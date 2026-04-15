@@ -1,0 +1,1740 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Machine>SATIVA</Machine>
+    <WindowsUser>SATIVA</WindowsUser>
+    <TargetPlatformIdentifier>Windows</TargetPlatformIdentifier>
+    <TargetOsVersion>10.0</TargetOsVersion>
+    <TargetOsDescription>Windows 10.0</TargetOsDescription>
+    <SolutionConfiguration>Debug|x64</SolutionConfiguration>
+    <PackageArchitecture>x64</PackageArchitecture>
+    <PackageIdentityName>KroiraApp</PackageIdentityName>
+    <PackageIdentityPublisher>CN=SATIVA</PackageIdentityPublisher>
+    <IntermediateOutputPath>C:\Users\SATIVA\Desktop\stream\src\Kroira.App\obj\x64\Debug\net8.0-windows10.0.19041.0\win-x64\</IntermediateOutputPath>
+    <RemoteDeploymentType>CopyToDevice</RemoteDeploymentType>
+    <PackageRegistrationPath></PackageRegistrationPath>
+    <RemoveNonLayoutFiles>false</RemoveNonLayoutFiles>
+    <DeployOptionalPackages>false</DeployOptionalPackages>
+    <WindowsSdkPath></WindowsSdkPath>
+    <LayoutDir>C:\Users\SATIVA\Desktop\stream\src\Kroira.App\bin\x64\Debug\net8.0-windows10.0.19041.0\win-x64\AppX</LayoutDir>
+  </PropertyGroup>
+  <ItemGroup>
+    <AppXManifest Include="C:\Users\SATIVA\Desktop\stream\src\Kroira.App\bin\x64\Debug\net8.0-windows10.0.19041.0\win-x64\AppxManifest.xml">
+      <PackagePath>AppxManifest.xml</PackagePath>
+      <ReRegisterAppIfChanged>true</ReRegisterAppIfChanged>
+    </AppXManifest>
+  </ItemGroup>
+  <ItemGroup>
+    <AppxPackagedFile Include="C:\Users\SATIVA\Desktop\stream\src\Kroira.App\bin\x64\Debug\net8.0-windows10.0.19041.0\win-x64\Kroira.App.runtimeconfig.json">
+      <PackagePath>Kroira.App.runtimeconfig.json</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\Desktop\stream\src\Kroira.App\obj\x64\Debug\net8.0-windows10.0.19041.0\win-x64\apphost.exe">
+      <PackagePath>Kroira.App.exe</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\libvlc.dll">
+      <PackagePath>libvlc\win-x64\libvlc.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\libvlc.lib">
+      <PackagePath>libvlc\win-x64\libvlc.lib</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\libvlccore.dll">
+      <PackagePath>libvlc\win-x64\libvlccore.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\libvlccore.lib">
+      <PackagePath>libvlc\win-x64\libvlccore.lib</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\hrtfs\dodeca_and_7channel_3DSL_HRTF.sofa">
+      <PackagePath>libvlc\win-x64\hrtfs\dodeca_and_7channel_3DSL_HRTF.sofa</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\lua\extensions\VLSub.luac">
+      <PackagePath>libvlc\win-x64\lua\extensions\VLSub.luac</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\lua\http\css\main.css">
+      <PackagePath>libvlc\win-x64\lua\http\css\main.css</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\lua\http\css\mobile.css">
+      <PackagePath>libvlc\win-x64\lua\http\css\mobile.css</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\lua\http\css\ui-lightness\images\ui-bg_diagonals-thick_18_b81900_40x40.png">
+      <PackagePath>libvlc\win-x64\lua\http\css\ui-lightness\images\ui-bg_diagonals-thick_18_b81900_40x40.png</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\lua\http\css\ui-lightness\images\ui-bg_diagonals-thick_20_666666_40x40.png">
+      <PackagePath>libvlc\win-x64\lua\http\css\ui-lightness\images\ui-bg_diagonals-thick_20_666666_40x40.png</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\lua\http\css\ui-lightness\images\ui-bg_flat_10_000000_40x100.png">
+      <PackagePath>libvlc\win-x64\lua\http\css\ui-lightness\images\ui-bg_flat_10_000000_40x100.png</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\lua\http\css\ui-lightness\images\ui-bg_glass_100_f6f6f6_1x400.png">
+      <PackagePath>libvlc\win-x64\lua\http\css\ui-lightness\images\ui-bg_glass_100_f6f6f6_1x400.png</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\lua\http\css\ui-lightness\images\ui-bg_glass_100_fdf5ce_1x400.png">
+      <PackagePath>libvlc\win-x64\lua\http\css\ui-lightness\images\ui-bg_glass_100_fdf5ce_1x400.png</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\lua\http\css\ui-lightness\images\ui-bg_glass_65_ffffff_1x400.png">
+      <PackagePath>libvlc\win-x64\lua\http\css\ui-lightness\images\ui-bg_glass_65_ffffff_1x400.png</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\lua\http\css\ui-lightness\images\ui-bg_gloss-wave_35_f6a828_500x100.png">
+      <PackagePath>libvlc\win-x64\lua\http\css\ui-lightness\images\ui-bg_gloss-wave_35_f6a828_500x100.png</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\lua\http\css\ui-lightness\images\ui-bg_highlight-soft_100_eeeeee_1x100.png">
+      <PackagePath>libvlc\win-x64\lua\http\css\ui-lightness\images\ui-bg_highlight-soft_100_eeeeee_1x100.png</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\lua\http\css\ui-lightness\images\ui-bg_highlight-soft_75_ffe45c_1x100.png">
+      <PackagePath>libvlc\win-x64\lua\http\css\ui-lightness\images\ui-bg_highlight-soft_75_ffe45c_1x100.png</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\lua\http\css\ui-lightness\images\ui-icons_222222_256x240.png">
+      <PackagePath>libvlc\win-x64\lua\http\css\ui-lightness\images\ui-icons_222222_256x240.png</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\lua\http\css\ui-lightness\images\ui-icons_228ef1_256x240.png">
+      <PackagePath>libvlc\win-x64\lua\http\css\ui-lightness\images\ui-icons_228ef1_256x240.png</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\lua\http\css\ui-lightness\images\ui-icons_ef8c08_256x240.png">
+      <PackagePath>libvlc\win-x64\lua\http\css\ui-lightness\images\ui-icons_ef8c08_256x240.png</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\lua\http\css\ui-lightness\images\ui-icons_ffd27a_256x240.png">
+      <PackagePath>libvlc\win-x64\lua\http\css\ui-lightness\images\ui-icons_ffd27a_256x240.png</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\lua\http\css\ui-lightness\images\ui-icons_ffffff_256x240.png">
+      <PackagePath>libvlc\win-x64\lua\http\css\ui-lightness\images\ui-icons_ffffff_256x240.png</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\lua\http\css\ui-lightness\jquery-ui-1.8.13.custom.css">
+      <PackagePath>libvlc\win-x64\lua\http\css\ui-lightness\jquery-ui-1.8.13.custom.css</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\lua\http\custom.lua">
+      <PackagePath>libvlc\win-x64\lua\http\custom.lua</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\lua\http\dialogs\batch_window.html">
+      <PackagePath>libvlc\win-x64\lua\http\dialogs\batch_window.html</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\lua\http\dialogs\browse_window.html">
+      <PackagePath>libvlc\win-x64\lua\http\dialogs\browse_window.html</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\lua\http\dialogs\create_stream.html">
+      <PackagePath>libvlc\win-x64\lua\http\dialogs\create_stream.html</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\lua\http\dialogs\equalizer_window.html">
+      <PackagePath>libvlc\win-x64\lua\http\dialogs\equalizer_window.html</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\lua\http\dialogs\error_window.html">
+      <PackagePath>libvlc\win-x64\lua\http\dialogs\error_window.html</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\lua\http\dialogs\mosaic_window.html">
+      <PackagePath>libvlc\win-x64\lua\http\dialogs\mosaic_window.html</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\lua\http\dialogs\offset_window.html">
+      <PackagePath>libvlc\win-x64\lua\http\dialogs\offset_window.html</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\lua\http\dialogs\stream_config_window.html">
+      <PackagePath>libvlc\win-x64\lua\http\dialogs\stream_config_window.html</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\lua\http\dialogs\stream_window.html">
+      <PackagePath>libvlc\win-x64\lua\http\dialogs\stream_window.html</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\lua\http\favicon.ico">
+      <PackagePath>libvlc\win-x64\lua\http\favicon.ico</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\lua\http\images\Audio-48.png">
+      <PackagePath>libvlc\win-x64\lua\http\images\Audio-48.png</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\lua\http\images\Back-48.png">
+      <PackagePath>libvlc\win-x64\lua\http\images\Back-48.png</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\lua\http\images\buttons.png">
+      <PackagePath>libvlc\win-x64\lua\http\images\buttons.png</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\lua\http\images\Folder-48.png">
+      <PackagePath>libvlc\win-x64\lua\http\images\Folder-48.png</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\lua\http\images\Other-48.png">
+      <PackagePath>libvlc\win-x64\lua\http\images\Other-48.png</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\lua\http\images\speaker-32.png">
+      <PackagePath>libvlc\win-x64\lua\http\images\speaker-32.png</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\lua\http\images\Video-48.png">
+      <PackagePath>libvlc\win-x64\lua\http\images\Video-48.png</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\lua\http\images\vlc-48.png">
+      <PackagePath>libvlc\win-x64\lua\http\images\vlc-48.png</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\lua\http\images\vlc16x16.png">
+      <PackagePath>libvlc\win-x64\lua\http\images\vlc16x16.png</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\lua\http\index.html">
+      <PackagePath>libvlc\win-x64\lua\http\index.html</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\lua\http\js\common.js">
+      <PackagePath>libvlc\win-x64\lua\http\js\common.js</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\lua\http\js\controllers.js">
+      <PackagePath>libvlc\win-x64\lua\http\js\controllers.js</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\lua\http\js\jquery.jstree.js">
+      <PackagePath>libvlc\win-x64\lua\http\js\jquery.jstree.js</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\lua\http\js\ui.js">
+      <PackagePath>libvlc\win-x64\lua\http\js\ui.js</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\lua\http\mobile.html">
+      <PackagePath>libvlc\win-x64\lua\http\mobile.html</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\lua\http\mobile_browse.html">
+      <PackagePath>libvlc\win-x64\lua\http\mobile_browse.html</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\lua\http\mobile_equalizer.html">
+      <PackagePath>libvlc\win-x64\lua\http\mobile_equalizer.html</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\lua\http\mobile_view.html">
+      <PackagePath>libvlc\win-x64\lua\http\mobile_view.html</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\lua\http\requests\browse.json">
+      <PackagePath>libvlc\win-x64\lua\http\requests\browse.json</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\lua\http\requests\browse.xml">
+      <PackagePath>libvlc\win-x64\lua\http\requests\browse.xml</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\lua\http\requests\playlist.json">
+      <PackagePath>libvlc\win-x64\lua\http\requests\playlist.json</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\lua\http\requests\playlist.xml">
+      <PackagePath>libvlc\win-x64\lua\http\requests\playlist.xml</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\lua\http\requests\playlist_jstree.xml">
+      <PackagePath>libvlc\win-x64\lua\http\requests\playlist_jstree.xml</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\lua\http\requests\README.txt">
+      <PackagePath>libvlc\win-x64\lua\http\requests\README.txt</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\lua\http\requests\status.json">
+      <PackagePath>libvlc\win-x64\lua\http\requests\status.json</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\lua\http\requests\status.xml">
+      <PackagePath>libvlc\win-x64\lua\http\requests\status.xml</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\lua\http\requests\vlm.xml">
+      <PackagePath>libvlc\win-x64\lua\http\requests\vlm.xml</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\lua\http\requests\vlm_cmd.xml">
+      <PackagePath>libvlc\win-x64\lua\http\requests\vlm_cmd.xml</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\lua\http\view.html">
+      <PackagePath>libvlc\win-x64\lua\http\view.html</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\lua\http\vlm.html">
+      <PackagePath>libvlc\win-x64\lua\http\vlm.html</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\lua\http\vlm_export.html">
+      <PackagePath>libvlc\win-x64\lua\http\vlm_export.html</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\lua\intf\cli.luac">
+      <PackagePath>libvlc\win-x64\lua\intf\cli.luac</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\lua\intf\dummy.luac">
+      <PackagePath>libvlc\win-x64\lua\intf\dummy.luac</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\lua\intf\dumpmeta.luac">
+      <PackagePath>libvlc\win-x64\lua\intf\dumpmeta.luac</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\lua\intf\http.luac">
+      <PackagePath>libvlc\win-x64\lua\intf\http.luac</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\lua\intf\luac.luac">
+      <PackagePath>libvlc\win-x64\lua\intf\luac.luac</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\lua\intf\modules\host.luac">
+      <PackagePath>libvlc\win-x64\lua\intf\modules\host.luac</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\lua\intf\modules\httprequests.luac">
+      <PackagePath>libvlc\win-x64\lua\intf\modules\httprequests.luac</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\lua\intf\telnet.luac">
+      <PackagePath>libvlc\win-x64\lua\intf\telnet.luac</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\lua\meta\art\00_musicbrainz.luac">
+      <PackagePath>libvlc\win-x64\lua\meta\art\00_musicbrainz.luac</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\lua\meta\art\01_googleimage.luac">
+      <PackagePath>libvlc\win-x64\lua\meta\art\01_googleimage.luac</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\lua\meta\art\02_frenchtv.luac">
+      <PackagePath>libvlc\win-x64\lua\meta\art\02_frenchtv.luac</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\lua\meta\art\03_lastfm.luac">
+      <PackagePath>libvlc\win-x64\lua\meta\art\03_lastfm.luac</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\lua\meta\reader\filename.luac">
+      <PackagePath>libvlc\win-x64\lua\meta\reader\filename.luac</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\lua\modules\common.luac">
+      <PackagePath>libvlc\win-x64\lua\modules\common.luac</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\lua\modules\dkjson.luac">
+      <PackagePath>libvlc\win-x64\lua\modules\dkjson.luac</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\lua\modules\sandbox.luac">
+      <PackagePath>libvlc\win-x64\lua\modules\sandbox.luac</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\lua\modules\simplexml.luac">
+      <PackagePath>libvlc\win-x64\lua\modules\simplexml.luac</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\lua\playlist\anevia_streams.luac">
+      <PackagePath>libvlc\win-x64\lua\playlist\anevia_streams.luac</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\lua\playlist\anevia_xml.luac">
+      <PackagePath>libvlc\win-x64\lua\playlist\anevia_xml.luac</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\lua\playlist\appletrailers.luac">
+      <PackagePath>libvlc\win-x64\lua\playlist\appletrailers.luac</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\lua\playlist\bbc_co_uk.luac">
+      <PackagePath>libvlc\win-x64\lua\playlist\bbc_co_uk.luac</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\lua\playlist\cue.luac">
+      <PackagePath>libvlc\win-x64\lua\playlist\cue.luac</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\lua\playlist\dailymotion.luac">
+      <PackagePath>libvlc\win-x64\lua\playlist\dailymotion.luac</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\lua\playlist\jamendo.luac">
+      <PackagePath>libvlc\win-x64\lua\playlist\jamendo.luac</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\lua\playlist\koreus.luac">
+      <PackagePath>libvlc\win-x64\lua\playlist\koreus.luac</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\lua\playlist\liveleak.luac">
+      <PackagePath>libvlc\win-x64\lua\playlist\liveleak.luac</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\lua\playlist\newgrounds.luac">
+      <PackagePath>libvlc\win-x64\lua\playlist\newgrounds.luac</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\lua\playlist\rockbox_fm_presets.luac">
+      <PackagePath>libvlc\win-x64\lua\playlist\rockbox_fm_presets.luac</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\lua\playlist\soundcloud.luac">
+      <PackagePath>libvlc\win-x64\lua\playlist\soundcloud.luac</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\lua\playlist\twitch.luac">
+      <PackagePath>libvlc\win-x64\lua\playlist\twitch.luac</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\lua\playlist\vimeo.luac">
+      <PackagePath>libvlc\win-x64\lua\playlist\vimeo.luac</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\lua\playlist\vocaroo.luac">
+      <PackagePath>libvlc\win-x64\lua\playlist\vocaroo.luac</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\lua\playlist\youtube.luac">
+      <PackagePath>libvlc\win-x64\lua\playlist\youtube.luac</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\lua\sd\icecast.luac">
+      <PackagePath>libvlc\win-x64\lua\sd\icecast.luac</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\lua\sd\jamendo.luac">
+      <PackagePath>libvlc\win-x64\lua\sd\jamendo.luac</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\access\libaccess_concat_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\access\libaccess_concat_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\access\libaccess_imem_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\access\libaccess_imem_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\access\libaccess_mms_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\access\libaccess_mms_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\access\libaccess_srt_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\access\libaccess_srt_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\access\libaccess_wasapi_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\access\libaccess_wasapi_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\access\libattachment_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\access\libattachment_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\access\libbluray-awt-j2se-1.4.0.jar">
+      <PackagePath>libvlc\win-x64\plugins\access\libbluray-awt-j2se-1.4.0.jar</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\access\libbluray-j2se-1.4.0.jar">
+      <PackagePath>libvlc\win-x64\plugins\access\libbluray-j2se-1.4.0.jar</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\access\libcdda_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\access\libcdda_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\access\libdcp_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\access\libdcp_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\access\libdtv_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\access\libdtv_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\access\libfilesystem_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\access\libfilesystem_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\access\libftp_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\access\libftp_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\access\libhttps_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\access\libhttps_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\access\libhttp_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\access\libhttp_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\access\libidummy_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\access\libidummy_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\access\libimem_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\access\libimem_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\access\liblibbluray_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\access\liblibbluray_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\access\liblive555_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\access\liblive555_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\access\libnfs_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\access\libnfs_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\access\librist_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\access\librist_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\access\librtp_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\access\librtp_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\access\libsatip_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\access\libsatip_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\access\libscreen_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\access\libscreen_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\access\libsdp_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\access\libsdp_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\access\libsftp_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\access\libsftp_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\access\libshm_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\access\libshm_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\access\libsmb_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\access\libsmb_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\access\libtcp_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\access\libtcp_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\access\libtimecode_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\access\libtimecode_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\access\libudp_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\access\libudp_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\access\libvcd_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\access\libvcd_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\access\libvdr_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\access\libvdr_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\access_output\libaccess_output_dummy_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\access_output\libaccess_output_dummy_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\access_output\libaccess_output_file_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\access_output\libaccess_output_file_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\access_output\libaccess_output_http_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\access_output\libaccess_output_http_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\access_output\libaccess_output_livehttp_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\access_output\libaccess_output_livehttp_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\access_output\libaccess_output_rist_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\access_output\libaccess_output_rist_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\access_output\libaccess_output_shout_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\access_output\libaccess_output_shout_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\access_output\libaccess_output_srt_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\access_output\libaccess_output_srt_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\access_output\libaccess_output_udp_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\access_output\libaccess_output_udp_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\audio_filter\libaudiobargraph_a_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\audio_filter\libaudiobargraph_a_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\audio_filter\libaudio_format_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\audio_filter\libaudio_format_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\audio_filter\libchorus_flanger_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\audio_filter\libchorus_flanger_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\audio_filter\libcompressor_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\audio_filter\libcompressor_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\audio_filter\libdolby_surround_decoder_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\audio_filter\libdolby_surround_decoder_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\audio_filter\libequalizer_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\audio_filter\libequalizer_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\audio_filter\libgain_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\audio_filter\libgain_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\audio_filter\libheadphone_channel_mixer_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\audio_filter\libheadphone_channel_mixer_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\audio_filter\libkaraoke_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\audio_filter\libkaraoke_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\audio_filter\libnormvol_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\audio_filter\libnormvol_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\audio_filter\libparam_eq_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\audio_filter\libparam_eq_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\audio_filter\libremap_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\audio_filter\libremap_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\audio_filter\libscaletempo_pitch_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\audio_filter\libscaletempo_pitch_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\audio_filter\libscaletempo_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\audio_filter\libscaletempo_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\audio_filter\libsimple_channel_mixer_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\audio_filter\libsimple_channel_mixer_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\audio_filter\libspatialaudio_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\audio_filter\libspatialaudio_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\audio_filter\libspatializer_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\audio_filter\libspatializer_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\audio_filter\libspeex_resampler_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\audio_filter\libspeex_resampler_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\audio_filter\libstereo_widen_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\audio_filter\libstereo_widen_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\audio_filter\libtospdif_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\audio_filter\libtospdif_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\audio_filter\libtrivial_channel_mixer_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\audio_filter\libtrivial_channel_mixer_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\audio_filter\libugly_resampler_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\audio_filter\libugly_resampler_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\audio_mixer\libfloat_mixer_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\audio_mixer\libfloat_mixer_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\audio_mixer\libinteger_mixer_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\audio_mixer\libinteger_mixer_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\audio_output\libadummy_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\audio_output\libadummy_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\audio_output\libafile_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\audio_output\libafile_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\audio_output\libamem_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\audio_output\libamem_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\audio_output\libdirectsound_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\audio_output\libdirectsound_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\audio_output\libmmdevice_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\audio_output\libmmdevice_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\audio_output\libwasapi_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\audio_output\libwasapi_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\audio_output\libwaveout_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\audio_output\libwaveout_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\codec\libadpcm_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\codec\libadpcm_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\codec\libaes3_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\codec\libaes3_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\codec\libaom_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\codec\libaom_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\codec\libaraw_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\codec\libaraw_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\codec\libavcodec_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\codec\libavcodec_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\codec\libcc_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\codec\libcc_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\codec\libcdg_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\codec\libcdg_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\codec\libcrystalhd_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\codec\libcrystalhd_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\codec\libcvdsub_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\codec\libcvdsub_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\codec\libd3d11va_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\codec\libd3d11va_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\codec\libdav1d_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\codec\libdav1d_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\codec\libddummy_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\codec\libddummy_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\codec\libdmo_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\codec\libdmo_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\codec\libdvbsub_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\codec\libdvbsub_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\codec\libdxva2_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\codec\libdxva2_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\codec\libedummy_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\codec\libedummy_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\codec\libflac_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\codec\libflac_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\codec\libfluidsynth_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\codec\libfluidsynth_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\codec\libg711_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\codec\libg711_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\codec\libjpeg_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\codec\libjpeg_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\codec\libkate_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\codec\libkate_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\codec\liblibass_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\codec\liblibass_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\codec\liblpcm_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\codec\liblpcm_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\codec\libmft_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\codec\libmft_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\codec\libmpg123_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\codec\libmpg123_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\codec\liboggspots_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\codec\liboggspots_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\codec\libopus_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\codec\libopus_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\codec\libpng_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\codec\libpng_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\codec\libqsv_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\codec\libqsv_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\codec\librawvideo_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\codec\librawvideo_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\codec\librtpvideo_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\codec\librtpvideo_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\codec\libschroedinger_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\codec\libschroedinger_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\codec\libscte18_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\codec\libscte18_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\codec\libscte27_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\codec\libscte27_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\codec\libsdl_image_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\codec\libsdl_image_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\codec\libspdif_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\codec\libspdif_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\codec\libspeex_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\codec\libspeex_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\codec\libspudec_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\codec\libspudec_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\codec\libstl_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\codec\libstl_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\codec\libsubsdec_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\codec\libsubsdec_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\codec\libsubstx3g_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\codec\libsubstx3g_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\codec\libsubsusf_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\codec\libsubsusf_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\codec\libsvcdsub_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\codec\libsvcdsub_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\codec\libtextst_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\codec\libtextst_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\codec\libtheora_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\codec\libtheora_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\codec\libttml_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\codec\libttml_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\codec\libtwolame_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\codec\libtwolame_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\codec\libuleaddvaudio_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\codec\libuleaddvaudio_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\codec\libvorbis_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\codec\libvorbis_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\codec\libvpx_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\codec\libvpx_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\codec\libwebvtt_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\codec\libwebvtt_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\codec\libx26410b_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\codec\libx26410b_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\codec\libzvbi_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\codec\libzvbi_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\d3d11\libdirect3d11_filters_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\d3d11\libdirect3d11_filters_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\d3d9\libdirect3d9_filters_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\d3d9\libdirect3d9_filters_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\demux\libadaptive_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\demux\libadaptive_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\demux\libaiff_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\demux\libaiff_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\demux\libasf_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\demux\libasf_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\demux\libau_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\demux\libau_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\demux\libavi_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\demux\libavi_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\demux\libcaf_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\demux\libcaf_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\demux\libdemuxdump_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\demux\libdemuxdump_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\demux\libdemux_cdg_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\demux\libdemux_cdg_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\demux\libdemux_chromecast_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\demux\libdemux_chromecast_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\demux\libdemux_stl_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\demux\libdemux_stl_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\demux\libdiracsys_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\demux\libdiracsys_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\demux\libdirectory_demux_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\demux\libdirectory_demux_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\demux\libdmxmus_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\demux\libdmxmus_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\demux\libes_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\demux\libes_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\demux\libflacsys_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\demux\libflacsys_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\demux\libgme_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\demux\libgme_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\demux\libh26x_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\demux\libh26x_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\demux\libimage_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\demux\libimage_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\demux\libmjpeg_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\demux\libmjpeg_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\demux\libmkv_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\demux\libmkv_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\demux\libmod_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\demux\libmod_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\demux\libmp4_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\demux\libmp4_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\demux\libmpgv_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\demux\libmpgv_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\demux\libnoseek_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\demux\libnoseek_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\demux\libnsc_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\demux\libnsc_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\demux\libnsv_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\demux\libnsv_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\demux\libnuv_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\demux\libnuv_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\demux\libogg_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\demux\libogg_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\demux\libplaylist_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\demux\libplaylist_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\demux\libps_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\demux\libps_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\demux\libpva_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\demux\libpva_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\demux\librawaud_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\demux\librawaud_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\demux\librawdv_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\demux\librawdv_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\demux\librawvid_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\demux\librawvid_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\demux\libsmf_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\demux\libsmf_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\demux\libsubtitle_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\demux\libsubtitle_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\demux\libts_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\demux\libts_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\demux\libtta_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\demux\libtta_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\demux\libty_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\demux\libty_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\demux\libvc1_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\demux\libvc1_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\demux\libvobsub_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\demux\libvobsub_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\demux\libvoc_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\demux\libvoc_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\demux\libwav_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\demux\libwav_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\demux\libxa_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\demux\libxa_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\keystore\libfile_keystore_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\keystore\libfile_keystore_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\keystore\libmemory_keystore_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\keystore\libmemory_keystore_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\logger\libconsole_logger_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\logger\libconsole_logger_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\lua\liblua_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\lua\liblua_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\meta_engine\libfolder_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\meta_engine\libfolder_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\meta_engine\libtaglib_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\meta_engine\libtaglib_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\misc\libaddonsfsstorage_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\misc\libaddonsfsstorage_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\misc\libaddonsvorepository_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\misc\libaddonsvorepository_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\misc\libfingerprinter_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\misc\libfingerprinter_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\misc\libgnutls_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\misc\libgnutls_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\misc\libxml_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\misc\libxml_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\mux\libmux_asf_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\mux\libmux_asf_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\mux\libmux_avi_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\mux\libmux_avi_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\mux\libmux_dummy_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\mux\libmux_dummy_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\mux\libmux_mp4_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\mux\libmux_mp4_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\mux\libmux_mpjpeg_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\mux\libmux_mpjpeg_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\mux\libmux_ogg_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\mux\libmux_ogg_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\mux\libmux_ps_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\mux\libmux_ps_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\mux\libmux_ts_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\mux\libmux_ts_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\mux\libmux_wav_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\mux\libmux_wav_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\packetizer\libpacketizer_av1_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\packetizer\libpacketizer_av1_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\packetizer\libpacketizer_copy_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\packetizer\libpacketizer_copy_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\packetizer\libpacketizer_dirac_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\packetizer\libpacketizer_dirac_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\packetizer\libpacketizer_dts_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\packetizer\libpacketizer_dts_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\packetizer\libpacketizer_flac_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\packetizer\libpacketizer_flac_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\packetizer\libpacketizer_h264_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\packetizer\libpacketizer_h264_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\packetizer\libpacketizer_hevc_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\packetizer\libpacketizer_hevc_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\packetizer\libpacketizer_mlp_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\packetizer\libpacketizer_mlp_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\packetizer\libpacketizer_mpeg4audio_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\packetizer\libpacketizer_mpeg4audio_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\packetizer\libpacketizer_mpeg4video_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\packetizer\libpacketizer_mpeg4video_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\packetizer\libpacketizer_mpegaudio_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\packetizer\libpacketizer_mpegaudio_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\packetizer\libpacketizer_mpegvideo_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\packetizer\libpacketizer_mpegvideo_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\packetizer\libpacketizer_vc1_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\packetizer\libpacketizer_vc1_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\services_discovery\libmicrodns_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\services_discovery\libmicrodns_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\services_discovery\libupnp_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\services_discovery\libupnp_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\services_discovery\libwindrive_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\services_discovery\libwindrive_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\spu\libaudiobargraph_v_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\spu\libaudiobargraph_v_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\spu\liblogo_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\spu\liblogo_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\spu\libmarq_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\spu\libmarq_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\spu\libmosaic_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\spu\libmosaic_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\spu\libremoteosd_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\spu\libremoteosd_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\spu\librss_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\spu\librss_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\spu\libsubsdelay_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\spu\libsubsdelay_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\stream_extractor\libarchive_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\stream_extractor\libarchive_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\stream_filter\libadf_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\stream_filter\libadf_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\stream_filter\libaribcam_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\stream_filter\libaribcam_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\stream_filter\libcache_block_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\stream_filter\libcache_block_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\stream_filter\libcache_read_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\stream_filter\libcache_read_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\stream_filter\libhds_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\stream_filter\libhds_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\stream_filter\libinflate_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\stream_filter\libinflate_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\stream_filter\libprefetch_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\stream_filter\libprefetch_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\stream_filter\librecord_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\stream_filter\librecord_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\stream_filter\libskiptags_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\stream_filter\libskiptags_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\stream_out\libstream_out_autodel_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\stream_out\libstream_out_autodel_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\stream_out\libstream_out_bridge_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\stream_out\libstream_out_bridge_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\stream_out\libstream_out_chromaprint_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\stream_out\libstream_out_chromaprint_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\stream_out\libstream_out_chromecast_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\stream_out\libstream_out_chromecast_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\stream_out\libstream_out_delay_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\stream_out\libstream_out_delay_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\stream_out\libstream_out_description_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\stream_out\libstream_out_description_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\stream_out\libstream_out_display_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\stream_out\libstream_out_display_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\stream_out\libstream_out_dummy_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\stream_out\libstream_out_dummy_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\stream_out\libstream_out_duplicate_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\stream_out\libstream_out_duplicate_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\stream_out\libstream_out_es_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\stream_out\libstream_out_es_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\stream_out\libstream_out_gather_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\stream_out\libstream_out_gather_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\stream_out\libstream_out_mosaic_bridge_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\stream_out\libstream_out_mosaic_bridge_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\stream_out\libstream_out_record_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\stream_out\libstream_out_record_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\stream_out\libstream_out_setid_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\stream_out\libstream_out_setid_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\stream_out\libstream_out_smem_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\stream_out\libstream_out_smem_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\stream_out\libstream_out_standard_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\stream_out\libstream_out_standard_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\stream_out\libstream_out_stats_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\stream_out\libstream_out_stats_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\stream_out\libstream_out_transcode_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\stream_out\libstream_out_transcode_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\text_renderer\libfreetype_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\text_renderer\libfreetype_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\text_renderer\libsapi_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\text_renderer\libsapi_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\text_renderer\libtdummy_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\text_renderer\libtdummy_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\video_chroma\libchain_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\video_chroma\libchain_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\video_chroma\libgrey_yuv_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\video_chroma\libgrey_yuv_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\video_chroma\libi420_10_p010_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\video_chroma\libi420_10_p010_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\video_chroma\libi420_nv12_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\video_chroma\libi420_nv12_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\video_chroma\libi420_rgb_mmx_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\video_chroma\libi420_rgb_mmx_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\video_chroma\libi420_rgb_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\video_chroma\libi420_rgb_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\video_chroma\libi420_rgb_sse2_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\video_chroma\libi420_rgb_sse2_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\video_chroma\libi420_yuy2_mmx_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\video_chroma\libi420_yuy2_mmx_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\video_chroma\libi420_yuy2_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\video_chroma\libi420_yuy2_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\video_chroma\libi420_yuy2_sse2_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\video_chroma\libi420_yuy2_sse2_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\video_chroma\libi422_i420_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\video_chroma\libi422_i420_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\video_chroma\libi422_yuy2_mmx_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\video_chroma\libi422_yuy2_mmx_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\video_chroma\libi422_yuy2_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\video_chroma\libi422_yuy2_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\video_chroma\libi422_yuy2_sse2_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\video_chroma\libi422_yuy2_sse2_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\video_chroma\librv32_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\video_chroma\librv32_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\video_chroma\libswscale_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\video_chroma\libswscale_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\video_chroma\libyuvp_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\video_chroma\libyuvp_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\video_chroma\libyuy2_i420_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\video_chroma\libyuy2_i420_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\video_chroma\libyuy2_i422_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\video_chroma\libyuy2_i422_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\video_filter\libadjust_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\video_filter\libadjust_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\video_filter\libalphamask_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\video_filter\libalphamask_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\video_filter\libanaglyph_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\video_filter\libanaglyph_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\video_filter\libantiflicker_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\video_filter\libantiflicker_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\video_filter\libball_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\video_filter\libball_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\video_filter\libblendbench_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\video_filter\libblendbench_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\video_filter\libblend_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\video_filter\libblend_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\video_filter\libbluescreen_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\video_filter\libbluescreen_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\video_filter\libcanvas_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\video_filter\libcanvas_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\video_filter\libcolorthres_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\video_filter\libcolorthres_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\video_filter\libcroppadd_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\video_filter\libcroppadd_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\video_filter\libdeinterlace_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\video_filter\libdeinterlace_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\video_filter\libedgedetection_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\video_filter\libedgedetection_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\video_filter\liberase_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\video_filter\liberase_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\video_filter\libextract_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\video_filter\libextract_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\video_filter\libfps_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\video_filter\libfps_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\video_filter\libfreeze_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\video_filter\libfreeze_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\video_filter\libgaussianblur_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\video_filter\libgaussianblur_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\video_filter\libgradfun_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\video_filter\libgradfun_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\video_filter\libgradient_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\video_filter\libgradient_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\video_filter\libgrain_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\video_filter\libgrain_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\video_filter\libhqdn3d_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\video_filter\libhqdn3d_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\video_filter\libinvert_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\video_filter\libinvert_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\video_filter\libmagnify_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\video_filter\libmagnify_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\video_filter\libmirror_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\video_filter\libmirror_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\video_filter\libmotionblur_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\video_filter\libmotionblur_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\video_filter\libmotiondetect_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\video_filter\libmotiondetect_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\video_filter\liboldmovie_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\video_filter\liboldmovie_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\video_filter\libposterize_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\video_filter\libposterize_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\video_filter\libpsychedelic_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\video_filter\libpsychedelic_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\video_filter\libpuzzle_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\video_filter\libpuzzle_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\video_filter\libripple_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\video_filter\libripple_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\video_filter\libscale_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\video_filter\libscale_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\video_filter\libscene_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\video_filter\libscene_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\video_filter\libsepia_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\video_filter\libsepia_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\video_filter\libsharpen_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\video_filter\libsharpen_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\video_filter\libtransform_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\video_filter\libtransform_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\video_filter\libvhs_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\video_filter\libvhs_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\video_filter\libwave_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\video_filter\libwave_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\video_output\libcaca_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\video_output\libcaca_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\video_output\libdirect3d11_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\video_output\libdirect3d11_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\video_output\libdirect3d9_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\video_output\libdirect3d9_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\video_output\libdirectdraw_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\video_output\libdirectdraw_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\video_output\libdrawable_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\video_output\libdrawable_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\video_output\libflaschen_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\video_output\libflaschen_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\video_output\libglinterop_dxva2_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\video_output\libglinterop_dxva2_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\video_output\libgl_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\video_output\libgl_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\video_output\libvdummy_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\video_output\libvdummy_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\video_output\libvmem_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\video_output\libvmem_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\video_output\libwingdi_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\video_output\libwingdi_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\video_output\libwinhibit_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\video_output\libwinhibit_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\video_output\libyuv_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\video_output\libyuv_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\video_splitter\libclone_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\video_splitter\libclone_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\video_splitter\libpanoramix_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\video_splitter\libpanoramix_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\video_splitter\libwall_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\video_splitter\libwall_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\visualization\libglspectrum_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\visualization\libglspectrum_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\visualization\libgoom_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\visualization\libgoom_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\visualization\libprojectm_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\visualization\libprojectm_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\videolan.libvlc.windows\3.0.22\build\x64\plugins\visualization\libvisual_plugin.dll">
+      <PackagePath>libvlc\win-x64\plugins\visualization\libvisual_plugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\Desktop\stream\src\Kroira.App\obj\x64\Debug\net8.0-windows10.0.19041.0\win-x64\Kroira.App.dll">
+      <PackagePath>Kroira.App.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.windows.sdk.net.ref\10.0.19041.56\lib\net8.0\Microsoft.Windows.SDK.NET.dll">
+      <PackagePath>Microsoft.Windows.SDK.NET.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.windows.sdk.net.ref\10.0.19041.56\lib\net8.0\WinRT.Runtime.dll">
+      <PackagePath>WinRT.Runtime.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\communitytoolkit.mvvm\8.2.2\lib\net6.0\CommunityToolkit.Mvvm.dll">
+      <PackagePath>CommunityToolkit.Mvvm.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\libvlcsharp\3.9.6\lib\net8.0-windows10.0.19041\LibVLCSharp.dll">
+      <PackagePath>LibVLCSharp.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.data.sqlite.core\8.0.0\lib\net8.0\Microsoft.Data.Sqlite.dll">
+      <PackagePath>Microsoft.Data.Sqlite.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.entityframeworkcore\8.0.0\lib\net8.0\Microsoft.EntityFrameworkCore.dll">
+      <PackagePath>Microsoft.EntityFrameworkCore.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.entityframeworkcore.abstractions\8.0.0\lib\net8.0\Microsoft.EntityFrameworkCore.Abstractions.dll">
+      <PackagePath>Microsoft.EntityFrameworkCore.Abstractions.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.entityframeworkcore.relational\8.0.0\lib\net8.0\Microsoft.EntityFrameworkCore.Relational.dll">
+      <PackagePath>Microsoft.EntityFrameworkCore.Relational.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.entityframeworkcore.sqlite.core\8.0.0\lib\net8.0\Microsoft.EntityFrameworkCore.Sqlite.dll">
+      <PackagePath>Microsoft.EntityFrameworkCore.Sqlite.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.extensions.caching.abstractions\8.0.0\lib\net8.0\Microsoft.Extensions.Caching.Abstractions.dll">
+      <PackagePath>Microsoft.Extensions.Caching.Abstractions.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.extensions.caching.memory\8.0.0\lib\net8.0\Microsoft.Extensions.Caching.Memory.dll">
+      <PackagePath>Microsoft.Extensions.Caching.Memory.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.extensions.configuration.abstractions\8.0.0\lib\net8.0\Microsoft.Extensions.Configuration.Abstractions.dll">
+      <PackagePath>Microsoft.Extensions.Configuration.Abstractions.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.extensions.dependencyinjection\8.0.0\lib\net8.0\Microsoft.Extensions.DependencyInjection.dll">
+      <PackagePath>Microsoft.Extensions.DependencyInjection.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.extensions.dependencyinjection.abstractions\8.0.0\lib\net8.0\Microsoft.Extensions.DependencyInjection.Abstractions.dll">
+      <PackagePath>Microsoft.Extensions.DependencyInjection.Abstractions.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.extensions.dependencymodel\8.0.0\lib\net8.0\Microsoft.Extensions.DependencyModel.dll">
+      <PackagePath>Microsoft.Extensions.DependencyModel.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.extensions.logging\8.0.0\lib\net8.0\Microsoft.Extensions.Logging.dll">
+      <PackagePath>Microsoft.Extensions.Logging.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.extensions.logging.abstractions\8.0.0\lib\net8.0\Microsoft.Extensions.Logging.Abstractions.dll">
+      <PackagePath>Microsoft.Extensions.Logging.Abstractions.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.extensions.options\8.0.0\lib\net8.0\Microsoft.Extensions.Options.dll">
+      <PackagePath>Microsoft.Extensions.Options.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.extensions.primitives\8.0.0\lib\net8.0\Microsoft.Extensions.Primitives.dll">
+      <PackagePath>Microsoft.Extensions.Primitives.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.windowsappsdk.ai\1.8.53\lib\net6.0-windows10.0.17763.0\Microsoft.Graphics.Imaging.Projection.dll">
+      <PackagePath>Microsoft.Graphics.Imaging.Projection.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.windowsappsdk.ai\1.8.53\lib\net6.0-windows10.0.17763.0\Microsoft.Windows.AI.ContentSafety.Projection.dll">
+      <PackagePath>Microsoft.Windows.AI.ContentSafety.Projection.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.windowsappsdk.ai\1.8.53\lib\net6.0-windows10.0.17763.0\Microsoft.Windows.AI.Foundation.Projection.dll">
+      <PackagePath>Microsoft.Windows.AI.Foundation.Projection.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.windowsappsdk.ai\1.8.53\lib\net6.0-windows10.0.17763.0\Microsoft.Windows.AI.Imaging.Projection.dll">
+      <PackagePath>Microsoft.Windows.AI.Imaging.Projection.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.windowsappsdk.ai\1.8.53\lib\net6.0-windows10.0.17763.0\Microsoft.Windows.AI.Projection.dll">
+      <PackagePath>Microsoft.Windows.AI.Projection.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.windowsappsdk.ai\1.8.53\lib\net6.0-windows10.0.17763.0\Microsoft.Windows.AI.Text.Projection.dll">
+      <PackagePath>Microsoft.Windows.AI.Text.Projection.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.windowsappsdk.foundation\1.8.260222000\lib\net6.0-windows10.0.17763.0\Microsoft.Security.Authentication.OAuth.Projection.dll">
+      <PackagePath>Microsoft.Security.Authentication.OAuth.Projection.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.windowsappsdk.foundation\1.8.260222000\lib\net6.0-windows10.0.17763.0\Microsoft.Windows.AppLifecycle.Projection.dll">
+      <PackagePath>Microsoft.Windows.AppLifecycle.Projection.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.windowsappsdk.foundation\1.8.260222000\lib\net6.0-windows10.0.17763.0\Microsoft.Windows.AppNotifications.Builder.Projection.dll">
+      <PackagePath>Microsoft.Windows.AppNotifications.Builder.Projection.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.windowsappsdk.foundation\1.8.260222000\lib\net6.0-windows10.0.17763.0\Microsoft.Windows.AppNotifications.Projection.dll">
+      <PackagePath>Microsoft.Windows.AppNotifications.Projection.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.windowsappsdk.foundation\1.8.260222000\lib\net6.0-windows10.0.17763.0\Microsoft.Windows.ApplicationModel.Background.Projection.dll">
+      <PackagePath>Microsoft.Windows.ApplicationModel.Background.Projection.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.windowsappsdk.foundation\1.8.260222000\lib\net6.0-windows10.0.17763.0\Microsoft.Windows.ApplicationModel.DynamicDependency.Projection.dll">
+      <PackagePath>Microsoft.Windows.ApplicationModel.DynamicDependency.Projection.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.windowsappsdk.foundation\1.8.260222000\lib\net6.0-windows10.0.17763.0\Microsoft.Windows.ApplicationModel.Resources.Projection.dll">
+      <PackagePath>Microsoft.Windows.ApplicationModel.Resources.Projection.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.windowsappsdk.foundation\1.8.260222000\lib\net6.0-windows10.0.17763.0\Microsoft.Windows.ApplicationModel.WindowsAppRuntime.Projection.dll">
+      <PackagePath>Microsoft.Windows.ApplicationModel.WindowsAppRuntime.Projection.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.windowsappsdk.foundation\1.8.260222000\lib\net6.0-windows10.0.17763.0\Microsoft.Windows.BadgeNotifications.Projection.dll">
+      <PackagePath>Microsoft.Windows.BadgeNotifications.Projection.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.windowsappsdk.foundation\1.8.260222000\lib\net6.0-windows10.0.17763.0\Microsoft.Windows.Foundation.Projection.dll">
+      <PackagePath>Microsoft.Windows.Foundation.Projection.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.windowsappsdk.foundation\1.8.260222000\lib\net6.0-windows10.0.17763.0\Microsoft.Windows.Management.Deployment.Projection.dll">
+      <PackagePath>Microsoft.Windows.Management.Deployment.Projection.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.windowsappsdk.foundation\1.8.260222000\lib\net6.0-windows10.0.17763.0\Microsoft.Windows.Media.Capture.Projection.dll">
+      <PackagePath>Microsoft.Windows.Media.Capture.Projection.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.windowsappsdk.foundation\1.8.260222000\lib\net6.0-windows10.0.17763.0\Microsoft.Windows.PushNotifications.Projection.dll">
+      <PackagePath>Microsoft.Windows.PushNotifications.Projection.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.windowsappsdk.foundation\1.8.260222000\lib\net6.0-windows10.0.17763.0\Microsoft.Windows.Security.AccessControl.Projection.dll">
+      <PackagePath>Microsoft.Windows.Security.AccessControl.Projection.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.windowsappsdk.foundation\1.8.260222000\lib\net6.0-windows10.0.17763.0\Microsoft.Windows.Storage.Pickers.Projection.dll">
+      <PackagePath>Microsoft.Windows.Storage.Pickers.Projection.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.windowsappsdk.foundation\1.8.260222000\lib\net6.0-windows10.0.17763.0\Microsoft.Windows.Storage.Projection.dll">
+      <PackagePath>Microsoft.Windows.Storage.Projection.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.windowsappsdk.foundation\1.8.260222000\lib\net6.0-windows10.0.17763.0\Microsoft.Windows.System.Power.Projection.dll">
+      <PackagePath>Microsoft.Windows.System.Power.Projection.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.windowsappsdk.foundation\1.8.260222000\lib\net6.0-windows10.0.17763.0\Microsoft.Windows.System.Projection.dll">
+      <PackagePath>Microsoft.Windows.System.Projection.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.windowsappsdk.foundation\1.8.260222000\lib\net6.0-windows10.0.17763.0\Microsoft.WindowsAppRuntime.Bootstrap.Net.dll">
+      <PackagePath>Microsoft.WindowsAppRuntime.Bootstrap.Net.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.windowsappsdk.interactiveexperiences\1.8.260125001\lib\net6.0-windows10.0.18362.0\Microsoft.InteractiveExperiences.Projection.dll">
+      <PackagePath>Microsoft.InteractiveExperiences.Projection.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.windowsappsdk.ml\1.8.2141\lib\net8.0-windows10.0.17763.0\Microsoft.ML.OnnxRuntime.dll">
+      <PackagePath>Microsoft.ML.OnnxRuntime.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.windowsappsdk.ml\1.8.2141\lib\net8.0-windows10.0.17763.0\Microsoft.Windows.AI.MachineLearning.Projection.dll">
+      <PackagePath>Microsoft.Windows.AI.MachineLearning.Projection.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.windowsappsdk.widgets\1.8.251231004\lib\net6.0-windows10.0.17763.0\Microsoft.Windows.Widgets.Projection.dll">
+      <PackagePath>Microsoft.Windows.Widgets.Projection.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.windowsappsdk.winui\1.8.260224000\lib\net6.0-windows10.0.17763.0\Microsoft.WinUI.dll">
+      <PackagePath>Microsoft.WinUI.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\sharpdx\4.2.0\lib\netstandard1.1\SharpDX.dll">
+      <PackagePath>SharpDX.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\sharpdx.direct3d11\4.2.0\lib\netstandard1.1\SharpDX.Direct3D11.dll">
+      <PackagePath>SharpDX.Direct3D11.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\sharpdx.dxgi\4.2.0\lib\netstandard1.1\SharpDX.DXGI.dll">
+      <PackagePath>SharpDX.DXGI.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\sqlitepclraw.bundle_e_sqlite3\2.1.6\lib\netstandard2.0\SQLitePCLRaw.batteries_v2.dll">
+      <PackagePath>SQLitePCLRaw.batteries_v2.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\sqlitepclraw.core\2.1.6\lib\netstandard2.0\SQLitePCLRaw.core.dll">
+      <PackagePath>SQLitePCLRaw.core.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\sqlitepclraw.provider.e_sqlite3\2.1.6\lib\net6.0-windows7.0\SQLitePCLRaw.provider.e_sqlite3.dll">
+      <PackagePath>SQLitePCLRaw.provider.e_sqlite3.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\system.numerics.tensors\9.0.0\lib\net8.0\System.Numerics.Tensors.dll">
+      <PackagePath>System.Numerics.Tensors.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.web.webview2\1.0.3179.45\runtimes\win-x64\native\WebView2Loader.dll">
+      <PackagePath>WebView2Loader.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.windowsappsdk.foundation\1.8.260222000\runtimes\win-x64\native\Microsoft.Windows.ApplicationModel.Background.UniversalBGTask.dll">
+      <PackagePath>Microsoft.Windows.ApplicationModel.Background.UniversalBGTask.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.windowsappsdk.foundation\1.8.260222000\runtimes\win-x64\native\Microsoft.WindowsAppRuntime.Bootstrap.dll">
+      <PackagePath>Microsoft.WindowsAppRuntime.Bootstrap.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\sqlitepclraw.lib.e_sqlite3\2.1.6\runtimes\win-x64\native\e_sqlite3.dll">
+      <PackagePath>e_sqlite3.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.web.webview2\1.0.3179.45\runtimes\win-x64\native_uap\Microsoft.Web.WebView2.Core.dll">
+      <PackagePath>Microsoft.Web.WebView2.Core.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.web.webview2\1.0.3179.45\lib_manual\net8.0-windows10.0.17763.0\Microsoft.Web.WebView2.Core.Projection.dll">
+      <PackagePath>Microsoft.Web.WebView2.Core.Projection.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\Desktop\stream\src\Kroira.App\obj\x64\Debug\net8.0-windows10.0.19041.0\win-x64\Kroira.App.deps.json">
+      <PackagePath>Kroira.App.deps.json</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\humanizer.core\2.14.1\lib\net6.0\Humanizer.dll">
+      <PackagePath>Humanizer.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.bcl.asyncinterfaces\6.0.0\lib\netstandard2.1\Microsoft.Bcl.AsyncInterfaces.dll">
+      <PackagePath>Microsoft.Bcl.AsyncInterfaces.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.codeanalysis.common\4.5.0\lib\netcoreapp3.1\Microsoft.CodeAnalysis.dll">
+      <PackagePath>Microsoft.CodeAnalysis.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.codeanalysis.csharp\4.5.0\lib\netcoreapp3.1\Microsoft.CodeAnalysis.CSharp.dll">
+      <PackagePath>Microsoft.CodeAnalysis.CSharp.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.codeanalysis.csharp.workspaces\4.5.0\lib\netcoreapp3.1\Microsoft.CodeAnalysis.CSharp.Workspaces.dll">
+      <PackagePath>Microsoft.CodeAnalysis.CSharp.Workspaces.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.codeanalysis.workspaces.common\4.5.0\lib\netcoreapp3.1\Microsoft.CodeAnalysis.Workspaces.dll">
+      <PackagePath>Microsoft.CodeAnalysis.Workspaces.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.entityframeworkcore.design\8.0.0\lib\net8.0\Microsoft.EntityFrameworkCore.Design.dll">
+      <PackagePath>Microsoft.EntityFrameworkCore.Design.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\mono.texttemplating\2.2.1\lib\netstandard2.0\Mono.TextTemplating.dll">
+      <PackagePath>Mono.TextTemplating.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\system.codedom\4.4.0\lib\netstandard2.0\System.CodeDom.dll">
+      <PackagePath>System.CodeDom.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\system.composition.attributedmodel\6.0.0\lib\net6.0\System.Composition.AttributedModel.dll">
+      <PackagePath>System.Composition.AttributedModel.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\system.composition.convention\6.0.0\lib\net6.0\System.Composition.Convention.dll">
+      <PackagePath>System.Composition.Convention.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\system.composition.hosting\6.0.0\lib\net6.0\System.Composition.Hosting.dll">
+      <PackagePath>System.Composition.Hosting.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\system.composition.runtime\6.0.0\lib\net6.0\System.Composition.Runtime.dll">
+      <PackagePath>System.Composition.Runtime.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\system.composition.typedparts\6.0.0\lib\net6.0\System.Composition.TypedParts.dll">
+      <PackagePath>System.Composition.TypedParts.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\system.io.pipelines\6.0.3\lib\net6.0\System.IO.Pipelines.dll">
+      <PackagePath>System.IO.Pipelines.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.codeanalysis.common\4.5.0\lib\netcoreapp3.1\cs\Microsoft.CodeAnalysis.resources.dll">
+      <PackagePath>cs\Microsoft.CodeAnalysis.resources.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.codeanalysis.common\4.5.0\lib\netcoreapp3.1\de\Microsoft.CodeAnalysis.resources.dll">
+      <PackagePath>de\Microsoft.CodeAnalysis.resources.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.codeanalysis.common\4.5.0\lib\netcoreapp3.1\es\Microsoft.CodeAnalysis.resources.dll">
+      <PackagePath>es\Microsoft.CodeAnalysis.resources.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.codeanalysis.common\4.5.0\lib\netcoreapp3.1\fr\Microsoft.CodeAnalysis.resources.dll">
+      <PackagePath>fr\Microsoft.CodeAnalysis.resources.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.codeanalysis.common\4.5.0\lib\netcoreapp3.1\it\Microsoft.CodeAnalysis.resources.dll">
+      <PackagePath>it\Microsoft.CodeAnalysis.resources.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.codeanalysis.common\4.5.0\lib\netcoreapp3.1\ja\Microsoft.CodeAnalysis.resources.dll">
+      <PackagePath>ja\Microsoft.CodeAnalysis.resources.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.codeanalysis.common\4.5.0\lib\netcoreapp3.1\ko\Microsoft.CodeAnalysis.resources.dll">
+      <PackagePath>ko\Microsoft.CodeAnalysis.resources.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.codeanalysis.common\4.5.0\lib\netcoreapp3.1\pl\Microsoft.CodeAnalysis.resources.dll">
+      <PackagePath>pl\Microsoft.CodeAnalysis.resources.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.codeanalysis.common\4.5.0\lib\netcoreapp3.1\pt-BR\Microsoft.CodeAnalysis.resources.dll">
+      <PackagePath>pt-BR\Microsoft.CodeAnalysis.resources.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.codeanalysis.common\4.5.0\lib\netcoreapp3.1\ru\Microsoft.CodeAnalysis.resources.dll">
+      <PackagePath>ru\Microsoft.CodeAnalysis.resources.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.codeanalysis.common\4.5.0\lib\netcoreapp3.1\tr\Microsoft.CodeAnalysis.resources.dll">
+      <PackagePath>tr\Microsoft.CodeAnalysis.resources.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.codeanalysis.common\4.5.0\lib\netcoreapp3.1\zh-Hans\Microsoft.CodeAnalysis.resources.dll">
+      <PackagePath>zh-Hans\Microsoft.CodeAnalysis.resources.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.codeanalysis.common\4.5.0\lib\netcoreapp3.1\zh-Hant\Microsoft.CodeAnalysis.resources.dll">
+      <PackagePath>zh-Hant\Microsoft.CodeAnalysis.resources.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.codeanalysis.csharp\4.5.0\lib\netcoreapp3.1\cs\Microsoft.CodeAnalysis.CSharp.resources.dll">
+      <PackagePath>cs\Microsoft.CodeAnalysis.CSharp.resources.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.codeanalysis.csharp\4.5.0\lib\netcoreapp3.1\de\Microsoft.CodeAnalysis.CSharp.resources.dll">
+      <PackagePath>de\Microsoft.CodeAnalysis.CSharp.resources.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.codeanalysis.csharp\4.5.0\lib\netcoreapp3.1\es\Microsoft.CodeAnalysis.CSharp.resources.dll">
+      <PackagePath>es\Microsoft.CodeAnalysis.CSharp.resources.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.codeanalysis.csharp\4.5.0\lib\netcoreapp3.1\fr\Microsoft.CodeAnalysis.CSharp.resources.dll">
+      <PackagePath>fr\Microsoft.CodeAnalysis.CSharp.resources.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.codeanalysis.csharp\4.5.0\lib\netcoreapp3.1\it\Microsoft.CodeAnalysis.CSharp.resources.dll">
+      <PackagePath>it\Microsoft.CodeAnalysis.CSharp.resources.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.codeanalysis.csharp\4.5.0\lib\netcoreapp3.1\ja\Microsoft.CodeAnalysis.CSharp.resources.dll">
+      <PackagePath>ja\Microsoft.CodeAnalysis.CSharp.resources.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.codeanalysis.csharp\4.5.0\lib\netcoreapp3.1\ko\Microsoft.CodeAnalysis.CSharp.resources.dll">
+      <PackagePath>ko\Microsoft.CodeAnalysis.CSharp.resources.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.codeanalysis.csharp\4.5.0\lib\netcoreapp3.1\pl\Microsoft.CodeAnalysis.CSharp.resources.dll">
+      <PackagePath>pl\Microsoft.CodeAnalysis.CSharp.resources.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.codeanalysis.csharp\4.5.0\lib\netcoreapp3.1\pt-BR\Microsoft.CodeAnalysis.CSharp.resources.dll">
+      <PackagePath>pt-BR\Microsoft.CodeAnalysis.CSharp.resources.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.codeanalysis.csharp\4.5.0\lib\netcoreapp3.1\ru\Microsoft.CodeAnalysis.CSharp.resources.dll">
+      <PackagePath>ru\Microsoft.CodeAnalysis.CSharp.resources.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.codeanalysis.csharp\4.5.0\lib\netcoreapp3.1\tr\Microsoft.CodeAnalysis.CSharp.resources.dll">
+      <PackagePath>tr\Microsoft.CodeAnalysis.CSharp.resources.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.codeanalysis.csharp\4.5.0\lib\netcoreapp3.1\zh-Hans\Microsoft.CodeAnalysis.CSharp.resources.dll">
+      <PackagePath>zh-Hans\Microsoft.CodeAnalysis.CSharp.resources.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.codeanalysis.csharp\4.5.0\lib\netcoreapp3.1\zh-Hant\Microsoft.CodeAnalysis.CSharp.resources.dll">
+      <PackagePath>zh-Hant\Microsoft.CodeAnalysis.CSharp.resources.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.codeanalysis.csharp.workspaces\4.5.0\lib\netcoreapp3.1\cs\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll">
+      <PackagePath>cs\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.codeanalysis.csharp.workspaces\4.5.0\lib\netcoreapp3.1\de\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll">
+      <PackagePath>de\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.codeanalysis.csharp.workspaces\4.5.0\lib\netcoreapp3.1\es\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll">
+      <PackagePath>es\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.codeanalysis.csharp.workspaces\4.5.0\lib\netcoreapp3.1\fr\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll">
+      <PackagePath>fr\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.codeanalysis.csharp.workspaces\4.5.0\lib\netcoreapp3.1\it\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll">
+      <PackagePath>it\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.codeanalysis.csharp.workspaces\4.5.0\lib\netcoreapp3.1\ja\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll">
+      <PackagePath>ja\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.codeanalysis.csharp.workspaces\4.5.0\lib\netcoreapp3.1\ko\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll">
+      <PackagePath>ko\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.codeanalysis.csharp.workspaces\4.5.0\lib\netcoreapp3.1\pl\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll">
+      <PackagePath>pl\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.codeanalysis.csharp.workspaces\4.5.0\lib\netcoreapp3.1\pt-BR\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll">
+      <PackagePath>pt-BR\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.codeanalysis.csharp.workspaces\4.5.0\lib\netcoreapp3.1\ru\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll">
+      <PackagePath>ru\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.codeanalysis.csharp.workspaces\4.5.0\lib\netcoreapp3.1\tr\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll">
+      <PackagePath>tr\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.codeanalysis.csharp.workspaces\4.5.0\lib\netcoreapp3.1\zh-Hans\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll">
+      <PackagePath>zh-Hans\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.codeanalysis.csharp.workspaces\4.5.0\lib\netcoreapp3.1\zh-Hant\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll">
+      <PackagePath>zh-Hant\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.codeanalysis.workspaces.common\4.5.0\lib\netcoreapp3.1\cs\Microsoft.CodeAnalysis.Workspaces.resources.dll">
+      <PackagePath>cs\Microsoft.CodeAnalysis.Workspaces.resources.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.codeanalysis.workspaces.common\4.5.0\lib\netcoreapp3.1\de\Microsoft.CodeAnalysis.Workspaces.resources.dll">
+      <PackagePath>de\Microsoft.CodeAnalysis.Workspaces.resources.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.codeanalysis.workspaces.common\4.5.0\lib\netcoreapp3.1\es\Microsoft.CodeAnalysis.Workspaces.resources.dll">
+      <PackagePath>es\Microsoft.CodeAnalysis.Workspaces.resources.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.codeanalysis.workspaces.common\4.5.0\lib\netcoreapp3.1\fr\Microsoft.CodeAnalysis.Workspaces.resources.dll">
+      <PackagePath>fr\Microsoft.CodeAnalysis.Workspaces.resources.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.codeanalysis.workspaces.common\4.5.0\lib\netcoreapp3.1\it\Microsoft.CodeAnalysis.Workspaces.resources.dll">
+      <PackagePath>it\Microsoft.CodeAnalysis.Workspaces.resources.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.codeanalysis.workspaces.common\4.5.0\lib\netcoreapp3.1\ja\Microsoft.CodeAnalysis.Workspaces.resources.dll">
+      <PackagePath>ja\Microsoft.CodeAnalysis.Workspaces.resources.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.codeanalysis.workspaces.common\4.5.0\lib\netcoreapp3.1\ko\Microsoft.CodeAnalysis.Workspaces.resources.dll">
+      <PackagePath>ko\Microsoft.CodeAnalysis.Workspaces.resources.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.codeanalysis.workspaces.common\4.5.0\lib\netcoreapp3.1\pl\Microsoft.CodeAnalysis.Workspaces.resources.dll">
+      <PackagePath>pl\Microsoft.CodeAnalysis.Workspaces.resources.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.codeanalysis.workspaces.common\4.5.0\lib\netcoreapp3.1\pt-BR\Microsoft.CodeAnalysis.Workspaces.resources.dll">
+      <PackagePath>pt-BR\Microsoft.CodeAnalysis.Workspaces.resources.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.codeanalysis.workspaces.common\4.5.0\lib\netcoreapp3.1\ru\Microsoft.CodeAnalysis.Workspaces.resources.dll">
+      <PackagePath>ru\Microsoft.CodeAnalysis.Workspaces.resources.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.codeanalysis.workspaces.common\4.5.0\lib\netcoreapp3.1\tr\Microsoft.CodeAnalysis.Workspaces.resources.dll">
+      <PackagePath>tr\Microsoft.CodeAnalysis.Workspaces.resources.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.codeanalysis.workspaces.common\4.5.0\lib\netcoreapp3.1\zh-Hans\Microsoft.CodeAnalysis.Workspaces.resources.dll">
+      <PackagePath>zh-Hans\Microsoft.CodeAnalysis.Workspaces.resources.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.codeanalysis.workspaces.common\4.5.0\lib\netcoreapp3.1\zh-Hant\Microsoft.CodeAnalysis.Workspaces.resources.dll">
+      <PackagePath>zh-Hant\Microsoft.CodeAnalysis.Workspaces.resources.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\libvlcsharp\3.9.6\lib\net8.0-windows10.0.19041\LibVLCSharp.pri">
+      <PackagePath>LibVLCSharp.pri</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\.nuget\packages\microsoft.web.webview2\1.0.3179.45\build\..\lib\Microsoft.Web.WebView2.Core.winmd">
+      <PackagePath>Microsoft.Web.WebView2.Core.winmd</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\SATIVA\Desktop\stream\src\Kroira.App\bin\x64\Debug\net8.0-windows10.0.19041.0\win-x64\resources.pri">
+      <PackagePath>resources.pri</PackagePath>
+    </AppxPackagedFile>
+  </ItemGroup>
+  <ItemGroup>
+    <ResolvedSDKReference Include="C:\Users\SATIVA\.nuget\packages\microsoft.windowsappsdk.runtime\1.8.260317003\buildTransitive\..\tools\MSIX\win10-x86\Microsoft.WindowsAppRuntime.1.8.msix">
+      <Name>Microsoft.WindowsAppRuntime.1.8</Name>
+      <Version>8000.806.2252.0</Version>
+      <Architecture>x86</Architecture>
+      <FrameworkIdentity>Name = Microsoft.WindowsAppRuntime.1.8, MinVersion = 8000.806.2252.0, Publisher = %27CN=Microsoft Corporation, O=Microsoft Corporation, L=Redmond, S=Washington, C=US%27</FrameworkIdentity>
+      <AppxLocation>C:\Users\SATIVA\.nuget\packages\microsoft.windowsappsdk.runtime\1.8.260317003\buildTransitive\..\tools\MSIX\win10-x86\Microsoft.WindowsAppRuntime.1.8.msix</AppxLocation>
+      <MoreInfo></MoreInfo>
+    </ResolvedSDKReference>
+    <ResolvedSDKReference Include="C:\Users\SATIVA\.nuget\packages\microsoft.windowsappsdk.runtime\1.8.260317003\buildTransitive\..\tools\MSIX\win10-x86\Microsoft.WindowsAppRuntime.1.8.msix">
+      <Name>Microsoft.WindowsAppRuntime.1.8</Name>
+      <Version>8000.806.2252.0</Version>
+      <Architecture>win32</Architecture>
+      <FrameworkIdentity>Name = Microsoft.WindowsAppRuntime.1.8, MinVersion = 8000.806.2252.0, Publisher = %27CN=Microsoft Corporation, O=Microsoft Corporation, L=Redmond, S=Washington, C=US%27</FrameworkIdentity>
+      <AppxLocation>C:\Users\SATIVA\.nuget\packages\microsoft.windowsappsdk.runtime\1.8.260317003\buildTransitive\..\tools\MSIX\win10-x86\Microsoft.WindowsAppRuntime.1.8.msix</AppxLocation>
+      <MoreInfo></MoreInfo>
+    </ResolvedSDKReference>
+    <ResolvedSDKReference Include="C:\Users\SATIVA\.nuget\packages\microsoft.windowsappsdk.runtime\1.8.260317003\buildTransitive\..\tools\MSIX\win10-x64\Microsoft.WindowsAppRuntime.1.8.msix">
+      <Name>Microsoft.WindowsAppRuntime.1.8</Name>
+      <Version>8000.806.2252.0</Version>
+      <Architecture>x64</Architecture>
+      <FrameworkIdentity>Name = Microsoft.WindowsAppRuntime.1.8, MinVersion = 8000.806.2252.0, Publisher = %27CN=Microsoft Corporation, O=Microsoft Corporation, L=Redmond, S=Washington, C=US%27</FrameworkIdentity>
+      <AppxLocation>C:\Users\SATIVA\.nuget\packages\microsoft.windowsappsdk.runtime\1.8.260317003\buildTransitive\..\tools\MSIX\win10-x64\Microsoft.WindowsAppRuntime.1.8.msix</AppxLocation>
+      <MoreInfo></MoreInfo>
+    </ResolvedSDKReference>
+    <ResolvedSDKReference Include="C:\Users\SATIVA\.nuget\packages\microsoft.windowsappsdk.runtime\1.8.260317003\buildTransitive\..\tools\MSIX\win10-arm64\Microsoft.WindowsAppRuntime.1.8.msix">
+      <Name>Microsoft.WindowsAppRuntime.1.8</Name>
+      <Version>8000.806.2252.0</Version>
+      <Architecture>arm64</Architecture>
+      <FrameworkIdentity>Name = Microsoft.WindowsAppRuntime.1.8, MinVersion = 8000.806.2252.0, Publisher = %27CN=Microsoft Corporation, O=Microsoft Corporation, L=Redmond, S=Washington, C=US%27</FrameworkIdentity>
+      <AppxLocation>C:\Users\SATIVA\.nuget\packages\microsoft.windowsappsdk.runtime\1.8.260317003\buildTransitive\..\tools\MSIX\win10-arm64\Microsoft.WindowsAppRuntime.1.8.msix</AppxLocation>
+      <MoreInfo></MoreInfo>
+    </ResolvedSDKReference>
+  </ItemGroup>
+</Project>
