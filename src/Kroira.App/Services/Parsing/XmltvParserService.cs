@@ -52,13 +52,14 @@ namespace Kroira.App.Services.Parsing
                     if (string.IsNullOrWhiteSpace(chIdNode)) continue;
 
                     string displayName = channelMapping.TryGetValue(chIdNode, out var dn) ? dn : chIdNode;
-                    
-                    var targetCh = channels.FirstOrDefault(c => c.Name.Equals(displayName, StringComparison.OrdinalIgnoreCase) || c.Name.Equals(chIdNode, StringComparison.OrdinalIgnoreCase));
+                    string cleanName = displayName.Trim();
+                    string cleanId = chIdNode.Trim();
+                    var targetCh = channels.FirstOrDefault(c => string.Equals(c.Name.Trim(), cleanName, StringComparison.OrdinalIgnoreCase) || string.Equals(c.Name.Trim(), cleanId, StringComparison.OrdinalIgnoreCase));
                     if (targetCh == null) continue;
 
                     var startString = p.Attribute("start")?.Value;
                     var stopString = p.Attribute("stop")?.Value;
-                    if (startString == null || stopString == null) continue;
+                    if (string.IsNullOrWhiteSpace(startString) || string.IsNullOrWhiteSpace(stopString)) continue;
 
                     var start = ParseXmltvDate(startString);
                     var end = ParseXmltvDate(stopString);
@@ -80,17 +81,33 @@ namespace Kroira.App.Services.Parsing
                 try
                 {
                     var chIds = channels.Select(c => c.Id).ToList();
-                    var existingEpg = await db.EpgPrograms.Where(e => chIds.Contains(e.ChannelId)).ToListAsync();
-                    db.EpgPrograms.RemoveRange(existingEpg);
+                    
+                    // Chunked deletion preserving memory across massive EPG scopes natively
+                    for (int i = 0; i < chIds.Count; i += 50)
+                    {
+                        var chunk = chIds.Skip(i).Take(50).ToList();
+                        var oldEpg = await db.EpgPrograms.Where(e => chunk.Contains(e.ChannelId)).ToListAsync();
+                        if (oldEpg.Any())
+                        {
+                            db.EpgPrograms.RemoveRange(oldEpg);
+                        }
+                    }
+                    await db.SaveChangesAsync();
 
-                    db.EpgPrograms.AddRange(epgItems);
+                    // Chunked insertion
+                    for (int i = 0; i < epgItems.Count; i += 1000)
+                    {
+                        var chunk = epgItems.Skip(i).Take(1000).ToList();
+                        db.EpgPrograms.AddRange(chunk);
+                        await db.SaveChangesAsync();
+                    }
 
                     var syncState = await db.SourceSyncStates.FirstOrDefaultAsync(s => s.SourceProfileId == sourceProfileId);
                     if (syncState != null)
                     {
                         syncState.LastAttempt = DateTime.UtcNow;
                         syncState.HttpStatusCode = 200;
-                        syncState.ErrorLog = $"EPG Sync: {epgItems.Count} programs imported.";
+                        syncState.ErrorLog = $"EPG Sync: Imported {epgItems.Count} programs successfully.";
                     }
 
                     await db.SaveChangesAsync();
@@ -120,10 +137,18 @@ namespace Kroira.App.Services.Parsing
         {
             try
             {
+                dateStr = dateStr.Trim();
                 if (dateStr.Length >= 14)
                 {
-                    string substr = dateStr.Substring(0, 14);
-                    return DateTime.ParseExact(substr, "yyyyMMddHHmmss", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.AssumeUniversal | System.Globalization.DateTimeStyles.AdjustToUniversal);
+                    string formatNode = dateStr.Substring(0, 14);
+                    string offsetNode = dateStr.Length >= 19 ? dateStr.Substring(15, 5).Replace(" ", "+") : "+0000";
+                    
+                    if (DateTimeOffset.TryParseExact($"{formatNode} {offsetNode}", "yyyyMMddHHmmss zzz", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var dto))
+                    {
+                        return dto.UtcDateTime;
+                    }
+
+                    return DateTime.ParseExact(formatNode, "yyyyMMddHHmmss", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.AssumeUniversal | System.Globalization.DateTimeStyles.AdjustToUniversal);
                 }
             }
             catch { }

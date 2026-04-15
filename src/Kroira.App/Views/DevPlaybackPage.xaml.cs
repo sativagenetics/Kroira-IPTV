@@ -43,6 +43,26 @@ namespace Kroira.App.Views
             else if (e.Parameter is PlaybackLaunchContext ctx)
             {
                 _launchContext = ctx;
+
+                if (ctx.ContentType == PlaybackContentType.Channel)
+                {
+                    ctx.StartPositionMs = 0; // Live channels strictly play natively.
+                }
+                else if (ctx.StartPositionMs <= 0)
+                {
+                    try
+                    {
+                        using var scope = ((App)Application.Current).Services.CreateScope();
+                        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                        var prog = db.PlaybackProgresses.FirstOrDefault(p => p.ContentId == ctx.ContentId && p.ContentType == ctx.ContentType);
+                        if (prog != null && !prog.IsCompleted && prog.PositionMs > 5000)
+                        {
+                            ctx.StartPositionMs = prog.PositionMs;
+                        }
+                    }
+                    catch { } // Logically suppress lookup errors falling back towards zero seamlessly.
+                }
+
                 _engine.Play(ctx.StreamUrl, ctx.StartPositionMs);
             }
         }

@@ -104,7 +104,7 @@ namespace Kroira.App.ViewModels
             {
                 var chEpg = epgs.Where(e => e.ChannelId == ch.Id).OrderBy(e => e.StartTimeUtc).ToList();
                 var curr = chEpg.FirstOrDefault(e => e.StartTimeUtc <= now && e.EndTimeUtc > now);
-                var next = chEpg.FirstOrDefault(e => e.StartTimeUtc > now);
+                var next = chEpg.Where(e => e.StartTimeUtc >= (curr?.EndTimeUtc ?? now)).OrderBy(e => e.StartTimeUtc).FirstOrDefault();
 
                 _allChannelsCache.Add(new BrowserChannelViewModel
                 {
