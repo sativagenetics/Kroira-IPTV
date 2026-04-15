@@ -5,6 +5,13 @@
   xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
   IgnorableNamespaces="uap rescap">
 
+  <!--
+    TODO (Store submission): Replace the three Identity fields below with values
+    from Partner Center → Apps → Product Management → Product Identity.
+      Name            = Package/Identity/Name   (e.g. "12345PublisherName.KroiraIPTV")
+      Publisher       = Package/Identity/Publisher (e.g. "CN=XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX")
+      Version         = Must be 4-part: Major.Minor.Build.Revision
+  -->
   <Identity
     Name="KroiraApp"
     Publisher="CN=SATIVA"
@@ -12,12 +19,20 @@
 
   <Properties>
     <DisplayName>KROIRA IPTV</DisplayName>
+    <!--
+      TODO (Store submission): Replace PublisherDisplayName with the exact value
+      from Partner Center → Account Settings → Publisher display name.
+    -->
     <PublisherDisplayName>SATIVA</PublisherDisplayName>
-    <Logo>Images\StoreLogo.png</Logo>
+    <Logo>Assets\StoreLogo.png</Logo>
   </Properties>
 
   <Dependencies>
-    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.17763.0" MaxVersionTested="10.0.19041.0" />
+    <!--
+      MinVersion = Windows 10 1809 (17763) — minimum supported.
+      MaxVersionTested = Windows 11 22H2 (22621) — highest tested build.
+    -->
+    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.17763.0" MaxVersionTested="10.0.22621.0" />
   </Dependencies>
 
   <Resources>
@@ -30,18 +45,22 @@
       EntryPoint="$targetentrypoint$">
       <uap:VisualElements
         DisplayName="KROIRA IPTV"
-        Description="Advanced IPTV Player"
+        Description="Advanced IPTV Player for Windows"
         BackgroundColor="transparent"
-        Square150x150Logo="Images\Square150x150Logo.png"
-        Square44x44Logo="Images\Square44x44Logo.png">
-        <uap:DefaultTile Wide310x150Logo="Images\Wide310x150Logo.png" />
-        <uap:SplashScreen Image="Images\SplashScreen.png" />
+        Square150x150Logo="Assets\Square150x150Logo.png"
+        Square44x44Logo="Assets\Square44x44Logo.png">
+        <uap:DefaultTile Wide310x150Logo="Assets\Wide310x150Logo.png" />
+        <uap:SplashScreen Image="Assets\SplashScreen.png" />
       </uap:VisualElements>
     </Application>
   </Applications>
 
   <Capabilities>
-    <rescap:Capability Name="runFullTrust" />
+    <!--
+      runFullTrust removed: MediaPlayerElement-based playback does not require
+      full trust. If any future feature needs it, add it back with justification.
+      internetClient is required for IPTV stream fetching and EPG sync.
+    -->
     <Capability Name="internetClient" />
   </Capabilities>
 </Package>
