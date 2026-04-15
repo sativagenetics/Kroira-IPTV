@@ -53,27 +53,43 @@ namespace Kroira.App.Services.Parsing
 
                     string displayName = channelMapping.TryGetValue(chIdNode, out var dn) ? dn : chIdNode;
                     string cleanName = displayName.Trim();
-                    string cleanId = chIdNode.Trim();
-                    var targetCh = channels.FirstOrDefault(c => string.Equals(c.Name.Trim(), cleanName, StringComparison.OrdinalIgnoreCase) || string.Equals(c.Name.Trim(), cleanId, StringComparison.OrdinalIgnoreCase));
+                    string cleanId  = chIdNode.Trim();
+
+                    // --- Channel matching: exact first, then normalized fallback ---
+                    var targetCh = channels.FirstOrDefault(c =>
+                        string.Equals(c.Name.Trim(), cleanName, StringComparison.OrdinalIgnoreCase) ||
+                        string.Equals(c.Name.Trim(), cleanId,   StringComparison.OrdinalIgnoreCase));
+
+                    if (targetCh == null)
+                    {
+                        // Normalized fallback: strip trailing HD/SD/FHD/4K qualifiers and retry
+                        string normIncoming = NormalizeChannelName(cleanName);
+                        targetCh = channels.FirstOrDefault(c =>
+                            string.Equals(NormalizeChannelName(c.Name), normIncoming, StringComparison.OrdinalIgnoreCase));
+                    }
+
                     if (targetCh == null) continue;
 
                     var startString = p.Attribute("start")?.Value;
-                    var stopString = p.Attribute("stop")?.Value;
+                    var stopString  = p.Attribute("stop")?.Value;
                     if (string.IsNullOrWhiteSpace(startString) || string.IsNullOrWhiteSpace(stopString)) continue;
 
                     var start = ParseXmltvDate(startString);
-                    var end = ParseXmltvDate(stopString);
+                    var end   = ParseXmltvDate(stopString);
+
+                    // Skip rows with unparseable timestamps or zero/negative duration
+                    if (start == null || end == null || end <= start) continue;
 
                     var titleNode = p.Element("title");
-                    var descNode = p.Element("desc");
+                    var descNode  = p.Element("desc");
 
                     epgItems.Add(new EpgProgram
                     {
-                        ChannelId = targetCh.Id,
-                        StartTimeUtc = start,
-                        EndTimeUtc = end,
-                        Title = titleNode?.Value ?? "Unknown Program",
-                        Description = descNode?.Value ?? string.Empty
+                        ChannelId    = targetCh.Id,
+                        StartTimeUtc = start.Value,
+                        EndTimeUtc   = end.Value,
+                        Title        = string.IsNullOrWhiteSpace(titleNode?.Value) ? "Unknown Program" : titleNode!.Value.Trim(),
+                        Description  = descNode?.Value?.Trim() ?? string.Empty
                     });
                 }
 
@@ -107,7 +123,8 @@ namespace Kroira.App.Services.Parsing
                     {
                         syncState.LastAttempt = DateTime.UtcNow;
                         syncState.HttpStatusCode = 200;
-                        syncState.ErrorLog = $"EPG Sync: Imported {epgItems.Count} programs successfully.";
+                        var matchedChannels = epgItems.Select(e => e.ChannelId).Distinct().Count();
+                        syncState.ErrorLog = $"EPG Sync: {epgItems.Count} programs across {matchedChannels} channels imported. ({programmes.Count} raw programme entries processed)";
                     }
 
                     await db.SaveChangesAsync();
@@ -133,26 +150,70 @@ namespace Kroira.App.Services.Parsing
             }
         }
 
-        private DateTime ParseXmltvDate(string dateStr)
+        private static DateTime? ParseXmltvDate(string dateStr)
         {
+            if (string.IsNullOrWhiteSpace(dateStr)) return null;
             try
             {
                 dateStr = dateStr.Trim();
                 if (dateStr.Length >= 14)
                 {
                     string formatNode = dateStr.Substring(0, 14);
-                    string offsetNode = dateStr.Length >= 19 ? dateStr.Substring(15, 5).Replace(" ", "+") : "+0000";
-                    
-                    if (DateTimeOffset.TryParseExact($"{formatNode} {offsetNode}", "yyyyMMddHHmmss zzz", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var dto))
+
+                    // Offset: may be separated by a space ("20240101120000 +0200")
+                    // or attached directly ("20240101120000+0200").
+                    // Positions 14+ after trimming the datetime digits.
+                    string offsetNode = "+0000";
+                    if (dateStr.Length >= 15)
+                    {
+                        string remainder = dateStr.Substring(14).Trim();
+                        if (remainder.Length >= 5)
+                            offsetNode = remainder.Substring(0, 5); // e.g. "+0200" or "-0500"
+                    }
+
+                    // Normalise: DateTimeOffset expects "zzz" = +HH:mm; convert +HHMM → +HH:mm
+                    if (offsetNode.Length == 5 && !offsetNode.Contains(':'))
+                        offsetNode = offsetNode.Insert(3, ":");
+
+                    if (DateTimeOffset.TryParseExact(
+                            $"{formatNode} {offsetNode}",
+                            "yyyyMMddHHmmss zzz",
+                            System.Globalization.CultureInfo.InvariantCulture,
+                            System.Globalization.DateTimeStyles.None,
+                            out var dto))
                     {
                         return dto.UtcDateTime;
                     }
 
-                    return DateTime.ParseExact(formatNode, "yyyyMMddHHmmss", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.AssumeUniversal | System.Globalization.DateTimeStyles.AdjustToUniversal);
+                    // Last-resort: treat as UTC
+                    if (DateTime.TryParseExact(
+                            formatNode,
+                            "yyyyMMddHHmmss",
+                            System.Globalization.CultureInfo.InvariantCulture,
+                            System.Globalization.DateTimeStyles.AssumeUniversal | System.Globalization.DateTimeStyles.AdjustToUniversal,
+                            out var dt))
+                    {
+                        return dt;
+                    }
                 }
             }
             catch { }
-            return DateTime.UtcNow;
+            return null; // Caller will skip this programme row
+        }
+
+        /// <summary>
+        /// Strips common quality/region suffixes so "CNN HD" matches "CNN" and vice-versa.
+        /// </summary>
+        private static string NormalizeChannelName(string name)
+        {
+            if (string.IsNullOrWhiteSpace(name)) return string.Empty;
+            // Remove trailing qualifiers (case-insensitive)
+            var suffixes = new[] { " HD", " SD", " FHD", " 4K", " UHD", " (HD)", " (SD)" };
+            string result = name.Trim();
+            foreach (var s in suffixes)
+                if (result.EndsWith(s, StringComparison.OrdinalIgnoreCase))
+                    result = result.Substring(0, result.Length - s.Length).TrimEnd();
+            return result;
         }
     }
 }
