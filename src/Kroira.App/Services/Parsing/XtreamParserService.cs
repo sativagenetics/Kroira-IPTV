@@ -213,11 +213,17 @@ namespace Kroira.App.Services.Parsing
 
                         if (string.IsNullOrEmpty(streamId)) continue;
                         
-                        var ext = element.TryGetProperty("container_extension", out var exProp) ? exProp.GetString() : "mp4";
+                        var ext = (element.TryGetProperty("container_extension", out var exProp) ? exProp.GetString() : null) ?? "mp4";
                         var name = element.TryGetProperty("name", out var nProp) ? nProp.GetString() : "Unknown";
                         var logo = element.TryGetProperty("stream_icon", out var lProp) ? lProp.GetString() : string.Empty;
 
                         md.TryGetValue(catId ?? "", out var mappedCatName);
+
+                        // --- Garbage filter ---
+                        if (IsGarbageMovieExtension(ext)) continue;
+                        if (IsGarbageCategoryName(mappedCatName)) continue;
+                        if (IsGarbageTitle(name)) continue;
+                        // ----------------------
 
                         parsedMovies.Add(new Movie
                         {
@@ -264,6 +270,11 @@ namespace Kroira.App.Services.Parsing
                         var cover = element.TryGetProperty("cover", out var lProp) ? lProp.GetString() : string.Empty;
 
                         sd.TryGetValue(catId ?? "", out var mappedCatName);
+
+                        // --- Garbage filter ---
+                        if (IsGarbageCategoryName(mappedCatName)) continue;
+                        if (IsGarbageTitle(name)) continue;
+                        // ----------------------
 
                         pendingSeries.Add((seriesId, new Series
                         {
@@ -361,7 +372,12 @@ namespace Kroira.App.Services.Parsing
                     await db.SaveChangesAsync();
 
                     db.Movies.AddRange(parsedMovies);
-                    db.Series.AddRange(limitedSeries.Select(s => s.BaseObj));
+                    // Filter series that ended up with zero episodes (no real content fetched)
+                    var validSeries = limitedSeries
+                        .Where(s => s.BaseObj.Seasons != null && s.BaseObj.Seasons.Any(sn => sn.Episodes != null && sn.Episodes.Count > 0))
+                        .Select(s => s.BaseObj)
+                        .ToList();
+                    db.Series.AddRange(validSeries);
                     await db.SaveChangesAsync();
 
                     var syncState = await db.SourceSyncStates.FirstOrDefaultAsync(s => s.SourceProfileId == sourceProfileId);
@@ -369,7 +385,7 @@ namespace Kroira.App.Services.Parsing
                     {
                         syncState.LastAttempt = DateTime.UtcNow;
                         syncState.HttpStatusCode = 200;
-                        syncState.ErrorLog = $"Xtream VOD Sync: Imported {parsedMovies.Count} movies and {limitedSeries.Count} series.";
+                        syncState.ErrorLog = $"Xtream VOD Sync: Imported {parsedMovies.Count} movies and {validSeries.Count} series.";
                     }
                     
                     profile.LastSync = DateTime.UtcNow;
@@ -395,6 +411,67 @@ namespace Kroira.App.Services.Parsing
                 }
                 throw;
             }
+        }
+
+        // -----------------------------------------------------------------------
+        // Heuristic garbage filters
+        // -----------------------------------------------------------------------
+
+        /// <summary>
+        /// Returns true for container extensions that are not video files and
+        /// should never appear in the Movies catalogue.
+        /// </summary>
+        private static bool IsGarbageMovieExtension(string ext)
+        {
+            if (string.IsNullOrWhiteSpace(ext)) return false;
+            var lower = ext.Trim().ToLowerInvariant().TrimStart('.');
+            return lower is "ts" or "m3u8" or "m3u" or "php" or "txt" or "html" or "htm";
+        }
+
+        /// <summary>
+        /// Returns true for category names that are clearly not real content
+        /// categories (playlists, packages, trial banners, test entries, etc.).
+        /// Case-insensitive substring match.
+        /// </summary>
+        private static bool IsGarbageCategoryName(string cat)
+        {
+            if (string.IsNullOrWhiteSpace(cat)) return false;
+            var lower = cat.ToLowerInvariant();
+            return lower.Contains("playlist") ||
+                   lower.Contains("package") ||
+                   lower.Contains(" trial") ||
+                   lower.Contains("trial ") ||
+                   lower == "trial" ||
+                   lower.Contains("| test") ||
+                   lower.Contains("test |") ||
+                   lower == "test" ||
+                   lower == "demo" ||
+                   lower.Contains("xxx pack") ||
+                   lower.Contains("xxx-pack") ||
+                   lower.Contains("xxx_pack") ||
+                   lower.Contains("iptv pack") ||
+                   lower.Contains("reseller") ||
+                   lower.Contains("credits") ||
+                   lower.Contains("placeholder");
+        }
+
+        /// <summary>
+        /// Returns true for titles that are clearly garbage or placeholder entries.
+        /// </summary>
+        private static bool IsGarbageTitle(string title)
+        {
+            if (string.IsNullOrWhiteSpace(title)) return true;
+            var lower = title.Trim().ToLowerInvariant();
+            // Pure numeric or very short entries are usually stream IDs leaked as names
+            if (lower.Length <= 2) return true;
+            return lower == "unknown" ||
+                   lower == "unknown movie" ||
+                   lower == "unknown series" ||
+                   lower.Contains("[placeholder]") ||
+                   lower.Contains("[test]") ||
+                   lower.Contains("[demo]") ||
+                   lower.StartsWith("test channel") ||
+                   lower.StartsWith("test stream");
         }
     }
 }
