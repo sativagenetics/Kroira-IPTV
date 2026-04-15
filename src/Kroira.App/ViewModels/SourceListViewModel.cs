@@ -90,14 +90,23 @@ namespace Kroira.App.ViewModels
         public async Task SyncEpgAsync(int id)
         {
             var item = Sources.FirstOrDefault(s => s.Id == id);
-            if (item != null) item.Status = "Syncing EPG...";
+            if (item != null) item.Status = "Checking EPG configuration...";
 
             try
             {
                 using var scope = _serviceProvider.CreateScope();
                 var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-                var parser = scope.ServiceProvider.GetRequiredService<Kroira.App.Services.Parsing.IXmltvParserService>();
 
+                var cred = await db.SourceCredentials.FirstOrDefaultAsync(c => c.SourceProfileId == id);
+                if (cred == null || string.IsNullOrWhiteSpace(cred.EpgUrl))
+                {
+                    if (item != null) item.Status = "No EPG URL configured for this source. Edit the source to add one.";
+                    return;
+                }
+
+                if (item != null) item.Status = "Syncing EPG...";
+
+                var parser = scope.ServiceProvider.GetRequiredService<Kroira.App.Services.Parsing.IXmltvParserService>();
                 await parser.ParseAndImportEpgAsync(db, id);
                 await LoadSourcesAsync();
             }

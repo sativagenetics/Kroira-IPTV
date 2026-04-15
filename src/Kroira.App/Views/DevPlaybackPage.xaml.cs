@@ -13,19 +13,33 @@ namespace Kroira.App.Views
     {
         private readonly IPlaybackEngine _engine;
         private PlaybackLaunchContext _launchContext;
+        private string _pendingUrl;
+        private long _pendingStartMs;
+        private bool _isViewLoaded;
 
         public DevPlaybackPage()
         {
             this.InitializeComponent();
             _engine = ((App)Application.Current).Services.GetRequiredService<IPlaybackEngine>();
             
-            // Connect native LibVLC render view strictly bound by isolation abstractions
-            PlayerView.MediaPlayer = (LibVLCSharp.Shared.MediaPlayer)_engine.MediaPlayerInstance;
-            
             _engine.StateChanged += Engine_StateChanged;
 
-            // Unhook instance when navigating away
-            this.Unloaded += (s, e) => 
+            // Defer MediaPlayer binding until the VideoView is in the visual tree with a valid HWND.
+            // Without this, LibVLC opens an external window for rendering.
+            PlayerView.Loaded += (s, e) =>
+            {
+                PlayerView.MediaPlayer = (LibVLCSharp.Shared.MediaPlayer)_engine.MediaPlayerInstance;
+                _isViewLoaded = true;
+
+                // If a play request arrived before the view was ready, fire it now
+                if (!string.IsNullOrEmpty(_pendingUrl))
+                {
+                    _engine.Play(_pendingUrl, _pendingStartMs);
+                    _pendingUrl = null;
+                }
+            };
+
+            this.Unloaded += (s, e) =>
             {
                 SaveProgress();
                 _engine.Stop();
@@ -36,9 +50,13 @@ namespace Kroira.App.Views
         protected override void OnNavigatedTo(Microsoft.UI.Xaml.Navigation.NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
-            if (e.Parameter is string url && !string.IsNullOrWhiteSpace(url))
+
+            string url = null;
+            long startMs = 0;
+
+            if (e.Parameter is string rawUrl && !string.IsNullOrWhiteSpace(rawUrl))
             {
-                _engine.Play(url);
+                url = rawUrl;
             }
             else if (e.Parameter is PlaybackLaunchContext ctx)
             {
@@ -46,7 +64,7 @@ namespace Kroira.App.Views
 
                 if (ctx.ContentType == PlaybackContentType.Channel)
                 {
-                    ctx.StartPositionMs = 0; // Live channels strictly play natively.
+                    ctx.StartPositionMs = 0;
                 }
                 else if (ctx.StartPositionMs <= 0)
                 {
@@ -60,10 +78,24 @@ namespace Kroira.App.Views
                             ctx.StartPositionMs = prog.PositionMs;
                         }
                     }
-                    catch { } // Logically suppress lookup errors falling back towards zero seamlessly.
+                    catch { }
                 }
 
-                _engine.Play(ctx.StreamUrl, ctx.StartPositionMs);
+                url = ctx.StreamUrl;
+                startMs = ctx.StartPositionMs;
+            }
+
+            if (!string.IsNullOrEmpty(url))
+            {
+                if (_isViewLoaded)
+                {
+                    _engine.Play(url, startMs);
+                }
+                else
+                {
+                    _pendingUrl = url;
+                    _pendingStartMs = startMs;
+                }
             }
         }
 
@@ -110,9 +142,12 @@ namespace Kroira.App.Views
             StateText.Text = e.ToString();
         }
 
-        private void PlayTest_Click(object sender, RoutedEventArgs e)
+        private void Back_Click(object sender, RoutedEventArgs e)
         {
-            _engine.Play("http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4");
+            if (this.Frame.CanGoBack)
+            {
+                this.Frame.GoBack();
+            }
         }
 
         private void Pause_Click(object sender, RoutedEventArgs e)

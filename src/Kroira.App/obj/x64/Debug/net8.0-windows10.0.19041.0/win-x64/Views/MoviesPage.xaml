@@ -12,10 +12,14 @@
 
         <StackPanel Grid.Row="0" Margin="0,0,0,16" Spacing="16">
             <TextBlock Text="Movies" Style="{ThemeResource TitleTextBlockStyle}" />
-            <TextBox x:ConnectionId='4'                                                                                         PlaceholderText="Search movies..." MaxWidth="400" HorizontalAlignment="Left" />
+            <TextBox x:ConnectionId='5'                                                                                         PlaceholderText="Search movies..." MaxWidth="400" HorizontalAlignment="Left" />
         </StackPanel>
 
-        <GridView x:ConnectionId='2' Grid.Row="1"                                                              SelectionMode="Single"                                             >
+        <TextBlock x:ConnectionId='2' Grid.Row="1" x:Name="EmptyMoviesText" Text="No movies imported yet. Sync an Xtream VOD source to get started."
+                                                                       
+                   Style="{ThemeResource BodyTextBlockStyle}" Foreground="Gray"
+                   HorizontalAlignment="Center" VerticalAlignment="Center" />
+        <GridView x:ConnectionId='3' Grid.Row="1"                                                              SelectionMode="Single"                                             >
             <GridView.ItemTemplate>
                 <DataTemplate>
                     <Grid Width="160" Height="260" Margin="4" CornerRadius="4" Background="#11FFFFFF">

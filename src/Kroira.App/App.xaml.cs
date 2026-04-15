@@ -55,6 +55,7 @@ namespace Kroira.App
             services.AddTransient<ContinueWatchingViewModel>();
             services.AddTransient<MoviesViewModel>();
             services.AddTransient<SeriesViewModel>();
+            services.AddTransient<ChannelsPageViewModel>();
 
             // Foundation Infrastructure
             services.AddSingleton<IEntitlementService, MockEntitlementService>();

@@ -22,6 +22,9 @@ namespace Kroira.App.ViewModels
         [ObservableProperty]
         private string _searchQuery = string.Empty;
 
+        [ObservableProperty]
+        private bool _isEmpty;
+
         partial void OnSearchQueryChanged(string value)
         {
             ApplyFilter();
@@ -52,6 +55,8 @@ namespace Kroira.App.ViewModels
             {
                 FilteredMovies.Add(item);
             }
+
+            IsEmpty = FilteredMovies.Count == 0;
         }
     }
 }

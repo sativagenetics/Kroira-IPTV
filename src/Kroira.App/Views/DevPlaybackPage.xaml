@@ -8,9 +8,12 @@
     <Grid>
         <lvs:VideoView x:Name="PlayerView" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" />
         
+        <Button Content="← Back" Click="Back_Click" 
+                VerticalAlignment="Top" HorizontalAlignment="Left" Margin="20" 
+                Background="#88000000" Foreground="White" Padding="12,8" CornerRadius="4" />
+        
         <StackPanel VerticalAlignment="Bottom" HorizontalAlignment="Center" Orientation="Horizontal" Spacing="10" Margin="20" Background="#88000000" Padding="10" CornerRadius="8">
             <TextBlock x:Name="StateText" Foreground="White" VerticalAlignment="Center" Text="Idle" Width="70" FontWeight="SemiBold" />
-            <Button Content="Play Test" Click="PlayTest_Click" Style="{ThemeResource AccentButtonStyle}" />
             <Button Content="Pause" Click="Pause_Click" />
             <Button Content="Stop" Click="Stop_Click" />
         </StackPanel>

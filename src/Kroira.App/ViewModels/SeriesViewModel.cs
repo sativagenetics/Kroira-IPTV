@@ -29,6 +29,8 @@ namespace Kroira.App.ViewModels
         [ObservableProperty]
         private Season? _selectedSeason;
 
+        [ObservableProperty]
+        private bool _isEmpty;
         partial void OnSearchQueryChanged(string value)
         {
             ApplyFilter();
@@ -91,6 +93,8 @@ namespace Kroira.App.ViewModels
             {
                 FilteredSeries.Add(item);
             }
+
+            IsEmpty = FilteredSeries.Count == 0;
         }
     }
 }

@@ -226,7 +226,7 @@ namespace Kroira.App.Kroira_App_XamlTypeInfo
         
         private void InitTypeTables()
         {
-            _typeNameTable = new string[65];
+            _typeNameTable = new string[70];
             _typeNameTable[0] = "Microsoft.UI.Xaml.Controls.XamlControlsResources";
             _typeNameTable[1] = "Microsoft.UI.Xaml.ResourceDictionary";
             _typeNameTable[2] = "Object";
@@ -265,35 +265,40 @@ namespace Kroira.App.Kroira_App_XamlTypeInfo
             _typeNameTable[35] = "Microsoft.UI.Xaml.Controls.Page";
             _typeNameTable[36] = "Microsoft.UI.Xaml.Controls.UserControl";
             _typeNameTable[37] = "Kroira.App.ViewModels.ChannelBrowserViewModel";
-            _typeNameTable[38] = "Kroira.App.Views.ContinueWatchingPage";
-            _typeNameTable[39] = "Kroira.App.ViewModels.ContinueWatchingViewModel";
-            _typeNameTable[40] = "LibVLCSharp.Platforms.Windows.VideoView";
-            _typeNameTable[41] = "LibVLCSharp.Platforms.Windows.VideoView`1<LibVLCSharp.Platforms.Windows.InitializedEventArgs>";
-            _typeNameTable[42] = "LibVLCSharp.Platforms.Windows.VideoViewBase";
-            _typeNameTable[43] = "String[]";
-            _typeNameTable[44] = "System.Array";
-            _typeNameTable[45] = "LibVLCSharp.Shared.MediaPlayer";
-            _typeNameTable[46] = "LibVLCSharp.Shared.Internal";
-            _typeNameTable[47] = "SharpDX.DXGI.AlphaMode";
-            _typeNameTable[48] = "Kroira.App.Views.DevPlaybackPage";
-            _typeNameTable[49] = "Kroira.App.Views.FavoritesPage";
-            _typeNameTable[50] = "Kroira.App.ViewModels.FavoritesViewModel";
-            _typeNameTable[51] = "Kroira.App.Views.MoviesPage";
-            _typeNameTable[52] = "Kroira.App.ViewModels.MoviesViewModel";
-            _typeNameTable[53] = "Kroira.App.Views.SeriesPage";
-            _typeNameTable[54] = "Kroira.App.ViewModels.SeriesViewModel";
-            _typeNameTable[55] = "Kroira.App.Views.SettingsPage";
-            _typeNameTable[56] = "Kroira.App.ViewModels.SettingsViewModel";
-            _typeNameTable[57] = "Kroira.App.Views.SourceListPage";
-            _typeNameTable[58] = "Kroira.App.ViewModels.SourceListViewModel";
-            _typeNameTable[59] = "Microsoft.UI.Xaml.Controls.RadioButtons";
-            _typeNameTable[60] = "Int32";
-            _typeNameTable[61] = "Kroira.App.Views.SourceOnboardingPage";
-            _typeNameTable[62] = "Kroira.App.ViewModels.SourceOnboardingViewModel";
-            _typeNameTable[63] = "Microsoft.UI.Xaml.Controls.TreeViewNode";
-            _typeNameTable[64] = "System.Collections.Generic.IList`1<Microsoft.UI.Xaml.Controls.TreeViewNode>";
+            _typeNameTable[38] = "Kroira.App.Views.ChannelsPage";
+            _typeNameTable[39] = "Kroira.App.ViewModels.ChannelsPageViewModel";
+            _typeNameTable[40] = "Kroira.App.Views.ContinueWatchingPage";
+            _typeNameTable[41] = "Kroira.App.ViewModels.ContinueWatchingViewModel";
+            _typeNameTable[42] = "LibVLCSharp.Platforms.Windows.VideoView";
+            _typeNameTable[43] = "LibVLCSharp.Platforms.Windows.VideoView`1<LibVLCSharp.Platforms.Windows.InitializedEventArgs>";
+            _typeNameTable[44] = "LibVLCSharp.Platforms.Windows.VideoViewBase";
+            _typeNameTable[45] = "String[]";
+            _typeNameTable[46] = "System.Array";
+            _typeNameTable[47] = "LibVLCSharp.Shared.MediaPlayer";
+            _typeNameTable[48] = "LibVLCSharp.Shared.Internal";
+            _typeNameTable[49] = "SharpDX.DXGI.AlphaMode";
+            _typeNameTable[50] = "Kroira.App.Views.DevPlaybackPage";
+            _typeNameTable[51] = "Kroira.App.Views.FavoritesPage";
+            _typeNameTable[52] = "Kroira.App.ViewModels.FavoritesViewModel";
+            _typeNameTable[53] = "Kroira.App.Views.MoviesPage";
+            _typeNameTable[54] = "Kroira.App.ViewModels.MoviesViewModel";
+            _typeNameTable[55] = "Kroira.App.Views.NullToCollapsedConverter";
+            _typeNameTable[56] = "Kroira.App.Views.SeasonPrefixConverter";
+            _typeNameTable[57] = "Kroira.App.Views.EpisodePrefixConverter";
+            _typeNameTable[58] = "Kroira.App.Views.SeriesPage";
+            _typeNameTable[59] = "Kroira.App.ViewModels.SeriesViewModel";
+            _typeNameTable[60] = "Kroira.App.Views.SettingsPage";
+            _typeNameTable[61] = "Kroira.App.ViewModels.SettingsViewModel";
+            _typeNameTable[62] = "Kroira.App.Views.SourceListPage";
+            _typeNameTable[63] = "Kroira.App.ViewModels.SourceListViewModel";
+            _typeNameTable[64] = "Microsoft.UI.Xaml.Controls.RadioButtons";
+            _typeNameTable[65] = "Int32";
+            _typeNameTable[66] = "Kroira.App.Views.SourceOnboardingPage";
+            _typeNameTable[67] = "Kroira.App.ViewModels.SourceOnboardingViewModel";
+            _typeNameTable[68] = "Microsoft.UI.Xaml.Controls.TreeViewNode";
+            _typeNameTable[69] = "System.Collections.Generic.IList`1<Microsoft.UI.Xaml.Controls.TreeViewNode>";
 
-            _typeTable = new global::System.Type[65];
+            _typeTable = new global::System.Type[70];
             _typeTable[0] = typeof(global::Microsoft.UI.Xaml.Controls.XamlControlsResources);
             _typeTable[1] = typeof(global::Microsoft.UI.Xaml.ResourceDictionary);
             _typeTable[2] = typeof(global::System.Object);
@@ -332,33 +337,38 @@ namespace Kroira.App.Kroira_App_XamlTypeInfo
             _typeTable[35] = typeof(global::Microsoft.UI.Xaml.Controls.Page);
             _typeTable[36] = typeof(global::Microsoft.UI.Xaml.Controls.UserControl);
             _typeTable[37] = typeof(global::Kroira.App.ViewModels.ChannelBrowserViewModel);
-            _typeTable[38] = typeof(global::Kroira.App.Views.ContinueWatchingPage);
-            _typeTable[39] = typeof(global::Kroira.App.ViewModels.ContinueWatchingViewModel);
-            _typeTable[40] = typeof(global::LibVLCSharp.Platforms.Windows.VideoView);
-            _typeTable[41] = typeof(global::LibVLCSharp.Platforms.Windows.VideoView<global::LibVLCSharp.Platforms.Windows.InitializedEventArgs>);
-            _typeTable[42] = typeof(global::LibVLCSharp.Platforms.Windows.VideoViewBase);
-            _typeTable[43] = typeof(global::System.String[]);
-            _typeTable[44] = typeof(global::System.Array);
-            _typeTable[45] = typeof(global::LibVLCSharp.Shared.MediaPlayer);
-            _typeTable[46] = typeof(global::LibVLCSharp.Shared.Internal);
-            _typeTable[47] = typeof(global::SharpDX.DXGI.AlphaMode);
-            _typeTable[48] = typeof(global::Kroira.App.Views.DevPlaybackPage);
-            _typeTable[49] = typeof(global::Kroira.App.Views.FavoritesPage);
-            _typeTable[50] = typeof(global::Kroira.App.ViewModels.FavoritesViewModel);
-            _typeTable[51] = typeof(global::Kroira.App.Views.MoviesPage);
-            _typeTable[52] = typeof(global::Kroira.App.ViewModels.MoviesViewModel);
-            _typeTable[53] = typeof(global::Kroira.App.Views.SeriesPage);
-            _typeTable[54] = typeof(global::Kroira.App.ViewModels.SeriesViewModel);
-            _typeTable[55] = typeof(global::Kroira.App.Views.SettingsPage);
-            _typeTable[56] = typeof(global::Kroira.App.ViewModels.SettingsViewModel);
-            _typeTable[57] = typeof(global::Kroira.App.Views.SourceListPage);
-            _typeTable[58] = typeof(global::Kroira.App.ViewModels.SourceListViewModel);
-            _typeTable[59] = typeof(global::Microsoft.UI.Xaml.Controls.RadioButtons);
-            _typeTable[60] = typeof(global::System.Int32);
-            _typeTable[61] = typeof(global::Kroira.App.Views.SourceOnboardingPage);
-            _typeTable[62] = typeof(global::Kroira.App.ViewModels.SourceOnboardingViewModel);
-            _typeTable[63] = typeof(global::Microsoft.UI.Xaml.Controls.TreeViewNode);
-            _typeTable[64] = typeof(global::System.Collections.Generic.IList<global::Microsoft.UI.Xaml.Controls.TreeViewNode>);
+            _typeTable[38] = typeof(global::Kroira.App.Views.ChannelsPage);
+            _typeTable[39] = typeof(global::Kroira.App.ViewModels.ChannelsPageViewModel);
+            _typeTable[40] = typeof(global::Kroira.App.Views.ContinueWatchingPage);
+            _typeTable[41] = typeof(global::Kroira.App.ViewModels.ContinueWatchingViewModel);
+            _typeTable[42] = typeof(global::LibVLCSharp.Platforms.Windows.VideoView);
+            _typeTable[43] = typeof(global::LibVLCSharp.Platforms.Windows.VideoView<global::LibVLCSharp.Platforms.Windows.InitializedEventArgs>);
+            _typeTable[44] = typeof(global::LibVLCSharp.Platforms.Windows.VideoViewBase);
+            _typeTable[45] = typeof(global::System.String[]);
+            _typeTable[46] = typeof(global::System.Array);
+            _typeTable[47] = typeof(global::LibVLCSharp.Shared.MediaPlayer);
+            _typeTable[48] = typeof(global::LibVLCSharp.Shared.Internal);
+            _typeTable[49] = typeof(global::SharpDX.DXGI.AlphaMode);
+            _typeTable[50] = typeof(global::Kroira.App.Views.DevPlaybackPage);
+            _typeTable[51] = typeof(global::Kroira.App.Views.FavoritesPage);
+            _typeTable[52] = typeof(global::Kroira.App.ViewModels.FavoritesViewModel);
+            _typeTable[53] = typeof(global::Kroira.App.Views.MoviesPage);
+            _typeTable[54] = typeof(global::Kroira.App.ViewModels.MoviesViewModel);
+            _typeTable[55] = typeof(global::Kroira.App.Views.NullToCollapsedConverter);
+            _typeTable[56] = typeof(global::Kroira.App.Views.SeasonPrefixConverter);
+            _typeTable[57] = typeof(global::Kroira.App.Views.EpisodePrefixConverter);
+            _typeTable[58] = typeof(global::Kroira.App.Views.SeriesPage);
+            _typeTable[59] = typeof(global::Kroira.App.ViewModels.SeriesViewModel);
+            _typeTable[60] = typeof(global::Kroira.App.Views.SettingsPage);
+            _typeTable[61] = typeof(global::Kroira.App.ViewModels.SettingsViewModel);
+            _typeTable[62] = typeof(global::Kroira.App.Views.SourceListPage);
+            _typeTable[63] = typeof(global::Kroira.App.ViewModels.SourceListViewModel);
+            _typeTable[64] = typeof(global::Microsoft.UI.Xaml.Controls.RadioButtons);
+            _typeTable[65] = typeof(global::System.Int32);
+            _typeTable[66] = typeof(global::Kroira.App.Views.SourceOnboardingPage);
+            _typeTable[67] = typeof(global::Kroira.App.ViewModels.SourceOnboardingViewModel);
+            _typeTable[68] = typeof(global::Microsoft.UI.Xaml.Controls.TreeViewNode);
+            _typeTable[69] = typeof(global::System.Collections.Generic.IList<global::Microsoft.UI.Xaml.Controls.TreeViewNode>);
         }
 
         private int LookupTypeIndexByName(string typeName)
@@ -400,17 +410,21 @@ namespace Kroira.App.Kroira_App_XamlTypeInfo
         private object Activate_28_InfoBadge() { return new global::Microsoft.UI.Xaml.Controls.InfoBadge(); }
         private object Activate_30_MainWindow() { return new global::Kroira.App.MainWindow(); }
         private object Activate_34_ChannelBrowserPage() { return new global::Kroira.App.Views.ChannelBrowserPage(); }
-        private object Activate_38_ContinueWatchingPage() { return new global::Kroira.App.Views.ContinueWatchingPage(); }
-        private object Activate_40_VideoView() { return new global::LibVLCSharp.Platforms.Windows.VideoView(); }
-        private object Activate_48_DevPlaybackPage() { return new global::Kroira.App.Views.DevPlaybackPage(); }
-        private object Activate_49_FavoritesPage() { return new global::Kroira.App.Views.FavoritesPage(); }
-        private object Activate_51_MoviesPage() { return new global::Kroira.App.Views.MoviesPage(); }
-        private object Activate_53_SeriesPage() { return new global::Kroira.App.Views.SeriesPage(); }
-        private object Activate_55_SettingsPage() { return new global::Kroira.App.Views.SettingsPage(); }
-        private object Activate_57_SourceListPage() { return new global::Kroira.App.Views.SourceListPage(); }
-        private object Activate_59_RadioButtons() { return new global::Microsoft.UI.Xaml.Controls.RadioButtons(); }
-        private object Activate_61_SourceOnboardingPage() { return new global::Kroira.App.Views.SourceOnboardingPage(); }
-        private object Activate_63_TreeViewNode() { return new global::Microsoft.UI.Xaml.Controls.TreeViewNode(); }
+        private object Activate_38_ChannelsPage() { return new global::Kroira.App.Views.ChannelsPage(); }
+        private object Activate_40_ContinueWatchingPage() { return new global::Kroira.App.Views.ContinueWatchingPage(); }
+        private object Activate_42_VideoView() { return new global::LibVLCSharp.Platforms.Windows.VideoView(); }
+        private object Activate_50_DevPlaybackPage() { return new global::Kroira.App.Views.DevPlaybackPage(); }
+        private object Activate_51_FavoritesPage() { return new global::Kroira.App.Views.FavoritesPage(); }
+        private object Activate_53_MoviesPage() { return new global::Kroira.App.Views.MoviesPage(); }
+        private object Activate_55_NullToCollapsedConverter() { return new global::Kroira.App.Views.NullToCollapsedConverter(); }
+        private object Activate_56_SeasonPrefixConverter() { return new global::Kroira.App.Views.SeasonPrefixConverter(); }
+        private object Activate_57_EpisodePrefixConverter() { return new global::Kroira.App.Views.EpisodePrefixConverter(); }
+        private object Activate_58_SeriesPage() { return new global::Kroira.App.Views.SeriesPage(); }
+        private object Activate_60_SettingsPage() { return new global::Kroira.App.Views.SettingsPage(); }
+        private object Activate_62_SourceListPage() { return new global::Kroira.App.Views.SourceListPage(); }
+        private object Activate_64_RadioButtons() { return new global::Microsoft.UI.Xaml.Controls.RadioButtons(); }
+        private object Activate_66_SourceOnboardingPage() { return new global::Kroira.App.Views.SourceOnboardingPage(); }
+        private object Activate_68_TreeViewNode() { return new global::Microsoft.UI.Xaml.Controls.TreeViewNode(); }
         private void StaticInitializer_0_XamlControlsResources() => global::System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(typeof(global::Microsoft.UI.Xaml.Controls.XamlControlsResources).TypeHandle);
         private void StaticInitializer_4_NavigationView() => global::System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(typeof(global::Microsoft.UI.Xaml.Controls.NavigationView).TypeHandle);
         private void StaticInitializer_6_IList() => global::System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(typeof(global::System.Collections.Generic.IList<global::System.Object>).TypeHandle);
@@ -431,31 +445,36 @@ namespace Kroira.App.Kroira_App_XamlTypeInfo
         private void StaticInitializer_33_ObservableObject() => global::System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(typeof(global::CommunityToolkit.Mvvm.ComponentModel.ObservableObject).TypeHandle);
         private void StaticInitializer_34_ChannelBrowserPage() => global::System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(typeof(global::Kroira.App.Views.ChannelBrowserPage).TypeHandle);
         private void StaticInitializer_37_ChannelBrowserViewModel() => global::System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(typeof(global::Kroira.App.ViewModels.ChannelBrowserViewModel).TypeHandle);
-        private void StaticInitializer_38_ContinueWatchingPage() => global::System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(typeof(global::Kroira.App.Views.ContinueWatchingPage).TypeHandle);
-        private void StaticInitializer_39_ContinueWatchingViewModel() => global::System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(typeof(global::Kroira.App.ViewModels.ContinueWatchingViewModel).TypeHandle);
-        private void StaticInitializer_40_VideoView() => global::System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(typeof(global::LibVLCSharp.Platforms.Windows.VideoView).TypeHandle);
-        private void StaticInitializer_41_VideoView() => global::System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(typeof(global::LibVLCSharp.Platforms.Windows.VideoView<global::LibVLCSharp.Platforms.Windows.InitializedEventArgs>).TypeHandle);
-        private void StaticInitializer_42_VideoViewBase() => global::System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(typeof(global::LibVLCSharp.Platforms.Windows.VideoViewBase).TypeHandle);
-        private void StaticInitializer_44_Array() => global::System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(typeof(global::System.Array).TypeHandle);
-        private void StaticInitializer_45_MediaPlayer() => global::System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(typeof(global::LibVLCSharp.Shared.MediaPlayer).TypeHandle);
-        private void StaticInitializer_46_Internal() => global::System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(typeof(global::LibVLCSharp.Shared.Internal).TypeHandle);
-        private void StaticInitializer_47_AlphaMode() => global::System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(typeof(global::SharpDX.DXGI.AlphaMode).TypeHandle);
-        private void StaticInitializer_48_DevPlaybackPage() => global::System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(typeof(global::Kroira.App.Views.DevPlaybackPage).TypeHandle);
-        private void StaticInitializer_49_FavoritesPage() => global::System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(typeof(global::Kroira.App.Views.FavoritesPage).TypeHandle);
-        private void StaticInitializer_50_FavoritesViewModel() => global::System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(typeof(global::Kroira.App.ViewModels.FavoritesViewModel).TypeHandle);
-        private void StaticInitializer_51_MoviesPage() => global::System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(typeof(global::Kroira.App.Views.MoviesPage).TypeHandle);
-        private void StaticInitializer_52_MoviesViewModel() => global::System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(typeof(global::Kroira.App.ViewModels.MoviesViewModel).TypeHandle);
-        private void StaticInitializer_53_SeriesPage() => global::System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(typeof(global::Kroira.App.Views.SeriesPage).TypeHandle);
-        private void StaticInitializer_54_SeriesViewModel() => global::System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(typeof(global::Kroira.App.ViewModels.SeriesViewModel).TypeHandle);
-        private void StaticInitializer_55_SettingsPage() => global::System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(typeof(global::Kroira.App.Views.SettingsPage).TypeHandle);
-        private void StaticInitializer_56_SettingsViewModel() => global::System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(typeof(global::Kroira.App.ViewModels.SettingsViewModel).TypeHandle);
-        private void StaticInitializer_57_SourceListPage() => global::System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(typeof(global::Kroira.App.Views.SourceListPage).TypeHandle);
-        private void StaticInitializer_58_SourceListViewModel() => global::System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(typeof(global::Kroira.App.ViewModels.SourceListViewModel).TypeHandle);
-        private void StaticInitializer_59_RadioButtons() => global::System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(typeof(global::Microsoft.UI.Xaml.Controls.RadioButtons).TypeHandle);
-        private void StaticInitializer_61_SourceOnboardingPage() => global::System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(typeof(global::Kroira.App.Views.SourceOnboardingPage).TypeHandle);
-        private void StaticInitializer_62_SourceOnboardingViewModel() => global::System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(typeof(global::Kroira.App.ViewModels.SourceOnboardingViewModel).TypeHandle);
-        private void StaticInitializer_63_TreeViewNode() => global::System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(typeof(global::Microsoft.UI.Xaml.Controls.TreeViewNode).TypeHandle);
-        private void StaticInitializer_64_IList() => global::System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(typeof(global::System.Collections.Generic.IList<global::Microsoft.UI.Xaml.Controls.TreeViewNode>).TypeHandle);
+        private void StaticInitializer_38_ChannelsPage() => global::System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(typeof(global::Kroira.App.Views.ChannelsPage).TypeHandle);
+        private void StaticInitializer_39_ChannelsPageViewModel() => global::System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(typeof(global::Kroira.App.ViewModels.ChannelsPageViewModel).TypeHandle);
+        private void StaticInitializer_40_ContinueWatchingPage() => global::System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(typeof(global::Kroira.App.Views.ContinueWatchingPage).TypeHandle);
+        private void StaticInitializer_41_ContinueWatchingViewModel() => global::System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(typeof(global::Kroira.App.ViewModels.ContinueWatchingViewModel).TypeHandle);
+        private void StaticInitializer_42_VideoView() => global::System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(typeof(global::LibVLCSharp.Platforms.Windows.VideoView).TypeHandle);
+        private void StaticInitializer_43_VideoView() => global::System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(typeof(global::LibVLCSharp.Platforms.Windows.VideoView<global::LibVLCSharp.Platforms.Windows.InitializedEventArgs>).TypeHandle);
+        private void StaticInitializer_44_VideoViewBase() => global::System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(typeof(global::LibVLCSharp.Platforms.Windows.VideoViewBase).TypeHandle);
+        private void StaticInitializer_46_Array() => global::System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(typeof(global::System.Array).TypeHandle);
+        private void StaticInitializer_47_MediaPlayer() => global::System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(typeof(global::LibVLCSharp.Shared.MediaPlayer).TypeHandle);
+        private void StaticInitializer_48_Internal() => global::System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(typeof(global::LibVLCSharp.Shared.Internal).TypeHandle);
+        private void StaticInitializer_49_AlphaMode() => global::System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(typeof(global::SharpDX.DXGI.AlphaMode).TypeHandle);
+        private void StaticInitializer_50_DevPlaybackPage() => global::System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(typeof(global::Kroira.App.Views.DevPlaybackPage).TypeHandle);
+        private void StaticInitializer_51_FavoritesPage() => global::System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(typeof(global::Kroira.App.Views.FavoritesPage).TypeHandle);
+        private void StaticInitializer_52_FavoritesViewModel() => global::System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(typeof(global::Kroira.App.ViewModels.FavoritesViewModel).TypeHandle);
+        private void StaticInitializer_53_MoviesPage() => global::System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(typeof(global::Kroira.App.Views.MoviesPage).TypeHandle);
+        private void StaticInitializer_54_MoviesViewModel() => global::System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(typeof(global::Kroira.App.ViewModels.MoviesViewModel).TypeHandle);
+        private void StaticInitializer_55_NullToCollapsedConverter() => global::System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(typeof(global::Kroira.App.Views.NullToCollapsedConverter).TypeHandle);
+        private void StaticInitializer_56_SeasonPrefixConverter() => global::System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(typeof(global::Kroira.App.Views.SeasonPrefixConverter).TypeHandle);
+        private void StaticInitializer_57_EpisodePrefixConverter() => global::System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(typeof(global::Kroira.App.Views.EpisodePrefixConverter).TypeHandle);
+        private void StaticInitializer_58_SeriesPage() => global::System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(typeof(global::Kroira.App.Views.SeriesPage).TypeHandle);
+        private void StaticInitializer_59_SeriesViewModel() => global::System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(typeof(global::Kroira.App.ViewModels.SeriesViewModel).TypeHandle);
+        private void StaticInitializer_60_SettingsPage() => global::System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(typeof(global::Kroira.App.Views.SettingsPage).TypeHandle);
+        private void StaticInitializer_61_SettingsViewModel() => global::System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(typeof(global::Kroira.App.ViewModels.SettingsViewModel).TypeHandle);
+        private void StaticInitializer_62_SourceListPage() => global::System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(typeof(global::Kroira.App.Views.SourceListPage).TypeHandle);
+        private void StaticInitializer_63_SourceListViewModel() => global::System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(typeof(global::Kroira.App.ViewModels.SourceListViewModel).TypeHandle);
+        private void StaticInitializer_64_RadioButtons() => global::System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(typeof(global::Microsoft.UI.Xaml.Controls.RadioButtons).TypeHandle);
+        private void StaticInitializer_66_SourceOnboardingPage() => global::System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(typeof(global::Kroira.App.Views.SourceOnboardingPage).TypeHandle);
+        private void StaticInitializer_67_SourceOnboardingViewModel() => global::System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(typeof(global::Kroira.App.ViewModels.SourceOnboardingViewModel).TypeHandle);
+        private void StaticInitializer_68_TreeViewNode() => global::System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(typeof(global::Microsoft.UI.Xaml.Controls.TreeViewNode).TypeHandle);
+        private void StaticInitializer_69_IList() => global::System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(typeof(global::System.Collections.Generic.IList<global::Microsoft.UI.Xaml.Controls.TreeViewNode>).TypeHandle);
         private void MapAdd_0_XamlControlsResources(object instance, object key, object item)
         {
             var collection = (global::System.Collections.Generic.IDictionary<global::System.Object, global::System.Object>)instance;
@@ -469,7 +488,7 @@ namespace Kroira.App.Kroira_App_XamlTypeInfo
             var newItem = (global::System.Object)item;
             collection.Add(newItem);
         }
-        private void VectorAdd_64_IList(object instance, object item)
+        private void VectorAdd_69_IList(object instance, object item)
         {
             var collection = (global::System.Collections.Generic.ICollection<global::Microsoft.UI.Xaml.Controls.TreeViewNode>)instance;
             var newItem = (global::Microsoft.UI.Xaml.Controls.TreeViewNode)item;
@@ -762,73 +781,90 @@ namespace Kroira.App.Kroira_App_XamlTypeInfo
                 xamlType = userType;
                 break;
 
-            case 38:   //  Kroira.App.Views.ContinueWatchingPage
+            case 38:   //  Kroira.App.Views.ChannelsPage
                 userType = new global::Kroira.App.Kroira_App_XamlTypeInfo.XamlUserType(this, typeName, type, GetXamlTypeByName("Microsoft.UI.Xaml.Controls.Page"));
-                userType.Activator = Activate_38_ContinueWatchingPage;
-                userType.StaticInitializer = StaticInitializer_38_ContinueWatchingPage;
+                userType.Activator = Activate_38_ChannelsPage;
+                userType.StaticInitializer = StaticInitializer_38_ChannelsPage;
                 userType.AddMemberName("ViewModel");
                 userType.SetIsLocalType();
                 xamlType = userType;
                 break;
 
-            case 39:   //  Kroira.App.ViewModels.ContinueWatchingViewModel
+            case 39:   //  Kroira.App.ViewModels.ChannelsPageViewModel
                 userType = new global::Kroira.App.Kroira_App_XamlTypeInfo.XamlUserType(this, typeName, type, GetXamlTypeByName("CommunityToolkit.Mvvm.ComponentModel.ObservableObject"));
-                userType.StaticInitializer = StaticInitializer_39_ContinueWatchingViewModel;
+                userType.StaticInitializer = StaticInitializer_39_ChannelsPageViewModel;
                 userType.SetIsReturnTypeStub();
                 userType.SetIsLocalType();
                 xamlType = userType;
                 break;
 
-            case 40:   //  LibVLCSharp.Platforms.Windows.VideoView
+            case 40:   //  Kroira.App.Views.ContinueWatchingPage
+                userType = new global::Kroira.App.Kroira_App_XamlTypeInfo.XamlUserType(this, typeName, type, GetXamlTypeByName("Microsoft.UI.Xaml.Controls.Page"));
+                userType.Activator = Activate_40_ContinueWatchingPage;
+                userType.StaticInitializer = StaticInitializer_40_ContinueWatchingPage;
+                userType.AddMemberName("ViewModel");
+                userType.SetIsLocalType();
+                xamlType = userType;
+                break;
+
+            case 41:   //  Kroira.App.ViewModels.ContinueWatchingViewModel
+                userType = new global::Kroira.App.Kroira_App_XamlTypeInfo.XamlUserType(this, typeName, type, GetXamlTypeByName("CommunityToolkit.Mvvm.ComponentModel.ObservableObject"));
+                userType.StaticInitializer = StaticInitializer_41_ContinueWatchingViewModel;
+                userType.SetIsReturnTypeStub();
+                userType.SetIsLocalType();
+                xamlType = userType;
+                break;
+
+            case 42:   //  LibVLCSharp.Platforms.Windows.VideoView
                 userType = new global::Kroira.App.Kroira_App_XamlTypeInfo.XamlUserType(this, typeName, type, GetXamlTypeByName("LibVLCSharp.Platforms.Windows.VideoView`1<LibVLCSharp.Platforms.Windows.InitializedEventArgs>"));
-                userType.Activator = Activate_40_VideoView;
-                userType.StaticInitializer = StaticInitializer_40_VideoView;
+                userType.Activator = Activate_42_VideoView;
+                userType.StaticInitializer = StaticInitializer_42_VideoView;
                 xamlType = userType;
                 break;
 
-            case 41:   //  LibVLCSharp.Platforms.Windows.VideoView`1<LibVLCSharp.Platforms.Windows.InitializedEventArgs>
+            case 43:   //  LibVLCSharp.Platforms.Windows.VideoView`1<LibVLCSharp.Platforms.Windows.InitializedEventArgs>
                 userType = new global::Kroira.App.Kroira_App_XamlTypeInfo.XamlUserType(this, typeName, type, GetXamlTypeByName("LibVLCSharp.Platforms.Windows.VideoViewBase"));
-                userType.StaticInitializer = StaticInitializer_41_VideoView;
+                userType.StaticInitializer = StaticInitializer_43_VideoView;
                 xamlType = userType;
                 break;
 
-            case 42:   //  LibVLCSharp.Platforms.Windows.VideoViewBase
+            case 44:   //  LibVLCSharp.Platforms.Windows.VideoViewBase
                 userType = new global::Kroira.App.Kroira_App_XamlTypeInfo.XamlUserType(this, typeName, type, GetXamlTypeByName("Microsoft.UI.Xaml.Controls.Control"));
-                userType.StaticInitializer = StaticInitializer_42_VideoViewBase;
+                userType.StaticInitializer = StaticInitializer_44_VideoViewBase;
                 userType.AddMemberName("SwapChainOptions");
                 userType.AddMemberName("MediaPlayer");
                 userType.AddMemberName("AlphaMode");
                 xamlType = userType;
                 break;
 
-            case 43:   //  String[]
+            case 45:   //  String[]
                 userType = new global::Kroira.App.Kroira_App_XamlTypeInfo.XamlUserType(this, typeName, type, GetXamlTypeByName("System.Array"));
                 userType.SetIsReturnTypeStub();
                 xamlType = userType;
                 break;
 
-            case 44:   //  System.Array
+            case 46:   //  System.Array
                 userType = new global::Kroira.App.Kroira_App_XamlTypeInfo.XamlUserType(this, typeName, type, GetXamlTypeByName("Object"));
-                userType.StaticInitializer = StaticInitializer_44_Array;
+                userType.StaticInitializer = StaticInitializer_46_Array;
                 xamlType = userType;
                 break;
 
-            case 45:   //  LibVLCSharp.Shared.MediaPlayer
+            case 47:   //  LibVLCSharp.Shared.MediaPlayer
                 userType = new global::Kroira.App.Kroira_App_XamlTypeInfo.XamlUserType(this, typeName, type, GetXamlTypeByName("LibVLCSharp.Shared.Internal"));
-                userType.StaticInitializer = StaticInitializer_45_MediaPlayer;
+                userType.StaticInitializer = StaticInitializer_47_MediaPlayer;
                 userType.SetIsReturnTypeStub();
                 xamlType = userType;
                 break;
 
-            case 46:   //  LibVLCSharp.Shared.Internal
+            case 48:   //  LibVLCSharp.Shared.Internal
                 userType = new global::Kroira.App.Kroira_App_XamlTypeInfo.XamlUserType(this, typeName, type, GetXamlTypeByName("Object"));
-                userType.StaticInitializer = StaticInitializer_46_Internal;
+                userType.StaticInitializer = StaticInitializer_48_Internal;
                 xamlType = userType;
                 break;
 
-            case 47:   //  SharpDX.DXGI.AlphaMode
+            case 49:   //  SharpDX.DXGI.AlphaMode
                 userType = new global::Kroira.App.Kroira_App_XamlTypeInfo.XamlUserType(this, typeName, type, GetXamlTypeByName("System.Enum"));
-                userType.StaticInitializer = StaticInitializer_47_AlphaMode;
+                userType.StaticInitializer = StaticInitializer_49_AlphaMode;
                 userType.AddEnumValue("Unspecified", global::SharpDX.DXGI.AlphaMode.Unspecified);
                 userType.AddEnumValue("Premultiplied", global::SharpDX.DXGI.AlphaMode.Premultiplied);
                 userType.AddEnumValue("Straight", global::SharpDX.DXGI.AlphaMode.Straight);
@@ -836,103 +872,127 @@ namespace Kroira.App.Kroira_App_XamlTypeInfo
                 xamlType = userType;
                 break;
 
-            case 48:   //  Kroira.App.Views.DevPlaybackPage
+            case 50:   //  Kroira.App.Views.DevPlaybackPage
                 userType = new global::Kroira.App.Kroira_App_XamlTypeInfo.XamlUserType(this, typeName, type, GetXamlTypeByName("Microsoft.UI.Xaml.Controls.Page"));
-                userType.Activator = Activate_48_DevPlaybackPage;
-                userType.StaticInitializer = StaticInitializer_48_DevPlaybackPage;
+                userType.Activator = Activate_50_DevPlaybackPage;
+                userType.StaticInitializer = StaticInitializer_50_DevPlaybackPage;
                 userType.SetIsLocalType();
                 xamlType = userType;
                 break;
 
-            case 49:   //  Kroira.App.Views.FavoritesPage
+            case 51:   //  Kroira.App.Views.FavoritesPage
                 userType = new global::Kroira.App.Kroira_App_XamlTypeInfo.XamlUserType(this, typeName, type, GetXamlTypeByName("Microsoft.UI.Xaml.Controls.Page"));
-                userType.Activator = Activate_49_FavoritesPage;
-                userType.StaticInitializer = StaticInitializer_49_FavoritesPage;
+                userType.Activator = Activate_51_FavoritesPage;
+                userType.StaticInitializer = StaticInitializer_51_FavoritesPage;
                 userType.AddMemberName("ViewModel");
                 userType.SetIsLocalType();
                 xamlType = userType;
                 break;
 
-            case 50:   //  Kroira.App.ViewModels.FavoritesViewModel
+            case 52:   //  Kroira.App.ViewModels.FavoritesViewModel
                 userType = new global::Kroira.App.Kroira_App_XamlTypeInfo.XamlUserType(this, typeName, type, GetXamlTypeByName("CommunityToolkit.Mvvm.ComponentModel.ObservableObject"));
-                userType.StaticInitializer = StaticInitializer_50_FavoritesViewModel;
+                userType.StaticInitializer = StaticInitializer_52_FavoritesViewModel;
                 userType.SetIsReturnTypeStub();
                 userType.SetIsLocalType();
                 xamlType = userType;
                 break;
 
-            case 51:   //  Kroira.App.Views.MoviesPage
+            case 53:   //  Kroira.App.Views.MoviesPage
                 userType = new global::Kroira.App.Kroira_App_XamlTypeInfo.XamlUserType(this, typeName, type, GetXamlTypeByName("Microsoft.UI.Xaml.Controls.Page"));
-                userType.Activator = Activate_51_MoviesPage;
-                userType.StaticInitializer = StaticInitializer_51_MoviesPage;
+                userType.Activator = Activate_53_MoviesPage;
+                userType.StaticInitializer = StaticInitializer_53_MoviesPage;
                 userType.AddMemberName("ViewModel");
                 userType.SetIsLocalType();
                 xamlType = userType;
                 break;
 
-            case 52:   //  Kroira.App.ViewModels.MoviesViewModel
+            case 54:   //  Kroira.App.ViewModels.MoviesViewModel
                 userType = new global::Kroira.App.Kroira_App_XamlTypeInfo.XamlUserType(this, typeName, type, GetXamlTypeByName("CommunityToolkit.Mvvm.ComponentModel.ObservableObject"));
-                userType.StaticInitializer = StaticInitializer_52_MoviesViewModel;
+                userType.StaticInitializer = StaticInitializer_54_MoviesViewModel;
                 userType.SetIsReturnTypeStub();
                 userType.SetIsLocalType();
                 xamlType = userType;
                 break;
 
-            case 53:   //  Kroira.App.Views.SeriesPage
+            case 55:   //  Kroira.App.Views.NullToCollapsedConverter
+                userType = new global::Kroira.App.Kroira_App_XamlTypeInfo.XamlUserType(this, typeName, type, GetXamlTypeByName("Object"));
+                userType.Activator = Activate_55_NullToCollapsedConverter;
+                userType.StaticInitializer = StaticInitializer_55_NullToCollapsedConverter;
+                userType.SetIsLocalType();
+                xamlType = userType;
+                break;
+
+            case 56:   //  Kroira.App.Views.SeasonPrefixConverter
+                userType = new global::Kroira.App.Kroira_App_XamlTypeInfo.XamlUserType(this, typeName, type, GetXamlTypeByName("Object"));
+                userType.Activator = Activate_56_SeasonPrefixConverter;
+                userType.StaticInitializer = StaticInitializer_56_SeasonPrefixConverter;
+                userType.SetIsLocalType();
+                xamlType = userType;
+                break;
+
+            case 57:   //  Kroira.App.Views.EpisodePrefixConverter
+                userType = new global::Kroira.App.Kroira_App_XamlTypeInfo.XamlUserType(this, typeName, type, GetXamlTypeByName("Object"));
+                userType.Activator = Activate_57_EpisodePrefixConverter;
+                userType.StaticInitializer = StaticInitializer_57_EpisodePrefixConverter;
+                userType.SetIsLocalType();
+                xamlType = userType;
+                break;
+
+            case 58:   //  Kroira.App.Views.SeriesPage
                 userType = new global::Kroira.App.Kroira_App_XamlTypeInfo.XamlUserType(this, typeName, type, GetXamlTypeByName("Microsoft.UI.Xaml.Controls.Page"));
-                userType.Activator = Activate_53_SeriesPage;
-                userType.StaticInitializer = StaticInitializer_53_SeriesPage;
+                userType.Activator = Activate_58_SeriesPage;
+                userType.StaticInitializer = StaticInitializer_58_SeriesPage;
                 userType.AddMemberName("ViewModel");
                 userType.SetIsLocalType();
                 xamlType = userType;
                 break;
 
-            case 54:   //  Kroira.App.ViewModels.SeriesViewModel
+            case 59:   //  Kroira.App.ViewModels.SeriesViewModel
                 userType = new global::Kroira.App.Kroira_App_XamlTypeInfo.XamlUserType(this, typeName, type, GetXamlTypeByName("CommunityToolkit.Mvvm.ComponentModel.ObservableObject"));
-                userType.StaticInitializer = StaticInitializer_54_SeriesViewModel;
+                userType.StaticInitializer = StaticInitializer_59_SeriesViewModel;
                 userType.SetIsReturnTypeStub();
                 userType.SetIsLocalType();
                 xamlType = userType;
                 break;
 
-            case 55:   //  Kroira.App.Views.SettingsPage
+            case 60:   //  Kroira.App.Views.SettingsPage
                 userType = new global::Kroira.App.Kroira_App_XamlTypeInfo.XamlUserType(this, typeName, type, GetXamlTypeByName("Microsoft.UI.Xaml.Controls.Page"));
-                userType.Activator = Activate_55_SettingsPage;
-                userType.StaticInitializer = StaticInitializer_55_SettingsPage;
+                userType.Activator = Activate_60_SettingsPage;
+                userType.StaticInitializer = StaticInitializer_60_SettingsPage;
                 userType.AddMemberName("ViewModel");
                 userType.SetIsLocalType();
                 xamlType = userType;
                 break;
 
-            case 56:   //  Kroira.App.ViewModels.SettingsViewModel
+            case 61:   //  Kroira.App.ViewModels.SettingsViewModel
                 userType = new global::Kroira.App.Kroira_App_XamlTypeInfo.XamlUserType(this, typeName, type, GetXamlTypeByName("CommunityToolkit.Mvvm.ComponentModel.ObservableObject"));
-                userType.StaticInitializer = StaticInitializer_56_SettingsViewModel;
+                userType.StaticInitializer = StaticInitializer_61_SettingsViewModel;
                 userType.SetIsReturnTypeStub();
                 userType.SetIsLocalType();
                 xamlType = userType;
                 break;
 
-            case 57:   //  Kroira.App.Views.SourceListPage
+            case 62:   //  Kroira.App.Views.SourceListPage
                 userType = new global::Kroira.App.Kroira_App_XamlTypeInfo.XamlUserType(this, typeName, type, GetXamlTypeByName("Microsoft.UI.Xaml.Controls.Page"));
-                userType.Activator = Activate_57_SourceListPage;
-                userType.StaticInitializer = StaticInitializer_57_SourceListPage;
+                userType.Activator = Activate_62_SourceListPage;
+                userType.StaticInitializer = StaticInitializer_62_SourceListPage;
                 userType.AddMemberName("ViewModel");
                 userType.SetIsLocalType();
                 xamlType = userType;
                 break;
 
-            case 58:   //  Kroira.App.ViewModels.SourceListViewModel
+            case 63:   //  Kroira.App.ViewModels.SourceListViewModel
                 userType = new global::Kroira.App.Kroira_App_XamlTypeInfo.XamlUserType(this, typeName, type, GetXamlTypeByName("CommunityToolkit.Mvvm.ComponentModel.ObservableObject"));
-                userType.StaticInitializer = StaticInitializer_58_SourceListViewModel;
+                userType.StaticInitializer = StaticInitializer_63_SourceListViewModel;
                 userType.SetIsReturnTypeStub();
                 userType.SetIsLocalType();
                 xamlType = userType;
                 break;
 
-            case 59:   //  Microsoft.UI.Xaml.Controls.RadioButtons
+            case 64:   //  Microsoft.UI.Xaml.Controls.RadioButtons
                 userType = new global::Kroira.App.Kroira_App_XamlTypeInfo.XamlUserType(this, typeName, type, GetXamlTypeByName("Microsoft.UI.Xaml.Controls.Control"));
-                userType.Activator = Activate_59_RadioButtons;
-                userType.StaticInitializer = StaticInitializer_59_RadioButtons;
+                userType.Activator = Activate_64_RadioButtons;
+                userType.StaticInitializer = StaticInitializer_64_RadioButtons;
                 userType.SetContentPropertyName("Microsoft.UI.Xaml.Controls.RadioButtons.Items");
                 userType.AddMemberName("Items");
                 userType.AddMemberName("Header");
@@ -945,31 +1005,31 @@ namespace Kroira.App.Kroira_App_XamlTypeInfo
                 xamlType = userType;
                 break;
 
-            case 60:   //  Int32
+            case 65:   //  Int32
                 xamlType = new global::Kroira.App.Kroira_App_XamlTypeInfo.XamlSystemBaseType(typeName, type);
                 break;
 
-            case 61:   //  Kroira.App.Views.SourceOnboardingPage
+            case 66:   //  Kroira.App.Views.SourceOnboardingPage
                 userType = new global::Kroira.App.Kroira_App_XamlTypeInfo.XamlUserType(this, typeName, type, GetXamlTypeByName("Microsoft.UI.Xaml.Controls.Page"));
-                userType.Activator = Activate_61_SourceOnboardingPage;
-                userType.StaticInitializer = StaticInitializer_61_SourceOnboardingPage;
+                userType.Activator = Activate_66_SourceOnboardingPage;
+                userType.StaticInitializer = StaticInitializer_66_SourceOnboardingPage;
                 userType.AddMemberName("ViewModel");
                 userType.SetIsLocalType();
                 xamlType = userType;
                 break;
 
-            case 62:   //  Kroira.App.ViewModels.SourceOnboardingViewModel
+            case 67:   //  Kroira.App.ViewModels.SourceOnboardingViewModel
                 userType = new global::Kroira.App.Kroira_App_XamlTypeInfo.XamlUserType(this, typeName, type, GetXamlTypeByName("CommunityToolkit.Mvvm.ComponentModel.ObservableObject"));
-                userType.StaticInitializer = StaticInitializer_62_SourceOnboardingViewModel;
+                userType.StaticInitializer = StaticInitializer_67_SourceOnboardingViewModel;
                 userType.SetIsReturnTypeStub();
                 userType.SetIsLocalType();
                 xamlType = userType;
                 break;
 
-            case 63:   //  Microsoft.UI.Xaml.Controls.TreeViewNode
+            case 68:   //  Microsoft.UI.Xaml.Controls.TreeViewNode
                 userType = new global::Kroira.App.Kroira_App_XamlTypeInfo.XamlUserType(this, typeName, type, GetXamlTypeByName("Microsoft.UI.Xaml.DependencyObject"));
-                userType.Activator = Activate_63_TreeViewNode;
-                userType.StaticInitializer = StaticInitializer_63_TreeViewNode;
+                userType.Activator = Activate_68_TreeViewNode;
+                userType.StaticInitializer = StaticInitializer_68_TreeViewNode;
                 userType.AddMemberName("Children");
                 userType.AddMemberName("Content");
                 userType.AddMemberName("Depth");
@@ -981,10 +1041,10 @@ namespace Kroira.App.Kroira_App_XamlTypeInfo
                 xamlType = userType;
                 break;
 
-            case 64:   //  System.Collections.Generic.IList`1<Microsoft.UI.Xaml.Controls.TreeViewNode>
+            case 69:   //  System.Collections.Generic.IList`1<Microsoft.UI.Xaml.Controls.TreeViewNode>
                 userType = new global::Kroira.App.Kroira_App_XamlTypeInfo.XamlUserType(this, typeName, type, null);
-                userType.StaticInitializer = StaticInitializer_64_IList;
-                userType.CollectionAdd = VectorAdd_64_IList;
+                userType.StaticInitializer = StaticInitializer_69_IList;
+                userType.CollectionAdd = VectorAdd_69_IList;
                 userType.SetIsReturnTypeStub();
                 xamlType = userType;
                 break;
@@ -1504,187 +1564,192 @@ namespace Kroira.App.Kroira_App_XamlTypeInfo
             var that = (global::Kroira.App.Views.ChannelBrowserPage)instance;
             return that.ViewModel;
         }
-        private object get_50_ContinueWatchingPage_ViewModel(object instance)
+        private object get_50_ChannelsPage_ViewModel(object instance)
+        {
+            var that = (global::Kroira.App.Views.ChannelsPage)instance;
+            return that.ViewModel;
+        }
+        private object get_51_ContinueWatchingPage_ViewModel(object instance)
         {
             var that = (global::Kroira.App.Views.ContinueWatchingPage)instance;
             return that.ViewModel;
         }
-        private object get_51_VideoViewBase_SwapChainOptions(object instance)
+        private object get_52_VideoViewBase_SwapChainOptions(object instance)
         {
             var that = (global::LibVLCSharp.Platforms.Windows.VideoViewBase)instance;
             return that.SwapChainOptions;
         }
-        private object get_52_VideoViewBase_MediaPlayer(object instance)
+        private object get_53_VideoViewBase_MediaPlayer(object instance)
         {
             var that = (global::LibVLCSharp.Platforms.Windows.VideoViewBase)instance;
             return that.MediaPlayer;
         }
-        private void set_52_VideoViewBase_MediaPlayer(object instance, object Value)
+        private void set_53_VideoViewBase_MediaPlayer(object instance, object Value)
         {
             var that = (global::LibVLCSharp.Platforms.Windows.VideoViewBase)instance;
             that.MediaPlayer = (global::LibVLCSharp.Shared.MediaPlayer)Value;
         }
-        private object get_53_VideoViewBase_AlphaMode(object instance)
+        private object get_54_VideoViewBase_AlphaMode(object instance)
         {
             var that = (global::LibVLCSharp.Platforms.Windows.VideoViewBase)instance;
             return that.AlphaMode;
         }
-        private void set_53_VideoViewBase_AlphaMode(object instance, object Value)
+        private void set_54_VideoViewBase_AlphaMode(object instance, object Value)
         {
             var that = (global::LibVLCSharp.Platforms.Windows.VideoViewBase)instance;
             that.AlphaMode = (global::SharpDX.DXGI.AlphaMode)Value;
         }
-        private object get_54_FavoritesPage_ViewModel(object instance)
+        private object get_55_FavoritesPage_ViewModel(object instance)
         {
             var that = (global::Kroira.App.Views.FavoritesPage)instance;
             return that.ViewModel;
         }
-        private object get_55_MoviesPage_ViewModel(object instance)
+        private object get_56_MoviesPage_ViewModel(object instance)
         {
             var that = (global::Kroira.App.Views.MoviesPage)instance;
             return that.ViewModel;
         }
-        private object get_56_SeriesPage_ViewModel(object instance)
+        private object get_57_SeriesPage_ViewModel(object instance)
         {
             var that = (global::Kroira.App.Views.SeriesPage)instance;
             return that.ViewModel;
         }
-        private object get_57_SettingsPage_ViewModel(object instance)
+        private object get_58_SettingsPage_ViewModel(object instance)
         {
             var that = (global::Kroira.App.Views.SettingsPage)instance;
             return that.ViewModel;
         }
-        private object get_58_SourceListPage_ViewModel(object instance)
+        private object get_59_SourceListPage_ViewModel(object instance)
         {
             var that = (global::Kroira.App.Views.SourceListPage)instance;
             return that.ViewModel;
         }
-        private object get_59_RadioButtons_Items(object instance)
+        private object get_60_RadioButtons_Items(object instance)
         {
             var that = (global::Microsoft.UI.Xaml.Controls.RadioButtons)instance;
             return that.Items;
         }
-        private object get_60_RadioButtons_Header(object instance)
+        private object get_61_RadioButtons_Header(object instance)
         {
             var that = (global::Microsoft.UI.Xaml.Controls.RadioButtons)instance;
             return that.Header;
         }
-        private void set_60_RadioButtons_Header(object instance, object Value)
+        private void set_61_RadioButtons_Header(object instance, object Value)
         {
             var that = (global::Microsoft.UI.Xaml.Controls.RadioButtons)instance;
             that.Header = (global::System.Object)Value;
         }
-        private object get_61_RadioButtons_SelectedIndex(object instance)
+        private object get_62_RadioButtons_SelectedIndex(object instance)
         {
             var that = (global::Microsoft.UI.Xaml.Controls.RadioButtons)instance;
             return that.SelectedIndex;
         }
-        private void set_61_RadioButtons_SelectedIndex(object instance, object Value)
+        private void set_62_RadioButtons_SelectedIndex(object instance, object Value)
         {
             var that = (global::Microsoft.UI.Xaml.Controls.RadioButtons)instance;
             that.SelectedIndex = (global::System.Int32)Value;
         }
-        private object get_62_RadioButtons_HeaderTemplate(object instance)
+        private object get_63_RadioButtons_HeaderTemplate(object instance)
         {
             var that = (global::Microsoft.UI.Xaml.Controls.RadioButtons)instance;
             return that.HeaderTemplate;
         }
-        private void set_62_RadioButtons_HeaderTemplate(object instance, object Value)
+        private void set_63_RadioButtons_HeaderTemplate(object instance, object Value)
         {
             var that = (global::Microsoft.UI.Xaml.Controls.RadioButtons)instance;
             that.HeaderTemplate = (global::Microsoft.UI.Xaml.DataTemplate)Value;
         }
-        private object get_63_RadioButtons_ItemTemplate(object instance)
+        private object get_64_RadioButtons_ItemTemplate(object instance)
         {
             var that = (global::Microsoft.UI.Xaml.Controls.RadioButtons)instance;
             return that.ItemTemplate;
         }
-        private void set_63_RadioButtons_ItemTemplate(object instance, object Value)
+        private void set_64_RadioButtons_ItemTemplate(object instance, object Value)
         {
             var that = (global::Microsoft.UI.Xaml.Controls.RadioButtons)instance;
             that.ItemTemplate = (global::System.Object)Value;
         }
-        private object get_64_RadioButtons_ItemsSource(object instance)
+        private object get_65_RadioButtons_ItemsSource(object instance)
         {
             var that = (global::Microsoft.UI.Xaml.Controls.RadioButtons)instance;
             return that.ItemsSource;
         }
-        private void set_64_RadioButtons_ItemsSource(object instance, object Value)
+        private void set_65_RadioButtons_ItemsSource(object instance, object Value)
         {
             var that = (global::Microsoft.UI.Xaml.Controls.RadioButtons)instance;
             that.ItemsSource = (global::System.Object)Value;
         }
-        private object get_65_RadioButtons_MaxColumns(object instance)
+        private object get_66_RadioButtons_MaxColumns(object instance)
         {
             var that = (global::Microsoft.UI.Xaml.Controls.RadioButtons)instance;
             return that.MaxColumns;
         }
-        private void set_65_RadioButtons_MaxColumns(object instance, object Value)
+        private void set_66_RadioButtons_MaxColumns(object instance, object Value)
         {
             var that = (global::Microsoft.UI.Xaml.Controls.RadioButtons)instance;
             that.MaxColumns = (global::System.Int32)Value;
         }
-        private object get_66_RadioButtons_SelectedItem(object instance)
+        private object get_67_RadioButtons_SelectedItem(object instance)
         {
             var that = (global::Microsoft.UI.Xaml.Controls.RadioButtons)instance;
             return that.SelectedItem;
         }
-        private void set_66_RadioButtons_SelectedItem(object instance, object Value)
+        private void set_67_RadioButtons_SelectedItem(object instance, object Value)
         {
             var that = (global::Microsoft.UI.Xaml.Controls.RadioButtons)instance;
             that.SelectedItem = (global::System.Object)Value;
         }
-        private object get_67_SourceOnboardingPage_ViewModel(object instance)
+        private object get_68_SourceOnboardingPage_ViewModel(object instance)
         {
             var that = (global::Kroira.App.Views.SourceOnboardingPage)instance;
             return that.ViewModel;
         }
-        private object get_68_TreeViewNode_Children(object instance)
+        private object get_69_TreeViewNode_Children(object instance)
         {
             var that = (global::Microsoft.UI.Xaml.Controls.TreeViewNode)instance;
             return that.Children;
         }
-        private object get_69_TreeViewNode_Content(object instance)
+        private object get_70_TreeViewNode_Content(object instance)
         {
             var that = (global::Microsoft.UI.Xaml.Controls.TreeViewNode)instance;
             return that.Content;
         }
-        private void set_69_TreeViewNode_Content(object instance, object Value)
+        private void set_70_TreeViewNode_Content(object instance, object Value)
         {
             var that = (global::Microsoft.UI.Xaml.Controls.TreeViewNode)instance;
             that.Content = (global::System.Object)Value;
         }
-        private object get_70_TreeViewNode_Depth(object instance)
+        private object get_71_TreeViewNode_Depth(object instance)
         {
             var that = (global::Microsoft.UI.Xaml.Controls.TreeViewNode)instance;
             return that.Depth;
         }
-        private object get_71_TreeViewNode_HasChildren(object instance)
+        private object get_72_TreeViewNode_HasChildren(object instance)
         {
             var that = (global::Microsoft.UI.Xaml.Controls.TreeViewNode)instance;
             return that.HasChildren;
         }
-        private object get_72_TreeViewNode_HasUnrealizedChildren(object instance)
+        private object get_73_TreeViewNode_HasUnrealizedChildren(object instance)
         {
             var that = (global::Microsoft.UI.Xaml.Controls.TreeViewNode)instance;
             return that.HasUnrealizedChildren;
         }
-        private void set_72_TreeViewNode_HasUnrealizedChildren(object instance, object Value)
+        private void set_73_TreeViewNode_HasUnrealizedChildren(object instance, object Value)
         {
             var that = (global::Microsoft.UI.Xaml.Controls.TreeViewNode)instance;
             that.HasUnrealizedChildren = (global::System.Boolean)Value;
         }
-        private object get_73_TreeViewNode_IsExpanded(object instance)
+        private object get_74_TreeViewNode_IsExpanded(object instance)
         {
             var that = (global::Microsoft.UI.Xaml.Controls.TreeViewNode)instance;
             return that.IsExpanded;
         }
-        private void set_73_TreeViewNode_IsExpanded(object instance, object Value)
+        private void set_74_TreeViewNode_IsExpanded(object instance, object Value)
         {
             var that = (global::Microsoft.UI.Xaml.Controls.TreeViewNode)instance;
             that.IsExpanded = (global::System.Boolean)Value;
         }
-        private object get_74_TreeViewNode_Parent(object instance)
+        private object get_75_TreeViewNode_Parent(object instance)
         {
             var that = (global::Microsoft.UI.Xaml.Controls.TreeViewNode)instance;
             return that.Parent;
@@ -2045,167 +2110,173 @@ namespace Kroira.App.Kroira_App_XamlTypeInfo
                 xamlMember.Getter = get_49_ChannelBrowserPage_ViewModel;
                 xamlMember.SetIsReadOnly();
                 break;
+            case "Kroira.App.Views.ChannelsPage.ViewModel":
+                userType = (global::Kroira.App.Kroira_App_XamlTypeInfo.XamlUserType)GetXamlTypeByName("Kroira.App.Views.ChannelsPage");
+                xamlMember = new global::Kroira.App.Kroira_App_XamlTypeInfo.XamlMember(this, "ViewModel", "Kroira.App.ViewModels.ChannelsPageViewModel");
+                xamlMember.Getter = get_50_ChannelsPage_ViewModel;
+                xamlMember.SetIsReadOnly();
+                break;
             case "Kroira.App.Views.ContinueWatchingPage.ViewModel":
                 userType = (global::Kroira.App.Kroira_App_XamlTypeInfo.XamlUserType)GetXamlTypeByName("Kroira.App.Views.ContinueWatchingPage");
                 xamlMember = new global::Kroira.App.Kroira_App_XamlTypeInfo.XamlMember(this, "ViewModel", "Kroira.App.ViewModels.ContinueWatchingViewModel");
-                xamlMember.Getter = get_50_ContinueWatchingPage_ViewModel;
+                xamlMember.Getter = get_51_ContinueWatchingPage_ViewModel;
                 xamlMember.SetIsReadOnly();
                 break;
             case "LibVLCSharp.Platforms.Windows.VideoViewBase.SwapChainOptions":
                 userType = (global::Kroira.App.Kroira_App_XamlTypeInfo.XamlUserType)GetXamlTypeByName("LibVLCSharp.Platforms.Windows.VideoViewBase");
                 xamlMember = new global::Kroira.App.Kroira_App_XamlTypeInfo.XamlMember(this, "SwapChainOptions", "String[]");
-                xamlMember.Getter = get_51_VideoViewBase_SwapChainOptions;
+                xamlMember.Getter = get_52_VideoViewBase_SwapChainOptions;
                 xamlMember.SetIsReadOnly();
                 break;
             case "LibVLCSharp.Platforms.Windows.VideoViewBase.MediaPlayer":
                 userType = (global::Kroira.App.Kroira_App_XamlTypeInfo.XamlUserType)GetXamlTypeByName("LibVLCSharp.Platforms.Windows.VideoViewBase");
                 xamlMember = new global::Kroira.App.Kroira_App_XamlTypeInfo.XamlMember(this, "MediaPlayer", "LibVLCSharp.Shared.MediaPlayer");
                 xamlMember.SetIsDependencyProperty();
-                xamlMember.Getter = get_52_VideoViewBase_MediaPlayer;
-                xamlMember.Setter = set_52_VideoViewBase_MediaPlayer;
+                xamlMember.Getter = get_53_VideoViewBase_MediaPlayer;
+                xamlMember.Setter = set_53_VideoViewBase_MediaPlayer;
                 break;
             case "LibVLCSharp.Platforms.Windows.VideoViewBase.AlphaMode":
                 userType = (global::Kroira.App.Kroira_App_XamlTypeInfo.XamlUserType)GetXamlTypeByName("LibVLCSharp.Platforms.Windows.VideoViewBase");
                 xamlMember = new global::Kroira.App.Kroira_App_XamlTypeInfo.XamlMember(this, "AlphaMode", "SharpDX.DXGI.AlphaMode");
-                xamlMember.Getter = get_53_VideoViewBase_AlphaMode;
-                xamlMember.Setter = set_53_VideoViewBase_AlphaMode;
+                xamlMember.Getter = get_54_VideoViewBase_AlphaMode;
+                xamlMember.Setter = set_54_VideoViewBase_AlphaMode;
                 break;
             case "Kroira.App.Views.FavoritesPage.ViewModel":
                 userType = (global::Kroira.App.Kroira_App_XamlTypeInfo.XamlUserType)GetXamlTypeByName("Kroira.App.Views.FavoritesPage");
                 xamlMember = new global::Kroira.App.Kroira_App_XamlTypeInfo.XamlMember(this, "ViewModel", "Kroira.App.ViewModels.FavoritesViewModel");
-                xamlMember.Getter = get_54_FavoritesPage_ViewModel;
+                xamlMember.Getter = get_55_FavoritesPage_ViewModel;
                 xamlMember.SetIsReadOnly();
                 break;
             case "Kroira.App.Views.MoviesPage.ViewModel":
                 userType = (global::Kroira.App.Kroira_App_XamlTypeInfo.XamlUserType)GetXamlTypeByName("Kroira.App.Views.MoviesPage");
                 xamlMember = new global::Kroira.App.Kroira_App_XamlTypeInfo.XamlMember(this, "ViewModel", "Kroira.App.ViewModels.MoviesViewModel");
-                xamlMember.Getter = get_55_MoviesPage_ViewModel;
+                xamlMember.Getter = get_56_MoviesPage_ViewModel;
                 xamlMember.SetIsReadOnly();
                 break;
             case "Kroira.App.Views.SeriesPage.ViewModel":
                 userType = (global::Kroira.App.Kroira_App_XamlTypeInfo.XamlUserType)GetXamlTypeByName("Kroira.App.Views.SeriesPage");
                 xamlMember = new global::Kroira.App.Kroira_App_XamlTypeInfo.XamlMember(this, "ViewModel", "Kroira.App.ViewModels.SeriesViewModel");
-                xamlMember.Getter = get_56_SeriesPage_ViewModel;
+                xamlMember.Getter = get_57_SeriesPage_ViewModel;
                 xamlMember.SetIsReadOnly();
                 break;
             case "Kroira.App.Views.SettingsPage.ViewModel":
                 userType = (global::Kroira.App.Kroira_App_XamlTypeInfo.XamlUserType)GetXamlTypeByName("Kroira.App.Views.SettingsPage");
                 xamlMember = new global::Kroira.App.Kroira_App_XamlTypeInfo.XamlMember(this, "ViewModel", "Kroira.App.ViewModels.SettingsViewModel");
-                xamlMember.Getter = get_57_SettingsPage_ViewModel;
+                xamlMember.Getter = get_58_SettingsPage_ViewModel;
                 xamlMember.SetIsReadOnly();
                 break;
             case "Kroira.App.Views.SourceListPage.ViewModel":
                 userType = (global::Kroira.App.Kroira_App_XamlTypeInfo.XamlUserType)GetXamlTypeByName("Kroira.App.Views.SourceListPage");
                 xamlMember = new global::Kroira.App.Kroira_App_XamlTypeInfo.XamlMember(this, "ViewModel", "Kroira.App.ViewModels.SourceListViewModel");
-                xamlMember.Getter = get_58_SourceListPage_ViewModel;
+                xamlMember.Getter = get_59_SourceListPage_ViewModel;
                 xamlMember.SetIsReadOnly();
                 break;
             case "Microsoft.UI.Xaml.Controls.RadioButtons.Items":
                 userType = (global::Kroira.App.Kroira_App_XamlTypeInfo.XamlUserType)GetXamlTypeByName("Microsoft.UI.Xaml.Controls.RadioButtons");
                 xamlMember = new global::Kroira.App.Kroira_App_XamlTypeInfo.XamlMember(this, "Items", "System.Collections.Generic.IList`1<Object>");
                 xamlMember.SetIsDependencyProperty();
-                xamlMember.Getter = get_59_RadioButtons_Items;
+                xamlMember.Getter = get_60_RadioButtons_Items;
                 xamlMember.SetIsReadOnly();
                 break;
             case "Microsoft.UI.Xaml.Controls.RadioButtons.Header":
                 userType = (global::Kroira.App.Kroira_App_XamlTypeInfo.XamlUserType)GetXamlTypeByName("Microsoft.UI.Xaml.Controls.RadioButtons");
                 xamlMember = new global::Kroira.App.Kroira_App_XamlTypeInfo.XamlMember(this, "Header", "Object");
                 xamlMember.SetIsDependencyProperty();
-                xamlMember.Getter = get_60_RadioButtons_Header;
-                xamlMember.Setter = set_60_RadioButtons_Header;
+                xamlMember.Getter = get_61_RadioButtons_Header;
+                xamlMember.Setter = set_61_RadioButtons_Header;
                 break;
             case "Microsoft.UI.Xaml.Controls.RadioButtons.SelectedIndex":
                 userType = (global::Kroira.App.Kroira_App_XamlTypeInfo.XamlUserType)GetXamlTypeByName("Microsoft.UI.Xaml.Controls.RadioButtons");
                 xamlMember = new global::Kroira.App.Kroira_App_XamlTypeInfo.XamlMember(this, "SelectedIndex", "Int32");
                 xamlMember.SetIsDependencyProperty();
-                xamlMember.Getter = get_61_RadioButtons_SelectedIndex;
-                xamlMember.Setter = set_61_RadioButtons_SelectedIndex;
+                xamlMember.Getter = get_62_RadioButtons_SelectedIndex;
+                xamlMember.Setter = set_62_RadioButtons_SelectedIndex;
                 break;
             case "Microsoft.UI.Xaml.Controls.RadioButtons.HeaderTemplate":
                 userType = (global::Kroira.App.Kroira_App_XamlTypeInfo.XamlUserType)GetXamlTypeByName("Microsoft.UI.Xaml.Controls.RadioButtons");
                 xamlMember = new global::Kroira.App.Kroira_App_XamlTypeInfo.XamlMember(this, "HeaderTemplate", "Microsoft.UI.Xaml.DataTemplate");
                 xamlMember.SetIsDependencyProperty();
-                xamlMember.Getter = get_62_RadioButtons_HeaderTemplate;
-                xamlMember.Setter = set_62_RadioButtons_HeaderTemplate;
+                xamlMember.Getter = get_63_RadioButtons_HeaderTemplate;
+                xamlMember.Setter = set_63_RadioButtons_HeaderTemplate;
                 break;
             case "Microsoft.UI.Xaml.Controls.RadioButtons.ItemTemplate":
                 userType = (global::Kroira.App.Kroira_App_XamlTypeInfo.XamlUserType)GetXamlTypeByName("Microsoft.UI.Xaml.Controls.RadioButtons");
                 xamlMember = new global::Kroira.App.Kroira_App_XamlTypeInfo.XamlMember(this, "ItemTemplate", "Object");
                 xamlMember.SetIsDependencyProperty();
-                xamlMember.Getter = get_63_RadioButtons_ItemTemplate;
-                xamlMember.Setter = set_63_RadioButtons_ItemTemplate;
+                xamlMember.Getter = get_64_RadioButtons_ItemTemplate;
+                xamlMember.Setter = set_64_RadioButtons_ItemTemplate;
                 break;
             case "Microsoft.UI.Xaml.Controls.RadioButtons.ItemsSource":
                 userType = (global::Kroira.App.Kroira_App_XamlTypeInfo.XamlUserType)GetXamlTypeByName("Microsoft.UI.Xaml.Controls.RadioButtons");
                 xamlMember = new global::Kroira.App.Kroira_App_XamlTypeInfo.XamlMember(this, "ItemsSource", "Object");
                 xamlMember.SetIsDependencyProperty();
-                xamlMember.Getter = get_64_RadioButtons_ItemsSource;
-                xamlMember.Setter = set_64_RadioButtons_ItemsSource;
+                xamlMember.Getter = get_65_RadioButtons_ItemsSource;
+                xamlMember.Setter = set_65_RadioButtons_ItemsSource;
                 break;
             case "Microsoft.UI.Xaml.Controls.RadioButtons.MaxColumns":
                 userType = (global::Kroira.App.Kroira_App_XamlTypeInfo.XamlUserType)GetXamlTypeByName("Microsoft.UI.Xaml.Controls.RadioButtons");
                 xamlMember = new global::Kroira.App.Kroira_App_XamlTypeInfo.XamlMember(this, "MaxColumns", "Int32");
                 xamlMember.SetIsDependencyProperty();
-                xamlMember.Getter = get_65_RadioButtons_MaxColumns;
-                xamlMember.Setter = set_65_RadioButtons_MaxColumns;
+                xamlMember.Getter = get_66_RadioButtons_MaxColumns;
+                xamlMember.Setter = set_66_RadioButtons_MaxColumns;
                 break;
             case "Microsoft.UI.Xaml.Controls.RadioButtons.SelectedItem":
                 userType = (global::Kroira.App.Kroira_App_XamlTypeInfo.XamlUserType)GetXamlTypeByName("Microsoft.UI.Xaml.Controls.RadioButtons");
                 xamlMember = new global::Kroira.App.Kroira_App_XamlTypeInfo.XamlMember(this, "SelectedItem", "Object");
                 xamlMember.SetIsDependencyProperty();
-                xamlMember.Getter = get_66_RadioButtons_SelectedItem;
-                xamlMember.Setter = set_66_RadioButtons_SelectedItem;
+                xamlMember.Getter = get_67_RadioButtons_SelectedItem;
+                xamlMember.Setter = set_67_RadioButtons_SelectedItem;
                 break;
             case "Kroira.App.Views.SourceOnboardingPage.ViewModel":
                 userType = (global::Kroira.App.Kroira_App_XamlTypeInfo.XamlUserType)GetXamlTypeByName("Kroira.App.Views.SourceOnboardingPage");
                 xamlMember = new global::Kroira.App.Kroira_App_XamlTypeInfo.XamlMember(this, "ViewModel", "Kroira.App.ViewModels.SourceOnboardingViewModel");
-                xamlMember.Getter = get_67_SourceOnboardingPage_ViewModel;
+                xamlMember.Getter = get_68_SourceOnboardingPage_ViewModel;
                 xamlMember.SetIsReadOnly();
                 break;
             case "Microsoft.UI.Xaml.Controls.TreeViewNode.Children":
                 userType = (global::Kroira.App.Kroira_App_XamlTypeInfo.XamlUserType)GetXamlTypeByName("Microsoft.UI.Xaml.Controls.TreeViewNode");
                 xamlMember = new global::Kroira.App.Kroira_App_XamlTypeInfo.XamlMember(this, "Children", "System.Collections.Generic.IList`1<Microsoft.UI.Xaml.Controls.TreeViewNode>");
-                xamlMember.Getter = get_68_TreeViewNode_Children;
+                xamlMember.Getter = get_69_TreeViewNode_Children;
                 xamlMember.SetIsReadOnly();
                 break;
             case "Microsoft.UI.Xaml.Controls.TreeViewNode.Content":
                 userType = (global::Kroira.App.Kroira_App_XamlTypeInfo.XamlUserType)GetXamlTypeByName("Microsoft.UI.Xaml.Controls.TreeViewNode");
                 xamlMember = new global::Kroira.App.Kroira_App_XamlTypeInfo.XamlMember(this, "Content", "Object");
                 xamlMember.SetIsDependencyProperty();
-                xamlMember.Getter = get_69_TreeViewNode_Content;
-                xamlMember.Setter = set_69_TreeViewNode_Content;
+                xamlMember.Getter = get_70_TreeViewNode_Content;
+                xamlMember.Setter = set_70_TreeViewNode_Content;
                 break;
             case "Microsoft.UI.Xaml.Controls.TreeViewNode.Depth":
                 userType = (global::Kroira.App.Kroira_App_XamlTypeInfo.XamlUserType)GetXamlTypeByName("Microsoft.UI.Xaml.Controls.TreeViewNode");
                 xamlMember = new global::Kroira.App.Kroira_App_XamlTypeInfo.XamlMember(this, "Depth", "Int32");
                 xamlMember.SetIsDependencyProperty();
-                xamlMember.Getter = get_70_TreeViewNode_Depth;
+                xamlMember.Getter = get_71_TreeViewNode_Depth;
                 xamlMember.SetIsReadOnly();
                 break;
             case "Microsoft.UI.Xaml.Controls.TreeViewNode.HasChildren":
                 userType = (global::Kroira.App.Kroira_App_XamlTypeInfo.XamlUserType)GetXamlTypeByName("Microsoft.UI.Xaml.Controls.TreeViewNode");
                 xamlMember = new global::Kroira.App.Kroira_App_XamlTypeInfo.XamlMember(this, "HasChildren", "Boolean");
                 xamlMember.SetIsDependencyProperty();
-                xamlMember.Getter = get_71_TreeViewNode_HasChildren;
+                xamlMember.Getter = get_72_TreeViewNode_HasChildren;
                 xamlMember.SetIsReadOnly();
                 break;
             case "Microsoft.UI.Xaml.Controls.TreeViewNode.HasUnrealizedChildren":
                 userType = (global::Kroira.App.Kroira_App_XamlTypeInfo.XamlUserType)GetXamlTypeByName("Microsoft.UI.Xaml.Controls.TreeViewNode");
                 xamlMember = new global::Kroira.App.Kroira_App_XamlTypeInfo.XamlMember(this, "HasUnrealizedChildren", "Boolean");
-                xamlMember.Getter = get_72_TreeViewNode_HasUnrealizedChildren;
-                xamlMember.Setter = set_72_TreeViewNode_HasUnrealizedChildren;
+                xamlMember.Getter = get_73_TreeViewNode_HasUnrealizedChildren;
+                xamlMember.Setter = set_73_TreeViewNode_HasUnrealizedChildren;
                 break;
             case "Microsoft.UI.Xaml.Controls.TreeViewNode.IsExpanded":
                 userType = (global::Kroira.App.Kroira_App_XamlTypeInfo.XamlUserType)GetXamlTypeByName("Microsoft.UI.Xaml.Controls.TreeViewNode");
                 xamlMember = new global::Kroira.App.Kroira_App_XamlTypeInfo.XamlMember(this, "IsExpanded", "Boolean");
                 xamlMember.SetIsDependencyProperty();
-                xamlMember.Getter = get_73_TreeViewNode_IsExpanded;
-                xamlMember.Setter = set_73_TreeViewNode_IsExpanded;
+                xamlMember.Getter = get_74_TreeViewNode_IsExpanded;
+                xamlMember.Setter = set_74_TreeViewNode_IsExpanded;
                 break;
             case "Microsoft.UI.Xaml.Controls.TreeViewNode.Parent":
                 userType = (global::Kroira.App.Kroira_App_XamlTypeInfo.XamlUserType)GetXamlTypeByName("Microsoft.UI.Xaml.Controls.TreeViewNode");
                 xamlMember = new global::Kroira.App.Kroira_App_XamlTypeInfo.XamlMember(this, "Parent", "Microsoft.UI.Xaml.Controls.TreeViewNode");
-                xamlMember.Getter = get_74_TreeViewNode_Parent;
+                xamlMember.Getter = get_75_TreeViewNode_Parent;
                 xamlMember.SetIsReadOnly();
                 break;
             }

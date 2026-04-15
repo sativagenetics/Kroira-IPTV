@@ -114,8 +114,35 @@ namespace Kroira.App.ViewModels
                     await db.SaveChangesAsync();
                     await transaction.CommitAsync();
 
-                    StatusMessage = "Source saved successfully!";
-                    
+                    int savedId = profile.Id;
+                    bool isM3u = profile.Type == SourceType.M3U;
+
+                    StatusMessage = "Source saved. Importing...";
+
+                    // Auto-import after save so user doesn't need a separate manual step
+                    try
+                    {
+                        using var importScope = _serviceProvider.CreateScope();
+                        var importDb = importScope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+                        if (isM3u)
+                        {
+                            var m3uParser = importScope.ServiceProvider.GetRequiredService<Kroira.App.Services.Parsing.IM3uParserService>();
+                            await m3uParser.ParseAndImportM3uAsync(importDb, savedId);
+                        }
+                        else
+                        {
+                            var xtreamParser = importScope.ServiceProvider.GetRequiredService<Kroira.App.Services.Parsing.IXtreamParserService>();
+                            await xtreamParser.ParseAndImportXtreamAsync(importDb, savedId);
+                        }
+
+                        StatusMessage = "Source saved and imported successfully!";
+                    }
+                    catch (Exception importEx)
+                    {
+                        StatusMessage = $"Source saved, but import failed: {importEx.Message}";
+                    }
+
                     SourceName = string.Empty;
                     M3uUrlOrPath = string.Empty;
                     EpgUrl = string.Empty;

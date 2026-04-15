@@ -425,6 +425,7 @@ C:\Users\SATIVA\Desktop\stream\src\Kroira.App\bin\x64\Debug\net8.0-windows10.0.1
 C:\Users\SATIVA\Desktop\stream\src\Kroira.App\bin\x64\Debug\net8.0-windows10.0.19041.0\win-x64\App.xbf
 C:\Users\SATIVA\Desktop\stream\src\Kroira.App\bin\x64\Debug\net8.0-windows10.0.19041.0\win-x64\MainWindow.xbf
 C:\Users\SATIVA\Desktop\stream\src\Kroira.App\bin\x64\Debug\net8.0-windows10.0.19041.0\win-x64\Views\ChannelBrowserPage.xbf
+C:\Users\SATIVA\Desktop\stream\src\Kroira.App\bin\x64\Debug\net8.0-windows10.0.19041.0\win-x64\Views\ChannelsPage.xbf
 C:\Users\SATIVA\Desktop\stream\src\Kroira.App\bin\x64\Debug\net8.0-windows10.0.19041.0\win-x64\Views\ContinueWatchingPage.xbf
 C:\Users\SATIVA\Desktop\stream\src\Kroira.App\bin\x64\Debug\net8.0-windows10.0.19041.0\win-x64\Views\DevPlaybackPage.xbf
 C:\Users\SATIVA\Desktop\stream\src\Kroira.App\bin\x64\Debug\net8.0-windows10.0.19041.0\win-x64\Views\FavoritesPage.xbf
@@ -574,6 +575,8 @@ C:\Users\SATIVA\Desktop\stream\src\Kroira.App\obj\x64\Debug\net8.0-windows10.0.1
 C:\Users\SATIVA\Desktop\stream\src\Kroira.App\obj\x64\Debug\net8.0-windows10.0.19041.0\win-x64\MainWindow.g.cs
 C:\Users\SATIVA\Desktop\stream\src\Kroira.App\obj\x64\Debug\net8.0-windows10.0.19041.0\win-x64\Views\ChannelBrowserPage.g.i.cs
 C:\Users\SATIVA\Desktop\stream\src\Kroira.App\obj\x64\Debug\net8.0-windows10.0.19041.0\win-x64\Views\ChannelBrowserPage.g.cs
+C:\Users\SATIVA\Desktop\stream\src\Kroira.App\obj\x64\Debug\net8.0-windows10.0.19041.0\win-x64\Views\ChannelsPage.g.i.cs
+C:\Users\SATIVA\Desktop\stream\src\Kroira.App\obj\x64\Debug\net8.0-windows10.0.19041.0\win-x64\Views\ChannelsPage.g.cs
 C:\Users\SATIVA\Desktop\stream\src\Kroira.App\obj\x64\Debug\net8.0-windows10.0.19041.0\win-x64\Views\ContinueWatchingPage.g.i.cs
 C:\Users\SATIVA\Desktop\stream\src\Kroira.App\obj\x64\Debug\net8.0-windows10.0.19041.0\win-x64\Views\ContinueWatchingPage.g.cs
 C:\Users\SATIVA\Desktop\stream\src\Kroira.App\obj\x64\Debug\net8.0-windows10.0.19041.0\win-x64\Views\DevPlaybackPage.g.i.cs
@@ -594,6 +597,7 @@ C:\Users\SATIVA\Desktop\stream\src\Kroira.App\obj\x64\Debug\net8.0-windows10.0.1
 C:\Users\SATIVA\Desktop\stream\src\Kroira.App\obj\x64\Debug\net8.0-windows10.0.19041.0\win-x64\App.xaml
 C:\Users\SATIVA\Desktop\stream\src\Kroira.App\obj\x64\Debug\net8.0-windows10.0.19041.0\win-x64\MainWindow.xaml
 C:\Users\SATIVA\Desktop\stream\src\Kroira.App\obj\x64\Debug\net8.0-windows10.0.19041.0\win-x64\Views\ChannelBrowserPage.xaml
+C:\Users\SATIVA\Desktop\stream\src\Kroira.App\obj\x64\Debug\net8.0-windows10.0.19041.0\win-x64\Views\ChannelsPage.xaml
 C:\Users\SATIVA\Desktop\stream\src\Kroira.App\obj\x64\Debug\net8.0-windows10.0.19041.0\win-x64\Views\ContinueWatchingPage.xaml
 C:\Users\SATIVA\Desktop\stream\src\Kroira.App\obj\x64\Debug\net8.0-windows10.0.19041.0\win-x64\Views\DevPlaybackPage.xaml
 C:\Users\SATIVA\Desktop\stream\src\Kroira.App\obj\x64\Debug\net8.0-windows10.0.19041.0\win-x64\Views\FavoritesPage.xaml
@@ -605,6 +609,7 @@ C:\Users\SATIVA\Desktop\stream\src\Kroira.App\obj\x64\Debug\net8.0-windows10.0.1
 C:\Users\SATIVA\Desktop\stream\src\Kroira.App\obj\x64\Debug\net8.0-windows10.0.19041.0\win-x64\App.xbf
 C:\Users\SATIVA\Desktop\stream\src\Kroira.App\obj\x64\Debug\net8.0-windows10.0.19041.0\win-x64\MainWindow.xbf
 C:\Users\SATIVA\Desktop\stream\src\Kroira.App\obj\x64\Debug\net8.0-windows10.0.19041.0\win-x64\Views\ChannelBrowserPage.xbf
+C:\Users\SATIVA\Desktop\stream\src\Kroira.App\obj\x64\Debug\net8.0-windows10.0.19041.0\win-x64\Views\ChannelsPage.xbf
 C:\Users\SATIVA\Desktop\stream\src\Kroira.App\obj\x64\Debug\net8.0-windows10.0.19041.0\win-x64\Views\ContinueWatchingPage.xbf
 C:\Users\SATIVA\Desktop\stream\src\Kroira.App\obj\x64\Debug\net8.0-windows10.0.19041.0\win-x64\Views\DevPlaybackPage.xbf
 C:\Users\SATIVA\Desktop\stream\src\Kroira.App\obj\x64\Debug\net8.0-windows10.0.19041.0\win-x64\Views\FavoritesPage.xbf

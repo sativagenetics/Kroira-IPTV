@@ -1,6 +1,7 @@
 App.xbf
 MainWindow.xbf
 Views\ChannelBrowserPage.xbf
+Views\ChannelsPage.xbf
 Views\ContinueWatchingPage.xbf
 Views\DevPlaybackPage.xbf
 Views\FavoritesPage.xbf

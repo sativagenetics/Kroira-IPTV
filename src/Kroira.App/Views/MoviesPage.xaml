@@ -15,6 +15,10 @@
             <TextBox Text="{x:Bind ViewModel.SearchQuery, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="Search movies..." MaxWidth="400" HorizontalAlignment="Left" />
         </StackPanel>
 
+        <TextBlock Grid.Row="1" x:Name="EmptyMoviesText" Text="No movies imported yet. Sync an Xtream VOD source to get started."
+                   Visibility="{x:Bind ViewModel.IsEmpty, Mode=OneWay}"
+                   Style="{ThemeResource BodyTextBlockStyle}" Foreground="Gray"
+                   HorizontalAlignment="Center" VerticalAlignment="Center" />
         <GridView Grid.Row="1" ItemsSource="{x:Bind ViewModel.FilteredMovies, Mode=OneWay}" SelectionMode="Single" SelectionChanged="GridView_SelectionChanged">
             <GridView.ItemTemplate>
                 <DataTemplate>

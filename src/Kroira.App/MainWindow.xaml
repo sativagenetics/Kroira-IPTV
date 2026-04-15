@@ -11,12 +11,12 @@
         <NavigationView x:Name="RootNavView" ItemInvoked="RootNavView_ItemInvoked">
             <NavigationView.MenuItems>
                 <NavigationViewItem Icon="Home" Content="Home" Tag="Home" />
+                <NavigationViewItem Icon="Video" Content="Channels" Tag="Channels" />
                 <NavigationViewItem Icon="OutlineStar" Content="Favorites" Tag="Favorites" />
                 <NavigationViewItem Icon="Play" Content="Continue Watching" Tag="ContinueWatching" />
                 <NavigationViewItem Icon="Video" Content="Movies" Tag="Movies" />
                 <NavigationViewItem Icon="DockLeft" Content="Series" Tag="Series" />
                 <NavigationViewItem Icon="Library" Content="Sources" Tag="Sources" />
-                <NavigationViewItem Icon="Play" Content="Dev Player" Tag="DevPlayer" />
             </NavigationView.MenuItems>
             <Frame x:Name="ContentFrame">
                 <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="20">

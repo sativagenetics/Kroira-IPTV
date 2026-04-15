@@ -30,9 +30,9 @@ namespace Kroira.App
             {
                 ContentFrame.Navigate(typeof(Views.SourceListPage));
             }
-            else if (args.InvokedItemContainer?.Tag?.ToString() == "DevPlayer")
+            else if (args.InvokedItemContainer?.Tag?.ToString() == "Channels")
             {
-                ContentFrame.Navigate(typeof(Views.DevPlaybackPage));
+                ContentFrame.Navigate(typeof(Views.ChannelsPage));
             }
             else if (args.InvokedItemContainer?.Tag?.ToString() == "Home")
             {
