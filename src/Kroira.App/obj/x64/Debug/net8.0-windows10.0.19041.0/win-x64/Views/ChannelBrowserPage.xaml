@@ -12,7 +12,7 @@
 
         <StackPanel Grid.Row="0" Margin="0,0,0,16" Spacing="16">
             <StackPanel Orientation="Horizontal" Spacing="12">
-                <Button x:ConnectionId='6' Content="Back"                    />
+                <Button x:ConnectionId='7' Content="Back"                    />
                 <TextBlock Text="Browser" Style="{ThemeResource TitleTextBlockStyle}" VerticalAlignment="Center"/>
             </StackPanel>
 
@@ -22,8 +22,8 @@
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
 
-                <ComboBox x:ConnectionId='4' Grid.Column="0"                                                                                                                          DisplayMemberPath="Name" HorizontalAlignment="Stretch" />
-                <TextBox x:ConnectionId='5' Grid.Column="1" PlaceholderText="Search Channels..."                                                                                         />
+                <ComboBox x:ConnectionId='5' Grid.Column="0"                                                                                                                          DisplayMemberPath="Name" HorizontalAlignment="Stretch" />
+                <TextBox x:ConnectionId='6' Grid.Column="1" PlaceholderText="Search Channels..."                                                                                         />
             </Grid>
         </StackPanel>
 
@@ -34,9 +34,11 @@
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="64" />
                             <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
                         <Image Grid.Column="0" Source="{Binding LogoUrl}" Stretch="Uniform" Margin="0,0,8,0" />
                         <TextBlock Grid.Column="1" Text="{Binding Name}" VerticalAlignment="Center" TextWrapping="Wrap" MaxLines="2" FontWeight="SemiBold" FontSize="14" />
+                        <Button x:ConnectionId='4' Grid.Column="2" Content="{Binding FavoriteIcon}" Tag="{Binding Id}"                              Background="Transparent" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" BorderThickness="0" FontSize="18" Padding="0,0,0,0" VerticalAlignment="Top" />
                     </Grid>
                 </DataTemplate>
             </GridView.ItemTemplate>

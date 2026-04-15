@@ -51,6 +51,7 @@ namespace Kroira.App
             services.AddTransient<SourceOnboardingViewModel>();
             services.AddTransient<SourceListViewModel>();
             services.AddTransient<ChannelBrowserViewModel>();
+            services.AddTransient<FavoritesViewModel>();
 
             // Foundation Infrastructure
             services.AddSingleton<IEntitlementService, MockEntitlementService>();

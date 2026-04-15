@@ -34,9 +34,11 @@
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="64" />
                             <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
                         <Image Grid.Column="0" Source="{Binding LogoUrl}" Stretch="Uniform" Margin="0,0,8,0" />
                         <TextBlock Grid.Column="1" Text="{Binding Name}" VerticalAlignment="Center" TextWrapping="Wrap" MaxLines="2" FontWeight="SemiBold" FontSize="14" />
+                        <Button Grid.Column="2" Content="{Binding FavoriteIcon}" Tag="{Binding Id}" Click="FavoriteToggle_Click" Background="Transparent" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" BorderThickness="0" FontSize="18" Padding="0,0,0,0" VerticalAlignment="Top" />
                     </Grid>
                 </DataTemplate>
             </GridView.ItemTemplate>

@@ -6,23 +6,20 @@ using Microsoft.UI.Xaml.Navigation;
 
 namespace Kroira.App.Views
 {
-    public sealed partial class ChannelBrowserPage : Page
+    public sealed partial class FavoritesPage : Page
     {
-        public ChannelBrowserViewModel ViewModel { get; }
+        public FavoritesViewModel ViewModel { get; }
 
-        public ChannelBrowserPage()
+        public FavoritesPage()
         {
             this.InitializeComponent();
-            ViewModel = ((App)Application.Current).Services.GetRequiredService<ChannelBrowserViewModel>();
+            ViewModel = ((App)Application.Current).Services.GetRequiredService<FavoritesViewModel>();
         }
 
-        protected override async void OnNavigatedTo(NavigationEventArgs e)
+        protected override void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
-            if (e.Parameter is int sourceId)
-            {
-                await ViewModel.LoadSourceAsync(sourceId);
-            }
+            ViewModel.LoadFavoritesCommand.Execute(null);
         }
 
         private void ChannelList_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -34,19 +31,10 @@ namespace Kroira.App.Views
                     this.Frame.Navigate(typeof(DevPlaybackPage), channel.StreamUrl);
                 }
             }
-            
             ((GridView)sender).SelectedItem = null;
         }
 
-        private void Back_Click(object sender, RoutedEventArgs e)
-        {
-            if (this.Frame.CanGoBack)
-            {
-                this.Frame.GoBack();
-            }
-        }
-
-        private void FavoriteToggle_Click(object sender, RoutedEventArgs e)
+        private void RemoveFavorite_Click(object sender, RoutedEventArgs e)
         {
             if (sender is Button btn && btn.Tag is int id)
             {

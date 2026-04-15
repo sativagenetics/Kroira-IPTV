@@ -38,6 +38,10 @@ namespace Kroira.App
             {
                 ContentFrame.Content = _homeContent;
             }
+            else if (args.InvokedItemContainer?.Tag?.ToString() == "Favorites")
+            {
+                ContentFrame.Navigate(typeof(Views.FavoritesPage));
+            }
         }
     }
 }

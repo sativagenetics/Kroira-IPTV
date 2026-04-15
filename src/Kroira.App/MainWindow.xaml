@@ -11,6 +11,7 @@
         <NavigationView x:Name="RootNavView" ItemInvoked="RootNavView_ItemInvoked">
             <NavigationView.MenuItems>
                 <NavigationViewItem Icon="Home" Content="Home" Tag="Home" />
+                <NavigationViewItem Icon="OutlineStar" Content="Favorites" Tag="Favorites" />
                 <NavigationViewItem Icon="Library" Content="Sources" Tag="Sources" />
                 <NavigationViewItem Icon="Play" Content="Dev Player" Tag="DevPlayer" />
             </NavigationView.MenuItems>

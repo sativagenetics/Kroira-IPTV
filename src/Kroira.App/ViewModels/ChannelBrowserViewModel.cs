@@ -7,6 +7,7 @@ using System;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
+using Kroira.App.Models;
 
 namespace Kroira.App.ViewModels
 {
@@ -24,6 +25,12 @@ namespace Kroira.App.ViewModels
         public string Name { get; set; } = string.Empty;
         public string StreamUrl { get; set; } = string.Empty;
         public string LogoUrl { get; set; } = string.Empty;
+
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(FavoriteIcon))]
+        private bool _isFavorite;
+
+        public string FavoriteIcon => IsFavorite ? "★" : "☆";
     }
 
     public partial class ChannelBrowserViewModel : ObservableObject
@@ -66,6 +73,11 @@ namespace Kroira.App.ViewModels
                 .Where(ch => catIds.Contains(ch.ChannelCategoryId))
                 .ToListAsync();
 
+            var favIds = await db.Favorites
+                .Where(f => f.ContentType == FavoriteType.Channel)
+                .Select(f => f.ContentId)
+                .ToListAsync();
+
             Categories.Add(new BrowserCategoryViewModel { Id = 0, Name = "All Categories", OrderIndex = -1 });
 
             foreach (var c in cats)
@@ -86,7 +98,8 @@ namespace Kroira.App.ViewModels
                     CategoryId = ch.ChannelCategoryId,
                     Name = ch.Name,
                     StreamUrl = ch.StreamUrl,
-                    LogoUrl = ch.LogoUrl ?? string.Empty
+                    LogoUrl = ch.LogoUrl ?? string.Empty,
+                    IsFavorite = favIds.Contains(ch.Id)
                 });
             }
 
@@ -122,6 +135,35 @@ namespace Kroira.App.ViewModels
             foreach (var ch in query)
             {
                 DisplayedChannels.Add(ch);
+            }
+        }
+
+        [RelayCommand]
+        public async Task ToggleFavoriteAsync(int channelId)
+        {
+            var target = DisplayedChannels.FirstOrDefault(c => c.Id == channelId);
+            if (target != null)
+            {
+                using var scope = _serviceProvider.CreateScope();
+                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+                if (target.IsFavorite)
+                {
+                    var fav = await db.Favorites.FirstOrDefaultAsync(f => f.ContentType == FavoriteType.Channel && f.ContentId == channelId);
+                    if (fav != null)
+                    {
+                        db.Favorites.Remove(fav);
+                        await db.SaveChangesAsync();
+                    }
+                    target.IsFavorite = false;
+                }
+                else
+                {
+                    var fav = new Favorite { ContentType = FavoriteType.Channel, ContentId = channelId };
+                    db.Favorites.Add(fav);
+                    await db.SaveChangesAsync();
+                    target.IsFavorite = true;
+                }
             }
         }
     }
