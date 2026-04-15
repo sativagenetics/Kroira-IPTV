@@ -473,7 +473,15 @@ namespace Kroira.App.Services.Parsing
                                         .Where(e => !string.IsNullOrEmpty(e.ExternalId) &&
                                                     !incomingEpExternalIds.Contains(e.ExternalId))
                                         .ToList();
-                                    if (staleEps.Count > 0) db.Episodes.RemoveRange(staleEps);
+                                    if (staleEps.Count > 0)
+                                    {
+                                        var staleEpIds = staleEps.Select(e => e.Id).ToList();
+                                        var staleEpProgress = await db.PlaybackProgresses
+                                            .Where(p => p.ContentType == PlaybackContentType.Episode && staleEpIds.Contains(p.ContentId))
+                                            .ToListAsync();
+                                        db.PlaybackProgresses.RemoveRange(staleEpProgress);
+                                        db.Episodes.RemoveRange(staleEps);
+                                    }
 
                                     // Orphan episodes (no ExternalId, pre-migration)
                                     var orphanEps = (existingSeason.Episodes ?? Enumerable.Empty<Episode>())
