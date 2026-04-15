@@ -228,6 +228,7 @@ namespace Kroira.App.Services.Parsing
                         parsedMovies.Add(new Movie
                         {
                             SourceProfileId = sourceProfileId,
+                            ExternalId = streamId,
                             Title = string.IsNullOrWhiteSpace(name) ? "Unknown Movie" : name,
                             StreamUrl = $"{baseUrl}/movie/{cred.Username}/{cred.Password}/{streamId}.{ext}",
                             PosterUrl = logo ?? string.Empty,
@@ -279,6 +280,7 @@ namespace Kroira.App.Services.Parsing
                         pendingSeries.Add((seriesId, new Series
                         {
                             SourceProfileId = sourceProfileId,
+                            ExternalId = seriesId,
                             Title = string.IsNullOrWhiteSpace(name) ? "Unknown Series" : name,
                             PosterUrl = cover ?? string.Empty,
                             CategoryName = mappedCatName ?? "Uncategorized",
@@ -348,36 +350,147 @@ namespace Kroira.App.Services.Parsing
                 using var transaction = await db.Database.BeginTransactionAsync();
                 try
                 {
-                    var oldMovies = await db.Movies.Where(m => m.SourceProfileId == sourceProfileId).ToListAsync();
-                    var oldFavMov = await db.Favorites.Where(f => f.ContentType == FavoriteType.Movie && oldMovies.Select(m => m.Id).Contains(f.ContentId)).ToListAsync();
-                    db.Favorites.RemoveRange(oldFavMov);
-                    db.Movies.RemoveRange(oldMovies);
+                    // ── MOVIES UPSERT ────────────────────────────────────────────────────────
+                    // Load existing movies for this source keyed by ExternalId
+                    var existingMovies = await db.Movies
+                        .Where(m => m.SourceProfileId == sourceProfileId)
+                        .ToListAsync();
+                    var existingMovieMap = existingMovies
+                        .Where(m => !string.IsNullOrEmpty(m.ExternalId))
+                        .ToDictionary(m => m.ExternalId);
 
-                    var oldSeries = await db.Series.Include(s => s.Seasons!).ThenInclude(sn => sn.Episodes!).Where(s => s.SourceProfileId == sourceProfileId).ToListAsync();
-                    var oldSerFav = await db.Favorites.Where(f => f.ContentType == FavoriteType.Series && oldSeries.Select(s => s.Id).Contains(f.ContentId)).ToListAsync();
-                    db.Favorites.RemoveRange(oldSerFav);
+                    var incomingMovieIds = new HashSet<string>(parsedMovies.Select(p => p.ExternalId));
 
-                    foreach (var ser in oldSeries)
+                    // Update or insert
+                    int movInserted = 0, movUpdated = 0;
+                    foreach (var incoming in parsedMovies)
                     {
-                        if (ser.Seasons != null)
+                        if (existingMovieMap.TryGetValue(incoming.ExternalId, out var existing))
                         {
-                            foreach (var sn in ser.Seasons)
-                            {
-                                if (sn.Episodes != null) db.Episodes.RemoveRange(sn.Episodes);
-                            }
-                            db.Seasons.RemoveRange(ser.Seasons);
+                            // UPDATE in place — Id stays the same, favorites/progress survive
+                            existing.Title        = incoming.Title;
+                            existing.StreamUrl    = incoming.StreamUrl;
+                            existing.PosterUrl    = incoming.PosterUrl;
+                            existing.CategoryName = incoming.CategoryName;
+                            movUpdated++;
+                        }
+                        else
+                        {
+                            db.Movies.Add(incoming);
+                            movInserted++;
                         }
                     }
-                    db.Series.RemoveRange(oldSeries);
+
+                    // Delete movies no longer in feed (also clean up their favorites/progress)
+                    var staleMovies = existingMovies
+                        .Where(m => !string.IsNullOrEmpty(m.ExternalId) && !incomingMovieIds.Contains(m.ExternalId))
+                        .ToList();
+                    if (staleMovies.Count > 0)
+                    {
+                        var staleIds = staleMovies.Select(m => m.Id).ToList();
+                        var staleFavs = await db.Favorites
+                            .Where(f => f.ContentType == FavoriteType.Movie && staleIds.Contains(f.ContentId))
+                            .ToListAsync();
+                        db.Favorites.RemoveRange(staleFavs);
+                        var staleProgress = await db.PlaybackProgresses
+                            .Where(p => p.ContentType == PlaybackContentType.Movie && staleIds.Contains(p.ContentId))
+                            .ToListAsync();
+                        db.PlaybackProgresses.RemoveRange(staleProgress);
+                        db.Movies.RemoveRange(staleMovies);
+                    }
+
+                    // Orphaned movies (no ExternalId from before this migration) — delete safely
+                    var orphanMovies = existingMovies
+                        .Where(m => string.IsNullOrEmpty(m.ExternalId))
+                        .ToList();
+                    if (orphanMovies.Count > 0)
+                        db.Movies.RemoveRange(orphanMovies);
+
                     await db.SaveChangesAsync();
 
-                    db.Movies.AddRange(parsedMovies);
-                    // Filter series that ended up with zero episodes (no real content fetched)
-                    var validSeries = limitedSeries
+                    // ── SERIES UPSERT ────────────────────────────────────────────────────────
+                    var validSeriesInfos = limitedSeries
                         .Where(s => s.BaseObj.Seasons != null && s.BaseObj.Seasons.Any(sn => sn.Episodes != null && sn.Episodes.Count > 0))
-                        .Select(s => s.BaseObj)
                         .ToList();
-                    db.Series.AddRange(validSeries);
+
+                    var existingSeries = await db.Series
+                        .Include(s => s.Seasons!).ThenInclude(sn => sn.Episodes!)
+                        .Where(s => s.SourceProfileId == sourceProfileId)
+                        .ToListAsync();
+                    var existingSeriesMap = existingSeries
+                        .Where(s => !string.IsNullOrEmpty(s.ExternalId))
+                        .ToDictionary(s => s.ExternalId);
+
+                    var incomingSeriesIds = new HashSet<string>(validSeriesInfos.Select(s => s.SeriesId));
+
+                    int serInserted = 0, serUpdated = 0;
+                    foreach (var sInfo in validSeriesInfos)
+                    {
+                        if (existingSeriesMap.TryGetValue(sInfo.SeriesId, out var existingSer))
+                        {
+                            // UPDATE metadata in place — Id stays the same
+                            existingSer.Title        = sInfo.BaseObj.Title;
+                            existingSer.PosterUrl    = sInfo.BaseObj.PosterUrl;
+                            existingSer.CategoryName = sInfo.BaseObj.CategoryName;
+
+                            // Rebuild seasons/episodes (they don't have a stable external key)
+                            if (existingSer.Seasons != null)
+                            {
+                                foreach (var sn in existingSer.Seasons)
+                                    if (sn.Episodes != null) db.Episodes.RemoveRange(sn.Episodes);
+                                db.Seasons.RemoveRange(existingSer.Seasons);
+                            }
+                            existingSer.Seasons = sInfo.BaseObj.Seasons;
+                            serUpdated++;
+                        }
+                        else
+                        {
+                            db.Series.Add(sInfo.BaseObj);
+                            serInserted++;
+                        }
+                    }
+
+                    // Delete series no longer in feed
+                    var staleSeries = existingSeries
+                        .Where(s => !string.IsNullOrEmpty(s.ExternalId) && !incomingSeriesIds.Contains(s.ExternalId))
+                        .ToList();
+                    if (staleSeries.Count > 0)
+                    {
+                        var staleSerIds = staleSeries.Select(s => s.Id).ToList();
+                        var staleSerFavs = await db.Favorites
+                            .Where(f => f.ContentType == FavoriteType.Series && staleSerIds.Contains(f.ContentId))
+                            .ToListAsync();
+                        db.Favorites.RemoveRange(staleSerFavs);
+                        foreach (var ser in staleSeries)
+                        {
+                            if (ser.Seasons != null)
+                            {
+                                foreach (var sn in ser.Seasons)
+                                    if (sn.Episodes != null) db.Episodes.RemoveRange(sn.Episodes);
+                                db.Seasons.RemoveRange(ser.Seasons);
+                            }
+                        }
+                        db.Series.RemoveRange(staleSeries);
+                    }
+
+                    // Orphaned series (no ExternalId)
+                    var orphanSeries = existingSeries
+                        .Where(s => string.IsNullOrEmpty(s.ExternalId))
+                        .ToList();
+                    if (orphanSeries.Count > 0)
+                    {
+                        foreach (var ser in orphanSeries)
+                        {
+                            if (ser.Seasons != null)
+                            {
+                                foreach (var sn in ser.Seasons)
+                                    if (sn.Episodes != null) db.Episodes.RemoveRange(sn.Episodes);
+                                db.Seasons.RemoveRange(ser.Seasons);
+                            }
+                        }
+                        db.Series.RemoveRange(orphanSeries);
+                    }
+
                     await db.SaveChangesAsync();
 
                     var syncState = await db.SourceSyncStates.FirstOrDefaultAsync(s => s.SourceProfileId == sourceProfileId);
@@ -385,9 +498,9 @@ namespace Kroira.App.Services.Parsing
                     {
                         syncState.LastAttempt = DateTime.UtcNow;
                         syncState.HttpStatusCode = 200;
-                        syncState.ErrorLog = $"Xtream VOD Sync: Imported {parsedMovies.Count} movies and {validSeries.Count} series.";
+                        syncState.ErrorLog = $"Xtream VOD Sync: movies +{movInserted}/~{movUpdated}, series +{serInserted}/~{serUpdated}.";
                     }
-                    
+
                     profile.LastSync = DateTime.UtcNow;
 
                     await db.SaveChangesAsync();
