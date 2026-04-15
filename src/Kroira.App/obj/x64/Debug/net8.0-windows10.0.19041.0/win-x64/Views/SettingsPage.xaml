@@ -1,0 +1,30 @@
+﻿<Page x:ConnectionId='1'
+    x:Class="Kroira.App.Views.SettingsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+
+    <StackPanel Padding="30" Spacing="20">
+        <TextBlock Text="Settings" Style="{ThemeResource TitleTextBlockStyle}" />
+        <TextBlock Text="Licensing Details" Style="{ThemeResource SubtitleTextBlockStyle}" />
+        
+        <Border Background="{ThemeResource SystemControlBackgroundChromeMediumBrush}" Padding="20" CornerRadius="8" HorizontalAlignment="Left">
+            <StackPanel Spacing="10">
+                <TextBlock Text="Current Tier:" FontWeight="SemiBold" />
+                
+                <Grid>
+                    <TextBlock x:ConnectionId='4' Text="KROIRA PRO" Foreground="LimeGreen" FontWeight="Bold" FontSize="20"                                                                />
+                    <TextBlock x:ConnectionId='5' Text="KROIRA FREE" Foreground="LightSkyBlue" FontWeight="Bold" FontSize="20"                                                                 />
+                </Grid>
+                
+                <TextBlock x:ConnectionId='2'                                                                 TextWrapping="Wrap" MaxWidth="600" Margin="0,10,0,20" />
+
+                <Button x:ConnectionId='3' Content="Upgrade to Pro" 
+                                                                    
+                                                                                       
+                        Style="{ThemeResource AccentButtonStyle}"/>
+            </StackPanel>
+        </Border>
+    </StackPanel>
+</Page>
+

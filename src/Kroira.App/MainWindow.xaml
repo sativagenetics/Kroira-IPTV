@@ -1,0 +1,28 @@
+<Window
+    x:Class="Kroira.App.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:Kroira.App"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+        <NavigationView x:Name="RootNavView" ItemInvoked="RootNavView_ItemInvoked">
+            <NavigationView.MenuItems>
+                <NavigationViewItem Icon="Home" Content="Home" Tag="Home" />
+                <NavigationViewItem Icon="Library" Content="Sources" Tag="Sources" />
+                <NavigationViewItem Icon="Play" Content="Dev Player" Tag="DevPlayer" />
+            </NavigationView.MenuItems>
+            <Frame x:Name="ContentFrame">
+                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="20">
+                    <TextBlock Text="KROIRA IPTV" Style="{ThemeResource TitleTextBlockStyle}" HorizontalAlignment="Center" />
+                    <TextBlock Text="{x:Bind ViewModel.LicenseStatusMessage, Mode=OneWay}" 
+                               Style="{ThemeResource BodyTextBlockStyle}" 
+                               HorizontalAlignment="Center" 
+                               Foreground="LimeGreen"/>
+                </StackPanel>
+            </Frame>
+        </NavigationView>
+    </Grid>
+</Window>

@@ -1,0 +1,34 @@
+<Page
+    x:Class="Kroira.App.Views.SourceOnboardingPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+
+    <StackPanel Margin="24" Spacing="16" MaxWidth="600" HorizontalAlignment="Left">
+        <TextBlock Text="Add New Source" Style="{ThemeResource TitleTextBlockStyle}" />
+
+        <TextBox Header="Source Name" Text="{x:Bind ViewModel.SourceName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="e.g. My Custom List" />
+
+        <RadioButtons Header="Source Format">
+            <RadioButton Content="M3U (URL or Local File)" IsChecked="{x:Bind ViewModel.IsM3U, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+            <RadioButton Content="Xtream Codes (Not supported yet)" IsEnabled="False" />
+        </RadioButtons>
+
+        <TextBlock Text="M3U Connection (URL or Local Path)" Margin="0,8,0,0"/>
+        <Grid ColumnSpacing="8">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <TextBox Grid.Column="0" Text="{x:Bind ViewModel.M3uUrlOrPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="http://... or C:\..." />
+            <Button Grid.Column="1" Content="Browse File..." Command="{x:Bind ViewModel.BrowseLocalFileCommand}" />
+        </Grid>
+
+        <Button Content="Save Source" Command="{x:Bind ViewModel.SaveSourceCommand}" Style="{ThemeResource AccentButtonStyle}" Margin="0,16,0,0" />
+
+        <TextBlock Text="{x:Bind ViewModel.StatusMessage, Mode=OneWay}" 
+                   Foreground="LimeGreen" 
+                   Visibility="{x:Bind ViewModel.StatusVisibility, Mode=OneWay}" 
+                   TextWrapping="WrapWholeWords" />
+    </StackPanel>
+</Page>

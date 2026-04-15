@@ -1,0 +1,35 @@
+﻿<Page x:ConnectionId='1'
+    x:Class="Kroira.App.Views.SourceOnboardingPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+
+    <StackPanel Margin="24" Spacing="16" MaxWidth="600" HorizontalAlignment="Left">
+        <TextBlock Text="Add New Source" Style="{ThemeResource TitleTextBlockStyle}" />
+
+        <TextBox x:ConnectionId='2' Header="Source Name"                                                                                        PlaceholderText="e.g. My Custom List" />
+
+        <RadioButtons Header="Source Format">
+            <RadioButton x:ConnectionId='7' Content="M3U (URL or Local File)"                                                                                        />
+            <RadioButton Content="Xtream Codes (Not supported yet)" IsEnabled="False" />
+        </RadioButtons>
+
+        <TextBlock Text="M3U Connection (URL or Local Path)" Margin="0,8,0,0"/>
+        <Grid ColumnSpacing="8">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <TextBox x:ConnectionId='5' Grid.Column="0"                                                                                          PlaceholderText="http://... or C:\..." />
+            <Button x:ConnectionId='6' Grid.Column="1" Content="Browse File..."                                                     />
+        </Grid>
+
+        <Button x:ConnectionId='3' Content="Save Source"                                                Style="{ThemeResource AccentButtonStyle}" Margin="0,16,0,0" />
+
+        <TextBlock x:ConnectionId='4'                                                      
+                   Foreground="LimeGreen" 
+                                                                                 
+                   TextWrapping="WrapWholeWords" />
+    </StackPanel>
+</Page>
+
