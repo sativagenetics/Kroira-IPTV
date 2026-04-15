@@ -19,6 +19,7 @@ namespace Kroira.App.ViewModels
         private List<BrowserChannelViewModel> _allChannels = new();
 
         public ObservableCollection<BrowserChannelViewModel> FilteredChannels { get; } = new();
+        public ObservableCollection<BrowserCategoryViewModel> Categories { get; } = new();
 
         [ObservableProperty]
         private string _searchQuery = string.Empty;
@@ -26,7 +27,15 @@ namespace Kroira.App.ViewModels
         [ObservableProperty]
         private bool _isEmpty;
 
+        [ObservableProperty]
+        private BrowserCategoryViewModel? _selectedCategory;
+
         partial void OnSearchQueryChanged(string value)
+        {
+            ApplyFilter();
+        }
+
+        partial void OnSelectedCategoryChanged(BrowserCategoryViewModel? value)
         {
             ApplyFilter();
         }
@@ -40,10 +49,30 @@ namespace Kroira.App.ViewModels
         public async Task LoadChannelsAsync()
         {
             _allChannels.Clear();
+            Categories.Clear();
 
             using var scope = _serviceProvider.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
+            // Load all categories across all sources
+            var cats = await db.ChannelCategories
+                .OrderBy(c => c.Name)
+                .ToListAsync();
+
+            Categories.Add(new BrowserCategoryViewModel { Id = 0, Name = "All Categories", OrderIndex = -1 });
+            foreach (var c in cats)
+            {
+                Categories.Add(new BrowserCategoryViewModel
+                {
+                    Id = c.Id,
+                    Name = c.Name,
+                    OrderIndex = c.OrderIndex
+                });
+            }
+
+            SelectedCategory = Categories.FirstOrDefault();
+
+            // Load all channels
             var channels = await db.Channels.ToListAsync();
             var favIds = await db.Favorites
                 .Where(f => f.ContentType == FavoriteType.Channel)
@@ -69,11 +98,20 @@ namespace Kroira.App.ViewModels
         private void ApplyFilter()
         {
             FilteredChannels.Clear();
-            var filtered = string.IsNullOrWhiteSpace(SearchQuery)
-                ? _allChannels
-                : _allChannels.Where(c => c.Name.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase));
 
-            foreach (var ch in filtered)
+            var query = _allChannels.AsEnumerable();
+
+            if (SelectedCategory != null && SelectedCategory.Id != 0)
+            {
+                query = query.Where(c => c.CategoryId == SelectedCategory.Id);
+            }
+
+            if (!string.IsNullOrWhiteSpace(SearchQuery))
+            {
+                query = query.Where(c => c.Name.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase));
+            }
+
+            foreach (var ch in query)
             {
                 FilteredChannels.Add(ch);
             }
@@ -82,3 +120,4 @@ namespace Kroira.App.ViewModels
         }
     }
 }
+

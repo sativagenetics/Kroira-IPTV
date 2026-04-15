@@ -9,11 +9,8 @@
                             AreTransportControlsEnabled="True" 
                             AutoPlay="True" 
                             HorizontalAlignment="Stretch" 
-                            VerticalAlignment="Stretch" />
-
-        <!-- Transparent overlay to capture double-click for fullscreen toggle.
-             Sits above the player but below the Back button in z-order. -->
-        <Grid x:Name="DoubleTapOverlay" Background="Transparent" DoubleTapped="DoubleTapOverlay_DoubleTapped" />
+                            VerticalAlignment="Stretch"
+                            DoubleTapped="DoubleTapOverlay_DoubleTapped" />
 
         <!-- Overlay Back Button — hidden during fullscreen for clean immersion -->
         <Button x:Name="BackButton" Content="← Back" Click="Back_Click" 

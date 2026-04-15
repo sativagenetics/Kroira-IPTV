@@ -12,7 +12,14 @@
 
         <StackPanel Grid.Row="0" Margin="0,0,0,16" Spacing="16">
             <TextBlock Text="Channels" Style="{ThemeResource TitleTextBlockStyle}" />
-            <TextBox x:ConnectionId='5'                                                                                         PlaceholderText="Search channels..." MaxWidth="400" HorizontalAlignment="Left" />
+            <Grid ColumnSpacing="16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="250" />
+                    <ColumnDefinition Width="*" MaxWidth="400" />
+                </Grid.ColumnDefinitions>
+                <ComboBox x:ConnectionId='5' Grid.Column="0"                                                                                                                          DisplayMemberPath="Name" HorizontalAlignment="Stretch" />
+                <TextBox x:ConnectionId='6' Grid.Column="1"                                                                                         PlaceholderText="Search channels..." HorizontalAlignment="Stretch" />
+            </Grid>
         </StackPanel>
 
         <TextBlock x:ConnectionId='2' Grid.Row="1" Text="No channels imported yet. Add a source and sync to get started."

@@ -12,7 +12,14 @@
 
         <StackPanel Grid.Row="0" Margin="0,0,0,16" Spacing="16">
             <TextBlock Text="Channels" Style="{ThemeResource TitleTextBlockStyle}" />
-            <TextBox Text="{x:Bind ViewModel.SearchQuery, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="Search channels..." MaxWidth="400" HorizontalAlignment="Left" />
+            <Grid ColumnSpacing="16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="250" />
+                    <ColumnDefinition Width="*" MaxWidth="400" />
+                </Grid.ColumnDefinitions>
+                <ComboBox Grid.Column="0" ItemsSource="{x:Bind ViewModel.Categories, Mode=OneWay}" SelectedItem="{x:Bind ViewModel.SelectedCategory, Mode=TwoWay}" DisplayMemberPath="Name" HorizontalAlignment="Stretch" />
+                <TextBox Grid.Column="1" Text="{x:Bind ViewModel.SearchQuery, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="Search channels..." HorizontalAlignment="Stretch" />
+            </Grid>
         </StackPanel>
 
         <TextBlock Grid.Row="1" Text="No channels imported yet. Add a source and sync to get started."
