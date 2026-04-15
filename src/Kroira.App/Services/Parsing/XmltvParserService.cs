@@ -31,11 +31,14 @@ namespace Kroira.App.Services.Parsing
             {
                 var doc = XDocument.Parse(xmlContent);
                 var programmes = doc.Descendants("programme").ToList();
-                var channelMapping = doc.Descendants("channel").ToDictionary(
-                    c => c.Attribute("id")?.Value ?? string.Empty,
-                    c => c.Element("display-name")?.Value ?? string.Empty,
-                    StringComparer.OrdinalIgnoreCase
-                );
+                var channelMapping = doc.Descendants("channel")
+                    .Where(c => !string.IsNullOrEmpty(c.Attribute("id")?.Value))
+                    .GroupBy(c => c.Attribute("id")!.Value, StringComparer.OrdinalIgnoreCase)
+                    .ToDictionary(
+                        g => g.Key,
+                        g => g.First().Element("display-name")?.Value ?? string.Empty,
+                        StringComparer.OrdinalIgnoreCase
+                    );
 
                 var channels = await db.Channels
                     .Join(db.ChannelCategories.Where(cat => cat.SourceProfileId == sourceProfileId),
