@@ -21,6 +21,11 @@ namespace Kroira.App.ViewModels
         [ObservableProperty]
         private string _m3uUrlOrPath = string.Empty;
 
+
+
+        [ObservableProperty]
+        private string _epgUrl = string.Empty;
+
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(HasStatus))]
         [NotifyPropertyChangedFor(nameof(StatusVisibility))]
@@ -72,7 +77,8 @@ namespace Kroira.App.ViewModels
                         SourceProfileId = profile.Id,
                         Url = IsM3U ? M3uUrlOrPath : string.Empty,
                         Username = string.Empty,
-                        Password = string.Empty
+                        Password = string.Empty,
+                        EpgUrl = EpgUrl
                     };
                     db.SourceCredentials.Add(creds);
 
@@ -92,6 +98,7 @@ namespace Kroira.App.ViewModels
                     
                     SourceName = string.Empty;
                     M3uUrlOrPath = string.Empty;
+                    EpgUrl = string.Empty;
                 }
                 catch
                 {

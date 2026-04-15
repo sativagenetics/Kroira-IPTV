@@ -49,5 +49,13 @@ namespace Kroira.App.Views
                 this.Frame.Navigate(typeof(ChannelBrowserPage), id);
             }
         }
+
+        private void SyncEpgSource_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.Tag is int id)
+            {
+                ViewModel.SyncEpgCommand.Execute(id);
+            }
+        }
     }
 }

@@ -21,6 +21,7 @@ namespace Kroira.App.ViewModels
 
         public Microsoft.UI.Xaml.Visibility ParseVisibility => Type == "M3U" ? Microsoft.UI.Xaml.Visibility.Visible : Microsoft.UI.Xaml.Visibility.Collapsed;
         public Microsoft.UI.Xaml.Visibility BrowseVisibility => Type == "M3U" ? Microsoft.UI.Xaml.Visibility.Visible : Microsoft.UI.Xaml.Visibility.Collapsed;
+        public Microsoft.UI.Xaml.Visibility SyncEpgVisibility => Type == "M3U" ? Microsoft.UI.Xaml.Visibility.Visible : Microsoft.UI.Xaml.Visibility.Collapsed;
     }
 
     public partial class SourceListViewModel : ObservableObject
@@ -81,6 +82,27 @@ namespace Kroira.App.ViewModels
             catch (Exception ex)
             {
                 if (item != null) item.Status = $"Parse Failed: {ex.Message}";
+            }
+        }
+
+        [RelayCommand]
+        public async Task SyncEpgAsync(int id)
+        {
+            var item = Sources.FirstOrDefault(s => s.Id == id);
+            if (item != null) item.Status = "Syncing EPG...";
+
+            try
+            {
+                using var scope = _serviceProvider.CreateScope();
+                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                var parser = scope.ServiceProvider.GetRequiredService<Kroira.App.Services.Parsing.IXmltvParserService>();
+
+                await parser.ParseAndImportEpgAsync(db, id);
+                await LoadSourcesAsync();
+            }
+            catch (Exception ex)
+            {
+                if (item != null) item.Status = $"EPG Failed: {ex.Message}";
             }
         }
 

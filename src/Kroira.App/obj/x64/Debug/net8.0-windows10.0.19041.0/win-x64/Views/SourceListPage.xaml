@@ -13,8 +13,8 @@
         <RelativePanel Grid.Row="0" Margin="0,0,0,16">
             <TextBlock Text="Saved Sources" Style="{ThemeResource TitleTextBlockStyle}" RelativePanel.AlignLeftWithPanel="True" RelativePanel.AlignVerticalCenterWithPanel="True"/>
             <StackPanel Orientation="Horizontal" Spacing="8" RelativePanel.AlignRightWithPanel="True" RelativePanel.AlignVerticalCenterWithPanel="True">
-                <Button x:ConnectionId='7' Content="Refresh"                                                 />
-                <Button x:ConnectionId='8' Content="Add New Source"                            Style="{ThemeResource AccentButtonStyle}" />
+                <Button x:ConnectionId='8' Content="Refresh"                                                 />
+                <Button x:ConnectionId='9' Content="Add New Source"                            Style="{ThemeResource AccentButtonStyle}" />
             </StackPanel>
         </RelativePanel>
 
@@ -34,7 +34,8 @@
                         <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
                             <Button x:ConnectionId='4' Content="Browse" Tag="{Binding Id}"                            Visibility="{Binding BrowseVisibility}" />
                             <Button x:ConnectionId='5' Content="Import / Parse" Tag="{Binding Id}"                           Visibility="{Binding ParseVisibility}" />
-                            <Button x:ConnectionId='6' Content="Delete" Tag="{Binding Id}"                            />
+                            <Button x:ConnectionId='6' Content="Sync EPG" Tag="{Binding Id}"                             Visibility="{Binding SyncEpgVisibility}" />
+                            <Button x:ConnectionId='7' Content="Delete" Tag="{Binding Id}"                            />
                         </StackPanel>
                     </Grid>
                 </DataTemplate>

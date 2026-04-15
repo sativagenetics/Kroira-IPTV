@@ -25,6 +25,8 @@ namespace Kroira.App.ViewModels
         public string Name { get; set; } = string.Empty;
         public string StreamUrl { get; set; } = string.Empty;
         public string LogoUrl { get; set; } = string.Empty;
+        public string CurrentProgramTitle { get; set; } = "No Data";
+        public string NextProgramTitle { get; set; } = string.Empty;
 
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(FavoriteIcon))]
@@ -78,6 +80,14 @@ namespace Kroira.App.ViewModels
                 .Select(f => f.ContentId)
                 .ToListAsync();
 
+            var chIds = chans.Select(c => c.Id).ToList();
+
+            var epgs = await db.EpgPrograms
+                .Where(e => chIds.Contains(e.ChannelId)) 
+                .ToListAsync(); 
+
+            var now = DateTime.UtcNow;
+
             Categories.Add(new BrowserCategoryViewModel { Id = 0, Name = "All Categories", OrderIndex = -1 });
 
             foreach (var c in cats)
@@ -92,6 +102,10 @@ namespace Kroira.App.ViewModels
 
             foreach (var ch in chans)
             {
+                var chEpg = epgs.Where(e => e.ChannelId == ch.Id).OrderBy(e => e.StartTimeUtc).ToList();
+                var curr = chEpg.FirstOrDefault(e => e.StartTimeUtc <= now && e.EndTimeUtc > now);
+                var next = chEpg.FirstOrDefault(e => e.StartTimeUtc > now);
+
                 _allChannelsCache.Add(new BrowserChannelViewModel
                 {
                     Id = ch.Id,
@@ -99,7 +113,9 @@ namespace Kroira.App.ViewModels
                     Name = ch.Name,
                     StreamUrl = ch.StreamUrl,
                     LogoUrl = ch.LogoUrl ?? string.Empty,
-                    IsFavorite = favIds.Contains(ch.Id)
+                    IsFavorite = favIds.Contains(ch.Id),
+                    CurrentProgramTitle = curr?.Title ?? "No Data",
+                    NextProgramTitle = next != null ? $"Next: {next.Title}" : string.Empty
                 });
             }
 

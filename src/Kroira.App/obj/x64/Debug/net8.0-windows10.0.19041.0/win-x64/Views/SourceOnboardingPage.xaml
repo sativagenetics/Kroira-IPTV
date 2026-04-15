@@ -10,7 +10,7 @@
         <TextBox x:ConnectionId='2' Header="Source Name"                                                                                        PlaceholderText="e.g. My Custom List" />
 
         <RadioButtons Header="Source Format">
-            <RadioButton x:ConnectionId='7' Content="M3U (URL or Local File)"                                                                                        />
+            <RadioButton x:ConnectionId='8' Content="M3U (URL or Local File)"                                                                                        />
             <RadioButton Content="Xtream Codes (Not supported yet)" IsEnabled="False" />
         </RadioButtons>
 
@@ -20,13 +20,16 @@
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
-            <TextBox x:ConnectionId='5' Grid.Column="0"                                                                                          PlaceholderText="http://... or C:\..." />
-            <Button x:ConnectionId='6' Grid.Column="1" Content="Browse File..."                                                     />
+            <TextBox x:ConnectionId='6' Grid.Column="0"                                                                                          PlaceholderText="http://... or C:\..." />
+            <Button x:ConnectionId='7' Grid.Column="1" Content="Browse File..."                                                     />
         </Grid>
 
-        <Button x:ConnectionId='3' Content="Save Source"                                                Style="{ThemeResource AccentButtonStyle}" Margin="0,16,0,0" />
+        <TextBlock Text="XMLTV EPG URL (Optional)" Margin="0,8,0,0"/>
+        <TextBox x:ConnectionId='3'                                                                                    PlaceholderText="http://.../epg.xml" />
 
-        <TextBlock x:ConnectionId='4'                                                      
+        <Button x:ConnectionId='4' Content="Save Source"                                                Style="{ThemeResource AccentButtonStyle}" Margin="0,16,0,0" />
+
+        <TextBlock x:ConnectionId='5'                                                      
                    Foreground="LimeGreen" 
                                                                                  
                    TextWrapping="WrapWholeWords" />

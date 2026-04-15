@@ -24,6 +24,9 @@
             <Button Grid.Column="1" Content="Browse File..." Command="{x:Bind ViewModel.BrowseLocalFileCommand}" />
         </Grid>
 
+        <TextBlock Text="XMLTV EPG URL (Optional)" Margin="0,8,0,0"/>
+        <TextBox Text="{x:Bind ViewModel.EpgUrl, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="http://.../epg.xml" />
+
         <Button Content="Save Source" Command="{x:Bind ViewModel.SaveSourceCommand}" Style="{ThemeResource AccentButtonStyle}" Margin="0,16,0,0" />
 
         <TextBlock Text="{x:Bind ViewModel.StatusMessage, Mode=OneWay}" 

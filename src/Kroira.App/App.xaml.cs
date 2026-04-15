@@ -59,6 +59,7 @@ namespace Kroira.App
             services.AddSingleton<IInputInterceptorService, InputInterceptorService>();
             services.AddSingleton<Kroira.App.Services.Playback.IPlaybackEngine, Kroira.App.Services.Playback.LibVlcPlaybackEngine>();
             services.AddSingleton<Kroira.App.Services.Parsing.IM3uParserService, Kroira.App.Services.Parsing.M3uParserService>();
+            services.AddSingleton<Kroira.App.Services.Parsing.IXmltvParserService, Kroira.App.Services.Parsing.XmltvParserService>();
 
             return services.BuildServiceProvider();
         }
