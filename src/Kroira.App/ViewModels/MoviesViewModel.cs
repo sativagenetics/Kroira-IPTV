@@ -40,7 +40,10 @@ namespace Kroira.App.ViewModels
         {
             using var scope = _serviceProvider.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            _allMovies = await db.Movies.OrderBy(m => m.Title).ToListAsync();
+            _allMovies = await db.Movies
+                .Where(m => m.StreamUrl != null && m.StreamUrl != "")
+                .OrderBy(m => m.Title)
+                .ToListAsync();
             ApplyFilter();
         }
 

@@ -40,5 +40,13 @@ namespace Kroira.App.Views
             }
             ((GridView)sender).SelectedItem = null;
         }
+
+        private void FavoriteToggle_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.Tag is int id)
+            {
+                _ = ViewModel.ToggleFavoriteCommand.ExecuteAsync(id);
+            }
+        }
     }
 }

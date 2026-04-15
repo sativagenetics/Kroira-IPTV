@@ -118,6 +118,35 @@ namespace Kroira.App.ViewModels
 
             IsEmpty = FilteredChannels.Count == 0;
         }
+
+        [RelayCommand]
+        public async Task ToggleFavoriteAsync(int channelId)
+        {
+            var target = FilteredChannels.FirstOrDefault(c => c.Id == channelId)
+                      ?? _allChannels.FirstOrDefault(c => c.Id == channelId);
+            if (target == null) return;
+
+            using var scope = _serviceProvider.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+            if (target.IsFavorite)
+            {
+                var fav = await db.Favorites.FirstOrDefaultAsync(f => f.ContentType == FavoriteType.Channel && f.ContentId == channelId);
+                if (fav != null)
+                {
+                    db.Favorites.Remove(fav);
+                    await db.SaveChangesAsync();
+                }
+                target.IsFavorite = false;
+            }
+            else
+            {
+                var fav = new Favorite { ContentType = FavoriteType.Channel, ContentId = channelId };
+                db.Favorites.Add(fav);
+                await db.SaveChangesAsync();
+                target.IsFavorite = true;
+            }
+        }
     }
 }
 
