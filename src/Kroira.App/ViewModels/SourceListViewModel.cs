@@ -161,40 +161,104 @@ namespace Kroira.App.ViewModels
         [RelayCommand]
         public async Task DeleteSourceAsync(int id)
         {
-            using var scope = _serviceProvider.CreateScope();
-            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var uiItem = Sources.FirstOrDefault(s => s.Id == id);
+            if (uiItem != null) uiItem.Status = "Deleting...";
 
-            var profile = await db.SourceProfiles.FindAsync(id);
-            if (profile != null)
+            try
             {
+                using var scope = _serviceProvider.CreateScope();
+                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+                var profile = await db.SourceProfiles.FindAsync(id);
+                if (profile == null)
+                {
+                    if (uiItem != null) uiItem.Status = "Source not found.";
+                    return;
+                }
+
                 using var transaction = await db.Database.BeginTransactionAsync();
                 try
                 {
-                    var creds = await db.SourceCredentials.FirstOrDefaultAsync(c => c.SourceProfileId == id);
-                    if (creds != null) db.SourceCredentials.Remove(creds);
+                    // 1. Delete EPG programs linked to channels in this source's categories
+                    var catIds = await db.ChannelCategories
+                        .Where(c => c.SourceProfileId == id)
+                        .Select(c => c.Id)
+                        .ToListAsync();
 
-                    var sync = await db.SourceSyncStates.FirstOrDefaultAsync(s => s.SourceProfileId == id);
-                    if (sync != null) db.SourceSyncStates.Remove(sync);
-
-                    var cats = await db.ChannelCategories.Where(c => c.SourceProfileId == id).ToListAsync();
-                    if (cats.Count > 0)
+                    if (catIds.Count > 0)
                     {
-                        var catIds = cats.Select(c => c.Id).ToList();
-                        var channels = await db.Channels.Where(ch => catIds.Contains(ch.ChannelCategoryId)).ToListAsync();
-                        db.Channels.RemoveRange(channels);
+                        var channelIds = await db.Channels
+                            .Where(ch => catIds.Contains(ch.ChannelCategoryId))
+                            .Select(ch => ch.Id)
+                            .ToListAsync();
+
+                        if (channelIds.Count > 0)
+                        {
+                            // EPG programs reference ChannelId
+                            var epgs = await db.EpgPrograms.Where(e => channelIds.Contains(e.ChannelId)).ToListAsync();
+                            if (epgs.Count > 0) db.EpgPrograms.RemoveRange(epgs);
+
+                            // Favorites referencing these channels
+                            var favs = await db.Favorites
+                                .Where(f => f.ContentType == Models.FavoriteType.Channel && channelIds.Contains(f.ContentId))
+                                .ToListAsync();
+                            if (favs.Count > 0) db.Favorites.RemoveRange(favs);
+
+                            // Channels themselves
+                            var channels = await db.Channels.Where(ch => channelIds.Contains(ch.Id)).ToListAsync();
+                            db.Channels.RemoveRange(channels);
+                        }
+
+                        // Channel categories
+                        var cats = await db.ChannelCategories.Where(c => catIds.Contains(c.Id)).ToListAsync();
                         db.ChannelCategories.RemoveRange(cats);
                     }
 
+                    // 2. Delete Xtream VOD: Episodes → Seasons → Series, then Movies
+                    var seriesIds = await db.Series.Where(s => s.SourceProfileId == id).Select(s => s.Id).ToListAsync();
+                    if (seriesIds.Count > 0)
+                    {
+                        var seasonIds = await db.Seasons.Where(sn => seriesIds.Contains(sn.SeriesId)).Select(sn => sn.Id).ToListAsync();
+                        if (seasonIds.Count > 0)
+                        {
+                            var episodes = await db.Episodes.Where(ep => seasonIds.Contains(ep.SeasonId)).ToListAsync();
+                            if (episodes.Count > 0) db.Episodes.RemoveRange(episodes);
+
+                            var seasons = await db.Seasons.Where(sn => seasonIds.Contains(sn.Id)).ToListAsync();
+                            db.Seasons.RemoveRange(seasons);
+                        }
+
+                        var series = await db.Series.Where(s => seriesIds.Contains(s.Id)).ToListAsync();
+                        db.Series.RemoveRange(series);
+                    }
+
+                    var movies = await db.Movies.Where(m => m.SourceProfileId == id).ToListAsync();
+                    if (movies.Count > 0) db.Movies.RemoveRange(movies);
+
+                    // 3. Credentials and sync state (may cascade via FK, but explicit is safer)
+                    var creds = await db.SourceCredentials.FirstOrDefaultAsync(c => c.SourceProfileId == id);
+                    if (creds != null) db.SourceCredentials.Remove(creds);
+
+                    var syncState = await db.SourceSyncStates.FirstOrDefaultAsync(s => s.SourceProfileId == id);
+                    if (syncState != null) db.SourceSyncStates.Remove(syncState);
+
+                    // 4. The profile itself
                     db.SourceProfiles.Remove(profile);
+
                     await db.SaveChangesAsync();
                     await transaction.CommitAsync();
 
                     await LoadSourcesAsync();
                 }
-                catch
+                catch (Exception ex)
                 {
-                    await transaction.RollbackAsync();
+                    try { await transaction.RollbackAsync(); } catch { }
+                    if (uiItem != null) uiItem.Status = $"Delete failed: {ex.Message}";
                 }
+            }
+            catch (Exception ex)
+            {
+                if (uiItem != null) uiItem.Status = $"Delete error: {ex.Message}";
             }
         }
     }
