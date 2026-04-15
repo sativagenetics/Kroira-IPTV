@@ -49,6 +49,9 @@ namespace Kroira.App.Services
 
             if (_window.Content is UIElement rootElement)
             {
+                // Suppress the visual accelerator key hint overlay (fixes stuck "F11" tooltip)
+                rootElement.KeyboardAcceleratorPlacementMode = KeyboardAcceleratorPlacementMode.Hidden;
+
                 // Attach global Keyboard Accelerators for decoupled bindings
                 var f11 = new KeyboardAccelerator { Key = Windows.System.VirtualKey.F11 };
                 f11.Invoked += (s, e) => { _windowManager.ToggleFullscreen(); e.Handled = true; };

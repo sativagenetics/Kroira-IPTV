@@ -1,6 +1,7 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Kroira.App.ViewModels;
+using Kroira.App.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Kroira.App.Views;
 
@@ -10,14 +11,30 @@ namespace Kroira.App
     {
         public MainViewModel ViewModel { get; }
         private readonly object _homeContent;
+        private readonly IWindowManagerService _windowManager;
 
         public MainWindow()
         {
             this.InitializeComponent();
             ViewModel = ((App)Application.Current).Services.GetRequiredService<MainViewModel>();
-            
+            _windowManager = ((App)Application.Current).Services.GetRequiredService<IWindowManagerService>();
+
             this.Title = "Kroira IPTV";
             _homeContent = ContentFrame.Content;
+
+            _windowManager.FullscreenStateChanged += (s, e) =>
+            {
+                if (_windowManager.IsFullscreen)
+                {
+                    RootNavView.IsPaneVisible = false;
+                    RootNavView.PaneDisplayMode = NavigationViewPaneDisplayMode.LeftMinimal;
+                }
+                else
+                {
+                    RootNavView.IsPaneVisible = true;
+                    RootNavView.PaneDisplayMode = NavigationViewPaneDisplayMode.Auto;
+                }
+            };
         }
 
         private void RootNavView_ItemInvoked(NavigationView sender, NavigationViewItemInvokedEventArgs args)
