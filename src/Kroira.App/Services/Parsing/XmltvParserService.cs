@@ -24,7 +24,7 @@ namespace Kroira.App.Services.Parsing
                 throw new Exception("EPG URL is not configured for this source.");
 
             string xmlContent;
-            using var client = new HttpClient();
+            using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(60) };
             xmlContent = await client.GetStringAsync(cred.EpgUrl);
 
             try
