@@ -327,6 +327,7 @@ namespace Kroira.App.Services.Parsing
 
                                             seasonObj.Episodes.Add(new Episode
                                             {
+                                                ExternalId = epId,
                                                 Title = string.IsNullOrWhiteSpace(epName) ? $"Episode {epNum}" : epName,
                                                 EpisodeNumber = epNum,
                                                 StreamUrl = $"{baseUrl}/series/{cred.Username}/{cred.Password}/{epId}.{ext}"
@@ -428,19 +429,77 @@ namespace Kroira.App.Services.Parsing
                     {
                         if (existingSeriesMap.TryGetValue(sInfo.SeriesId, out var existingSer))
                         {
-                            // UPDATE metadata in place — Id stays the same
+                            // UPDATE metadata in place — Series.Id stays the same
                             existingSer.Title        = sInfo.BaseObj.Title;
                             existingSer.PosterUrl    = sInfo.BaseObj.PosterUrl;
                             existingSer.CategoryName = sInfo.BaseObj.CategoryName;
 
-                            // Rebuild seasons/episodes (they don't have a stable external key)
-                            if (existingSer.Seasons != null)
+                            // Upsert seasons and episodes instead of rebuild-from-scratch
+                            var existingSeasonMap = (existingSer.Seasons ?? Enumerable.Empty<Season>())
+                                .ToDictionary(sn => sn.SeasonNumber);
+                            var incomingSeasonNums = new HashSet<int>(sInfo.BaseObj.Seasons!.Select(sn => sn.SeasonNumber));
+
+                            foreach (var incomingSeason in sInfo.BaseObj.Seasons!)
                             {
-                                foreach (var sn in existingSer.Seasons)
-                                    if (sn.Episodes != null) db.Episodes.RemoveRange(sn.Episodes);
-                                db.Seasons.RemoveRange(existingSer.Seasons);
+                                if (existingSeasonMap.TryGetValue(incomingSeason.SeasonNumber, out var existingSeason))
+                                {
+                                    // Season exists — upsert its episodes
+                                    var existingEpMap = (existingSeason.Episodes ?? Enumerable.Empty<Episode>())
+                                        .Where(e => !string.IsNullOrEmpty(e.ExternalId))
+                                        .ToDictionary(e => e.ExternalId);
+                                    var incomingEpExternalIds = new HashSet<string>(
+                                        incomingSeason.Episodes!.Select(e => e.ExternalId)
+                                            .Where(x => !string.IsNullOrEmpty(x)));
+
+                                    foreach (var incomingEp in incomingSeason.Episodes!)
+                                    {
+                                        if (!string.IsNullOrEmpty(incomingEp.ExternalId) &&
+                                            existingEpMap.TryGetValue(incomingEp.ExternalId, out var existingEp))
+                                        {
+                                            // UPDATE — Episode.Id unchanged, progress survives
+                                            existingEp.Title         = incomingEp.Title;
+                                            existingEp.StreamUrl     = incomingEp.StreamUrl;
+                                            existingEp.EpisodeNumber = incomingEp.EpisodeNumber;
+                                        }
+                                        else
+                                        {
+                                            incomingEp.SeasonId = existingSeason.Id;
+                                            db.Episodes.Add(incomingEp);
+                                        }
+                                    }
+
+                                    // Remove episodes no longer in feed
+                                    var staleEps = (existingSeason.Episodes ?? Enumerable.Empty<Episode>())
+                                        .Where(e => !string.IsNullOrEmpty(e.ExternalId) &&
+                                                    !incomingEpExternalIds.Contains(e.ExternalId))
+                                        .ToList();
+                                    if (staleEps.Count > 0) db.Episodes.RemoveRange(staleEps);
+
+                                    // Orphan episodes (no ExternalId, pre-migration)
+                                    var orphanEps = (existingSeason.Episodes ?? Enumerable.Empty<Episode>())
+                                        .Where(e => string.IsNullOrEmpty(e.ExternalId))
+                                        .ToList();
+                                    if (orphanEps.Count > 0) db.Episodes.RemoveRange(orphanEps);
+                                }
+                                else
+                                {
+                                    // New season — insert whole branch; set FK explicitly
+                                    incomingSeason.SeriesId = existingSer.Id;
+                                    db.Seasons.Add(incomingSeason);
+                                }
                             }
-                            existingSer.Seasons = sInfo.BaseObj.Seasons;
+
+                            // Remove seasons no longer in feed
+                            var staleSns = (existingSer.Seasons ?? Enumerable.Empty<Season>())
+                                .Where(sn => !incomingSeasonNums.Contains(sn.SeasonNumber))
+                                .ToList();
+                            if (staleSns.Count > 0)
+                            {
+                                foreach (var staleSn in staleSns)
+                                    if (staleSn.Episodes != null) db.Episodes.RemoveRange(staleSn.Episodes);
+                                db.Seasons.RemoveRange(staleSns);
+                            }
+
                             serUpdated++;
                         }
                         else
