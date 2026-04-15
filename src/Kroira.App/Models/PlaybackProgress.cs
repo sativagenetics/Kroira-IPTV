@@ -2,7 +2,7 @@ using System;
 
 namespace Kroira.App.Models
 {
-    public enum PlaybackContentType { Movie, Episode }
+    public enum PlaybackContentType { Channel, Movie, Episode }
 
     public class PlaybackProgress
     {

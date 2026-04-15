@@ -52,6 +52,9 @@ namespace Kroira.App
             services.AddTransient<SourceListViewModel>();
             services.AddTransient<ChannelBrowserViewModel>();
             services.AddTransient<FavoritesViewModel>();
+            services.AddTransient<ContinueWatchingViewModel>();
+            services.AddTransient<MoviesViewModel>();
+            services.AddTransient<SeriesViewModel>();
 
             // Foundation Infrastructure
             services.AddSingleton<IEntitlementService, MockEntitlementService>();
@@ -60,6 +63,7 @@ namespace Kroira.App
             services.AddSingleton<Kroira.App.Services.Playback.IPlaybackEngine, Kroira.App.Services.Playback.LibVlcPlaybackEngine>();
             services.AddSingleton<Kroira.App.Services.Parsing.IM3uParserService, Kroira.App.Services.Parsing.M3uParserService>();
             services.AddSingleton<Kroira.App.Services.Parsing.IXmltvParserService, Kroira.App.Services.Parsing.XmltvParserService>();
+            services.AddSingleton<Kroira.App.Services.Parsing.IXtreamParserService, Kroira.App.Services.Parsing.XtreamParserService>();
 
             return services.BuildServiceProvider();
         }

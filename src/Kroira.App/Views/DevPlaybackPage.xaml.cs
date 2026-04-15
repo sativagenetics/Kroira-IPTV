@@ -2,12 +2,17 @@ using Kroira.App.Services.Playback;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.Extensions.DependencyInjection;
+using Kroira.App.Models;
+using Kroira.App.Data;
+using System.Linq;
+using System;
 
 namespace Kroira.App.Views
 {
     public sealed partial class DevPlaybackPage : Page
     {
         private readonly IPlaybackEngine _engine;
+        private PlaybackLaunchContext _launchContext;
 
         public DevPlaybackPage()
         {
@@ -22,6 +27,7 @@ namespace Kroira.App.Views
             // Unhook instance when navigating away
             this.Unloaded += (s, e) => 
             {
+                SaveProgress();
                 _engine.Stop();
                 _engine.StateChanged -= Engine_StateChanged;
             };
@@ -33,6 +39,49 @@ namespace Kroira.App.Views
             if (e.Parameter is string url && !string.IsNullOrWhiteSpace(url))
             {
                 _engine.Play(url);
+            }
+            else if (e.Parameter is PlaybackLaunchContext ctx)
+            {
+                _launchContext = ctx;
+                _engine.Play(ctx.StreamUrl, ctx.StartPositionMs);
+            }
+        }
+
+        private void SaveProgress()
+        {
+            if (_launchContext != null && _launchContext.ContentId > 0 && _engine != null)
+            {
+                try
+                {
+                    using var scope = ((App)Application.Current).Services.CreateScope();
+                    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+                    var prog = db.PlaybackProgresses.FirstOrDefault(p => p.ContentId == _launchContext.ContentId && p.ContentType == _launchContext.ContentType);
+                    if (prog == null)
+                    {
+                        prog = new PlaybackProgress
+                        {
+                            ContentId = _launchContext.ContentId,
+                            ContentType = _launchContext.ContentType
+                        };
+                        db.PlaybackProgresses.Add(prog);
+                    }
+
+                    if (_engine.LengthMs > 0)
+                    {
+                        prog.PositionMs = _engine.PositionMs;
+                        prog.IsCompleted = _engine.PositionMs >= (_engine.LengthMs * 0.95);
+                    }
+                    else
+                    {
+                        prog.PositionMs = 0;
+                        prog.IsCompleted = false;
+                    }
+
+                    prog.LastWatched = DateTime.UtcNow;
+                    db.SaveChanges();
+                }
+                catch { }
             }
         }
 

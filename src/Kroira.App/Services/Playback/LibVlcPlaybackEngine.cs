@@ -17,6 +17,9 @@ namespace Kroira.App.Services.Playback
         
         public object MediaPlayerInstance => _mediaPlayer;
 
+        public long PositionMs => _mediaPlayer?.Time ?? 0;
+        public long LengthMs => _mediaPlayer?.Length ?? 0;
+
         public LibVlcPlaybackEngine()
         {
             _dispatcherQueue = DispatcherQueue.GetForCurrentThread(); 
@@ -63,10 +66,16 @@ namespace Kroira.App.Services.Playback
             }
         }
 
-        public void Play(string sourceUrl)
+        public void Play(string sourceUrl) => Play(sourceUrl, 0);
+
+        public void Play(string sourceUrl, long startPositionMs)
         {
             EnsureUIThread(() => UpdateState(PlaybackState.Loading));
-            using var media = new Media(_libVLC, new Uri(sourceUrl));
+            var media = new Media(_libVLC, new Uri(sourceUrl));
+            if (startPositionMs > 0)
+            {
+                media.AddOption($":start-time={startPositionMs / 1000f}");
+            }
             _mediaPlayer.Play(media);
         }
 

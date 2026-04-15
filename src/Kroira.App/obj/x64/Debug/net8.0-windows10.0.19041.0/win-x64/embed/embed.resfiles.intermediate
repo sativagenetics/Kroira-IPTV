@@ -1,8 +1,11 @@
 App.xbf
 MainWindow.xbf
 Views\ChannelBrowserPage.xbf
+Views\ContinueWatchingPage.xbf
 Views\DevPlaybackPage.xbf
 Views\FavoritesPage.xbf
+Views\MoviesPage.xbf
+Views\SeriesPage.xbf
 Views\SettingsPage.xbf
 Views\SourceListPage.xbf
 Views\SourceOnboardingPage.xbf

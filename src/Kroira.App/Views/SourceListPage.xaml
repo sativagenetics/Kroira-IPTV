@@ -35,6 +35,8 @@
                             <Button Content="Browse" Tag="{Binding Id}" Click="BrowseSource_Click" Visibility="{Binding BrowseVisibility}" />
                             <Button Content="Import / Parse" Tag="{Binding Id}" Click="ParseSource_Click" Visibility="{Binding ParseVisibility}" />
                             <Button Content="Sync EPG" Tag="{Binding Id}" Click="SyncEpgSource_Click" Visibility="{Binding SyncEpgVisibility}" />
+                            <Button Content="Sync Xtream Live" Tag="{Binding Id}" Click="SyncXtreamSource_Click" Visibility="{Binding SyncXtreamVisibility}" />
+                            <Button Content="Sync Xtream VOD" Tag="{Binding Id}" Click="SyncXtreamVodSource_Click" Visibility="{Binding SyncXtreamVisibility}" />
                             <Button Content="Delete" Tag="{Binding Id}" Click="DeleteSource_Click" />
                         </StackPanel>
                     </Grid>

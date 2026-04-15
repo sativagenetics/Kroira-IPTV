@@ -57,5 +57,21 @@ namespace Kroira.App.Views
                 ViewModel.SyncEpgCommand.Execute(id);
             }
         }
+
+        private void SyncXtreamSource_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.Tag is int id)
+            {
+                ViewModel.SyncXtreamCommand.Execute(id);
+            }
+        }
+
+        private void SyncXtreamVodSource_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.Tag is int id)
+            {
+                ViewModel.SyncXtreamVodCommand.Execute(id);
+            }
+        }
     }
 }

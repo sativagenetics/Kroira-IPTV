@@ -25,5 +25,21 @@
                         Style="{ThemeResource AccentButtonStyle}"/>
             </StackPanel>
         </Border>
+
+        <Border Background="{ThemeResource SystemControlBackgroundChromeMediumBrush}" Padding="20" CornerRadius="8" HorizontalAlignment="Left" Margin="0,20,0,0">
+            <StackPanel Spacing="12">
+                <TextBlock Text="App Information" Style="{ThemeResource SubtitleTextBlockStyle}" />
+                
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <TextBlock Text="Version:" FontWeight="SemiBold" />
+                    <TextBlock Text="{x:Bind ViewModel.AppVersion, Mode=OneTime}" />
+                </StackPanel>
+                
+                <HyperlinkButton Content="Privacy Policy" Command="{x:Bind ViewModel.OpenPrivacyPolicyCommand}" />
+                <HyperlinkButton Content="Support &amp; Feedback" Command="{x:Bind ViewModel.OpenSupportCommand}" />
+
+                <TextBlock Text="© 2026 KROIRA. All rights reserved." Foreground="{ThemeResource TextFillColorTertiaryBrush}" FontSize="12" Margin="0,16,0,0"/>
+            </StackPanel>
+        </Border>
     </StackPanel>
 </Page>

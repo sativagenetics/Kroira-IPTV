@@ -9,27 +9,36 @@
 
         <TextBox x:ConnectionId='2' Header="Source Name"                                                                                        PlaceholderText="e.g. My Custom List" />
 
-        <RadioButtons Header="Source Format">
-            <RadioButton x:ConnectionId='8' Content="M3U (URL or Local File)"                                                                                        />
-            <RadioButton Content="Xtream Codes (Not supported yet)" IsEnabled="False" />
+        <RadioButtons x:ConnectionId='3' Header="Source Format"                                                                                                         >
+            <RadioButton Content="M3U (URL or Local File)" />
+            <RadioButton Content="Xtream Codes (Live TV Only)" />
         </RadioButtons>
 
-        <TextBlock Text="M3U Connection (URL or Local Path)" Margin="0,8,0,0"/>
-        <Grid ColumnSpacing="8">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="Auto" />
-            </Grid.ColumnDefinitions>
-            <TextBox x:ConnectionId='6' Grid.Column="0"                                                                                          PlaceholderText="http://... or C:\..." />
-            <Button x:ConnectionId='7' Grid.Column="1" Content="Browse File..."                                                     />
-        </Grid>
+        <StackPanel x:ConnectionId='4'                                                            Spacing="8">
+            <TextBlock Text="M3U Connection (URL or Local Path)"/>
+            <Grid ColumnSpacing="8">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBox x:ConnectionId='12' Grid.Column="0"                                                                                          PlaceholderText="http://... or C:\..." />
+                <Button x:ConnectionId='13' Grid.Column="1" Content="Browse File..."                                                     />
+            </Grid>
 
-        <TextBlock Text="XMLTV EPG URL (Optional)" Margin="0,8,0,0"/>
-        <TextBox x:ConnectionId='3'                                                                                    PlaceholderText="http://.../epg.xml" />
+            <TextBlock Text="XMLTV EPG URL (Optional)" Margin="0,8,0,0"/>
+            <TextBox x:ConnectionId='11'                                                                                    PlaceholderText="http://.../epg.xml" />
+        </StackPanel>
 
-        <Button x:ConnectionId='4' Content="Save Source"                                                Style="{ThemeResource AccentButtonStyle}" Margin="0,16,0,0" />
+        <StackPanel x:ConnectionId='5'                                                               Spacing="8">
+            <TextBlock Text="Xtream Codes Connection" />
+            <TextBox x:ConnectionId='8' Header="Server URL"                                                                                       PlaceholderText="http://domain.com:8080" />
+            <TextBox x:ConnectionId='9' Header="Username"                                                                                            />
+            <PasswordBox x:ConnectionId='10' Header="Password"                                                                                                />
+        </StackPanel>
 
-        <TextBlock x:ConnectionId='5'                                                      
+        <Button x:ConnectionId='6' Content="Save Source"                                                Style="{ThemeResource AccentButtonStyle}" Margin="0,16,0,0" />
+
+        <TextBlock x:ConnectionId='7'                                                      
                    Foreground="LimeGreen" 
                                                                                  
                    TextWrapping="WrapWholeWords" />

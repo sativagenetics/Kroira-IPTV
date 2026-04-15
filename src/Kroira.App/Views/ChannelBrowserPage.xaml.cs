@@ -31,7 +31,13 @@ namespace Kroira.App.Views
             {
                 if (!string.IsNullOrWhiteSpace(channel.StreamUrl))
                 {
-                    this.Frame.Navigate(typeof(DevPlaybackPage), channel.StreamUrl);
+                    this.Frame.Navigate(typeof(DevPlaybackPage), new Kroira.App.Models.PlaybackLaunchContext
+                    {
+                        ContentId = channel.Id,
+                        ContentType = Kroira.App.Models.PlaybackContentType.Channel,
+                        StreamUrl = channel.StreamUrl,
+                        StartPositionMs = 0
+                    });
                 }
             }
             

@@ -12,7 +12,11 @@ namespace Kroira.App.Services.Playback
 
         object MediaPlayerInstance { get; }
 
+        long PositionMs { get; }
+        long LengthMs { get; }
+
         void Play(string sourceUrl);
+        void Play(string sourceUrl, long startPositionMs);
         void Pause();
         void Stop();
     }

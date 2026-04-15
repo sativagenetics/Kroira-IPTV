@@ -8,5 +8,6 @@ namespace Kroira.App.Models
         public string StreamUrl { get; set; } = string.Empty;
         public string PosterUrl { get; set; } = string.Empty;
         public string TmdbId { get; set; } = string.Empty;
+        public string CategoryName { get; set; } = string.Empty;
     }
 }

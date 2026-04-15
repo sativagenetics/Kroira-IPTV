@@ -42,6 +42,18 @@ namespace Kroira.App
             {
                 ContentFrame.Navigate(typeof(Views.FavoritesPage));
             }
+            else if (args.InvokedItemContainer?.Tag?.ToString() == "ContinueWatching")
+            {
+                ContentFrame.Navigate(typeof(Views.ContinueWatchingPage));
+            }
+            else if (args.InvokedItemContainer?.Tag?.ToString() == "Movies")
+            {
+                ContentFrame.Navigate(typeof(Views.MoviesPage));
+            }
+            else if (args.InvokedItemContainer?.Tag?.ToString() == "Series")
+            {
+                ContentFrame.Navigate(typeof(Views.SeriesPage));
+            }
         }
     }
 }

@@ -20,8 +20,9 @@ namespace Kroira.App.ViewModels
         private string _status = string.Empty;
 
         public Microsoft.UI.Xaml.Visibility ParseVisibility => Type == "M3U" ? Microsoft.UI.Xaml.Visibility.Visible : Microsoft.UI.Xaml.Visibility.Collapsed;
-        public Microsoft.UI.Xaml.Visibility BrowseVisibility => Type == "M3U" ? Microsoft.UI.Xaml.Visibility.Visible : Microsoft.UI.Xaml.Visibility.Collapsed;
         public Microsoft.UI.Xaml.Visibility SyncEpgVisibility => Type == "M3U" ? Microsoft.UI.Xaml.Visibility.Visible : Microsoft.UI.Xaml.Visibility.Collapsed;
+        public Microsoft.UI.Xaml.Visibility SyncXtreamVisibility => Type == "Xtream" ? Microsoft.UI.Xaml.Visibility.Visible : Microsoft.UI.Xaml.Visibility.Collapsed;
+        public Microsoft.UI.Xaml.Visibility BrowseVisibility => (Type == "M3U" || Type == "Xtream") ? Microsoft.UI.Xaml.Visibility.Visible : Microsoft.UI.Xaml.Visibility.Collapsed;
     }
 
     public partial class SourceListViewModel : ObservableObject
@@ -103,6 +104,48 @@ namespace Kroira.App.ViewModels
             catch (Exception ex)
             {
                 if (item != null) item.Status = $"EPG Failed: {ex.Message}";
+            }
+        }
+
+        [RelayCommand]
+        public async Task SyncXtreamAsync(int id)
+        {
+            var item = Sources.FirstOrDefault(s => s.Id == id);
+            if (item != null) item.Status = "Syncing Xtream...";
+
+            try
+            {
+                using var scope = _serviceProvider.CreateScope();
+                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                var parser = scope.ServiceProvider.GetRequiredService<Kroira.App.Services.Parsing.IXtreamParserService>();
+
+                await parser.ParseAndImportXtreamAsync(db, id);
+                await LoadSourcesAsync();
+            }
+            catch (Exception ex)
+            {
+                if (item != null) item.Status = $"Xtream Sync Failed: {ex.Message}";
+            }
+        }
+
+        [RelayCommand]
+        public async Task SyncXtreamVodAsync(int id)
+        {
+            var item = Sources.FirstOrDefault(s => s.Id == id);
+            if (item != null) item.Status = "Syncing Xtream VOD...";
+
+            try
+            {
+                using var scope = _serviceProvider.CreateScope();
+                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                var parser = scope.ServiceProvider.GetRequiredService<Kroira.App.Services.Parsing.IXtreamParserService>();
+
+                await parser.ParseAndImportXtreamVodAsync(db, id);
+                await LoadSourcesAsync();
+            }
+            catch (Exception ex)
+            {
+                if (item != null) item.Status = $"Xtream VOD Sync Failed: {ex.Message}";
             }
         }
 

@@ -16,12 +16,26 @@ namespace Kroira.App.ViewModels
         private string _sourceName = string.Empty;
 
         [ObservableProperty]
-        private bool _isM3U = true;
+        [NotifyPropertyChangedFor(nameof(IsM3U))]
+        [NotifyPropertyChangedFor(nameof(M3UVisibility))]
+        [NotifyPropertyChangedFor(nameof(XtreamVisibility))]
+        private int _selectedFormatIndex = 0;
+
+        public bool IsM3U => SelectedFormatIndex == 0;
+        public Microsoft.UI.Xaml.Visibility M3UVisibility => IsM3U ? Microsoft.UI.Xaml.Visibility.Visible : Microsoft.UI.Xaml.Visibility.Collapsed;
+        public Microsoft.UI.Xaml.Visibility XtreamVisibility => !IsM3U ? Microsoft.UI.Xaml.Visibility.Visible : Microsoft.UI.Xaml.Visibility.Collapsed;
 
         [ObservableProperty]
         private string _m3uUrlOrPath = string.Empty;
 
+        [ObservableProperty]
+        private string _xtreamUrl = string.Empty;
 
+        [ObservableProperty]
+        private string _xtreamUsername = string.Empty;
+
+        [ObservableProperty]
+        private string _xtreamPassword = string.Empty;
 
         [ObservableProperty]
         private string _epgUrl = string.Empty;
@@ -54,6 +68,12 @@ namespace Kroira.App.ViewModels
                 return;
             }
 
+            if (!IsM3U && (string.IsNullOrWhiteSpace(XtreamUrl) || string.IsNullOrWhiteSpace(XtreamUsername) || string.IsNullOrWhiteSpace(XtreamPassword)))
+            {
+                StatusMessage = "Server URL, Username, and Password are required for Xtream.";
+                return;
+            }
+
             try
             {
                 using var scope = _serviceProvider.CreateScope();
@@ -75,9 +95,9 @@ namespace Kroira.App.ViewModels
                     var creds = new SourceCredential
                     {
                         SourceProfileId = profile.Id,
-                        Url = IsM3U ? M3uUrlOrPath : string.Empty,
-                        Username = string.Empty,
-                        Password = string.Empty,
+                        Url = IsM3U ? M3uUrlOrPath : XtreamUrl,
+                        Username = IsM3U ? string.Empty : XtreamUsername,
+                        Password = IsM3U ? string.Empty : XtreamPassword,
                         EpgUrl = EpgUrl
                     };
                     db.SourceCredentials.Add(creds);
@@ -99,6 +119,9 @@ namespace Kroira.App.ViewModels
                     SourceName = string.Empty;
                     M3uUrlOrPath = string.Empty;
                     EpgUrl = string.Empty;
+                    XtreamUrl = string.Empty;
+                    XtreamUsername = string.Empty;
+                    XtreamPassword = string.Empty;
                 }
                 catch
                 {

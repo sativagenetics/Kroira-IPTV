@@ -9,23 +9,32 @@
 
         <TextBox Header="Source Name" Text="{x:Bind ViewModel.SourceName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="e.g. My Custom List" />
 
-        <RadioButtons Header="Source Format">
-            <RadioButton Content="M3U (URL or Local File)" IsChecked="{x:Bind ViewModel.IsM3U, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-            <RadioButton Content="Xtream Codes (Not supported yet)" IsEnabled="False" />
+        <RadioButtons Header="Source Format" SelectedIndex="{x:Bind ViewModel.SelectedFormatIndex, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+            <RadioButton Content="M3U (URL or Local File)" />
+            <RadioButton Content="Xtream Codes (Live TV Only)" />
         </RadioButtons>
 
-        <TextBlock Text="M3U Connection (URL or Local Path)" Margin="0,8,0,0"/>
-        <Grid ColumnSpacing="8">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="Auto" />
-            </Grid.ColumnDefinitions>
-            <TextBox Grid.Column="0" Text="{x:Bind ViewModel.M3uUrlOrPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="http://... or C:\..." />
-            <Button Grid.Column="1" Content="Browse File..." Command="{x:Bind ViewModel.BrowseLocalFileCommand}" />
-        </Grid>
+        <StackPanel Visibility="{x:Bind ViewModel.M3UVisibility, Mode=OneWay}" Spacing="8">
+            <TextBlock Text="M3U Connection (URL or Local Path)"/>
+            <Grid ColumnSpacing="8">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBox Grid.Column="0" Text="{x:Bind ViewModel.M3uUrlOrPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="http://... or C:\..." />
+                <Button Grid.Column="1" Content="Browse File..." Command="{x:Bind ViewModel.BrowseLocalFileCommand}" />
+            </Grid>
 
-        <TextBlock Text="XMLTV EPG URL (Optional)" Margin="0,8,0,0"/>
-        <TextBox Text="{x:Bind ViewModel.EpgUrl, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="http://.../epg.xml" />
+            <TextBlock Text="XMLTV EPG URL (Optional)" Margin="0,8,0,0"/>
+            <TextBox Text="{x:Bind ViewModel.EpgUrl, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="http://.../epg.xml" />
+        </StackPanel>
+
+        <StackPanel Visibility="{x:Bind ViewModel.XtreamVisibility, Mode=OneWay}" Spacing="8">
+            <TextBlock Text="Xtream Codes Connection" />
+            <TextBox Header="Server URL" Text="{x:Bind ViewModel.XtreamUrl, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="http://domain.com:8080" />
+            <TextBox Header="Username" Text="{x:Bind ViewModel.XtreamUsername, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+            <PasswordBox Header="Password" Password="{x:Bind ViewModel.XtreamPassword, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+        </StackPanel>
 
         <Button Content="Save Source" Command="{x:Bind ViewModel.SaveSourceCommand}" Style="{ThemeResource AccentButtonStyle}" Margin="0,16,0,0" />
 
