@@ -1,5 +1,6 @@
 using Kroira.App.Models;
 using Kroira.App.Data;
+using Kroira.App.Services;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Navigation;
@@ -15,6 +16,7 @@ namespace Kroira.App.Views
     {
         private PlaybackLaunchContext _launchContext;
         private MediaPlayer _mediaPlayer;
+        private readonly IWindowManagerService _windowManager;
 
         public EmbeddedPlaybackPage()
         {
@@ -23,12 +25,23 @@ namespace Kroira.App.Views
             _mediaPlayer = new MediaPlayer();
             PlayerElement.SetMediaPlayer(_mediaPlayer);
 
+            _windowManager = ((App)Application.Current).Services.GetRequiredService<IWindowManagerService>();
+            _windowManager.FullscreenStateChanged += OnFullscreenStateChanged;
+            SyncBackButtonVisibility();
+
             this.Unloaded += (s, e) => 
             {
                 SaveProgress();
                 _mediaPlayer.Pause();
                 _mediaPlayer.Source = null;
                 _mediaPlayer.Dispose();
+                _windowManager.FullscreenStateChanged -= OnFullscreenStateChanged;
+
+                // Exit fullscreen when leaving the playback page so the shell is restored
+                if (_windowManager.IsFullscreen)
+                {
+                    _windowManager.ExitFullscreen();
+                }
             };
         }
 
@@ -137,8 +150,32 @@ namespace Kroira.App.Views
             }
         }
 
+        private void DoubleTapOverlay_DoubleTapped(object sender, Microsoft.UI.Xaml.Input.DoubleTappedRoutedEventArgs e)
+        {
+            _windowManager.ToggleFullscreen();
+            e.Handled = true;
+        }
+
+        private void OnFullscreenStateChanged(object sender, EventArgs e)
+        {
+            SyncBackButtonVisibility();
+        }
+
+        private void SyncBackButtonVisibility()
+        {
+            BackButton.Visibility = _windowManager.IsFullscreen
+                ? Visibility.Collapsed
+                : Visibility.Visible;
+        }
+
         private void Back_Click(object sender, RoutedEventArgs e)
         {
+            // If fullscreen, exit it first so the shell is visible before navigating
+            if (_windowManager.IsFullscreen)
+            {
+                _windowManager.ExitFullscreen();
+            }
+
             if (this.Frame.CanGoBack)
             {
                 this.Frame.GoBack();

@@ -11,8 +11,12 @@
                             HorizontalAlignment="Stretch" 
                             VerticalAlignment="Stretch" />
 
-        <!-- Overlay Back Button so user can leave without reaching for keyboard or mouse-back -->
-        <Button Content="← Back" Click="Back_Click" 
+        <!-- Transparent overlay to capture double-click for fullscreen toggle.
+             Sits above the player but below the Back button in z-order. -->
+        <Grid x:Name="DoubleTapOverlay" Background="Transparent" DoubleTapped="DoubleTapOverlay_DoubleTapped" />
+
+        <!-- Overlay Back Button — hidden during fullscreen for clean immersion -->
+        <Button x:Name="BackButton" Content="← Back" Click="Back_Click" 
                 VerticalAlignment="Top" HorizontalAlignment="Left" Margin="20" 
                 Background="#88000000" Foreground="White" Padding="12,8" CornerRadius="4" />
     </Grid>
