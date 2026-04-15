@@ -5,31 +5,20 @@
   xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
   IgnorableNamespaces="uap rescap">
 
-  <!--
-    TODO (Store submission): Replace the three Identity fields below with values
-    from Partner Center → Apps → Product Management → Product Identity.
-      Name            = Package/Identity/Name   (e.g. "12345PublisherName.KroiraIPTV")
-      Publisher       = Package/Identity/Publisher (e.g. "CN=XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX")
-      Version         = Must be 4-part: Major.Minor.Build.Revision
-  -->
   <Identity
-    Name="KroiraApp"
-    Publisher="CN=SATIVA"
+    Name="SATIVAGENETICS.KROIRAIPTVPlayer"
+    Publisher="CN=1B47D348-A27A-430F-8ED8-B45035F098CB"
     Version="1.0.0.0" />
 
   <Properties>
     <DisplayName>KROIRA IPTV</DisplayName>
-    <!--
-      TODO (Store submission): Replace PublisherDisplayName with the exact value
-      from Partner Center → Account Settings → Publisher display name.
-    -->
-    <PublisherDisplayName>SATIVA</PublisherDisplayName>
+    <PublisherDisplayName>SATIVAGENETICS</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
   </Properties>
 
   <Dependencies>
     <!--
-      MinVersion = Windows 10 1809 (17763) — minimum supported.
+      MinVersion  = Windows 10 1809 (17763) — minimum supported.
       MaxVersionTested = Windows 11 22H2 (22621) — highest tested build.
     -->
     <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.17763.0" MaxVersionTested="10.0.22621.0" />
@@ -57,10 +46,11 @@
 
   <Capabilities>
     <!--
-      runFullTrust removed: MediaPlayerElement-based playback does not require
-      full trust. If any future feature needs it, add it back with justification.
-      internetClient is required for IPTV stream fetching and EPG sync.
+      runFullTrust is required by the WinUI 3 $targetentrypoint$ packaging token.
+      MakeAppx validation enforces this for all packaged Windows App SDK applications.
+      internetClient is required for stream fetching and EPG sync.
     -->
+    <rescap:Capability Name="runFullTrust" />
     <Capability Name="internetClient" />
   </Capabilities>
 </Package>
