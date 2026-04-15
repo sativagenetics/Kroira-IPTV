@@ -4,6 +4,7 @@ Views\ChannelBrowserPage.xbf
 Views\ChannelsPage.xbf
 Views\ContinueWatchingPage.xbf
 Views\DevPlaybackPage.xbf
+Views\EmbeddedPlaybackPage.xbf
 Views\FavoritesPage.xbf
 Views\MoviesPage.xbf
 Views\SeriesPage.xbf

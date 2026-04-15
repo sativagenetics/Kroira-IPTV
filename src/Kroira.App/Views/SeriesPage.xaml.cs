@@ -52,7 +52,7 @@ namespace Kroira.App.Views
             {
                 if (!string.IsNullOrWhiteSpace(ep.StreamUrl))
                 {
-                    this.Frame.Navigate(typeof(DevPlaybackPage), new PlaybackLaunchContext
+                    this.Frame.Navigate(typeof(EmbeddedPlaybackPage), new PlaybackLaunchContext
                     {
                         ContentId = ep.Id,
                         ContentType = PlaybackContentType.Episode,

@@ -646,3 +646,8 @@ C:\Users\SATIVA\Desktop\stream\src\Kroira.App\obj\x64\Debug\net8.0-windows10.0.1
 C:\Users\SATIVA\Desktop\stream\src\Kroira.App\obj\x64\Debug\net8.0-windows10.0.19041.0\win-x64\qualifiers.txt
 C:\Users\SATIVA\Desktop\stream\src\Kroira.App\obj\x64\Debug\net8.0-windows10.0.19041.0\win-x64\qualifiers.txt.intermediate
 C:\Users\SATIVA\Desktop\stream\src\Kroira.App\obj\x64\Debug\net8.0-windows10.0.19041.0\win-x64\MultipleQualifiersPerDimensionFound.txt
+C:\Users\SATIVA\Desktop\stream\src\Kroira.App\bin\x64\Debug\net8.0-windows10.0.19041.0\win-x64\Views\EmbeddedPlaybackPage.xbf
+C:\Users\SATIVA\Desktop\stream\src\Kroira.App\obj\x64\Debug\net8.0-windows10.0.19041.0\win-x64\Views\EmbeddedPlaybackPage.g.i.cs
+C:\Users\SATIVA\Desktop\stream\src\Kroira.App\obj\x64\Debug\net8.0-windows10.0.19041.0\win-x64\Views\EmbeddedPlaybackPage.g.cs
+C:\Users\SATIVA\Desktop\stream\src\Kroira.App\obj\x64\Debug\net8.0-windows10.0.19041.0\win-x64\Views\EmbeddedPlaybackPage.xaml
+C:\Users\SATIVA\Desktop\stream\src\Kroira.App\obj\x64\Debug\net8.0-windows10.0.19041.0\win-x64\Views\EmbeddedPlaybackPage.xbf

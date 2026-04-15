@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Kroira.App")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+94113a8235443093ebe5584d55eb281e90842f43")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+b4ea09151d03f7a730ef7f1ca6a116af556a1327")]
 [assembly: System.Reflection.AssemblyProductAttribute("Kroira.App")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Kroira.App")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
