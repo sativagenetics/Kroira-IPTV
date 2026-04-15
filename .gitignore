@@ -1,0 +1,87 @@
+###############################################################################
+# .NET / C# / WinUI 3 / Windows App SDK
+###############################################################################
+
+## Build output
+[Dd]ebug/
+[Rr]elease/
+[Bb]in/
+[Oo]bj/
+[Oo]ut/
+*.appx
+*.msix
+*.appxupload
+*.appxbundle
+
+## NuGet
+*.nupkg
+*.snupkg
+.nuget/
+packages/
+!**/packages/build/
+project.lock.json
+project.assets.json
+**/[Pp]ackages/*
+# Keep NuGet.Config if present
+!NuGet.Config
+
+## Rider / Resharper
+.idea/
+*.sln.iml
+_ReSharper*/
+*.ReSharper
+*.DotSettings.user
+
+## Visual Studio
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.opendb
+*.VC.db
+
+## VS Code
+.vscode/
+*.code-workspace
+
+## Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+## macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+## EF Core / SQLite local databases (runtime-generated, not source)
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+
+## Rider local history
+.localhistory/
+
+## Test results
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+*.log
+*.trx
+
+## Publish profile secrets
+PublishProfiles/
+*.pubxml.user
+
+## Temporary files
+*.tmp
+*.temp
+~$*
