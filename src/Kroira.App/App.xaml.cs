@@ -5,6 +5,7 @@ using Kroira.App.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using System.Diagnostics;
 using System.IO;
 
 namespace Kroira.App
@@ -16,8 +17,17 @@ namespace Kroira.App
 
         public App()
         {
-            this.InitializeComponent();
-            Services = ConfigureServices();
+            try
+            {
+                this.InitializeComponent();
+                Services = ConfigureServices();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.ToString());
+                WriteStartupError(ex);
+                throw;
+            }
         }
 
         public IServiceProvider Services { get; }
@@ -44,6 +54,7 @@ namespace Kroira.App
             }
             catch (Exception ex)
             {
+                Debug.WriteLine(ex.ToString());
                 WriteStartupError(ex);
                 ShowStartupError(ex);
             }
