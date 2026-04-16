@@ -8,6 +8,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Kroira.App.Data;
 using Kroira.App.Models;
+using Kroira.App.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -58,11 +59,11 @@ namespace Kroira.App.ViewModels
             var categoryLabels = rawMovies
                 .Select(m => m.CategoryName)
                 .Where(c => !string.IsNullOrWhiteSpace(c))
-                .Select(NormalizeCatalogLabel)
+                .Select(ContentClassifier.NormalizeLabel)
                 .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
             _allMovies = rawMovies
-                .Where(m => IsPlayableMovie(m, categoryLabels))
+                .Where(m => ContentClassifier.IsPlayableMovie(m, categoryLabels))
                 .ToList();
 
             Categories.Clear();
@@ -111,23 +112,9 @@ namespace Kroira.App.ViewModels
             IsEmpty = FilteredMovies.Count == 0;
         }
 
-        private static bool IsPlayableMovie(Movie movie, HashSet<string> categoryLabels)
-        {
-            if (string.IsNullOrWhiteSpace(movie.StreamUrl)) return false;
-            if (string.IsNullOrWhiteSpace(movie.Title)) return false;
-
-            return !categoryLabels.Contains(NormalizeCatalogLabel(movie.Title));
-        }
-
         private static string GetDisplayCategory(string categoryName)
         {
             return string.IsNullOrWhiteSpace(categoryName) ? "Uncategorized" : categoryName.Trim();
-        }
-
-        private static string NormalizeCatalogLabel(string value)
-        {
-            if (string.IsNullOrWhiteSpace(value)) return string.Empty;
-            return string.Join(" ", value.Trim().Split(new[] { ' ', '\t', '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries));
         }
     }
 }

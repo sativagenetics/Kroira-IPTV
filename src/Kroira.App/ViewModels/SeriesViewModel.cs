@@ -8,6 +8,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Kroira.App.Data;
 using Kroira.App.Models;
+using Kroira.App.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -77,11 +78,11 @@ namespace Kroira.App.ViewModels
             var categoryLabels = rawSeries
                 .Select(s => s.CategoryName)
                 .Where(c => !string.IsNullOrWhiteSpace(c))
-                .Select(NormalizeCatalogLabel)
+                .Select(ContentClassifier.NormalizeLabel)
                 .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
             _allSeries = rawSeries
-                .Where(s => IsPlayableSeries(s, categoryLabels))
+                .Where(s => ContentClassifier.IsPlayableSeries(s, categoryLabels))
                 .ToList();
 
             foreach (var s in _allSeries)
@@ -145,26 +146,9 @@ namespace Kroira.App.ViewModels
             IsEmpty = FilteredSeries.Count == 0;
         }
 
-        private static bool IsPlayableSeries(Series series, HashSet<string> categoryLabels)
-        {
-            if (string.IsNullOrWhiteSpace(series.Title)) return false;
-            if (categoryLabels.Contains(NormalizeCatalogLabel(series.Title))) return false;
-
-            return series.Seasons != null &&
-                   series.Seasons.Any(season =>
-                       season.Episodes != null &&
-                       season.Episodes.Any(episode => !string.IsNullOrWhiteSpace(episode.StreamUrl)));
-        }
-
         private static string GetDisplayCategory(string categoryName)
         {
             return string.IsNullOrWhiteSpace(categoryName) ? "Uncategorized" : categoryName.Trim();
-        }
-
-        private static string NormalizeCatalogLabel(string value)
-        {
-            if (string.IsNullOrWhiteSpace(value)) return string.Empty;
-            return string.Join(" ", value.Trim().Split(new[] { ' ', '\t', '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries));
         }
     }
 }

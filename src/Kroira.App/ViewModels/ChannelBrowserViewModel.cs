@@ -7,6 +7,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Kroira.App.Data;
 using Kroira.App.Models;
+using Kroira.App.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
@@ -150,9 +151,12 @@ namespace Kroira.App.ViewModels
                 .ToListAsync();
 
             var catIds = cats.Select(c => c.Id).ToList();
-            var chans = await db.Channels
+            var categoryLabels = ContentClassifier.BuildCategoryLabelSet(cats.Select(c => c.Name));
+            var chans = (await db.Channels
                 .Where(ch => catIds.Contains(ch.ChannelCategoryId))
-                .ToListAsync();
+                .ToListAsync())
+                .Where(ch => ContentClassifier.IsPlayableLiveChannel(ch.Name, ch.StreamUrl, categoryLabels))
+                .ToList();
 
             var favIds = await db.Favorites
                 .Where(f => f.ContentType == FavoriteType.Channel)
@@ -173,7 +177,7 @@ namespace Kroira.App.ViewModels
 
             Categories.Add(new BrowserCategoryViewModel { Id = 0, Name = "All Categories", OrderIndex = -1 });
 
-            foreach (var c in cats)
+            foreach (var c in cats.Where(c => chans.Any(ch => ch.ChannelCategoryId == c.Id)))
             {
                 Categories.Add(new BrowserCategoryViewModel
                 {

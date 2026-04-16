@@ -6,6 +6,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Kroira.App.Data;
 using Kroira.App.Models;
+using Kroira.App.Services;
 using Microsoft.EntityFrameworkCore;
 
 namespace Kroira.App.Services.Parsing
@@ -39,7 +40,7 @@ namespace Kroira.App.Services.Parsing
 
             var lines = content.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
 
-            var categoriesDict = new Dictionary<string, ChannelCategory>(StringComparer.OrdinalIgnoreCase);
+            var parsedEntries = new List<M3uEntry>();
 
             string currentGroup = "Uncategorized";
             string currentLogo = string.Empty;
@@ -68,28 +69,46 @@ namespace Kroira.App.Services.Parsing
                 else if (expectsUrl && !line.StartsWith("#"))
                 {
                     var url = line.Trim();
-                    if (!categoriesDict.TryGetValue(currentGroup, out var category))
+                    parsedEntries.Add(new M3uEntry
                     {
-                        category = new ChannelCategory
-                        {
-                            SourceProfileId = sourceProfileId,
-                            Name = currentGroup,
-                            OrderIndex = categoriesDict.Count,
-                            Channels = new List<Channel>()
-                        };
-                        categoriesDict[currentGroup] = category;
-                    }
-
-                    category.Channels.Add(new Channel
-                    {
+                        GroupName = currentGroup,
                         Name = currentName,
-                        StreamUrl = url,
+                        Url = url,
                         LogoUrl = currentLogo
                     });
 
-                    totalChannels++;
                     expectsUrl = false;
                 }
+            }
+
+            var categoryLabels = ContentClassifier.BuildCategoryLabelSet(parsedEntries.Select(entry => entry.GroupName));
+            var categoriesDict = new Dictionary<string, ChannelCategory>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var entry in parsedEntries)
+            {
+                if (ContentClassifier.IsGarbageCategoryName(entry.GroupName)) continue;
+                if (!ContentClassifier.IsPlayableLiveChannel(entry.Name, entry.Url, categoryLabels)) continue;
+
+                if (!categoriesDict.TryGetValue(entry.GroupName, out var category))
+                {
+                    category = new ChannelCategory
+                    {
+                        SourceProfileId = sourceProfileId,
+                        Name = entry.GroupName,
+                        OrderIndex = categoriesDict.Count,
+                        Channels = new List<Channel>()
+                    };
+                    categoriesDict[entry.GroupName] = category;
+                }
+
+                category.Channels.Add(new Channel
+                {
+                    Name = entry.Name,
+                    StreamUrl = entry.Url,
+                    LogoUrl = entry.LogoUrl
+                });
+
+                totalChannels++;
             }
 
             using var transaction = await db.Database.BeginTransactionAsync();
@@ -128,6 +147,14 @@ namespace Kroira.App.Services.Parsing
                 await transaction.RollbackAsync();
                 throw;
             }
+        }
+
+        private sealed class M3uEntry
+        {
+            public string GroupName { get; set; } = string.Empty;
+            public string Name { get; set; } = string.Empty;
+            public string Url { get; set; } = string.Empty;
+            public string LogoUrl { get; set; } = string.Empty;
         }
     }
 }

@@ -8,6 +8,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Kroira.App.Data;
 using Kroira.App.Models;
+using Kroira.App.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -54,26 +55,16 @@ namespace Kroira.App.ViewModels
             using var scope = _serviceProvider.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
-            // Load all categories across all sources
             var cats = await db.ChannelCategories
                 .OrderBy(c => c.Name)
                 .ToListAsync();
+            var categoryMap = cats.ToDictionary(c => c.Id);
+            var categoryLabels = ContentClassifier.BuildCategoryLabelSet(cats.Select(c => c.Name));
 
-            Categories.Add(new BrowserCategoryViewModel { Id = 0, Name = "All Categories", OrderIndex = -1 });
-            foreach (var c in cats)
-            {
-                Categories.Add(new BrowserCategoryViewModel
-                {
-                    Id = c.Id,
-                    Name = c.Name,
-                    OrderIndex = c.OrderIndex
-                });
-            }
-
-            SelectedCategory = Categories.FirstOrDefault();
-
-            // Load all channels
-            var channels = await db.Channels.ToListAsync();
+            var channels = (await db.Channels.ToListAsync())
+                .Where(ch => ContentClassifier.IsPlayableLiveChannel(ch.Name, ch.StreamUrl, categoryLabels))
+                .Where(ch => categoryMap.ContainsKey(ch.ChannelCategoryId))
+                .ToList();
             var favIds = await db.Favorites
                 .Where(f => f.ContentType == FavoriteType.Channel)
                 .Select(f => f.ContentId)
@@ -112,6 +103,20 @@ namespace Kroira.App.ViewModels
                 _allChannels.Add(item);
             }
 
+            Categories.Add(new BrowserCategoryViewModel { Id = 0, Name = "All Categories", OrderIndex = -1 });
+            foreach (var c in cats
+                         .Where(c => _allChannels.Any(ch => ch.CategoryId == c.Id))
+                         .OrderBy(c => c.Name))
+            {
+                Categories.Add(new BrowserCategoryViewModel
+                {
+                    Id = c.Id,
+                    Name = c.Name,
+                    OrderIndex = c.OrderIndex
+                });
+            }
+
+            SelectedCategory = Categories.FirstOrDefault();
             ApplyFilter();
         }
 

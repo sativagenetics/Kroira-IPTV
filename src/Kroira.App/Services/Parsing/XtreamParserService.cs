@@ -6,6 +6,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using Kroira.App.Data;
 using Kroira.App.Models;
+using Kroira.App.Services;
 using Microsoft.EntityFrameworkCore;
 
 namespace Kroira.App.Services.Parsing
@@ -97,6 +98,7 @@ namespace Kroira.App.Services.Parsing
                     if (streamsDoc.RootElement.ValueKind == JsonValueKind.Array)
                     {
                         var channelsList = new List<Channel>();
+                        var liveCategoryLabels = ContentClassifier.BuildCategoryLabelSet(categoryMap.Values.Select(c => c.Name));
                         foreach (var element in streamsDoc.RootElement.EnumerateArray())
                         {
                             string catId = null;
@@ -119,6 +121,7 @@ namespace Kroira.App.Services.Parsing
                             if (catId != null && categoryMap.TryGetValue(catId, out var mappedCat))
                             {
                                 string streamUrl = $"{baseUrl}/live/{cred.Username}/{cred.Password}/{streamId}.ts";
+                                if (!ContentClassifier.IsPlayableLiveChannel(name ?? string.Empty, streamUrl, liveCategoryLabels)) continue;
 
                                 channelsList.Add(new Channel
                                 {
@@ -198,7 +201,7 @@ namespace Kroira.App.Services.Parsing
                         }
                     }
                 }
-                var movieCategoryLabels = BuildCategoryLabelSet(md.Values);
+                var movieCategoryLabels = ContentClassifier.BuildCategoryLabelSet(md.Values);
 
                 var moviesJson = await client.GetStringAsync($"{baseUrl}/player_api.php{authQuery}&action=get_vod_streams");
                 if (string.IsNullOrWhiteSpace(moviesJson)) moviesJson = "[]";
@@ -221,10 +224,13 @@ namespace Kroira.App.Services.Parsing
                         md.TryGetValue(catId ?? "", out var mappedCatName);
 
                         // --- Garbage filter ---
-                        if (IsGarbageMovieExtension(ext)) continue;
-                        if (IsGarbageCategoryName(mappedCatName)) continue;
-                        if (IsGarbageTitle(name)) continue;
-                        if (IsProviderCategoryRow(name, movieCategoryLabels)) continue;
+                        if (ContentClassifier.IsGarbageMovieExtension(ext)) continue;
+                        if (ContentClassifier.IsGarbageCategoryName(mappedCatName)) continue;
+                        if (!ContentClassifier.IsPlayableMovie(new Movie
+                        {
+                            Title = name ?? string.Empty,
+                            StreamUrl = $"{baseUrl}/movie/{cred.Username}/{cred.Password}/{streamId}.{ext}"
+                        }, movieCategoryLabels)) continue;
                         // ----------------------
 
                         parsedMovies.Add(new Movie
@@ -254,7 +260,7 @@ namespace Kroira.App.Services.Parsing
                         }
                     }
                 }
-                var seriesCategoryLabels = BuildCategoryLabelSet(sd.Values);
+                var seriesCategoryLabels = ContentClassifier.BuildCategoryLabelSet(sd.Values);
 
                 var seriesJson = await client.GetStringAsync($"{baseUrl}/player_api.php{authQuery}&action=get_series");
                 if (string.IsNullOrWhiteSpace(seriesJson)) seriesJson = "[]";
@@ -276,9 +282,9 @@ namespace Kroira.App.Services.Parsing
                         sd.TryGetValue(catId ?? "", out var mappedCatName);
 
                         // --- Garbage filter ---
-                        if (IsGarbageCategoryName(mappedCatName)) continue;
-                        if (IsGarbageTitle(name)) continue;
-                        if (IsProviderCategoryRow(name, seriesCategoryLabels)) continue;
+                        if (ContentClassifier.IsGarbageCategoryName(mappedCatName)) continue;
+                        if (ContentClassifier.IsGarbageTitle(name ?? string.Empty)) continue;
+                        if (ContentClassifier.IsProviderCategoryRow(name ?? string.Empty, seriesCategoryLabels)) continue;
                         // ----------------------
 
                         pendingSeries.Add((seriesId, new Series
@@ -597,85 +603,5 @@ namespace Kroira.App.Services.Parsing
             }
         }
 
-        // -----------------------------------------------------------------------
-        // Heuristic garbage filters
-        // -----------------------------------------------------------------------
-
-        /// <summary>
-        /// Returns true for container extensions that are not video files and
-        /// should never appear in the Movies catalogue.
-        /// </summary>
-        private static bool IsGarbageMovieExtension(string ext)
-        {
-            if (string.IsNullOrWhiteSpace(ext)) return false;
-            var lower = ext.Trim().ToLowerInvariant().TrimStart('.');
-            return lower is "ts" or "m3u8" or "m3u" or "php" or "txt" or "html" or "htm";
-        }
-
-        /// <summary>
-        /// Returns true for category names that are clearly not real content
-        /// categories (playlists, packages, trial banners, test entries, etc.).
-        /// Case-insensitive substring match.
-        /// </summary>
-        private static bool IsGarbageCategoryName(string cat)
-        {
-            if (string.IsNullOrWhiteSpace(cat)) return false;
-            var lower = cat.ToLowerInvariant();
-            return lower.Contains("playlist") ||
-                   lower.Contains("package") ||
-                   lower.Contains(" trial") ||
-                   lower.Contains("trial ") ||
-                   lower == "trial" ||
-                   lower.Contains("| test") ||
-                   lower.Contains("test |") ||
-                   lower == "test" ||
-                   lower == "demo" ||
-                   lower.Contains("xxx pack") ||
-                   lower.Contains("xxx-pack") ||
-                   lower.Contains("xxx_pack") ||
-                   lower.Contains("iptv pack") ||
-                   lower.Contains("reseller") ||
-                   lower.Contains("credits") ||
-                   lower.Contains("placeholder");
-        }
-
-        /// <summary>
-        /// Returns true for titles that are clearly garbage or placeholder entries.
-        /// </summary>
-        private static bool IsGarbageTitle(string title)
-        {
-            if (string.IsNullOrWhiteSpace(title)) return true;
-            var lower = title.Trim().ToLowerInvariant();
-            // Pure numeric or very short entries are usually stream IDs leaked as names
-            if (lower.Length <= 2) return true;
-            return lower == "unknown" ||
-                   lower == "unknown movie" ||
-                   lower == "unknown series" ||
-                   lower.Contains("[placeholder]") ||
-                   lower.Contains("[test]") ||
-                   lower.Contains("[demo]") ||
-                   lower.StartsWith("test channel") ||
-                   lower.StartsWith("test stream");
-        }
-
-        private static HashSet<string> BuildCategoryLabelSet(IEnumerable<string> categoryNames)
-        {
-            return categoryNames
-                .Select(NormalizeCatalogLabel)
-                .Where(value => !string.IsNullOrWhiteSpace(value))
-                .ToHashSet(StringComparer.OrdinalIgnoreCase);
-        }
-
-        private static bool IsProviderCategoryRow(string title, HashSet<string> categoryLabels)
-        {
-            if (categoryLabels.Count == 0 || string.IsNullOrWhiteSpace(title)) return false;
-            return categoryLabels.Contains(NormalizeCatalogLabel(title));
-        }
-
-        private static string NormalizeCatalogLabel(string value)
-        {
-            if (string.IsNullOrWhiteSpace(value)) return string.Empty;
-            return string.Join(" ", value.Trim().Split(new[] { ' ', '\t', '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries));
-        }
     }
 }
