@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 using Kroira.App.Data;
 using Kroira.App.Models;
 using Kroira.App.Services;
@@ -22,11 +23,17 @@ namespace Kroira.App.Views
         private readonly IWindowManagerService _windowManager;
         private readonly DispatcherTimer _positionTimer;
         private readonly DispatcherTimer _voutAdoptionTimer;
+        private readonly DispatcherTimer _layoutStabilizationTimer;
+        private readonly DispatcherTimer _chromeAutoHideTimer;
         private PlaybackLaunchContext _launchContext;
         private string _pendingUrl;
         private long _pendingStartMs;
         private IntPtr _videoHostHwnd;
         private IntPtr _adoptedVoutHwnd;
+        private IntPtr _videoHostOriginalWndProc;
+        private IntPtr _adoptedVoutOriginalWndProc;
+        private readonly WndProcDelegate _videoHostWndProc;
+        private readonly WndProcDelegate _adoptedVoutWndProc;
         private bool _isDisposed;
         private bool _isViewLoaded;
         private bool _isUserSeeking;
@@ -35,6 +42,7 @@ namespace Kroira.App.Views
         private bool _tracksLoaded;
         private int _trackRefreshAttempts;
         private int _voutAdoptionAttempts;
+        private int _layoutStabilizationTicks;
         private DateTime _lastProgressSaveUtc = DateTime.MinValue;
 
         public EmbeddedPlaybackPage()
@@ -44,6 +52,8 @@ namespace Kroira.App.Views
             var services = ((App)Application.Current).Services;
             _engine = services.GetRequiredService<IPlaybackEngine>();
             _windowManager = services.GetRequiredService<IWindowManagerService>();
+            _videoHostWndProc = VideoHostWndProc;
+            _adoptedVoutWndProc = AdoptedVoutWndProc;
 
             _engine.StateChanged += Engine_StateChanged;
             _engine.ErrorOccurred += Engine_ErrorOccurred;
@@ -56,6 +66,12 @@ namespace Kroira.App.Views
 
             _voutAdoptionTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(100) };
             _voutAdoptionTimer.Tick += VoutAdoptionTimer_Tick;
+
+            _layoutStabilizationTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(80) };
+            _layoutStabilizationTimer.Tick += LayoutStabilizationTimer_Tick;
+
+            _chromeAutoHideTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(3) };
+            _chromeAutoHideTimer.Tick += ChromeAutoHideTimer_Tick;
 
             SyncFullscreenChrome();
         }
@@ -147,8 +163,10 @@ namespace Kroira.App.Views
                 _engine.SetVideoHostHandle(_videoHostHwnd);
                 ShowVideoHostWindow(true);
                 UpdateVideoHostBounds();
+                StartLayoutStabilization();
                 StartVoutAdoptionGuard();
                 _engine.Play(_pendingUrl, _pendingStartMs);
+                ShowChrome();
                 _positionTimer.Start();
                 _pendingUrl = null;
                 _pendingStartMs = 0;
@@ -172,6 +190,8 @@ namespace Kroira.App.Views
 
             _positionTimer.Stop();
             _voutAdoptionTimer.Stop();
+            _layoutStabilizationTimer.Stop();
+            _chromeAutoHideTimer.Stop();
 
             _engine.StateChanged -= Engine_StateChanged;
             _engine.ErrorOccurred -= Engine_ErrorOccurred;
@@ -186,13 +206,7 @@ namespace Kroira.App.Views
             }
             catch { }
 
-            try
-            {
-                _engine.SetVideoHostHandle(IntPtr.Zero);
-                _engine.Stop();
-                DestroyVideoHostWindow();
-            }
-            catch { }
+            BeginNonBlockingTeardown();
         }
 
         private void PositionTimer_Tick(object sender, object e)
@@ -222,6 +236,17 @@ namespace Kroira.App.Views
             if (TryAdoptDetachedVoutWindow() || _voutAdoptionAttempts >= 80)
             {
                 _voutAdoptionTimer.Stop();
+            }
+        }
+
+        private void LayoutStabilizationTimer_Tick(object sender, object e)
+        {
+            _layoutStabilizationTicks++;
+            UpdateVideoHostBounds();
+
+            if (_layoutStabilizationTicks >= 20)
+            {
+                _layoutStabilizationTimer.Stop();
             }
         }
 
@@ -284,7 +309,10 @@ namespace Kroira.App.Views
                         break;
                     case PlaybackState.Playing:
                         ShowVideoHostWindow(true);
+                        UpdateVideoHostBounds();
+                        StartLayoutStabilization();
                         ShowStatus(null, false);
+                        RestartChromeAutoHide();
                         _positionTimer.Start();
                         _tracksLoaded = false;
                         _trackRefreshAttempts = 0;
@@ -328,6 +356,44 @@ namespace Kroira.App.Views
             StatusOverlay.Visibility = Visibility.Visible;
         }
 
+        private void ShowChrome()
+        {
+            TopChrome.Opacity = 1;
+            BottomChrome.Opacity = 1;
+            TopChrome.IsHitTestVisible = true;
+            BottomChrome.IsHitTestVisible = true;
+        }
+
+        private void HideChrome()
+        {
+            if (_engine.State != PlaybackState.Playing || StatusOverlay.Visibility == Visibility.Visible)
+            {
+                return;
+            }
+
+            TopChrome.Opacity = 0;
+            BottomChrome.Opacity = 0;
+            TopChrome.IsHitTestVisible = false;
+            BottomChrome.IsHitTestVisible = false;
+        }
+
+        private void RestartChromeAutoHide()
+        {
+            ShowChrome();
+            _chromeAutoHideTimer.Stop();
+
+            if (_engine.State == PlaybackState.Playing)
+            {
+                _chromeAutoHideTimer.Start();
+            }
+        }
+
+        private void ChromeAutoHideTimer_Tick(object sender, object e)
+        {
+            _chromeAutoHideTimer.Stop();
+            HideChrome();
+        }
+
         private void EnsureVideoHostWindow()
         {
             if (_videoHostHwnd != IntPtr.Zero)
@@ -358,6 +424,7 @@ namespace Kroira.App.Views
             }
 
             _engine.SetVideoHostHandle(_videoHostHwnd);
+            _videoHostOriginalWndProc = SetWindowLongPtr(_videoHostHwnd, WindowLongIndex.GWLP_WNDPROC, Marshal.GetFunctionPointerForDelegate(_videoHostWndProc));
             UpdateVideoHostBounds();
             ShowVideoHostWindow(true);
         }
@@ -378,23 +445,23 @@ namespace Kroira.App.Views
 
             SetWindowPos(
                 _videoHostHwnd,
-                IntPtr.Zero,
+                HwndTop,
                 x,
                 y,
                 width,
                 height,
-                SetWindowPosFlags.SWP_NOZORDER | SetWindowPosFlags.SWP_NOACTIVATE);
+                SetWindowPosFlags.SWP_NOACTIVATE | SetWindowPosFlags.SWP_SHOWWINDOW);
 
             if (_adoptedVoutHwnd != IntPtr.Zero)
             {
                 SetWindowPos(
                     _adoptedVoutHwnd,
-                    IntPtr.Zero,
+                    HwndTop,
                     0,
                     0,
                     width,
                     height,
-                    SetWindowPosFlags.SWP_NOZORDER | SetWindowPosFlags.SWP_NOACTIVATE | SetWindowPosFlags.SWP_FRAMECHANGED);
+                    SetWindowPosFlags.SWP_NOACTIVATE | SetWindowPosFlags.SWP_FRAMECHANGED | SetWindowPosFlags.SWP_SHOWWINDOW);
             }
         }
 
@@ -416,6 +483,8 @@ namespace Kroira.App.Views
             try
             {
                 _engine.SetVideoHostHandle(IntPtr.Zero);
+                RestoreWindowProc(_adoptedVoutHwnd, ref _adoptedVoutOriginalWndProc);
+                RestoreWindowProc(_videoHostHwnd, ref _videoHostOriginalWndProc);
                 DestroyWindow(_videoHostHwnd);
             }
             catch { }
@@ -432,6 +501,13 @@ namespace Kroira.App.Views
             _voutAdoptionAttempts = 0;
             _voutAdoptionTimer.Stop();
             _voutAdoptionTimer.Start();
+        }
+
+        private void StartLayoutStabilization()
+        {
+            _layoutStabilizationTicks = 0;
+            _layoutStabilizationTimer.Stop();
+            _layoutStabilizationTimer.Start();
         }
 
         private bool TryAdoptDetachedVoutWindow()
@@ -480,10 +556,40 @@ namespace Kroira.App.Views
             SetWindowLongPtr(detachedWindow, WindowLongIndex.GWL_STYLE, new IntPtr(style));
             SetParent(detachedWindow, _videoHostHwnd);
             _adoptedVoutHwnd = detachedWindow;
+            _adoptedVoutOriginalWndProc = SetWindowLongPtr(_adoptedVoutHwnd, WindowLongIndex.GWLP_WNDPROC, Marshal.GetFunctionPointerForDelegate(_adoptedVoutWndProc));
             ShowWindow(_adoptedVoutHwnd, ShowWindowCommand.SW_SHOWNA);
             UpdateVideoHostBounds();
 
             return true;
+        }
+
+        private IntPtr VideoHostWndProc(IntPtr hwnd, uint msg, IntPtr wParam, IntPtr lParam)
+        {
+            HandleNativeVideoMouseMessage(msg);
+            return CallWindowProc(_videoHostOriginalWndProc, hwnd, msg, wParam, lParam);
+        }
+
+        private IntPtr AdoptedVoutWndProc(IntPtr hwnd, uint msg, IntPtr wParam, IntPtr lParam)
+        {
+            HandleNativeVideoMouseMessage(msg);
+            return CallWindowProc(_adoptedVoutOriginalWndProc, hwnd, msg, wParam, lParam);
+        }
+
+        private void HandleNativeVideoMouseMessage(uint message)
+        {
+            if (message == NativeMessages.WM_MOUSEMOVE || message == NativeMessages.WM_LBUTTONDOWN)
+            {
+                DispatcherQueue.TryEnqueue(RestartChromeAutoHide);
+            }
+        }
+
+        private static void RestoreWindowProc(IntPtr hwnd, ref IntPtr originalWndProc)
+        {
+            if (hwnd != IntPtr.Zero && originalWndProc != IntPtr.Zero)
+            {
+                SetWindowLongPtr(hwnd, WindowLongIndex.GWLP_WNDPROC, originalWndProc);
+                originalWndProc = IntPtr.Zero;
+            }
         }
 
         private static string GetWindowTitle(IntPtr hwnd)
@@ -514,7 +620,7 @@ namespace Kroira.App.Views
         private void Stop_Click(object sender, RoutedEventArgs e)
         {
             SaveProgress(force: true);
-            _engine.Stop();
+            BeginNonBlockingTeardown();
         }
 
         private void SkipBack_Click(object sender, RoutedEventArgs e)
@@ -665,7 +771,7 @@ namespace Kroira.App.Views
 
         private void PlayerRoot_PointerMoved(object sender, PointerRoutedEventArgs e)
         {
-            ChromeOverlay.Opacity = 1;
+            RestartChromeAutoHide();
         }
 
         private void PlayerRoot_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
@@ -687,12 +793,15 @@ namespace Kroira.App.Views
         private void SyncFullscreenChrome()
         {
             BackButton.Visibility = _windowManager.IsFullscreen ? Visibility.Collapsed : Visibility.Visible;
-            ChromeOverlay.Opacity = 1;
+            ShowChrome();
+            UpdateVideoHostBounds();
+            StartLayoutStabilization();
         }
 
         private void Back_Click(object sender, RoutedEventArgs e)
         {
             SaveProgress(force: true);
+            BeginNonBlockingTeardown();
 
             if (_windowManager.IsFullscreen)
             {
@@ -707,6 +816,39 @@ namespace Kroira.App.Views
             {
                 Frame.Navigate(typeof(ChannelsPage));
             }
+        }
+
+        private void BeginNonBlockingTeardown()
+        {
+            _positionTimer.Stop();
+            _voutAdoptionTimer.Stop();
+            _layoutStabilizationTimer.Stop();
+            _chromeAutoHideTimer.Stop();
+            ShowVideoHostWindow(false);
+
+            var videoHost = _videoHostHwnd;
+            var adoptedVout = _adoptedVoutHwnd;
+            _videoHostHwnd = IntPtr.Zero;
+            _adoptedVoutHwnd = IntPtr.Zero;
+
+            try
+            {
+                _engine.SetVideoHostHandle(IntPtr.Zero);
+            }
+            catch { }
+
+            RestoreWindowProc(adoptedVout, ref _adoptedVoutOriginalWndProc);
+            RestoreWindowProc(videoHost, ref _videoHostOriginalWndProc);
+
+            if (videoHost != IntPtr.Zero)
+            {
+                try { DestroyWindow(videoHost); } catch { }
+            }
+
+            Task.Run(() =>
+            {
+                try { _engine.Stop(); } catch { }
+            });
         }
 
         private void SaveProgress(bool force)
@@ -820,6 +962,13 @@ namespace Kroira.App.Views
         [DllImport("user32.dll", EntryPoint = "SetWindowLongPtrW", SetLastError = true)]
         private static extern IntPtr SetWindowLongPtr(IntPtr hWnd, WindowLongIndex nIndex, IntPtr dwNewLong);
 
+        [DllImport("user32.dll", SetLastError = true)]
+        private static extern IntPtr CallWindowProc(IntPtr lpPrevWndFunc, IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam);
+
+        private delegate IntPtr WndProcDelegate(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam);
+
+        private static readonly IntPtr HwndTop = IntPtr.Zero;
+
         [Flags]
         private enum WindowStyles : uint
         {
@@ -834,7 +983,14 @@ namespace Kroira.App.Views
 
         private enum WindowLongIndex
         {
-            GWL_STYLE = -16
+            GWL_STYLE = -16,
+            GWLP_WNDPROC = -4
+        }
+
+        private static class NativeMessages
+        {
+            public const uint WM_MOUSEMOVE = 0x0200;
+            public const uint WM_LBUTTONDOWN = 0x0201;
         }
 
         [Flags]
@@ -842,7 +998,8 @@ namespace Kroira.App.Views
         {
             SWP_NOZORDER = 0x0004,
             SWP_NOACTIVATE = 0x0010,
-            SWP_FRAMECHANGED = 0x0020
+            SWP_FRAMECHANGED = 0x0020,
+            SWP_SHOWWINDOW = 0x0040
         }
 
         private enum ShowWindowCommand

@@ -16,7 +16,10 @@
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
-            <Border Grid.Row="0" Background="#99000000" Padding="18,14">
+            <Border x:Name="TopChrome"
+                    Grid.Row="0"
+                    Background="#99000000"
+                    Padding="18,14">
                 <Grid ColumnSpacing="12">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" />
@@ -83,7 +86,10 @@
                 </Border>
             </Grid>
 
-            <Border Grid.Row="2" Background="#CC05070C" Padding="18,14">
+            <Border x:Name="BottomChrome"
+                    Grid.Row="2"
+                    Background="#CC05070C"
+                    Padding="18,14">
                 <Grid RowSpacing="10">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
