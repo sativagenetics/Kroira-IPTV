@@ -49,7 +49,7 @@
             </GridView.ItemContainerStyle>
             <GridView.ItemTemplate>
                 <DataTemplate>
-                    <Grid Width="286" Height="88" Padding="12" BorderBrush="{StaticResource KroiraBorderBrush}" BorderThickness="1" CornerRadius="16" ColumnSpacing="12">
+                    <Grid Width="318" Height="136" Padding="12" BorderBrush="{StaticResource KroiraBorderBrush}" BorderThickness="1" CornerRadius="16" ColumnSpacing="12">
                         <Grid.Background>
                             <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
                                 <GradientStop Color="#171E2E" Offset="0" />
@@ -57,18 +57,31 @@
                             </LinearGradientBrush>
                         </Grid.Background>
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="54" />
+                            <ColumnDefinition Width="52" />
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
-                        <Border Grid.Column="0" Width="48" Height="48" CornerRadius="14" Background="{StaticResource KroiraMediaGradientBrush}">
-                            <Image Source="{Binding LogoUrl}" Stretch="Uniform" Margin="6" />
+                        <Border Grid.Column="0" Width="48" Height="48" CornerRadius="14" Background="{StaticResource KroiraMediaGradientBrush}" BorderBrush="#32B7B2FF" BorderThickness="1" VerticalAlignment="Top">
+                            <Grid>
+                                <FontIcon Glyph="&#xE714;" Foreground="{StaticResource KroiraAccentBrush}" FontSize="20" Opacity="0.54" />
+                                <Image Source="{Binding LogoUrl}" Stretch="Uniform" Margin="6" />
+                            </Grid>
                         </Border>
-                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="3">
-                            <TextBlock Text="{Binding Name}" TextWrapping="Wrap" MaxLines="2" FontWeight="SemiBold" FontSize="14" Foreground="{StaticResource KroiraTextPrimaryBrush}" />
-                            <TextBlock Text="Live channel" Foreground="{StaticResource KroiraTextTertiaryBrush}" FontSize="11" />
+                        <StackPanel Grid.Column="1" VerticalAlignment="Top" Spacing="5">
+                            <TextBlock Text="{Binding Name}" TextWrapping="Wrap" MaxLines="1" TextTrimming="CharacterEllipsis" FontWeight="SemiBold" FontSize="14" Foreground="{StaticResource KroiraTextPrimaryBrush}" />
+                            <TextBlock Text="{Binding CurrentProgramTitle}" TextWrapping="Wrap" MaxLines="1" TextTrimming="CharacterEllipsis" Foreground="{StaticResource KroiraTextSecondaryBrush}" FontSize="12" />
+                            <TextBlock Text="{Binding CurrentProgramTimeText}" Visibility="{Binding EpgVisibility}" Foreground="{StaticResource KroiraGoldBrush}" FontSize="11" FontWeight="SemiBold" />
+                            <ProgressBar Value="{Binding LiveProgressValue}" Maximum="100" Visibility="{Binding EpgVisibility}" Height="4" Foreground="{StaticResource KroiraGoldBrush}" Background="#30364B" />
+                            <Grid Visibility="{Binding NextProgramVisibility}" ColumnSpacing="6">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="{Binding NextProgramTitle}" MaxLines="1" TextTrimming="CharacterEllipsis" Foreground="{StaticResource KroiraTextTertiaryBrush}" FontSize="11" />
+                                <TextBlock Grid.Column="1" Text="{Binding NextProgramTimeText}" Foreground="{StaticResource KroiraTextTertiaryBrush}" FontSize="11" />
+                            </Grid>
                         </StackPanel>
-                        <Button Grid.Column="2" Content="{Binding FavoriteIcon}" Tag="{Binding Id}" Click="FavoriteToggle_Click" Background="Transparent" Foreground="{StaticResource KroiraGoldBrush}" BorderThickness="0" FontSize="18" Padding="0" VerticalAlignment="Center" />
+                        <Button Grid.Column="2" Content="{Binding FavoriteIcon}" Tag="{Binding Id}" Click="FavoriteToggle_Click" Background="#141A29" Foreground="{StaticResource KroiraGoldBrush}" BorderBrush="{StaticResource KroiraBorderBrush}" BorderThickness="1" CornerRadius="10" FontSize="17" Padding="5,1" VerticalAlignment="Top" />
                     </Grid>
                 </DataTemplate>
             </GridView.ItemTemplate>

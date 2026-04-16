@@ -79,9 +79,26 @@ namespace Kroira.App.ViewModels
                 .Select(f => f.ContentId)
                 .ToListAsync();
 
+            var channelIds = channels.Select(c => c.Id).ToList();
+            var now = DateTime.UtcNow;
+            var epgWindowEnd = now.AddHours(8);
+            var epgs = await db.EpgPrograms
+                .Where(e => channelIds.Contains(e.ChannelId)
+                         && e.EndTimeUtc > now
+                         && e.StartTimeUtc < epgWindowEnd)
+                .OrderBy(e => e.StartTimeUtc)
+                .ToListAsync();
+
             foreach (var ch in channels)
             {
-                _allChannels.Add(new BrowserChannelViewModel
+                var chEpg = epgs.Where(e => e.ChannelId == ch.Id).ToList();
+                var current = chEpg.FirstOrDefault(e => e.StartTimeUtc <= now && e.EndTimeUtc > now);
+                var next = chEpg
+                    .Where(e => e.StartTimeUtc >= (current?.EndTimeUtc ?? now))
+                    .OrderBy(e => e.StartTimeUtc)
+                    .FirstOrDefault();
+
+                var item = new BrowserChannelViewModel
                 {
                     Id = ch.Id,
                     CategoryId = ch.ChannelCategoryId,
@@ -89,7 +106,10 @@ namespace Kroira.App.ViewModels
                     StreamUrl = ch.StreamUrl,
                     LogoUrl = ch.LogoUrl ?? string.Empty,
                     IsFavorite = favIds.Contains(ch.Id)
-                });
+                };
+                item.ApplyEpg(current, next, now);
+
+                _allChannels.Add(item);
             }
 
             ApplyFilter();
@@ -149,4 +169,3 @@ namespace Kroira.App.ViewModels
         }
     }
 }
-

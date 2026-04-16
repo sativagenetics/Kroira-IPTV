@@ -37,14 +37,14 @@
             </StackPanel>
         </Border>
 
-        <Grid Grid.Row="1" ColumnSpacing="16" MaxWidth="1040" HorizontalAlignment="Left" VerticalAlignment="Top">
+        <Grid Grid.Row="1" ColumnSpacing="14" MaxWidth="980" HorizontalAlignment="Left" VerticalAlignment="Top">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="2*" />
-                <ColumnDefinition Width="288" />
+                <ColumnDefinition Width="260" />
             </Grid.ColumnDefinitions>
 
-            <Border Grid.Column="0" Style="{StaticResource KroiraPanelStyle}" Padding="16">
-                <StackPanel Spacing="12">
+            <Border Grid.Column="0" Style="{StaticResource KroiraPanelStyle}" Padding="14">
+                <StackPanel Spacing="10">
                     <TextBlock Text="Resume queue" Style="{StaticResource KroiraSectionTitleStyle}" />
                     <GridView ItemsSource="{x:Bind ViewModel.ProgressItems, Mode=OneWay}" SelectionMode="Single" SelectionChanged="ItemList_SelectionChanged">
                         <GridView.ItemsPanel>
@@ -59,7 +59,7 @@
                         </GridView.ItemContainerStyle>
                         <GridView.ItemTemplate>
                             <DataTemplate>
-                                <Grid Width="372" Height="128" Padding="12" BorderBrush="{StaticResource KroiraBorderStrongBrush}" BorderThickness="1" CornerRadius="22" ColumnSpacing="12">
+                                <Grid Width="382" Height="122" Padding="11" BorderBrush="{StaticResource KroiraBorderStrongBrush}" BorderThickness="1" CornerRadius="21" ColumnSpacing="12">
                                     <Grid.Background>
                                         <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
                                             <GradientStop Color="#302E5D" Offset="0" />
@@ -68,13 +68,14 @@
                                         </LinearGradientBrush>
                                     </Grid.Background>
                                     <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="118" />
+                                        <ColumnDefinition Width="114" />
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
 
-                                    <Border Grid.Column="0" Width="108" Height="82" CornerRadius="20" Background="{StaticResource KroiraMediaGradientBrush}" VerticalAlignment="Center">
+                                    <Border Grid.Column="0" Width="104" Height="76" CornerRadius="19" Background="{StaticResource KroiraMediaGradientBrush}" BorderBrush="#32B7B2FF" BorderThickness="1" VerticalAlignment="Center">
                                         <Grid>
+                                            <FontIcon Glyph="&#xE768;" Foreground="{StaticResource KroiraAccentBrush}" FontSize="25" Opacity="0.52" />
                                             <Image Source="{Binding LogoUrl}" Stretch="Uniform" Margin="10" />
                                             <Border Height="5" Background="{StaticResource KroiraGoldBrush}" CornerRadius="3" VerticalAlignment="Bottom" Margin="12,0,46,10" />
                                             <Border Height="5" Background="#4CFFFFFF" CornerRadius="3" VerticalAlignment="Bottom" Margin="12,0,12,10" Opacity="0.18" />

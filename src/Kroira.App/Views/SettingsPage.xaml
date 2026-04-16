@@ -5,7 +5,7 @@
     Background="{StaticResource KroiraPageBackgroundBrush}">
 
     <ScrollViewer>
-        <Grid Padding="28" RowSpacing="16" MaxWidth="980" HorizontalAlignment="Left">
+        <Grid Padding="28" RowSpacing="16" MaxWidth="940" HorizontalAlignment="Left">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />

@@ -67,13 +67,21 @@
                             </Grid.RowDefinitions>
                             
                             <Grid Grid.Row="0" Background="{StaticResource KroiraMediaGradientBrush}">
-                                <FontIcon Glyph="&#xE8A9;" Foreground="{StaticResource KroiraAccentBrush}" FontSize="28" Opacity="0.45" />
+                                <Border Margin="11" CornerRadius="15" BorderBrush="#46B7B2FF" BorderThickness="1" Opacity="0.72">
+                                    <Grid>
+                                        <FontIcon Glyph="&#xE8A9;" Foreground="{StaticResource KroiraAccentBrush}" FontSize="28" Opacity="0.52" />
+                                        <Border Width="56" Height="4" Background="{StaticResource KroiraGoldBrush}" CornerRadius="2" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="13,0,0,15" Opacity="0.72" />
+                                        <Border Width="94" Height="4" Background="#40FFFFFF" CornerRadius="2" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="13,0,0,15" Opacity="0.22" />
+                                    </Grid>
+                                </Border>
                                 <Image Source="{Binding PosterUrl}" Stretch="UniformToFill" />
                             </Grid>
 
-                            <StackPanel Grid.Row="1" Padding="10" Background="#E00F141D">
+                            <StackPanel Grid.Row="1" Padding="10,9,10,10" Background="#E00F141D" Spacing="5">
                                 <TextBlock Text="{Binding Title}" TextWrapping="Wrap" MaxLines="2" FontWeight="SemiBold" FontSize="11" Foreground="{StaticResource KroiraTextPrimaryBrush}" />
-                                <TextBlock Text="{Binding CategoryName}" Foreground="{StaticResource KroiraTextSecondaryBrush}" FontSize="9" Margin="0,4,0,0" />
+                                <Border Background="#241F42" BorderBrush="#38B7B2FF" BorderThickness="1" CornerRadius="999" Padding="7,2" HorizontalAlignment="Left">
+                                    <TextBlock Text="{Binding CategoryName}" Foreground="{StaticResource KroiraTextSecondaryBrush}" FontSize="9" />
+                                </Border>
                             </StackPanel>
                         </Grid>
                     </DataTemplate>

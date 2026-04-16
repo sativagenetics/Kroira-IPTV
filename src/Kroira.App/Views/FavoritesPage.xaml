@@ -30,14 +30,14 @@
             </StackPanel>
         </Border>
 
-        <Grid Grid.Row="1" ColumnSpacing="16" MaxWidth="960" HorizontalAlignment="Left" VerticalAlignment="Top">
+        <Grid Grid.Row="1" ColumnSpacing="14" MaxWidth="910" HorizontalAlignment="Left" VerticalAlignment="Top">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="2*" />
-                <ColumnDefinition Width="280" />
+                <ColumnDefinition Width="260" />
             </Grid.ColumnDefinitions>
 
-            <Border Grid.Column="0" Style="{StaticResource KroiraPanelStyle}" Padding="16">
-                <StackPanel Spacing="12">
+            <Border Grid.Column="0" Style="{StaticResource KroiraPanelStyle}" Padding="14">
+                <StackPanel Spacing="10">
                     <TextBlock Text="Saved lineup" Style="{StaticResource KroiraSectionTitleStyle}" />
                     <GridView ItemsSource="{x:Bind ViewModel.FavoriteChannels, Mode=OneWay}" SelectionMode="Single" SelectionChanged="ChannelList_SelectionChanged">
                         <GridView.ItemsPanel>
@@ -52,7 +52,7 @@
                         </GridView.ItemContainerStyle>
                         <GridView.ItemTemplate>
                             <DataTemplate>
-                                <Grid Width="292" Height="96" Padding="12" BorderBrush="{StaticResource KroiraBorderBrush}" BorderThickness="1" CornerRadius="18" ColumnSpacing="12">
+                                <Grid Width="280" Height="88" Padding="11" BorderBrush="{StaticResource KroiraBorderBrush}" BorderThickness="1" CornerRadius="17" ColumnSpacing="10">
                                     <Grid.Background>
                                         <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
                                             <GradientStop Color="#1B2134" Offset="0" />
@@ -60,15 +60,18 @@
                                         </LinearGradientBrush>
                                     </Grid.Background>
                                     <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="62" />
+                                        <ColumnDefinition Width="56" />
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
-                                    <Border Grid.Column="0" Width="52" Height="52" CornerRadius="16" Background="{StaticResource KroiraMediaGradientBrush}">
-                                        <Image Source="{Binding LogoUrl}" Stretch="Uniform" Margin="6" />
+                                    <Border Grid.Column="0" Width="48" Height="48" CornerRadius="15" Background="{StaticResource KroiraMediaGradientBrush}" BorderBrush="#32D9B96F" BorderThickness="1">
+                                        <Grid>
+                                            <FontIcon Glyph="&#xE714;" Foreground="{StaticResource KroiraGoldBrush}" FontSize="20" Opacity="0.55" />
+                                            <Image Source="{Binding LogoUrl}" Stretch="Uniform" Margin="6" />
+                                        </Grid>
                                     </Border>
                                     <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="4">
-                                        <TextBlock Text="{Binding Name}" TextWrapping="Wrap" MaxLines="2" FontWeight="SemiBold" FontSize="15" Foreground="{StaticResource KroiraTextPrimaryBrush}" />
+                                        <TextBlock Text="{Binding Name}" TextWrapping="Wrap" MaxLines="2" FontWeight="SemiBold" FontSize="14" Foreground="{StaticResource KroiraTextPrimaryBrush}" />
                                         <TextBlock Text="Favorite channel" Foreground="{StaticResource KroiraGoldBrush}" FontSize="11" />
                                     </StackPanel>
                                     <Button Grid.Column="2" Content="Remove" Tag="{Binding Id}" Click="RemoveFavorite_Click" Style="{StaticResource KroiraDangerButtonStyle}" FontSize="11" VerticalAlignment="Center" />
