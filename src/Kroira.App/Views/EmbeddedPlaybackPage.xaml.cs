@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Runtime.InteropServices;
-using System.Threading.Tasks;
 using Kroira.App.Data;
 using Kroira.App.Models;
 using Kroira.App.Services;
@@ -22,18 +21,14 @@ namespace Kroira.App.Views
         private readonly IPlaybackEngine _engine;
         private readonly IWindowManagerService _windowManager;
         private readonly DispatcherTimer _positionTimer;
-        private readonly DispatcherTimer _voutAdoptionTimer;
         private readonly DispatcherTimer _layoutStabilizationTimer;
         private readonly DispatcherTimer _chromeAutoHideTimer;
         private PlaybackLaunchContext _launchContext;
         private string _pendingUrl;
         private long _pendingStartMs;
         private IntPtr _videoHostHwnd;
-        private IntPtr _adoptedVoutHwnd;
         private IntPtr _videoHostOriginalWndProc;
-        private IntPtr _adoptedVoutOriginalWndProc;
         private readonly WndProcDelegate _videoHostWndProc;
-        private readonly WndProcDelegate _adoptedVoutWndProc;
         private bool _isDisposed;
         private bool _isViewLoaded;
         private bool _isUserSeeking;
@@ -41,7 +36,6 @@ namespace Kroira.App.Views
         private bool _isRefreshingTracks;
         private bool _tracksLoaded;
         private int _trackRefreshAttempts;
-        private int _voutAdoptionAttempts;
         private int _layoutStabilizationTicks;
         private DateTime _lastProgressSaveUtc = DateTime.MinValue;
 
@@ -53,7 +47,6 @@ namespace Kroira.App.Views
             _engine = services.GetRequiredService<IPlaybackEngine>();
             _windowManager = services.GetRequiredService<IWindowManagerService>();
             _videoHostWndProc = VideoHostWndProc;
-            _adoptedVoutWndProc = AdoptedVoutWndProc;
 
             _engine.StateChanged += Engine_StateChanged;
             _engine.ErrorOccurred += Engine_ErrorOccurred;
@@ -63,9 +56,6 @@ namespace Kroira.App.Views
 
             _positionTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(500) };
             _positionTimer.Tick += PositionTimer_Tick;
-
-            _voutAdoptionTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(100) };
-            _voutAdoptionTimer.Tick += VoutAdoptionTimer_Tick;
 
             _layoutStabilizationTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(80) };
             _layoutStabilizationTimer.Tick += LayoutStabilizationTimer_Tick;
@@ -164,7 +154,6 @@ namespace Kroira.App.Views
                 ShowVideoHostWindow(true);
                 UpdateVideoHostBounds();
                 StartLayoutStabilization();
-                StartVoutAdoptionGuard();
                 _engine.Play(_pendingUrl, _pendingStartMs);
                 ShowChrome();
                 _positionTimer.Start();
@@ -189,7 +178,6 @@ namespace Kroira.App.Views
             try { SaveProgress(force: true); } catch { }
 
             _positionTimer.Stop();
-            _voutAdoptionTimer.Stop();
             _layoutStabilizationTimer.Stop();
             _chromeAutoHideTimer.Stop();
 
@@ -228,15 +216,6 @@ namespace Kroira.App.Views
             }
 
             SaveProgress(force: false);
-        }
-
-        private void VoutAdoptionTimer_Tick(object sender, object e)
-        {
-            _voutAdoptionAttempts++;
-            if (TryAdoptDetachedVoutWindow() || _voutAdoptionAttempts >= 80)
-            {
-                _voutAdoptionTimer.Stop();
-            }
         }
 
         private void LayoutStabilizationTimer_Tick(object sender, object e)
@@ -451,18 +430,6 @@ namespace Kroira.App.Views
                 width,
                 height,
                 SetWindowPosFlags.SWP_NOACTIVATE | SetWindowPosFlags.SWP_SHOWWINDOW);
-
-            if (_adoptedVoutHwnd != IntPtr.Zero)
-            {
-                SetWindowPos(
-                    _adoptedVoutHwnd,
-                    HwndTop,
-                    0,
-                    0,
-                    width,
-                    height,
-                    SetWindowPosFlags.SWP_NOACTIVATE | SetWindowPosFlags.SWP_FRAMECHANGED | SetWindowPosFlags.SWP_SHOWWINDOW);
-            }
         }
 
         private void ShowVideoHostWindow(bool show)
@@ -483,7 +450,6 @@ namespace Kroira.App.Views
             try
             {
                 _engine.SetVideoHostHandle(IntPtr.Zero);
-                RestoreWindowProc(_adoptedVoutHwnd, ref _adoptedVoutOriginalWndProc);
                 RestoreWindowProc(_videoHostHwnd, ref _videoHostOriginalWndProc);
                 DestroyWindow(_videoHostHwnd);
             }
@@ -491,16 +457,7 @@ namespace Kroira.App.Views
             finally
             {
                 _videoHostHwnd = IntPtr.Zero;
-                _adoptedVoutHwnd = IntPtr.Zero;
             }
-        }
-
-        private void StartVoutAdoptionGuard()
-        {
-            _adoptedVoutHwnd = IntPtr.Zero;
-            _voutAdoptionAttempts = 0;
-            _voutAdoptionTimer.Stop();
-            _voutAdoptionTimer.Start();
         }
 
         private void StartLayoutStabilization()
@@ -510,69 +467,10 @@ namespace Kroira.App.Views
             _layoutStabilizationTimer.Start();
         }
 
-        private bool TryAdoptDetachedVoutWindow()
-        {
-            if (_videoHostHwnd == IntPtr.Zero)
-            {
-                return false;
-            }
-
-            var currentProcessId = Environment.ProcessId;
-            IntPtr detachedWindow = IntPtr.Zero;
-
-            EnumWindows((hwnd, lParam) =>
-            {
-                if (hwnd == _videoHostHwnd || hwnd == _adoptedVoutHwnd)
-                {
-                    return true;
-                }
-
-                GetWindowThreadProcessId(hwnd, out var processId);
-                if (processId != currentProcessId)
-                {
-                    return true;
-                }
-
-                var title = GetWindowTitle(hwnd);
-                if (title.Contains("VLC", StringComparison.OrdinalIgnoreCase) &&
-                    title.Contains("output", StringComparison.OrdinalIgnoreCase))
-                {
-                    detachedWindow = hwnd;
-                    return false;
-                }
-
-                return true;
-            }, IntPtr.Zero);
-
-            if (detachedWindow == IntPtr.Zero)
-            {
-                return false;
-            }
-
-            var style = GetWindowLongPtr(detachedWindow, WindowLongIndex.GWL_STYLE).ToInt64();
-            style &= ~((long)WindowStyles.WS_POPUP | (long)WindowStyles.WS_CAPTION | (long)WindowStyles.WS_THICKFRAME);
-            style |= (long)WindowStyles.WS_CHILD | (long)WindowStyles.WS_VISIBLE | (long)WindowStyles.WS_CLIPSIBLINGS | (long)WindowStyles.WS_CLIPCHILDREN;
-
-            SetWindowLongPtr(detachedWindow, WindowLongIndex.GWL_STYLE, new IntPtr(style));
-            SetParent(detachedWindow, _videoHostHwnd);
-            _adoptedVoutHwnd = detachedWindow;
-            _adoptedVoutOriginalWndProc = SetWindowLongPtr(_adoptedVoutHwnd, WindowLongIndex.GWLP_WNDPROC, Marshal.GetFunctionPointerForDelegate(_adoptedVoutWndProc));
-            ShowWindow(_adoptedVoutHwnd, ShowWindowCommand.SW_SHOWNA);
-            UpdateVideoHostBounds();
-
-            return true;
-        }
-
         private IntPtr VideoHostWndProc(IntPtr hwnd, uint msg, IntPtr wParam, IntPtr lParam)
         {
             HandleNativeVideoMouseMessage(msg);
             return CallWindowProc(_videoHostOriginalWndProc, hwnd, msg, wParam, lParam);
-        }
-
-        private IntPtr AdoptedVoutWndProc(IntPtr hwnd, uint msg, IntPtr wParam, IntPtr lParam)
-        {
-            HandleNativeVideoMouseMessage(msg);
-            return CallWindowProc(_adoptedVoutOriginalWndProc, hwnd, msg, wParam, lParam);
         }
 
         private void HandleNativeVideoMouseMessage(uint message)
@@ -590,19 +488,6 @@ namespace Kroira.App.Views
                 SetWindowLongPtr(hwnd, WindowLongIndex.GWLP_WNDPROC, originalWndProc);
                 originalWndProc = IntPtr.Zero;
             }
-        }
-
-        private static string GetWindowTitle(IntPtr hwnd)
-        {
-            var length = GetWindowTextLength(hwnd);
-            if (length <= 0)
-            {
-                return string.Empty;
-            }
-
-            var buffer = new char[length + 1];
-            GetWindowText(hwnd, buffer, buffer.Length);
-            return new string(buffer).TrimEnd('\0');
         }
 
         private void PlayPause_Click(object sender, RoutedEventArgs e)
@@ -821,34 +706,26 @@ namespace Kroira.App.Views
         private void BeginNonBlockingTeardown()
         {
             _positionTimer.Stop();
-            _voutAdoptionTimer.Stop();
             _layoutStabilizationTimer.Stop();
             _chromeAutoHideTimer.Stop();
             ShowVideoHostWindow(false);
 
             var videoHost = _videoHostHwnd;
-            var adoptedVout = _adoptedVoutHwnd;
             _videoHostHwnd = IntPtr.Zero;
-            _adoptedVoutHwnd = IntPtr.Zero;
 
             try
             {
+                _engine.Stop();
                 _engine.SetVideoHostHandle(IntPtr.Zero);
             }
             catch { }
 
-            RestoreWindowProc(adoptedVout, ref _adoptedVoutOriginalWndProc);
             RestoreWindowProc(videoHost, ref _videoHostOriginalWndProc);
 
             if (videoHost != IntPtr.Zero)
             {
                 try { DestroyWindow(videoHost); } catch { }
             }
-
-            Task.Run(() =>
-            {
-                try { _engine.Stop(); } catch { }
-            });
         }
 
         private void SaveProgress(bool force)
@@ -939,26 +816,6 @@ namespace Kroira.App.Views
         [DllImport("user32.dll", SetLastError = true)]
         private static extern bool ShowWindow(IntPtr hWnd, ShowWindowCommand nCmdShow);
 
-        [DllImport("user32.dll")]
-        private static extern bool EnumWindows(EnumWindowsProc lpEnumFunc, IntPtr lParam);
-
-        private delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
-
-        [DllImport("user32.dll", SetLastError = true)]
-        private static extern uint GetWindowThreadProcessId(IntPtr hWnd, out int lpdwProcessId);
-
-        [DllImport("user32.dll", EntryPoint = "GetWindowTextW", SetLastError = true, CharSet = CharSet.Unicode)]
-        private static extern int GetWindowText(IntPtr hWnd, char[] lpString, int nMaxCount);
-
-        [DllImport("user32.dll", EntryPoint = "GetWindowTextLengthW", SetLastError = true, CharSet = CharSet.Unicode)]
-        private static extern int GetWindowTextLength(IntPtr hWnd);
-
-        [DllImport("user32.dll", SetLastError = true)]
-        private static extern IntPtr SetParent(IntPtr hWndChild, IntPtr hWndNewParent);
-
-        [DllImport("user32.dll", EntryPoint = "GetWindowLongPtrW", SetLastError = true)]
-        private static extern IntPtr GetWindowLongPtr(IntPtr hWnd, WindowLongIndex nIndex);
-
         [DllImport("user32.dll", EntryPoint = "SetWindowLongPtrW", SetLastError = true)]
         private static extern IntPtr SetWindowLongPtr(IntPtr hWnd, WindowLongIndex nIndex, IntPtr dwNewLong);
 
@@ -974,16 +831,12 @@ namespace Kroira.App.Views
         {
             WS_CHILD = 0x40000000,
             WS_VISIBLE = 0x10000000,
-            WS_POPUP = 0x80000000,
-            WS_CAPTION = 0x00C00000,
-            WS_THICKFRAME = 0x00040000,
             WS_CLIPCHILDREN = 0x02000000,
             WS_CLIPSIBLINGS = 0x04000000
         }
 
         private enum WindowLongIndex
         {
-            GWL_STYLE = -16,
             GWLP_WNDPROC = -4
         }
 
@@ -998,7 +851,6 @@ namespace Kroira.App.Views
         {
             SWP_NOZORDER = 0x0004,
             SWP_NOACTIVATE = 0x0010,
-            SWP_FRAMECHANGED = 0x0020,
             SWP_SHOWWINDOW = 0x0040
         }
 
