@@ -66,8 +66,11 @@
                                 <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
                             
-                            <Image Grid.Row="0" Source="{Binding PosterUrl}" Stretch="UniformToFill" />
-                            
+                            <Grid Grid.Row="0" Background="{StaticResource KroiraMediaGradientBrush}">
+                                <FontIcon Glyph="&#xE8A9;" Foreground="{StaticResource KroiraAccentBrush}" FontSize="28" Opacity="0.45" />
+                                <Image Source="{Binding PosterUrl}" Stretch="UniformToFill" />
+                            </Grid>
+
                             <StackPanel Grid.Row="1" Padding="10" Background="#E00F141D">
                                 <TextBlock Text="{Binding Title}" TextWrapping="Wrap" MaxLines="2" FontWeight="SemiBold" FontSize="11" Foreground="{StaticResource KroiraTextPrimaryBrush}" />
                                 <TextBlock Text="{Binding CategoryName}" Foreground="{StaticResource KroiraTextSecondaryBrush}" FontSize="9" Margin="0,4,0,0" />
@@ -89,7 +92,7 @@
                     <StackPanel Grid.Row="0" Spacing="8">
                         <TextBlock Text="{x:Bind ViewModel.SelectedSeries.Title, Mode=OneWay}" Style="{StaticResource KroiraSectionTitleStyle}" TextWrapping="Wrap" />
                         <TextBlock Text="Seasons" FontWeight="SemiBold" Margin="0,16,0,0" Foreground="{StaticResource KroiraTextPrimaryBrush}" />
-                        
+
                         <ComboBox Style="{StaticResource KroiraComboBoxStyle}" ItemsSource="{x:Bind ViewModel.SelectedSeries.Seasons, Mode=OneWay}"
                                   SelectedItem="{x:Bind ViewModel.SelectedSeason, Mode=TwoWay}"
                                   HorizontalAlignment="Stretch">
@@ -102,7 +105,7 @@
                     </StackPanel>
 
                     <TextBlock Grid.Row="1" Text="Episodes" FontWeight="SemiBold" Margin="0,16,0,8" Foreground="{StaticResource KroiraTextPrimaryBrush}" />
-                    
+
                     <ListView Grid.Row="2" ItemsSource="{x:Bind ViewModel.SelectedSeason.Episodes, Mode=OneWay}" SelectionMode="Single" SelectionChanged="EpisodeList_SelectionChanged">
                         <ListView.ItemTemplate>
                             <DataTemplate>

@@ -52,8 +52,11 @@
                             <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
                         
-                        <Image Grid.Row="0" Source="{Binding PosterUrl}" Stretch="UniformToFill" />
-                        
+                        <Grid Grid.Row="0" Background="{StaticResource KroiraMediaGradientBrush}">
+                            <FontIcon Glyph="&#xE8B2;" Foreground="{StaticResource KroiraAccentBrush}" FontSize="30" Opacity="0.45" />
+                            <Image Source="{Binding PosterUrl}" Stretch="UniformToFill" />
+                        </Grid>
+
                         <StackPanel Grid.Row="1" Padding="10" Background="#E00F141D">
                             <TextBlock Text="{Binding Title}" TextWrapping="Wrap" MaxLines="2" FontWeight="SemiBold" FontSize="12" Foreground="{StaticResource KroiraTextPrimaryBrush}" />
                             <TextBlock Text="{Binding CategoryName}" Foreground="{StaticResource KroiraTextSecondaryBrush}" FontSize="10" Margin="0,4,0,0" />
