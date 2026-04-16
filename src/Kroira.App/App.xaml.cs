@@ -4,6 +4,8 @@ using Kroira.App.Services;
 using Kroira.App.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
+using System.IO;
 
 namespace Kroira.App
 {
@@ -22,21 +24,66 @@ namespace Kroira.App
 
         protected override void OnLaunched(LaunchActivatedEventArgs args)
         {
-            using (var scope = Services.CreateScope())
+            try
             {
-                var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-                DatabaseBootstrapper.Initialize(dbContext);
+                using (var scope = Services.CreateScope())
+                {
+                    var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                    DatabaseBootstrapper.Initialize(dbContext);
+                }
+
+                _window = new MainWindow();
+
+                var winManager = Services.GetRequiredService<IWindowManagerService>();
+                winManager.Initialize(_window);
+
+                var inputManager = Services.GetRequiredService<IInputInterceptorService>();
+                inputManager.Initialize(_window);
+
+                _window.Activate();
             }
+            catch (Exception ex)
+            {
+                WriteStartupError(ex);
+                ShowStartupError(ex);
+            }
+        }
 
-            _window = new MainWindow();
+        // Temporary startup diagnostics. Remove after the startup failure is identified.
+        private static string WriteStartupError(Exception ex)
+        {
+            var errorDirectory = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "Kroira");
+            Directory.CreateDirectory(errorDirectory);
 
-            var winManager = Services.GetRequiredService<IWindowManagerService>();
-            winManager.Initialize(_window);
+            var errorPath = Path.Combine(errorDirectory, "startup-error.txt");
+            File.WriteAllText(errorPath, ex.ToString());
+            return errorPath;
+        }
 
-            var inputManager = Services.GetRequiredService<IInputInterceptorService>();
-            inputManager.Initialize(_window);
+        private void ShowStartupError(Exception ex)
+        {
+            try
+            {
+                _window = new Window
+                {
+                    Title = "Kroira startup error",
+                    Content = new TextBox
+                    {
+                        Text = ex.ToString(),
+                        IsReadOnly = true,
+                        AcceptsReturn = true,
+                        TextWrapping = TextWrapping.Wrap
+                    }
+                };
 
-            _window.Activate();
+                _window.Activate();
+            }
+            catch
+            {
+                // File logging above is the reliable fallback.
+            }
         }
 
         private static IServiceProvider ConfigureServices()
