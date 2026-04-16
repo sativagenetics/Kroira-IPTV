@@ -3,28 +3,41 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:local="using:Kroira.App.Views"
-    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+    Background="{StaticResource KroiraPageBackgroundBrush}">
 
     <Page.Resources>
         <local:NullToCollapsedConverter x:Key="NullToCollapsedConverter" />
         <local:SeasonPrefixConverter x:Key="SeasonPrefixConverter" />
         <local:EpisodePrefixConverter x:Key="EpisodePrefixConverter" />
     </Page.Resources>
-    <Grid Margin="24">
+    <Grid Padding="28" RowSpacing="18">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <StackPanel Grid.Row="0" Margin="0,0,0,16" Spacing="16">
-            <TextBlock Text="Series" Style="{ThemeResource TitleTextBlockStyle}" />
-            <TextBox Text="{x:Bind ViewModel.SearchQuery, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="Search series..." MaxWidth="400" HorizontalAlignment="Left" />
-        </StackPanel>
+        <Border Grid.Row="0" Style="{StaticResource KroiraPanelStyle}">
+            <StackPanel Spacing="16">
+                <Grid>
+                    <StackPanel>
+                        <TextBlock Text="Series" Style="{StaticResource KroiraPageTitleStyle}" />
+                        <TextBlock Text="Explore shows, seasons, and episodes from your VOD sources." Style="{StaticResource KroiraPageSubtitleStyle}" Margin="0,4,0,0" />
+                    </StackPanel>
+                    <Border HorizontalAlignment="Right" VerticalAlignment="Center" Background="#221F42" BorderBrush="{StaticResource KroiraBorderStrongBrush}" BorderThickness="1" CornerRadius="999" Padding="12,5">
+                        <TextBlock Text="Episodes" Foreground="{StaticResource KroiraAccentBrush}" FontSize="12" FontWeight="SemiBold" />
+                    </Border>
+                </Grid>
+                <TextBox Style="{StaticResource KroiraTextBoxStyle}" Text="{x:Bind ViewModel.SearchQuery, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="Search series..." MaxWidth="420" HorizontalAlignment="Left" />
+            </StackPanel>
+        </Border>
 
-        <TextBlock Grid.Row="1" Text="No series imported yet. Sync an Xtream VOD source to get started."
-                   Visibility="{x:Bind ViewModel.IsEmpty, Mode=OneWay}"
-                   Style="{ThemeResource BodyTextBlockStyle}" Foreground="Gray"
-                   HorizontalAlignment="Center" VerticalAlignment="Center" />
+        <Border Grid.Row="1" Visibility="{x:Bind ViewModel.IsEmpty, Mode=OneWay}" Style="{StaticResource KroiraPanelStyle}" HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="460">
+            <StackPanel Spacing="10">
+                <FontIcon Glyph="&#xE8A9;" Foreground="{StaticResource KroiraAccentBrush}" FontSize="30" HorizontalAlignment="Left" />
+                <TextBlock Text="No series imported yet" Style="{StaticResource KroiraSectionTitleStyle}" />
+                <TextBlock Text="Sync an Xtream VOD source to start browsing shows and episodes." Style="{StaticResource KroiraPageSubtitleStyle}" />
+            </StackPanel>
+        </Border>
 
         <Grid Grid.Row="1" ColumnSpacing="24">
             <Grid.ColumnDefinitions>
@@ -34,9 +47,20 @@
 
             <!-- Left: Series Grid -->
             <GridView Grid.Column="0" ItemsSource="{x:Bind ViewModel.FilteredSeries, Mode=OneWay}" SelectedItem="{x:Bind ViewModel.SelectedSeries, Mode=TwoWay}" SelectionMode="Single">
+                <GridView.ItemContainerStyle>
+                    <Style TargetType="GridViewItem">
+                        <Setter Property="Margin" Value="0,0,12,14" />
+                    </Style>
+                </GridView.ItemContainerStyle>
                 <GridView.ItemTemplate>
                     <DataTemplate>
-                        <Grid Width="140" Height="220" Margin="4" CornerRadius="4" Background="#11FFFFFF">
+                        <Grid Width="150" Height="234" CornerRadius="18" BorderBrush="{StaticResource KroiraBorderBrush}" BorderThickness="1">
+                            <Grid.Background>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                    <GradientStop Color="#1A1F35" Offset="0" />
+                                    <GradientStop Color="#0F151F" Offset="1" />
+                                </LinearGradientBrush>
+                            </Grid.Background>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="*" />
                                 <RowDefinition Height="Auto" />
@@ -44,9 +68,9 @@
                             
                             <Image Grid.Row="0" Source="{Binding PosterUrl}" Stretch="UniformToFill" />
                             
-                            <StackPanel Grid.Row="1" Padding="8" Background="#CC000000">
-                                <TextBlock Text="{Binding Title}" TextWrapping="Wrap" MaxLines="2" FontWeight="SemiBold" FontSize="11" />
-                                <TextBlock Text="{Binding CategoryName}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" FontSize="9" Margin="0,4,0,0" />
+                            <StackPanel Grid.Row="1" Padding="10" Background="#E00F141D">
+                                <TextBlock Text="{Binding Title}" TextWrapping="Wrap" MaxLines="2" FontWeight="SemiBold" FontSize="11" Foreground="{StaticResource KroiraTextPrimaryBrush}" />
+                                <TextBlock Text="{Binding CategoryName}" Foreground="{StaticResource KroiraTextSecondaryBrush}" FontSize="9" Margin="0,4,0,0" />
                             </StackPanel>
                         </Grid>
                     </DataTemplate>
@@ -54,7 +78,7 @@
             </GridView>
 
             <!-- Right: Details Panel -->
-            <Border Grid.Column="1" Background="#0AFFFFFF" CornerRadius="8" Padding="16" Visibility="{x:Bind ViewModel.SelectedSeries, Mode=OneWay, Converter={StaticResource NullToCollapsedConverter}}">
+            <Border Grid.Column="1" Style="{StaticResource KroiraPanelStyle}" Visibility="{x:Bind ViewModel.SelectedSeries, Mode=OneWay, Converter={StaticResource NullToCollapsedConverter}}">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
@@ -63,11 +87,11 @@
                     </Grid.RowDefinitions>
 
                     <StackPanel Grid.Row="0" Spacing="8">
-                        <TextBlock Text="{x:Bind ViewModel.SelectedSeries.Title, Mode=OneWay}" Style="{ThemeResource SubtitleTextBlockStyle}" TextWrapping="Wrap" />
-                        <TextBlock Text="Seasons" FontWeight="SemiBold" Margin="0,16,0,0" />
+                        <TextBlock Text="{x:Bind ViewModel.SelectedSeries.Title, Mode=OneWay}" Style="{StaticResource KroiraSectionTitleStyle}" TextWrapping="Wrap" />
+                        <TextBlock Text="Seasons" FontWeight="SemiBold" Margin="0,16,0,0" Foreground="{StaticResource KroiraTextPrimaryBrush}" />
                         
-                        <ComboBox ItemsSource="{x:Bind ViewModel.SelectedSeries.Seasons, Mode=OneWay}" 
-                                  SelectedItem="{x:Bind ViewModel.SelectedSeason, Mode=TwoWay}" 
+                        <ComboBox Style="{StaticResource KroiraComboBoxStyle}" ItemsSource="{x:Bind ViewModel.SelectedSeries.Seasons, Mode=OneWay}"
+                                  SelectedItem="{x:Bind ViewModel.SelectedSeason, Mode=TwoWay}"
                                   HorizontalAlignment="Stretch">
                             <ComboBox.ItemTemplate>
                                 <DataTemplate>
@@ -77,14 +101,14 @@
                         </ComboBox>
                     </StackPanel>
 
-                    <TextBlock Grid.Row="1" Text="Episodes" FontWeight="SemiBold" Margin="0,16,0,8" />
+                    <TextBlock Grid.Row="1" Text="Episodes" FontWeight="SemiBold" Margin="0,16,0,8" Foreground="{StaticResource KroiraTextPrimaryBrush}" />
                     
                     <ListView Grid.Row="2" ItemsSource="{x:Bind ViewModel.SelectedSeason.Episodes, Mode=OneWay}" SelectionMode="Single" SelectionChanged="EpisodeList_SelectionChanged">
                         <ListView.ItemTemplate>
                             <DataTemplate>
-                                <StackPanel Padding="8,4">
-                                    <TextBlock Text="{Binding Title}" FontWeight="SemiBold" TextWrapping="Wrap" />
-                                    <TextBlock Text="{Binding EpisodeNumber, Converter={StaticResource EpisodePrefixConverter}}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" FontSize="12" />
+                                <StackPanel Padding="10,6">
+                                    <TextBlock Text="{Binding Title}" FontWeight="SemiBold" TextWrapping="Wrap" Foreground="{StaticResource KroiraTextPrimaryBrush}" />
+                                    <TextBlock Text="{Binding EpisodeNumber, Converter={StaticResource EpisodePrefixConverter}}" Foreground="{StaticResource KroiraTextSecondaryBrush}" FontSize="12" />
                                 </StackPanel>
                             </DataTemplate>
                         </ListView.ItemTemplate>

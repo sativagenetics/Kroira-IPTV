@@ -61,7 +61,7 @@ namespace Kroira.App.ViewModels
         private string _lastSyncMessage = "No sync history yet";
 
         [ObservableProperty]
-        private string _heroSubtitle = "Review your IPTV library, sources, and playback progress from one place.";
+        private string _heroSubtitle = "Fast access to live TV, VOD, source health, and saved playback progress from one desktop-first hub.";
 
         [ObservableProperty]
         private Visibility _continueItemsVisibility = Visibility.Collapsed;
@@ -81,12 +81,12 @@ namespace Kroira.App.ViewModels
                 ? "Pro license active"
                 : "Free tier active";
 
-            QuickActions.Add(new HomeActionItem { Title = "Live Channels", Detail = "Browse imported TV channels", Glyph = "\uE714", Target = "Channels" });
-            QuickActions.Add(new HomeActionItem { Title = "Movies", Detail = "Open your VOD movie library", Glyph = "\uE8B2", Target = "Movies" });
-            QuickActions.Add(new HomeActionItem { Title = "Series", Detail = "Continue episodic content", Glyph = "\uE8A9", Target = "Series" });
-            QuickActions.Add(new HomeActionItem { Title = "Favorites", Detail = "Jump to saved channels", Glyph = "\uE734", Target = "Favorites" });
-            QuickActions.Add(new HomeActionItem { Title = "Sources", Detail = "Manage playlists and providers", Glyph = "\uE8F1", Target = "Sources" });
-            QuickActions.Add(new HomeActionItem { Title = "Settings", Detail = "Tune app preferences", Glyph = "\uE713", Target = "Settings" });
+            QuickActions.Add(new HomeActionItem { Title = "Live Channels", Detail = "Open live TV and guide-ready streams", Glyph = "\uE714", Target = "Channels" });
+            QuickActions.Add(new HomeActionItem { Title = "Movies", Detail = "Browse VOD with fast playback resume", Glyph = "\uE8B2", Target = "Movies" });
+            QuickActions.Add(new HomeActionItem { Title = "Series", Detail = "Pick up seasons and episodes", Glyph = "\uE8A9", Target = "Series" });
+            QuickActions.Add(new HomeActionItem { Title = "Favorites", Detail = "Jump to saved channels and picks", Glyph = "\uE734", Target = "Favorites" });
+            QuickActions.Add(new HomeActionItem { Title = "Sources", Detail = "Manage M3U, Xtream, and provider setup", Glyph = "\uE8F1", Target = "Sources" });
+            QuickActions.Add(new HomeActionItem { Title = "Settings", Detail = "Playback, profiles, and family controls", Glyph = "\uE713", Target = "Settings" });
         }
 
         [RelayCommand]
@@ -119,8 +119,8 @@ namespace Kroira.App.ViewModels
 
             SourceIssueVisibility = sourceIssuesCount > 0 ? Visibility.Visible : Visibility.Collapsed;
             HeroSubtitle = sourcesCount > 0
-                ? "Your library is ready. Pick up where you left off or jump into a section."
-                : "Add a source to import channels, movies, series, and EPG data.";
+                ? "Your library is staged for fast live TV, VOD, source management, and saved progress."
+                : "Add a source to unlock live channels, movies, series, and guide-ready playback.";
 
             var lastSync = await db.SourceProfiles
                 .Where(s => s.LastSync != null)

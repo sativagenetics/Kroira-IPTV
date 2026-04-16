@@ -31,6 +31,9 @@ namespace Kroira.App.ViewModels
 
         public ObservableCollection<SourceItemViewModel> Sources { get; } = new();
 
+        [ObservableProperty]
+        private bool _isEmpty;
+
         public SourceListViewModel(IServiceProvider serviceProvider)
         {
             _serviceProvider = serviceProvider;
@@ -63,6 +66,8 @@ namespace Kroira.App.ViewModels
                     Status = statusStr
                 });
             }
+
+            IsEmpty = Sources.Count == 0;
         }
 
         [RelayCommand]

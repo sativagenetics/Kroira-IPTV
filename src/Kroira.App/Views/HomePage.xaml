@@ -2,20 +2,26 @@
     x:Class="Kroira.App.Views.HomePage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    Background="#0B0F14">
+    Background="#090B13">
 
     <Page.Resources>
-        <SolidColorBrush x:Key="HomeCardBrush" Color="#151A21" />
-        <SolidColorBrush x:Key="HomeCardElevatedBrush" Color="#1A2029" />
-        <SolidColorBrush x:Key="HomeBorderBrush" Color="#2A3340" />
-        <SolidColorBrush x:Key="HomeMutedTextBrush" Color="#A7B0BD" />
-        <SolidColorBrush x:Key="HomeAccentBrush" Color="#7CC7FF" />
+        <SolidColorBrush x:Key="HomeCardBrush" Color="#111722" />
+        <SolidColorBrush x:Key="HomeCardElevatedBrush" Color="#171E2B" />
+        <SolidColorBrush x:Key="HomeBorderBrush" Color="#2D3448" />
+        <SolidColorBrush x:Key="HomeMutedTextBrush" Color="#AEB5C8" />
+        <SolidColorBrush x:Key="HomeSoftTextBrush" Color="#E6EAFE" />
+        <SolidColorBrush x:Key="HomeAccentBrush" Color="#B7B2FF" />
+        <SolidColorBrush x:Key="HomeAccentStrongBrush" Color="#7968FF" />
+        <SolidColorBrush x:Key="HomeMagentaBrush" Color="#F05BD7" />
+        <SolidColorBrush x:Key="HomeWarmAccentBrush" Color="#D9B96F" />
+        <SolidColorBrush x:Key="HomeActionBrush" Color="#221F42" />
+        <SolidColorBrush x:Key="HomeActionBorderBrush" Color="#6658A8" />
 
         <Style x:Key="CardBorderStyle" TargetType="Border">
             <Setter Property="Background" Value="{StaticResource HomeCardBrush}" />
             <Setter Property="BorderBrush" Value="{StaticResource HomeBorderBrush}" />
             <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="CornerRadius" Value="14" />
+            <Setter Property="CornerRadius" Value="16" />
             <Setter Property="Padding" Value="18" />
         </Style>
 
@@ -35,15 +41,51 @@
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
-            <Border Grid.Row="0" CornerRadius="20" BorderThickness="1" BorderBrush="#334256" Padding="28">
+            <Border Grid.RowSpan="4" Width="620" Height="260" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-108,-170,0" CornerRadius="80" Background="#1E7968FF" />
+            <Border Grid.RowSpan="4" Width="420" Height="190" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="-170,380,0,0" CornerRadius="70" Background="#16F05BD7" />
+            <Border Grid.RowSpan="4" Width="520" Height="1" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,300,0,0" Background="#337968FF" Opacity="0.55" />
+
+            <Border Grid.Row="0" CornerRadius="26" BorderThickness="1" BorderBrush="#4D4778" Padding="0">
                 <Border.Background>
                     <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                        <GradientStop Color="#202936" Offset="0" />
-                        <GradientStop Color="#151A22" Offset="0.55" />
-                        <GradientStop Color="#10141A" Offset="1" />
+                        <GradientStop Color="#2C2A56" Offset="0" />
+                        <GradientStop Color="#171A2C" Offset="0.48" />
+                        <GradientStop Color="#0C1018" Offset="1" />
                     </LinearGradientBrush>
                 </Border.Background>
-                <Grid ColumnSpacing="24">
+                <Grid>
+                    <Border Width="620" Height="190" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-64,-92,0" CornerRadius="36" Opacity="0.30">
+                        <Border.Background>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                <GradientStop Color="#337968FF" Offset="0" />
+                                <GradientStop Color="#3BF05BD7" Offset="0.55" />
+                                <GradientStop Color="#007968FF" Offset="1" />
+                            </LinearGradientBrush>
+                        </Border.Background>
+                    </Border>
+                    <Border Width="450" Height="94" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,28,20" CornerRadius="26" Opacity="0.22">
+                        <Border.Background>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                <GradientStop Color="#2EF05BD7" Offset="0" />
+                                <GradientStop Color="#26D9B96F" Offset="0.52" />
+                                <GradientStop Color="#007968FF" Offset="1" />
+                            </LinearGradientBrush>
+                        </Border.Background>
+                    </Border>
+                    <Border Width="260" Height="150" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="-84,0,0,-74" CornerRadius="64" Background="#18D9B96F" />
+                    <Border Height="1" VerticalAlignment="Top" Opacity="0.72">
+                        <Border.Background>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                <GradientStop Color="#00FFFFFF" Offset="0" />
+                                <GradientStop Color="#66FFFFFF" Offset="0.22" />
+                                <GradientStop Color="#557968FF" Offset="0.40" />
+                                <GradientStop Color="#33F05BD7" Offset="0.72" />
+                                <GradientStop Color="#00FFFFFF" Offset="1" />
+                            </LinearGradientBrush>
+                        </Border.Background>
+                    </Border>
+
+                    <Grid Padding="32" ColumnSpacing="22">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
@@ -51,40 +93,84 @@
 
                     <StackPanel Grid.Column="0" Spacing="12" VerticalAlignment="Center">
                         <StackPanel Orientation="Horizontal" Spacing="8">
-                            <Border Background="#223A4C" BorderBrush="#40627B" BorderThickness="1" CornerRadius="999" Padding="10,5">
+                            <Border Background="#262246" BorderBrush="{StaticResource HomeActionBorderBrush}" BorderThickness="1" CornerRadius="999" Padding="11,5">
                                 <TextBlock Text="{x:Bind ViewModel.LicenseStatusMessage, Mode=OneWay}" Foreground="{StaticResource HomeAccentBrush}" FontSize="12" FontWeight="SemiBold" />
                             </Border>
-                            <Border Background="#1C2631" BorderBrush="#2F3F50" BorderThickness="1" CornerRadius="999" Padding="10,5">
+                            <Border Background="#171D2B" BorderBrush="#353A5A" BorderThickness="1" CornerRadius="999" Padding="11,5">
                                 <TextBlock Text="{x:Bind ViewModel.SourceStatusMessage, Mode=OneWay}" Foreground="{StaticResource HomeMutedTextBrush}" FontSize="12" />
                             </Border>
                         </StackPanel>
 
-                        <TextBlock Text="Welcome to Kroira IPTV" FontSize="34" FontWeight="SemiBold" TextWrapping="Wrap" />
+                        <TextBlock Text="Kroira IPTV" FontSize="42" FontWeight="SemiBold" Foreground="{StaticResource HomeSoftTextBrush}" TextWrapping="Wrap" />
+                        <TextBlock Text="Premium IPTV control hub for Windows" Foreground="{StaticResource HomeAccentBrush}" FontSize="15" FontWeight="SemiBold" TextWrapping="Wrap" />
                         <TextBlock Text="{x:Bind ViewModel.HeroSubtitle, Mode=OneWay}" Foreground="{StaticResource HomeMutedTextBrush}" FontSize="15" TextWrapping="Wrap" MaxWidth="760" />
 
+                        <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,2,0,0">
+                            <Border Background="#1E223A" BorderBrush="#3E3A65" BorderThickness="1" CornerRadius="999" Padding="10,5">
+                                <TextBlock Text="Live + VOD" Foreground="{StaticResource HomeSoftTextBrush}" FontSize="12" />
+                            </Border>
+                            <Border Background="#1E223A" BorderBrush="#3E3A65" BorderThickness="1" CornerRadius="999" Padding="10,5">
+                                <TextBlock Text="Guide ready" Foreground="{StaticResource HomeSoftTextBrush}" FontSize="12" />
+                            </Border>
+                            <Border Background="#1E223A" BorderBrush="#3E3A65" BorderThickness="1" CornerRadius="999" Padding="10,5">
+                                <TextBlock Text="Local-first" Foreground="{StaticResource HomeSoftTextBrush}" FontSize="12" />
+                            </Border>
+                            <Border Background="#1E223A" BorderBrush="#3E3A65" BorderThickness="1" CornerRadius="999" Padding="10,5">
+                                <TextBlock Text="PiP / Multi-View" Foreground="{StaticResource HomeSoftTextBrush}" FontSize="12" />
+                            </Border>
+                        </StackPanel>
+
                         <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,8,0,0">
-                            <Button Style="{ThemeResource AccentButtonStyle}" Click="AddSource_Click" Padding="16,8">
+                            <Button Click="AddSource_Click" Padding="18,9" Background="{StaticResource HomeActionBrush}" BorderBrush="{StaticResource HomeActionBorderBrush}" Foreground="{StaticResource HomeSoftTextBrush}">
                                 <StackPanel Orientation="Horizontal" Spacing="8">
-                                    <FontIcon Glyph="&#xE710;" FontSize="14" />
+                                    <FontIcon Glyph="&#xE710;" FontSize="14" Foreground="{StaticResource HomeAccentBrush}" />
                                     <TextBlock Text="Add Source" />
                                 </StackPanel>
                             </Button>
-                            <Button Click="ContinueWatching_Click" Padding="16,8">
+                            <Button Click="ContinueWatching_Click" Padding="18,9" Background="#171D2D" BorderBrush="#4A446E" Foreground="{StaticResource HomeSoftTextBrush}">
                                 <StackPanel Orientation="Horizontal" Spacing="8">
-                                    <FontIcon Glyph="&#xE768;" FontSize="14" />
+                                    <FontIcon Glyph="&#xE768;" FontSize="14" Foreground="{StaticResource HomeWarmAccentBrush}" />
                                     <TextBlock Text="Continue Watching" />
                                 </StackPanel>
                             </Button>
                         </StackPanel>
                     </StackPanel>
 
-                    <Border Grid.Column="1" Width="180" MinHeight="150" Background="#18222D" BorderBrush="#2F4357" BorderThickness="1" CornerRadius="18" Padding="18" VerticalAlignment="Stretch">
-                        <StackPanel Spacing="10" VerticalAlignment="Center">
-                            <FontIcon Glyph="&#xE7F4;" FontSize="30" Foreground="{StaticResource HomeAccentBrush}" HorizontalAlignment="Left" />
-                            <TextBlock Text="{x:Bind ViewModel.LibraryStatusMessage, Mode=OneWay}" TextWrapping="Wrap" FontWeight="SemiBold" />
-                            <TextBlock Text="{x:Bind ViewModel.LastSyncMessage, Mode=OneWay}" Foreground="{StaticResource HomeMutedTextBrush}" FontSize="12" TextWrapping="Wrap" />
-                        </StackPanel>
+                    <Border Grid.Column="1" Width="264" MinHeight="200" BorderBrush="#5B5487" BorderThickness="1" CornerRadius="24" Padding="18" VerticalAlignment="Stretch" Margin="0,2,0,2">
+                        <Border.Background>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                <GradientStop Color="#272A4B" Offset="0" />
+                                <GradientStop Color="#1A1E32" Offset="0.54" />
+                                <GradientStop Color="#111722" Offset="1" />
+                            </LinearGradientBrush>
+                        </Border.Background>
+                        <Grid RowSpacing="12">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                            <Grid>
+                                <Border Width="58" Height="58" HorizontalAlignment="Left" CornerRadius="17">
+                                    <Border.Background>
+                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                            <GradientStop Color="#4B4382" Offset="0" />
+                                            <GradientStop Color="#1E2342" Offset="1" />
+                                        </LinearGradientBrush>
+                                    </Border.Background>
+                                    <FontIcon Glyph="&#xE7F4;" FontSize="25" Foreground="{StaticResource HomeAccentBrush}" />
+                                </Border>
+                                <Border Width="96" Height="40" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-6,-10,0" CornerRadius="14" Opacity="0.24" Background="#66F05BD7" />
+                                <Border Height="3" Width="76" HorizontalAlignment="Right" VerticalAlignment="Bottom" CornerRadius="2" Background="{StaticResource HomeWarmAccentBrush}" Opacity="0.9" />
+                            </Grid>
+                            <StackPanel Grid.Row="1" Spacing="5">
+                                <TextBlock Text="{x:Bind ViewModel.LibraryStatusMessage, Mode=OneWay}" TextWrapping="Wrap" FontWeight="SemiBold" FontSize="16" />
+                                <TextBlock Text="Sources, playback, and progress stay ready on this device." Foreground="{StaticResource HomeMutedTextBrush}" FontSize="12" TextWrapping="Wrap" />
+                            </StackPanel>
+                            <TextBlock Grid.Row="2" Text="{x:Bind ViewModel.LastSyncMessage, Mode=OneWay}" Foreground="{StaticResource HomeMutedTextBrush}" FontSize="12" TextWrapping="Wrap" />
+                        </Grid>
                     </Border>
+                    </Grid>
                 </Grid>
             </Border>
 
@@ -101,20 +187,47 @@
                 </GridView.ItemContainerStyle>
                 <GridView.ItemTemplate>
                     <DataTemplate>
-                        <Border Width="210" Style="{StaticResource CardBorderStyle}">
-                            <Grid ColumnSpacing="14">
+                        <Border Width="216" Style="{StaticResource CardBorderStyle}" Padding="16" BorderBrush="#343858">
+                            <Border.Background>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                    <GradientStop Color="#171B2C" Offset="0" />
+                                    <GradientStop Color="#111722" Offset="1" />
+                                </LinearGradientBrush>
+                            </Border.Background>
+                            <Grid RowSpacing="12">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <Border Height="2" VerticalAlignment="Top" CornerRadius="1" Opacity="0.86">
+                                    <Border.Background>
+                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                            <GradientStop Color="#B7B2FF" Offset="0" />
+                                            <GradientStop Color="#44F05BD7" Offset="0.54" />
+                                            <GradientStop Color="#00D9BB79" Offset="1" />
+                                        </LinearGradientBrush>
+                                    </Border.Background>
+                                </Border>
+                            <Grid Grid.Row="1" ColumnSpacing="14">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto" />
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
-                                <Border Width="42" Height="42" Background="#202C38" CornerRadius="12">
-                                    <FontIcon Glyph="{Binding Glyph}" FontSize="18" Foreground="{StaticResource HomeAccentBrush}" />
+                                <Border Width="46" Height="46" CornerRadius="14">
+                                    <Border.Background>
+                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                            <GradientStop Color="#332F62" Offset="0" />
+                                            <GradientStop Color="#181D35" Offset="1" />
+                                        </LinearGradientBrush>
+                                    </Border.Background>
+                                    <FontIcon Glyph="{Binding Glyph}" FontSize="19" Foreground="{StaticResource HomeAccentBrush}" />
                                 </Border>
-                                <StackPanel Grid.Column="1" Spacing="2">
+                                <StackPanel Grid.Column="1" Spacing="1">
                                     <TextBlock Text="{Binding Label}" Foreground="{StaticResource HomeMutedTextBrush}" FontSize="12" />
-                                    <TextBlock Text="{Binding Value}" FontSize="25" FontWeight="SemiBold" />
+                                    <TextBlock Text="{Binding Value}" FontSize="28" FontWeight="SemiBold" Foreground="{StaticResource HomeSoftTextBrush}" />
                                     <TextBlock Text="{Binding Detail}" Foreground="{StaticResource HomeMutedTextBrush}" FontSize="12" />
                                 </StackPanel>
+                            </Grid>
                             </Grid>
                         </Border>
                     </DataTemplate>
@@ -127,13 +240,13 @@
                     <ColumnDefinition Width="2*" />
                 </Grid.ColumnDefinitions>
 
-                <Border Grid.Column="0" Style="{StaticResource CardBorderStyle}" Background="{StaticResource HomeCardElevatedBrush}">
+                <Border Grid.Column="1" Style="{StaticResource CardBorderStyle}" Background="{StaticResource HomeCardElevatedBrush}" Padding="20" BorderBrush="#2D324C">
                     <StackPanel>
                         <TextBlock Text="Quick Actions" Style="{StaticResource SectionTitleStyle}" />
                         <GridView ItemsSource="{x:Bind ViewModel.QuickActions, Mode=OneWay}" SelectionMode="None" IsItemClickEnabled="True" ItemClick="QuickAction_ItemClick">
                             <GridView.ItemsPanel>
                                 <ItemsPanelTemplate>
-                                    <ItemsWrapGrid Orientation="Horizontal" MaximumRowsOrColumns="3" />
+                                    <ItemsWrapGrid Orientation="Horizontal" MaximumRowsOrColumns="2" />
                                 </ItemsPanelTemplate>
                             </GridView.ItemsPanel>
                             <GridView.ItemContainerStyle>
@@ -143,18 +256,33 @@
                             </GridView.ItemContainerStyle>
                             <GridView.ItemTemplate>
                                 <DataTemplate>
-                                    <Grid Width="230" MinHeight="82" Padding="14" Background="#121821" BorderBrush="#26313D" BorderThickness="1" CornerRadius="12" ColumnSpacing="12">
+                                    <Grid Width="232" MinHeight="92" Padding="14" BorderBrush="#303553" BorderThickness="1" CornerRadius="20" ColumnSpacing="12">
+                                        <Grid.Background>
+                                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                                <GradientStop Color="#1A1F35" Offset="0" />
+                                                <GradientStop Color="#131927" Offset="0.72" />
+                                                <GradientStop Color="#10151E" Offset="1" />
+                                            </LinearGradientBrush>
+                                        </Grid.Background>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="Auto" />
                                             <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
-                                        <Border Width="38" Height="38" Background="#1D2A36" CornerRadius="10" VerticalAlignment="Top">
-                                            <FontIcon Glyph="{Binding Glyph}" FontSize="16" Foreground="{StaticResource HomeAccentBrush}" />
+                                        <Border Width="42" Height="42" CornerRadius="16" VerticalAlignment="Top">
+                                            <Border.Background>
+                                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                                    <GradientStop Color="#3B3370" Offset="0" />
+                                                    <GradientStop Color="#1A2140" Offset="1" />
+                                                </LinearGradientBrush>
+                                            </Border.Background>
+                                            <FontIcon Glyph="{Binding Glyph}" FontSize="17" Foreground="{StaticResource HomeAccentBrush}" />
                                         </Border>
                                         <StackPanel Grid.Column="1" Spacing="3">
-                                            <TextBlock Text="{Binding Title}" FontWeight="SemiBold" />
+                                            <TextBlock Text="{Binding Title}" FontWeight="SemiBold" Foreground="{StaticResource HomeSoftTextBrush}" />
                                             <TextBlock Text="{Binding Detail}" Foreground="{StaticResource HomeMutedTextBrush}" FontSize="12" TextWrapping="Wrap" MaxLines="2" />
                                         </StackPanel>
+                                        <FontIcon Grid.Column="2" Glyph="&#xE76C;" FontSize="11" Foreground="#A79FDD" VerticalAlignment="Center" />
                                     </Grid>
                                 </DataTemplate>
                             </GridView.ItemTemplate>
@@ -162,11 +290,18 @@
                     </StackPanel>
                 </Border>
 
-                <Border Grid.Column="1" Style="{StaticResource CardBorderStyle}">
+                <Border Grid.Column="0" Style="{StaticResource CardBorderStyle}" Padding="20" BorderBrush="#5A5089">
+                    <Border.Background>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                            <GradientStop Color="#2B2952" Offset="0" />
+                            <GradientStop Color="#171D31" Offset="0.58" />
+                            <GradientStop Color="#10151E" Offset="1" />
+                        </LinearGradientBrush>
+                    </Border.Background>
                     <StackPanel>
-                        <Grid Margin="0,0,0,12">
+                        <Grid Margin="0,0,0,14">
                             <TextBlock Text="Continue Watching" Style="{StaticResource SectionTitleStyle}" Margin="0" />
-                            <Button Content="View all" HorizontalAlignment="Right" Click="ContinueWatching_Click" />
+                            <Button Content="View all" HorizontalAlignment="Right" Click="ContinueWatching_Click" Background="#1D2137" BorderBrush="#514A7B" Foreground="{StaticResource HomeSoftTextBrush}" />
                         </Grid>
 
                         <ListView ItemsSource="{x:Bind ViewModel.ContinueItems, Mode=OneWay}" SelectionMode="Single" SelectionChanged="ContinueList_SelectionChanged" Visibility="{x:Bind ViewModel.ContinueItemsVisibility, Mode=OneWay}">
@@ -178,29 +313,73 @@
                             </ListView.ItemContainerStyle>
                             <ListView.ItemTemplate>
                                 <DataTemplate>
-                                    <Grid MinHeight="72" Padding="12" Background="#121821" BorderBrush="#26313D" BorderThickness="1" CornerRadius="12" ColumnSpacing="12">
+                                    <Grid MinHeight="118" Padding="14" BorderBrush="#5C5489" BorderThickness="1" CornerRadius="22" ColumnSpacing="16">
+                                        <Grid.Background>
+                                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                                <GradientStop Color="#302E5D" Offset="0" />
+                                                <GradientStop Color="#181E33" Offset="0.62" />
+                                                <GradientStop Color="#111722" Offset="1" />
+                                            </LinearGradientBrush>
+                                        </Grid.Background>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="Auto" />
                                             <ColumnDefinition Width="*" />
                                             <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
-                                        <Border Width="48" Height="48" Background="#1D2A36" CornerRadius="12">
-                                            <FontIcon Glyph="&#xE768;" Foreground="{StaticResource HomeAccentBrush}" />
+                                        <Border Width="148" Height="88" CornerRadius="22">
+                                            <Border.Background>
+                                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                                    <GradientStop Color="#7565D4" Offset="0" />
+                                                    <GradientStop Color="#3D3676" Offset="0.46" />
+                                                    <GradientStop Color="#121722" Offset="1" />
+                                                </LinearGradientBrush>
+                                            </Border.Background>
+                                            <Grid>
+                                                <Border Width="64" Height="64" CornerRadius="24" Background="#66212B38" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                <FontIcon Glyph="&#xE768;" Foreground="{StaticResource HomeAccentBrush}" FontSize="25" />
+                                                <Border Height="5" Background="{StaticResource HomeWarmAccentBrush}" CornerRadius="3" VerticalAlignment="Bottom" Margin="14,0,54,12" Opacity="0.94" />
+                                                <Border Height="5" Background="#4CFFFFFF" CornerRadius="3" VerticalAlignment="Bottom" Margin="14,0,14,12" Opacity="0.17" />
+                                                <Border Width="72" Height="28" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-8,-12,0" CornerRadius="12" Background="#44F05BD7" />
+                                                <Border Width="48" Height="48" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="-18,-20,0,0" CornerRadius="20" Background="#337968FF" />
+                                            </Grid>
                                         </Border>
-                                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="3">
-                                            <TextBlock Text="{Binding Title}" FontWeight="SemiBold" TextWrapping="Wrap" MaxLines="1" />
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="4">
+                                            <TextBlock Text="{Binding Title}" FontWeight="SemiBold" TextWrapping="Wrap" MaxLines="1" Foreground="{StaticResource HomeSoftTextBrush}" />
                                             <TextBlock Text="{Binding Detail}" Foreground="{StaticResource HomeMutedTextBrush}" FontSize="12" />
                                         </StackPanel>
-                                        <FontIcon Grid.Column="2" Glyph="&#xE76C;" Foreground="{StaticResource HomeMutedTextBrush}" FontSize="12" VerticalAlignment="Center" />
+                                        <FontIcon Grid.Column="2" Glyph="&#xE76C;" Foreground="{StaticResource HomeWarmAccentBrush}" FontSize="12" VerticalAlignment="Center" />
                                     </Grid>
                                 </DataTemplate>
                             </ListView.ItemTemplate>
                         </ListView>
 
-                        <Border Visibility="{x:Bind ViewModel.ContinueEmptyVisibility, Mode=OneWay}" Background="#111821" BorderBrush="#26313D" BorderThickness="1" CornerRadius="12" Padding="18">
-                            <StackPanel Spacing="8">
-                                <FontIcon Glyph="&#xE768;" Foreground="{StaticResource HomeAccentBrush}" FontSize="24" HorizontalAlignment="Left" />
-                                <TextBlock Text="Nothing to resume yet" FontWeight="SemiBold" />
+                        <Border Visibility="{x:Bind ViewModel.ContinueEmptyVisibility, Mode=OneWay}" BorderBrush="#5C5489" BorderThickness="1" CornerRadius="22" Padding="20">
+                            <Border.Background>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                    <GradientStop Color="#27284D" Offset="0" />
+                                    <GradientStop Color="#171D30" Offset="0.62" />
+                                    <GradientStop Color="#111722" Offset="1" />
+                                </LinearGradientBrush>
+                            </Border.Background>
+                            <StackPanel Spacing="10">
+                                <Border Height="150" CornerRadius="24">
+                                    <Border.Background>
+                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                            <GradientStop Color="#7565D4" Offset="0" />
+                                            <GradientStop Color="#3D3676" Offset="0.46" />
+                                            <GradientStop Color="#121722" Offset="1" />
+                                        </LinearGradientBrush>
+                                    </Border.Background>
+                                    <Grid>
+                                        <Border Width="94" Height="94" CornerRadius="30" Background="#55212938" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                        <FontIcon Glyph="&#xE768;" Foreground="{StaticResource HomeAccentBrush}" FontSize="38" />
+                                        <Border Width="180" Height="6" Background="{StaticResource HomeWarmAccentBrush}" CornerRadius="3" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="24,0,0,24" Opacity="0.94" />
+                                        <Border Width="290" Height="6" Background="#42FFFFFF" CornerRadius="3" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="24,0,0,24" Opacity="0.17" />
+                                        <Border Width="154" Height="48" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-16,-34,0" CornerRadius="18" Background="#44F05BD7" />
+                                        <Border Width="86" Height="86" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="-36,-34,0,0" CornerRadius="30" Background="#337968FF" />
+                                    </Grid>
+                                </Border>
+                                <TextBlock Text="Nothing to resume yet" FontWeight="SemiBold" Foreground="{StaticResource HomeSoftTextBrush}" />
                                 <TextBlock Text="Start watching a channel, movie, or episode and it will appear here." Foreground="{StaticResource HomeMutedTextBrush}" TextWrapping="Wrap" />
                             </StackPanel>
                         </Border>
@@ -208,22 +387,40 @@
                 </Border>
             </Grid>
 
-            <Border Grid.Row="3" Style="{StaticResource CardBorderStyle}" Padding="16">
+            <Border Grid.Row="3" Style="{StaticResource CardBorderStyle}" Padding="16" BorderBrush="#2F334C">
+                <Border.Background>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                        <GradientStop Color="#141A29" Offset="0" />
+                        <GradientStop Color="#10151E" Offset="1" />
+                    </LinearGradientBrush>
+                </Border.Background>
                 <Grid ColumnSpacing="16">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
-                    <Border Width="36" Height="36" Background="#1D2A36" CornerRadius="10">
+                    <Border Width="36" Height="36" CornerRadius="12">
+                        <Border.Background>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                <GradientStop Color="#302C5B" Offset="0" />
+                                <GradientStop Color="#181E38" Offset="1" />
+                            </LinearGradientBrush>
+                        </Border.Background>
                         <FontIcon Glyph="&#xE946;" Foreground="{StaticResource HomeAccentBrush}" FontSize="16" />
                     </Border>
                     <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
                         <TextBlock Text="{x:Bind ViewModel.SourceStatusMessage, Mode=OneWay}" FontWeight="SemiBold" />
                         <TextBlock Text="{x:Bind ViewModel.LastSyncMessage, Mode=OneWay}" Foreground="{StaticResource HomeMutedTextBrush}" FontSize="12" />
                     </StackPanel>
-                    <Border Grid.Column="2" Visibility="{x:Bind ViewModel.SourceIssueVisibility, Mode=OneWay}" Background="#3B211F" BorderBrush="#6A3832" BorderThickness="1" CornerRadius="999" Padding="10,5" VerticalAlignment="Center">
-                        <TextBlock Text="Source attention needed" Foreground="#FFB5AA" FontSize="12" FontWeight="SemiBold" />
+                    <Border Grid.Column="2" Visibility="{x:Bind ViewModel.SourceIssueVisibility, Mode=OneWay}" BorderBrush="#7C6640" BorderThickness="1" CornerRadius="999" Padding="11,5" VerticalAlignment="Center">
+                        <Border.Background>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                <GradientStop Color="#302718" Offset="0" />
+                                <GradientStop Color="#1B1A20" Offset="1" />
+                            </LinearGradientBrush>
+                        </Border.Background>
+                        <TextBlock Text="Source attention needed" Foreground="{StaticResource HomeWarmAccentBrush}" FontSize="12" FontWeight="SemiBold" />
                     </Border>
                 </Grid>
             </Border>

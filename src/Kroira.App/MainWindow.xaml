@@ -7,8 +7,13 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
 
-    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
-        <NavigationView x:Name="RootNavView" ItemInvoked="RootNavView_ItemInvoked">
+    <Grid Background="{StaticResource KroiraPageBackgroundBrush}">
+        <NavigationView x:Name="RootNavView"
+                        ItemInvoked="RootNavView_ItemInvoked"
+                        Background="{StaticResource KroiraPageBackgroundBrush}"
+                        PaneTitle="Kroira IPTV"
+                        OpenPaneLength="236"
+                        CompactPaneLength="52">
             <NavigationView.MenuItems>
                 <NavigationViewItem Icon="Home" Content="Home" Tag="Home" />
                 <NavigationViewItem Icon="Video" Content="Channels" Tag="Channels" />

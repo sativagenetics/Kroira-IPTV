@@ -17,6 +17,9 @@ namespace Kroira.App.ViewModels
 
         public ObservableCollection<BrowserChannelViewModel> FavoriteChannels { get; } = new();
 
+        [ObservableProperty]
+        private bool _isEmpty;
+
         public FavoritesViewModel(IServiceProvider serviceProvider)
         {
             _serviceProvider = serviceProvider;
@@ -50,6 +53,8 @@ namespace Kroira.App.ViewModels
                     });
                 }
             }
+
+            IsEmpty = FavoriteChannels.Count == 0;
         }
 
         [RelayCommand]
@@ -68,6 +73,7 @@ namespace Kroira.App.ViewModels
                     await db.SaveChangesAsync();
                 }
                 FavoriteChannels.Remove(target);
+                IsEmpty = FavoriteChannels.Count == 0;
             }
         }
     }

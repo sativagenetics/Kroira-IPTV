@@ -31,6 +31,9 @@ namespace Kroira.App.ViewModels
 
         public ObservableCollection<ProgressItemViewModel> ProgressItems { get; } = new();
 
+        [ObservableProperty]
+        private bool _isEmpty;
+
         public ContinueWatchingViewModel(IServiceProvider serviceProvider)
         {
             _serviceProvider = serviceProvider;
@@ -48,7 +51,11 @@ namespace Kroira.App.ViewModels
                 .OrderByDescending(p => p.LastWatched)
                 .ToListAsync();
 
-            if (recs.Count == 0) return;
+            if (recs.Count == 0)
+            {
+                IsEmpty = true;
+                return;
+            }
 
             // Preload lookup data for all content types
             var channelIds = recs.Where(r => r.ContentType == PlaybackContentType.Channel).Select(r => r.ContentId).ToList();
@@ -103,6 +110,8 @@ namespace Kroira.App.ViewModels
                     SavedPositionMs = r.PositionMs
                 });
             }
+
+            IsEmpty = ProgressItems.Count == 0;
         }
 
         [RelayCommand]
@@ -117,6 +126,7 @@ namespace Kroira.App.ViewModels
                 await db.SaveChangesAsync();
                 var vm = ProgressItems.FirstOrDefault(x => x.Id == progressId);
                 if (vm != null) ProgressItems.Remove(vm);
+                IsEmpty = ProgressItems.Count == 0;
             }
         }
     }
