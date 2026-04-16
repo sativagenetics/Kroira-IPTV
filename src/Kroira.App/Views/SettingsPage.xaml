@@ -57,6 +57,14 @@
                             <StackPanel Grid.Column="1" Spacing="6">
                                 <TextBlock Text="Local-first app settings" Style="{StaticResource KroiraSectionTitleStyle}" />
                                 <TextBlock Text="Kroira keeps the settings surface focused: licensing, version, privacy, and support stay easy to find without burying playback controls." Style="{StaticResource KroiraPageSubtitleStyle}" />
+                                <TextBlock Text="App language" FontWeight="SemiBold" Foreground="{StaticResource KroiraTextPrimaryBrush}" Margin="0,10,0,0" />
+                                <ComboBox Style="{StaticResource KroiraComboBoxStyle}"
+                                          ItemsSource="{x:Bind ViewModel.Languages, Mode=OneWay}"
+                                          SelectedItem="{x:Bind ViewModel.SelectedLanguage, Mode=TwoWay}"
+                                          DisplayMemberPath="DisplayName"
+                                          MaxWidth="260"
+                                          HorizontalAlignment="Left" />
+                                <TextBlock Text="{x:Bind ViewModel.LanguageStatusText, Mode=OneWay}" Style="{StaticResource KroiraPageSubtitleStyle}" />
                             </StackPanel>
                         </Grid>
                     </Border>

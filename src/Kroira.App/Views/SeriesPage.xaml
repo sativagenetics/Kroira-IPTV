@@ -117,6 +117,16 @@
                                 </DataTemplate>
                             </ComboBox.ItemTemplate>
                         </ComboBox>
+                        <TextBlock Text="{x:Bind ViewModel.SelectedSeriesStatus, Mode=OneWay}"
+                                   Visibility="{x:Bind ViewModel.SelectedSeriesStatusVisibility, Mode=OneWay}"
+                                   Foreground="{StaticResource KroiraTextSecondaryBrush}"
+                                   FontSize="12"
+                                   TextWrapping="Wrap" />
+                        <Button Content="Play selected episode"
+                                Visibility="{x:Bind ViewModel.SelectedEpisodePlayVisibility, Mode=OneWay}"
+                                Click="PlaySelectedEpisode_Click"
+                                Style="{StaticResource KroiraPrimaryButtonStyle}"
+                                HorizontalAlignment="Left" />
                     </StackPanel>
 
                     <TextBlock Grid.Row="1" Text="Episodes" FontWeight="SemiBold" Margin="0,16,0,8" Foreground="{StaticResource KroiraTextPrimaryBrush}" />

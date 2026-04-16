@@ -60,9 +60,16 @@ namespace Kroira.App.ViewModels
                 .ToListAsync();
             var categoryMap = cats.ToDictionary(c => c.Id);
             var categoryLabels = ContentClassifier.BuildCategoryLabelSet(cats.Select(c => c.Name));
+            var sourceTypes = await db.SourceProfiles
+                .Select(source => new { source.Id, source.Type })
+                .ToDictionaryAsync(source => source.Id, source => source.Type);
+            var categorySourceTypes = cats.ToDictionary(
+                category => category.Id,
+                category => sourceTypes.TryGetValue(category.SourceProfileId, out var type) ? type : SourceType.M3U);
 
             var channels = (await db.Channels.ToListAsync())
-                .Where(ch => ContentClassifier.IsPlayableLiveChannel(ch.Name, ch.StreamUrl, categoryLabels))
+                .Where(ch => categorySourceTypes.TryGetValue(ch.ChannelCategoryId, out var sourceType) &&
+                             ContentClassifier.IsPlayableStoredLiveChannel(ch.Name, ch.StreamUrl, sourceType, categoryLabels))
                 .Where(ch => categoryMap.ContainsKey(ch.ChannelCategoryId))
                 .ToList();
             var favIds = await db.Favorites

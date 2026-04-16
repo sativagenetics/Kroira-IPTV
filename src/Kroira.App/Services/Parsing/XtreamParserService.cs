@@ -121,7 +121,7 @@ namespace Kroira.App.Services.Parsing
                             if (catId != null && categoryMap.TryGetValue(catId, out var mappedCat))
                             {
                                 string streamUrl = $"{baseUrl}/live/{cred.Username}/{cred.Password}/{streamId}.ts";
-                                if (!ContentClassifier.IsPlayableLiveChannel(name ?? string.Empty, streamUrl, liveCategoryLabels)) continue;
+                                if (!ContentClassifier.IsPlayableXtreamLiveChannel(name ?? string.Empty, streamUrl, liveCategoryLabels)) continue;
 
                                 channelsList.Add(new Channel
                                 {
@@ -201,7 +201,23 @@ namespace Kroira.App.Services.Parsing
                         }
                     }
                 }
-                var movieCategoryLabels = ContentClassifier.BuildCategoryLabelSet(md.Values);
+                var serCatsJson = await client.GetStringAsync($"{baseUrl}/player_api.php{authQuery}&action=get_series_categories");
+                if (string.IsNullOrWhiteSpace(serCatsJson)) serCatsJson = "[]";
+                using var serCatsDoc = JsonDocument.Parse(serCatsJson);
+                var sd = new Dictionary<string, string>();
+                if (serCatsDoc.RootElement.ValueKind == JsonValueKind.Array)
+                {
+                    foreach (var element in serCatsDoc.RootElement.EnumerateArray())
+                    {
+                        string id = element.TryGetProperty("category_id", out var idProp) ? (idProp.ValueKind == JsonValueKind.Number ? idProp.GetInt32().ToString() : idProp.GetString()) : null;
+                        if (!string.IsNullOrEmpty(id) && element.TryGetProperty("category_name", out var nameProp))
+                        {
+                            sd[id] = nameProp.GetString() ?? "Unknown";
+                        }
+                    }
+                }
+                var seriesCategoryLabels = ContentClassifier.BuildCategoryLabelSet(sd.Values);
+                var allVodCategoryLabels = ContentClassifier.BuildCategoryLabelSet(md.Values.Concat(sd.Values));
 
                 var moviesJson = await client.GetStringAsync($"{baseUrl}/player_api.php{authQuery}&action=get_vod_streams");
                 if (string.IsNullOrWhiteSpace(moviesJson)) moviesJson = "[]";
@@ -226,11 +242,10 @@ namespace Kroira.App.Services.Parsing
                         // --- Garbage filter ---
                         if (ContentClassifier.IsGarbageMovieExtension(ext)) continue;
                         if (ContentClassifier.IsGarbageCategoryName(mappedCatName)) continue;
-                        if (!ContentClassifier.IsPlayableMovie(new Movie
-                        {
-                            Title = name ?? string.Empty,
-                            StreamUrl = $"{baseUrl}/movie/{cred.Username}/{cred.Password}/{streamId}.{ext}"
-                        }, movieCategoryLabels)) continue;
+                        if (!ContentClassifier.IsPlayableXtreamMovie(
+                                name ?? string.Empty,
+                                $"{baseUrl}/movie/{cred.Username}/{cred.Password}/{streamId}.{ext}",
+                                allVodCategoryLabels)) continue;
                         // ----------------------
 
                         parsedMovies.Add(new Movie
@@ -244,23 +259,6 @@ namespace Kroira.App.Services.Parsing
                         });
                     }
                 }
-
-                var serCatsJson = await client.GetStringAsync($"{baseUrl}/player_api.php{authQuery}&action=get_series_categories");
-                if (string.IsNullOrWhiteSpace(serCatsJson)) serCatsJson = "[]";
-                using var serCatsDoc = JsonDocument.Parse(serCatsJson);
-                var sd = new Dictionary<string, string>();
-                if (serCatsDoc.RootElement.ValueKind == JsonValueKind.Array)
-                {
-                    foreach (var element in serCatsDoc.RootElement.EnumerateArray())
-                    {
-                        string id = element.TryGetProperty("category_id", out var idProp) ? (idProp.ValueKind == JsonValueKind.Number ? idProp.GetInt32().ToString() : idProp.GetString()) : null;
-                        if (!string.IsNullOrEmpty(id) && element.TryGetProperty("category_name", out var nameProp))
-                        {
-                            sd[id] = nameProp.GetString() ?? "Unknown";
-                        }
-                    }
-                }
-                var seriesCategoryLabels = ContentClassifier.BuildCategoryLabelSet(sd.Values);
 
                 var seriesJson = await client.GetStringAsync($"{baseUrl}/player_api.php{authQuery}&action=get_series");
                 if (string.IsNullOrWhiteSpace(seriesJson)) seriesJson = "[]";
@@ -283,8 +281,7 @@ namespace Kroira.App.Services.Parsing
 
                         // --- Garbage filter ---
                         if (ContentClassifier.IsGarbageCategoryName(mappedCatName)) continue;
-                        if (ContentClassifier.IsGarbageTitle(name ?? string.Empty)) continue;
-                        if (ContentClassifier.IsProviderCategoryRow(name ?? string.Empty, seriesCategoryLabels)) continue;
+                        if (!ContentClassifier.IsBrowsableXtreamSeries(name ?? string.Empty, allVodCategoryLabels)) continue;
                         // ----------------------
 
                         pendingSeries.Add((seriesId, new Series
@@ -420,9 +417,7 @@ namespace Kroira.App.Services.Parsing
                     await db.SaveChangesAsync();
 
                     // ── SERIES UPSERT ────────────────────────────────────────────────────────
-                    var validSeriesInfos = limitedSeries
-                        .Where(s => s.BaseObj.Seasons != null && s.BaseObj.Seasons.Any(sn => sn.Episodes != null && sn.Episodes.Count > 0))
-                        .ToList();
+                    var validSeriesInfos = pendingSeries;
 
                     var existingSeries = await db.Series
                         .Include(s => s.Seasons!).ThenInclude(sn => sn.Episodes!)
@@ -445,11 +440,18 @@ namespace Kroira.App.Services.Parsing
                             existingSer.CategoryName = sInfo.BaseObj.CategoryName;
 
                             // Upsert seasons and episodes instead of rebuild-from-scratch
+                            var incomingSeasons = sInfo.BaseObj.Seasons?.ToList() ?? new List<Season>();
+                            if (incomingSeasons.Count == 0)
+                            {
+                                serUpdated++;
+                                continue;
+                            }
+
                             var existingSeasonMap = (existingSer.Seasons ?? Enumerable.Empty<Season>())
                                 .ToDictionary(sn => sn.SeasonNumber);
-                            var incomingSeasonNums = new HashSet<int>(sInfo.BaseObj.Seasons!.Select(sn => sn.SeasonNumber));
+                            var incomingSeasonNums = new HashSet<int>(incomingSeasons.Select(sn => sn.SeasonNumber));
 
-                            foreach (var incomingSeason in sInfo.BaseObj.Seasons!)
+                            foreach (var incomingSeason in incomingSeasons)
                             {
                                 if (existingSeasonMap.TryGetValue(incomingSeason.SeasonNumber, out var existingSeason))
                                 {

@@ -50,18 +50,31 @@ namespace Kroira.App.Views
         {
             if (e.AddedItems.Count > 0 && e.AddedItems[0] is Episode ep)
             {
-                if (!string.IsNullOrWhiteSpace(ep.StreamUrl))
-                {
-                    this.Frame.Navigate(typeof(EmbeddedPlaybackPage), new PlaybackLaunchContext
-                    {
-                        ContentId = ep.Id,
-                        ContentType = PlaybackContentType.Episode,
-                        StreamUrl = ep.StreamUrl,
-                        StartPositionMs = 0
-                    });
-                }
+                PlayEpisode(ep);
             }
             ((ListView)sender).SelectedItem = null;
+        }
+
+        private void PlaySelectedEpisode_Click(object sender, RoutedEventArgs e)
+        {
+            if (ViewModel.SelectedEpisode != null)
+            {
+                PlayEpisode(ViewModel.SelectedEpisode);
+            }
+        }
+
+        private void PlayEpisode(Episode ep)
+        {
+            if (!string.IsNullOrWhiteSpace(ep.StreamUrl))
+            {
+                this.Frame.Navigate(typeof(EmbeddedPlaybackPage), new PlaybackLaunchContext
+                {
+                    ContentId = ep.Id,
+                    ContentType = PlaybackContentType.Episode,
+                    StreamUrl = ep.StreamUrl,
+                    StartPositionMs = 0
+                });
+            }
         }
     }
 }

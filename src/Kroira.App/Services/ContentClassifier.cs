@@ -31,41 +31,50 @@ namespace Kroira.App.Services
             return categoryLabels.Contains(NormalizeLabel(title));
         }
 
-        public static bool IsPlayableLiveChannel(string name, string streamUrl, HashSet<string> categoryLabels)
+        public static bool IsPlayableXtreamLiveChannel(string name, string streamUrl, HashSet<string> categoryLabels)
         {
             if (IsGarbageTitle(name)) return false;
             if (string.IsNullOrWhiteSpace(streamUrl)) return false;
             if (IsProviderCategoryRow(name, categoryLabels)) return false;
 
             var lowerUrl = streamUrl.Trim().ToLowerInvariant();
-            if (lowerUrl.Contains("/movie/") || lowerUrl.Contains("/series/") || lowerUrl.Contains("/vod/"))
-            {
-                return false;
-            }
+            return lowerUrl.Contains("/live/");
+        }
+
+        public static bool IsPlayableM3uLiveChannel(string name, string streamUrl, HashSet<string> categoryLabels)
+        {
+            if (IsGarbageTitle(name)) return false;
+            if (string.IsNullOrWhiteSpace(streamUrl)) return false;
+            if (IsProviderCategoryRow(name, categoryLabels)) return false;
+
+            var lowerUrl = streamUrl.Trim().ToLowerInvariant();
+            if (lowerUrl.Contains("/movie/") || lowerUrl.Contains("/series/") || lowerUrl.Contains("/vod/")) return false;
 
             var extension = GetUrlExtension(lowerUrl);
             return string.IsNullOrEmpty(extension) || !MovieExtensions.Contains(extension);
         }
 
-        public static bool IsPlayableMovie(Movie movie, HashSet<string> categoryLabels)
+        public static bool IsPlayableStoredLiveChannel(string name, string streamUrl, SourceType sourceType, HashSet<string> categoryLabels)
         {
-            if (IsGarbageTitle(movie.Title)) return false;
-            if (string.IsNullOrWhiteSpace(movie.StreamUrl)) return false;
-            if (IsProviderCategoryRow(movie.Title, categoryLabels)) return false;
-
-            var extension = GetUrlExtension(movie.StreamUrl);
-            return string.IsNullOrEmpty(extension) || !NonMovieExtensions.Contains(extension);
+            return sourceType == SourceType.Xtream
+                ? IsPlayableXtreamLiveChannel(name, streamUrl, categoryLabels)
+                : IsPlayableM3uLiveChannel(name, streamUrl, categoryLabels);
         }
 
-        public static bool IsPlayableSeries(Series series, HashSet<string> categoryLabels)
+        public static bool IsPlayableXtreamMovie(string title, string streamUrl, HashSet<string> categoryLabels)
         {
-            if (IsGarbageTitle(series.Title)) return false;
-            if (IsProviderCategoryRow(series.Title, categoryLabels)) return false;
+            if (IsGarbageTitle(title)) return false;
+            if (string.IsNullOrWhiteSpace(streamUrl)) return false;
+            if (IsProviderCategoryRow(title, categoryLabels)) return false;
 
-            return series.Seasons != null &&
-                   series.Seasons.Any(season =>
-                       season.Episodes != null &&
-                       season.Episodes.Any(episode => !string.IsNullOrWhiteSpace(episode.StreamUrl)));
+            var lowerUrl = streamUrl.Trim().ToLowerInvariant();
+            return lowerUrl.Contains("/movie/");
+        }
+
+        public static bool IsBrowsableXtreamSeries(string title, HashSet<string> categoryLabels)
+        {
+            if (IsGarbageTitle(title)) return false;
+            return !IsProviderCategoryRow(title, categoryLabels);
         }
 
         public static bool IsGarbageCategoryName(string categoryName)

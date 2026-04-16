@@ -22,7 +22,7 @@
             </Grid>
         </Border>
 
-        <Border Grid.Row="1" Visibility="{x:Bind ViewModel.IsEmpty, Mode=OneWay}" Style="{StaticResource KroiraPanelStyle}" HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="520">
+        <Border Grid.Row="1" Visibility="{x:Bind ViewModel.EmptyVisibility, Mode=OneWay}" Style="{StaticResource KroiraPanelStyle}" HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="520">
             <StackPanel Spacing="12">
                 <Border Height="130" CornerRadius="22" Background="{StaticResource KroiraMediaGradientBrush}">
                     <Grid>
@@ -37,7 +37,7 @@
             </StackPanel>
         </Border>
 
-        <Grid Grid.Row="1" ColumnSpacing="14" MaxWidth="980" HorizontalAlignment="Left" VerticalAlignment="Top">
+        <Grid Grid.Row="1" Visibility="{x:Bind ViewModel.ContentVisibility, Mode=OneWay}" ColumnSpacing="14" MaxWidth="980" HorizontalAlignment="Left" VerticalAlignment="Top">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="2*" />
                 <ColumnDefinition Width="260" />

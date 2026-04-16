@@ -51,9 +51,9 @@ namespace Kroira.App.ViewModels
         {
             using var scope = _serviceProvider.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var languageCode = await AppLanguageService.GetLanguageAsync(db);
             var rawMovies = await db.Movies
                 .Where(m => m.StreamUrl != null && m.StreamUrl != "")
-                .OrderBy(m => m.Title)
                 .ToListAsync();
 
             var categoryLabels = rawMovies
@@ -62,18 +62,24 @@ namespace Kroira.App.ViewModels
                 .Select(ContentClassifier.NormalizeLabel)
                 .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-            _allMovies = rawMovies
-                .Where(m => ContentClassifier.IsPlayableMovie(m, categoryLabels))
+            var cleanMovies = rawMovies
+                .Where(m => ContentClassifier.IsPlayableXtreamMovie(m.Title, m.StreamUrl, categoryLabels));
+
+            _allMovies = CatalogOrderingService
+                .OrderCatalog(cleanMovies, languageCode, m => m.CategoryName, m => m.Title)
                 .ToList();
 
             Categories.Clear();
             Categories.Add(new BrowserCategoryViewModel { Id = 0, Name = "All Categories", OrderIndex = -1 });
 
             var categoryIndex = 1;
-            foreach (var categoryName in _allMovies
-                         .Select(m => string.IsNullOrWhiteSpace(m.CategoryName) ? "Uncategorized" : m.CategoryName.Trim())
-                         .Distinct(StringComparer.OrdinalIgnoreCase)
-                         .OrderBy(c => c))
+            var orderedCategories = CatalogOrderingService.OrderCategories(
+                _allMovies
+                    .Select(m => string.IsNullOrWhiteSpace(m.CategoryName) ? "Uncategorized" : m.CategoryName.Trim())
+                    .Distinct(StringComparer.OrdinalIgnoreCase),
+                languageCode);
+
+            foreach (var categoryName in orderedCategories)
             {
                 Categories.Add(new BrowserCategoryViewModel
                 {

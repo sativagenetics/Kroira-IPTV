@@ -149,13 +149,17 @@ namespace Kroira.App.ViewModels
                 .Where(c => c.SourceProfileId == sourceProfileId)
                 .OrderBy(c => c.OrderIndex)
                 .ToListAsync();
+            var sourceType = await db.SourceProfiles
+                .Where(source => source.Id == sourceProfileId)
+                .Select(source => source.Type)
+                .FirstOrDefaultAsync();
 
             var catIds = cats.Select(c => c.Id).ToList();
             var categoryLabels = ContentClassifier.BuildCategoryLabelSet(cats.Select(c => c.Name));
             var chans = (await db.Channels
                 .Where(ch => catIds.Contains(ch.ChannelCategoryId))
                 .ToListAsync())
-                .Where(ch => ContentClassifier.IsPlayableLiveChannel(ch.Name, ch.StreamUrl, categoryLabels))
+                .Where(ch => ContentClassifier.IsPlayableStoredLiveChannel(ch.Name, ch.StreamUrl, sourceType, categoryLabels))
                 .ToList();
 
             var favIds = await db.Favorites

@@ -8,6 +8,7 @@ using Kroira.App.Data;
 using Kroira.App.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.UI.Xaml;
 
 namespace Kroira.App.ViewModels
 {
@@ -32,7 +33,12 @@ namespace Kroira.App.ViewModels
         public ObservableCollection<ProgressItemViewModel> ProgressItems { get; } = new();
 
         [ObservableProperty]
-        private bool _isEmpty;
+        [NotifyPropertyChangedFor(nameof(EmptyVisibility))]
+        [NotifyPropertyChangedFor(nameof(ContentVisibility))]
+        private bool _isEmpty = true;
+
+        public Visibility EmptyVisibility => IsEmpty ? Visibility.Visible : Visibility.Collapsed;
+        public Visibility ContentVisibility => IsEmpty ? Visibility.Collapsed : Visibility.Visible;
 
         public ContinueWatchingViewModel(IServiceProvider serviceProvider)
         {
@@ -66,6 +72,10 @@ namespace Kroira.App.ViewModels
 
             var episodeIds = recs.Where(r => r.ContentType == PlaybackContentType.Episode).Select(r => r.ContentId).ToList();
             var episodes = await db.Episodes.Where(e => episodeIds.Contains(e.Id)).ToDictionaryAsync(e => e.Id);
+            var seasonIds = episodes.Values.Select(e => e.SeasonId).Distinct().ToList();
+            var seasons = await db.Seasons.Where(s => seasonIds.Contains(s.Id)).ToDictionaryAsync(s => s.Id);
+            var seriesIds = seasons.Values.Select(s => s.SeriesId).Distinct().ToList();
+            var series = await db.Series.Where(s => seriesIds.Contains(s.Id)).ToDictionaryAsync(s => s.Id);
 
             foreach (var r in recs)
             {
@@ -87,7 +97,17 @@ namespace Kroira.App.ViewModels
                 }
                 else if (r.ContentType == PlaybackContentType.Episode && episodes.TryGetValue(r.ContentId, out var ep))
                 {
-                    title = ep.Title;
+                    if (seasons.TryGetValue(ep.SeasonId, out var season) &&
+                        series.TryGetValue(season.SeriesId, out var parentSeries))
+                    {
+                        title = $"{parentSeries.Title} - {ep.Title}";
+                        logo = parentSeries.PosterUrl ?? string.Empty;
+                    }
+                    else
+                    {
+                        title = ep.Title;
+                    }
+
                     streamUrl = ep.StreamUrl;
                 }
 

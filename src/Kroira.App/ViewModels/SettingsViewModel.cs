@@ -1,8 +1,12 @@
 using System;
+using System.Collections.ObjectModel;
+using System.Linq;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Kroira.App.Data;
 using Kroira.App.Services;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Windows.ApplicationModel;
 
@@ -11,6 +15,16 @@ namespace Kroira.App.ViewModels
     public partial class SettingsViewModel : ObservableObject
     {
         private readonly IEntitlementService _entitlementService;
+        private readonly IServiceProvider _serviceProvider;
+        private bool _isLoadingLanguage;
+
+        public ObservableCollection<LanguageOptionViewModel> Languages { get; } = new()
+        {
+            new LanguageOptionViewModel("tr-TR", "Turkish"),
+            new LanguageOptionViewModel("en-US", "English"),
+            new LanguageOptionViewModel("de-DE", "German"),
+            new LanguageOptionViewModel("ar-SA", "Arabic")
+        };
 
         [ObservableProperty]
         private Visibility _freeTierVisibility;
@@ -21,10 +35,46 @@ namespace Kroira.App.ViewModels
         [ObservableProperty]
         private string _licenseStatusDescription = string.Empty;
 
-        public SettingsViewModel(IEntitlementService entitlementService)
+        [ObservableProperty]
+        private LanguageOptionViewModel _selectedLanguage;
+
+        [ObservableProperty]
+        private string _languageStatusText = "Language preference is used for catalog ordering. Full UI localization can build on this setting later.";
+
+        partial void OnSelectedLanguageChanged(LanguageOptionViewModel value)
+        {
+            if (!_isLoadingLanguage && value != null)
+            {
+                _ = SaveLanguageAsync(value.Code);
+            }
+        }
+
+        public SettingsViewModel(IEntitlementService entitlementService, IServiceProvider serviceProvider)
         {
             _entitlementService = entitlementService;
+            _serviceProvider = serviceProvider;
             UpdateState();
+        }
+
+        [RelayCommand]
+        public async Task LoadSettingsAsync()
+        {
+            using var scope = _serviceProvider.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var languageCode = await AppLanguageService.GetLanguageAsync(db);
+
+            _isLoadingLanguage = true;
+            SelectedLanguage = Languages.FirstOrDefault(language => language.Code == languageCode)
+                ?? Languages.First(language => language.Code == AppLanguageService.DefaultLanguageCode);
+            _isLoadingLanguage = false;
+        }
+
+        private async Task SaveLanguageAsync(string languageCode)
+        {
+            using var scope = _serviceProvider.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            await AppLanguageService.SetLanguageAsync(db, languageCode);
+            LanguageStatusText = "Language preference saved. Catalog ordering will use it when you reopen Movies or Series.";
         }
 
         [RelayCommand]
@@ -76,5 +126,17 @@ namespace Kroira.App.ViewModels
         {
             await Windows.System.Launcher.LaunchUriAsync(new Uri("https://sativagenetics.github.io/KroiraIPTV/support.html"));
         }
+    }
+
+    public sealed class LanguageOptionViewModel
+    {
+        public LanguageOptionViewModel(string code, string displayName)
+        {
+            Code = code;
+            DisplayName = displayName;
+        }
+
+        public string Code { get; }
+        public string DisplayName { get; }
     }
 }

@@ -17,10 +17,10 @@ namespace Kroira.App.Views
             ViewModel = ((App)Application.Current).Services.GetRequiredService<ContinueWatchingViewModel>();
         }
 
-        protected override void OnNavigatedTo(NavigationEventArgs e)
+        protected override async void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
-            ViewModel.LoadProgressCommand.Execute(null);
+            await ViewModel.LoadProgressCommand.ExecuteAsync(null);
         }
 
         private void ItemList_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -45,7 +45,7 @@ namespace Kroira.App.Views
         {
             if (sender is Button btn && btn.Tag is int id)
             {
-                ViewModel.RemoveProgressCommand.Execute(id);
+                _ = ViewModel.RemoveProgressCommand.ExecuteAsync(id);
             }
         }
     }

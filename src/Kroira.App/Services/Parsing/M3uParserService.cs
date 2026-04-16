@@ -87,7 +87,7 @@ namespace Kroira.App.Services.Parsing
             foreach (var entry in parsedEntries)
             {
                 if (ContentClassifier.IsGarbageCategoryName(entry.GroupName)) continue;
-                if (!ContentClassifier.IsPlayableLiveChannel(entry.Name, entry.Url, categoryLabels)) continue;
+                if (!ContentClassifier.IsPlayableM3uLiveChannel(entry.Name, entry.Url, categoryLabels)) continue;
 
                 if (!categoriesDict.TryGetValue(entry.GroupName, out var category))
                 {
