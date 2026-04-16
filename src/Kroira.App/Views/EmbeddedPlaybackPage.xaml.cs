@@ -2,11 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Runtime.InteropServices;
 using Kroira.App.Data;
 using Kroira.App.Models;
 using Kroira.App.Services;
 using Kroira.App.Services.Playback;
-using LibVLCSharp.Shared;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -21,9 +21,12 @@ namespace Kroira.App.Views
         private readonly IPlaybackEngine _engine;
         private readonly IWindowManagerService _windowManager;
         private readonly DispatcherTimer _positionTimer;
+        private readonly DispatcherTimer _voutAdoptionTimer;
         private PlaybackLaunchContext _launchContext;
         private string _pendingUrl;
         private long _pendingStartMs;
+        private IntPtr _videoHostHwnd;
+        private IntPtr _adoptedVoutHwnd;
         private bool _isDisposed;
         private bool _isViewLoaded;
         private bool _isUserSeeking;
@@ -31,6 +34,7 @@ namespace Kroira.App.Views
         private bool _isRefreshingTracks;
         private bool _tracksLoaded;
         private int _trackRefreshAttempts;
+        private int _voutAdoptionAttempts;
         private DateTime _lastProgressSaveUtc = DateTime.MinValue;
 
         public EmbeddedPlaybackPage()
@@ -45,11 +49,13 @@ namespace Kroira.App.Views
             _engine.ErrorOccurred += Engine_ErrorOccurred;
             _windowManager.FullscreenStateChanged += OnFullscreenStateChanged;
 
-            PlayerView.Loaded += PlayerView_Loaded;
             this.Unloaded += OnPageUnloaded;
 
             _positionTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(500) };
             _positionTimer.Tick += PositionTimer_Tick;
+
+            _voutAdoptionTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(100) };
+            _voutAdoptionTimer.Tick += VoutAdoptionTimer_Tick;
 
             SyncFullscreenChrome();
         }
@@ -100,11 +106,21 @@ namespace Kroira.App.Views
             }
         }
 
-        private void PlayerView_Loaded(object sender, RoutedEventArgs e)
+        private void VideoHost_Loaded(object sender, RoutedEventArgs e)
         {
-            PlayerView.MediaPlayer = (MediaPlayer)_engine.MediaPlayerInstance;
+            EnsureVideoHostWindow();
             _isViewLoaded = true;
             StartPlaybackWhenReady();
+        }
+
+        private void VideoHost_Unloaded(object sender, RoutedEventArgs e)
+        {
+            DestroyVideoHostWindow();
+        }
+
+        private void VideoHost_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            UpdateVideoHostBounds();
         }
 
         private void StartPlaybackWhenReady()
@@ -121,6 +137,17 @@ namespace Kroira.App.Views
 
             try
             {
+                EnsureVideoHostWindow();
+                if (_videoHostHwnd == IntPtr.Zero)
+                {
+                    ShowStatus("Unable to create embedded video surface.", false);
+                    return;
+                }
+
+                _engine.SetVideoHostHandle(_videoHostHwnd);
+                ShowVideoHostWindow(true);
+                UpdateVideoHostBounds();
+                StartVoutAdoptionGuard();
                 _engine.Play(_pendingUrl, _pendingStartMs);
                 _positionTimer.Start();
                 _pendingUrl = null;
@@ -144,6 +171,7 @@ namespace Kroira.App.Views
             try { SaveProgress(force: true); } catch { }
 
             _positionTimer.Stop();
+            _voutAdoptionTimer.Stop();
 
             _engine.StateChanged -= Engine_StateChanged;
             _engine.ErrorOccurred -= Engine_ErrorOccurred;
@@ -160,8 +188,9 @@ namespace Kroira.App.Views
 
             try
             {
-                PlayerView.MediaPlayer = null;
+                _engine.SetVideoHostHandle(IntPtr.Zero);
                 _engine.Stop();
+                DestroyVideoHostWindow();
             }
             catch { }
         }
@@ -185,6 +214,15 @@ namespace Kroira.App.Views
             }
 
             SaveProgress(force: false);
+        }
+
+        private void VoutAdoptionTimer_Tick(object sender, object e)
+        {
+            _voutAdoptionAttempts++;
+            if (TryAdoptDetachedVoutWindow() || _voutAdoptionAttempts >= 80)
+            {
+                _voutAdoptionTimer.Stop();
+            }
         }
 
         private void UpdatePositionUi()
@@ -241,9 +279,11 @@ namespace Kroira.App.Views
                 switch (state)
                 {
                     case PlaybackState.Loading:
+                        ShowVideoHostWindow(true);
                         ShowStatus("Loading stream...", true);
                         break;
                     case PlaybackState.Playing:
+                        ShowVideoHostWindow(true);
                         ShowStatus(null, false);
                         _positionTimer.Start();
                         _tracksLoaded = false;
@@ -256,6 +296,7 @@ namespace Kroira.App.Views
                         ShowStatus("Playback stopped", false);
                         break;
                     case PlaybackState.Error:
+                        ShowVideoHostWindow(false);
                         ShowStatus("This stream could not be played. Try another track or source.", false);
                         break;
                 }
@@ -285,6 +326,177 @@ namespace Kroira.App.Views
             LoadingRing.IsActive = isLoading;
             LoadingRing.Visibility = isLoading ? Visibility.Visible : Visibility.Collapsed;
             StatusOverlay.Visibility = Visibility.Visible;
+        }
+
+        private void EnsureVideoHostWindow()
+        {
+            if (_videoHostHwnd != IntPtr.Zero)
+            {
+                UpdateVideoHostBounds();
+                return;
+            }
+
+            var parentHwnd = WinRT.Interop.WindowNative.GetWindowHandle(((App)Application.Current).MainWindow);
+            _videoHostHwnd = CreateWindowEx(
+                0,
+                "STATIC",
+                string.Empty,
+                WindowStyles.WS_CHILD | WindowStyles.WS_VISIBLE | WindowStyles.WS_CLIPSIBLINGS | WindowStyles.WS_CLIPCHILDREN,
+                0,
+                0,
+                1,
+                1,
+                parentHwnd,
+                IntPtr.Zero,
+                IntPtr.Zero,
+                IntPtr.Zero);
+
+            if (_videoHostHwnd == IntPtr.Zero)
+            {
+                ShowStatus("Unable to create embedded video surface.", false);
+                return;
+            }
+
+            _engine.SetVideoHostHandle(_videoHostHwnd);
+            UpdateVideoHostBounds();
+            ShowVideoHostWindow(true);
+        }
+
+        private void UpdateVideoHostBounds()
+        {
+            if (_videoHostHwnd == IntPtr.Zero || VideoHost.XamlRoot == null || ActualWidth <= 0 || ActualHeight <= 0)
+            {
+                return;
+            }
+
+            var scale = VideoHost.XamlRoot.RasterizationScale;
+            var origin = VideoHost.TransformToVisual(null).TransformPoint(new Windows.Foundation.Point(0, 0));
+            var x = (int)Math.Round(origin.X * scale);
+            var y = (int)Math.Round(origin.Y * scale);
+            var width = Math.Max(1, (int)Math.Round(VideoHost.ActualWidth * scale));
+            var height = Math.Max(1, (int)Math.Round(VideoHost.ActualHeight * scale));
+
+            SetWindowPos(
+                _videoHostHwnd,
+                IntPtr.Zero,
+                x,
+                y,
+                width,
+                height,
+                SetWindowPosFlags.SWP_NOZORDER | SetWindowPosFlags.SWP_NOACTIVATE);
+
+            if (_adoptedVoutHwnd != IntPtr.Zero)
+            {
+                SetWindowPos(
+                    _adoptedVoutHwnd,
+                    IntPtr.Zero,
+                    0,
+                    0,
+                    width,
+                    height,
+                    SetWindowPosFlags.SWP_NOZORDER | SetWindowPosFlags.SWP_NOACTIVATE | SetWindowPosFlags.SWP_FRAMECHANGED);
+            }
+        }
+
+        private void ShowVideoHostWindow(bool show)
+        {
+            if (_videoHostHwnd != IntPtr.Zero)
+            {
+                ShowWindow(_videoHostHwnd, show ? ShowWindowCommand.SW_SHOWNA : ShowWindowCommand.SW_HIDE);
+            }
+        }
+
+        private void DestroyVideoHostWindow()
+        {
+            if (_videoHostHwnd == IntPtr.Zero)
+            {
+                return;
+            }
+
+            try
+            {
+                _engine.SetVideoHostHandle(IntPtr.Zero);
+                DestroyWindow(_videoHostHwnd);
+            }
+            catch { }
+            finally
+            {
+                _videoHostHwnd = IntPtr.Zero;
+                _adoptedVoutHwnd = IntPtr.Zero;
+            }
+        }
+
+        private void StartVoutAdoptionGuard()
+        {
+            _adoptedVoutHwnd = IntPtr.Zero;
+            _voutAdoptionAttempts = 0;
+            _voutAdoptionTimer.Stop();
+            _voutAdoptionTimer.Start();
+        }
+
+        private bool TryAdoptDetachedVoutWindow()
+        {
+            if (_videoHostHwnd == IntPtr.Zero)
+            {
+                return false;
+            }
+
+            var currentProcessId = Environment.ProcessId;
+            IntPtr detachedWindow = IntPtr.Zero;
+
+            EnumWindows((hwnd, lParam) =>
+            {
+                if (hwnd == _videoHostHwnd || hwnd == _adoptedVoutHwnd)
+                {
+                    return true;
+                }
+
+                GetWindowThreadProcessId(hwnd, out var processId);
+                if (processId != currentProcessId)
+                {
+                    return true;
+                }
+
+                var title = GetWindowTitle(hwnd);
+                if (title.Contains("VLC", StringComparison.OrdinalIgnoreCase) &&
+                    title.Contains("output", StringComparison.OrdinalIgnoreCase))
+                {
+                    detachedWindow = hwnd;
+                    return false;
+                }
+
+                return true;
+            }, IntPtr.Zero);
+
+            if (detachedWindow == IntPtr.Zero)
+            {
+                return false;
+            }
+
+            var style = GetWindowLongPtr(detachedWindow, WindowLongIndex.GWL_STYLE).ToInt64();
+            style &= ~((long)WindowStyles.WS_POPUP | (long)WindowStyles.WS_CAPTION | (long)WindowStyles.WS_THICKFRAME);
+            style |= (long)WindowStyles.WS_CHILD | (long)WindowStyles.WS_VISIBLE | (long)WindowStyles.WS_CLIPSIBLINGS | (long)WindowStyles.WS_CLIPCHILDREN;
+
+            SetWindowLongPtr(detachedWindow, WindowLongIndex.GWL_STYLE, new IntPtr(style));
+            SetParent(detachedWindow, _videoHostHwnd);
+            _adoptedVoutHwnd = detachedWindow;
+            ShowWindow(_adoptedVoutHwnd, ShowWindowCommand.SW_SHOWNA);
+            UpdateVideoHostBounds();
+
+            return true;
+        }
+
+        private static string GetWindowTitle(IntPtr hwnd)
+        {
+            var length = GetWindowTextLength(hwnd);
+            if (length <= 0)
+            {
+                return string.Empty;
+            }
+
+            var buffer = new char[length + 1];
+            GetWindowText(hwnd, buffer, buffer.Length);
+            return new string(buffer).TrimEnd('\0');
         }
 
         private void PlayPause_Click(object sender, RoutedEventArgs e)
@@ -552,6 +764,91 @@ namespace Kroira.App.Views
             return time.TotalHours >= 1
                 ? $"{(int)time.TotalHours}:{time.Minutes:00}:{time.Seconds:00}"
                 : time.ToString(@"mm\:ss", CultureInfo.InvariantCulture);
+        }
+
+        [DllImport("user32.dll", EntryPoint = "CreateWindowExW", SetLastError = true, CharSet = CharSet.Unicode)]
+        private static extern IntPtr CreateWindowEx(
+            int dwExStyle,
+            string lpClassName,
+            string lpWindowName,
+            WindowStyles dwStyle,
+            int x,
+            int y,
+            int nWidth,
+            int nHeight,
+            IntPtr hWndParent,
+            IntPtr hMenu,
+            IntPtr hInstance,
+            IntPtr lpParam);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        private static extern bool DestroyWindow(IntPtr hWnd);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        private static extern bool SetWindowPos(
+            IntPtr hWnd,
+            IntPtr hWndInsertAfter,
+            int x,
+            int y,
+            int cx,
+            int cy,
+            SetWindowPosFlags uFlags);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        private static extern bool ShowWindow(IntPtr hWnd, ShowWindowCommand nCmdShow);
+
+        [DllImport("user32.dll")]
+        private static extern bool EnumWindows(EnumWindowsProc lpEnumFunc, IntPtr lParam);
+
+        private delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        private static extern uint GetWindowThreadProcessId(IntPtr hWnd, out int lpdwProcessId);
+
+        [DllImport("user32.dll", EntryPoint = "GetWindowTextW", SetLastError = true, CharSet = CharSet.Unicode)]
+        private static extern int GetWindowText(IntPtr hWnd, char[] lpString, int nMaxCount);
+
+        [DllImport("user32.dll", EntryPoint = "GetWindowTextLengthW", SetLastError = true, CharSet = CharSet.Unicode)]
+        private static extern int GetWindowTextLength(IntPtr hWnd);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        private static extern IntPtr SetParent(IntPtr hWndChild, IntPtr hWndNewParent);
+
+        [DllImport("user32.dll", EntryPoint = "GetWindowLongPtrW", SetLastError = true)]
+        private static extern IntPtr GetWindowLongPtr(IntPtr hWnd, WindowLongIndex nIndex);
+
+        [DllImport("user32.dll", EntryPoint = "SetWindowLongPtrW", SetLastError = true)]
+        private static extern IntPtr SetWindowLongPtr(IntPtr hWnd, WindowLongIndex nIndex, IntPtr dwNewLong);
+
+        [Flags]
+        private enum WindowStyles : uint
+        {
+            WS_CHILD = 0x40000000,
+            WS_VISIBLE = 0x10000000,
+            WS_POPUP = 0x80000000,
+            WS_CAPTION = 0x00C00000,
+            WS_THICKFRAME = 0x00040000,
+            WS_CLIPCHILDREN = 0x02000000,
+            WS_CLIPSIBLINGS = 0x04000000
+        }
+
+        private enum WindowLongIndex
+        {
+            GWL_STYLE = -16
+        }
+
+        [Flags]
+        private enum SetWindowPosFlags : uint
+        {
+            SWP_NOZORDER = 0x0004,
+            SWP_NOACTIVATE = 0x0010,
+            SWP_FRAMECHANGED = 0x0020
+        }
+
+        private enum ShowWindowCommand
+        {
+            SW_HIDE = 0,
+            SW_SHOWNA = 8
         }
     }
 }

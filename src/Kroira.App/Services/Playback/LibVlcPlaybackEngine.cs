@@ -34,6 +34,9 @@ namespace Kroira.App.Services.Playback
 
             _libVLC = new LibVLC(
                 "--avcodec-hw=any",
+                "--embedded-video",
+                "--no-video-deco",
+                "--no-video-title-show",
                 "--network-caching=1500",
                 "--file-caching=800",
                 "--live-caching=1500",
@@ -176,6 +179,14 @@ namespace Kroira.App.Services.Playback
             }
 
             return _mediaPlayer.AddSlave(MediaSlaveType.Subtitle, filePath, true);
+        }
+
+        public void SetVideoHostHandle(IntPtr hwnd)
+        {
+            if (_mediaPlayer != null)
+            {
+                _mediaPlayer.Hwnd = hwnd;
+            }
         }
 
         private static IReadOnlyList<PlaybackTrack> BuildTracks(IEnumerable<LibVLCSharp.Shared.Structures.TrackDescription> descriptions)

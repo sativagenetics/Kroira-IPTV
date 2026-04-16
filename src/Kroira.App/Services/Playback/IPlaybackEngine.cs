@@ -46,5 +46,6 @@ namespace Kroira.App.Services.Playback
         bool SetAudioTrack(int trackId);
         bool SetSubtitleTrack(int trackId);
         bool AddSubtitleFile(string filePath);
+        void SetVideoHostHandle(IntPtr hwnd);
     }
 }

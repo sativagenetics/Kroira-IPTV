@@ -2,37 +2,11 @@
     x:Class="Kroira.App.Views.EmbeddedPlaybackPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:lvs="using:LibVLCSharp.Platforms.Windows"
     Background="Black">
 
     <Grid PointerMoved="PlayerRoot_PointerMoved"
           DoubleTapped="PlayerRoot_DoubleTapped"
           Background="Black">
-        <lvs:VideoView x:Name="PlayerView"
-                       HorizontalAlignment="Stretch"
-                       VerticalAlignment="Stretch" />
-
-        <Border x:Name="StatusOverlay"
-                Background="#B0000000"
-                CornerRadius="10"
-                Padding="16,12"
-                HorizontalAlignment="Center"
-                VerticalAlignment="Center">
-            <StackPanel Spacing="8" HorizontalAlignment="Center">
-                <ProgressRing x:Name="LoadingRing"
-                              IsActive="True"
-                              Width="36"
-                              Height="36" />
-                <TextBlock x:Name="StatusText"
-                           Text="Loading stream..."
-                           Foreground="White"
-                           FontSize="14"
-                           TextAlignment="Center"
-                           TextWrapping="Wrap"
-                           MaxWidth="460" />
-            </StackPanel>
-        </Border>
-
         <Grid x:Name="ChromeOverlay"
               VerticalAlignment="Stretch"
               HorizontalAlignment="Stretch">
@@ -80,6 +54,34 @@
                             Padding="14,8" />
                 </Grid>
             </Border>
+
+            <Grid x:Name="VideoHost"
+                  Grid.Row="1"
+                  Background="Black"
+                  SizeChanged="VideoHost_SizeChanged"
+                  Loaded="VideoHost_Loaded"
+                  Unloaded="VideoHost_Unloaded">
+                <Border x:Name="StatusOverlay"
+                        Background="#B0000000"
+                        CornerRadius="10"
+                        Padding="16,12"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center">
+                    <StackPanel Spacing="8" HorizontalAlignment="Center">
+                        <ProgressRing x:Name="LoadingRing"
+                                      IsActive="True"
+                                      Width="36"
+                                      Height="36" />
+                        <TextBlock x:Name="StatusText"
+                                   Text="Loading stream..."
+                                   Foreground="White"
+                                   FontSize="14"
+                                   TextAlignment="Center"
+                                   TextWrapping="Wrap"
+                                   MaxWidth="460" />
+                    </StackPanel>
+                </Border>
+            </Grid>
 
             <Border Grid.Row="2" Background="#CC05070C" Padding="18,14">
                 <Grid RowSpacing="10">
