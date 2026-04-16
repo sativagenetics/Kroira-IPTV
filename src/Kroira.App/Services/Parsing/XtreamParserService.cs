@@ -198,6 +198,7 @@ namespace Kroira.App.Services.Parsing
                         }
                     }
                 }
+                var movieCategoryLabels = BuildCategoryLabelSet(md.Values);
 
                 var moviesJson = await client.GetStringAsync($"{baseUrl}/player_api.php{authQuery}&action=get_vod_streams");
                 if (string.IsNullOrWhiteSpace(moviesJson)) moviesJson = "[]";
@@ -223,6 +224,7 @@ namespace Kroira.App.Services.Parsing
                         if (IsGarbageMovieExtension(ext)) continue;
                         if (IsGarbageCategoryName(mappedCatName)) continue;
                         if (IsGarbageTitle(name)) continue;
+                        if (IsProviderCategoryRow(name, movieCategoryLabels)) continue;
                         // ----------------------
 
                         parsedMovies.Add(new Movie
@@ -252,6 +254,7 @@ namespace Kroira.App.Services.Parsing
                         }
                     }
                 }
+                var seriesCategoryLabels = BuildCategoryLabelSet(sd.Values);
 
                 var seriesJson = await client.GetStringAsync($"{baseUrl}/player_api.php{authQuery}&action=get_series");
                 if (string.IsNullOrWhiteSpace(seriesJson)) seriesJson = "[]";
@@ -275,6 +278,7 @@ namespace Kroira.App.Services.Parsing
                         // --- Garbage filter ---
                         if (IsGarbageCategoryName(mappedCatName)) continue;
                         if (IsGarbageTitle(name)) continue;
+                        if (IsProviderCategoryRow(name, seriesCategoryLabels)) continue;
                         // ----------------------
 
                         pendingSeries.Add((seriesId, new Series
@@ -652,6 +656,26 @@ namespace Kroira.App.Services.Parsing
                    lower.Contains("[demo]") ||
                    lower.StartsWith("test channel") ||
                    lower.StartsWith("test stream");
+        }
+
+        private static HashSet<string> BuildCategoryLabelSet(IEnumerable<string> categoryNames)
+        {
+            return categoryNames
+                .Select(NormalizeCatalogLabel)
+                .Where(value => !string.IsNullOrWhiteSpace(value))
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        }
+
+        private static bool IsProviderCategoryRow(string title, HashSet<string> categoryLabels)
+        {
+            if (categoryLabels.Count == 0 || string.IsNullOrWhiteSpace(title)) return false;
+            return categoryLabels.Contains(NormalizeCatalogLabel(title));
+        }
+
+        private static string NormalizeCatalogLabel(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value)) return string.Empty;
+            return string.Join(" ", value.Trim().Split(new[] { ' ', '\t', '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries));
         }
     }
 }
