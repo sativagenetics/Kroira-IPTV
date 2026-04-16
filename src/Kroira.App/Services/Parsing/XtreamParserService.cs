@@ -1,12 +1,12 @@
-using Kroira.App.Data;
-using Kroira.App.Models;
-using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Kroira.App.Data;
+using Kroira.App.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace Kroira.App.Services.Parsing
 {
@@ -33,7 +33,7 @@ namespace Kroira.App.Services.Parsing
             string streamsUrl = $"{baseUrl}/player_api.php{authQuery}&action=get_live_streams";
 
             using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(30) };
-            
+
             try
             {
                 var catsResponse = await client.GetAsync(catsUrl);
@@ -54,7 +54,7 @@ namespace Kroira.App.Services.Parsing
                     var oldCats = await db.ChannelCategories.Where(c => c.SourceProfileId == sourceProfileId).ToListAsync();
                     var oldCatIds = oldCats.Select(c => c.Id).ToList();
                     var oldChans = await db.Channels.Where(c => oldCatIds.Contains(c.ChannelCategoryId)).ToListAsync();
-                    
+
                     var oldFavs = await db.Favorites.Where(f => f.ContentType == FavoriteType.Channel && oldChans.Select(c => c.Id).Contains(f.ContentId)).ToListAsync();
                     db.Favorites.RemoveRange(oldFavs);
 
@@ -76,7 +76,7 @@ namespace Kroira.App.Services.Parsing
                             {
                                 id = idProp.ValueKind == JsonValueKind.Number ? idProp.GetInt32().ToString() : idProp.GetString();
                             }
-                            
+
                             var name = element.TryGetProperty("category_name", out var nameProp) ? nameProp.GetString() : "Unknown";
 
                             if (!string.IsNullOrEmpty(id))
@@ -115,7 +115,7 @@ namespace Kroira.App.Services.Parsing
                             var logo = element.TryGetProperty("stream_icon", out var lProp) ? lProp.GetString() : string.Empty;
 
                             if (string.IsNullOrEmpty(streamId)) continue;
-                            
+
                             if (catId != null && categoryMap.TryGetValue(catId, out var mappedCat))
                             {
                                 string streamUrl = $"{baseUrl}/live/{cred.Username}/{cred.Password}/{streamId}.ts";
@@ -178,7 +178,7 @@ namespace Kroira.App.Services.Parsing
 
             string baseUrl = cred.Url.TrimEnd('/');
             string authQuery = $"?username={Uri.EscapeDataString(cred.Username)}&password={Uri.EscapeDataString(cred.Password)}";
-            
+
             using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(45) };
 
             try
@@ -212,7 +212,7 @@ namespace Kroira.App.Services.Parsing
                         string catId = element.TryGetProperty("category_id", out var cProp) ? (cProp.ValueKind == JsonValueKind.Number ? cProp.GetInt32().ToString() : cProp.GetString()) : null;
 
                         if (string.IsNullOrEmpty(streamId)) continue;
-                        
+
                         var ext = (element.TryGetProperty("container_extension", out var exProp) ? exProp.GetString() : null) ?? "mp4";
                         var name = element.TryGetProperty("name", out var nProp) ? nProp.GetString() : "Unknown";
                         var logo = element.TryGetProperty("stream_icon", out var lProp) ? lProp.GetString() : string.Empty;
@@ -257,7 +257,7 @@ namespace Kroira.App.Services.Parsing
                 if (string.IsNullOrWhiteSpace(seriesJson)) seriesJson = "[]";
                 using var seriesDoc = JsonDocument.Parse(seriesJson);
                 var pendingSeries = new List<(string SeriesId, Series BaseObj)>();
-                
+
                 if (seriesDoc.RootElement.ValueKind == JsonValueKind.Array)
                 {
                     foreach (var element in seriesDoc.RootElement.EnumerateArray())
@@ -266,7 +266,7 @@ namespace Kroira.App.Services.Parsing
                         string catId = element.TryGetProperty("category_id", out var cProp) ? (cProp.ValueKind == JsonValueKind.Number ? cProp.GetInt32().ToString() : cProp.GetString()) : null;
 
                         if (string.IsNullOrEmpty(seriesId)) continue;
-                        
+
                         var name = element.TryGetProperty("name", out var nProp) ? nProp.GetString() : "Unknown";
                         var cover = element.TryGetProperty("cover", out var lProp) ? lProp.GetString() : string.Empty;
 
@@ -301,7 +301,7 @@ namespace Kroira.App.Services.Parsing
                             var infoStr = await client.GetStringAsync($"{baseUrl}/player_api.php{authQuery}&action=get_series_info&series_id={sInfo.SeriesId}");
                             if (string.IsNullOrWhiteSpace(infoStr)) return;
                             using var iDoc = JsonDocument.Parse(infoStr);
-                            
+
                             if (iDoc.RootElement.TryGetProperty("episodes", out var epNode) && epNode.ValueKind == JsonValueKind.Object)
                             {
                                 foreach (var seasonProp in epNode.EnumerateObject())
@@ -313,7 +313,7 @@ namespace Kroira.App.Services.Parsing
                                         SeasonNumber = seasonNum,
                                         Episodes = new List<Episode>()
                                     };
-                                    
+
                                     if (seasonProp.Value.ValueKind == JsonValueKind.Array)
                                     {
                                         foreach (var epElement in seasonProp.Value.EnumerateArray())
@@ -369,9 +369,9 @@ namespace Kroira.App.Services.Parsing
                         if (existingMovieMap.TryGetValue(incoming.ExternalId, out var existing))
                         {
                             // UPDATE in place — Id stays the same, favorites/progress survive
-                            existing.Title        = incoming.Title;
-                            existing.StreamUrl    = incoming.StreamUrl;
-                            existing.PosterUrl    = incoming.PosterUrl;
+                            existing.Title = incoming.Title;
+                            existing.StreamUrl = incoming.StreamUrl;
+                            existing.PosterUrl = incoming.PosterUrl;
                             existing.CategoryName = incoming.CategoryName;
                             movUpdated++;
                         }
@@ -430,8 +430,8 @@ namespace Kroira.App.Services.Parsing
                         if (existingSeriesMap.TryGetValue(sInfo.SeriesId, out var existingSer))
                         {
                             // UPDATE metadata in place — Series.Id stays the same
-                            existingSer.Title        = sInfo.BaseObj.Title;
-                            existingSer.PosterUrl    = sInfo.BaseObj.PosterUrl;
+                            existingSer.Title = sInfo.BaseObj.Title;
+                            existingSer.PosterUrl = sInfo.BaseObj.PosterUrl;
                             existingSer.CategoryName = sInfo.BaseObj.CategoryName;
 
                             // Upsert seasons and episodes instead of rebuild-from-scratch
@@ -457,8 +457,8 @@ namespace Kroira.App.Services.Parsing
                                             existingEpMap.TryGetValue(incomingEp.ExternalId, out var existingEp))
                                         {
                                             // UPDATE — Episode.Id unchanged, progress survives
-                                            existingEp.Title         = incomingEp.Title;
-                                            existingEp.StreamUrl     = incomingEp.StreamUrl;
+                                            existingEp.Title = incomingEp.Title;
+                                            existingEp.StreamUrl = incomingEp.StreamUrl;
                                             existingEp.EpisodeNumber = incomingEp.EpisodeNumber;
                                         }
                                         else

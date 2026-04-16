@@ -1,7 +1,7 @@
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Data.Sqlite;
 using System;
 using System.IO;
+using Microsoft.Data.Sqlite;
+using Microsoft.EntityFrameworkCore;
 
 namespace Kroira.App.Data
 {
@@ -21,15 +21,15 @@ namespace Kroira.App.Data
             {
                 string backupPath = dbPath + ".bak";
                 File.Copy(dbPath, backupPath, overwrite: true);
-                
+
                 // Real upgrade-path validation before EF migration boots
                 using var conn = new SqliteConnection($"Data Source={dbPath}");
                 conn.Open();
-                
+
                 using var cmd = conn.CreateCommand();
                 cmd.CommandText = "SELECT name FROM sqlite_master WHERE type='table' AND name='SchemaVersions';";
                 bool tableExists = cmd.ExecuteScalar() != null;
-                
+
                 if (tableExists)
                 {
                     cmd.CommandText = "SELECT VersionNumber FROM SchemaVersions ORDER BY AppliedAt DESC LIMIT 1;";

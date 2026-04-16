@@ -1,6 +1,6 @@
+using System;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
-using System;
 
 namespace Kroira.App.Services
 {
@@ -26,7 +26,7 @@ namespace Kroira.App.Services
             var hWnd = WinRT.Interop.WindowNative.GetWindowHandle(window);
             Microsoft.UI.WindowId windowId = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(hWnd);
             _appWindow = AppWindow.GetFromWindowId(windowId);
-            
+
             _appWindow.Changed += (s, e) =>
             {
                 if (e.DidPresenterChange)

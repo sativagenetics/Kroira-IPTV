@@ -1,7 +1,7 @@
-using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Input;
 using System;
 using System.Runtime.InteropServices;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Input;
 
 namespace Kroira.App.Services
 {
@@ -24,7 +24,7 @@ namespace Kroira.App.Services
         public InputInterceptorService(IWindowManagerService windowManager)
         {
             _windowManager = windowManager;
-            
+
             _pointerTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(3) };
             _pointerTimer.Tick += PointerTimer_Tick;
 
@@ -55,14 +55,14 @@ namespace Kroira.App.Services
                 // Attach global Keyboard Accelerators for decoupled bindings
                 var f11 = new KeyboardAccelerator { Key = Windows.System.VirtualKey.F11 };
                 f11.Invoked += (s, e) => { _windowManager.ToggleFullscreen(); e.Handled = true; };
-                
+
                 var esc = new KeyboardAccelerator { Key = Windows.System.VirtualKey.Escape };
-                esc.Invoked += (s, e) => 
-                { 
-                    if (_windowManager.IsFullscreen) 
+                esc.Invoked += (s, e) =>
+                {
+                    if (_windowManager.IsFullscreen)
                     {
-                        _windowManager.ExitFullscreen(); 
-                        e.Handled = true; 
+                        _windowManager.ExitFullscreen();
+                        e.Handled = true;
                     }
                 };
 

@@ -1,12 +1,12 @@
+using System;
+using System.Collections.ObjectModel;
+using System.Linq;
+using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Kroira.App.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Collections.ObjectModel;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace Kroira.App.ViewModels
 {
@@ -15,7 +15,7 @@ namespace Kroira.App.ViewModels
         public int Id { get; set; }
         public string Name { get; set; } = string.Empty;
         public string Type { get; set; } = string.Empty;
-        
+
         [ObservableProperty]
         private string _status = string.Empty;
 
@@ -51,8 +51,8 @@ namespace Kroira.App.ViewModels
             foreach (var item in profiles)
             {
                 var syncStr = item.Profile.LastSync?.ToString("g") ?? "Never";
-                var statusStr = item.Sync == null 
-                    ? $"Saved, Last Sync: {syncStr}" 
+                var statusStr = item.Sync == null
+                    ? $"Saved, Last Sync: {syncStr}"
                     : $"Attempt: {item.Sync.LastAttempt:g} | Code: {item.Sync.HttpStatusCode}\n{item.Sync.ErrorLog}";
 
                 Sources.Add(new SourceItemViewModel

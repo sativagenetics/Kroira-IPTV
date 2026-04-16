@@ -1,9 +1,9 @@
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.UI.Xaml;
 using System;
+using Kroira.App.Data;
 using Kroira.App.Services;
 using Kroira.App.ViewModels;
-using Kroira.App.Data;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.UI.Xaml;
 
 namespace Kroira.App
 {

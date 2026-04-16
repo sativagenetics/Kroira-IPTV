@@ -1,14 +1,14 @@
+using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Linq;
+using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Kroira.App.Data;
 using Kroira.App.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace Kroira.App.ViewModels
 {
@@ -50,10 +50,10 @@ namespace Kroira.App.ViewModels
         private void ApplyFilter()
         {
             FilteredMovies.Clear();
-            var filtered = string.IsNullOrWhiteSpace(SearchQuery) 
-                ? _allMovies 
+            var filtered = string.IsNullOrWhiteSpace(SearchQuery)
+                ? _allMovies
                 : _allMovies.Where(m => m.Title.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase));
-            
+
             foreach (var item in filtered)
             {
                 FilteredMovies.Add(item);

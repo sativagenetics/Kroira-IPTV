@@ -1,12 +1,12 @@
-using Kroira.App.Data;
-using Kroira.App.Models;
-using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Kroira.App.Data;
+using Kroira.App.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace Kroira.App.Services.Parsing
 {
@@ -23,7 +23,7 @@ namespace Kroira.App.Services.Parsing
         public async Task ParseAndImportM3uAsync(AppDbContext db, int sourceProfileId)
         {
             var cred = await db.SourceCredentials.FirstOrDefaultAsync(c => c.SourceProfileId == sourceProfileId);
-            if (cred == null || string.IsNullOrWhiteSpace(cred.Url)) 
+            if (cred == null || string.IsNullOrWhiteSpace(cred.Url))
                 throw new Exception("Source URL or Path is empty.");
 
             string content;
@@ -38,9 +38,9 @@ namespace Kroira.App.Services.Parsing
             }
 
             var lines = content.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
-            
+
             var categoriesDict = new Dictionary<string, ChannelCategory>(StringComparer.OrdinalIgnoreCase);
-            
+
             string currentGroup = "Uncategorized";
             string currentLogo = string.Empty;
             string currentName = string.Empty;
@@ -59,10 +59,10 @@ namespace Kroira.App.Services.Parsing
                     currentLogo = logoMatch.Success ? logoMatch.Groups[1].Value.Trim() : string.Empty;
 
                     var commaIndex = line.LastIndexOf(',');
-                    currentName = (commaIndex != -1 && commaIndex < line.Length - 1) 
-                        ? line.Substring(commaIndex + 1).Trim() 
+                    currentName = (commaIndex != -1 && commaIndex < line.Length - 1)
+                        ? line.Substring(commaIndex + 1).Trim()
                         : "Unknown Channel";
-                        
+
                     expectsUrl = true;
                 }
                 else if (expectsUrl && !line.StartsWith("#"))

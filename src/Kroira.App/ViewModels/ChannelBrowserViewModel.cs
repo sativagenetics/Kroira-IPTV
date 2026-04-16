@@ -1,14 +1,14 @@
 #nullable enable
-using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
-using Kroira.App.Data;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using Kroira.App.Data;
 using Kroira.App.Models;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Kroira.App.ViewModels
 {
@@ -84,8 +84,8 @@ namespace Kroira.App.ViewModels
             var chIds = chans.Select(c => c.Id).ToList();
 
             var epgs = await db.EpgPrograms
-                .Where(e => chIds.Contains(e.ChannelId)) 
-                .ToListAsync(); 
+                .Where(e => chIds.Contains(e.ChannelId))
+                .ToListAsync();
 
             var now = DateTime.UtcNow;
 

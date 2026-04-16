@@ -1,10 +1,10 @@
+using System;
+using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Kroira.App.Data;
 using Kroira.App.Models;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Threading.Tasks;
 
 namespace Kroira.App.ViewModels
 {
@@ -169,7 +169,7 @@ namespace Kroira.App.ViewModels
             var window = ((Kroira.App.App)Microsoft.UI.Xaml.Application.Current).MainWindow;
             var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(window);
             WinRT.Interop.InitializeWithWindow.Initialize(picker, hwnd);
-            
+
             picker.FileTypeFilter.Add(".m3u");
             picker.FileTypeFilter.Add(".m3u8");
 

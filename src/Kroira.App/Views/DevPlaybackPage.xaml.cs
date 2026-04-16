@@ -1,11 +1,11 @@
+using System;
+using System.Linq;
+using Kroira.App.Data;
+using Kroira.App.Models;
 using Kroira.App.Services.Playback;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.Extensions.DependencyInjection;
-using Kroira.App.Models;
-using Kroira.App.Data;
-using System.Linq;
-using System;
 
 namespace Kroira.App.Views
 {
@@ -21,7 +21,7 @@ namespace Kroira.App.Views
         {
             this.InitializeComponent();
             _engine = ((App)Application.Current).Services.GetRequiredService<IPlaybackEngine>();
-            
+
             _engine.StateChanged += Engine_StateChanged;
 
             // Defer MediaPlayer binding until the VideoView is in the visual tree with a valid HWND.

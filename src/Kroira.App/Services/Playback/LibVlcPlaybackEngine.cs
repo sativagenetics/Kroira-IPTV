@@ -1,6 +1,6 @@
+using System;
 using LibVLCSharp.Shared;
 using Microsoft.UI.Dispatching;
-using System;
 
 namespace Kroira.App.Services.Playback
 {
@@ -11,10 +11,10 @@ namespace Kroira.App.Services.Playback
         private readonly DispatcherQueue _dispatcherQueue;
 
         public PlaybackState State { get; private set; } = PlaybackState.Idle;
-        
+
         public event EventHandler<PlaybackState> StateChanged;
         public event EventHandler<string> ErrorOccurred;
-        
+
         public object MediaPlayerInstance => _mediaPlayer;
 
         public long PositionMs => _mediaPlayer?.Time ?? 0;
@@ -22,17 +22,17 @@ namespace Kroira.App.Services.Playback
 
         public LibVlcPlaybackEngine()
         {
-            _dispatcherQueue = DispatcherQueue.GetForCurrentThread(); 
+            _dispatcherQueue = DispatcherQueue.GetForCurrentThread();
             Core.Initialize();
-            
+
             _libVLC = new LibVLC();
             _mediaPlayer = new MediaPlayer(_libVLC);
 
             _mediaPlayer.EncounteredError += OnError;
-            _mediaPlayer.Playing += (s,e) => UpdateState(PlaybackState.Playing);
-            _mediaPlayer.Paused += (s,e) => UpdateState(PlaybackState.Paused);
-            _mediaPlayer.Stopped += (s,e) => UpdateState(PlaybackState.Stopped);
-            _mediaPlayer.EndReached += (s,e) => UpdateState(PlaybackState.Stopped);
+            _mediaPlayer.Playing += (s, e) => UpdateState(PlaybackState.Playing);
+            _mediaPlayer.Paused += (s, e) => UpdateState(PlaybackState.Paused);
+            _mediaPlayer.Stopped += (s, e) => UpdateState(PlaybackState.Stopped);
+            _mediaPlayer.EndReached += (s, e) => UpdateState(PlaybackState.Stopped);
         }
 
         private void UpdateState(PlaybackState newState)

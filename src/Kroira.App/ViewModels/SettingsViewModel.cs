@@ -1,9 +1,9 @@
+using System;
+using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Kroira.App.Services;
 using Microsoft.UI.Xaml;
-using System;
-using System.Threading.Tasks;
 using Windows.ApplicationModel;
 
 namespace Kroira.App.ViewModels
@@ -42,9 +42,9 @@ namespace Kroira.App.ViewModels
             bool isPro = _entitlementService.HasProLicense;
             ProTierVisibility = isPro ? Visibility.Visible : Visibility.Collapsed;
             FreeTierVisibility = !isPro ? Visibility.Visible : Visibility.Collapsed;
-            
-            LicenseStatusDescription = isPro 
-                ? "You are rocking the Pro version! All advanced multi-monitor, external player fallback, and family features are enabled." 
+
+            LicenseStatusDescription = isPro
+                ? "You are rocking the Pro version! All advanced multi-monitor, external player fallback, and family features are enabled."
                 : "You are currently on the Free tier. Upgrade to Pro for multi-monitor, continuous recording, and premium playback features.";
         }
 

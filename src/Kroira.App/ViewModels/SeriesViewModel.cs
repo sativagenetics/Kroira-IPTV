@@ -1,15 +1,15 @@
 #nullable enable
+using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Linq;
+using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Kroira.App.Data;
 using Kroira.App.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace Kroira.App.ViewModels
 {
@@ -63,7 +63,7 @@ namespace Kroira.App.ViewModels
                 .ThenInclude(sn => sn.Episodes)
                 .OrderBy(s => s.Title)
                 .ToListAsync();
-            
+
             foreach (var s in _allSeries)
             {
                 if (s.Seasons != null)
@@ -85,10 +85,10 @@ namespace Kroira.App.ViewModels
         private void ApplyFilter()
         {
             FilteredSeries.Clear();
-            var filtered = string.IsNullOrWhiteSpace(SearchQuery) 
-                ? _allSeries 
+            var filtered = string.IsNullOrWhiteSpace(SearchQuery)
+                ? _allSeries
                 : _allSeries.Where(s => s.Title.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase));
-            
+
             foreach (var item in filtered)
             {
                 FilteredSeries.Add(item);

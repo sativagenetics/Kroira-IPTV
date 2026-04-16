@@ -1,11 +1,11 @@
-using Kroira.App.ViewModels;
+using System;
 using Kroira.App.Models;
+using Kroira.App.ViewModels;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.UI.Xaml.Navigation;
 using Microsoft.UI.Xaml.Data;
-using System;
+using Microsoft.UI.Xaml.Navigation;
 
 namespace Kroira.App.Views
 {

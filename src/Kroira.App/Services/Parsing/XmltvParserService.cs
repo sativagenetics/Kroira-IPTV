@@ -1,12 +1,12 @@
-using Kroira.App.Data;
-using Kroira.App.Models;
-using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using System.Xml.Linq;
+using Kroira.App.Data;
+using Kroira.App.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace Kroira.App.Services.Parsing
 {
@@ -46,7 +46,7 @@ namespace Kroira.App.Services.Parsing
                           cat => cat.Id,
                           (ch, cat) => ch)
                     .ToListAsync();
-                
+
                 var epgItems = new List<EpgProgram>();
 
                 foreach (var p in programmes)
@@ -56,12 +56,12 @@ namespace Kroira.App.Services.Parsing
 
                     string displayName = channelMapping.TryGetValue(chIdNode, out var dn) ? dn : chIdNode;
                     string cleanName = displayName.Trim();
-                    string cleanId  = chIdNode.Trim();
+                    string cleanId = chIdNode.Trim();
 
                     // --- Channel matching: exact first, then normalized fallback ---
                     var targetCh = channels.FirstOrDefault(c =>
                         string.Equals(c.Name.Trim(), cleanName, StringComparison.OrdinalIgnoreCase) ||
-                        string.Equals(c.Name.Trim(), cleanId,   StringComparison.OrdinalIgnoreCase));
+                        string.Equals(c.Name.Trim(), cleanId, StringComparison.OrdinalIgnoreCase));
 
                     if (targetCh == null)
                     {
@@ -74,25 +74,25 @@ namespace Kroira.App.Services.Parsing
                     if (targetCh == null) continue;
 
                     var startString = p.Attribute("start")?.Value;
-                    var stopString  = p.Attribute("stop")?.Value;
+                    var stopString = p.Attribute("stop")?.Value;
                     if (string.IsNullOrWhiteSpace(startString) || string.IsNullOrWhiteSpace(stopString)) continue;
 
                     var start = ParseXmltvDate(startString);
-                    var end   = ParseXmltvDate(stopString);
+                    var end = ParseXmltvDate(stopString);
 
                     // Skip rows with unparseable timestamps or zero/negative duration
                     if (start == null || end == null || end <= start) continue;
 
                     var titleNode = p.Element("title");
-                    var descNode  = p.Element("desc");
+                    var descNode = p.Element("desc");
 
                     epgItems.Add(new EpgProgram
                     {
-                        ChannelId    = targetCh.Id,
+                        ChannelId = targetCh.Id,
                         StartTimeUtc = start.Value,
-                        EndTimeUtc   = end.Value,
-                        Title        = string.IsNullOrWhiteSpace(titleNode?.Value) ? "Unknown Program" : titleNode!.Value.Trim(),
-                        Description  = descNode?.Value?.Trim() ?? string.Empty
+                        EndTimeUtc = end.Value,
+                        Title = string.IsNullOrWhiteSpace(titleNode?.Value) ? "Unknown Program" : titleNode!.Value.Trim(),
+                        Description = descNode?.Value?.Trim() ?? string.Empty
                     });
                 }
 
@@ -100,7 +100,7 @@ namespace Kroira.App.Services.Parsing
                 try
                 {
                     var chIds = channels.Select(c => c.Id).ToList();
-                    
+
                     // Chunked deletion preserving memory across massive EPG scopes natively
                     for (int i = 0; i < chIds.Count; i += 50)
                     {

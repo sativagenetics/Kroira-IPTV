@@ -1,6 +1,6 @@
+using System;
 using Kroira.App.Models;
 using Microsoft.EntityFrameworkCore;
-using System;
 
 namespace Kroira.App.Data
 {
@@ -43,7 +43,7 @@ namespace Kroira.App.Data
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
-            
+
             // Query Model Configuration (Explicitly keyless)
             modelBuilder.Entity<ContinueWatching>().HasNoKey();
 

@@ -1,14 +1,14 @@
-using Kroira.App.Models;
+using System;
+using System.Linq;
 using Kroira.App.Data;
+using Kroira.App.Models;
 using Kroira.App.Services;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Navigation;
-using Microsoft.Extensions.DependencyInjection;
-using System.Linq;
-using System;
-using Windows.Media.Core;
 using Windows.Foundation;
+using Windows.Media.Core;
 using Windows.Media.Playback;
 
 namespace Kroira.App.Views
@@ -64,7 +64,7 @@ namespace Kroira.App.Views
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
-            
+
             string url = null;
             long startMs = 0;
 
@@ -105,9 +105,9 @@ namespace Kroira.App.Views
                 {
                     var mediaSource = MediaSource.CreateFromUri(new Uri(url));
                     var playbackItem = new MediaPlaybackItem(mediaSource);
-                    
+
                     _mediaPlayer.Source = playbackItem;
-                    
+
                     if (startMs > 0)
                     {
                         // Use a local handler reference so we can detach it after firing
@@ -143,7 +143,7 @@ namespace Kroira.App.Views
             {
                 var pos = _mediaPlayer.PlaybackSession.Position;
                 var dur = _mediaPlayer.PlaybackSession.NaturalDuration;
-                
+
                 var positionMs = pos.TotalMilliseconds;
                 var lengthMs = dur.TotalMilliseconds;
 

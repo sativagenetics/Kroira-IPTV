@@ -13,9 +13,9 @@ namespace Kroira.App.ViewModels
         public MainViewModel(IEntitlementService entitlementService)
         {
             _entitlementService = entitlementService;
-            
-            LicenseStatusMessage = _entitlementService.HasProLicense 
-                ? "App Initialized - Pro License Valid" 
+
+            LicenseStatusMessage = _entitlementService.HasProLicense
+                ? "App Initialized - Pro License Valid"
                 : "App Initialized - Operating in Free Tier";
         }
     }
