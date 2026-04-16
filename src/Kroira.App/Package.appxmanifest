@@ -11,7 +11,7 @@
     Version="1.0.0.0" />
 
   <Properties>
-    <DisplayName>KROIRA IPTV</DisplayName>
+    <DisplayName>KROIRA IPTV Player</DisplayName>
     <PublisherDisplayName>SATIVAGENETICS</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
   </Properties>
@@ -33,7 +33,7 @@
       Executable="$targetnametoken$.exe"
       EntryPoint="$targetentrypoint$">
       <uap:VisualElements
-        DisplayName="KROIRA IPTV"
+        DisplayName="KROIRA IPTV Player"
         Description="Advanced IPTV Player for Windows"
         BackgroundColor="transparent"
         Square150x150Logo="Assets\Square150x150Logo.png"
