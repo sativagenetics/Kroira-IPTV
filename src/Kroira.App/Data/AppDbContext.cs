@@ -1,10 +1,16 @@
 using Kroira.App.Models;
 using Microsoft.EntityFrameworkCore;
+using System;
 
 namespace Kroira.App.Data
 {
     public class AppDbContext : DbContext
     {
+        public AppDbContext(DbContextOptions<AppDbContext> options)
+            : base(options)
+        {
+        }
+
         public DbSet<AppSetting> AppSettings { get; set; } = null!;
         public DbSet<FeatureEntitlement> FeatureEntitlements { get; set; } = null!;
         public DbSet<ParentalControlSetting> ParentalControlSettings { get; set; } = null!;
@@ -63,8 +69,20 @@ namespace Kroira.App.Data
                 .OnDelete(DeleteBehavior.Cascade);
 
             // Optimize query access
+            modelBuilder.Entity<Favorite>()
+                .HasIndex(f => new { f.ContentType, f.ContentId });
+
             modelBuilder.Entity<PlaybackProgress>()
                 .HasIndex(p => new { p.ContentType, p.ContentId });
+
+            modelBuilder.Entity<SchemaVersion>()
+                .HasData(new SchemaVersion
+                {
+                    Id = 1,
+                    VersionNumber = 1,
+                    AppliedAt = new DateTime(2026, 4, 16, 0, 0, 0, DateTimeKind.Utc),
+                    IsValidated = true
+                });
         }
     }
 }
