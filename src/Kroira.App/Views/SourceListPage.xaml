@@ -31,19 +31,19 @@
             </StackPanel>
         </Border>
 
-        <Grid Grid.Row="1" ColumnSpacing="18">
+        <Grid Grid.Row="1" ColumnSpacing="16" MaxWidth="1180" HorizontalAlignment="Left" VerticalAlignment="Top">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="300" />
+                <ColumnDefinition Width="278" />
             </Grid.ColumnDefinitions>
 
-            <Border Grid.Column="0" Style="{StaticResource KroiraPanelStyle}">
-                <StackPanel Spacing="14">
+            <Border Grid.Column="0" Style="{StaticResource KroiraPanelStyle}" Padding="16">
+                <StackPanel Spacing="12">
                     <TextBlock Text="Provider stack" Style="{StaticResource KroiraSectionTitleStyle}" />
                     <ListView ItemsSource="{x:Bind ViewModel.Sources, Mode=OneWay}" SelectionMode="None">
                         <ListView.ItemTemplate>
                             <DataTemplate>
-                                <Grid Padding="16" BorderBrush="{StaticResource KroiraBorderBrush}" BorderThickness="1" CornerRadius="20" Margin="0,0,0,12" RowSpacing="14">
+                                <Grid Padding="14" BorderBrush="{StaticResource KroiraBorderBrush}" BorderThickness="1" CornerRadius="18" Margin="0,0,0,10" RowSpacing="12">
                                     <Grid.Background>
                                         <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
                                             <GradientStop Color="#1A2033" Offset="0" />
@@ -60,18 +60,19 @@
                                             <ColumnDefinition Width="*" />
                                             <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
-                                        <Border Width="56" Height="56" CornerRadius="18" Background="{StaticResource KroiraMediaGradientBrush}">
-                                            <FontIcon Glyph="&#xE8F1;" Foreground="{StaticResource KroiraAccentBrush}" FontSize="24" />
+                                        <Border Width="50" Height="50" CornerRadius="16" Background="{StaticResource KroiraMediaGradientBrush}">
+                                            <FontIcon Glyph="&#xE8F1;" Foreground="{StaticResource KroiraAccentBrush}" FontSize="22" />
                                         </Border>
                                         <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="5">
-                                            <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="17" Foreground="{StaticResource KroiraTextPrimaryBrush}" />
+                                            <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="16" Foreground="{StaticResource KroiraTextPrimaryBrush}" />
                                             <TextBlock Text="{Binding Status}" Foreground="{StaticResource KroiraTextSecondaryBrush}" FontSize="12" TextWrapping="Wrap" MaxLines="2" />
                                         </StackPanel>
                                         <Border Grid.Column="2" Background="#221F42" BorderBrush="{StaticResource KroiraBorderStrongBrush}" BorderThickness="1" CornerRadius="999" Padding="10,4" VerticalAlignment="Top">
                                             <TextBlock Text="{Binding Type}" Foreground="{StaticResource KroiraAccentBrush}" FontSize="11" FontWeight="SemiBold" />
                                         </Border>
                                     </Grid>
-                                    <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+                                    <Border Grid.Row="1" Background="#111722" BorderBrush="{StaticResource KroiraBorderBrush}" BorderThickness="1" CornerRadius="14" Padding="8">
+                                    <StackPanel Orientation="Horizontal" Spacing="7" HorizontalAlignment="Right">
                                         <Button Content="Browse" Tag="{Binding Id}" Click="BrowseSource_Click" Visibility="{Binding BrowseVisibility}" Style="{StaticResource KroiraButtonStyle}" />
                                         <Button Content="Import" Tag="{Binding Id}" Click="ParseSource_Click" Visibility="{Binding ParseVisibility}" Style="{StaticResource KroiraButtonStyle}" />
                                         <Button Content="EPG" Tag="{Binding Id}" Click="SyncEpgSource_Click" Visibility="{Binding SyncEpgVisibility}" Style="{StaticResource KroiraButtonStyle}" />
@@ -79,6 +80,7 @@
                                         <Button Content="VOD" Tag="{Binding Id}" Click="SyncXtreamVodSource_Click" Visibility="{Binding SyncXtreamVisibility}" Style="{StaticResource KroiraButtonStyle}" />
                                         <Button Content="Delete" Tag="{Binding Id}" Click="DeleteSource_Click" Style="{StaticResource KroiraDangerButtonStyle}" />
                                     </StackPanel>
+                                    </Border>
                                 </Grid>
                             </DataTemplate>
                         </ListView.ItemTemplate>
@@ -92,18 +94,18 @@
                 </StackPanel>
             </Border>
 
-            <Border Grid.Column="1" Style="{StaticResource KroiraPanelStyle}">
-                <StackPanel Spacing="12">
-                    <Border Height="94" CornerRadius="22" Background="{StaticResource KroiraMediaGradientBrush}">
+            <Border Grid.Column="1" Style="{StaticResource KroiraPanelStyle}" Padding="16">
+                <StackPanel Spacing="10">
+                    <Border Height="72" CornerRadius="18" Background="{StaticResource KroiraMediaGradientBrush}">
                         <Grid>
-                            <FontIcon Glyph="&#xE8F1;" Foreground="{StaticResource KroiraAccentBrush}" FontSize="32" />
-                            <Border Width="142" Height="5" Background="{StaticResource KroiraGoldBrush}" CornerRadius="3" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="20,0,0,20" />
-                            <Border Width="230" Height="5" Background="#35FFFFFF" CornerRadius="3" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="20,0,0,20" Opacity="0.18" />
+                            <FontIcon Glyph="&#xE8F1;" Foreground="{StaticResource KroiraAccentBrush}" FontSize="28" />
+                            <Border Width="98" Height="4" Background="{StaticResource KroiraGoldBrush}" CornerRadius="2" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="16,0,0,14" />
+                            <Border Width="188" Height="4" Background="#35FFFFFF" CornerRadius="2" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="16,0,0,14" Opacity="0.18" />
                         </Grid>
                     </Border>
                     <TextBlock Text="Source operations" Style="{StaticResource KroiraSectionTitleStyle}" />
                     <TextBlock Text="Import, EPG, live, and VOD actions are grouped per source so providers stay readable even when there are only one or two configured." Style="{StaticResource KroiraPageSubtitleStyle}" />
-                    <Border Background="#171E2E" BorderBrush="{StaticResource KroiraBorderBrush}" BorderThickness="1" CornerRadius="14" Padding="12">
+                    <Border Background="#171E2E" BorderBrush="{StaticResource KroiraBorderBrush}" BorderThickness="1" CornerRadius="14" Padding="10">
                         <TextBlock Text="Tip: use EPG sync for guide data and VOD sync for movies and series where supported." Style="{StaticResource KroiraPageSubtitleStyle}" />
                     </Border>
                 </StackPanel>

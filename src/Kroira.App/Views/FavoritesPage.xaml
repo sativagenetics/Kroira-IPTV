@@ -30,14 +30,14 @@
             </StackPanel>
         </Border>
 
-        <Grid Grid.Row="1" ColumnSpacing="18" MaxWidth="1040" HorizontalAlignment="Left">
+        <Grid Grid.Row="1" ColumnSpacing="16" MaxWidth="960" HorizontalAlignment="Left" VerticalAlignment="Top">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="2*" />
-                <ColumnDefinition Width="320" />
+                <ColumnDefinition Width="280" />
             </Grid.ColumnDefinitions>
 
-            <Border Grid.Column="0" Style="{StaticResource KroiraPanelStyle}">
-                <StackPanel Spacing="14">
+            <Border Grid.Column="0" Style="{StaticResource KroiraPanelStyle}" Padding="16">
+                <StackPanel Spacing="12">
                     <TextBlock Text="Saved lineup" Style="{StaticResource KroiraSectionTitleStyle}" />
                     <GridView ItemsSource="{x:Bind ViewModel.FavoriteChannels, Mode=OneWay}" SelectionMode="Single" SelectionChanged="ChannelList_SelectionChanged">
                         <GridView.ItemsPanel>
@@ -52,7 +52,7 @@
                         </GridView.ItemContainerStyle>
                         <GridView.ItemTemplate>
                             <DataTemplate>
-                                <Grid Width="300" Height="104" Padding="14" BorderBrush="{StaticResource KroiraBorderBrush}" BorderThickness="1" CornerRadius="20" ColumnSpacing="12">
+                                <Grid Width="292" Height="96" Padding="12" BorderBrush="{StaticResource KroiraBorderBrush}" BorderThickness="1" CornerRadius="18" ColumnSpacing="12">
                                     <Grid.Background>
                                         <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
                                             <GradientStop Color="#1B2134" Offset="0" />
@@ -64,7 +64,7 @@
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
-                                    <Border Grid.Column="0" Width="56" Height="56" CornerRadius="18" Background="{StaticResource KroiraMediaGradientBrush}">
+                                    <Border Grid.Column="0" Width="52" Height="52" CornerRadius="16" Background="{StaticResource KroiraMediaGradientBrush}">
                                         <Image Source="{Binding LogoUrl}" Stretch="Uniform" Margin="6" />
                                     </Border>
                                     <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="4">
@@ -79,13 +79,13 @@
                 </StackPanel>
             </Border>
 
-            <Border Grid.Column="1" Style="{StaticResource KroiraPanelStyle}">
-                <StackPanel Spacing="12">
-                    <Border Height="88" CornerRadius="20" Background="{StaticResource KroiraMediaGradientBrush}">
+            <Border Grid.Column="1" Style="{StaticResource KroiraPanelStyle}" Padding="16">
+                <StackPanel Spacing="10">
+                    <Border Height="72" CornerRadius="18" Background="{StaticResource KroiraMediaGradientBrush}">
                         <Grid>
-                            <FontIcon Glyph="&#xE734;" Foreground="{StaticResource KroiraGoldBrush}" FontSize="30" />
-                            <Border Width="120" Height="4" Background="{StaticResource KroiraGoldBrush}" CornerRadius="2" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="18,0,0,18" />
-                            <Border Width="210" Height="4" Background="#35FFFFFF" CornerRadius="2" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="18,0,0,18" Opacity="0.2" />
+                            <FontIcon Glyph="&#xE734;" Foreground="{StaticResource KroiraGoldBrush}" FontSize="26" />
+                            <Border Width="92" Height="4" Background="{StaticResource KroiraGoldBrush}" CornerRadius="2" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="16,0,0,14" />
+                            <Border Width="170" Height="4" Background="#35FFFFFF" CornerRadius="2" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="16,0,0,14" Opacity="0.2" />
                         </Grid>
                     </Border>
                     <TextBlock Text="Your fastest route back" Style="{StaticResource KroiraSectionTitleStyle}" />

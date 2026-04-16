@@ -5,7 +5,7 @@
     Background="{StaticResource KroiraPageBackgroundBrush}">
 
     <ScrollViewer>
-        <Grid Padding="28" RowSpacing="18" MaxWidth="1120" HorizontalAlignment="Left">
+        <Grid Padding="28" RowSpacing="16" MaxWidth="980" HorizontalAlignment="Left">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
@@ -18,15 +18,15 @@
                 </StackPanel>
             </Border>
 
-            <Grid Grid.Row="1" ColumnSpacing="18">
+            <Grid Grid.Row="1" ColumnSpacing="16" VerticalAlignment="Top">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="2*" />
-                    <ColumnDefinition Width="1.15*" />
+                    <ColumnDefinition Width="1.55*" />
+                    <ColumnDefinition Width="1*" />
                 </Grid.ColumnDefinitions>
 
-                <StackPanel Grid.Column="0" Spacing="18">
-                    <Border Style="{StaticResource KroiraPanelStyle}">
-                        <StackPanel Spacing="12">
+                <StackPanel Grid.Column="0" Spacing="16">
+                    <Border Style="{StaticResource KroiraPanelStyle}" Padding="16">
+                        <StackPanel Spacing="10">
                             <TextBlock Text="Licensing Details" Style="{StaticResource KroiraSectionTitleStyle}" />
                             <TextBlock Text="Current Tier:" FontWeight="SemiBold" Foreground="{StaticResource KroiraTextSecondaryBrush}" />
 
@@ -35,7 +35,7 @@
                                 <TextBlock Text="KROIRA FREE" Foreground="{StaticResource KroiraAccentBrush}" FontWeight="Bold" FontSize="22" Visibility="{x:Bind ViewModel.FreeTierVisibility, Mode=OneWay}" />
                             </Grid>
 
-                            <TextBlock Text="{x:Bind ViewModel.LicenseStatusDescription, Mode=OneWay}" TextWrapping="Wrap" Foreground="{StaticResource KroiraTextSecondaryBrush}" Margin="0,4,0,12" />
+                            <TextBlock Text="{x:Bind ViewModel.LicenseStatusDescription, Mode=OneWay}" TextWrapping="Wrap" Foreground="{StaticResource KroiraTextSecondaryBrush}" Margin="0,2,0,8" />
 
                             <Button Content="Upgrade to Pro"
                                     Command="{x:Bind ViewModel.UpgradeCommand}"
@@ -45,14 +45,14 @@
                         </StackPanel>
                     </Border>
 
-                    <Border Style="{StaticResource KroiraPanelStyle}">
+                    <Border Style="{StaticResource KroiraPanelStyle}" Padding="16">
                         <Grid ColumnSpacing="16">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
-                            <Border Width="58" Height="58" CornerRadius="18" Background="{StaticResource KroiraMediaGradientBrush}">
-                                <FontIcon Glyph="&#xE946;" Foreground="{StaticResource KroiraAccentBrush}" FontSize="24" />
+                            <Border Width="50" Height="50" CornerRadius="16" Background="{StaticResource KroiraMediaGradientBrush}">
+                                <FontIcon Glyph="&#xE946;" Foreground="{StaticResource KroiraAccentBrush}" FontSize="22" />
                             </Border>
                             <StackPanel Grid.Column="1" Spacing="6">
                                 <TextBlock Text="Local-first app settings" Style="{StaticResource KroiraSectionTitleStyle}" />
@@ -62,13 +62,13 @@
                     </Border>
                 </StackPanel>
 
-                <Border Grid.Column="1" Style="{StaticResource KroiraPanelStyle}">
-                    <StackPanel Spacing="14">
-                        <Border Height="92" CornerRadius="22" Background="{StaticResource KroiraMediaGradientBrush}">
+                <Border Grid.Column="1" Style="{StaticResource KroiraPanelStyle}" Padding="16">
+                    <StackPanel Spacing="12">
+                        <Border Height="72" CornerRadius="18" Background="{StaticResource KroiraMediaGradientBrush}">
                             <Grid>
-                                <FontIcon Glyph="&#xE713;" Foreground="{StaticResource KroiraAccentBrush}" FontSize="32" />
-                                <Border Width="150" Height="5" Background="{StaticResource KroiraGoldBrush}" CornerRadius="3" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="20,0,0,20" />
-                                <Border Width="240" Height="5" Background="#35FFFFFF" CornerRadius="3" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="20,0,0,20" Opacity="0.18" />
+                                <FontIcon Glyph="&#xE713;" Foreground="{StaticResource KroiraAccentBrush}" FontSize="28" />
+                                <Border Width="104" Height="4" Background="{StaticResource KroiraGoldBrush}" CornerRadius="2" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="16,0,0,14" />
+                                <Border Width="194" Height="4" Background="#35FFFFFF" CornerRadius="2" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="16,0,0,14" Opacity="0.18" />
                             </Grid>
                         </Border>
 
