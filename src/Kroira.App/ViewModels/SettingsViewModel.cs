@@ -68,13 +68,13 @@ namespace Kroira.App.ViewModels
         [RelayCommand]
         public async Task OpenPrivacyPolicyAsync()
         {
-            await Windows.System.Launcher.LaunchUriAsync(new Uri("https://kroira.app/privacy"));
+            await Windows.System.Launcher.LaunchUriAsync(new Uri("https://sativagenetics.github.io/KroiraIPTV/privacy.html"));
         }
 
         [RelayCommand]
         public async Task OpenSupportAsync()
         {
-            await Windows.System.Launcher.LaunchUriAsync(new Uri("https://kroira.app/support"));
+            await Windows.System.Launcher.LaunchUriAsync(new Uri("https://sativagenetics.github.io/KroiraIPTV/support.html"));
         }
     }
 }
