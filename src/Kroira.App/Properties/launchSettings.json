@@ -1,10 +1,6 @@
 {
   "$schema": "http://json.schemastore.org/launchsettings.json",
   "profiles": {
-    "Kroira.App (Unpackaged)": {
-      "commandName": "Project",
-      "nativeDebugging": false
-    },
     "Kroira.App (Packaged)": {
       "commandName": "MsixPackage"
     }
