@@ -105,6 +105,7 @@ namespace Kroira.App
 
             // Core UI ViewModels
             services.AddTransient<MainViewModel>();
+            services.AddTransient<HomeViewModel>();
             services.AddTransient<SettingsViewModel>();
             services.AddTransient<SourceOnboardingViewModel>();
             services.AddTransient<SourceListViewModel>();

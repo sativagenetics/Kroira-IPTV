@@ -18,15 +18,7 @@
                 <NavigationViewItem Icon="DockLeft" Content="Series" Tag="Series" />
                 <NavigationViewItem Icon="Library" Content="Sources" Tag="Sources" />
             </NavigationView.MenuItems>
-            <Frame x:Name="ContentFrame">
-                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="20">
-                    <TextBlock Text="KROIRA IPTV" Style="{ThemeResource TitleTextBlockStyle}" HorizontalAlignment="Center" />
-                    <TextBlock Text="{x:Bind ViewModel.LicenseStatusMessage, Mode=OneWay}" 
-                               Style="{ThemeResource BodyTextBlockStyle}" 
-                               HorizontalAlignment="Center" 
-                               Foreground="LimeGreen"/>
-                </StackPanel>
-            </Frame>
+            <Frame x:Name="ContentFrame" />
         </NavigationView>
     </Grid>
 </Window>

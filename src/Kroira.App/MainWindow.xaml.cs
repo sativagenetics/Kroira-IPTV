@@ -10,7 +10,6 @@ namespace Kroira.App
     public sealed partial class MainWindow : Window
     {
         public MainViewModel ViewModel { get; }
-        private readonly object _homeContent;
         private readonly IWindowManagerService _windowManager;
 
         public MainWindow()
@@ -20,7 +19,8 @@ namespace Kroira.App
             _windowManager = ((App)Application.Current).Services.GetRequiredService<IWindowManagerService>();
 
             this.Title = "Kroira IPTV";
-            _homeContent = ContentFrame.Content;
+            ContentFrame.Navigate(typeof(HomePage));
+            RootNavView.SelectedItem = RootNavView.MenuItems[0];
 
             _windowManager.FullscreenStateChanged += (s, e) =>
             {
@@ -53,7 +53,7 @@ namespace Kroira.App
             }
             else if (args.InvokedItemContainer?.Tag?.ToString() == "Home")
             {
-                ContentFrame.Content = _homeContent;
+                ContentFrame.Navigate(typeof(HomePage));
             }
             else if (args.InvokedItemContainer?.Tag?.ToString() == "Favorites")
             {
