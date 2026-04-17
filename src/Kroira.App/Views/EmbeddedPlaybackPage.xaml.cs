@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Kroira.App.Data;
 using Kroira.App.Models;
@@ -33,14 +34,20 @@ namespace Kroira.App.Views
         private bool _controlsVisible = true;
         private bool _wasFullscreenOnEnter;
         private long _lastPositionMs;
+        private long _lastDurationMs;
         private bool _playbackStarted;
         private bool _teardownStarted;
         private bool _progressSaveQueued;
         private bool _isNavigatingBack;
+        private bool _isMuted;
+        private bool _isVolumeSliderUpdating;
+        private double _lastNonZeroVolume = 100;
 
         public EmbeddedPlaybackPage()
         {
             this.InitializeComponent();
+            TimelineSlider.AddHandler(UIElement.PointerPressedEvent, new PointerEventHandler(TimelineSlider_PointerPressed), true);
+            TimelineSlider.AddHandler(UIElement.PointerReleasedEvent, new PointerEventHandler(TimelineSlider_PointerReleased), true);
             this.Loaded += OnPageLoaded;
             this.Unloaded += OnPageUnloaded;
         }
@@ -120,6 +127,8 @@ namespace Kroira.App.Views
                 _controlsHideTimer = new DispatcherTimer { Interval = ControlsHideDelay };
                 _controlsHideTimer.Tick += (_, __) => HideControls();
 
+                ResolveResumePosition(_context);
+                _lastPositionMs = _context.StartPositionMs;
                 _player.Play(_context.StreamUrl, _context.StartPositionMs);
                 RestartControlsHideTimer();
             }
@@ -154,7 +163,7 @@ namespace Kroira.App.Views
             if (!_progressSaveQueued && _context != null && _context.ContentType != PlaybackContentType.Channel)
             {
                 _progressSaveQueued = true;
-                _ = SaveProgressAsync(_context, _lastPositionMs);
+                _ = SaveProgressAsync(_context, _lastPositionMs, _lastDurationMs);
             }
 
             if (_player != null)
@@ -201,6 +210,7 @@ namespace Kroira.App.Views
         private void OnDurationChanged(TimeSpan duration)
         {
             if (_teardownStarted) return;
+            _lastDurationMs = (long)duration.TotalMilliseconds;
             DurationText.Text = FormatTime(duration);
         }
 
@@ -329,8 +339,28 @@ namespace Kroira.App.Views
 
         private void TimelineSlider_PointerCaptureLost(object sender, PointerRoutedEventArgs e)
         {
+            CommitTimelineSeek();
+        }
+
+        private void TimelineSlider_PointerReleased(object sender, PointerRoutedEventArgs e)
+        {
+            CommitTimelineSeek();
+        }
+
+        private void TimelineSlider_LostFocus(object sender, RoutedEventArgs e)
+        {
+            CommitTimelineSeek();
+        }
+
+        private void TimelineSlider_KeyUp(object sender, KeyRoutedEventArgs e)
+        {
+            CommitTimelineSeek(force: true);
+        }
+
+        private void CommitTimelineSeek(bool force = false)
+        {
             if (_teardownStarted) return;
-            if (!_isUserSeeking) return;
+            if (!_isUserSeeking && !force) return;
             _isUserSeeking = false;
 
             if (_player == null || !_player.IsSeekable) return;
@@ -339,8 +369,53 @@ namespace Kroira.App.Views
             var durationSeconds = _player.Duration.TotalSeconds;
             if (durationSeconds <= 0) return;
             var fraction = TimelineSlider.Value / 1000.0;
-            _player.SeekAbsoluteSeconds(fraction * durationSeconds);
+            var targetSeconds = fraction * durationSeconds;
+            _lastPositionMs = (long)(targetSeconds * 1000);
+            _player.SeekAbsoluteSeconds(targetSeconds);
             RestartControlsHideTimer();
+        }
+
+        private void Mute_Click(object sender, RoutedEventArgs e)
+        {
+            if (_teardownStarted || _player == null) return;
+
+            var muted = !_isMuted;
+            if (!muted && VolumeSlider.Value <= 0)
+            {
+                SetVolumeSliderValue(_lastNonZeroVolume);
+                _player.SetVolume(_lastNonZeroVolume);
+            }
+
+            _player.SetMuted(muted);
+            SetMutedUi(muted);
+            RestartControlsHideTimer();
+        }
+
+        private void VolumeSlider_ValueChanged(object sender, RangeBaseValueChangedEventArgs e)
+        {
+            if (_isVolumeSliderUpdating || _teardownStarted || _player == null) return;
+
+            var volume = Math.Clamp(e.NewValue, 0, 100);
+            if (volume > 0) _lastNonZeroVolume = volume;
+
+            _player.SetVolume(volume);
+            _player.SetMuted(volume <= 0);
+            SetMutedUi(volume <= 0);
+            RestartControlsHideTimer();
+        }
+
+        private void SetMutedUi(bool muted)
+        {
+            _isMuted = muted;
+            MuteIcon.Glyph = muted ? "\uE74F" : "\uE767";
+            ToolTipService.SetToolTip(MuteButton, muted ? "Unmute" : "Mute");
+        }
+
+        private void SetVolumeSliderValue(double value)
+        {
+            _isVolumeSliderUpdating = true;
+            VolumeSlider.Value = Math.Clamp(value, 0, 100);
+            _isVolumeSliderUpdating = false;
         }
 
         // --- Controls auto-hide ---
@@ -409,11 +484,34 @@ namespace Kroira.App.Views
             };
         }
 
-        private static async Task SaveProgressAsync(PlaybackLaunchContext ctx, long positionMs)
+        private static void ResolveResumePosition(PlaybackLaunchContext ctx)
+        {
+            if (ctx == null || ctx.ContentType == PlaybackContentType.Channel || ctx.StartPositionMs > 0) return;
+
+            try
+            {
+                using var scope = ((App)Application.Current).Services.CreateScope();
+                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                var existing = db.PlaybackProgresses.FirstOrDefault(
+                    p => p.ContentType == ctx.ContentType && p.ContentId == ctx.ContentId && !p.IsCompleted);
+
+                if (existing != null && existing.PositionMs >= 5_000)
+                {
+                    ctx.StartPositionMs = existing.PositionMs;
+                }
+            }
+            catch
+            {
+                // Resume lookup is best-effort.
+            }
+        }
+
+        private static async Task SaveProgressAsync(PlaybackLaunchContext ctx, long positionMs, long durationMs)
         {
             if (ctx == null) return;
             // Only bother persisting progress if the user got past the first few seconds.
             if (positionMs < 5_000) return;
+            var isCompleted = durationMs > 0 && positionMs >= durationMs * 0.95;
 
             try
             {
@@ -431,13 +529,14 @@ namespace Kroira.App.Views
                         ContentType = ctx.ContentType,
                         ContentId = ctx.ContentId,
                         PositionMs = positionMs,
-                        IsCompleted = false,
+                        IsCompleted = isCompleted,
                         LastWatched = DateTime.UtcNow,
                     });
                 }
                 else
                 {
                     existing.PositionMs = positionMs;
+                    existing.IsCompleted = isCompleted;
                     existing.LastWatched = DateTime.UtcNow;
                 }
                 await db.SaveChangesAsync();

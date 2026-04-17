@@ -37,6 +37,8 @@ namespace Kroira.App.Services.Playback
         public TimeSpan Duration { get; private set; }
         public bool IsPaused { get; private set; }
         public bool IsSeekable { get; private set; }
+        public double Volume { get; private set; } = 100;
+        public bool IsMuted { get; private set; }
 
         public MpvPlayer(DispatcherQueue dispatcher, IntPtr videoHwnd)
         {
@@ -140,6 +142,24 @@ namespace Kroira.App.Services.Playback
             if (!IsSeekable) return;
             UseCtx(ctx => NativeMpv.Command(ctx, "seek",
                 seconds.ToString(CultureInfo.InvariantCulture), "absolute"));
+        }
+
+        public void SetVolume(double volume)
+        {
+            Volume = Math.Clamp(volume, 0, 100);
+            UseCtx(ctx => NativeMpv.mpv_set_property_string(ctx, "volume",
+                Volume.ToString(CultureInfo.InvariantCulture)));
+        }
+
+        public void SetMuted(bool muted)
+        {
+            IsMuted = muted;
+            UseCtx(ctx => NativeMpv.mpv_set_property_string(ctx, "mute", muted ? "yes" : "no"));
+        }
+
+        public void ToggleMute()
+        {
+            SetMuted(!IsMuted);
         }
 
         private void SetOption(string name, string value)

@@ -75,7 +75,10 @@
                             IsThumbToolTipEnabled="False"
                             VerticalAlignment="Center"
                             PointerPressed="TimelineSlider_PointerPressed"
-                            PointerCaptureLost="TimelineSlider_PointerCaptureLost" />
+                            PointerReleased="TimelineSlider_PointerReleased"
+                            PointerCaptureLost="TimelineSlider_PointerCaptureLost"
+                            LostFocus="TimelineSlider_LostFocus"
+                            KeyUp="TimelineSlider_KeyUp" />
                     <TextBlock Grid.Column="2" x:Name="DurationText" Text="0:00"
                                VerticalAlignment="Center"
                                Foreground="{StaticResource KroiraTextSecondaryBrush}"
@@ -105,6 +108,25 @@
                             Padding="10">
                         <FontIcon x:Name="FullscreenIcon" FontFamily="Segoe MDL2 Assets" Glyph="&#xE740;" />
                     </Button>
+                    <StackPanel Orientation="Horizontal"
+                                VerticalAlignment="Center"
+                                Spacing="6"
+                                Margin="16,0,0,0">
+                        <Button x:Name="MuteButton" Click="Mute_Click"
+                                Background="Transparent" BorderThickness="0"
+                                Foreground="{StaticResource KroiraTextPrimaryBrush}"
+                                ToolTipService.ToolTip="Mute"
+                                Padding="8">
+                            <FontIcon x:Name="MuteIcon" FontFamily="Segoe MDL2 Assets" Glyph="&#xE767;" />
+                        </Button>
+                        <Slider x:Name="VolumeSlider"
+                                Minimum="0" Maximum="100" Value="100"
+                                Width="120"
+                                StepFrequency="1"
+                                IsThumbToolTipEnabled="False"
+                                VerticalAlignment="Center"
+                                ValueChanged="VolumeSlider_ValueChanged" />
+                    </StackPanel>
                 </StackPanel>
             </Grid>
         </Border>
