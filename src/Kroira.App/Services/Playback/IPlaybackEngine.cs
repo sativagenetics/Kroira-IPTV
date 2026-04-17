@@ -48,10 +48,9 @@ namespace Kroira.App.Services.Playback
         bool AddSubtitleFile(string filePath);
         void SetVideoHostHandle(IntPtr hwnd);
 
-        // Tears down the mpv handle on a background thread and invokes onTerminated on the
-        // UI thread only after mpv has fully released its VO resources (including the DirectX
-        // swap chain targeting the host HWND). Destroy the HWND inside onTerminated to avoid
-        // the 0xc0000005 access violation that results from destroying the window first.
+        // Tears down the playback handle synchronously and invokes onTerminated on the UI
+        // thread after native VO resources are released. Destroy the host HWND only after
+        // this returns to avoid native access violations.
         void DetachAndDispose(Action onTerminated);
     }
 }

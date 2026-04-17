@@ -62,8 +62,7 @@
                   Grid.Row="1"
                   Background="Black"
                   SizeChanged="VideoHost_SizeChanged"
-                  Loaded="VideoHost_Loaded"
-                  Unloaded="VideoHost_Unloaded">
+                  Loaded="VideoHost_Loaded">
                 <Border x:Name="StatusOverlay"
                         Background="#B0000000"
                         CornerRadius="10"

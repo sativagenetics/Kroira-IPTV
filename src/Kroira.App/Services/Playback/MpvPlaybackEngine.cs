@@ -87,7 +87,7 @@ namespace Kroira.App.Services.Playback
                 // Always tear down any existing handle so the new one gets the correct wid.
                 // mpv_set_option_string has no effect after mpv_initialize; recreating is the
                 // only reliable way to redirect the video output to a new HWND.
-                TeardownHandleAsync();
+                TeardownHandle();
                 EnsureInitialized();
                 UpdateState(PlaybackState.Loading);
                 CommandAsync("loadfile", sourceUrl, "replace");
@@ -173,17 +173,19 @@ namespace Kroira.App.Services.Playback
         {
             IntPtr handle;
             CancellationTokenSource cts;
+            Task eventLoop;
 
             lock (_sync)
             {
                 if (_handle == IntPtr.Zero)
                 {
-                    _dispatcherQueue?.TryEnqueue(() => onTerminated?.Invoke());
+                    EnsureUiThread(() => onTerminated?.Invoke());
                     return;
                 }
 
                 handle = _handle;
                 cts = _eventLoopCts;
+                eventLoop = _eventLoopTask;
                 _handle = IntPtr.Zero;
                 _videoHostHwnd = IntPtr.Zero;
                 _eventLoopCts = null;
@@ -192,16 +194,13 @@ namespace Kroira.App.Services.Playback
 
             UpdateState(PlaybackState.Stopped);
 
-            _ = Task.Run(() =>
-            {
-                try { cts?.Cancel(); } catch { }
-                // mpv_terminate_destroy blocks until mpv has fully released its VO resources,
-                // including the DirectX swap chain that references the host HWND. Only after
-                // this returns is it safe to destroy the HWND on the UI thread.
-                try { mpv_terminate_destroy(handle); } catch { }
-                try { cts?.Dispose(); } catch { }
-                _dispatcherQueue?.TryEnqueue(() => onTerminated?.Invoke());
-            });
+            try { cts?.Cancel(); } catch { }
+            // mpv_terminate_destroy blocks until mpv has fully released its VO resources.
+            // The caller can safely destroy the host HWND after this method returns.
+            try { mpv_terminate_destroy(handle); } catch { }
+            try { eventLoop?.Wait(1000); } catch { }
+            try { cts?.Dispose(); } catch { }
+            EnsureUiThread(() => onTerminated?.Invoke());
         }
 
         public void Dispose()
@@ -234,13 +233,12 @@ namespace Kroira.App.Services.Playback
             try { cts?.Dispose(); } catch { }
         }
 
-        // Tears down the existing handle on a background thread so the UI is not blocked.
-        // mpv_terminate_destroy causes any blocked mpv_wait_event to return with
-        // MpvEventShutdown, allowing the event loop to exit cleanly.
-        private void TeardownHandleAsync()
+        // Synchronous teardown avoids races with host-window destruction.
+        private void TeardownHandle()
         {
             IntPtr handle;
             CancellationTokenSource cts;
+            Task eventLoop;
 
             lock (_sync)
             {
@@ -248,17 +246,16 @@ namespace Kroira.App.Services.Playback
 
                 handle = _handle;
                 cts = _eventLoopCts;
+                eventLoop = _eventLoopTask;
                 _handle = IntPtr.Zero;
                 _eventLoopCts = null;
                 _eventLoopTask = null;
             }
 
-            _ = Task.Run(() =>
-            {
-                try { cts?.Cancel(); } catch { }
-                try { mpv_terminate_destroy(handle); } catch { }
-                try { cts?.Dispose(); } catch { }
-            });
+            try { cts?.Cancel(); } catch { }
+            try { mpv_terminate_destroy(handle); } catch { }
+            try { eventLoop?.Wait(1000); } catch { }
+            try { cts?.Dispose(); } catch { }
         }
 
         private void EnsureInitialized()

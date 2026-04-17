@@ -29,6 +29,7 @@ namespace Kroira.App.Views
         private IntPtr _videoHostHwnd;
         private IntPtr _videoHostOriginalWndProc;
         private readonly WndProcDelegate _videoHostWndProc;
+        private bool _isHostHandleAssigned;
         private bool _isDisposed;
         private bool _isViewLoaded;
         private bool _isUserSeeking;
@@ -119,11 +120,6 @@ namespace Kroira.App.Views
             StartPlaybackWhenReady();
         }
 
-        private void VideoHost_Unloaded(object sender, RoutedEventArgs e)
-        {
-            DestroyVideoHostWindow();
-        }
-
         private void VideoHost_SizeChanged(object sender, SizeChangedEventArgs e)
         {
             UpdateVideoHostBounds();
@@ -131,7 +127,7 @@ namespace Kroira.App.Views
 
         private void StartPlaybackWhenReady()
         {
-            if (!_isViewLoaded || string.IsNullOrWhiteSpace(_pendingUrl)) return;
+            if (_isDisposed || !_isViewLoaded || string.IsNullOrWhiteSpace(_pendingUrl)) return;
 
             _tracksLoaded = false;
             _trackRefreshAttempts = 0;
@@ -147,7 +143,13 @@ namespace Kroira.App.Views
                     return;
                 }
 
-                _engine.SetVideoHostHandle(_videoHostHwnd);
+                EnsureEngineHostBinding();
+                if (!_isHostHandleAssigned)
+                {
+                    ShowStatus("Embedded video host is not bound.", false);
+                    return;
+                }
+
                 ShowVideoHostWindow(true);
                 UpdateVideoHostBounds();
                 StartLayoutStabilization();
@@ -173,6 +175,7 @@ namespace Kroira.App.Views
             _layoutStabilizationTimer.Stop();
             _chromeAutoHideTimer.Stop();
 
+            this.Unloaded -= OnPageUnloaded;
             _engine.StateChanged -= Engine_StateChanged;
             _engine.ErrorOccurred -= Engine_ErrorOccurred;
             _windowManager.FullscreenStateChanged -= OnFullscreenStateChanged;
@@ -186,25 +189,18 @@ namespace Kroira.App.Views
             }
             catch { }
 
+            try { _engine.Stop(); } catch { }
+
             ShowVideoHostWindow(false);
 
-            // Capture and zero _videoHostHwnd before DetachAndDispose so that any concurrent
-            // VideoHost_Unloaded / DestroyVideoHostWindow calls see IntPtr.Zero and no-op.
-            var videoHost = _videoHostHwnd;
-            _videoHostHwnd = IntPtr.Zero;
-
-            // Restore WndProc immediately: mpv_terminate_destroy may post WM_* messages during
-            // VO cleanup and we must not dispatch them through our subclass after teardown.
-            RestoreWindowProc(videoHost, ref _videoHostOriginalWndProc);
-
-            // DetachAndDispose runs mpv_terminate_destroy on a background thread; onTerminated
-            // is invoked on the UI thread only after mpv has fully released its DirectX swap
-            // chain, making it safe to call DestroyWindow without an access violation.
-            _engine.DetachAndDispose(() =>
+            if (_isHostHandleAssigned)
             {
-                if (videoHost != IntPtr.Zero)
-                    try { DestroyWindow(videoHost); } catch { }
-            });
+                try { _engine.SetVideoHostHandle(IntPtr.Zero); } catch { }
+                _isHostHandleAssigned = false;
+            }
+
+            try { _engine.DetachAndDispose(() => { }); } catch { }
+            DestroyVideoHostWindow();
         }
 
         private void OnPageUnloaded(object sender, RoutedEventArgs e)
@@ -385,8 +381,12 @@ namespace Kroira.App.Views
 
         private void EnsureVideoHostWindow()
         {
+            if (_isDisposed)
+                return;
+
             if (_videoHostHwnd != IntPtr.Zero)
             {
+                EnsureEngineHostBinding();
                 UpdateVideoHostBounds();
                 return;
             }
@@ -407,13 +407,22 @@ namespace Kroira.App.Views
                 return;
             }
 
-            _engine.SetVideoHostHandle(_videoHostHwnd);
             _videoHostOriginalWndProc = SetWindowLongPtr(
                 _videoHostHwnd,
                 WindowLongIndex.GWLP_WNDPROC,
                 Marshal.GetFunctionPointerForDelegate(_videoHostWndProc));
+            EnsureEngineHostBinding();
             UpdateVideoHostBounds();
             ShowVideoHostWindow(true);
+        }
+
+        private void EnsureEngineHostBinding()
+        {
+            if (_isDisposed || _isHostHandleAssigned || _videoHostHwnd == IntPtr.Zero)
+                return;
+
+            _engine.SetVideoHostHandle(_videoHostHwnd);
+            _isHostHandleAssigned = true;
         }
 
         private void UpdateVideoHostBounds()
@@ -447,7 +456,6 @@ namespace Kroira.App.Views
 
             try
             {
-                _engine.SetVideoHostHandle(IntPtr.Zero);
                 RestoreWindowProc(_videoHostHwnd, ref _videoHostOriginalWndProc);
                 DestroyWindow(_videoHostHwnd);
             }
@@ -656,9 +664,6 @@ namespace Kroira.App.Views
         private void Back_Click(object sender, RoutedEventArgs e)
         {
             FullTeardown();
-
-            if (_windowManager.IsFullscreen)
-                _windowManager.ExitFullscreen();
 
             if (Frame.CanGoBack)
                 Frame.GoBack();
