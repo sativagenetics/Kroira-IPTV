@@ -62,8 +62,8 @@ namespace Kroira.App.Views
 
         protected override void OnNavigatedFrom(NavigationEventArgs e)
         {
-            base.OnNavigatedFrom(e);
             TeardownPlayback();
+            base.OnNavigatedFrom(e);
 
             // Leave the window in whatever fullscreen state the user had before entering.
             if (_windowManager != null && _windowManager.IsFullscreen && !_wasFullscreenOnEnter)
@@ -106,7 +106,7 @@ namespace Kroira.App.Views
                     onMouseMoved: OnVideoMouseMoved);
 
                 // Ensure the HWND is sized to the host rectangle before handing it to mpv.
-                _surface.UpdatePlacement();
+                _surface.UpdatePlacement(force: true);
 
                 _player = new MpvPlayer(DispatcherQueue.GetForCurrentThread(), _surface.Handle);
                 _player.PositionChanged += OnPositionChanged;
@@ -224,13 +224,13 @@ namespace Kroira.App.Views
             if (_teardownStarted) return;
             // Once the first frame is on-screen, repositioning the HWND resolves the
             // rare case where mpv's output size lags layout.
-            _surface?.UpdatePlacement();
+            _surface?.UpdatePlacement(force: true);
         }
 
         private void OnOutputReady()
         {
             if (_teardownStarted) return;
-            _surface?.UpdatePlacement();
+            _surface?.UpdatePlacement(force: true);
         }
 
         private void OnPlaybackEnded()
@@ -271,6 +271,7 @@ namespace Kroira.App.Views
 
         private void Stop_Click(object sender, RoutedEventArgs e)
         {
+            if (_teardownStarted) return;
             _player?.Stop();
             NavigateBack();
         }

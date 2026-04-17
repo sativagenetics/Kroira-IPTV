@@ -108,6 +108,10 @@ namespace Kroira.App.Services.Playback
         private IntPtr _hwnd;
         private DateTime _lastClickUtc = DateTime.MinValue;
         private bool _disposed;
+        private int _lastX = int.MinValue;
+        private int _lastY = int.MinValue;
+        private int _lastWidth = int.MinValue;
+        private int _lastHeight = int.MinValue;
 
         public IntPtr Handle => _hwnd;
 
@@ -186,11 +190,11 @@ namespace Kroira.App.Services.Playback
 
         private static readonly System.Collections.Concurrent.ConcurrentDictionary<IntPtr, VideoSurface> _instances = new();
 
-        private void Host_Loaded(object sender, RoutedEventArgs e) => UpdatePlacement();
-        private void Host_SizeChanged(object sender, SizeChangedEventArgs e) => UpdatePlacement();
+        private void Host_Loaded(object sender, RoutedEventArgs e) => UpdatePlacement(force: true);
+        private void Host_SizeChanged(object sender, SizeChangedEventArgs e) => UpdatePlacement(force: true);
         private void Host_LayoutUpdated(object sender, object e) => UpdatePlacement();
 
-        public void UpdatePlacement()
+        public void UpdatePlacement(bool force = false)
         {
             if (_disposed) return;
             if (_hwnd == IntPtr.Zero) return;
@@ -215,6 +219,16 @@ namespace Kroira.App.Services.Playback
                 if (w < 1) w = 1;
                 if (h < 1) h = 1;
 
+                if (!force && x == _lastX && y == _lastY && w == _lastWidth && h == _lastHeight)
+                {
+                    return;
+                }
+
+                _lastX = x;
+                _lastY = y;
+                _lastWidth = w;
+                _lastHeight = h;
+
                 BringWindowToTop(_hwnd);
                 SetWindowPos(_hwnd, HWND_TOP, x, y, w, h,
                     SWP_NOACTIVATE | SWP_SHOWWINDOW);
@@ -231,6 +245,8 @@ namespace Kroira.App.Services.Playback
         {
             if (_instances.TryGetValue(hWnd, out var self))
             {
+                if (self._disposed) return DefWindowProc(hWnd, msg, wParam, lParam);
+
                 switch (msg)
                 {
                     case WM_LBUTTONDBLCLK:
@@ -268,9 +284,11 @@ namespace Kroira.App.Services.Playback
 
             if (_hwnd != IntPtr.Zero)
             {
-                _instances.TryRemove(_hwnd, out _);
-                DestroyWindow(_hwnd);
+                var hwnd = _hwnd;
                 _hwnd = IntPtr.Zero;
+                _instances.TryRemove(hwnd, out _);
+                SetWindowPos(hwnd, HWND_TOP, 0, 0, 1, 1, SWP_NOZORDER | SWP_NOACTIVATE | SWP_HIDEWINDOW);
+                DestroyWindow(hwnd);
             }
         }
     }

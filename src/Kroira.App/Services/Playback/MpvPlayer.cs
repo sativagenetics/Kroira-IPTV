@@ -20,6 +20,7 @@ namespace Kroira.App.Services.Playback
 
         private readonly DispatcherQueue _dispatcher;
         private readonly object _lifecycleLock = new();
+        private readonly object _apiLock = new();
         private IntPtr _ctx;
         private Thread _eventThread;
         private bool _disposed;
@@ -56,9 +57,9 @@ namespace Kroira.App.Services.Playback
             SetOption("input-vo-keyboard", "no");
             SetOption("osc", "no");
             SetOption("audio-display", "no");
-            SetOption("ao", "wasapi");
             SetOption("aid", "auto");
             SetOption("mute", "no");
+            SetOption("volume", "100");
             SetOption("keep-open", "no");
             SetOption("idle", "yes");
             SetOption("force-window", "no");
@@ -96,54 +97,82 @@ namespace Kroira.App.Services.Playback
             if (string.IsNullOrWhiteSpace(url)) return;
             if (TryGetCtx(out var ctx))
             {
-                if (startPositionMs > 0)
+                lock (_apiLock)
                 {
-                    var start = (startPositionMs / 1000.0).ToString(CultureInfo.InvariantCulture);
-                    NativeMpv.Command(ctx, "loadfile", url, "replace", $"start={start}");
+                    if (IsDisposed) return;
+
+                    if (startPositionMs > 0)
+                    {
+                        var start = (startPositionMs / 1000.0).ToString(CultureInfo.InvariantCulture);
+                        NativeMpv.Command(ctx, "loadfile", url, "replace", $"start={start}");
+                    }
+                    else
+                    {
+                        NativeMpv.Command(ctx, "loadfile", url, "replace");
+                    }
+                    EnsurePlaybackActiveLocked(ctx, selectAudio: true);
                 }
-                else
-                {
-                    NativeMpv.Command(ctx, "loadfile", url, "replace");
-                }
-                NativeMpv.mpv_set_property_string(ctx, "pause", "no");
-                NativeMpv.mpv_set_property_string(ctx, "mute", "no");
-                NativeMpv.mpv_set_property_string(ctx, "aid", "auto");
             }
         }
 
         public void TogglePause()
         {
-            if (TryGetCtx(out var ctx)) NativeMpv.Command(ctx, "cycle", "pause");
+            UseCtx(ctx => NativeMpv.Command(ctx, "cycle", "pause"));
         }
 
         public void Pause()
         {
-            if (TryGetCtx(out var ctx)) NativeMpv.mpv_set_property_string(ctx, "pause", "yes");
+            UseCtx(ctx => NativeMpv.mpv_set_property_string(ctx, "pause", "yes"));
         }
 
         public void Resume()
         {
-            if (TryGetCtx(out var ctx)) NativeMpv.mpv_set_property_string(ctx, "pause", "no");
+            UseCtx(ctx => NativeMpv.mpv_set_property_string(ctx, "pause", "no"));
         }
 
         public void Stop()
         {
-            if (TryGetCtx(out var ctx)) NativeMpv.Command(ctx, "stop");
+            UseCtx(ctx => NativeMpv.Command(ctx, "stop"));
         }
 
         public void SeekAbsoluteSeconds(double seconds)
         {
             if (!IsSeekable) return;
-            if (TryGetCtx(out var ctx))
-            {
-                NativeMpv.Command(ctx, "seek",
-                    seconds.ToString(CultureInfo.InvariantCulture), "absolute");
-            }
+            UseCtx(ctx => NativeMpv.Command(ctx, "seek",
+                seconds.ToString(CultureInfo.InvariantCulture), "absolute"));
         }
 
         private void SetOption(string name, string value)
         {
             NativeMpv.mpv_set_option_string(_ctx, name, value);
+        }
+
+        private void UseCtx(Action<IntPtr> action)
+        {
+            if (action == null || !TryGetCtx(out var ctx)) return;
+
+            lock (_apiLock)
+            {
+                if (IsDisposed) return;
+                action(ctx);
+            }
+        }
+
+        private void EnsurePlaybackActive(IntPtr ctx, bool selectAudio)
+        {
+            lock (_apiLock)
+            {
+                if (IsDisposed) return;
+                EnsurePlaybackActiveLocked(ctx, selectAudio);
+            }
+        }
+
+        private static void EnsurePlaybackActiveLocked(IntPtr ctx, bool selectAudio)
+        {
+            NativeMpv.mpv_set_property_string(ctx, "mute", "no");
+            NativeMpv.mpv_set_property_string(ctx, "volume", "100");
+            if (selectAudio) NativeMpv.mpv_set_property_string(ctx, "aid", "auto");
+            NativeMpv.mpv_set_property_string(ctx, "pause", "no");
         }
 
         private bool TryGetCtx(out IntPtr ctx)
@@ -178,11 +207,14 @@ namespace Kroira.App.Services.Playback
                     case NativeMpv.MpvEventId.FileLoaded:
                         EnqueueCallback(() =>
                         {
+                            EnsurePlaybackActive(ctx, selectAudio: true);
                             FileLoaded?.Invoke();
                             OutputReady?.Invoke();
                         });
                         break;
                     case NativeMpv.MpvEventId.PlaybackRestart:
+                        EnqueueCallback(() => OutputReady?.Invoke());
+                        break;
                     case NativeMpv.MpvEventId.VideoReconfig:
                         EnqueueCallback(() => OutputReady?.Invoke());
                         break;
@@ -297,7 +329,11 @@ namespace Kroira.App.Services.Playback
             // so the handle is safe to destroy afterwards.
             if (ctx != IntPtr.Zero)
             {
-                NativeMpv.mpv_terminate_destroy(ctx);
+                lock (_apiLock)
+                {
+                    try { NativeMpv.Command(ctx, "stop"); } catch { }
+                    NativeMpv.mpv_terminate_destroy(ctx);
+                }
             }
 
             // Join the event thread so no managed callback fires after Dispose returns.
