@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(del \"C:\\\\Users\\\\SATIVA\\\\Desktop\\\\stream\\\\src\\\\Kroira.App\\\\Services\\\\Playback\\\\LibVlcPlaybackEngine.cs\")",
+      "Bash(dotnet build *)"
+    ]
+  }
+}

@@ -150,13 +150,15 @@
                                 Background="#2D6B63FF"
                                 Foreground="White"
                                 Padding="16,8" />
-                        <Button Grid.Column="1"
+                        <Button x:Name="SkipBackButton"
+                                Grid.Column="1"
                                 Content="-10s"
                                 Click="SkipBack_Click"
                                 Background="#22FFFFFF"
                                 Foreground="White"
                                 Padding="12,8" />
-                        <Button Grid.Column="2"
+                        <Button x:Name="SkipForwardButton"
+                                Grid.Column="2"
                                 Content="+30s"
                                 Click="SkipForward_Click"
                                 Background="#22FFFFFF"

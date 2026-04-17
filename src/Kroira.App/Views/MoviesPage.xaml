@@ -67,7 +67,7 @@
                                     <Border Width="106" Height="4" Background="#40FFFFFF" CornerRadius="2" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="14,0,0,16" Opacity="0.22" />
                                 </Grid>
                             </Border>
-                            <Image Source="{Binding PosterUrl}" Stretch="UniformToFill" />
+                            <Image Source="{Binding PosterUrl, Converter={StaticResource UrlToImageSourceConverter}}" Stretch="UniformToFill" />
                         </Grid>
 
                         <StackPanel Grid.Row="1" Padding="10,9,10,10" Background="#E00F141D" Spacing="5">

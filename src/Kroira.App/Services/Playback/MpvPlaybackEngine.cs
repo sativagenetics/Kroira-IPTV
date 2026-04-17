@@ -53,9 +53,15 @@ namespace Kroira.App.Services.Playback
             {
                 _videoHostHwnd = hwnd;
 
+                // Belt-and-suspenders: if handle is alive attempt a runtime property update.
+                // mpv_set_property_string is the correct post-init API; mpv_set_option_string
+                // is silently ignored after mpv_initialize, which is why we always recreate
+                // the handle in Play() to guarantee a fresh wid.
                 if (_handle != IntPtr.Zero)
                 {
-                    SetOptionString("wid", hwnd == IntPtr.Zero ? "0" : hwnd.ToInt64().ToString(CultureInfo.InvariantCulture));
+                    SetPropertyString("wid", hwnd == IntPtr.Zero
+                        ? "0"
+                        : hwnd.ToInt64().ToString(CultureInfo.InvariantCulture));
                 }
             }
         }
@@ -78,6 +84,10 @@ namespace Kroira.App.Services.Playback
 
             try
             {
+                // Always tear down any existing handle so the new one gets the correct wid.
+                // mpv_set_option_string has no effect after mpv_initialize; recreating is the
+                // only reliable way to redirect the video output to a new HWND.
+                TeardownHandleAsync();
                 EnsureInitialized();
                 UpdateState(PlaybackState.Loading);
                 CommandAsync("loadfile", sourceUrl, "replace");
@@ -111,21 +121,14 @@ namespace Kroira.App.Services.Playback
 
         public void Stop()
         {
-            if (_disposed)
-            {
-                return;
-            }
-
+            if (_disposed) return;
             CommandAsync("stop");
             UpdateState(PlaybackState.Stopped);
         }
 
         public void SeekTo(long positionMs)
         {
-            if (!IsSeekable)
-            {
-                return;
-            }
+            if (!IsSeekable) return;
 
             var seconds = Math.Max(0, positionMs) / 1000d;
             SetPropertyString("time-pos", seconds.ToString("0.###", CultureInfo.InvariantCulture));
@@ -133,10 +136,7 @@ namespace Kroira.App.Services.Playback
 
         public void SeekBy(long deltaMs)
         {
-            if (!IsSeekable)
-            {
-                return;
-            }
+            if (!IsSeekable) return;
 
             var seconds = deltaMs / 1000d;
             CommandAsync("seek", seconds.ToString("0.###", CultureInfo.InvariantCulture), "relative", "exact");
@@ -148,10 +148,7 @@ namespace Kroira.App.Services.Playback
             return SetPropertyString("speed", normalizedRate.ToString("0.###", CultureInfo.InvariantCulture));
         }
 
-        public IReadOnlyList<PlaybackTrack> GetAudioTracks()
-        {
-            return GetTracks("audio");
-        }
+        public IReadOnlyList<PlaybackTrack> GetAudioTracks() => GetTracks("audio");
 
         public IReadOnlyList<PlaybackTrack> GetSubtitleTracks()
         {
@@ -161,68 +158,118 @@ namespace Kroira.App.Services.Playback
         }
 
         public bool SetAudioTrack(int trackId)
-        {
-            return SetPropertyString("aid", trackId <= 0 ? "auto" : trackId.ToString(CultureInfo.InvariantCulture));
-        }
+            => SetPropertyString("aid", trackId <= 0 ? "auto" : trackId.ToString(CultureInfo.InvariantCulture));
 
         public bool SetSubtitleTrack(int trackId)
-        {
-            return SetPropertyString("sid", trackId <= 0 ? "no" : trackId.ToString(CultureInfo.InvariantCulture));
-        }
+            => SetPropertyString("sid", trackId <= 0 ? "no" : trackId.ToString(CultureInfo.InvariantCulture));
 
         public bool AddSubtitleFile(string filePath)
         {
-            if (string.IsNullOrWhiteSpace(filePath))
+            if (string.IsNullOrWhiteSpace(filePath)) return false;
+            return CommandAsync("sub-add", filePath, "select");
+        }
+
+        public void DetachAndDispose(Action onTerminated)
+        {
+            IntPtr handle;
+            CancellationTokenSource cts;
+
+            lock (_sync)
             {
-                return false;
+                if (_handle == IntPtr.Zero)
+                {
+                    _dispatcherQueue?.TryEnqueue(() => onTerminated?.Invoke());
+                    return;
+                }
+
+                handle = _handle;
+                cts = _eventLoopCts;
+                _handle = IntPtr.Zero;
+                _videoHostHwnd = IntPtr.Zero;
+                _eventLoopCts = null;
+                _eventLoopTask = null;
             }
 
-            return CommandAsync("sub-add", filePath, "select");
+            UpdateState(PlaybackState.Stopped);
+
+            _ = Task.Run(() =>
+            {
+                try { cts?.Cancel(); } catch { }
+                // mpv_terminate_destroy blocks until mpv has fully released its VO resources,
+                // including the DirectX swap chain that references the host HWND. Only after
+                // this returns is it safe to destroy the HWND on the UI thread.
+                try { mpv_terminate_destroy(handle); } catch { }
+                try { cts?.Dispose(); } catch { }
+                _dispatcherQueue?.TryEnqueue(() => onTerminated?.Invoke());
+            });
         }
 
         public void Dispose()
         {
-            if (_disposed)
-            {
-                return;
-            }
-
+            if (_disposed) return;
             _disposed = true;
 
             IntPtr handle;
+            CancellationTokenSource cts;
+            Task eventLoop;
+
             lock (_sync)
             {
                 handle = _handle;
+                cts = _eventLoopCts;
+                eventLoop = _eventLoopTask;
                 _handle = IntPtr.Zero;
+                _eventLoopCts = null;
+                _eventLoopTask = null;
             }
 
-            try { _eventLoopCts?.Cancel(); } catch { }
+            try { cts?.Cancel(); } catch { }
 
             if (handle != IntPtr.Zero)
             {
-                try { mpv_command_string(handle, "quit"); } catch { }
-                try { _eventLoopTask?.Wait(250); } catch { }
                 try { mpv_terminate_destroy(handle); } catch { }
+                try { eventLoop?.Wait(1000); } catch { }
             }
 
-            _eventLoopCts?.Dispose();
+            try { cts?.Dispose(); } catch { }
+        }
+
+        // Tears down the existing handle on a background thread so the UI is not blocked.
+        // mpv_terminate_destroy causes any blocked mpv_wait_event to return with
+        // MpvEventShutdown, allowing the event loop to exit cleanly.
+        private void TeardownHandleAsync()
+        {
+            IntPtr handle;
+            CancellationTokenSource cts;
+
+            lock (_sync)
+            {
+                if (_handle == IntPtr.Zero) return;
+
+                handle = _handle;
+                cts = _eventLoopCts;
+                _handle = IntPtr.Zero;
+                _eventLoopCts = null;
+                _eventLoopTask = null;
+            }
+
+            _ = Task.Run(() =>
+            {
+                try { cts?.Cancel(); } catch { }
+                try { mpv_terminate_destroy(handle); } catch { }
+                try { cts?.Dispose(); } catch { }
+            });
         }
 
         private void EnsureInitialized()
         {
             lock (_sync)
             {
-                if (_handle != IntPtr.Zero)
-                {
-                    SetOptionString("wid", _videoHostHwnd.ToInt64().ToString(CultureInfo.InvariantCulture));
-                    return;
-                }
+                if (_handle != IntPtr.Zero) return;
 
                 _handle = mpv_create();
                 if (_handle == IntPtr.Zero)
-                {
                     throw new InvalidOperationException("mpv_create returned null.");
-                }
 
                 SetOptionString("terminal", "no");
                 SetOptionString("msg-level", "all=warn");
@@ -230,35 +277,32 @@ namespace Kroira.App.Services.Playback
                 SetOptionString("input-vo-keyboard", "no");
                 SetOptionString("osc", "no");
                 SetOptionString("idle", "yes");
-                SetOptionString("keep-open", "no");
-                SetOptionString("force-window", "immediate");
+                // force-window=no prevents mpv from creating an orphaned window if wid is
+                // temporarily invalid; the VO is created when the first frame is decoded.
+                SetOptionString("force-window", "no");
                 SetOptionString("hwdec", "auto-safe");
                 SetOptionString("cache", "yes");
                 SetOptionString("demuxer-readahead-secs", "20");
+                // wid must be set as an option before mpv_initialize; after init only
+                // mpv_set_property_string works, which is why we always recreate here.
                 SetOptionString("wid", _videoHostHwnd.ToInt64().ToString(CultureInfo.InvariantCulture));
 
                 CheckError(mpv_initialize(_handle), "mpv_initialize");
 
+                // Capture handle by value so the event loop never reads the instance field,
+                // preventing old loops from accidentally processing new-session events.
+                var capturedHandle = _handle;
                 _eventLoopCts = new CancellationTokenSource();
-                _eventLoopTask = Task.Run(() => RunEventLoop(_eventLoopCts.Token));
+                _eventLoopTask = Task.Run(() => RunEventLoop(capturedHandle, _eventLoopCts.Token));
             }
         }
 
-        private void RunEventLoop(CancellationToken token)
+        private void RunEventLoop(IntPtr handle, CancellationToken token)
         {
             while (!token.IsCancellationRequested)
             {
-                var handle = _handle;
-                if (handle == IntPtr.Zero)
-                {
-                    return;
-                }
-
-                var eventPtr = mpv_wait_event(handle, 0.1);
-                if (eventPtr == IntPtr.Zero)
-                {
-                    continue;
-                }
+                var eventPtr = mpv_wait_event(handle, 0.5);
+                if (eventPtr == IntPtr.Zero) continue;
 
                 var mpvEvent = Marshal.PtrToStructure<MpvEvent>(eventPtr);
                 switch (mpvEvent.EventId)
@@ -272,9 +316,7 @@ namespace Kroira.App.Services.Playback
                         break;
                     case MpvEventIdle:
                         if (State != PlaybackState.Loading && State != PlaybackState.Error)
-                        {
                             UpdateState(PlaybackState.Stopped);
-                        }
                         break;
                     case MpvEventShutdown:
                         return;
@@ -303,33 +345,22 @@ namespace Kroira.App.Services.Playback
         private IReadOnlyList<PlaybackTrack> GetTracks(string type)
         {
             var count = GetIntProperty("track-list/count", 0);
-            if (count <= 0)
-            {
-                return Array.Empty<PlaybackTrack>();
-            }
+            if (count <= 0) return Array.Empty<PlaybackTrack>();
 
             var tracks = new List<PlaybackTrack>();
             for (var i = 0; i < count; i++)
             {
                 if (!string.Equals(GetStringProperty($"track-list/{i}/type"), type, StringComparison.OrdinalIgnoreCase))
-                {
                     continue;
-                }
 
                 var id = GetIntProperty($"track-list/{i}/id", -1);
-                if (id < 0)
-                {
-                    continue;
-                }
+                if (id < 0) continue;
 
                 var title = GetStringProperty($"track-list/{i}/title");
                 var lang = GetStringProperty($"track-list/{i}/lang");
                 var fallback = type == "audio" ? $"Audio {id}" : $"Subtitle {id}";
                 var name = string.IsNullOrWhiteSpace(title) ? fallback : title;
-                if (!string.IsNullOrWhiteSpace(lang))
-                {
-                    name = $"{name} ({lang})";
-                }
+                if (!string.IsNullOrWhiteSpace(lang)) name = $"{name} ({lang})";
 
                 tracks.Add(new PlaybackTrack(id, name));
             }
@@ -340,10 +371,7 @@ namespace Kroira.App.Services.Playback
         private bool CommandAsync(params string[] args)
         {
             var handle = _handle;
-            if (_disposed || handle == IntPtr.Zero)
-            {
-                return false;
-            }
+            if (_disposed || handle == IntPtr.Zero) return false;
 
             IntPtr argv = IntPtr.Zero;
             var allocated = new IntPtr[args.Length];
@@ -370,15 +398,11 @@ namespace Kroira.App.Services.Playback
                 for (var i = 0; i < allocated.Length; i++)
                 {
                     if (allocated[i] != IntPtr.Zero)
-                    {
                         Marshal.FreeCoTaskMem(allocated[i]);
-                    }
                 }
 
                 if (argv != IntPtr.Zero)
-                {
                     Marshal.FreeHGlobal(argv);
-                }
             }
         }
 
@@ -397,16 +421,10 @@ namespace Kroira.App.Services.Playback
         private string GetStringProperty(string name)
         {
             var handle = _handle;
-            if (handle == IntPtr.Zero)
-            {
-                return string.Empty;
-            }
+            if (handle == IntPtr.Zero) return string.Empty;
 
             var valuePtr = mpv_get_property_string(handle, name);
-            if (valuePtr == IntPtr.Zero)
-            {
-                return string.Empty;
-            }
+            if (valuePtr == IntPtr.Zero) return string.Empty;
 
             try
             {
@@ -419,26 +437,22 @@ namespace Kroira.App.Services.Playback
         }
 
         private double GetDoubleProperty(string name, double fallback = 0)
-        {
-            return double.TryParse(GetStringProperty(name), NumberStyles.Float, CultureInfo.InvariantCulture, out var value)
-                ? value
-                : fallback;
-        }
+            => double.TryParse(GetStringProperty(name), NumberStyles.Float, CultureInfo.InvariantCulture, out var value)
+                ? value : fallback;
 
         private int GetIntProperty(string name, int fallback)
         {
             var raw = GetStringProperty(name);
             return int.TryParse(raw, NumberStyles.Integer, CultureInfo.InvariantCulture, out var value)
-                ? value
-                : fallback;
+                ? value : fallback;
         }
 
         private bool GetBooleanProperty(string name)
         {
             var raw = GetStringProperty(name);
-            return raw.Equals("yes", StringComparison.OrdinalIgnoreCase) ||
-                   raw.Equals("true", StringComparison.OrdinalIgnoreCase) ||
-                   raw.Equals("1", StringComparison.OrdinalIgnoreCase);
+            return raw.Equals("yes", StringComparison.OrdinalIgnoreCase)
+                || raw.Equals("true", StringComparison.OrdinalIgnoreCase)
+                || raw.Equals("1", StringComparison.OrdinalIgnoreCase);
         }
 
         private void UpdateState(PlaybackState newState)
@@ -463,21 +477,15 @@ namespace Kroira.App.Services.Playback
         private void EnsureUiThread(Action action)
         {
             if (_dispatcherQueue == null || _dispatcherQueue.HasThreadAccess)
-            {
                 action();
-            }
             else
-            {
                 _dispatcherQueue.TryEnqueue(() => action());
-            }
         }
 
         private static void CheckError(int result, string operation)
         {
             if (result < 0)
-            {
                 throw new InvalidOperationException($"{operation} failed: {GetErrorString(result)}");
-            }
         }
 
         private static string GetErrorString(int error)

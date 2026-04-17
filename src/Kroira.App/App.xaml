@@ -2,12 +2,15 @@
     x:Class="Kroira.App.App"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:local="using:Kroira.App">
+    xmlns:local="using:Kroira.App"
+    xmlns:converters="using:Kroira.App.Converters">
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <XamlControlsResources xmlns="using:Microsoft.UI.Xaml.Controls" />
             </ResourceDictionary.MergedDictionaries>
+
+            <converters:UrlToImageSourceConverter x:Key="UrlToImageSourceConverter" />
 
             <SolidColorBrush x:Key="KroiraPageBackgroundBrush" Color="#090B13" />
             <SolidColorBrush x:Key="KroiraSurfaceBrush" Color="#111722" />

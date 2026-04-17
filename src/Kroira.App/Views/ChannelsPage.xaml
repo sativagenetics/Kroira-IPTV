@@ -64,7 +64,7 @@
                         <Border Grid.Column="0" Width="48" Height="48" CornerRadius="14" Background="{StaticResource KroiraMediaGradientBrush}" BorderBrush="#32B7B2FF" BorderThickness="1" VerticalAlignment="Top">
                             <Grid>
                                 <FontIcon Glyph="&#xE714;" Foreground="{StaticResource KroiraAccentBrush}" FontSize="20" Opacity="0.54" />
-                                <Image Source="{Binding LogoUrl}" Stretch="Uniform" Margin="6" />
+                                <Image Source="{Binding LogoUrl, Converter={StaticResource UrlToImageSourceConverter}}" Stretch="Uniform" Margin="6" />
                             </Grid>
                         </Border>
                         <StackPanel Grid.Column="1" VerticalAlignment="Top" Spacing="5">
