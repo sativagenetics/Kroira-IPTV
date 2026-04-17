@@ -23,6 +23,9 @@ namespace Kroira.App.ViewModels
 
         public double ProgressPercent { get; set; }
         public string ProgressText { get; set; } = string.Empty;
+        public string TypeLabel { get; set; } = string.Empty;
+        public string ResumeContextText { get; set; } = string.Empty;
+        public string LastWatchedText { get; set; } = string.Empty;
         public long SavedPositionMs { get; set; }
     }
 
@@ -116,6 +119,21 @@ namespace Kroira.App.ViewModels
                 string text = r.PositionMs > 0
                     ? TimeSpan.FromMilliseconds(r.PositionMs).ToString(@"hh\:mm\:ss")
                     : (r.ContentType == PlaybackContentType.Channel ? "Live Channel" : "Not started");
+                string typeLabel = r.ContentType switch
+                {
+                    PlaybackContentType.Channel => "Live channel",
+                    PlaybackContentType.Movie => "Movie",
+                    PlaybackContentType.Episode => "Episode",
+                    _ => "Playback"
+                };
+                string contextText = r.ContentType == PlaybackContentType.Channel
+                    ? "Return to this live source"
+                    : r.PositionMs > 0
+                        ? $"Resume from {text}"
+                        : "Ready to start";
+                string lastWatched = r.LastWatched == default
+                    ? string.Empty
+                    : $"Saved {r.LastWatched.ToLocalTime():MMM d, HH:mm}";
 
                 ProgressItems.Add(new ProgressItemViewModel
                 {
@@ -127,6 +145,9 @@ namespace Kroira.App.ViewModels
                     StreamUrl = streamUrl,
                     ProgressPercent = r.PositionMs > 0 ? -1 : 0,
                     ProgressText = text,
+                    TypeLabel = typeLabel,
+                    ResumeContextText = contextText,
+                    LastWatchedText = lastWatched,
                     SavedPositionMs = r.PositionMs
                 });
             }

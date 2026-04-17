@@ -28,7 +28,9 @@ namespace Kroira.App.Services.Playback
         private const uint SWP_HIDEWINDOW = 0x0080;
 
         private const int GWLP_WNDPROC = -4;
+        private const int IDC_ARROW = 32512;
 
+        private const uint WM_SETCURSOR = 0x0020;
         private const uint WM_LBUTTONDOWN = 0x0201;
         private const uint WM_LBUTTONUP = 0x0202;
         private const uint WM_LBUTTONDBLCLK = 0x0203;
@@ -73,6 +75,12 @@ namespace Kroira.App.Services.Playback
         [DllImport("user32.dll")]
         private static extern IntPtr DefWindowProc(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam);
 
+        [DllImport("user32.dll", SetLastError = true)]
+        private static extern IntPtr LoadCursor(IntPtr hInstance, IntPtr lpCursorName);
+
+        [DllImport("user32.dll")]
+        private static extern IntPtr SetCursor(IntPtr hCursor);
+
         [DllImport("user32.dll")]
         [return: MarshalAs(UnmanagedType.Bool)]
         private static extern bool BringWindowToTop(IntPtr hWnd);
@@ -96,6 +104,7 @@ namespace Kroira.App.Services.Playback
         private static extern IntPtr GetModuleHandle(string lpModuleName);
 
         private static readonly string WindowClassName = "KroiraMpvSurface";
+        private static readonly IntPtr ArrowCursor = LoadCursor(IntPtr.Zero, (IntPtr)IDC_ARROW);
         private static readonly object ClassLock = new();
         private static bool _classRegistered;
         private static WndProcDelegate _classWndProc; // keep delegate alive for the lifetime of the class
@@ -147,6 +156,7 @@ namespace Kroira.App.Services.Playback
                     style = 0x0008 /* CS_DBLCLKS */,
                     lpfnWndProc = Marshal.GetFunctionPointerForDelegate(_classWndProc),
                     hInstance = GetModuleHandle(null),
+                    hCursor = ArrowCursor,
                     hbrBackground = (IntPtr)1, // COLOR_BACKGROUND
                     lpszClassName = WindowClassName,
                 };
@@ -252,6 +262,9 @@ namespace Kroira.App.Services.Playback
 
                 switch (msg)
                 {
+                    case WM_SETCURSOR:
+                        SetCursor(ArrowCursor);
+                        return (IntPtr)1;
                     case WM_LBUTTONDBLCLK:
                         self.HandleDoubleClick();
                         return IntPtr.Zero;

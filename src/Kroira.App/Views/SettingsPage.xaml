@@ -6,216 +6,213 @@
 
     <ScrollViewer>
         <Grid
-            Padding="28"
-            RowSpacing="22"
+            Padding="30,28,34,34"
+            RowSpacing="24"
             MaxWidth="1040"
-            HorizontalAlignment="Left"
-            Background="{StaticResource KroiraPageAtmosphereBrush}">
+            HorizontalAlignment="Left">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
-                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
-            <StackPanel Grid.Row="0" Spacing="4">
+            <StackPanel Grid.Row="0" Spacing="6">
                 <TextBlock Text="Settings" Style="{StaticResource KroiraPageTitleStyle}" />
                 <TextBlock
-                    Text="Manage account status, app language, product information, privacy, and support."
+                    Text="Local preferences, account state, and product links."
                     Style="{StaticResource KroiraPageSubtitleStyle}"
-                    MaxWidth="720" />
+                    MaxWidth="680" />
             </StackPanel>
 
-            <Grid Grid.Row="1" ColumnSpacing="18">
+            <Grid Grid.Row="1" ColumnSpacing="22">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="1.45*" />
-                    <ColumnDefinition Width="0.95*" />
+                    <ColumnDefinition Width="1.5*" />
+                    <ColumnDefinition Width="0.9*" />
                 </Grid.ColumnDefinitions>
 
-                <StackPanel Grid.Column="0" Spacing="16">
+                <StackPanel Grid.Column="0" Spacing="18">
                     <Border Style="{StaticResource KroiraSettingsGroupStyle}">
-                        <StackPanel Spacing="14">
-                            <StackPanel Spacing="3">
-                                <TextBlock Text="Account" Style="{StaticResource KroiraSectionTitleStyle}" />
-                                <TextBlock
-                                    Text="License status and available product tier."
-                                    Style="{StaticResource KroiraBodyStyle}" />
-                            </StackPanel>
+                        <StackPanel Spacing="16">
+                            <Grid ColumnSpacing="12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Spacing="3">
+                                    <TextBlock Text="Account" Style="{StaticResource KroiraSectionTitleStyle}" />
+                                    <TextBlock
+                                        Text="License state for this installation."
+                                        Style="{StaticResource KroiraBodyStyle}" />
+                                </StackPanel>
+                                <Border
+                                    Grid.Column="1"
+                                    Visibility="{x:Bind ViewModel.ProTierVisibility, Mode=OneWay}"
+                                    Background="{StaticResource KroiraSurfaceHighBrush}"
+                                    CornerRadius="8"
+                                    Padding="10,6"
+                                    VerticalAlignment="Center">
+                                    <TextBlock Text="PRO" Foreground="{StaticResource KroiraGoldBrush}" FontSize="12" FontWeight="SemiBold" />
+                                </Border>
+                                <Border
+                                    Grid.Column="1"
+                                    Visibility="{x:Bind ViewModel.FreeTierVisibility, Mode=OneWay}"
+                                    Background="{StaticResource KroiraSurfaceHighBrush}"
+                                    CornerRadius="8"
+                                    Padding="10,6"
+                                    VerticalAlignment="Center">
+                                    <TextBlock Text="FREE" Foreground="{StaticResource KroiraAccentBrush}" FontSize="12" FontWeight="SemiBold" />
+                                </Border>
+                            </Grid>
 
-                            <Border Style="{StaticResource KroiraSettingsRowStyle}">
-                                <Grid ColumnSpacing="18">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
+                            <Border Height="1" Background="{StaticResource KroiraBorderBrush}" Opacity="0.45" />
 
-                                    <StackPanel Spacing="6">
-                                        <TextBlock Text="Current tier" Style="{StaticResource KroiraTitleStyle}" />
-                                        <TextBlock
-                                            Text="{x:Bind ViewModel.LicenseStatusDescription, Mode=OneWay}"
-                                            Style="{StaticResource KroiraBodyStyle}"
-                                            MaxWidth="560" />
-                                    </StackPanel>
+                            <Grid ColumnSpacing="18">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="170" />
+                                </Grid.ColumnDefinitions>
 
-                                    <StackPanel Grid.Column="1" Spacing="8" MinWidth="150" HorizontalAlignment="Right">
-                                        <Border
-                                            Visibility="{x:Bind ViewModel.ProTierVisibility, Mode=OneWay}"
-                                            Background="{StaticResource KroiraSurfaceHighBrush}"
-                                            CornerRadius="8"
-                                            Padding="12,8">
-                                            <TextBlock
-                                                Text="KROIRA PRO"
-                                                Foreground="{StaticResource KroiraGoldBrush}"
-                                                FontWeight="SemiBold"
-                                                FontSize="13"
-                                                HorizontalAlignment="Center" />
-                                        </Border>
+                                <StackPanel Spacing="5">
+                                    <TextBlock Text="Current tier" Style="{StaticResource KroiraTitleStyle}" />
+                                    <TextBlock
+                                        Text="{x:Bind ViewModel.LicenseStatusDescription, Mode=OneWay}"
+                                        Style="{StaticResource KroiraBodyStyle}"
+                                        MaxWidth="560" />
+                                </StackPanel>
 
-                                        <Border
-                                            Visibility="{x:Bind ViewModel.FreeTierVisibility, Mode=OneWay}"
-                                            Background="{StaticResource KroiraSurfaceHighBrush}"
-                                            CornerRadius="8"
-                                            Padding="12,8">
-                                            <TextBlock
-                                                Text="KROIRA FREE"
-                                                Foreground="{StaticResource KroiraAccentBrush}"
-                                                FontWeight="SemiBold"
-                                                FontSize="13"
-                                                HorizontalAlignment="Center" />
-                                        </Border>
-
-                                        <Button
-                                            Content="Upgrade to Pro"
-                                            Command="{x:Bind ViewModel.UpgradeCommand}"
-                                            Visibility="{x:Bind ViewModel.FreeTierVisibility, Mode=OneWay}"
-                                            Style="{StaticResource KroiraPrimaryButtonStyle}"
-                                            HorizontalAlignment="Stretch" />
-                                    </StackPanel>
-                                </Grid>
-                            </Border>
+                                <Button
+                                    Grid.Column="1"
+                                    Content="Upgrade to Pro"
+                                    Command="{x:Bind ViewModel.UpgradeCommand}"
+                                    Visibility="{x:Bind ViewModel.FreeTierVisibility, Mode=OneWay}"
+                                    Style="{StaticResource KroiraPrimaryButtonStyle}"
+                                    HorizontalAlignment="Stretch"
+                                    VerticalAlignment="Center" />
+                            </Grid>
                         </StackPanel>
                     </Border>
 
                     <Border Style="{StaticResource KroiraSettingsGroupStyle}">
-                        <StackPanel Spacing="14">
+                        <StackPanel Spacing="16">
                             <StackPanel Spacing="3">
                                 <TextBlock Text="Application" Style="{StaticResource KroiraSectionTitleStyle}" />
                                 <TextBlock
-                                    Text="Local preferences that affect catalog presentation."
+                                    Text="Preferences that affect local catalog presentation."
                                     Style="{StaticResource KroiraBodyStyle}" />
                             </StackPanel>
 
-                            <Border Style="{StaticResource KroiraSettingsRowStyle}">
-                                <Grid ColumnSpacing="18">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="260" />
-                                    </Grid.ColumnDefinitions>
+                            <Border Height="1" Background="{StaticResource KroiraBorderBrush}" Opacity="0.45" />
 
-                                    <StackPanel Spacing="6">
-                                        <TextBlock Text="App language" Style="{StaticResource KroiraTitleStyle}" />
-                                        <TextBlock
-                                            Text="{x:Bind ViewModel.LanguageStatusText, Mode=OneWay}"
-                                            Style="{StaticResource KroiraBodyStyle}"
-                                            MaxWidth="520" />
-                                    </StackPanel>
+                            <Grid ColumnSpacing="18">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="260" />
+                                </Grid.ColumnDefinitions>
 
-                                    <ComboBox
-                                        Grid.Column="1"
-                                        Style="{StaticResource KroiraComboBoxStyle}"
-                                        ItemsSource="{x:Bind ViewModel.Languages, Mode=OneWay}"
-                                        SelectedItem="{x:Bind ViewModel.SelectedLanguage, Mode=TwoWay}"
-                                        DisplayMemberPath="DisplayName"
-                                        HorizontalAlignment="Stretch"
-                                        VerticalAlignment="Center" />
-                                </Grid>
-                            </Border>
+                                <StackPanel Spacing="5">
+                                    <TextBlock Text="App language" Style="{StaticResource KroiraTitleStyle}" />
+                                    <TextBlock
+                                        Text="{x:Bind ViewModel.LanguageStatusText, Mode=OneWay}"
+                                        Style="{StaticResource KroiraBodyStyle}"
+                                        MaxWidth="520" />
+                                </StackPanel>
+
+                                <ComboBox
+                                    Grid.Column="1"
+                                    Style="{StaticResource KroiraComboBoxStyle}"
+                                    ItemsSource="{x:Bind ViewModel.Languages, Mode=OneWay}"
+                                    SelectedItem="{x:Bind ViewModel.SelectedLanguage, Mode=TwoWay}"
+                                    DisplayMemberPath="DisplayName"
+                                    HorizontalAlignment="Stretch"
+                                    VerticalAlignment="Center" />
+                            </Grid>
                         </StackPanel>
                     </Border>
                 </StackPanel>
 
-                <StackPanel Grid.Column="1" Spacing="16">
+                <StackPanel Grid.Column="1" Spacing="18">
                     <Border Style="{StaticResource KroiraSettingsGroupStyle}">
-                        <StackPanel Spacing="14">
+                        <StackPanel Spacing="16">
                             <StackPanel Spacing="3">
                                 <TextBlock Text="Product" Style="{StaticResource KroiraSectionTitleStyle}" />
                                 <TextBlock
-                                    Text="Installed build and official links."
+                                    Text="Installed build and official resources."
                                     Style="{StaticResource KroiraBodyStyle}" />
                             </StackPanel>
 
-                            <Border Style="{StaticResource KroiraSettingsRowStyle}">
-                                <Grid ColumnSpacing="14">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
-                                    <StackPanel Spacing="3">
-                                        <TextBlock Text="Version" Style="{StaticResource KroiraTitleStyle}" />
-                                        <TextBlock
-                                            Text="Current installed application package."
-                                            Style="{StaticResource KroiraBodyStyle}" />
-                                    </StackPanel>
-                                    <TextBlock
-                                        Grid.Column="1"
-                                        Text="{x:Bind ViewModel.AppVersion, Mode=OneTime}"
-                                        Foreground="{StaticResource KroiraTextPrimaryBrush}"
-                                        FontSize="13"
-                                        FontWeight="SemiBold"
-                                        VerticalAlignment="Center" />
-                                </Grid>
-                            </Border>
+                            <Border Height="1" Background="{StaticResource KroiraBorderBrush}" Opacity="0.45" />
 
-                            <Border Style="{StaticResource KroiraSettingsRowStyle}">
-                                <StackPanel Spacing="8">
-                                    <Grid ColumnSpacing="14">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="Auto" />
-                                        </Grid.ColumnDefinitions>
-                                        <StackPanel Spacing="3">
-                                            <TextBlock Text="Privacy" Style="{StaticResource KroiraTitleStyle}" />
-                                            <TextBlock
-                                                Text="Open the privacy policy in your default browser."
-                                                Style="{StaticResource KroiraBodyStyle}" />
-                                        </StackPanel>
-                                        <HyperlinkButton
-                                            Grid.Column="1"
-                                            Content="Open"
-                                            Command="{x:Bind ViewModel.OpenPrivacyPolicyCommand}"
-                                            Foreground="{StaticResource KroiraAccentBrush}"
-                                            Padding="0"
-                                            VerticalAlignment="Center" />
-                                    </Grid>
+                            <Grid ColumnSpacing="14">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="Version" Style="{StaticResource KroiraTitleStyle}" />
+                                    <TextBlock Text="Installed package" Style="{StaticResource KroiraBodyStyle}" />
                                 </StackPanel>
-                            </Border>
-
-                            <Border Style="{StaticResource KroiraSettingsRowStyle}">
-                                <Grid ColumnSpacing="14">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
-                                    <StackPanel Spacing="3">
-                                        <TextBlock Text="Support" Style="{StaticResource KroiraTitleStyle}" />
-                                        <TextBlock
-                                            Text="Open support and feedback resources."
-                                            Style="{StaticResource KroiraBodyStyle}" />
-                                    </StackPanel>
-                                    <HyperlinkButton
-                                        Grid.Column="1"
-                                        Content="Open"
-                                        Command="{x:Bind ViewModel.OpenSupportCommand}"
-                                        Foreground="{StaticResource KroiraAccentBrush}"
-                                        Padding="0"
-                                        VerticalAlignment="Center" />
-                                </Grid>
-                            </Border>
-
-                            <TextBlock
-                                Text="2026 KROIRA. All rights reserved."
-                                Foreground="{StaticResource KroiraTextTertiaryBrush}"
-                                FontSize="12" />
+                                <TextBlock
+                                    Grid.Column="1"
+                                    Text="{x:Bind ViewModel.AppVersion, Mode=OneTime}"
+                                    Foreground="{StaticResource KroiraTextPrimaryBrush}"
+                                    FontSize="13"
+                                    FontWeight="SemiBold"
+                                    VerticalAlignment="Center" />
+                            </Grid>
                         </StackPanel>
                     </Border>
+
+                    <Border Style="{StaticResource KroiraSettingsGroupStyle}">
+                        <StackPanel Spacing="14">
+                            <StackPanel Spacing="3">
+                                <TextBlock Text="Links" Style="{StaticResource KroiraSectionTitleStyle}" />
+                                <TextBlock Text="Open policy and support resources." Style="{StaticResource KroiraBodyStyle}" />
+                            </StackPanel>
+
+                            <Border Height="1" Background="{StaticResource KroiraBorderBrush}" Opacity="0.45" />
+
+                            <Grid ColumnSpacing="14">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="Privacy policy" Style="{StaticResource KroiraTitleStyle}" />
+                                    <TextBlock Text="View data and privacy information." Style="{StaticResource KroiraBodyStyle}" />
+                                </StackPanel>
+                                <HyperlinkButton
+                                    Grid.Column="1"
+                                    Content="Open"
+                                    Command="{x:Bind ViewModel.OpenPrivacyPolicyCommand}"
+                                    Foreground="{StaticResource KroiraAccentBrush}"
+                                    Padding="0"
+                                    VerticalAlignment="Center" />
+                            </Grid>
+
+                            <Grid ColumnSpacing="14">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="Support" Style="{StaticResource KroiraTitleStyle}" />
+                                    <TextBlock Text="Open help and feedback resources." Style="{StaticResource KroiraBodyStyle}" />
+                                </StackPanel>
+                                <HyperlinkButton
+                                    Grid.Column="1"
+                                    Content="Open"
+                                    Command="{x:Bind ViewModel.OpenSupportCommand}"
+                                    Foreground="{StaticResource KroiraAccentBrush}"
+                                    Padding="0"
+                                    VerticalAlignment="Center" />
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <TextBlock
+                        Text="2026 KROIRA. All rights reserved."
+                        Foreground="{StaticResource KroiraTextTertiaryBrush}"
+                        FontSize="12"
+                        Margin="2,0,0,0" />
                 </StackPanel>
             </Grid>
         </Grid>

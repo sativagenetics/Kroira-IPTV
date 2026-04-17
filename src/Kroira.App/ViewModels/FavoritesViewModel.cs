@@ -8,6 +8,7 @@ using Kroira.App.Data;
 using Kroira.App.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.UI.Xaml;
 
 namespace Kroira.App.ViewModels
 {
@@ -18,7 +19,14 @@ namespace Kroira.App.ViewModels
         public ObservableCollection<BrowserChannelViewModel> FavoriteChannels { get; } = new();
 
         [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(EmptyVisibility))]
+        [NotifyPropertyChangedFor(nameof(ContentVisibility))]
+        [NotifyPropertyChangedFor(nameof(FavoriteCountText))]
         private bool _isEmpty;
+
+        public Visibility EmptyVisibility => IsEmpty ? Visibility.Visible : Visibility.Collapsed;
+        public Visibility ContentVisibility => IsEmpty ? Visibility.Collapsed : Visibility.Visible;
+        public string FavoriteCountText => FavoriteChannels.Count == 1 ? "1 saved channel" : $"{FavoriteChannels.Count} saved channels";
 
         public FavoritesViewModel(IServiceProvider serviceProvider)
         {
@@ -55,6 +63,7 @@ namespace Kroira.App.ViewModels
             }
 
             IsEmpty = FavoriteChannels.Count == 0;
+            OnPropertyChanged(nameof(FavoriteCountText));
         }
 
         [RelayCommand]
@@ -74,6 +83,7 @@ namespace Kroira.App.ViewModels
                 }
                 FavoriteChannels.Remove(target);
                 IsEmpty = FavoriteChannels.Count == 0;
+                OnPropertyChanged(nameof(FavoriteCountText));
             }
         }
     }

@@ -4,97 +4,204 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     Background="{StaticResource KroiraPageBackgroundBrush}">
 
-    <Grid Padding="28" RowSpacing="18">
+    <Grid Padding="30,28,34,30" RowSpacing="22">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <Border Grid.Row="0" Style="{StaticResource KroiraPanelStyle}">
-            <Grid>
-                <StackPanel>
-                    <TextBlock Text="Favorites" Style="{StaticResource KroiraPageTitleStyle}" />
-                    <TextBlock Text="Your saved live channels and quick-return picks." Style="{StaticResource KroiraPageSubtitleStyle}" Margin="0,4,0,0" />
-                </StackPanel>
-                <Border HorizontalAlignment="Right" VerticalAlignment="Center" Background="#221F42" BorderBrush="{StaticResource KroiraBorderStrongBrush}" BorderThickness="1" CornerRadius="999" Padding="12,5">
-                    <TextBlock Text="Pinned" Foreground="{StaticResource KroiraGoldBrush}" FontSize="12" FontWeight="SemiBold" />
-                </Border>
-            </Grid>
-        </Border>
+        <Grid Grid.Row="0" ColumnSpacing="24">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
 
-        <Border Grid.Row="1" Visibility="{x:Bind ViewModel.IsEmpty, Mode=OneWay}" Style="{StaticResource KroiraPanelStyle}" HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="440">
-            <StackPanel Spacing="10">
-                <FontIcon Glyph="&#xE734;" Foreground="{StaticResource KroiraGoldBrush}" FontSize="30" HorizontalAlignment="Left" />
-                <TextBlock Text="No favorites yet" Style="{StaticResource KroiraSectionTitleStyle}" />
-                <TextBlock Text="Mark channels as favorites to keep your everyday lineup close." Style="{StaticResource KroiraPageSubtitleStyle}" />
+            <StackPanel Spacing="6">
+                <TextBlock Text="Favorites" Style="{StaticResource KroiraPageTitleStyle}" />
+                <TextBlock
+                    Text="A saved hub for the live channels you return to most."
+                    Style="{StaticResource KroiraPageSubtitleStyle}"
+                    MaxWidth="680" />
+            </StackPanel>
+
+            <Border
+                Grid.Column="1"
+                Background="{StaticResource KroiraSurfaceSoftBrush}"
+                CornerRadius="8"
+                Padding="12,7"
+                VerticalAlignment="Center"
+                Visibility="{x:Bind ViewModel.ContentVisibility, Mode=OneWay}">
+                <TextBlock
+                    Text="{x:Bind ViewModel.FavoriteCountText, Mode=OneWay}"
+                    Foreground="{StaticResource KroiraAccentBrush}"
+                    FontSize="12"
+                    FontWeight="SemiBold" />
+            </Border>
+        </Grid>
+
+        <Border
+            Grid.Row="1"
+            Visibility="{x:Bind ViewModel.EmptyVisibility, Mode=OneWay}"
+            Background="{StaticResource KroiraSurfaceBrush}"
+            CornerRadius="12"
+            Padding="24"
+            HorizontalAlignment="Left"
+            VerticalAlignment="Top"
+            MaxWidth="520">
+            <StackPanel Spacing="12">
+                <Border
+                    Width="54"
+                    Height="54"
+                    CornerRadius="10"
+                    Background="{StaticResource KroiraSurfaceElevatedBrush}"
+                    HorizontalAlignment="Left">
+                    <FontIcon Glyph="&#xE734;" Foreground="{StaticResource KroiraGoldBrush}" FontSize="22" />
+                </Border>
+                <TextBlock Text="No saved channels yet" Style="{StaticResource KroiraSectionTitleStyle}" />
+                <TextBlock
+                    Text="Mark channels as favorites and they will appear here as a compact launch list."
+                    Style="{StaticResource KroiraPageSubtitleStyle}"
+                    MaxWidth="420" />
             </StackPanel>
         </Border>
 
-        <Grid Grid.Row="1" ColumnSpacing="14" MaxWidth="910" HorizontalAlignment="Left" VerticalAlignment="Top">
+        <Grid
+            Grid.Row="1"
+            Visibility="{x:Bind ViewModel.ContentVisibility, Mode=OneWay}"
+            ColumnSpacing="22"
+            MaxWidth="1060"
+            HorizontalAlignment="Left"
+            VerticalAlignment="Stretch">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="2*" />
-                <ColumnDefinition Width="260" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="280" />
             </Grid.ColumnDefinitions>
 
-            <Border Grid.Column="0" Style="{StaticResource KroiraPanelStyle}" Padding="14">
-                <StackPanel Spacing="10">
-                    <TextBlock Text="Saved lineup" Style="{StaticResource KroiraSectionTitleStyle}" />
-                    <GridView ItemsSource="{x:Bind ViewModel.FavoriteChannels, Mode=OneWay}" SelectionMode="Single" SelectionChanged="ChannelList_SelectionChanged">
-                        <GridView.ItemsPanel>
-                            <ItemsPanelTemplate>
-                                <ItemsWrapGrid Orientation="Horizontal" MaximumRowsOrColumns="2" />
-                            </ItemsPanelTemplate>
-                        </GridView.ItemsPanel>
-                        <GridView.ItemContainerStyle>
-                            <Style TargetType="GridViewItem">
-                                <Setter Property="Margin" Value="0,0,12,12" />
-                            </Style>
-                        </GridView.ItemContainerStyle>
-                        <GridView.ItemTemplate>
+            <Border Grid.Column="0" Style="{StaticResource KroiraPanelStyle}" Padding="0">
+                <Grid RowSpacing="0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <Grid Padding="18,16,18,12" ColumnSpacing="12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Spacing="3">
+                            <TextBlock Text="Saved channels" Style="{StaticResource KroiraSectionTitleStyle}" />
+                            <TextBlock
+                                Text="Select a row to start playback. Remove only clears it from this saved list."
+                                Style="{StaticResource KroiraBodyStyle}" />
+                        </StackPanel>
+                        <TextBlock
+                            Grid.Column="1"
+                            Text="LIVE"
+                            Foreground="{StaticResource KroiraTextTertiaryBrush}"
+                            FontSize="11"
+                            FontWeight="SemiBold"
+                            CharacterSpacing="80"
+                            VerticalAlignment="Center" />
+                    </Grid>
+
+                    <ListView
+                        Grid.Row="1"
+                        ItemsSource="{x:Bind ViewModel.FavoriteChannels, Mode=OneWay}"
+                        SelectionMode="Single"
+                        SelectionChanged="ChannelList_SelectionChanged"
+                        ItemContainerStyle="{StaticResource KroiraMediaRowContainerStyle}"
+                        Padding="10,0,10,10">
+                        <ListView.ItemTemplate>
                             <DataTemplate>
-                                <Grid Width="280" Height="88" Padding="11" BorderBrush="{StaticResource KroiraBorderBrush}" BorderThickness="1" CornerRadius="17" ColumnSpacing="10">
-                                    <Grid.Background>
-                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                                            <GradientStop Color="#1B2134" Offset="0" />
-                                            <GradientStop Color="#101722" Offset="1" />
-                                        </LinearGradientBrush>
-                                    </Grid.Background>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="56" />
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
-                                    <Border Grid.Column="0" Width="48" Height="48" CornerRadius="15" Background="{StaticResource KroiraMediaGradientBrush}" BorderBrush="#32D9B96F" BorderThickness="1">
-                                        <Grid>
-                                            <FontIcon Glyph="&#xE714;" Foreground="{StaticResource KroiraGoldBrush}" FontSize="20" Opacity="0.55" />
-                                            <Image Source="{Binding LogoUrl, Converter={StaticResource UrlToImageSourceConverter}}" Stretch="Uniform" Margin="6" />
-                                        </Grid>
-                                    </Border>
-                                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="4">
-                                        <TextBlock Text="{Binding Name}" TextWrapping="Wrap" MaxLines="2" FontWeight="SemiBold" FontSize="14" Foreground="{StaticResource KroiraTextPrimaryBrush}" />
-                                        <TextBlock Text="Favorite channel" Foreground="{StaticResource KroiraGoldBrush}" FontSize="11" />
-                                    </StackPanel>
-                                    <Button Grid.Column="2" Content="Remove" Tag="{Binding Id}" Click="RemoveFavorite_Click" Style="{StaticResource KroiraDangerButtonStyle}" FontSize="11" VerticalAlignment="Center" />
-                                </Grid>
+                                <Border
+                                    Background="{StaticResource KroiraSurfaceSoftBrush}"
+                                    CornerRadius="8"
+                                    Padding="14,12">
+                                    <Grid ColumnSpacing="14">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="62" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <Border
+                                            Width="54"
+                                            Height="54"
+                                            CornerRadius="8"
+                                            Background="{StaticResource KroiraMediaGradientBrush}"
+                                            VerticalAlignment="Center">
+                                            <Grid>
+                                                <FontIcon Glyph="&#xE714;" Foreground="{StaticResource KroiraAccentBrush}" FontSize="18" Opacity="0.55" />
+                                                <Image Source="{Binding LogoUrl, Converter={StaticResource UrlToImageSourceConverter}}" Stretch="Uniform" Margin="7" />
+                                            </Grid>
+                                        </Border>
+
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="5">
+                                            <TextBlock
+                                                Text="{Binding Name}"
+                                                Style="{StaticResource KroiraTitleStyle}"
+                                                MaxLines="2"
+                                                TextTrimming="CharacterEllipsis" />
+                                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                                <Border
+                                                    Width="7"
+                                                    Height="7"
+                                                    CornerRadius="4"
+                                                    Background="{StaticResource KroiraLiveDotBrush}"
+                                                    VerticalAlignment="Center" />
+                                                <TextBlock
+                                                    Text="Favorite channel"
+                                                    Foreground="{StaticResource KroiraTextSecondaryBrush}"
+                                                    FontSize="12" />
+                                            </StackPanel>
+                                        </StackPanel>
+
+                                        <Button
+                                            Grid.Column="2"
+                                            Content="Remove"
+                                            Tag="{Binding Id}"
+                                            Click="RemoveFavorite_Click"
+                                            Style="{StaticResource KroiraDangerButtonStyle}"
+                                            FontSize="12"
+                                            VerticalAlignment="Center" />
+                                    </Grid>
+                                </Border>
                             </DataTemplate>
-                        </GridView.ItemTemplate>
-                    </GridView>
-                </StackPanel>
+                        </ListView.ItemTemplate>
+                    </ListView>
+                </Grid>
             </Border>
 
-            <Border Grid.Column="1" Style="{StaticResource KroiraPanelStyle}" Padding="16">
-                <StackPanel Spacing="10">
-                    <Border Height="72" CornerRadius="18" Background="{StaticResource KroiraMediaGradientBrush}">
-                        <Grid>
-                            <FontIcon Glyph="&#xE734;" Foreground="{StaticResource KroiraGoldBrush}" FontSize="26" />
-                            <Border Width="92" Height="4" Background="{StaticResource KroiraGoldBrush}" CornerRadius="2" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="16,0,0,14" />
-                            <Border Width="170" Height="4" Background="#35FFFFFF" CornerRadius="2" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="16,0,0,14" Opacity="0.2" />
-                        </Grid>
-                    </Border>
-                    <TextBlock Text="Your fastest route back" Style="{StaticResource KroiraSectionTitleStyle}" />
-                    <TextBlock Text="Favorites stay focused on live channels you actually use, so a short list still feels intentional." Style="{StaticResource KroiraPageSubtitleStyle}" />
-                </StackPanel>
-            </Border>
+            <StackPanel Grid.Column="1" Spacing="14">
+                <Border Style="{StaticResource KroiraPanelStyle}" Padding="18">
+                    <StackPanel Spacing="12">
+                        <Border
+                            Height="5"
+                            Width="72"
+                            Background="{StaticResource KroiraGoldBrush}"
+                            CornerRadius="3"
+                            HorizontalAlignment="Left" />
+                        <TextBlock Text="Built for quick return" Style="{StaticResource KroiraSectionTitleStyle}" />
+                        <TextBlock
+                            Text="Favorites are intentionally focused on channels in the current data model, so this page behaves like a reliable live lineup instead of a mixed placeholder."
+                            Style="{StaticResource KroiraBodyStyle}" />
+                    </StackPanel>
+                </Border>
+
+                <Border
+                    Background="{StaticResource KroiraSurfaceSoftBrush}"
+                    CornerRadius="10"
+                    Padding="16">
+                    <StackPanel Spacing="6">
+                        <TextBlock Text="Saved type" Style="{StaticResource KroiraLabelStyle}" />
+                        <TextBlock Text="Channels" Style="{StaticResource KroiraTitleStyle}" />
+                        <TextBlock
+                            Text="Movie and series favorites can be added here later when the data path supports them safely."
+                            Style="{StaticResource KroiraBodyStyle}" />
+                    </StackPanel>
+                </Border>
+            </StackPanel>
         </Grid>
     </Grid>
 </Page>

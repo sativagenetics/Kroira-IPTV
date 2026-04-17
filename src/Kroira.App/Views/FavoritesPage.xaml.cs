@@ -37,7 +37,7 @@ namespace Kroira.App.Views
                     });
                 }
             }
-            ((GridView)sender).SelectedItem = null;
+            ((ListView)sender).SelectedItem = null;
         }
 
         private void RemoveFavorite_Click(object sender, RoutedEventArgs e)
