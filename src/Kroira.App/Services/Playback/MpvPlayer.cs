@@ -189,9 +189,12 @@ namespace Kroira.App.Services.Playback
             var ctx = (IntPtr)ctxBoxed;
             while (true)
             {
-                var evPtr = NativeMpv.mpv_wait_event(ctx, 1.0);
+                if (IsDisposed) break;
+
+                var evPtr = NativeMpv.mpv_wait_event(ctx, 0.25);
+                if (IsDisposed) break;
                 if (evPtr == IntPtr.Zero) continue;
-                var ev = Marshal.PtrToStructure<NativeMpv.MpvEvent>(evPtr);
+                var ev = NativeMpv.ReadEvent(evPtr);
 
                 if (ev.EventId == NativeMpv.MpvEventId.Shutdown) break;
                 if (ev.EventId == NativeMpv.MpvEventId.None) continue;
@@ -225,7 +228,7 @@ namespace Kroira.App.Services.Playback
         private void HandlePropertyChange(NativeMpv.MpvEvent ev)
         {
             if (ev.Data == IntPtr.Zero) return;
-            var prop = Marshal.PtrToStructure<NativeMpv.MpvEventProperty>(ev.Data);
+            var prop = NativeMpv.ReadEventProperty(ev.Data);
             if (prop.Data == IntPtr.Zero) return;
 
             switch (ev.ReplyUserdata)
@@ -323,11 +326,19 @@ namespace Kroira.App.Services.Playback
                 _eventThread = null;
             }
 
-            // mpv_terminate_destroy blocks until libmpv's internal threads exit and
-            // also unblocks any mpv_wait_event call with MPV_EVENT_SHUTDOWN. Our
-            // event thread breaks on Shutdown and makes no further libmpv calls,
-            // so the handle is safe to destroy afterwards.
             if (ctx != IntPtr.Zero)
+            {
+                try { NativeMpv.mpv_wakeup(ctx); } catch { }
+            }
+
+            if (thread != null && thread != Thread.CurrentThread)
+            {
+                thread.Join(TimeSpan.FromSeconds(3));
+            }
+
+            // mpv_wait_event returns pointers that are valid only until the next
+            // wait or handle destruction. Destroy only after the event thread exits.
+            if (ctx != IntPtr.Zero && (thread == null || !thread.IsAlive))
             {
                 lock (_apiLock)
                 {
@@ -335,11 +346,6 @@ namespace Kroira.App.Services.Playback
                     NativeMpv.mpv_terminate_destroy(ctx);
                 }
             }
-
-            // Join the event thread so no managed callback fires after Dispose returns.
-            // This is what prevents ghost audio, stale property callbacks, and
-            // second-playback races.
-            thread?.Join(TimeSpan.FromSeconds(3));
         }
     }
 }

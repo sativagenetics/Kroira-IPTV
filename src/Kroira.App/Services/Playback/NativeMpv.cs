@@ -10,7 +10,7 @@ namespace Kroira.App.Services.Playback
     {
         private const string Dll = "mpv-1.dll";
 
-        public enum MpvFormat
+        public enum MpvFormat : int
         {
             None = 0,
             String = 1,
@@ -20,7 +20,7 @@ namespace Kroira.App.Services.Playback
             Double = 5,
         }
 
-        public enum MpvEventId
+        public enum MpvEventId : int
         {
             None = 0,
             Shutdown = 1,
@@ -42,7 +42,7 @@ namespace Kroira.App.Services.Playback
             QueueOverflow = 24,
         }
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Sequential, Pack = 8)]
         public struct MpvEvent
         {
             public MpvEventId EventId;
@@ -51,7 +51,7 @@ namespace Kroira.App.Services.Playback
             public IntPtr Data;
         }
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Sequential, Pack = 8)]
         public struct MpvEventProperty
         {
             public IntPtr Name;
@@ -59,7 +59,7 @@ namespace Kroira.App.Services.Playback
             public IntPtr Data;
         }
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Sequential, Pack = 8)]
         public struct MpvEventLogMessage
         {
             public IntPtr Prefix;
@@ -76,6 +76,9 @@ namespace Kroira.App.Services.Playback
 
         [DllImport(Dll, CallingConvention = CallingConvention.Cdecl)]
         public static extern void mpv_terminate_destroy(IntPtr ctx);
+
+        [DllImport(Dll, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void mpv_wakeup(IntPtr ctx);
 
         [DllImport(Dll, CallingConvention = CallingConvention.Cdecl)]
         public static extern int mpv_set_option_string(IntPtr ctx,
@@ -107,6 +110,27 @@ namespace Kroira.App.Services.Playback
         [DllImport(Dll, CallingConvention = CallingConvention.Cdecl)]
         public static extern int mpv_request_log_messages(IntPtr ctx,
             [MarshalAs(UnmanagedType.LPUTF8Str)] string minLevel);
+
+        public static MpvEvent ReadEvent(IntPtr ptr)
+        {
+            return new MpvEvent
+            {
+                EventId = (MpvEventId)Marshal.ReadInt32(ptr, 0),
+                Error = Marshal.ReadInt32(ptr, 4),
+                ReplyUserdata = unchecked((ulong)Marshal.ReadInt64(ptr, 8)),
+                Data = Marshal.ReadIntPtr(ptr, 16),
+            };
+        }
+
+        public static MpvEventProperty ReadEventProperty(IntPtr ptr)
+        {
+            return new MpvEventProperty
+            {
+                Name = Marshal.ReadIntPtr(ptr, 0),
+                Format = (MpvFormat)Marshal.ReadInt32(ptr, IntPtr.Size),
+                Data = Marshal.ReadIntPtr(ptr, IntPtr.Size == 8 ? 16 : 8),
+            };
+        }
 
         // Convenience wrapper: pack a variadic command into the char** form mpv expects.
         public static int Command(IntPtr ctx, params string[] args)
