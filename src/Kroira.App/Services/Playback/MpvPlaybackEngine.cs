@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -30,14 +31,13 @@ namespace Kroira.App.Services.Playback
         public MpvPlaybackEngine()
         {
             _dispatcherQueue = DispatcherQueue.GetForCurrentThread();
+            Log("created");
         }
 
         public PlaybackState State { get; private set; } = PlaybackState.Idle;
 
         public event EventHandler<PlaybackState> StateChanged;
         public event EventHandler<string> ErrorOccurred;
-
-        public object MediaPlayerInstance => _handle;
 
         public long PositionMs => (long)Math.Max(0, GetDoubleProperty("time-pos") * 1000);
         public long LengthMs => (long)Math.Max(0, GetDoubleProperty("duration") * 1000);
@@ -89,20 +89,24 @@ namespace Kroira.App.Services.Playback
                 // only reliable way to redirect the video output to a new HWND.
                 TeardownHandle();
                 EnsureInitialized();
-                UpdateState(PlaybackState.Loading);
-                CommandAsync("loadfile", sourceUrl, "replace");
 
-                if (startPositionMs > 0)
+                var loadQueued = startPositionMs > 0
+                    ? CommandAsync("loadfile", sourceUrl, "replace", $"start={FormatStartSeconds(startPositionMs)}")
+                    : CommandAsync("loadfile", sourceUrl, "replace");
+
+                if (!loadQueued)
                 {
-                    _ = Task.Run(async () =>
-                    {
-                        await Task.Delay(700).ConfigureAwait(false);
-                        SeekTo(startPositionMs);
-                    });
+                    TeardownHandle();
+                    RaiseError("mpv playback failed to queue load command.");
+                    return;
                 }
+
+                Log($"source load queued; resumeMs={startPositionMs}");
+                UpdateState(PlaybackState.Loading);
             }
             catch (Exception ex)
             {
+                TeardownHandle();
                 RaiseError($"mpv playback failed to start: {ex.Message}");
             }
         }
@@ -122,6 +126,7 @@ namespace Kroira.App.Services.Playback
         public void Stop()
         {
             if (_disposed) return;
+            Log("stop requested");
             CommandAsync("stop");
             UpdateState(PlaybackState.Stopped);
         }
@@ -171,6 +176,7 @@ namespace Kroira.App.Services.Playback
 
         public void DetachAndDispose(Action onTerminated)
         {
+            Log("detach started");
             IntPtr handle;
             CancellationTokenSource cts;
             Task eventLoop;
@@ -179,6 +185,7 @@ namespace Kroira.App.Services.Playback
             {
                 if (_handle == IntPtr.Zero)
                 {
+                    Log("detach completed; no active handle");
                     EnsureUiThread(() => onTerminated?.Invoke());
                     return;
                 }
@@ -200,6 +207,7 @@ namespace Kroira.App.Services.Playback
             try { mpv_terminate_destroy(handle); } catch { }
             try { eventLoop?.Wait(1000); } catch { }
             try { cts?.Dispose(); } catch { }
+            Log("detach completed");
             EnsureUiThread(() => onTerminated?.Invoke());
         }
 
@@ -231,6 +239,7 @@ namespace Kroira.App.Services.Playback
             }
 
             try { cts?.Dispose(); } catch { }
+            Log("disposed");
         }
 
         // Synchronous teardown avoids races with host-window destruction.
@@ -268,6 +277,8 @@ namespace Kroira.App.Services.Playback
                 if (_handle == IntPtr.Zero)
                     throw new InvalidOperationException("mpv_create returned null.");
 
+                Log("native player created");
+
                 SetOptionString("terminal", "no");
                 SetOptionString("msg-level", "all=warn");
                 SetOptionString("input-default-bindings", "no");
@@ -283,8 +294,10 @@ namespace Kroira.App.Services.Playback
                 // wid must be set as an option before mpv_initialize; after init only
                 // mpv_set_property_string works, which is why we always recreate here.
                 SetOptionString("wid", _videoHostHwnd.ToInt64().ToString(CultureInfo.InvariantCulture));
+                Log($"host bound; hwnd={_videoHostHwnd}");
 
                 CheckError(mpv_initialize(_handle), "mpv_initialize");
+                Log("native player initialized");
 
                 // Capture handle by value so the event loop never reads the instance field,
                 // preventing old loops from accidentally processing new-session events.
@@ -457,6 +470,7 @@ namespace Kroira.App.Services.Playback
             EnsureUiThread(() =>
             {
                 State = newState;
+                Log($"state={newState}");
                 StateChanged?.Invoke(this, newState);
             });
         }
@@ -466,6 +480,7 @@ namespace Kroira.App.Services.Playback
             EnsureUiThread(() =>
             {
                 State = PlaybackState.Error;
+                Log($"error={message}");
                 StateChanged?.Invoke(this, State);
                 ErrorOccurred?.Invoke(this, message);
             });
@@ -489,6 +504,17 @@ namespace Kroira.App.Services.Playback
         {
             var ptr = mpv_error_string(error);
             return ptr == IntPtr.Zero ? $"mpv error {error}" : Marshal.PtrToStringUTF8(ptr) ?? $"mpv error {error}";
+        }
+
+        private static string FormatStartSeconds(long startPositionMs)
+        {
+            var seconds = Math.Max(0, startPositionMs) / 1000d;
+            return seconds.ToString("0.###", CultureInfo.InvariantCulture);
+        }
+
+        private static void Log(string message)
+        {
+            Debug.WriteLine($"[Playback:mpv] {message}");
         }
 
         [StructLayout(LayoutKind.Sequential)]
@@ -538,11 +564,6 @@ namespace Kroira.App.Services.Playback
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         private static extern int mpv_command_async(IntPtr ctx, ulong replyUserData, IntPtr args);
-
-        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-        private static extern int mpv_command_string(
-            IntPtr ctx,
-            [MarshalAs(UnmanagedType.LPUTF8Str)] string args);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr mpv_wait_event(IntPtr ctx, double timeout);

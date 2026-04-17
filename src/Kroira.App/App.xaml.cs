@@ -120,7 +120,7 @@ namespace Kroira.App
             services.AddSingleton<IEntitlementService, MockEntitlementService>();
             services.AddSingleton<IWindowManagerService, WindowManagerService>();
             services.AddSingleton<IInputInterceptorService, InputInterceptorService>();
-            services.AddSingleton<Kroira.App.Services.Playback.IPlaybackEngine, Kroira.App.Services.Playback.MpvPlaybackEngine>();
+            services.AddTransient<Kroira.App.Services.Playback.IPlaybackEngine, Kroira.App.Services.Playback.MpvPlaybackEngine>();
             services.AddSingleton<Kroira.App.Services.Parsing.IM3uParserService, Kroira.App.Services.Parsing.M3uParserService>();
             services.AddSingleton<Kroira.App.Services.Parsing.IXmltvParserService, Kroira.App.Services.Parsing.XmltvParserService>();
             services.AddSingleton<Kroira.App.Services.Parsing.IXtreamParserService, Kroira.App.Services.Parsing.XtreamParserService>();

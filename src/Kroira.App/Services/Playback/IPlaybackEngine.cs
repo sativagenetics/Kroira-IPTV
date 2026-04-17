@@ -23,8 +23,6 @@ namespace Kroira.App.Services.Playback
         event EventHandler<PlaybackState> StateChanged;
         event EventHandler<string> ErrorOccurred;
 
-        object MediaPlayerInstance { get; }
-
         long PositionMs { get; }
         long LengthMs { get; }
         bool IsPlaying { get; }

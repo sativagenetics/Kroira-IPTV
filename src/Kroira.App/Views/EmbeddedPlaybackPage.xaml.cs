@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -49,6 +50,7 @@ namespace Kroira.App.Views
             _engine = services.GetRequiredService<IPlaybackEngine>();
             _windowManager = services.GetRequiredService<IWindowManagerService>();
             _videoHostWndProc = VideoHostWndProc;
+            Log("page created");
 
             _engine.StateChanged += Engine_StateChanged;
             _engine.ErrorOccurred += Engine_ErrorOccurred;
@@ -71,6 +73,7 @@ namespace Kroira.App.Views
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
+            Log("page entered");
 
             string url = null;
             long startMs = 0;
@@ -113,6 +116,13 @@ namespace Kroira.App.Views
             }
         }
 
+        protected override void OnNavigatedFrom(NavigationEventArgs e)
+        {
+            Log("page navigated from");
+            FullTeardown();
+            base.OnNavigatedFrom(e);
+        }
+
         private void VideoHost_Loaded(object sender, RoutedEventArgs e)
         {
             EnsureVideoHostWindow();
@@ -153,6 +163,7 @@ namespace Kroira.App.Views
                 ShowVideoHostWindow(true);
                 UpdateVideoHostBounds();
                 StartLayoutStabilization();
+                Log("play requested");
                 _engine.Play(_pendingUrl, _pendingStartMs);
                 ShowChrome();
                 _positionTimer.Start();
@@ -170,10 +181,13 @@ namespace Kroira.App.Views
         {
             if (_isDisposed) return;
             _isDisposed = true;
+            Log("teardown started");
 
             _positionTimer.Stop();
             _layoutStabilizationTimer.Stop();
             _chromeAutoHideTimer.Stop();
+            _pendingUrl = null;
+            _pendingStartMs = 0;
 
             this.Unloaded -= OnPageUnloaded;
             _engine.StateChanged -= Engine_StateChanged;
@@ -197,10 +211,13 @@ namespace Kroira.App.Views
             {
                 try { _engine.SetVideoHostHandle(IntPtr.Zero); } catch { }
                 _isHostHandleAssigned = false;
+                Log("engine host handle cleared");
             }
 
             try { _engine.DetachAndDispose(() => { }); } catch { }
+            try { _engine.Dispose(); } catch { }
             DestroyVideoHostWindow();
+            Log("teardown completed");
         }
 
         private void OnPageUnloaded(object sender, RoutedEventArgs e)
@@ -284,6 +301,8 @@ namespace Kroira.App.Views
 
             DispatcherQueue.TryEnqueue(() =>
             {
+                if (_isDisposed) return;
+
                 var wasPlaying = _lastKnownState == PlaybackState.Playing;
                 _lastKnownState = state;
 
@@ -327,7 +346,11 @@ namespace Kroira.App.Views
         private void Engine_ErrorOccurred(object sender, string message)
         {
             if (_isDisposed) return;
-            DispatcherQueue.TryEnqueue(() => ShowStatus(message, false));
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                if (!_isDisposed)
+                    ShowStatus(message, false);
+            });
         }
 
         private void ShowStatus(string message, bool isLoading)
@@ -407,6 +430,8 @@ namespace Kroira.App.Views
                 return;
             }
 
+            Log($"host created; hwnd={_videoHostHwnd}");
+
             _videoHostOriginalWndProc = SetWindowLongPtr(
                 _videoHostHwnd,
                 WindowLongIndex.GWLP_WNDPROC,
@@ -423,6 +448,7 @@ namespace Kroira.App.Views
 
             _engine.SetVideoHostHandle(_videoHostHwnd);
             _isHostHandleAssigned = true;
+            Log("engine host handle assigned");
         }
 
         private void UpdateVideoHostBounds()
@@ -458,6 +484,7 @@ namespace Kroira.App.Views
             {
                 RestoreWindowProc(_videoHostHwnd, ref _videoHostOriginalWndProc);
                 DestroyWindow(_videoHostHwnd);
+                Log("host destroyed");
             }
             catch { }
             finally
@@ -506,7 +533,7 @@ namespace Kroira.App.Views
 
         private void Stop_Click(object sender, RoutedEventArgs e)
         {
-            FullTeardown();
+            ExitPlaybackPage();
         }
 
         private void SkipBack_Click(object sender, RoutedEventArgs e)
@@ -663,12 +690,22 @@ namespace Kroira.App.Views
 
         private void Back_Click(object sender, RoutedEventArgs e)
         {
+            ExitPlaybackPage();
+        }
+
+        private void ExitPlaybackPage()
+        {
             FullTeardown();
 
             if (Frame.CanGoBack)
                 Frame.GoBack();
             else
                 Frame.Navigate(typeof(ChannelsPage));
+        }
+
+        private static void Log(string message)
+        {
+            Debug.WriteLine($"[Playback:page] {message}");
         }
 
         private void SaveProgress(bool force)
