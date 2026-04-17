@@ -13,6 +13,7 @@ using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Navigation;
+using Windows.Foundation;
 using WinRT.Interop;
 
 namespace Kroira.App.Views
@@ -23,6 +24,9 @@ namespace Kroira.App.Views
     public sealed partial class EmbeddedPlaybackPage : Page
     {
         private static readonly TimeSpan ControlsHideDelay = TimeSpan.FromMilliseconds(1350);
+        private static readonly TimeSpan PointerHideSuppressDelay = TimeSpan.FromMilliseconds(350);
+        private static readonly TimeSpan PointerTimerResetThrottle = TimeSpan.FromMilliseconds(250);
+        private const double PointerMoveResetDistance = 4.0;
 
         private PlaybackLaunchContext _context;
         private MpvPlayer _player;
@@ -42,6 +46,10 @@ namespace Kroira.App.Views
         private bool _isMuted;
         private bool _isVolumeSliderUpdating;
         private double _lastNonZeroVolume = 100;
+        private DateTime _ignorePointerUntilUtc = DateTime.MinValue;
+        private DateTime _lastPointerTimerRestartUtc = DateTime.MinValue;
+        private Point _lastPointerPosition;
+        private bool _hasLastPointerPosition;
 
         public EmbeddedPlaybackPage()
         {
@@ -127,6 +135,7 @@ namespace Kroira.App.Views
                 _controlsHideTimer = new DispatcherTimer { Interval = ControlsHideDelay };
                 _controlsHideTimer.Tick += (_, __) => HideControls();
 
+                UpdateLiveAndSeekUi();
                 ResolveResumePosition(_context);
                 _lastPositionMs = _context.StartPositionMs;
                 _player.Play(_context.StreamUrl, _context.StartPositionMs);
@@ -212,6 +221,7 @@ namespace Kroira.App.Views
             if (_teardownStarted) return;
             _lastDurationMs = (long)duration.TotalMilliseconds;
             DurationText.Text = FormatTime(duration);
+            UpdateLiveAndSeekUi();
         }
 
         private void OnPauseChanged(bool isPaused)
@@ -225,8 +235,7 @@ namespace Kroira.App.Views
         private void OnSeekableChanged(bool seekable)
         {
             if (_teardownStarted) return;
-            TimelineSlider.IsEnabled = seekable;
-            LivePill.Visibility = seekable ? Visibility.Collapsed : Visibility.Visible;
+            UpdateLiveAndSeekUi();
         }
 
         private void OnFileLoaded()
@@ -246,6 +255,15 @@ namespace Kroira.App.Views
         private void OnPlaybackEnded()
         {
             if (_teardownStarted) return;
+            if (IsLivePlayback())
+            {
+                // Live streams can emit EndFile/eof during reloads, pause recovery, or
+                // transient network stalls. That is not a completion signal.
+                UpdateLiveAndSeekUi();
+                ShowControls(persist: _player?.IsPaused == true);
+                return;
+            }
+
             // Mark VOD as completed (by saving near-duration) and navigate back.
             if (_context != null && _context.ContentType != PlaybackContentType.Channel && _player != null)
             {
@@ -275,7 +293,15 @@ namespace Kroira.App.Views
         private void PlayPause_Click(object sender, RoutedEventArgs e)
         {
             if (_teardownStarted) return;
-            _player?.TogglePause();
+            TogglePlayPauseOrLive();
+            RestartControlsHideTimer();
+        }
+
+        private void GoLive_Click(object sender, RoutedEventArgs e)
+        {
+            if (_teardownStarted) return;
+            GoToLiveEdge();
+            ShowControls();
             RestartControlsHideTimer();
         }
 
@@ -296,8 +322,7 @@ namespace Kroira.App.Views
         private void Page_PointerMoved(object sender, PointerRoutedEventArgs e)
         {
             if (_teardownStarted) return;
-            ShowControls();
-            RestartControlsHideTimer();
+            HandlePointerActivity(e.GetCurrentPoint(RootGrid).Position);
         }
 
         private void OnVideoClick()
@@ -305,7 +330,7 @@ namespace Kroira.App.Views
             DispatcherQueue.TryEnqueue(() =>
             {
                 if (_teardownStarted) return;
-                _player?.TogglePause();
+                TogglePlayPauseOrLive();
                 ShowControls();
                 RestartControlsHideTimer();
             });
@@ -326,8 +351,7 @@ namespace Kroira.App.Views
             DispatcherQueue.TryEnqueue(() =>
             {
                 if (_teardownStarted) return;
-                ShowControls();
-                RestartControlsHideTimer();
+                HandlePointerActivity(null);
             });
         }
 
@@ -363,7 +387,7 @@ namespace Kroira.App.Views
             if (!_isUserSeeking && !force) return;
             _isUserSeeking = false;
 
-            if (_player == null || !_player.IsSeekable) return;
+            if (_player == null || !IsTimelineSeekAllowed()) return;
             if (_suppressSliderUpdates) return;
 
             var durationSeconds = _player.Duration.TotalSeconds;
@@ -418,17 +442,123 @@ namespace Kroira.App.Views
             _isVolumeSliderUpdating = false;
         }
 
+        private void TogglePlayPauseOrLive()
+        {
+            if (_player == null) return;
+
+            if (IsLivePlayback() && _player.IsPaused)
+            {
+                GoToLiveEdge();
+                return;
+            }
+
+            _player.TogglePause();
+        }
+
+        private void GoToLiveEdge()
+        {
+            if (!IsLivePlayback() || _player == null || _context == null) return;
+
+            var volume = VolumeSlider.Value;
+            var muted = _isMuted;
+
+            if (_player.IsSeekable)
+            {
+                _player.SeekAbsolutePercent(100);
+                _player.Resume();
+            }
+            else
+            {
+                _player.Play(_context.StreamUrl, 0);
+                _player.SetVolume(volume);
+                _player.SetMuted(muted);
+            }
+
+            UpdateLiveAndSeekUi();
+        }
+
+        private bool IsLivePlayback()
+        {
+            return _context?.ContentType == PlaybackContentType.Channel;
+        }
+
+        private bool IsTimelineSeekAllowed()
+        {
+            if (_player == null || !_player.IsSeekable) return false;
+            return !IsLivePlayback() || _player.Duration.TotalSeconds > 0;
+        }
+
+        private void UpdateLiveAndSeekUi()
+        {
+            if (_teardownStarted) return;
+
+            var isLive = IsLivePlayback();
+            var canSeek = IsTimelineSeekAllowed();
+
+            TimelineSlider.IsEnabled = canSeek;
+            LivePill.Visibility = isLive ? Visibility.Visible : Visibility.Collapsed;
+            GoLiveButton.Visibility = isLive ? Visibility.Visible : Visibility.Collapsed;
+            GoLiveButton.IsEnabled = isLive && _player != null;
+
+            ToolTipService.SetToolTip(
+                TimelineSlider,
+                isLive
+                    ? canSeek ? "Seek within live buffer" : "Live stream has no seekable buffer"
+                    : canSeek ? "Seek" : "Seeking unavailable");
+        }
+
         // --- Controls auto-hide ---
+
+        private void HandlePointerActivity(Point? position)
+        {
+            if (_teardownStarted) return;
+
+            var now = DateTime.UtcNow;
+            var movedEnough = false;
+            if (position.HasValue)
+            {
+                movedEnough = !_hasLastPointerPosition ||
+                    Distance(position.Value, _lastPointerPosition) >= PointerMoveResetDistance;
+
+                if (movedEnough)
+                {
+                    _lastPointerPosition = position.Value;
+                    _hasLastPointerPosition = true;
+                }
+            }
+
+            if (now < _ignorePointerUntilUtc && (!position.HasValue || !movedEnough))
+            {
+                return;
+            }
+
+            if (!_controlsVisible && position.HasValue && !movedEnough)
+            {
+                return;
+            }
+
+            var wasHidden = !_controlsVisible;
+            ShowControls();
+
+            if (wasHidden || movedEnough ||
+                (!position.HasValue && now - _lastPointerTimerRestartUtc >= PointerTimerResetThrottle))
+            {
+                RestartControlsHideTimer(now);
+            }
+        }
 
         private void ShowControls(bool persist = false)
         {
             if (!_controlsVisible)
             {
+                TopRow.Height = GridLength.Auto;
+                BottomRow.Height = GridLength.Auto;
                 TopBar.Visibility = Visibility.Visible;
                 BottomBar.Visibility = Visibility.Visible;
                 _controlsVisible = true;
                 // Changing row heights will cause VideoHost to resize; the surface
                 // listens for SizeChanged/LayoutUpdated and repositions the HWND.
+                QueueSurfacePlacementUpdate();
             }
 
             if (persist)
@@ -441,20 +571,47 @@ namespace Kroira.App.Views
         {
             if (_player != null && _player.IsPaused) return;
             if (ErrorOverlay.Visibility == Visibility.Visible) return;
+            if (!_controlsVisible) return;
 
+            TopRow.Height = new GridLength(0);
+            BottomRow.Height = new GridLength(0);
             TopBar.Visibility = Visibility.Collapsed;
             BottomBar.Visibility = Visibility.Collapsed;
             _controlsVisible = false;
+            _ignorePointerUntilUtc = DateTime.UtcNow + PointerHideSuppressDelay;
             _controlsHideTimer?.Stop();
+            QueueSurfacePlacementUpdate();
         }
 
         private void RestartControlsHideTimer()
+        {
+            RestartControlsHideTimer(DateTime.UtcNow);
+        }
+
+        private void RestartControlsHideTimer(DateTime now)
         {
             if (_controlsHideTimer == null) return;
             _controlsHideTimer.Stop();
             if (_player != null && _player.IsPaused) return;
             if (ErrorOverlay.Visibility == Visibility.Visible) return;
+            _lastPointerTimerRestartUtc = now;
             _controlsHideTimer.Start();
+        }
+
+        private void QueueSurfacePlacementUpdate()
+        {
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                if (_teardownStarted) return;
+                _surface?.UpdatePlacement(force: true);
+            });
+        }
+
+        private static double Distance(Point a, Point b)
+        {
+            var dx = a.X - b.X;
+            var dy = a.Y - b.Y;
+            return Math.Sqrt(dx * dx + dy * dy);
         }
 
         // --- Helpers ---

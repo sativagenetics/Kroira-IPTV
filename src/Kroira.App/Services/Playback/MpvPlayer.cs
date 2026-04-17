@@ -144,6 +144,13 @@ namespace Kroira.App.Services.Playback
                 seconds.ToString(CultureInfo.InvariantCulture), "absolute"));
         }
 
+        public void SeekAbsolutePercent(double percent)
+        {
+            if (!IsSeekable) return;
+            var value = Math.Clamp(percent, 0, 100).ToString(CultureInfo.InvariantCulture);
+            UseCtx(ctx => NativeMpv.Command(ctx, "seek", value, "absolute-percent"));
+        }
+
         public void SetVolume(double volume)
         {
             Volume = Math.Clamp(volume, 0, 100);

@@ -87,6 +87,17 @@
 
                 <StackPanel Grid.Row="1" Orientation="Horizontal"
                             HorizontalAlignment="Center" Spacing="8">
+                    <Button x:Name="GoLiveButton" Click="GoLive_Click"
+                            Visibility="Collapsed"
+                            Background="Transparent" BorderThickness="0"
+                            Foreground="{StaticResource KroiraTextPrimaryBrush}"
+                            ToolTipService.ToolTip="Go to live"
+                            Padding="10,6">
+                        <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                            <Ellipse Width="7" Height="7" Fill="#FF4D5F" VerticalAlignment="Center" />
+                            <TextBlock Text="LIVE" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
                     <Button x:Name="PlayPauseButton" Click="PlayPause_Click"
                             Background="Transparent" BorderThickness="0"
                             Foreground="{StaticResource KroiraTextPrimaryBrush}"

@@ -1,5 +1,6 @@
 using System;
 using System.Runtime.InteropServices;
+using System.Threading;
 using Microsoft.UI.Xaml;
 using Windows.Foundation;
 
@@ -104,9 +105,11 @@ namespace Kroira.App.Services.Playback
         private readonly Action _onDoubleClick;
         private readonly Action _onClick;
         private readonly Action _onMouseMoved;
+        private readonly object _clickLock = new();
 
         private IntPtr _hwnd;
-        private DateTime _lastClickUtc = DateTime.MinValue;
+        private Timer _pendingClickTimer;
+        private DateTime _suppressClickUntilUtc = DateTime.MinValue;
         private bool _disposed;
         private int _lastX = int.MinValue;
         private int _lastY = int.MinValue;
@@ -250,27 +253,52 @@ namespace Kroira.App.Services.Playback
                 switch (msg)
                 {
                     case WM_LBUTTONDBLCLK:
-                        self._onDoubleClick?.Invoke();
+                        self.HandleDoubleClick();
                         return IntPtr.Zero;
                     case WM_LBUTTONUP:
-                        {
-                            var now = DateTime.UtcNow;
-                            // Ignore the click that follows a DBLCLK (same rough window).
-                            if ((now - self._lastClickUtc).TotalMilliseconds < 50)
-                            {
-                                self._lastClickUtc = now;
-                                return IntPtr.Zero;
-                            }
-                            self._lastClickUtc = now;
-                            self._onClick?.Invoke();
-                            return IntPtr.Zero;
-                        }
+                        self.ScheduleSingleClick();
+                        return IntPtr.Zero;
                     case WM_MOUSEMOVE:
                         self._onMouseMoved?.Invoke();
                         return IntPtr.Zero;
                 }
             }
             return DefWindowProc(hWnd, msg, wParam, lParam);
+        }
+
+        private void ScheduleSingleClick()
+        {
+            lock (_clickLock)
+            {
+                if (_disposed || DateTime.UtcNow < _suppressClickUntilUtc) return;
+                _pendingClickTimer?.Dispose();
+                _pendingClickTimer = new Timer(_ => FireSingleClick(), null, 240, Timeout.Infinite);
+            }
+        }
+
+        private void FireSingleClick()
+        {
+            lock (_clickLock)
+            {
+                if (_disposed || DateTime.UtcNow < _suppressClickUntilUtc) return;
+                _pendingClickTimer?.Dispose();
+                _pendingClickTimer = null;
+            }
+
+            _onClick?.Invoke();
+        }
+
+        private void HandleDoubleClick()
+        {
+            lock (_clickLock)
+            {
+                if (_disposed) return;
+                _suppressClickUntilUtc = DateTime.UtcNow.AddMilliseconds(360);
+                _pendingClickTimer?.Dispose();
+                _pendingClickTimer = null;
+            }
+
+            _onDoubleClick?.Invoke();
         }
 
         public void Dispose()
@@ -281,6 +309,11 @@ namespace Kroira.App.Services.Playback
             _host.Loaded -= Host_Loaded;
             _host.SizeChanged -= Host_SizeChanged;
             _host.LayoutUpdated -= Host_LayoutUpdated;
+            lock (_clickLock)
+            {
+                _pendingClickTimer?.Dispose();
+                _pendingClickTimer = null;
+            }
 
             if (_hwnd != IntPtr.Zero)
             {
