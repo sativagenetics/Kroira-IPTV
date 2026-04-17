@@ -19,7 +19,7 @@ namespace Kroira.App.Views
 {
     public sealed partial class EmbeddedPlaybackPage : Page
     {
-        private readonly IPlaybackEngine _engine;
+        private readonly MpvPlaybackEngine _engine;
         private readonly IWindowManagerService _windowManager;
         private readonly DispatcherTimer _positionTimer;
         private readonly DispatcherTimer _layoutStabilizationTimer;
@@ -47,7 +47,7 @@ namespace Kroira.App.Views
             this.InitializeComponent();
 
             var services = ((App)Application.Current).Services;
-            _engine = services.GetRequiredService<IPlaybackEngine>();
+            _engine = services.GetRequiredService<MpvPlaybackEngine>();
             _windowManager = services.GetRequiredService<IWindowManagerService>();
             _videoHostWndProc = VideoHostWndProc;
             Log("page created");

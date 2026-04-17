@@ -9,7 +9,7 @@ using Microsoft.UI.Dispatching;
 
 namespace Kroira.App.Services.Playback
 {
-    public sealed class MpvPlaybackEngine : IPlaybackEngine
+    public sealed class MpvPlaybackEngine : IDisposable
     {
         private const string DllName = "mpv-1";
         private const int MpvEventShutdown = 1;
