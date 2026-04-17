@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Package
   xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
   xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
@@ -8,7 +8,7 @@
   <Identity
     Name="SATIVAGENETICS.KROIRAIPTVPlayer"
     Publisher="CN=1B47D348-A27A-430F-8ED8-B45035F098CB"
-    Version="1.0.0.0" />
+    Version="0.9.0.0" />
 
   <Properties>
     <DisplayName>KROIRA IPTV Player</DisplayName>

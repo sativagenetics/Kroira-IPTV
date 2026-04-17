@@ -39,7 +39,7 @@ namespace Kroira.App.ViewModels
         private LanguageOptionViewModel _selectedLanguage;
 
         [ObservableProperty]
-        private string _languageStatusText = "Language preference is used for catalog ordering. Full UI localization can build on this setting later.";
+        private string _languageStatusText = "Language preference is used for catalog ordering.";
 
         partial void OnSelectedLanguageChanged(LanguageOptionViewModel value)
         {
@@ -74,7 +74,7 @@ namespace Kroira.App.ViewModels
             using var scope = _serviceProvider.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             await AppLanguageService.SetLanguageAsync(db, languageCode);
-            LanguageStatusText = "Language preference saved. Catalog ordering will use it when you reopen Movies or Series.";
+            LanguageStatusText = "Language preference saved. Catalog ordering will update when Movies or Series reload.";
         }
 
         [RelayCommand]
@@ -94,8 +94,8 @@ namespace Kroira.App.ViewModels
             FreeTierVisibility = !isPro ? Visibility.Visible : Visibility.Collapsed;
 
             LicenseStatusDescription = isPro
-                ? "You are rocking the Pro version! All advanced multi-monitor, external player fallback, and family features are enabled."
-                : "You are currently on the Free tier. Upgrade to Pro for multi-monitor, continuous recording, and premium playback features.";
+                ? "Pro features are enabled for this installation."
+                : "Free tier is active. Upgrade to enable multi-monitor, recording, and premium playback features.";
         }
 
         public string AppVersion

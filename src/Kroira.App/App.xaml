@@ -8,118 +8,70 @@
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <XamlControlsResources xmlns="using:Microsoft.UI.Xaml.Controls" />
+                <ResourceDictionary Source="ms-appx:///Styles/Colors.xaml" />
+                <ResourceDictionary Source="ms-appx:///Styles/Typography.xaml" />
+                <ResourceDictionary Source="ms-appx:///Styles/Controls.xaml" />
+                <ResourceDictionary Source="ms-appx:///Styles/Posters.xaml" />
             </ResourceDictionary.MergedDictionaries>
 
             <converters:UrlToImageSourceConverter x:Key="UrlToImageSourceConverter" />
+            <converters:NumberFormatConverter x:Key="NumberFormatConverter" />
 
-            <SolidColorBrush x:Key="KroiraPageBackgroundBrush" Color="#090B13" />
-            <SolidColorBrush x:Key="KroiraSurfaceBrush" Color="#111722" />
-            <SolidColorBrush x:Key="KroiraSurfaceElevatedBrush" Color="#171E2B" />
-            <SolidColorBrush x:Key="KroiraSurfaceSoftBrush" Color="#1A1F35" />
-            <SolidColorBrush x:Key="KroiraBorderBrush" Color="#2F344E" />
-            <SolidColorBrush x:Key="KroiraBorderStrongBrush" Color="#514A7B" />
-            <SolidColorBrush x:Key="KroiraTextPrimaryBrush" Color="#E6EAFE" />
-            <SolidColorBrush x:Key="KroiraTextSecondaryBrush" Color="#AEB5C8" />
-            <SolidColorBrush x:Key="KroiraTextTertiaryBrush" Color="#778198" />
-            <SolidColorBrush x:Key="KroiraAccentBrush" Color="#B7B2FF" />
-            <SolidColorBrush x:Key="KroiraAccentStrongBrush" Color="#7968FF" />
-            <SolidColorBrush x:Key="KroiraMagentaBrush" Color="#F05BD7" />
-            <SolidColorBrush x:Key="KroiraGoldBrush" Color="#D9B96F" />
-            <SolidColorBrush x:Key="KroiraControlBrush" Color="#181D2D" />
-            <SolidColorBrush x:Key="KroiraControlBorderBrush" Color="#3C4164" />
+            <!--
+                NavigationView theming overrides. These system keys retune
+                the built-in NavigationView without requiring a custom shell.
+            -->
+            <SolidColorBrush x:Key="NavigationViewDefaultPaneBackground"       Color="#0B0C10" />
+            <SolidColorBrush x:Key="NavigationViewExpandedPaneBackground"      Color="#0B0C10" />
+            <SolidColorBrush x:Key="NavigationViewContentBackground"           Color="#0B0C10" />
+            <SolidColorBrush x:Key="NavigationViewTopPaneBackground"           Color="#0B0C10" />
+            <SolidColorBrush x:Key="NavigationViewItemForeground"              Color="#A8ABB5" />
+            <SolidColorBrush x:Key="NavigationViewItemForegroundPointerOver"   Color="#E6E8EF" />
+            <SolidColorBrush x:Key="NavigationViewItemForegroundSelected"      Color="#E6E8EF" />
+            <SolidColorBrush x:Key="NavigationViewItemForegroundSelectedPointerOver" Color="#E6E8EF" />
+            <SolidColorBrush x:Key="NavigationViewItemBackgroundPointerOver"   Color="#16181F" />
+            <SolidColorBrush x:Key="NavigationViewItemBackgroundSelected"      Color="#16181F" />
+            <SolidColorBrush x:Key="NavigationViewItemBackgroundSelectedPointerOver" Color="#1A1D24" />
+            <SolidColorBrush x:Key="NavigationViewSelectionIndicatorForeground" Color="#A7C8FF" />
 
-            <LinearGradientBrush x:Key="KroiraPageAtmosphereBrush" StartPoint="0,0" EndPoint="1,1">
-                <GradientStop Color="#0B0E18" Offset="0" />
-                <GradientStop Color="#090B13" Offset="0.56" />
-                <GradientStop Color="#111525" Offset="1" />
-            </LinearGradientBrush>
+            <!--
+                GridViewItem / ListViewItem overrides: subtle sky-accent tint
+                on hover, pressed, and selected. No selection border.
+            -->
+            <SolidColorBrush x:Key="GridViewItemBackground" Color="Transparent" />
+            <SolidColorBrush x:Key="GridViewItemBackgroundPointerOver"         Color="#A7C8FF" Opacity="0.08" />
+            <SolidColorBrush x:Key="GridViewItemBackgroundPressed"             Color="#A7C8FF" Opacity="0.12" />
+            <SolidColorBrush x:Key="GridViewItemBackgroundSelected"            Color="#A7C8FF" Opacity="0.14" />
+            <SolidColorBrush x:Key="GridViewItemBackgroundSelectedPointerOver" Color="#A7C8FF" Opacity="0.18" />
+            <SolidColorBrush x:Key="GridViewItemBackgroundSelectedPressed"     Color="#A7C8FF" Opacity="0.16" />
+            <SolidColorBrush x:Key="GridViewItemForegroundPointerOver"         Color="#E6E8EF" />
+            <SolidColorBrush x:Key="GridViewItemForegroundSelected"            Color="#E6E8EF" />
+            <SolidColorBrush x:Key="GridViewItemForegroundSelectedPointerOver" Color="#E6E8EF" />
+            <SolidColorBrush x:Key="GridViewItemCheckBrush"                    Color="Transparent" />
+            <SolidColorBrush x:Key="GridViewItemCheckBoxBrush"                 Color="Transparent" />
+            <SolidColorBrush x:Key="GridViewItemCheckBoxBorderBrush"           Color="Transparent" />
+            <SolidColorBrush x:Key="GridViewItemFocusVisualPrimaryBrush"       Color="#A7C8FF" />
+            <SolidColorBrush x:Key="GridViewItemFocusBorderBrush"              Color="#A7C8FF" />
+            <SolidColorBrush x:Key="GridViewItemFocusSecondaryBorderBrush"     Color="Transparent" />
+            <Thickness x:Key="GridViewItemSelectedBorderThemeThickness">0</Thickness>
 
-            <LinearGradientBrush x:Key="KroiraSurfaceGradientBrush" StartPoint="0,0" EndPoint="1,1">
-                <GradientStop Color="#171E2E" Offset="0" />
-                <GradientStop Color="#101722" Offset="1" />
-            </LinearGradientBrush>
+            <SolidColorBrush x:Key="ListViewItemBackground" Color="Transparent" />
+            <SolidColorBrush x:Key="ListViewItemBackgroundPointerOver"         Color="#A7C8FF" Opacity="0.08" />
+            <SolidColorBrush x:Key="ListViewItemBackgroundPressed"             Color="#A7C8FF" Opacity="0.12" />
+            <SolidColorBrush x:Key="ListViewItemBackgroundSelected"            Color="#A7C8FF" Opacity="0.14" />
+            <SolidColorBrush x:Key="ListViewItemBackgroundSelectedPointerOver" Color="#A7C8FF" Opacity="0.18" />
+            <SolidColorBrush x:Key="ListViewItemBackgroundSelectedPressed"     Color="#A7C8FF" Opacity="0.16" />
+            <SolidColorBrush x:Key="ListViewItemForegroundPointerOver"         Color="#E6E8EF" />
+            <SolidColorBrush x:Key="ListViewItemForegroundSelected"            Color="#E6E8EF" />
+            <SolidColorBrush x:Key="ListViewItemForegroundSelectedPointerOver" Color="#E6E8EF" />
+            <SolidColorBrush x:Key="ListViewItemCheckBrush"                    Color="Transparent" />
+            <SolidColorBrush x:Key="ListViewItemCheckBoxBrush"                 Color="Transparent" />
+            <SolidColorBrush x:Key="ListViewItemCheckBoxBorderBrush"           Color="Transparent" />
+            <SolidColorBrush x:Key="ListViewItemFocusVisualPrimaryBrush"       Color="#A7C8FF" />
+            <SolidColorBrush x:Key="ListViewItemFocusBorderBrush"              Color="#A7C8FF" />
+            <SolidColorBrush x:Key="ListViewItemFocusSecondaryBorderBrush"     Color="Transparent" />
+            <Thickness x:Key="ListViewItemSelectedBorderThemeThickness">0</Thickness>
 
-            <LinearGradientBrush x:Key="KroiraMediaGradientBrush" StartPoint="0,0" EndPoint="1,1">
-                <GradientStop Color="#6659BA" Offset="0" />
-                <GradientStop Color="#352F68" Offset="0.48" />
-                <GradientStop Color="#111722" Offset="1" />
-            </LinearGradientBrush>
-
-            <Style x:Key="KroiraPageTitleStyle" TargetType="TextBlock">
-                <Setter Property="FontSize" Value="30" />
-                <Setter Property="FontWeight" Value="SemiBold" />
-                <Setter Property="Foreground" Value="{StaticResource KroiraTextPrimaryBrush}" />
-                <Setter Property="TextWrapping" Value="Wrap" />
-            </Style>
-
-            <Style x:Key="KroiraPageSubtitleStyle" TargetType="TextBlock">
-                <Setter Property="FontSize" Value="13" />
-                <Setter Property="Foreground" Value="{StaticResource KroiraTextSecondaryBrush}" />
-                <Setter Property="TextWrapping" Value="Wrap" />
-            </Style>
-
-            <Style x:Key="KroiraSectionTitleStyle" TargetType="TextBlock">
-                <Setter Property="FontSize" Value="18" />
-                <Setter Property="FontWeight" Value="SemiBold" />
-                <Setter Property="Foreground" Value="{StaticResource KroiraTextPrimaryBrush}" />
-            </Style>
-
-            <Style x:Key="KroiraPanelStyle" TargetType="Border">
-                <Setter Property="Background" Value="{StaticResource KroiraSurfaceGradientBrush}" />
-                <Setter Property="BorderBrush" Value="{StaticResource KroiraBorderBrush}" />
-                <Setter Property="BorderThickness" Value="1" />
-                <Setter Property="CornerRadius" Value="18" />
-                <Setter Property="Padding" Value="18" />
-            </Style>
-
-            <Style x:Key="KroiraCardStyle" TargetType="Border">
-                <Setter Property="Background" Value="{StaticResource KroiraSurfaceBrush}" />
-                <Setter Property="BorderBrush" Value="{StaticResource KroiraBorderBrush}" />
-                <Setter Property="BorderThickness" Value="1" />
-                <Setter Property="CornerRadius" Value="16" />
-                <Setter Property="Padding" Value="14" />
-            </Style>
-
-            <Style x:Key="KroiraTextBoxStyle" TargetType="TextBox">
-                <Setter Property="Background" Value="{StaticResource KroiraControlBrush}" />
-                <Setter Property="BorderBrush" Value="{StaticResource KroiraControlBorderBrush}" />
-                <Setter Property="Foreground" Value="{StaticResource KroiraTextPrimaryBrush}" />
-                <Setter Property="PlaceholderForeground" Value="{StaticResource KroiraTextTertiaryBrush}" />
-                <Setter Property="CornerRadius" Value="10" />
-                <Setter Property="Padding" Value="12,8" />
-            </Style>
-
-            <Style x:Key="KroiraComboBoxStyle" TargetType="ComboBox">
-                <Setter Property="Background" Value="{StaticResource KroiraControlBrush}" />
-                <Setter Property="BorderBrush" Value="{StaticResource KroiraControlBorderBrush}" />
-                <Setter Property="Foreground" Value="{StaticResource KroiraTextPrimaryBrush}" />
-                <Setter Property="CornerRadius" Value="10" />
-                <Setter Property="Padding" Value="12,6" />
-            </Style>
-
-            <Style x:Key="KroiraButtonStyle" TargetType="Button">
-                <Setter Property="Background" Value="{StaticResource KroiraControlBrush}" />
-                <Setter Property="BorderBrush" Value="{StaticResource KroiraControlBorderBrush}" />
-                <Setter Property="Foreground" Value="{StaticResource KroiraTextPrimaryBrush}" />
-                <Setter Property="CornerRadius" Value="10" />
-                <Setter Property="Padding" Value="12,7" />
-            </Style>
-
-            <Style x:Key="KroiraPrimaryButtonStyle" TargetType="Button">
-                <Setter Property="Background" Value="#221F42" />
-                <Setter Property="BorderBrush" Value="{StaticResource KroiraBorderStrongBrush}" />
-                <Setter Property="Foreground" Value="{StaticResource KroiraTextPrimaryBrush}" />
-                <Setter Property="CornerRadius" Value="10" />
-                <Setter Property="Padding" Value="14,8" />
-            </Style>
-
-            <Style x:Key="KroiraDangerButtonStyle" TargetType="Button">
-                <Setter Property="Background" Value="#24171F" />
-                <Setter Property="BorderBrush" Value="#5A3148" />
-                <Setter Property="Foreground" Value="#F3B7DE" />
-                <Setter Property="CornerRadius" Value="10" />
-                <Setter Property="Padding" Value="12,7" />
-            </Style>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

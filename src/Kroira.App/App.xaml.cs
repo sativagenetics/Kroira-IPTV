@@ -1,100 +1,137 @@
 using System;
+using System.Diagnostics;
+using System.IO;
+using System.Threading.Tasks;
 using Kroira.App.Data;
 using Kroira.App.Services;
 using Kroira.App.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using System.Diagnostics;
-using System.IO;
 
 namespace Kroira.App
 {
     public partial class App : Application
     {
-        private Window _window;
-        public Window MainWindow => _window;
+        private Window? _window;
+        public Window? MainWindow => _window;
+
+        public IServiceProvider Services { get; private set; } = null!;
+
+        private static readonly string ErrorDirectory =
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Kroira");
+
+        private static readonly string StartupLogPath =
+            Path.Combine(ErrorDirectory, "startup-log.txt");
+
+        private static readonly string StartupErrorPath =
+            Path.Combine(ErrorDirectory, "startup-error.txt");
 
         public App()
         {
+            Directory.CreateDirectory(ErrorDirectory);
+            SafeAppendLog("APP 01: constructor entered");
+
+            RegisterGlobalExceptionHandlers();
+
             try
             {
-                this.InitializeComponent();
+                SafeAppendLog("APP 02: before InitializeComponent");
+                InitializeComponent();
+                SafeAppendLog("APP 03: after InitializeComponent");
+
+                SafeAppendLog("APP 04: before ConfigureServices");
                 Services = ConfigureServices();
+                SafeAppendLog("APP 05: after ConfigureServices");
             }
             catch (Exception ex)
             {
-                Debug.WriteLine(ex.ToString());
-                WriteStartupError(ex);
+                SafeAppendLog("APP FATAL: exception in constructor");
+                SafeLogException("APP CONSTRUCTOR EXCEPTION", ex);
                 throw;
             }
         }
 
-        public IServiceProvider Services { get; }
-
         protected override void OnLaunched(LaunchActivatedEventArgs args)
         {
+            SafeAppendLog("APP 06: OnLaunched entered");
+
             try
             {
+                SafeAppendLog("APP 07: before database bootstrap");
                 using (var scope = Services.CreateScope())
                 {
                     var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
                     DatabaseBootstrapper.Initialize(dbContext);
                 }
+                SafeAppendLog("APP 08: after database bootstrap");
 
+                SafeAppendLog("APP 09: before MainWindow ctor");
                 _window = new MainWindow();
+                SafeAppendLog("APP 10: after MainWindow ctor");
 
+                SafeAppendLog("APP 11: before IWindowManagerService.Initialize");
                 var winManager = Services.GetRequiredService<IWindowManagerService>();
                 winManager.Initialize(_window);
+                SafeAppendLog("APP 12: after IWindowManagerService.Initialize");
 
+                SafeAppendLog("APP 13: before IInputInterceptorService.Initialize");
                 var inputManager = Services.GetRequiredService<IInputInterceptorService>();
                 inputManager.Initialize(_window);
+                SafeAppendLog("APP 14: after IInputInterceptorService.Initialize");
 
+                SafeAppendLog("APP 15: before window.Activate");
                 _window.Activate();
+                SafeAppendLog("APP 16: after window.Activate");
             }
             catch (Exception ex)
             {
-                Debug.WriteLine(ex.ToString());
-                WriteStartupError(ex);
-                ShowStartupError(ex);
+                SafeAppendLog("APP FATAL: exception in OnLaunched");
+                SafeLogException("APP ONLAUNCHED EXCEPTION", ex);
+                ShowStartupErrorWindow(ex);
             }
         }
 
-        // Temporary startup diagnostics. Remove after the startup failure is identified.
-        private static string WriteStartupError(Exception ex)
+        private void RegisterGlobalExceptionHandlers()
         {
-            var errorDirectory = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "Kroira");
-            Directory.CreateDirectory(errorDirectory);
+            SafeAppendLog("APP G01: registering global exception handlers");
 
-            var errorPath = Path.Combine(errorDirectory, "startup-error.txt");
-            File.WriteAllText(errorPath, ex.ToString());
-            return errorPath;
-        }
-
-        private void ShowStartupError(Exception ex)
-        {
-            try
+            AppDomain.CurrentDomain.UnhandledException += (_, e) =>
             {
-                _window = new Window
+                SafeAppendLog("APP G02: AppDomain.CurrentDomain.UnhandledException");
+                if (e.ExceptionObject is Exception ex)
                 {
-                    Title = "Kroira startup error",
-                    Content = new TextBox
-                    {
-                        Text = ex.ToString(),
-                        IsReadOnly = true,
-                        AcceptsReturn = true,
-                        TextWrapping = TextWrapping.Wrap
-                    }
-                };
+                    SafeLogException("APPDOMAIN UNHANDLED", ex);
+                }
+                else
+                {
+                    SafeAppendLog($"APPDOMAIN UNHANDLED (non-Exception): {e.ExceptionObject}");
+                }
+            };
 
-                _window.Activate();
-            }
-            catch
+            TaskScheduler.UnobservedTaskException += (_, e) =>
             {
-                // File logging above is the reliable fallback.
-            }
+                SafeAppendLog("APP G03: TaskScheduler.UnobservedTaskException");
+                SafeLogException("TASK UNOBSERVED", e.Exception);
+            };
+
+            UnhandledException += (_, e) =>
+            {
+                SafeAppendLog("APP G04: Application.UnhandledException");
+                SafeLogException("WINUI UNHANDLED", e.Exception);
+
+                try
+                {
+                    ShowStartupErrorWindow(e.Exception);
+                }
+                catch (Exception windowEx)
+                {
+                    SafeLogException("ERROR SHOWING STARTUP ERROR WINDOW", windowEx);
+                }
+
+                // Tanı amaçlı: sessiz çöküş yerine hata penceresi görelim.
+                e.Handled = true;
+            };
         }
 
         private static IServiceProvider ConfigureServices()
@@ -103,7 +140,6 @@ namespace Kroira.App
 
             services.AddDbContext<AppDbContext>();
 
-            // Core UI ViewModels
             services.AddTransient<MainViewModel>();
             services.AddTransient<HomeViewModel>();
             services.AddTransient<SettingsViewModel>();
@@ -116,7 +152,6 @@ namespace Kroira.App
             services.AddTransient<SeriesViewModel>();
             services.AddTransient<ChannelsPageViewModel>();
 
-            // Foundation Infrastructure
             services.AddSingleton<IEntitlementService, MockEntitlementService>();
             services.AddSingleton<IWindowManagerService, WindowManagerService>();
             services.AddSingleton<IInputInterceptorService, InputInterceptorService>();
@@ -125,6 +160,82 @@ namespace Kroira.App
             services.AddSingleton<Kroira.App.Services.Parsing.IXtreamParserService, Kroira.App.Services.Parsing.XtreamParserService>();
 
             return services.BuildServiceProvider();
+        }
+
+        private void ShowStartupErrorWindow(Exception ex)
+        {
+            try
+            {
+                SafeAppendLog("APP E01: showing startup error window");
+
+                var text =
+                    "Kroira startup error\n\n" +
+                    ex + "\n\n" +
+                    $"Startup log: {StartupLogPath}\n" +
+                    $"Startup error: {StartupErrorPath}";
+
+                var errorWindow = new Window
+                {
+                    Title = "Kroira startup error",
+                    Content = new Grid
+                    {
+                        Padding = new Thickness(16),
+                        Children =
+                        {
+                            new ScrollViewer
+                            {
+                                Content = new TextBox
+                                {
+                                    Text = text,
+                                    IsReadOnly = true,
+                                    AcceptsReturn = true,
+                                    TextWrapping = TextWrapping.Wrap
+                                }
+                            }
+                        }
+                    }
+                };
+
+                errorWindow.Activate();
+                _window = errorWindow;
+            }
+            catch (Exception ex2)
+            {
+                SafeLogException("APP E02: failed to show startup error window", ex2);
+            }
+        }
+
+        private static void SafeLogException(string title, Exception ex)
+        {
+            try
+            {
+                var text =
+                    $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] {title}{Environment.NewLine}" +
+                    ex + Environment.NewLine +
+                    new string('-', 80) + Environment.NewLine;
+
+                Debug.WriteLine(text);
+                File.AppendAllText(StartupErrorPath, text);
+                File.AppendAllText(StartupLogPath, text);
+            }
+            catch
+            {
+                // Tanı kodu, burada tekrar patlamasın.
+            }
+        }
+
+        private static void SafeAppendLog(string message)
+        {
+            try
+            {
+                var line = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] {message}";
+                Debug.WriteLine(line);
+                File.AppendAllText(StartupLogPath, line + Environment.NewLine);
+            }
+            catch
+            {
+                // Tanı kodu, burada tekrar patlamasın.
+            }
         }
     }
 }

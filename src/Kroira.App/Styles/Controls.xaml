@@ -1,0 +1,139 @@
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!--
+        Surfaces: tonal layering, no visible borders by default.
+        Legacy keys (KroiraPanelStyle, KroiraCardStyle) are retuned so that
+        unrefactored pages automatically lose their heavy outlines.
+    -->
+    <Style x:Key="KroiraPanelStyle" TargetType="Border">
+        <Setter Property="Background" Value="{StaticResource KroiraSurfaceBrush}" />
+        <Setter Property="BorderBrush" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="CornerRadius" Value="14" />
+        <Setter Property="Padding" Value="20" />
+    </Style>
+
+    <Style x:Key="KroiraCardStyle" TargetType="Border">
+        <Setter Property="Background" Value="{StaticResource KroiraSurfaceElevatedBrush}" />
+        <Setter Property="BorderBrush" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="CornerRadius" Value="12" />
+        <Setter Property="Padding" Value="14" />
+    </Style>
+
+    <!-- New: poster-first card (for Movies / Series in later phases) -->
+    <Style x:Key="KroiraPosterCardStyle" TargetType="Border">
+        <Setter Property="Background" Value="{StaticResource KroiraSurfaceBrush}" />
+        <Setter Property="BorderBrush" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="CornerRadius" Value="10" />
+    </Style>
+
+    <!-- New: operational row (Sources, Channels) -->
+    <Style x:Key="KroiraRowStyle" TargetType="Border">
+        <Setter Property="Background" Value="{StaticResource KroiraSurfaceSoftBrush}" />
+        <Setter Property="BorderBrush" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="CornerRadius" Value="8" />
+        <Setter Property="Padding" Value="14,10" />
+    </Style>
+
+    <!-- Settings: compact grouped rows for desktop preference surfaces -->
+    <Style x:Key="KroiraSettingsGroupStyle" TargetType="Border">
+        <Setter Property="Background" Value="{StaticResource KroiraSurfaceBrush}" />
+        <Setter Property="BorderBrush" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="CornerRadius" Value="10" />
+        <Setter Property="Padding" Value="18,16" />
+    </Style>
+
+    <Style x:Key="KroiraSettingsRowStyle" TargetType="Border">
+        <Setter Property="Background" Value="{StaticResource KroiraSurfaceSoftBrush}" />
+        <Setter Property="BorderBrush" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="CornerRadius" Value="8" />
+        <Setter Property="Padding" Value="14,12" />
+    </Style>
+
+    <!--
+        Shared media row container. Used for dense operational lists
+        (Channels, Favorites, full-page Continue Watching).
+        Stretches full width, gives each row its own rounded hit area,
+        and defers hover/selection styling to global ListViewItem overrides.
+    -->
+    <Style x:Key="KroiraMediaRowContainerStyle" TargetType="ListViewItem">
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="Margin" Value="0,0,0,4" />
+        <Setter Property="CornerRadius" Value="8" />
+    </Style>
+
+    <!-- Inputs -->
+    <Style x:Key="KroiraTextBoxStyle" TargetType="TextBox">
+        <Setter Property="Background" Value="{StaticResource KroiraControlBrush}" />
+        <Setter Property="BorderBrush" Value="{StaticResource KroiraControlBorderBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Foreground" Value="{StaticResource KroiraTextPrimaryBrush}" />
+        <Setter Property="PlaceholderForeground" Value="{StaticResource KroiraTextTertiaryBrush}" />
+        <Setter Property="CornerRadius" Value="8" />
+        <Setter Property="Padding" Value="12,8" />
+        <Setter Property="FontSize" Value="13" />
+    </Style>
+
+    <Style x:Key="KroiraComboBoxStyle" TargetType="ComboBox">
+        <Setter Property="Background" Value="{StaticResource KroiraControlBrush}" />
+        <Setter Property="BorderBrush" Value="{StaticResource KroiraControlBorderBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Foreground" Value="{StaticResource KroiraTextPrimaryBrush}" />
+        <Setter Property="CornerRadius" Value="8" />
+        <Setter Property="Padding" Value="12,6" />
+        <Setter Property="FontSize" Value="13" />
+    </Style>
+
+    <!-- Buttons -->
+    <Style x:Key="KroiraButtonStyle" TargetType="Button">
+        <Setter Property="Background" Value="{StaticResource KroiraControlBrush}" />
+        <Setter Property="BorderBrush" Value="{StaticResource KroiraControlBorderBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Foreground" Value="{StaticResource KroiraTextPrimaryBrush}" />
+        <Setter Property="CornerRadius" Value="8" />
+        <Setter Property="Padding" Value="12,7" />
+        <Setter Property="FontSize" Value="13" />
+    </Style>
+
+    <!-- Ghost / secondary button: no fill, faint outline -->
+    <Style x:Key="KroiraGhostButtonStyle" TargetType="Button">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderBrush" Value="{StaticResource KroiraBorderStrongBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Foreground" Value="{StaticResource KroiraTextPrimaryBrush}" />
+        <Setter Property="CornerRadius" Value="8" />
+        <Setter Property="Padding" Value="12,7" />
+        <Setter Property="FontSize" Value="13" />
+    </Style>
+
+    <!-- Primary CTA: subtle accent-container gradient -->
+    <Style x:Key="KroiraPrimaryButtonStyle" TargetType="Button">
+        <Setter Property="Background" Value="{StaticResource KroiraAccentGradientBrush}" />
+        <Setter Property="BorderBrush" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Foreground" Value="{StaticResource KroiraTextPrimaryBrush}" />
+        <Setter Property="CornerRadius" Value="8" />
+        <Setter Property="Padding" Value="14,8" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+
+    <Style x:Key="KroiraDangerButtonStyle" TargetType="Button">
+        <Setter Property="Background" Value="#221518" />
+        <Setter Property="BorderBrush" Value="#4A2830" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Foreground" Value="#F0B5B5" />
+        <Setter Property="CornerRadius" Value="8" />
+        <Setter Property="Padding" Value="12,7" />
+        <Setter Property="FontSize" Value="13" />
+    </Style>
+
+</ResourceDictionary>

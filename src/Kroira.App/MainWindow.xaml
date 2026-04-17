@@ -11,17 +11,20 @@
         <NavigationView x:Name="RootNavView"
                         ItemInvoked="RootNavView_ItemInvoked"
                         Background="{StaticResource KroiraPageBackgroundBrush}"
-                        PaneTitle="Kroira IPTV"
-                        OpenPaneLength="236"
-                        CompactPaneLength="52">
+                        PaneTitle="Kroira"
+                        IsBackButtonVisible="Collapsed"
+                        OpenPaneLength="216"
+                        CompactPaneLength="48">
             <NavigationView.MenuItems>
-                <NavigationViewItem Icon="Home" Content="Home" Tag="Home" />
-                <NavigationViewItem Icon="Video" Content="Channels" Tag="Channels" />
-                <NavigationViewItem Icon="OutlineStar" Content="Favorites" Tag="Favorites" />
-                <NavigationViewItem Icon="Play" Content="Continue Watching" Tag="ContinueWatching" />
-                <NavigationViewItem Icon="Video" Content="Movies" Tag="Movies" />
-                <NavigationViewItem Icon="DockLeft" Content="Series" Tag="Series" />
-                <NavigationViewItem Icon="Library" Content="Sources" Tag="Sources" />
+                <NavigationViewItem Icon="Home"       Content="Home"              Tag="Home" />
+                <NavigationViewItem Icon="Video"      Content="Channels"          Tag="Channels" />
+                <NavigationViewItem Icon="Video"      Content="Movies"            Tag="Movies" />
+                <NavigationViewItem Icon="DockLeft"   Content="Series"            Tag="Series" />
+                <NavigationViewItemSeparator />
+                <NavigationViewItem Icon="Play"       Content="Continue Watching" Tag="ContinueWatching" />
+                <NavigationViewItem Icon="OutlineStar" Content="Favorites"        Tag="Favorites" />
+                <NavigationViewItemSeparator />
+                <NavigationViewItem Icon="Library"    Content="Sources"           Tag="Sources" />
             </NavigationView.MenuItems>
             <Frame x:Name="ContentFrame" />
         </NavigationView>

@@ -1,0 +1,76 @@
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!--
+        Cinematic Noir palette.
+        Near-black base, tonal surface layers, single sky-blue accent,
+        gold reserved for highlights. No magenta, no strong purple.
+    -->
+
+    <!-- Surfaces -->
+    <SolidColorBrush x:Key="KroiraPageBackgroundBrush" Color="#0B0C10" />
+    <SolidColorBrush x:Key="KroiraSurfaceSoftBrush"    Color="#0F1116" />
+    <SolidColorBrush x:Key="KroiraSurfaceBrush"        Color="#14161C" />
+    <SolidColorBrush x:Key="KroiraSurfaceElevatedBrush" Color="#1A1D24" />
+    <SolidColorBrush x:Key="KroiraSurfaceHighBrush"     Color="#22262E" />
+
+    <!-- Borders: ghost-only, used sparingly -->
+    <SolidColorBrush x:Key="KroiraBorderBrush"       Color="#22252C" />
+    <SolidColorBrush x:Key="KroiraBorderStrongBrush" Color="#2E323B" />
+    <SolidColorBrush x:Key="KroiraGhostBorderBrush"  Color="#454851" Opacity="0.15" />
+
+    <!-- Text -->
+    <SolidColorBrush x:Key="KroiraTextPrimaryBrush"   Color="#E6E8EF" />
+    <SolidColorBrush x:Key="KroiraTextSecondaryBrush" Color="#A8ABB5" />
+    <SolidColorBrush x:Key="KroiraTextTertiaryBrush"  Color="#6E727C" />
+
+    <!-- Single restrained accent (sky blue) -->
+    <SolidColorBrush x:Key="KroiraAccentBrush"        Color="#A7C8FF" />
+    <SolidColorBrush x:Key="KroiraAccentStrongBrush"  Color="#6FA5FF" />
+    <SolidColorBrush x:Key="KroiraAccentContainerBrush" Color="#1E2A3E" />
+
+    <!-- Gold: reserved for premium / highlight only -->
+    <SolidColorBrush x:Key="KroiraGoldBrush" Color="#FFE2AF" />
+
+    <!-- Live indicator: calm, desaturated red. Only for LIVE state, never UI chrome. -->
+    <SolidColorBrush x:Key="KroiraLiveDotBrush" Color="#FF5A5F" />
+
+    <!--
+        Legacy magenta key kept for binding compatibility while unrefactored
+        pages still reference it. Aliased to the muted accent so it no longer
+        reads as a competing second accent.
+    -->
+    <SolidColorBrush x:Key="KroiraMagentaBrush" Color="#7A9BD6" />
+
+    <!-- Controls -->
+    <SolidColorBrush x:Key="KroiraControlBrush"       Color="#16181F" />
+    <SolidColorBrush x:Key="KroiraControlBorderBrush" Color="#2A2D35" />
+
+    <!--
+        Atmosphere / surface gradients. Intentionally very subtle tonal
+        shifts rather than the previous saturated purple bleeds.
+    -->
+    <LinearGradientBrush x:Key="KroiraPageAtmosphereBrush" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#0B0C10" Offset="0" />
+        <GradientStop Color="#0D0F14" Offset="0.55" />
+        <GradientStop Color="#0B0C10" Offset="1" />
+    </LinearGradientBrush>
+
+    <LinearGradientBrush x:Key="KroiraSurfaceGradientBrush" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#1A1D24" Offset="0" />
+        <GradientStop Color="#14161C" Offset="1" />
+    </LinearGradientBrush>
+
+    <LinearGradientBrush x:Key="KroiraMediaGradientBrush" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#1F242E" Offset="0" />
+        <GradientStop Color="#14161C" Offset="1" />
+    </LinearGradientBrush>
+
+    <!-- Primary CTA gradient (subtle accent-container -> accent-strong) -->
+    <LinearGradientBrush x:Key="KroiraAccentGradientBrush" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#2A3F5E" Offset="0" />
+        <GradientStop Color="#1E2A3E" Offset="1" />
+    </LinearGradientBrush>
+
+</ResourceDictionary>
