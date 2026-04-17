@@ -1,33 +1,129 @@
 # KROIRA IPTV
 
-KROIRA IPTV is a Windows desktop IPTV player built with C# / .NET 8 / WinUI 3.
+KROIRA IPTV is a modern Windows IPTV player built with C# / .NET 8 / WinUI 3.
 
-The goal of the project is simple: let users add their own M3U or Xtream source, browse live TV / movies / series, and watch content inside an embedded player experience on Windows. The app is intended to remain a **player-only** product. It does not provide content, playlists, or credentials. :contentReference[oaicite:1]{index=1} :contentReference[oaicite:2]{index=2}
+The app is designed as a **player-only** product. It does not provide playlists, channels, or credentials. Users bring their own sources and use the app to browse and watch content through a polished desktop experience.
 
-## Current status
+## Overview
 
-The project has moved past the early scaffold stage and already includes:
+KROIRA IPTV focuses on three core content types:
+
+- **Live TV**
+- **Movies**
+- **Series**
+
+The app supports user-provided IPTV sources such as:
+
+- **M3U**
+- **Xtream**
+
+The current playback system is built around a rebuilt **mpv/libmpv-based embedded player** for Windows.
+
+## Current Status
+
+The project is now past the early scaffold stage and has a working core experience for:
 
 - source onboarding for M3U / Xtream
-- live channels browsing
-- movies and series browsing
-- embedded playback using **WinUI 3 MediaPlayerElement** as the primary playback path
-- fullscreen / F11 / Esc / double-click playback controls
+- live TV browsing
+- movie browsing
+- series browsing
 - favorites
 - continue watching
-- XMLTV EPG foundation
-- SQLite persistence with EF Core migrations :contentReference[oaicite:3]{index=3}
+- XMLTV / EPG foundation
+- embedded playback inside the app window
 
-Recent work focused on stabilizing the core experience:
+The playback system has recently been rebuilt and stabilized around **mpv/libmpv**.
 
-- Xtream VOD cleanup to reduce garbage / placeholder / non-playable entries
-- preserving favorites and continue watching across VOD syncs using stable external IDs
-- episode progress preservation improvements during series sync
-- XMLTV parsing hardening and safer EPG channel matching
-- duplicate XMLTV channel id guard
-- repo cleanup with `.gitignore` and build artifact untracking :contentReference[oaicite:4]{index=4} :contentReference[oaicite:5]{index=5} :contentReference[oaicite:6]{index=6}
+### Playback features currently working
 
-## Tech stack
+- Live TV playback
+- VOD movie playback
+- Series episode playback
+- Embedded in-app playback
+- Back / Stop behavior
+- Fullscreen
+- Double-click fullscreen
+- VOD seek
+- Continue Watching / resume playback
+- Volume controls
+- Improved playback chrome auto-hide
+- LIVE button / live-edge behavior for live streams
+
+## Playback Architecture
+
+KROIRA IPTV now uses a rebuilt mpv-based playback path.
+
+### Active playback flow
+
+- `EmbeddedPlaybackPage`
+- `MpvPlayer`
+- `VideoSurface`
+- `NativeMpv`
+
+### Design goals
+
+- stable embedded playback inside the app window
+- no detached external player window
+- safe teardown and re-entry
+- good behavior across live TV, movies, and episodes
+- clear separation between live-stream and VOD behavior
+
+### Notes
+
+- The player is intentionally single-path and mpv-based.
+- Old mixed or transitional playback paths should not be treated as active architecture.
+- Future playback work should be incremental hardening and UX improvement, not another full rewrite unless absolutely necessary.
+
+## Features
+
+### Sources
+
+- Add M3U sources
+- Add Xtream sources
+- Persist source profiles locally
+- Remove sources safely
+
+### Live TV
+
+- Channel browsing
+- Category filtering
+- Favorites
+- Embedded playback
+- LIVE button / go-to-live behavior
+- Non-seekable live policy where appropriate
+- EPG foundation
+
+### Movies & Series
+
+- Movies page
+- Series page
+- Embedded playback
+- VOD seek
+- Resume support
+- Continue Watching integration
+
+### Continue Watching
+
+- Resume support for movies
+- Resume support for episodes
+- Progress persistence for VOD content
+
+### Playback UX
+
+- Embedded playback inside the app window
+- Fullscreen support
+- Double-click fullscreen
+- Auto-hide playback chrome
+- Volume control
+- Back / Stop flow improvements
+
+### EPG
+
+- XMLTV URL support
+- Current / upcoming program foundation
+- Basic guide-aware channel experience
+
+## Tech Stack
 
 - C#
 - .NET 8
@@ -36,61 +132,57 @@ Recent work focused on stabilizing the core experience:
 - SQLite
 - Entity Framework Core
 - CommunityToolkit.Mvvm
-- DI + MVVM architecture :contentReference[oaicite:7]{index=7}
 
-## Playback architecture
-
-The app originally experimented with LibVLCSharp, but the main playback direction was changed because the desired embedded playback behavior in WinUI 3 was not reliable enough through that path.
-
-**Primary playback path:**
-- WinUI 3 `MediaPlayerElement`
-
-LibVLC should be treated as legacy / fallback territory, not the main direction of the app. :contentReference[oaicite:8]{index=8}
-
-## Features
-
-### Sources
-- Add M3U sources
-- Add Xtream sources
-- Persist source profiles locally
-- Delete sources and related imported data safely :contentReference[oaicite:9]{index=9}
-
-### Live TV
-- Channel list
-- Category filtering
-- Channel favorites
-- Embedded playback :contentReference[oaicite:10]{index=10}
-
-### Movies & Series
-- Xtream VOD import
-- Movies page
-- Series page
-- VOD cleanup / filtering improvements
-- Better identity stability across syncs :contentReference[oaicite:11]{index=11} :contentReference[oaicite:12]{index=12}
-
-### Continue Watching
-- Channel support
-- Movie support
-- Episode support
-- Progress preservation improvements across syncs :contentReference[oaicite:13]{index=13} 
-
-### EPG
-- XMLTV URL support
-- EPG import / sync foundation
-- Safer XMLTV date parsing
-- Better normalized channel matching
-- Duplicate channel id guard :contentReference[oaicite:15]{index=15} :contentReference[oaicite:16]{index=16}
-
-## Getting started
+## Getting Started
 
 ### Requirements
 
-- Windows 10/11
+- Windows 10 / 11
 - .NET 8 SDK
-- Visual Studio 2022 or newer recommended
-- Windows App SDK compatible development environment
+- Visual Studio 2022 or newer
+- Windows App SDK compatible environment
 
-### Run
+### Development Notes
 
-```bash
-dotnet run --project src/Kroira.App/Kroira.App.csproj
+This is a packaged WinUI 3 desktop app. The recommended way to run and debug it is through **Visual Studio** using the packaged profile.
+
+### Typical Development Flow
+
+- open the solution in Visual Studio
+- select the packaged startup profile
+- build for `x64`
+- run/debug from Visual Studio
+
+## Project Direction
+
+Short-term priorities:
+
+- playback hardening and polish
+- subtitle / audio track improvements
+- aspect ratio / fit mode controls
+- better playback status and error messaging
+- longer session testing and stress testing
+
+Long-term priorities:
+
+- EPG improvements
+- catalog polish
+- localization improvements
+- search / filter / sort improvements
+- additional quality-of-life features
+
+## Disclaimer
+
+KROIRA IPTV is a client application only.
+
+It does **not** include or distribute:
+- channels
+- playlists
+- stream credentials
+- copyrighted content
+
+Users are responsible for the sources they add and use.
+
+## License
+
+Add your preferred license here.
