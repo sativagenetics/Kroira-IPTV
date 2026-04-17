@@ -1,0 +1,65 @@
+<UserControl
+    x:Class="Kroira.App.Controls.Rail"
+    x:Name="Root"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Grid x:Name="RailRoot" Height="130">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
+
+        <Button
+            x:Name="PreviousButton"
+            Grid.Column="0"
+            Width="32"
+            Height="32"
+            MinWidth="32"
+            Padding="0"
+            Margin="0,0,10,0"
+            VerticalAlignment="Center"
+            Click="PreviousButton_Click"
+            Style="{StaticResource KroiraGhostButtonStyle}"
+            ToolTipService.ToolTip="Previous">
+            <FontIcon Glyph="&#xE76B;" FontSize="12" />
+        </Button>
+
+        <ScrollViewer
+            x:Name="RailScrollViewer"
+            Grid.Column="1"
+            HorizontalScrollBarVisibility="Hidden"
+            HorizontalScrollMode="Enabled"
+            VerticalScrollBarVisibility="Disabled"
+            VerticalScrollMode="Disabled"
+            ZoomMode="Disabled"
+            ViewChanged="RailScrollViewer_ViewChanged">
+            <ItemsRepeater
+                x:Name="RailRepeater"
+                ItemsSource="{x:Null}">
+                <ItemsRepeater.Layout>
+                    <StackLayout
+                        x:Name="RailStackLayout"
+                        Orientation="Horizontal"
+                        Spacing="14" />
+                </ItemsRepeater.Layout>
+            </ItemsRepeater>
+        </ScrollViewer>
+
+        <Button
+            x:Name="NextButton"
+            Grid.Column="2"
+            Width="32"
+            Height="32"
+            MinWidth="32"
+            Padding="0"
+            Margin="10,0,0,0"
+            VerticalAlignment="Center"
+            Click="NextButton_Click"
+            Style="{StaticResource KroiraGhostButtonStyle}"
+            ToolTipService.ToolTip="Next">
+            <FontIcon Glyph="&#xE76C;" FontSize="12" />
+        </Button>
+    </Grid>
+</UserControl>

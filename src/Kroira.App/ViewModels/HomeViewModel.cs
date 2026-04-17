@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
@@ -39,6 +40,15 @@ namespace Kroira.App.ViewModels
         public long SavedPositionMs { get; set; }
     }
 
+    public sealed class HomeLiveItem
+    {
+        public int ContentId { get; set; }
+        public string Title { get; set; } = string.Empty;
+        public string LogoUrl { get; set; } = string.Empty;
+        public string StreamUrl { get; set; } = string.Empty;
+        public string Detail { get; set; } = "Live channel";
+    }
+
     public partial class HomeViewModel : ObservableObject
     {
         private readonly IServiceProvider _serviceProvider;
@@ -47,6 +57,7 @@ namespace Kroira.App.ViewModels
         public ObservableCollection<HomeSummaryItem> SummaryItems { get; } = new();
         public ObservableCollection<HomeActionItem> QuickActions { get; } = new();
         public ObservableCollection<HomeContinueItem> ContinueItems { get; } = new();
+        public ObservableCollection<HomeLiveItem> LiveItems { get; } = new();
 
         [ObservableProperty]
         private string _licenseStatusMessage = string.Empty;
@@ -71,6 +82,9 @@ namespace Kroira.App.ViewModels
 
         [ObservableProperty]
         private Visibility _sourceIssueVisibility = Visibility.Collapsed;
+
+        [ObservableProperty]
+        private Visibility _liveItemsVisibility = Visibility.Collapsed;
 
         public HomeViewModel(IServiceProvider serviceProvider, IEntitlementService entitlementService)
         {
@@ -133,6 +147,7 @@ namespace Kroira.App.ViewModels
                 : "No source sync has completed yet";
 
             await LoadContinueItemsAsync(db);
+            await LoadLiveItemsAsync(db);
         }
 
         private async Task LoadContinueItemsAsync(AppDbContext db)
@@ -142,7 +157,7 @@ namespace Kroira.App.ViewModels
             var recs = await db.PlaybackProgresses
                 .Where(p => !p.IsCompleted)
                 .OrderByDescending(p => p.LastWatched)
-                .Take(3)
+                .Take(8)
                 .ToListAsync();
 
             if (recs.Count == 0)
@@ -161,6 +176,7 @@ namespace Kroira.App.ViewModels
             var episodeIds = recs.Where(r => r.ContentType == PlaybackContentType.Episode).Select(r => r.ContentId).ToList();
             var episodes = await db.Episodes.Where(e => episodeIds.Contains(e.Id)).ToDictionaryAsync(e => e.Id);
 
+            var continueItems = new List<HomeContinueItem>();
             foreach (var r in recs)
             {
                 var title = string.Empty;
@@ -187,7 +203,7 @@ namespace Kroira.App.ViewModels
                     continue;
                 }
 
-                ContinueItems.Add(new HomeContinueItem
+                continueItems.Add(new HomeContinueItem
                 {
                     ContentId = r.ContentId,
                     ContentType = r.ContentType,
@@ -200,8 +216,56 @@ namespace Kroira.App.ViewModels
                 });
             }
 
+            foreach (var item in continueItems
+                         .OrderByDescending(item => IsTurkishHint(item.Title) || IsTurkishHint(item.Detail))
+                         .ThenBy(item => item.Title, StringComparer.CurrentCultureIgnoreCase))
+            {
+                ContinueItems.Add(item);
+            }
+
             ContinueItemsVisibility = ContinueItems.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
             ContinueEmptyVisibility = ContinueItems.Count > 0 ? Visibility.Collapsed : Visibility.Visible;
+        }
+
+        private async Task LoadLiveItemsAsync(AppDbContext db)
+        {
+            LiveItems.Clear();
+
+            var channels = await db.Channels
+                .Where(c => c.StreamUrl != string.Empty)
+                .OrderByDescending(c => IsTurkishHint(c.Name) || IsTurkishHint(c.LogoUrl))
+                .ThenBy(c => c.Name)
+                .Take(8)
+                .ToListAsync();
+
+            foreach (var channel in channels)
+            {
+                LiveItems.Add(new HomeLiveItem
+                {
+                    ContentId = channel.Id,
+                    Title = channel.Name,
+                    LogoUrl = channel.LogoUrl,
+                    StreamUrl = channel.StreamUrl
+                });
+            }
+
+            LiveItemsVisibility = LiveItems.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        private static bool IsTurkishHint(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return false;
+            }
+
+            var normalized = value.Trim();
+            return normalized.StartsWith("TR", StringComparison.OrdinalIgnoreCase)
+                || normalized.Contains("Turk", StringComparison.OrdinalIgnoreCase)
+                || normalized.Contains("Türk", StringComparison.OrdinalIgnoreCase)
+                || normalized.Contains("Turkiye", StringComparison.OrdinalIgnoreCase)
+                || normalized.Contains("Türkiye", StringComparison.OrdinalIgnoreCase)
+                || normalized.Contains("Turkish", StringComparison.OrdinalIgnoreCase);
         }
     }
 }

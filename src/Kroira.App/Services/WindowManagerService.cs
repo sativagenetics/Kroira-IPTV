@@ -1,5 +1,6 @@
 using System;
 using Microsoft.UI.Windowing;
+using Windows.Graphics;
 using Microsoft.UI.Xaml;
 
 namespace Kroira.App.Services
@@ -26,6 +27,7 @@ namespace Kroira.App.Services
             var hWnd = WinRT.Interop.WindowNative.GetWindowHandle(window);
             Microsoft.UI.WindowId windowId = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(hWnd);
             _appWindow = AppWindow.GetFromWindowId(windowId);
+            _appWindow.Resize(new SizeInt32(1440, 920));
 
             _appWindow.Changed += (s, e) =>
             {

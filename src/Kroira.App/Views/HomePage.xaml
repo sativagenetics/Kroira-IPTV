@@ -2,130 +2,302 @@
     x:Class="Kroira.App.Views.HomePage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:Kroira.App.Controls"
+    xmlns:viewmodels="using:Kroira.App.ViewModels"
     Background="{StaticResource KroiraPageBackgroundBrush}">
 
-    <ScrollViewer>
-        <Grid Padding="40,28,40,40"
-              RowSpacing="28"
-              MaxWidth="1200"
-              HorizontalAlignment="Center">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-            </Grid.RowDefinitions>
+    <Page.Resources>
+        <Style x:Key="HomeCardButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="CornerRadius" Value="12" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="MinWidth" Value="0" />
+            <Setter Property="MinHeight" Value="0" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="VerticalContentAlignment" Value="Stretch" />
+        </Style>
 
-            <!-- Header -->
-            <Grid Grid.Row="0" ColumnSpacing="24">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
-
-                <StackPanel Spacing="10" MaxWidth="760">
-                    <TextBlock Text="KROIRA · DESKTOP MEDIA HUB"
-                               Style="{StaticResource KroiraLabelStyle}"
-                               Foreground="{StaticResource KroiraAccentBrush}" />
-                    <TextBlock Text="Welcome back"
-                               Style="{StaticResource KroiraDisplayLgStyle}" />
-                    <TextBlock Text="{x:Bind ViewModel.HeroSubtitle, Mode=OneWay}"
-                               Style="{StaticResource KroiraBodyStyle}"
-                               FontSize="14"
-                               MaxWidth="680" />
+        <DataTemplate x:Key="SummaryStatTemplate">
+            <Border MinWidth="150" Padding="0,0,24,0">
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                    <FontIcon Glyph="{Binding Glyph}"
+                              FontSize="14"
+                              Foreground="{StaticResource KroiraAccentBrush}"
+                              VerticalAlignment="Center" />
+                    <StackPanel>
+                        <TextBlock Text="{Binding Value}"
+                                   FontSize="21"
+                                   FontWeight="SemiBold"
+                                   Foreground="{StaticResource KroiraTextPrimaryBrush}" />
+                        <TextBlock Text="{Binding Label}" Style="{StaticResource KroiraMetaStyle}" />
+                    </StackPanel>
                 </StackPanel>
+            </Border>
+        </DataTemplate>
 
-                <StackPanel Grid.Column="1"
-                            Orientation="Horizontal"
-                            Spacing="10"
-                            VerticalAlignment="Center">
-                    <Button Click="ContinueWatching_Click"
-                            Style="{StaticResource KroiraPrimaryButtonStyle}"
-                            Padding="18,10"
-                            MinWidth="160"
-                            Content="Continue watching" />
-                    <Button Click="AddSource_Click"
-                            Style="{StaticResource KroiraGhostButtonStyle}"
-                            Padding="18,10"
-                            MinWidth="140"
-                            Content="Add source" />
-                </StackPanel>
-            </Grid>
+        <DataTemplate x:Key="ContinueItemCardTemplate">
+            <Button Click="ContinueItem_Click"
+                    Style="{StaticResource HomeCardButtonStyle}">
+                <Border Width="300"
+                        Height="148"
+                        Background="#B21A202B"
+                        BorderBrush="#2EFFFFFF"
+                        BorderThickness="1"
+                        CornerRadius="14"
+                        Padding="18,16">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
 
-            <!-- Library strip -->
-            <Border Grid.Row="1"
-                    Background="{StaticResource KroiraSurfaceSoftBrush}"
-                    CornerRadius="12"
-                    Padding="20,14">
-                <Grid ColumnSpacing="18">
+                        <StackPanel Spacing="6">
+                            <TextBlock Text="{Binding Title}"
+                                       Style="{StaticResource KroiraTitleStyle}"
+                                       FontSize="17"
+                                       MaxLines="2"
+                                       TextTrimming="CharacterEllipsis"
+                                       TextWrapping="Wrap" />
+                            <TextBlock Text="{Binding Detail}"
+                                       Style="{StaticResource KroiraMetaStyle}"
+                                       MaxLines="1"
+                                       TextTrimming="CharacterEllipsis" />
+                        </StackPanel>
+
+                        <Grid Grid.Row="1" ColumnSpacing="10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <ProgressBar Value="58"
+                                         Maximum="100"
+                                         Height="3"
+                                         Foreground="{StaticResource KroiraAccentBrush}"
+                                         Background="#33404B5A"
+                                         VerticalAlignment="Center" />
+                            <FontIcon Grid.Column="1"
+                                      Glyph="&#xE768;"
+                                      FontSize="16"
+                                      Foreground="{StaticResource KroiraTextPrimaryBrush}" />
+                        </Grid>
+                    </Grid>
+                </Border>
+            </Button>
+        </DataTemplate>
+
+        <DataTemplate x:Key="LiveNowCardTemplate">
+            <Button Click="LiveNow_Click"
+                    Style="{StaticResource HomeCardButtonStyle}">
+                <Border Width="210"
+                        Height="126"
+                        Background="{StaticResource KroiraSurfaceElevatedBrush}"
+                        BorderBrush="#2AFFFFFF"
+                        BorderThickness="1"
+                        CornerRadius="14"
+                        Padding="14">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <Grid>
+                            <Border Width="48"
+                                    Height="48"
+                                    CornerRadius="10"
+                                    Background="{StaticResource KroiraSurfaceHighBrush}"
+                                    HorizontalAlignment="Left"
+                                    VerticalAlignment="Top">
+                                <Grid>
+                                    <FontIcon Glyph="&#xE714;"
+                                              FontSize="18"
+                                              Foreground="{StaticResource KroiraTextTertiaryBrush}"
+                                              Opacity="0.55" />
+                                    <Image Source="{Binding LogoUrl, Converter={StaticResource UrlToImageSourceConverter}}"
+                                           Stretch="Uniform"
+                                           Margin="6" />
+                                </Grid>
+                            </Border>
+                            <Border Background="{StaticResource KroiraStateDangerSoftBrush}"
+                                    BorderBrush="#33FF5A5F"
+                                    BorderThickness="1"
+                                    CornerRadius="10"
+                                    Padding="8,3"
+                                    HorizontalAlignment="Right"
+                                    VerticalAlignment="Top">
+                                <StackPanel Orientation="Horizontal" Spacing="5">
+                                    <Ellipse Width="6" Height="6" Fill="{StaticResource KroiraLiveDotBrush}" />
+                                    <TextBlock Text="LIVE"
+                                               Foreground="{StaticResource KroiraLiveDotBrush}"
+                                               FontSize="10"
+                                               FontWeight="SemiBold" />
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+
+                        <StackPanel Grid.Row="1" Spacing="3">
+                            <TextBlock Text="{Binding Title}"
+                                       Style="{StaticResource KroiraTitleStyle}"
+                                       MaxLines="1"
+                                       TextTrimming="CharacterEllipsis" />
+                            <TextBlock Text="{Binding Detail}"
+                                       Style="{StaticResource KroiraMetaStyle}"
+                                       MaxLines="1"
+                                       TextTrimming="CharacterEllipsis" />
+                        </StackPanel>
+                    </Grid>
+                </Border>
+            </Button>
+        </DataTemplate>
+
+        <DataTemplate x:Key="QuickActionCardTemplate">
+            <Button Click="QuickAction_Click"
+                    Style="{StaticResource HomeCardButtonStyle}">
+                <Border Height="118"
+                        Background="#99161B24"
+                        BorderBrush="#24FFFFFF"
+                        BorderThickness="1"
+                        CornerRadius="14"
+                        Padding="16,14">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <Border Width="40"
+                                Height="40"
+                                CornerRadius="10"
+                                Background="#243A4D5E"
+                                VerticalAlignment="Top">
+                            <FontIcon Glyph="{Binding Glyph}"
+                                      FontSize="18"
+                                      Foreground="{StaticResource KroiraAccentBrush}" />
+                        </Border>
+
+                        <StackPanel Grid.Column="1" Margin="14,0,0,0" Spacing="5" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding Title}"
+                                       Style="{StaticResource KroiraTitleStyle}"
+                                       MaxLines="1"
+                                       TextTrimming="CharacterEllipsis" />
+                            <TextBlock Text="{Binding Detail}"
+                                       Style="{StaticResource KroiraMetaStyle}"
+                                       MaxLines="2"
+                                       TextWrapping="Wrap"
+                                       TextTrimming="CharacterEllipsis" />
+                        </StackPanel>
+                    </Grid>
+                </Border>
+            </Button>
+        </DataTemplate>
+    </Page.Resources>
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto"
+                  VerticalScrollMode="Auto"
+                  HorizontalScrollBarVisibility="Disabled"
+                  HorizontalScrollMode="Disabled">
+        <StackPanel Padding="44,34,44,46" Spacing="34">
+            <Border MinHeight="360"
+                    CornerRadius="22"
+                    BorderBrush="#2DFFFFFF"
+                    BorderThickness="1"
+                    Padding="38,34">
+                <Border.Background>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                        <GradientStop Color="#263447" Offset="0" />
+                        <GradientStop Color="#151B25" Offset="0.54" />
+                        <GradientStop Color="#0D1118" Offset="1" />
+                    </LinearGradientBrush>
+                </Border.Background>
+
+                <Grid ColumnSpacing="32">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="340" />
                     </Grid.ColumnDefinitions>
 
-                    <ItemsControl ItemsSource="{x:Bind ViewModel.SummaryItems, Mode=OneWay}">
-                        <ItemsControl.ItemsPanel>
-                            <ItemsPanelTemplate>
-                                <StackPanel Orientation="Horizontal" />
-                            </ItemsPanelTemplate>
-                        </ItemsControl.ItemsPanel>
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,0,28,0">
-                                    <FontIcon Glyph="{Binding Glyph}"
-                                              FontSize="13"
-                                              Foreground="{StaticResource KroiraTextTertiaryBrush}" />
-                                    <TextBlock Text="{Binding Value}"
-                                               FontSize="18"
-                                               FontWeight="SemiBold"
-                                               Foreground="{StaticResource KroiraTextPrimaryBrush}" />
-                                    <TextBlock Text="{Binding Label}"
-                                               FontSize="13"
-                                               Foreground="{StaticResource KroiraTextSecondaryBrush}" />
-                                </StackPanel>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
+                    <StackPanel Grid.Column="0"
+                                Spacing="18"
+                                VerticalAlignment="Center"
+                                MaxWidth="680">
+                        <TextBlock Text="DESKTOP MEDIA HUB"
+                                   Style="{StaticResource KroiraEyebrowStyle}"
+                                   Foreground="{StaticResource KroiraAccentBrush}" />
+                        <TextBlock Text="Watch without friction"
+                                   Style="{StaticResource KroiraDisplayLgStyle}"
+                                   MaxLines="2"
+                                   TextWrapping="Wrap" />
+                        <TextBlock Text="{x:Bind ViewModel.HeroSubtitle, Mode=OneWay}"
+                                   Style="{StaticResource KroiraBodyStyle}"
+                                   FontSize="15"
+                                   MaxWidth="560" />
 
-                    <TextBlock Grid.Column="1"
-                               Text="{x:Bind ViewModel.LibraryStatusMessage, Mode=OneWay}"
-                               Style="{StaticResource KroiraBodyStyle}"
-                               FontSize="12"
-                               VerticalAlignment="Center"
-                               TextAlignment="Right" />
+                        <StackPanel Orientation="Horizontal" Spacing="12" Margin="0,8,0,0">
+                            <Button Click="ContinueWatching_Click"
+                                    Style="{StaticResource KroiraPrimaryButtonStyle}"
+                                    Padding="22,11"
+                                    MinWidth="178"
+                                    Content="Continue watching" />
+                            <Button Click="AddSource_Click"
+                                    Style="{StaticResource KroiraGhostButtonStyle}"
+                                    Padding="20,11"
+                                    MinWidth="124"
+                                    Content="Add source" />
+                        </StackPanel>
+                    </StackPanel>
+
+                    <Border Grid.Column="1"
+                            Background="#7A0E131B"
+                            BorderBrush="#26FFFFFF"
+                            BorderThickness="1"
+                            CornerRadius="18"
+                            Padding="24"
+                            VerticalAlignment="Stretch">
+                        <StackPanel Spacing="18" VerticalAlignment="Center">
+                            <ItemsControl ItemsSource="{x:Bind ViewModel.SummaryItems, Mode=OneWay}"
+                                          ItemTemplate="{StaticResource SummaryStatTemplate}" />
+                            <Border Height="1" Background="#26FFFFFF" />
+                            <TextBlock Text="{x:Bind ViewModel.LibraryStatusMessage, Mode=OneWay}"
+                                       Style="{StaticResource KroiraBodyStyle}"
+                                       FontSize="13"
+                                       TextWrapping="Wrap" />
+                            <controls:StatusPill Visibility="{x:Bind ViewModel.SourceIssueVisibility, Mode=OneWay}"
+                                                 Label="SOURCE ATTENTION NEEDED"
+                                                 Kind="Warning" />
+                        </StackPanel>
+                    </Border>
                 </Grid>
             </Border>
 
-            <!-- Continue watching safe block -->
-            <StackPanel Grid.Row="2" Spacing="14">
+            <StackPanel Spacing="16">
                 <Grid>
-                    <TextBlock Text="Continue watching"
+                    <TextBlock Text="Continue Watching"
                                Style="{StaticResource KroiraSectionTitleStyle}"
                                VerticalAlignment="Center" />
                     <Button Content="View all"
                             HorizontalAlignment="Right"
+                            VerticalAlignment="Center"
                             Click="ContinueWatching_Click"
                             Style="{StaticResource KroiraGhostButtonStyle}" />
                 </Grid>
 
-                <Border Visibility="{x:Bind ViewModel.ContinueItemsVisibility, Mode=OneWay}"
-                        Background="{StaticResource KroiraSurfaceBrush}"
-                        CornerRadius="12"
-                        Padding="20">
-                    <StackPanel Spacing="10">
-                        <TextBlock Text="Resume queue is ready"
-                                   Style="{StaticResource KroiraTitleStyle}" />
-                        <TextBlock Text="Use View all to continue movies, episodes, and live playback from your saved positions."
-                                   Style="{StaticResource KroiraBodyStyle}"
-                                   MaxWidth="700" />
-                    </StackPanel>
-                </Border>
+                <controls:Rail x:Name="ContinueWatchingRail"
+                               Visibility="{x:Bind ViewModel.ContinueItemsVisibility, Mode=OneWay}"
+                               ItemsSource="{x:Bind ViewModel.ContinueItems, Mode=OneWay}"
+                               ItemTemplate="{StaticResource ContinueItemCardTemplate}"
+                               RailHeight="154"
+                               ItemSpacing="14"
+                               ScrollAmount="360" />
 
                 <Border Visibility="{x:Bind ViewModel.ContinueEmptyVisibility, Mode=OneWay}"
-                        Background="{StaticResource KroiraSurfaceBrush}"
-                        CornerRadius="12"
-                        Padding="20">
-                    <StackPanel Spacing="8" MaxWidth="560">
+                        Background="#99161B24"
+                        BorderBrush="#24FFFFFF"
+                        BorderThickness="1"
+                        CornerRadius="14"
+                        Padding="24,20">
+                    <StackPanel Spacing="8" MaxWidth="500">
                         <FontIcon Glyph="&#xE768;"
                                   FontSize="18"
                                   Foreground="{StaticResource KroiraTextTertiaryBrush}" />
@@ -137,20 +309,52 @@
                 </Border>
             </StackPanel>
 
-            <!-- Source status -->
-            <Border Grid.Row="3"
-                    Background="{StaticResource KroiraSurfaceSoftBrush}"
-                    CornerRadius="10"
-                    Padding="16,12">
+            <StackPanel Spacing="16" Visibility="{x:Bind ViewModel.LiveItemsVisibility, Mode=OneWay}">
+                <Grid>
+                    <TextBlock Text="Live Now"
+                               Style="{StaticResource KroiraSectionTitleStyle}"
+                               VerticalAlignment="Center" />
+                    <Button Content="All live TV"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Center"
+                            Click="LiveTv_Click"
+                            Style="{StaticResource KroiraGhostButtonStyle}" />
+                </Grid>
+
+                <controls:Rail ItemsSource="{x:Bind ViewModel.LiveItems, Mode=OneWay}"
+                               ItemTemplate="{StaticResource LiveNowCardTemplate}"
+                               RailHeight="132"
+                               ItemSpacing="14"
+                               ScrollAmount="340" />
+            </StackPanel>
+
+            <StackPanel Spacing="16">
+                <TextBlock Text="Quick Access"
+                           Style="{StaticResource KroiraSectionTitleStyle}" />
+                <ItemsRepeater ItemsSource="{x:Bind ViewModel.QuickActions, Mode=OneWay}"
+                               ItemTemplate="{StaticResource QuickActionCardTemplate}">
+                    <ItemsRepeater.Layout>
+                        <UniformGridLayout MinItemWidth="224"
+                                           MinRowSpacing="14"
+                                           MinColumnSpacing="14" />
+                    </ItemsRepeater.Layout>
+                </ItemsRepeater>
+            </StackPanel>
+
+            <Border Background="#99161B24"
+                    BorderBrush="#24FFFFFF"
+                    BorderThickness="1"
+                    CornerRadius="14"
+                    Padding="18,14">
                 <Grid ColumnSpacing="14">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
 
-                    <FontIcon Glyph="&#xE946;"
-                              FontSize="13"
+                    <FontIcon Grid.Column="0"
+                              Glyph="&#xE946;"
+                              FontSize="14"
                               Foreground="{StaticResource KroiraTextTertiaryBrush}"
                               VerticalAlignment="Center" />
 
@@ -161,33 +365,15 @@
                         <TextBlock Text="{x:Bind ViewModel.SourceStatusMessage, Mode=OneWay}"
                                    Style="{StaticResource KroiraTitleStyle}"
                                    FontSize="13" />
-                        <TextBlock Text="·"
-                                   Foreground="{StaticResource KroiraTextTertiaryBrush}" />
                         <TextBlock Text="{x:Bind ViewModel.LastSyncMessage, Mode=OneWay}"
                                    Style="{StaticResource KroiraBodyStyle}"
                                    FontSize="12" />
-                        <TextBlock Text="·"
-                                   Foreground="{StaticResource KroiraTextTertiaryBrush}" />
                         <TextBlock Text="{x:Bind ViewModel.LicenseStatusMessage, Mode=OneWay}"
                                    Style="{StaticResource KroiraBodyStyle}"
                                    FontSize="12" />
                     </StackPanel>
-
-                    <Border Grid.Column="2"
-                            Visibility="{x:Bind ViewModel.SourceIssueVisibility, Mode=OneWay}"
-                            Background="Transparent"
-                            BorderBrush="{StaticResource KroiraGoldBrush}"
-                            BorderThickness="1"
-                            CornerRadius="999"
-                            Padding="10,4"
-                            VerticalAlignment="Center">
-                        <TextBlock Text="Source attention needed"
-                                   Foreground="{StaticResource KroiraGoldBrush}"
-                                   FontSize="11"
-                                   FontWeight="SemiBold" />
-                    </Border>
                 </Grid>
             </Border>
-        </Grid>
+        </StackPanel>
     </ScrollViewer>
 </Page>

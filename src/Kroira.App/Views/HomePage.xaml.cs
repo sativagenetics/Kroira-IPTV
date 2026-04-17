@@ -33,33 +33,75 @@ namespace Kroira.App.Views
             Frame.Navigate(typeof(ContinueWatchingPage));
         }
 
-        private void QuickAction_ItemClick(object sender, ItemClickEventArgs e)
+        private void QuickAction_Click(object sender, RoutedEventArgs e)
         {
-            if (e.ClickedItem is not HomeActionItem item)
+            if (GetTemplateItem<HomeActionItem>(sender) is { } item)
+            {
+                NavigateToTarget(item.Target);
+            }
+        }
+
+        private void ContinueItem_Click(object sender, RoutedEventArgs e)
+        {
+            if (GetTemplateItem<HomeContinueItem>(sender) is { } item)
+            {
+                OpenContinueItem(item);
+            }
+        }
+
+        private void OpenContinueItem(HomeContinueItem item)
+        {
+            if (string.IsNullOrWhiteSpace(item.StreamUrl))
             {
                 return;
             }
 
-            NavigateToTarget(item.Target);
+            Frame.Navigate(typeof(EmbeddedPlaybackPage), new PlaybackLaunchContext
+            {
+                ContentId = item.ContentId,
+                ContentType = item.ContentType,
+                StreamUrl = item.StreamUrl,
+                StartPositionMs = item.SavedPositionMs
+            });
         }
 
-        private void ContinueList_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void LiveNow_Click(object sender, RoutedEventArgs e)
         {
-            if (e.AddedItems.Count > 0 && e.AddedItems[0] is HomeContinueItem item)
+            if (GetTemplateItem<HomeLiveItem>(sender) is { } item &&
+                !string.IsNullOrWhiteSpace(item.StreamUrl))
             {
                 Frame.Navigate(typeof(EmbeddedPlaybackPage), new PlaybackLaunchContext
                 {
                     ContentId = item.ContentId,
-                    ContentType = item.ContentType,
+                    ContentType = PlaybackContentType.Channel,
                     StreamUrl = item.StreamUrl,
-                    StartPositionMs = item.SavedPositionMs
+                    StartPositionMs = 0
                 });
             }
+        }
 
-            if (sender is ListView listView)
+        private static T GetTemplateItem<T>(object sender) where T : class
+        {
+            if (sender is FrameworkElement element)
             {
-                listView.SelectedItem = null;
+                if (element.DataContext is T direct)
+                {
+                    return direct;
+                }
+
+                if (element is ContentControl { Content: FrameworkElement contentElement } &&
+                    contentElement.DataContext is T content)
+                {
+                    return content;
+                }
             }
+
+            return null;
+        }
+
+        private void LiveTv_Click(object sender, RoutedEventArgs e)
+        {
+            Frame.Navigate(typeof(ChannelsPage));
         }
 
         private void NavigateToTarget(string target)

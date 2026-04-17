@@ -10,10 +10,11 @@
         <local:NullToVisibleConverter x:Key="NullToVisibleConverter" />
         <local:SeasonPrefixConverter x:Key="SeasonPrefixConverter" />
 
-        <Style x:Key="SeriesListItemStyle" TargetType="ListViewItem">
-            <Setter Property="Margin" Value="0,0,0,12" />
+        <Style x:Key="SeriesTileContainerStyle" TargetType="GridViewItem">
             <Setter Property="Padding" Value="0" />
+            <Setter Property="Margin" Value="0" />
             <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="VerticalContentAlignment" Value="Stretch" />
         </Style>
 
         <Style x:Key="SeriesEpisodeRowStyle" TargetType="ListViewItem">
@@ -23,176 +24,179 @@
         </Style>
     </Page.Resources>
 
-    <Grid Padding="40,24,40,32"
-          MaxWidth="1500"
+    <Grid Padding="34,26,34,32"
+          MaxWidth="1460"
           HorizontalAlignment="Center"
-          RowSpacing="20">
+          RowSpacing="18">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <!-- Header -->
-        <StackPanel Grid.Row="0" Spacing="6">
-            <TextBlock Text="SHOWS LIBRARY"
-                       Style="{StaticResource KroiraLabelStyle}"
-                       Foreground="{StaticResource KroiraAccentBrush}" />
-            <TextBlock Text="Series"
-                       Style="{StaticResource KroiraPageTitleStyle}" />
-        </StackPanel>
+        <Grid Grid.Row="0" ColumnSpacing="18">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
 
-        <!-- Filter bar -->
+            <StackPanel Spacing="6">
+                <TextBlock Text="SHOWS LIBRARY"
+                           Style="{StaticResource KroiraLabelStyle}"
+                           Foreground="{StaticResource KroiraAccentBrush}" />
+                <TextBlock Text="Series"
+                           Style="{StaticResource KroiraPageTitleStyle}" />
+                <TextBlock Text="Pick a show, then inspect seasons and episodes in the side panel."
+                           Style="{StaticResource KroiraPageSubtitleStyle}"
+                           MaxWidth="680" />
+            </StackPanel>
+
+            <Border Grid.Column="1"
+                    Background="#99161B24"
+                    BorderBrush="#24FFFFFF"
+                    BorderThickness="1"
+                    CornerRadius="14"
+                    Padding="14,10"
+                    VerticalAlignment="Bottom">
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                    <TextBlock Text="{x:Bind ViewModel.FilteredSeries.Count, Mode=OneWay, Converter={StaticResource NumberFormatConverter}}"
+                               Style="{StaticResource KroiraTitleStyle}"
+                               FontSize="13" />
+                    <TextBlock Text="shows" Style="{StaticResource KroiraMetaStyle}" />
+                </StackPanel>
+            </Border>
+        </Grid>
+
         <Grid Grid.Row="1" ColumnSpacing="12">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" MaxWidth="460" />
-                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" MaxWidth="520" />
+                <ColumnDefinition Width="220" />
             </Grid.ColumnDefinitions>
 
             <TextBox Grid.Column="0"
                      Style="{StaticResource KroiraFilterTextBoxStyle}"
                      Text="{x:Bind ViewModel.SearchQuery, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                     PlaceholderText="Search series"
-                     HorizontalAlignment="Stretch" />
+                     PlaceholderText="Search series" />
 
             <ComboBox Grid.Column="1"
                       Style="{StaticResource KroiraFilterComboBoxStyle}"
                       ItemsSource="{x:Bind ViewModel.Categories, Mode=OneWay}"
                       SelectedItem="{x:Bind ViewModel.SelectedCategory, Mode=TwoWay}"
-                      DisplayMemberPath="Name"
-                      MinWidth="220" />
+                      DisplayMemberPath="Name" />
         </Grid>
 
-        <!-- Result count -->
-        <StackPanel Grid.Row="2"
-                    Orientation="Horizontal"
-                    Spacing="5"
-                    Margin="2,0,0,0">
-            <TextBlock Text="{x:Bind ViewModel.FilteredSeries.Count, Mode=OneWay, Converter={StaticResource NumberFormatConverter}}"
-                       Style="{StaticResource KroiraResultCountStyle}" />
-            <TextBlock Text="shows"
-                       Style="{StaticResource KroiraResultCountStyle}" />
-        </StackPanel>
-
-        <!-- Main content -->
-        <Grid Grid.Row="3" ColumnSpacing="24">
+        <Grid Grid.Row="2" ColumnSpacing="22">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="420" />
+                <ColumnDefinition Width="430" />
             </Grid.ColumnDefinitions>
 
-            <!-- Empty state -->
-            <StackPanel Grid.Column="0"
-                        Visibility="{x:Bind ViewModel.IsEmpty, Mode=OneWay}"
-                        HorizontalAlignment="Center"
-                        VerticalAlignment="Center"
-                        Spacing="10"
-                        MaxWidth="460">
-                <FontIcon Glyph="&#xE8A9;"
-                          Foreground="{StaticResource KroiraTextTertiaryBrush}"
-                          FontSize="28"
-                          HorizontalAlignment="Center" />
-                <TextBlock Text="No series to show"
-                           Style="{StaticResource KroiraSectionTitleStyle}"
-                           HorizontalAlignment="Center" />
-                <TextBlock Text="Sync an Xtream VOD source, or clear your filters."
-                           Style="{StaticResource KroiraBodyStyle}"
-                           TextAlignment="Center"
-                           HorizontalAlignment="Center" />
-            </StackPanel>
+            <Grid Grid.Column="0">
+                <StackPanel Visibility="{x:Bind ViewModel.IsEmpty, Mode=OneWay}"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Spacing="10"
+                            MaxWidth="460">
+                    <FontIcon Glyph="&#xE8A9;"
+                              Foreground="{StaticResource KroiraTextTertiaryBrush}"
+                              FontSize="28"
+                              HorizontalAlignment="Center" />
+                    <TextBlock Text="No series to show"
+                               Style="{StaticResource KroiraSectionTitleStyle}"
+                               HorizontalAlignment="Center" />
+                    <TextBlock Text="Sync an Xtream VOD source, or clear your filters."
+                               Style="{StaticResource KroiraBodyStyle}"
+                               TextAlignment="Center" />
+                </StackPanel>
 
-            <!-- Safe master list -->
-            <ListView Grid.Column="0"
-                      ItemsSource="{x:Bind ViewModel.FilteredSeries, Mode=OneWay}"
-                      SelectedItem="{x:Bind ViewModel.SelectedSeries, Mode=TwoWay}"
-                      SelectionMode="Single"
-                      ItemContainerStyle="{StaticResource SeriesListItemStyle}"
-                      ScrollViewer.HorizontalScrollMode="Disabled"
-                      ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                      ScrollViewer.VerticalScrollMode="Enabled"
-                      ScrollViewer.VerticalScrollBarVisibility="Auto"
-                      Padding="0,4,0,20">
-                <ListView.ItemTemplate>
-                    <DataTemplate>
-                        <Border Background="{StaticResource KroiraSurfaceBrush}"
-                                CornerRadius="12"
-                                Padding="14">
-                            <Grid ColumnSpacing="14">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="72" />
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
+                <GridView ItemsSource="{x:Bind ViewModel.FilteredSeries, Mode=OneWay}"
+                          SelectedItem="{x:Bind ViewModel.SelectedSeries, Mode=TwoWay}"
+                          SelectionMode="Single"
+                          ItemContainerStyle="{StaticResource SeriesTileContainerStyle}"
+                          ScrollViewer.HorizontalScrollMode="Disabled"
+                          ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                          ScrollViewer.VerticalScrollMode="Enabled"
+                          ScrollViewer.VerticalScrollBarVisibility="Auto"
+                          Padding="0,2,0,22">
+                    <GridView.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <ItemsWrapGrid Orientation="Horizontal"
+                                           MaximumRowsOrColumns="4" />
+                        </ItemsPanelTemplate>
+                    </GridView.ItemsPanel>
+                    <GridView.ItemTemplate>
+                        <DataTemplate>
+                            <Border Width="198"
+                                    Height="246"
+                                    Background="#99161B24"
+                                    BorderBrush="#24FFFFFF"
+                                    BorderThickness="1"
+                                    CornerRadius="14"
+                                    Padding="10">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="154" />
+                                        <RowDefinition Height="*" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
 
-                                <!-- Poster -->
-                                <Grid Width="72" Height="108">
-                                    <Border CornerRadius="10"
-                                            Background="{StaticResource KroiraPosterPlaceholderBrush}">
-                                        <FontIcon Glyph="&#xE8A9;"
-                                                  Foreground="{StaticResource KroiraTextTertiaryBrush}"
-                                                  FontSize="22"
-                                                  HorizontalAlignment="Center"
-                                                  VerticalAlignment="Center" />
-                                    </Border>
-                                    <Border CornerRadius="10">
-                                        <Image Source="{Binding PosterUrl, Converter={StaticResource UrlToImageSourceConverter}}"
-                                               Stretch="UniformToFill" />
-                                    </Border>
-                                </Grid>
+                                    <Grid>
+                                        <Border CornerRadius="10"
+                                                Background="{StaticResource KroiraPosterPlaceholderBrush}">
+                                            <FontIcon Glyph="&#xE8A9;"
+                                                      Foreground="{StaticResource KroiraTextTertiaryBrush}"
+                                                      FontSize="24"
+                                                      HorizontalAlignment="Center"
+                                                      VerticalAlignment="Center" />
+                                        </Border>
+                                        <Border CornerRadius="10">
+                                            <Image Source="{Binding PosterUrl, Converter={StaticResource UrlToImageSourceConverter}}"
+                                                   Stretch="UniformToFill" />
+                                        </Border>
+                                    </Grid>
 
-                                <!-- Metadata -->
-                                <StackPanel Grid.Column="1"
-                                            Spacing="4"
-                                            VerticalAlignment="Center">
-                                    <TextBlock Text="{Binding Title}"
-                                               Style="{StaticResource KroiraTitleStyle}"
-                                               FontSize="17"
-                                               TextWrapping="WrapWholeWords"
-                                               MaxLines="2" />
-                                    <TextBlock Text="{Binding CategoryName}"
-                                               Style="{StaticResource KroiraBodyStyle}"
-                                               FontSize="13"
-                                               Foreground="{StaticResource KroiraTextSecondaryBrush}" />
-                                    <TextBlock Text="Select to inspect seasons and episodes"
-                                               Style="{StaticResource KroiraBodyStyle}"
-                                               FontSize="12"
-                                               Foreground="{StaticResource KroiraTextTertiaryBrush}" />
-                                </StackPanel>
+                                    <StackPanel Grid.Row="1" Spacing="4" Margin="2,10,2,4">
+                                        <TextBlock Text="{Binding Title}"
+                                                   Style="{StaticResource KroiraTitleStyle}"
+                                                   MaxLines="2"
+                                                   TextWrapping="Wrap"
+                                                   TextTrimming="CharacterEllipsis" />
+                                        <TextBlock Text="{Binding CategoryName}"
+                                                   Style="{StaticResource KroiraMetaStyle}"
+                                                   MaxLines="1"
+                                                   TextTrimming="CharacterEllipsis" />
+                                    </StackPanel>
 
-                                <!-- Affordance -->
-                                <StackPanel Grid.Column="2"
-                                            VerticalAlignment="Center"
-                                            HorizontalAlignment="Right"
-                                            Spacing="6">
-                                    <Border Background="{StaticResource KroiraSurfaceSoftBrush}"
-                                            CornerRadius="999"
-                                            Padding="10,5">
+                                    <Border Grid.Row="2"
+                                            HorizontalAlignment="Left"
+                                            Background="{StaticResource KroiraSurfaceSoftBrush}"
+                                            CornerRadius="10"
+                                            Padding="9,4">
                                         <StackPanel Orientation="Horizontal" Spacing="6">
                                             <FontIcon Glyph="&#xE7C3;"
-                                                      FontSize="12"
+                                                      FontSize="11"
                                                       Foreground="{StaticResource KroiraAccentBrush}" />
-                                            <TextBlock Text="Series"
-                                                       FontSize="12"
+                                            <TextBlock Text="Inspect"
+                                                       FontSize="11"
                                                        FontWeight="SemiBold"
                                                        Foreground="{StaticResource KroiraTextPrimaryBrush}" />
                                         </StackPanel>
                                     </Border>
-                                </StackPanel>
-                            </Grid>
-                        </Border>
-                    </DataTemplate>
-                </ListView.ItemTemplate>
-            </ListView>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </GridView.ItemTemplate>
+                </GridView>
+            </Grid>
 
-            <!-- Detail drawer -->
             <Border Grid.Column="1"
-                    Background="{StaticResource KroiraSurfaceBrush}"
-                    CornerRadius="14"
-                    Padding="24"
+                    Background="#99161B24"
+                    BorderBrush="#24FFFFFF"
+                    BorderThickness="1"
+                    CornerRadius="16"
+                    Padding="22"
                     VerticalAlignment="Stretch">
                 <Grid>
-                    <!-- Nothing selected -->
                     <StackPanel Visibility="{x:Bind ViewModel.SelectedSeries, Mode=OneWay, Converter={StaticResource NullToVisibleConverter}}"
                                 Spacing="10"
                                 VerticalAlignment="Top">
@@ -202,13 +206,13 @@
                                   HorizontalAlignment="Left" />
                         <TextBlock Text="Pick a show"
                                    Style="{StaticResource KroiraSectionTitleStyle}" />
-                        <TextBlock Text="Select any title on the left to view its seasons and episodes."
-                                   Style="{StaticResource KroiraBodyStyle}" />
+                        <TextBlock Text="Select a title from the four-column browser to view seasons and episodes here."
+                                   Style="{StaticResource KroiraBodyStyle}"
+                                   TextWrapping="Wrap" />
                     </StackPanel>
 
-                    <!-- Selected series -->
                     <Grid Visibility="{x:Bind ViewModel.SelectedSeries, Mode=OneWay, Converter={StaticResource NullToCollapsedConverter}}"
-                          RowSpacing="16">
+                          RowSpacing="14">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
@@ -217,10 +221,8 @@
                             <RowDefinition Height="*" />
                         </Grid.RowDefinitions>
 
-                        <!-- Show info -->
                         <StackPanel Grid.Row="0" Spacing="6">
-                            <TextBlock Text="SHOW"
-                                       Style="{StaticResource KroiraLabelStyle}" />
+                            <TextBlock Text="SHOW" Style="{StaticResource KroiraLabelStyle}" />
                             <TextBlock Text="{x:Bind ViewModel.SelectedSeries.Title, Mode=OneWay}"
                                        Style="{StaticResource KroiraSectionTitleStyle}"
                                        FontSize="20"
@@ -230,10 +232,8 @@
                                        Foreground="{StaticResource KroiraTextSecondaryBrush}" />
                         </StackPanel>
 
-                        <!-- Season picker -->
                         <StackPanel Grid.Row="1" Spacing="8">
-                            <TextBlock Text="SEASON"
-                                       Style="{StaticResource KroiraLabelStyle}" />
+                            <TextBlock Text="SEASON" Style="{StaticResource KroiraLabelStyle}" />
                             <ComboBox Style="{StaticResource KroiraFilterComboBoxStyle}"
                                       ItemsSource="{x:Bind ViewModel.SelectedSeries.Seasons, Mode=OneWay}"
                                       SelectedItem="{x:Bind ViewModel.SelectedSeason, Mode=TwoWay}"
@@ -246,12 +246,12 @@
                             </ComboBox>
                         </StackPanel>
 
-                        <!-- Status / CTA -->
                         <StackPanel Grid.Row="2" Spacing="10">
                             <TextBlock Text="{x:Bind ViewModel.SelectedSeriesStatus, Mode=OneWay}"
                                        Visibility="{x:Bind ViewModel.SelectedSeriesStatusVisibility, Mode=OneWay}"
                                        Style="{StaticResource KroiraBodyStyle}"
-                                       FontSize="12" />
+                                       FontSize="12"
+                                       TextWrapping="Wrap" />
                             <Button Content="Play selected episode"
                                     Visibility="{x:Bind ViewModel.SelectedEpisodePlayVisibility, Mode=OneWay}"
                                     Click="PlaySelectedEpisode_Click"
@@ -259,13 +259,11 @@
                                     HorizontalAlignment="Left" />
                         </StackPanel>
 
-                        <!-- Episodes label -->
                         <TextBlock Grid.Row="3"
                                    Text="EPISODES"
                                    Style="{StaticResource KroiraLabelStyle}"
                                    Margin="0,4,0,0" />
 
-                        <!-- Episodes list -->
                         <ListView Grid.Row="4"
                                   ItemsSource="{x:Bind ViewModel.SelectedSeason.Episodes, Mode=OneWay}"
                                   SelectionMode="Single"
@@ -279,8 +277,8 @@
                                 <DataTemplate>
                                     <Border Background="{StaticResource KroiraSurfaceSoftBrush}"
                                             CornerRadius="8"
-                                            Padding="14,10">
-                                        <Grid ColumnSpacing="12">
+                                            Padding="13,10">
+                                        <Grid ColumnSpacing="10">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="Auto" />
                                                 <ColumnDefinition Width="*" />

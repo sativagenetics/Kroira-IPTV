@@ -136,6 +136,12 @@ namespace Kroira.App
                     case "Series":
                         NavigateTo(typeof(SeriesPage));
                         break;
+                    case "Settings":
+                        NavigateTo(typeof(SettingsPage));
+                        break;
+                    case "Profile":
+                        NavigateTo(typeof(ProfilePage));
+                        break;
                 }
             }
             catch (Exception ex)

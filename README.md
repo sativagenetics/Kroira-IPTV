@@ -146,12 +146,20 @@ KROIRA IPTV now uses a rebuilt mpv-based playback path.
 
 This is a packaged WinUI 3 desktop app. The recommended way to run and debug it is through **Visual Studio** using the packaged profile.
 
+For runtime smoke tests, launch through package identity. Directly starting `bin\...\Kroira.App.exe` runs outside package identity and can fail during Windows App SDK bootstrap.
+
 ### Typical Development Flow
 
 - open the solution in Visual Studio
 - select the packaged startup profile
 - build for `x64`
 - run/debug from Visual Studio
+
+You can also launch the packaged debug app with:
+
+```powershell
+.\scripts\launch-packaged-debug.ps1
+```
 
 ## Project Direction
 

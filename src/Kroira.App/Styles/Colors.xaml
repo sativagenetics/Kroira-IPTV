@@ -37,6 +37,22 @@
     <SolidColorBrush x:Key="KroiraLiveDotBrush" Color="#FF5A5F" />
 
     <!--
+        Operational state brushes. Use only on StatusPill, health chips,
+        inline banners, and row accents. Never on chrome, never as fills
+        larger than a pill or a 1px edge.
+    -->
+    <SolidColorBrush x:Key="KroiraStateSuccessBrush"      Color="#46A758" />
+    <SolidColorBrush x:Key="KroiraStateSuccessSoftBrush"  Color="#46A758" Opacity="0.14" />
+    <SolidColorBrush x:Key="KroiraStateWarningBrush"      Color="#F5A524" />
+    <SolidColorBrush x:Key="KroiraStateWarningSoftBrush"  Color="#F5A524" Opacity="0.14" />
+    <SolidColorBrush x:Key="KroiraStateDangerBrush"       Color="#E5484D" />
+    <SolidColorBrush x:Key="KroiraStateDangerSoftBrush"   Color="#E5484D" Opacity="0.14" />
+    <SolidColorBrush x:Key="KroiraStateInfoBrush"         Color="#6EA8FF" />
+    <SolidColorBrush x:Key="KroiraStateInfoSoftBrush"     Color="#6EA8FF" Opacity="0.14" />
+    <SolidColorBrush x:Key="KroiraStateNeutralBrush"      Color="#A8ABB5" />
+    <SolidColorBrush x:Key="KroiraStateNeutralSoftBrush"  Color="#A8ABB5" Opacity="0.10" />
+
+    <!--
         Legacy magenta key kept for binding compatibility while unrefactored
         pages still reference it. Aliased to the muted accent so it no longer
         reads as a competing second accent.

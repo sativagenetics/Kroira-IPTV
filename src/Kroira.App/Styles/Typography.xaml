@@ -73,4 +73,58 @@
         <Setter Property="Foreground" Value="{StaticResource KroiraTextTertiaryBrush}" />
     </Style>
 
+    <!--
+        Extended ramp. Kept as alias/aligned keys so existing pages keep
+        working while new pages adopt the cleaner naming.
+    -->
+
+    <!-- Display XL: reserved for hero titles only -->
+    <Style x:Key="KroiraDisplayXlStyle" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource KroiraDisplayFontFamily}" />
+        <Setter Property="FontSize" Value="56" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="LineHeight" Value="60" />
+        <Setter Property="CharacterSpacing" Value="-20" />
+        <Setter Property="Foreground" Value="{StaticResource KroiraTextPrimaryBrush}" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+
+    <!-- H1 page title alias (32/36) for future pages -->
+    <Style x:Key="KroiraH1Style" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource KroiraDisplayFontFamily}" />
+        <Setter Property="FontSize" Value="32" />
+        <Setter Property="LineHeight" Value="36" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="CharacterSpacing" Value="-10" />
+        <Setter Property="Foreground" Value="{StaticResource KroiraTextPrimaryBrush}" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+
+    <!-- Eyebrow: uppercase label sitting above a page / hero title -->
+    <Style x:Key="KroiraEyebrowStyle" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource KroiraTextFontFamily}" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="LineHeight" Value="16" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="CharacterSpacing" Value="80" />
+        <Setter Property="Foreground" Value="{StaticResource KroiraTextTertiaryBrush}" />
+    </Style>
+
+    <!-- Meta: secondary informational text (durations, years, counts) -->
+    <Style x:Key="KroiraMetaStyle" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource KroiraTextFontFamily}" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="LineHeight" Value="16" />
+        <Setter Property="Foreground" Value="{StaticResource KroiraTextSecondaryBrush}" />
+    </Style>
+
+    <!-- Mono: timestamps, sizes, IDs on operational surfaces -->
+    <Style x:Key="KroiraMonoStyle" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="Cascadia Mono, Consolas, Segoe UI Mono" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="LineHeight" Value="16" />
+        <Setter Property="FontWeight" Value="Medium" />
+        <Setter Property="Foreground" Value="{StaticResource KroiraTextSecondaryBrush}" />
+    </Style>
+
 </ResourceDictionary>

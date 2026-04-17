@@ -10,21 +10,36 @@
     <Grid Background="{StaticResource KroiraPageBackgroundBrush}">
         <NavigationView x:Name="RootNavView"
                         ItemInvoked="RootNavView_ItemInvoked"
-                        Background="{StaticResource KroiraPageBackgroundBrush}"
-                        PaneTitle="Kroira"
+                        Background="#0A0C10"
                         IsBackButtonVisible="Collapsed"
-                        OpenPaneLength="216"
-                        CompactPaneLength="48">
+                        IsSettingsVisible="False"
+                        OpenPaneLength="244"
+                        CompactPaneLength="56">
+            <NavigationView.PaneHeader>
+                <StackPanel Margin="20,22,18,20" Spacing="6">
+                    <TextBlock Text="KROIRA"
+                               Foreground="{StaticResource KroiraAccentBrush}"
+                               FontSize="11"
+                               FontWeight="SemiBold"
+                               CharacterSpacing="180" />
+                    <TextBlock Text="Media Center"
+                               Foreground="{StaticResource KroiraTextPrimaryBrush}"
+                               FontSize="22"
+                               FontWeight="SemiBold" />
+                </StackPanel>
+            </NavigationView.PaneHeader>
             <NavigationView.MenuItems>
-                <NavigationViewItem Icon="Home"       Content="Home"              Tag="Home" />
-                <NavigationViewItem Icon="Video"      Content="Channels"          Tag="Channels" />
-                <NavigationViewItem Icon="Video"      Content="Movies"            Tag="Movies" />
-                <NavigationViewItem Icon="DockLeft"   Content="Series"            Tag="Series" />
+                <NavigationViewItem Icon="Home" Content="Home" Tag="Home" Margin="10,2" Height="42" />
                 <NavigationViewItemSeparator />
-                <NavigationViewItem Icon="Play"       Content="Continue Watching" Tag="ContinueWatching" />
-                <NavigationViewItem Icon="OutlineStar" Content="Favorites"        Tag="Favorites" />
+                <NavigationViewItem Icon="Video" Content="Live TV" Tag="Channels" Margin="10,2" Height="42" />
+                <NavigationViewItem Icon="Video" Content="Movies" Tag="Movies" Margin="10,2" Height="42" />
+                <NavigationViewItem Icon="Library" Content="Series" Tag="Series" Margin="10,2" Height="42" />
+                <NavigationViewItem Icon="OutlineStar" Content="Favorites" Tag="Favorites" Margin="10,2" Height="42" />
                 <NavigationViewItemSeparator />
-                <NavigationViewItem Icon="Library"    Content="Sources"           Tag="Sources" />
+                <NavigationViewItem Icon="Library" Content="Sources" Tag="Sources" Margin="10,2" Height="42" />
+                <NavigationViewItem Icon="Library" Content="Settings" Tag="Settings" Margin="10,2" Height="42" />
+                <NavigationViewItemSeparator />
+                <NavigationViewItem Icon="Home" Content="Profile" Tag="Profile" Margin="10,2" Height="42" />
             </NavigationView.MenuItems>
             <Frame x:Name="ContentFrame" />
         </NavigationView>
