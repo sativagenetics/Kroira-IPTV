@@ -21,7 +21,7 @@ namespace Kroira.App.Views
     // synchronously tears them down. There is no app-lifetime playback singleton.
     public sealed partial class EmbeddedPlaybackPage : Page
     {
-        private static readonly TimeSpan ControlsHideDelay = TimeSpan.FromSeconds(3);
+        private static readonly TimeSpan ControlsHideDelay = TimeSpan.FromMilliseconds(1350);
 
         private PlaybackLaunchContext _context;
         private MpvPlayer _player;
@@ -365,6 +365,7 @@ namespace Kroira.App.Views
         private void HideControls()
         {
             if (_player != null && _player.IsPaused) return;
+            if (ErrorOverlay.Visibility == Visibility.Visible) return;
 
             TopBar.Visibility = Visibility.Collapsed;
             BottomBar.Visibility = Visibility.Collapsed;
@@ -377,6 +378,7 @@ namespace Kroira.App.Views
             if (_controlsHideTimer == null) return;
             _controlsHideTimer.Stop();
             if (_player != null && _player.IsPaused) return;
+            if (ErrorOverlay.Visibility == Visibility.Visible) return;
             _controlsHideTimer.Start();
         }
 
