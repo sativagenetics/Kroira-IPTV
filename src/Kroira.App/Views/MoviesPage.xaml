@@ -34,24 +34,54 @@
           HorizontalAlignment="Center"
           RowSpacing="18">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
+            <RowDefinition Height="326" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
+        <!--
+            FEATURED HERO
+            ─────────────────────────────────────────────────────────────
+            The outer Border is Height-clamped AND MaxHeight-clamped so
+            the unbounded <Image Stretch="UniformToFill" .. /> children
+            below can never dictate the layout height from their natural
+            pixel dimensions. The CornerRadius on this Border clips any
+            overflow to the rounded rectangle. Row 0 of the outer Grid is
+            now a fixed 326px row so the hero can never push the browse
+            area off-screen even if the hero Border is ever re-templated.
+        -->
         <Border Grid.Row="0"
-                MinHeight="326"
+                Height="326"
+                MaxHeight="326"
+                VerticalAlignment="Top"
                 BorderBrush="{StaticResource KroiraGlassBorderBrush}"
                 BorderThickness="1"
                 CornerRadius="18">
             <Grid>
                 <Border Background="{StaticResource KroiraMediaGradientBrush}"
                         CornerRadius="18" />
+                <!--
+                    Hero backdrop image. Width/Height explicitly set to
+                    the hero size so the image cannot request its own
+                    natural pixel size during measure. UniformToFill
+                    crops to the hero frame.
+                -->
                 <Image Source="{x:Bind ViewModel.FeaturedMovie.DisplayHeroArtworkUrl, Mode=OneWay, Converter={StaticResource UrlToImageSourceConverter}}"
                        Stretch="UniformToFill"
-                       Opacity="0.92" />
+                       Opacity="0.92"
+                       HorizontalAlignment="Stretch"
+                       VerticalAlignment="Stretch"
+                       MaxHeight="324" />
+                <!--
+                    Right-aligned poster accent. Width bounded AND height
+                    bounded so UniformToFill crops rather than requesting
+                    a natural height (otherwise a 2:3 poster would ask
+                    for ~645px and blow out Row 0).
+                -->
                 <Image Source="{x:Bind ViewModel.FeaturedMovie.DisplayPosterUrl, Mode=OneWay, Converter={StaticResource UrlToImageSourceConverter}}"
                        Width="430"
+                       MaxHeight="324"
                        HorizontalAlignment="Right"
+                       VerticalAlignment="Stretch"
                        Stretch="UniformToFill"
                        Opacity="0.16" />
                 <Border>
@@ -94,10 +124,11 @@
                                    Foreground="{StaticResource KroiraAccentBrush}" />
                         <TextBlock Text="{x:Bind ViewModel.FeaturedMovie.Title, Mode=OneWay}"
                                    Style="{StaticResource KroiraDisplayLgStyle}"
-                                   FontSize="46"
-                                   LineHeight="52"
+                                   FontSize="38"
+                                   LineHeight="44"
                                    MaxLines="2"
-                                   TextWrapping="Wrap" />
+                                   TextWrapping="Wrap"
+                                   TextTrimming="CharacterEllipsis" />
                         <StackPanel Orientation="Horizontal" Spacing="12">
                             <Border Background="#B40A0D11"
                                     BorderBrush="{StaticResource KroiraChromeLineBrush}"
@@ -120,8 +151,9 @@
                                    FontSize="14"
                                    LineHeight="21"
                                    MaxWidth="620"
-                                   MaxLines="3"
-                                   TextTrimming="CharacterEllipsis" />
+                                   MaxLines="2"
+                                   TextTrimming="CharacterEllipsis"
+                                   TextWrapping="Wrap" />
                         <StackPanel Orientation="Horizontal"
                                     Spacing="10"
                                     Margin="0,6,0,0">

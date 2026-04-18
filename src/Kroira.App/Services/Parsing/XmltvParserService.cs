@@ -85,6 +85,8 @@ namespace Kroira.App.Services.Parsing
 
                     var titleNode = p.Element("title");
                     var descNode = p.Element("desc");
+                    var subtitleNode = p.Element("sub-title");
+                    var categoryNode = p.Element("category");
 
                     epgItems.Add(new EpgProgram
                     {
@@ -92,7 +94,9 @@ namespace Kroira.App.Services.Parsing
                         StartTimeUtc = start.Value,
                         EndTimeUtc = end.Value,
                         Title = string.IsNullOrWhiteSpace(titleNode?.Value) ? "Unknown Program" : titleNode!.Value.Trim(),
-                        Description = descNode?.Value?.Trim() ?? string.Empty
+                        Description = descNode?.Value?.Trim() ?? string.Empty,
+                        Subtitle = string.IsNullOrWhiteSpace(subtitleNode?.Value) ? null : subtitleNode!.Value.Trim(),
+                        Category = string.IsNullOrWhiteSpace(categoryNode?.Value) ? null : categoryNode!.Value.Trim()
                     });
                 }
 
@@ -121,13 +125,27 @@ namespace Kroira.App.Services.Parsing
                         await db.SaveChangesAsync();
                     }
 
+                    var matchedChannels = epgItems.Select(e => e.ChannelId).Distinct().Count();
+                    var now2 = DateTime.UtcNow;
+
+                    var epgLog = await db.EpgSyncLogs.FirstOrDefaultAsync(e => e.SourceProfileId == sourceProfileId);
+                    if (epgLog == null)
+                    {
+                        epgLog = new EpgSyncLog { SourceProfileId = sourceProfileId };
+                        db.EpgSyncLogs.Add(epgLog);
+                    }
+                    epgLog.SyncedAtUtc = now2;
+                    epgLog.IsSuccess = true;
+                    epgLog.MatchedChannelCount = matchedChannels;
+                    epgLog.ProgrammeCount = epgItems.Count;
+                    epgLog.FailureReason = string.Empty;
+
                     var syncState = await db.SourceSyncStates.FirstOrDefaultAsync(s => s.SourceProfileId == sourceProfileId);
                     if (syncState != null)
                     {
-                        syncState.LastAttempt = DateTime.UtcNow;
+                        syncState.LastAttempt = now2;
                         syncState.HttpStatusCode = 200;
-                        var matchedChannels = epgItems.Select(e => e.ChannelId).Distinct().Count();
-                        syncState.ErrorLog = $"EPG Sync: {epgItems.Count} programs across {matchedChannels} channels imported. ({programmes.Count} raw programme entries processed)";
+                        syncState.ErrorLog = $"EPG: {epgItems.Count:N0} programs · {matchedChannels} channels matched.";
                     }
 
                     await db.SaveChangesAsync();
@@ -141,14 +159,29 @@ namespace Kroira.App.Services.Parsing
             }
             catch (Exception ex)
             {
+                var failedAt = DateTime.UtcNow;
+                var shortReason = ex.Message.Length > 200 ? ex.Message.Substring(0, 200) : ex.Message;
+
+                var epgLog = await db.EpgSyncLogs.FirstOrDefaultAsync(e => e.SourceProfileId == sourceProfileId);
+                if (epgLog == null)
+                {
+                    epgLog = new EpgSyncLog { SourceProfileId = sourceProfileId };
+                    db.EpgSyncLogs.Add(epgLog);
+                }
+                epgLog.SyncedAtUtc = failedAt;
+                epgLog.IsSuccess = false;
+                epgLog.MatchedChannelCount = 0;
+                epgLog.ProgrammeCount = 0;
+                epgLog.FailureReason = shortReason;
+
                 var syncState = await db.SourceSyncStates.FirstOrDefaultAsync(s => s.SourceProfileId == sourceProfileId);
                 if (syncState != null)
                 {
-                    syncState.LastAttempt = DateTime.UtcNow;
+                    syncState.LastAttempt = failedAt;
                     syncState.HttpStatusCode = 500;
-                    syncState.ErrorLog = $"EPG parsing failed: {ex.Message}";
-                    await db.SaveChangesAsync();
+                    syncState.ErrorLog = $"EPG failed: {shortReason}";
                 }
+                try { await db.SaveChangesAsync(); } catch { }
                 throw new Exception($"Failed to parse XMLTV EPG: {ex.Message}");
             }
         }

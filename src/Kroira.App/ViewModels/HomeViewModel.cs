@@ -233,7 +233,41 @@ namespace Kroira.App.ViewModels
                 .Take(24)
                 .ToListAsync();
 
-            var topMoviePool = movieCandidates
+            // Featured safety: M3U bucket/adult/category items are stripped
+            // before ranking. Xtream items are NEVER filtered by this gate —
+            // the Xtream pipeline already yields structured data and its
+            // "Movies" / "Series" category names are legitimate. We look up
+            // each candidate's source type and let the Xtream branch pass
+            // through untouched.
+            var candidateSourceIds = movieCandidates.Select(m => m.SourceProfileId)
+                .Concat(seriesCandidates.Select(s => s.SourceProfileId))
+                .Distinct()
+                .ToList();
+            var sourceTypeById = await db.SourceProfiles
+                .Where(p => candidateSourceIds.Contains(p.Id))
+                .ToDictionaryAsync(p => p.Id, p => p.Type);
+
+            SourceType GetSourceType(int sourceProfileId) =>
+                sourceTypeById.TryGetValue(sourceProfileId, out var t) ? t : SourceType.M3U;
+
+            var safeFeaturedMovies = movieCandidates
+                .Where(m => ContentClassifier.IsFeaturedSafeMovie(
+                    GetSourceType(m.SourceProfileId), m.Title, m.CategoryName, m.StreamUrl))
+                .ToList();
+
+            var safeFeaturedSeries = seriesCandidates
+                .Where(s => ContentClassifier.IsFeaturedSafeSeries(
+                    GetSourceType(s.SourceProfileId), s.Title, s.CategoryName))
+                .ToList();
+
+            // No fallback: if every candidate fails the safety gate we
+            // intentionally leave the pools empty and let
+            // BuildFallbackFeaturedItem render a neutral hero instead of
+            // promoting a bucket / adult / category label into the featured
+            // slot. This is the only guarantee that "ALL SERIEN" and friends
+            // can never reach the hero even if they somehow exist in the DB.
+
+            var topMoviePool = safeFeaturedMovies
                 .OrderByDescending(GetArtworkScore)
                 .ThenByDescending(m => m.Popularity)
                 .ThenByDescending(m => m.VoteAverage)
@@ -241,7 +275,7 @@ namespace Kroira.App.ViewModels
                 .Take(5)
                 .ToList();
 
-            var topSeriesPool = seriesCandidates
+            var topSeriesPool = safeFeaturedSeries
                 .OrderByDescending(GetArtworkScore)
                 .ThenByDescending(s => s.Popularity)
                 .ThenByDescending(s => s.VoteAverage)

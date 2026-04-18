@@ -77,38 +77,48 @@ namespace Kroira.App.ViewModels
                 .Select(f => f.ContentId)
                 .ToListAsync();
 
-            var channelIds = channels.Select(c => c.Id).ToList();
+            // Build channel view models first — always succeeds regardless of EPG state
             var now = DateTime.UtcNow;
-            var epgWindowEnd = now.AddHours(8);
-            var epgs = await db.EpgPrograms
-                .Where(e => channelIds.Contains(e.ChannelId)
-                         && e.EndTimeUtc > now
-                         && e.StartTimeUtc < epgWindowEnd)
-                .OrderBy(e => e.StartTimeUtc)
-                .ToListAsync();
-
-            foreach (var ch in channels)
+            var channelVMs = channels.Select(ch => new BrowserChannelViewModel
             {
-                var chEpg = epgs.Where(e => e.ChannelId == ch.Id).ToList();
-                var current = chEpg.FirstOrDefault(e => e.StartTimeUtc <= now && e.EndTimeUtc > now);
-                var next = chEpg
-                    .Where(e => e.StartTimeUtc >= (current?.EndTimeUtc ?? now))
+                Id = ch.Id,
+                CategoryId = ch.ChannelCategoryId,
+                Name = ch.Name,
+                StreamUrl = ch.StreamUrl,
+                LogoUrl = ch.LogoUrl ?? string.Empty,
+                IsFavorite = favIds.Contains(ch.Id)
+            }).ToList();
+
+            // EPG decoration — optional; failure leaves channels with neutral "No guide data" state
+            try
+            {
+                var channelIds = channels.Select(c => c.Id).ToList();
+                var epgWindowEnd = now.AddHours(8);
+                var epgs = await db.EpgPrograms
+                    .Where(e => channelIds.Contains(e.ChannelId)
+                             && e.EndTimeUtc > now
+                             && e.StartTimeUtc < epgWindowEnd)
                     .OrderBy(e => e.StartTimeUtc)
-                    .FirstOrDefault();
+                    .ToListAsync();
 
-                var item = new BrowserChannelViewModel
+                foreach (var item in channelVMs)
                 {
-                    Id = ch.Id,
-                    CategoryId = ch.ChannelCategoryId,
-                    Name = ch.Name,
-                    StreamUrl = ch.StreamUrl,
-                    LogoUrl = ch.LogoUrl ?? string.Empty,
-                    IsFavorite = favIds.Contains(ch.Id)
-                };
-                item.ApplyEpg(current, next, now);
-
-                _allChannels.Add(item);
+                    var chEpg = epgs.Where(e => e.ChannelId == item.Id).ToList();
+                    var current = chEpg.FirstOrDefault(e => e.StartTimeUtc <= now && e.EndTimeUtc > now);
+                    var next = chEpg
+                        .Where(e => e.StartTimeUtc >= (current?.EndTimeUtc ?? now))
+                        .OrderBy(e => e.StartTimeUtc)
+                        .FirstOrDefault();
+                    item.ApplyEpg(current, next, now);
+                }
             }
+            catch
+            {
+                // EpgPrograms schema mismatch or missing columns — channels still shown, EPG skipped
+            }
+
+            foreach (var item in channelVMs)
+                _allChannels.Add(item);
 
             Categories.Add(new BrowserCategoryViewModel { Id = 0, Name = "All Categories", OrderIndex = -1 });
             foreach (var c in cats

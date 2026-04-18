@@ -197,13 +197,13 @@
                     <ItemsPanelTemplate>
                         <ItemsWrapGrid Orientation="Horizontal"
                                        ItemWidth="176"
-                                       ItemHeight="202"
+                                       ItemHeight="216"
                                        MaximumRowsOrColumns="6" />
                     </ItemsPanelTemplate>
                 </GridView.ItemsPanel>
                 <GridView.ItemTemplate>
                     <DataTemplate>
-                        <Grid Width="168" Height="184">
+                        <Grid Width="168" Height="198">
                             <ToolTipService.ToolTip>
                                 <ToolTip Placement="Mouse">
                                             <Border Background="{StaticResource KroiraSurfaceElevatedBrush}"
@@ -244,6 +244,7 @@
                                         <RowDefinition Height="*" />
                                         <RowDefinition Height="Auto" />
                                         <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
                                     </Grid.RowDefinitions>
 
                                     <Grid Grid.Row="0">
@@ -273,9 +274,17 @@
                                                FontWeight="Normal"
                                                MaxLines="1"
                                                TextTrimming="CharacterEllipsis"
-                                               Margin="0,0,26,8" />
+                                               Margin="0,0,26,4" />
 
-                                    <Grid Grid.Row="2" ColumnSpacing="8">
+                                    <TextBlock Grid.Row="2"
+                                               Text="{Binding CurrentProgramTitle}"
+                                               Foreground="{StaticResource KroiraTextTertiaryBrush}"
+                                               FontSize="11"
+                                               MaxLines="1"
+                                               TextTrimming="CharacterEllipsis"
+                                               Margin="0,0,0,6" />
+
+                                    <Grid Grid.Row="3" ColumnSpacing="8">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
                                             <ColumnDefinition Width="Auto" />

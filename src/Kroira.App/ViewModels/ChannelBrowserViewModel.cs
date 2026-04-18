@@ -29,8 +29,10 @@ namespace Kroira.App.ViewModels
         public string StreamUrl { get; set; } = string.Empty;
         public string LogoUrl { get; set; } = string.Empty;
         public string CurrentProgramTitle { get; set; } = "Guide not synced";
+        public string CurrentProgramSubtitle { get; set; } = string.Empty;
         public string CurrentProgramTimeText { get; set; } = string.Empty;
         public string CurrentProgramDescription { get; set; } = string.Empty;
+        public string CurrentProgramCategory { get; set; } = string.Empty;
         public string NextProgramTitle { get; set; } = string.Empty;
         public string NextProgramTimeText { get; set; } = string.Empty;
         public double LiveProgressValue { get; set; }
@@ -38,6 +40,8 @@ namespace Kroira.App.ViewModels
         public Visibility EpgVisibility { get; set; } = Visibility.Collapsed;
         public Visibility NextProgramVisibility { get; set; } = Visibility.Collapsed;
         public Visibility DescriptionVisibility { get; set; } = Visibility.Collapsed;
+        public Visibility SubtitleVisibility { get; set; } = Visibility.Collapsed;
+        public Visibility CategoryVisibility { get; set; } = Visibility.Collapsed;
 
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(FavoriteIcon))]
@@ -52,13 +56,17 @@ namespace Kroira.App.ViewModels
         {
             if (current == null)
             {
-                channel.CurrentProgramTitle = next == null ? "Guide not synced" : "No current program";
+                channel.CurrentProgramTitle = next == null ? "No guide data" : "No current program";
+                channel.CurrentProgramSubtitle = string.Empty;
                 channel.CurrentProgramTimeText = string.Empty;
                 channel.CurrentProgramDescription = string.Empty;
+                channel.CurrentProgramCategory = string.Empty;
                 channel.LiveProgressValue = 0;
                 channel.LiveProgressText = string.Empty;
                 channel.EpgVisibility = Visibility.Collapsed;
                 channel.DescriptionVisibility = Visibility.Collapsed;
+                channel.SubtitleVisibility = Visibility.Collapsed;
+                channel.CategoryVisibility = Visibility.Collapsed;
 
                 if (next != null)
                 {
@@ -77,12 +85,20 @@ namespace Kroira.App.ViewModels
             }
 
             channel.CurrentProgramTitle = current.Title;
+            channel.CurrentProgramSubtitle = current.Subtitle ?? string.Empty;
             channel.CurrentProgramTimeText = FormatTimeRange(current.StartTimeUtc, current.EndTimeUtc);
             channel.CurrentProgramDescription = current.Description;
+            channel.CurrentProgramCategory = current.Category ?? string.Empty;
             channel.LiveProgressValue = CalculateProgress(current.StartTimeUtc, current.EndTimeUtc, nowUtc);
             channel.LiveProgressText = $"{Math.Round(channel.LiveProgressValue):0}% live";
             channel.EpgVisibility = Visibility.Visible;
             channel.DescriptionVisibility = string.IsNullOrWhiteSpace(current.Description)
+                ? Visibility.Collapsed
+                : Visibility.Visible;
+            channel.SubtitleVisibility = string.IsNullOrWhiteSpace(current.Subtitle)
+                ? Visibility.Collapsed
+                : Visibility.Visible;
+            channel.CategoryVisibility = string.IsNullOrWhiteSpace(current.Category)
                 ? Visibility.Collapsed
                 : Visibility.Visible;
 
@@ -167,20 +183,10 @@ namespace Kroira.App.ViewModels
                 .Select(f => f.ContentId)
                 .ToListAsync();
 
-            var chIds = chans.Select(c => c.Id).ToList();
-
             var now = DateTime.UtcNow;
-            var epgWindowEnd = now.AddHours(8);
 
-            var epgs = await db.EpgPrograms
-                .Where(e => chIds.Contains(e.ChannelId)
-                         && e.EndTimeUtc > now
-                         && e.StartTimeUtc < epgWindowEnd)
-                .OrderBy(e => e.StartTimeUtc)
-                .ToListAsync();
-
+            // Populate category list
             Categories.Add(new BrowserCategoryViewModel { Id = 0, Name = "All Categories", OrderIndex = -1 });
-
             foreach (var c in cats.Where(c => chans.Any(ch => ch.ChannelCategoryId == c.Id)))
             {
                 Categories.Add(new BrowserCategoryViewModel
@@ -191,25 +197,47 @@ namespace Kroira.App.ViewModels
                 });
             }
 
-            foreach (var ch in chans)
+            // Build channel view models first — always succeeds regardless of EPG state
+            var channelVMs = chans.Select(ch => new BrowserChannelViewModel
             {
-                var chEpg = epgs.Where(e => e.ChannelId == ch.Id).ToList();
-                var curr = chEpg.FirstOrDefault(e => e.StartTimeUtc <= now && e.EndTimeUtc > now);
-                var next = chEpg.Where(e => e.StartTimeUtc >= (curr?.EndTimeUtc ?? now)).OrderBy(e => e.StartTimeUtc).FirstOrDefault();
+                Id = ch.Id,
+                CategoryId = ch.ChannelCategoryId,
+                Name = ch.Name,
+                StreamUrl = ch.StreamUrl,
+                LogoUrl = ch.LogoUrl ?? string.Empty,
+                IsFavorite = favIds.Contains(ch.Id)
+            }).ToList();
 
-                var item = new BrowserChannelViewModel
+            // EPG decoration — optional; failure leaves channels with neutral "No guide data" state
+            try
+            {
+                var chIds = chans.Select(c => c.Id).ToList();
+                var epgWindowEnd = now.AddHours(8);
+                var epgs = await db.EpgPrograms
+                    .Where(e => chIds.Contains(e.ChannelId)
+                             && e.EndTimeUtc > now
+                             && e.StartTimeUtc < epgWindowEnd)
+                    .OrderBy(e => e.StartTimeUtc)
+                    .ToListAsync();
+
+                foreach (var item in channelVMs)
                 {
-                    Id = ch.Id,
-                    CategoryId = ch.ChannelCategoryId,
-                    Name = ch.Name,
-                    StreamUrl = ch.StreamUrl,
-                    LogoUrl = ch.LogoUrl ?? string.Empty,
-                    IsFavorite = favIds.Contains(ch.Id)
-                };
-                item.ApplyEpg(curr, next, now);
-
-                _allChannelsCache.Add(item);
+                    var chEpg = epgs.Where(e => e.ChannelId == item.Id).ToList();
+                    var curr = chEpg.FirstOrDefault(e => e.StartTimeUtc <= now && e.EndTimeUtc > now);
+                    var next = chEpg
+                        .Where(e => e.StartTimeUtc >= (curr?.EndTimeUtc ?? now))
+                        .OrderBy(e => e.StartTimeUtc)
+                        .FirstOrDefault();
+                    item.ApplyEpg(curr, next, now);
+                }
             }
+            catch
+            {
+                // EpgPrograms schema mismatch or missing columns — channels still shown, EPG skipped
+            }
+
+            foreach (var item in channelVMs)
+                _allChannelsCache.Add(item);
 
             SelectedCategory = Categories.FirstOrDefault();
             ApplyFilter();

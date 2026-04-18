@@ -21,6 +21,7 @@ namespace Kroira.App.Data
         public DbSet<ChannelCategory> ChannelCategories { get; set; } = null!;
         public DbSet<Channel> Channels { get; set; } = null!;
         public DbSet<EpgProgram> EpgPrograms { get; set; } = null!;
+        public DbSet<EpgSyncLog> EpgSyncLogs { get; set; } = null!;
         public DbSet<Movie> Movies { get; set; } = null!;
         public DbSet<Series> Series { get; set; } = null!;
         public DbSet<Season> Seasons { get; set; } = null!;
@@ -66,6 +67,20 @@ namespace Kroira.App.Data
                 .WithOne()
                 .HasForeignKey<SourceSyncState>(e => e.SourceProfileId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<EpgSyncLog>()
+                .HasIndex(e => e.SourceProfileId)
+                .IsUnique();
+
+            modelBuilder.Entity<EpgSyncLog>()
+                .HasOne<SourceProfile>()
+                .WithOne()
+                .HasForeignKey<EpgSyncLog>(e => e.SourceProfileId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<EpgProgram>()
+                .HasIndex(e => new { e.ChannelId, e.StartTimeUtc })
+                .HasDatabaseName("IX_EpgPrograms_ChannelId_StartTimeUtc");
 
             // Optimize query access
             modelBuilder.Entity<Favorite>()

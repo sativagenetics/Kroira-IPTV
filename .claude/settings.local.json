@@ -2,7 +2,9 @@
   "permissions": {
     "allow": [
       "Bash(xargs grep *)",
-      "Bash(dotnet build *)"
+      "Bash(dotnet build *)",
+      "Bash(xargs ls *)",
+      "Bash(grep -v \"^$\")"
     ]
   }
 }

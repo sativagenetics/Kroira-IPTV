@@ -88,10 +88,65 @@ namespace Kroira.App.Data
             EnsureColumn(conn, "Series", "TmdbPosterPath", "TEXT NOT NULL DEFAULT ''");
             EnsureColumn(conn, "Series", "VoteAverage", "REAL NOT NULL DEFAULT 0.0");
 
+            // EPG pass: nullable programme metadata columns
+            EnsureColumn(conn, "EpgPrograms", "Subtitle", "TEXT");
+            EnsureColumn(conn, "EpgPrograms", "Category", "TEXT");
+
+            // M3U import mode for SourceCredentials.
+            //  • New-column default = 2 (LiveMoviesAndSeries) — matches the
+            //    current model default.
+            //  • Existing rows that still have the legacy default of 1
+            //    (LiveAndMovies, set by the original AddM3uImportMode
+            //    migration) are bumped to 2 so M3U sources import series
+            //    without requiring a manual mode change. Value 0 (LiveOnly)
+            //    is preserved because it represents an explicit user choice.
+            EnsureColumn(conn, "SourceCredentials", "M3uImportMode", "INTEGER NOT NULL DEFAULT 2");
+            BumpLegacyM3uImportMode(conn);
+
+            // EPG pass: per-source sync health log (CREATE TABLE IF NOT EXISTS is safe to repeat)
+            EnsureEpgSyncLogsTable(conn);
+
             EnsureIndex(conn, "IX_Movies_MetadataUpdatedAt", "Movies", "MetadataUpdatedAt");
             EnsureIndex(conn, "IX_Movies_TmdbId", "Movies", "TmdbId");
             EnsureIndex(conn, "IX_Series_MetadataUpdatedAt", "Series", "MetadataUpdatedAt");
             EnsureIndex(conn, "IX_Series_TmdbId", "Series", "TmdbId");
+            EnsureCompositeIndex(conn, "IX_EpgPrograms_ChannelId_StartTimeUtc", "EpgPrograms", "ChannelId", "StartTimeUtc");
+        }
+
+        private static void BumpLegacyM3uImportMode(SqliteConnection conn)
+        {
+            if (!TableExists(conn, "SourceCredentials")) return;
+            if (!ColumnExists(conn, "SourceCredentials", "M3uImportMode")) return;
+
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = "UPDATE \"SourceCredentials\" SET \"M3uImportMode\" = 2 WHERE \"M3uImportMode\" = 1;";
+            cmd.ExecuteNonQuery();
+        }
+
+        private static void EnsureEpgSyncLogsTable(SqliteConnection conn)
+        {
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = @"
+                CREATE TABLE IF NOT EXISTS ""EpgSyncLogs"" (
+                    ""Id""                  INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                    ""SourceProfileId""     INTEGER NOT NULL,
+                    ""SyncedAtUtc""         TEXT    NOT NULL,
+                    ""IsSuccess""           INTEGER NOT NULL DEFAULT 0,
+                    ""MatchedChannelCount"" INTEGER NOT NULL DEFAULT 0,
+                    ""ProgrammeCount""      INTEGER NOT NULL DEFAULT 0,
+                    ""FailureReason""       TEXT    NOT NULL DEFAULT '',
+                    CONSTRAINT ""FK_EpgSyncLogs_SourceProfiles_SourceProfileId""
+                        FOREIGN KEY (""SourceProfileId"")
+                        REFERENCES ""SourceProfiles"" (""Id"")
+                        ON DELETE CASCADE
+                );";
+            cmd.ExecuteNonQuery();
+
+            // Unique index (safe to run even if already exists via CREATE TABLE)
+            cmd.CommandText = @"
+                CREATE UNIQUE INDEX IF NOT EXISTS ""IX_EpgSyncLogs_SourceProfileId""
+                ON ""EpgSyncLogs"" (""SourceProfileId"");";
+            cmd.ExecuteNonQuery();
         }
 
         private static void EnsureColumn(SqliteConnection conn, string tableName, string columnName, string definition)
@@ -139,6 +194,23 @@ namespace Kroira.App.Data
 
             using var cmd = conn.CreateCommand();
             cmd.CommandText = $"CREATE INDEX \"{indexName}\" ON \"{tableName}\" (\"{columnName}\");";
+            cmd.ExecuteNonQuery();
+        }
+
+        private static void EnsureCompositeIndex(SqliteConnection conn, string indexName, string tableName, string col1, string col2)
+        {
+            if (!TableExists(conn, tableName) || IndexExists(conn, indexName))
+            {
+                return;
+            }
+
+            if (!ColumnExists(conn, tableName, col1) || !ColumnExists(conn, tableName, col2))
+            {
+                return;
+            }
+
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = $"CREATE INDEX \"{indexName}\" ON \"{tableName}\" (\"{col1}\", \"{col2}\");";
             cmd.ExecuteNonQuery();
         }
 

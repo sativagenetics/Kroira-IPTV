@@ -82,6 +82,7 @@ namespace Kroira.App.ViewModels
         private const int BrowseGridColumns = 5;
         private readonly IServiceProvider _serviceProvider;
         private List<MovieBrowseItemViewModel> _allMovies = new List<MovieBrowseItemViewModel>();
+        private Dictionary<int, SourceType> _sourceTypeById = new Dictionary<int, SourceType>();
         private static readonly int _sessionRotationIndex = Math.Abs(Environment.TickCount % 5);
 
         public ObservableCollection<MovieBrowseItemViewModel> FilteredMovies { get; } = new ObservableCollection<MovieBrowseItemViewModel>();
@@ -135,6 +136,14 @@ namespace Kroira.App.ViewModels
                 .OrderCatalog(rawMovies, languageCode, m => m.CategoryName, m => m.Title)
                 .Select(movie => new MovieBrowseItemViewModel(movie, favoriteIds.Contains(movie.Id)))
                 .ToList();
+
+            // Cache SourceProfileId -> SourceType for featured-safety gate.
+            // The M3U safety rules are applied only to M3U items; Xtream
+            // items pass through untouched.
+            var sourceIds = rawMovies.Select(m => m.SourceProfileId).Distinct().ToList();
+            _sourceTypeById = await db.SourceProfiles
+                .Where(p => sourceIds.Contains(p.Id))
+                .ToDictionaryAsync(p => p.Id, p => p.Type);
 
             Categories.Clear();
             Categories.Add(new BrowserCategoryViewModel { Id = 0, Name = "All Categories", OrderIndex = -1 });
@@ -250,14 +259,55 @@ namespace Kroira.App.ViewModels
 
         private void RefreshFeaturedMovie()
         {
-            FeaturedMovie = _allMovies.FirstOrDefault(m =>
-                string.Equals(m.Title.Trim(), FixedFeaturedMovieTitle, StringComparison.OrdinalIgnoreCase))
-                ?? SelectFeaturedMovie(_allMovies);
+            // Pinned-title path must ALSO pass the featured-safety gate so a
+            // bucket row can never be promoted even if its title matches the
+            // pinned constant.
+            var pinned = _allMovies.FirstOrDefault(m =>
+                string.Equals(m.Title.Trim(), FixedFeaturedMovieTitle, StringComparison.OrdinalIgnoreCase));
+            if (pinned != null && IsSafeForFeatured(pinned))
+            {
+                FeaturedMovie = pinned;
+                return;
+            }
+
+            FeaturedMovie = SelectFeaturedMovie(_allMovies, _sourceTypeById);
         }
 
-        private static MovieBrowseItemViewModel SelectFeaturedMovie(IEnumerable<MovieBrowseItemViewModel> movies)
+        private bool IsSafeForFeatured(MovieBrowseItemViewModel item)
         {
-            var allRanked = movies
+            var type = _sourceTypeById.TryGetValue(item.Movie.SourceProfileId, out var t)
+                ? t
+                : SourceType.M3U;
+            return ContentClassifier.IsFeaturedSafeMovie(type, item.Title, item.CategoryName, item.StreamUrl);
+        }
+
+        private static MovieBrowseItemViewModel SelectFeaturedMovie(
+            IEnumerable<MovieBrowseItemViewModel> movies,
+            IReadOnlyDictionary<int, SourceType> sourceTypeById)
+        {
+            // Featured safety: exclude M3U bucket/adult/category items.
+            // Xtream items pass through the gate untouched — the Xtream
+            // pipeline already yields structured data and a "Movies" /
+            // "Cinema" category name is a legitimate Xtream category.
+            //
+            // If NO movie passes the gate, we render a neutral placeholder
+            // instead of promoting an unsafe title into the featured slot.
+            // This is the only guarantee that a bucket row can never reach
+            // the Movies-page hero even when it exists in the DB.
+            SourceType TypeFor(MovieBrowseItemViewModel item) =>
+                sourceTypeById.TryGetValue(item.Movie.SourceProfileId, out var t) ? t : SourceType.M3U;
+
+            var safeMovies = movies
+                .Where(m => ContentClassifier.IsFeaturedSafeMovie(
+                    TypeFor(m), m.Title, m.CategoryName, m.StreamUrl))
+                .ToList();
+
+            if (safeMovies.Count == 0)
+            {
+                return CreatePlaceholderFeaturedMovie();
+            }
+
+            var allRanked = safeMovies
                 .OrderByDescending(m => GetArtworkScore(m))
                 .ThenByDescending(m => m.Popularity)
                 .ThenByDescending(m => m.VoteAverage)

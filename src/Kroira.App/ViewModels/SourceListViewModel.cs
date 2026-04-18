@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
@@ -20,6 +21,24 @@ namespace Kroira.App.ViewModels
         public int MovieCount { get; set; }
         public int SeriesCount { get; set; }
 
+        // EPG health (set at load time)
+        public bool HasEpgUrl { get; set; }
+        public bool HasEpgData { get; set; }
+        public string EpgLastSyncText { get; set; } = string.Empty;
+        public int EpgMatchedChannels { get; set; }
+        public int EpgProgramCount { get; set; }
+        public string EpgSummaryText { get; set; } = string.Empty;
+        public bool EpgSyncSuccess { get; set; }
+
+        // Per-row EPG sync busy state
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(EpgSyncButtonText))]
+        [NotifyPropertyChangedFor(nameof(IsEpgSyncEnabled))]
+        private bool _isEpgSyncing;
+
+        public string EpgSyncButtonText => IsEpgSyncing ? "Syncing…" : "EPG";
+        public bool IsEpgSyncEnabled => HasEpgUrl && !IsEpgSyncing;
+
         [ObservableProperty]
         private string _status = string.Empty;
 
@@ -27,13 +46,15 @@ namespace Kroira.App.ViewModels
         private string _healthLabel = "Saved";
 
         public Microsoft.UI.Xaml.Visibility ParseVisibility => Type == "M3U" ? Microsoft.UI.Xaml.Visibility.Visible : Microsoft.UI.Xaml.Visibility.Collapsed;
-        public Microsoft.UI.Xaml.Visibility SyncEpgVisibility => Type == "M3U" ? Microsoft.UI.Xaml.Visibility.Visible : Microsoft.UI.Xaml.Visibility.Collapsed;
+        public Microsoft.UI.Xaml.Visibility SyncEpgVisibility => HasEpgUrl ? Microsoft.UI.Xaml.Visibility.Visible : Microsoft.UI.Xaml.Visibility.Collapsed;
         public Microsoft.UI.Xaml.Visibility SyncXtreamVisibility => Type == "Xtream" ? Microsoft.UI.Xaml.Visibility.Visible : Microsoft.UI.Xaml.Visibility.Collapsed;
         public Microsoft.UI.Xaml.Visibility BrowseVisibility => (Type == "M3U" || Type == "Xtream") ? Microsoft.UI.Xaml.Visibility.Visible : Microsoft.UI.Xaml.Visibility.Collapsed;
         public Microsoft.UI.Xaml.Visibility HealthyVisibility => HealthLabel is "Healthy" or "Ready" ? Microsoft.UI.Xaml.Visibility.Visible : Microsoft.UI.Xaml.Visibility.Collapsed;
         public Microsoft.UI.Xaml.Visibility AttentionVisibility => HealthLabel == "Attention" ? Microsoft.UI.Xaml.Visibility.Visible : Microsoft.UI.Xaml.Visibility.Collapsed;
         public Microsoft.UI.Xaml.Visibility WorkingVisibility => HealthLabel == "Working" ? Microsoft.UI.Xaml.Visibility.Visible : Microsoft.UI.Xaml.Visibility.Collapsed;
         public Microsoft.UI.Xaml.Visibility IdleVisibility => HealthLabel is "Saved" or "Not synced" ? Microsoft.UI.Xaml.Visibility.Visible : Microsoft.UI.Xaml.Visibility.Collapsed;
+        public Microsoft.UI.Xaml.Visibility EpgHealthVisibility => HasEpgData ? Microsoft.UI.Xaml.Visibility.Visible : Microsoft.UI.Xaml.Visibility.Collapsed;
+        public Microsoft.UI.Xaml.Visibility EpgConfiguredVisibility => HasEpgUrl && !HasEpgData ? Microsoft.UI.Xaml.Visibility.Visible : Microsoft.UI.Xaml.Visibility.Collapsed;
 
         partial void OnHealthLabelChanged(string value)
         {
@@ -81,6 +102,30 @@ namespace Kroira.App.ViewModels
                 .ToListAsync();
 
             var sourceIds = profiles.Select(x => x.Profile.Id).ToList();
+
+            // EPG health data — fully optional; any DB/schema error just means no EPG decoration
+            var epgLogs = new Dictionary<int, Kroira.App.Models.EpgSyncLog>();
+            var credEpgUrls = new Dictionary<int, string>();
+            try
+            {
+                epgLogs = await db.EpgSyncLogs
+                    .Where(e => sourceIds.Contains(e.SourceProfileId))
+                    .ToDictionaryAsync(e => e.SourceProfileId);
+
+                var rawCreds = await db.SourceCredentials
+                    .Where(c => sourceIds.Contains(c.SourceProfileId))
+                    .Select(c => new { c.SourceProfileId, c.EpgUrl })
+                    .ToListAsync();
+
+                foreach (var row in rawCreds)
+                    credEpgUrls[row.SourceProfileId] = row.EpgUrl ?? string.Empty;
+            }
+            catch
+            {
+                // EpgSyncLogs table or EpgUrl column may be absent on an older runtime DB.
+                // Sources page continues loading without EPG health decoration.
+            }
+
             var channelCounts = await db.ChannelCategories
                 .Where(c => sourceIds.Contains(c.SourceProfileId))
                 .Join(db.Channels, c => c.Id, ch => ch.ChannelCategoryId, (c, ch) => c.SourceProfileId)
@@ -113,6 +158,16 @@ namespace Kroira.App.ViewModels
                     ? item.Profile.LastSync == null ? "Not synced" : "Ready"
                     : hasSyncIssue ? "Attention" : "Healthy";
 
+                var hasEpgUrl = credEpgUrls.TryGetValue(item.Profile.Id, out var epgUrl) && !string.IsNullOrWhiteSpace(epgUrl);
+                epgLogs.TryGetValue(item.Profile.Id, out var epgLog);
+
+                var epgSummary = epgLog != null
+                    ? epgLog.IsSuccess
+                        ? $"{epgLog.ProgrammeCount:N0} programs · {epgLog.MatchedChannelCount} ch matched"
+                        : $"Failed: {(epgLog.FailureReason.Length > 60 ? epgLog.FailureReason.Substring(0, 60) + "…" : epgLog.FailureReason)}"
+                    : hasEpgUrl ? "Not synced yet" : string.Empty;
+                var epgLastSync = epgLog != null ? epgLog.SyncedAtUtc.ToLocalTime().ToString("g") : string.Empty;
+
                 Sources.Add(new SourceItemViewModel
                 {
                     Id = item.Profile.Id,
@@ -123,7 +178,14 @@ namespace Kroira.App.ViewModels
                     MovieCount = movieCounts.TryGetValue(item.Profile.Id, out var movieCount) ? movieCount : 0,
                     SeriesCount = seriesCounts.TryGetValue(item.Profile.Id, out var seriesCount) ? seriesCount : 0,
                     HealthLabel = healthLabel,
-                    Status = statusStr
+                    Status = statusStr,
+                    HasEpgUrl = hasEpgUrl,
+                    HasEpgData = epgLog != null,
+                    EpgLastSyncText = epgLastSync,
+                    EpgMatchedChannels = epgLog?.MatchedChannelCount ?? 0,
+                    EpgProgramCount = epgLog?.ProgrammeCount ?? 0,
+                    EpgSummaryText = epgSummary,
+                    EpgSyncSuccess = epgLog?.IsSuccess ?? false
                 });
             }
 
@@ -166,11 +228,11 @@ namespace Kroira.App.ViewModels
         public async Task SyncEpgAsync(int id)
         {
             var item = Sources.FirstOrDefault(s => s.Id == id);
-            if (item != null)
-            {
-                item.HealthLabel = "Working";
-                item.Status = "Checking EPG configuration...";
-            }
+            if (item == null) return;
+
+            item.IsEpgSyncing = true;
+            item.HealthLabel = "Working";
+            item.Status = "Syncing EPG…";
 
             try
             {
@@ -180,27 +242,23 @@ namespace Kroira.App.ViewModels
                 var cred = await db.SourceCredentials.FirstOrDefaultAsync(c => c.SourceProfileId == id);
                 if (cred == null || string.IsNullOrWhiteSpace(cred.EpgUrl))
                 {
-                    if (item != null)
-                    {
-                        item.HealthLabel = "Attention";
-                        item.Status = "No EPG URL configured for this source. Edit the source to add one.";
-                    }
+                    item.IsEpgSyncing = false;
+                    item.HealthLabel = "Attention";
+                    item.Status = "No EPG URL configured. Edit the source to add one.";
                     return;
                 }
 
-                if (item != null) item.Status = "Syncing EPG...";
-
                 var parser = scope.ServiceProvider.GetRequiredService<Kroira.App.Services.Parsing.IXmltvParserService>();
                 await parser.ParseAndImportEpgAsync(db, id);
+
+                // Refresh the full row — new item will have IsEpgSyncing = false and updated EPG health
                 await LoadSourcesAsync();
             }
             catch (Exception ex)
             {
-                if (item != null)
-                {
-                    item.HealthLabel = "Attention";
-                    item.Status = $"EPG Failed: {ex.Message}";
-                }
+                item.IsEpgSyncing = false;
+                item.HealthLabel = "Attention";
+                item.Status = $"EPG failed: {(ex.Message.Length > 120 ? ex.Message.Substring(0, 120) + "…" : ex.Message)}";
             }
         }
 
@@ -348,12 +406,15 @@ namespace Kroira.App.ViewModels
                     var movies = await db.Movies.Where(m => m.SourceProfileId == id).ToListAsync();
                     if (movies.Count > 0) db.Movies.RemoveRange(movies);
 
-                    // 3. Credentials and sync state (may cascade via FK, but explicit is safer)
+                    // 3. Credentials, sync state, and EPG log
                     var creds = await db.SourceCredentials.FirstOrDefaultAsync(c => c.SourceProfileId == id);
                     if (creds != null) db.SourceCredentials.Remove(creds);
 
                     var syncState = await db.SourceSyncStates.FirstOrDefaultAsync(s => s.SourceProfileId == id);
                     if (syncState != null) db.SourceSyncStates.Remove(syncState);
+
+                    var epgLog = await db.EpgSyncLogs.FirstOrDefaultAsync(e => e.SourceProfileId == id);
+                    if (epgLog != null) db.EpgSyncLogs.Remove(epgLog);
 
                     // 4. The profile itself
                     db.SourceProfiles.Remove(profile);
