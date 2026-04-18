@@ -233,7 +233,8 @@ namespace Kroira.App.Services.Parsing
                         var ext = (element.TryGetProperty("container_extension", out var exProp) ? exProp.GetString() : null) ?? "mp4";
                         var name = element.TryGetProperty("name", out var nProp) ? nProp.GetString() : "Unknown";
                         var logo = element.TryGetProperty("stream_icon", out var lProp) ? lProp.GetString() : string.Empty;
-                        var tmdbId = GetJsonString(element, "tmdb") ?? GetJsonString(element, "tmdb_id");
+                        var tmdbId = GetFirstJsonString(element, "tmdb", "tmdb_id", "themoviedb_id");
+                        var imdbId = GetFirstJsonString(element, "imdb", "imdb_id", "imdbid");
 
                         md.TryGetValue(catId ?? "", out var mappedCatName);
 
@@ -249,6 +250,7 @@ namespace Kroira.App.Services.Parsing
                             StreamUrl = $"{baseUrl}/movie/{cred.Username}/{cred.Password}/{streamId}.{ext}",
                             PosterUrl = logo ?? string.Empty,
                             TmdbId = tmdbId ?? string.Empty,
+                            ImdbId = imdbId ?? string.Empty,
                             CategoryName = mappedCatName ?? "Uncategorized"
                         });
                     }
@@ -270,7 +272,8 @@ namespace Kroira.App.Services.Parsing
 
                         var name = element.TryGetProperty("name", out var nProp) ? nProp.GetString() : "Unknown";
                         var cover = element.TryGetProperty("cover", out var lProp) ? lProp.GetString() : string.Empty;
-                        var tmdbId = GetJsonString(element, "tmdb") ?? GetJsonString(element, "tmdb_id");
+                        var tmdbId = GetFirstJsonString(element, "tmdb", "tmdb_id", "themoviedb_id");
+                        var imdbId = GetFirstJsonString(element, "imdb", "imdb_id", "imdbid");
 
                         sd.TryGetValue(catId ?? "", out var mappedCatName);
 
@@ -284,6 +287,7 @@ namespace Kroira.App.Services.Parsing
                             Title = string.IsNullOrWhiteSpace(name) ? "Unknown Series" : name,
                             PosterUrl = cover ?? string.Empty,
                             TmdbId = tmdbId ?? string.Empty,
+                            ImdbId = imdbId ?? string.Empty,
                             CategoryName = mappedCatName ?? "Uncategorized",
                             Seasons = new List<Season>()
                         }));
@@ -379,6 +383,10 @@ namespace Kroira.App.Services.Parsing
                             {
                                 existing.TmdbId = incoming.TmdbId;
                             }
+                            if (string.IsNullOrWhiteSpace(existing.ImdbId) && !string.IsNullOrWhiteSpace(incoming.ImdbId))
+                            {
+                                existing.ImdbId = incoming.ImdbId;
+                            }
                             existing.CategoryName = incoming.CategoryName;
                             movUpdated++;
                         }
@@ -442,6 +450,10 @@ namespace Kroira.App.Services.Parsing
                             if (string.IsNullOrWhiteSpace(existingSer.TmdbId) && !string.IsNullOrWhiteSpace(sInfo.BaseObj.TmdbId))
                             {
                                 existingSer.TmdbId = sInfo.BaseObj.TmdbId;
+                            }
+                            if (string.IsNullOrWhiteSpace(existingSer.ImdbId) && !string.IsNullOrWhiteSpace(sInfo.BaseObj.ImdbId))
+                            {
+                                existingSer.ImdbId = sInfo.BaseObj.ImdbId;
                             }
                             existingSer.CategoryName = sInfo.BaseObj.CategoryName;
 
@@ -624,6 +636,20 @@ namespace Kroira.App.Services.Parsing
                 JsonValueKind.Number => property.GetRawText(),
                 _ => string.Empty
             };
+        }
+
+        private static string GetFirstJsonString(JsonElement element, params string[] propertyNames)
+        {
+            foreach (var propertyName in propertyNames)
+            {
+                var value = GetJsonString(element, propertyName);
+                if (!string.IsNullOrWhiteSpace(value) && value != "0")
+                {
+                    return value.Trim();
+                }
+            }
+
+            return string.Empty;
         }
 
     }

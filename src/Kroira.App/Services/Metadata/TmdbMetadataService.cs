@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Net.Http;
@@ -26,9 +27,15 @@ namespace Kroira.App.Services.Metadata
         private const string ApiBaseUrl = "https://api.themoviedb.org/3";
         private const string ImageBaseUrl = "https://image.tmdb.org/t/p";
         private static readonly TimeSpan CacheTtl = TimeSpan.FromDays(30);
-        private static readonly Regex BracketPattern = new Regex(@"\[[^\]]+\]|\([^\)]*(?:1080p|720p|2160p|4k|hdr|x264|x265|bluray|webrip|web-dl|hdtv)[^\)]*\)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        private static readonly Regex BracketPattern = new Regex(@"\[[^\]]*\]|\([^\)]*\)|\{[^\}]*\}", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         private static readonly Regex YearPattern = new Regex(@"\b(19\d{2}|20\d{2})\b", RegexOptions.Compiled);
-        private static readonly Regex QualityPattern = new Regex(@"\b(480p|720p|1080p|2160p|4k|uhd|hdr|hdtv|web[-\s]?dl|webrip|bluray|x264|x265|hevc|aac|dts|multi|dual|dubbed|subbed)\b", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        private static readonly Regex EpisodePattern = new Regex(@"\b(s\d{1,2}\s*e\d{1,3}|s\d{1,2}|season\s*\d+|sezon\s*\d+|episode\s*\d+|ep\s*\d+|bolum\s*\d+|bölüm\s*\d+)\b", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        private static readonly Regex NoiseTokenPattern = new Regex(
+            @"\b(TR|TURK|TURKIYE|TÜRK|TÜRKİYE|YERLI|YERLİ|DUAL|HD|UHD|SD|FHD|4K|480P|720P|1080P|2160P|HDR|HDR10|HEVC|H264|H265|X264|X265|AAC|DTS|DDP|MULTI|DUBBED|SUBBED|DUBLAJ|ALTYAZI|WEB\s*DL|WEB\s*RIP|WEBDL|WEBRIP|BLU\s*RAY|BLURAY|BRRIP|BDRIP|HDTV|DVDRIP|FRAGMAN|TRAILER|TEASER|CLIP|FEED|CDN|VOD|IPTV|NETFLIX|AMAZON|DISNEY|HBO|EXXEN|GAIN|PUHU|TABII|TV\+)\b",
+            RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        private static readonly Regex ProviderPrefixPattern = new Regex(@"^\s*(?:TR|TURK|TURKIYE|TÜRK|TÜRKİYE|YERLI|YERLİ|DUAL|HD|UHD|4K|VOD)\s*[:|\-._/]+\s*", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        private static readonly Regex ImdbIdPattern = new Regex(@"\btt\d{6,10}\b", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        private static readonly Regex TmdbIdPattern = new Regex(@"\b\d{2,9}\b", RegexOptions.Compiled);
 
         private readonly HttpClient _httpClient;
 
@@ -104,12 +111,11 @@ namespace Kroira.App.Services.Metadata
             {
                 try
                 {
-                    var details = string.IsNullOrWhiteSpace(movie.TmdbId)
-                        ? await SearchAndLoadAsync(apiKey, "movie", movie.Title)
-                        : await LoadDetailsAsync(apiKey, "movie", movie.TmdbId);
+                    var details = await MatchMovieAsync(apiKey, movie);
 
                     if (details == null)
                     {
+                        Debug.WriteLine($"TMDb movie miss: {movie.Id} '{movie.Title}'");
                         movie.MetadataUpdatedAt = DateTime.UtcNow;
                         continue;
                     }
@@ -118,6 +124,7 @@ namespace Kroira.App.Services.Metadata
                 }
                 catch
                 {
+                    Debug.WriteLine($"TMDb movie error: {movie.Id} '{movie.Title}'");
                     movie.MetadataUpdatedAt = DateTime.UtcNow;
                 }
             }
@@ -148,12 +155,11 @@ namespace Kroira.App.Services.Metadata
             {
                 try
                 {
-                    var details = string.IsNullOrWhiteSpace(show.TmdbId)
-                        ? await SearchAndLoadAsync(apiKey, "tv", show.Title)
-                        : await LoadDetailsAsync(apiKey, "tv", show.TmdbId);
+                    var details = await MatchSeriesAsync(apiKey, show);
 
                     if (details == null)
                     {
+                        Debug.WriteLine($"TMDb series miss: {show.Id} '{show.Title}'");
                         show.MetadataUpdatedAt = DateTime.UtcNow;
                         continue;
                     }
@@ -162,6 +168,7 @@ namespace Kroira.App.Services.Metadata
                 }
                 catch
                 {
+                    Debug.WriteLine($"TMDb series error: {show.Id} '{show.Title}'");
                     show.MetadataUpdatedAt = DateTime.UtcNow;
                 }
             }
@@ -211,30 +218,130 @@ namespace Kroira.App.Services.Metadata
                 ?? string.Empty;
         }
 
-        private async Task<TmdbDetails?> SearchAndLoadAsync(string apiKey, string mediaType, string rawTitle)
+        private async Task<TmdbDetails?> MatchMovieAsync(string apiKey, Movie movie)
         {
-            var query = BuildSearchQuery(rawTitle);
-            if (string.IsNullOrWhiteSpace(query.Title))
+            var providerTmdbId = NormalizeTmdbId(movie.TmdbId);
+            if (!string.IsNullOrWhiteSpace(providerTmdbId))
+            {
+                var details = await LoadDetailsAsync(apiKey, "movie", providerTmdbId);
+                if (details != null)
+                {
+                    return details;
+                }
+            }
+
+            var providerImdbId = NormalizeImdbId(movie.ImdbId) ?? NormalizeImdbId(movie.ExternalId);
+            if (!string.IsNullOrWhiteSpace(providerImdbId))
+            {
+                var details = await FindByImdbIdAsync(apiKey, "movie", providerImdbId);
+                if (details != null)
+                {
+                    return details;
+                }
+            }
+
+            return await SearchAndLoadAsync(apiKey, "movie", movie.Title, movie.ReleaseDate?.Year);
+        }
+
+        private async Task<TmdbDetails?> MatchSeriesAsync(string apiKey, Series series)
+        {
+            var providerTmdbId = NormalizeTmdbId(series.TmdbId);
+            if (!string.IsNullOrWhiteSpace(providerTmdbId))
+            {
+                var details = await LoadDetailsAsync(apiKey, "tv", providerTmdbId);
+                if (details != null)
+                {
+                    return details;
+                }
+            }
+
+            var providerImdbId = NormalizeImdbId(series.ImdbId) ?? NormalizeImdbId(series.ExternalId);
+            if (!string.IsNullOrWhiteSpace(providerImdbId))
+            {
+                var details = await FindByImdbIdAsync(apiKey, "tv", providerImdbId);
+                if (details != null)
+                {
+                    return details;
+                }
+            }
+
+            return await SearchAndLoadAsync(apiKey, "tv", series.Title, series.FirstAirDate?.Year);
+        }
+
+        private async Task<TmdbDetails?> FindByImdbIdAsync(string apiKey, string mediaType, string imdbId)
+        {
+            var url = $"{ApiBaseUrl}/find/{Uri.EscapeDataString(imdbId)}?api_key={Uri.EscapeDataString(apiKey)}&external_source=imdb_id";
+            using var doc = await GetJsonAsync(url);
+            if (doc == null)
             {
                 return null;
             }
 
-            var url = $"{ApiBaseUrl}/search/{mediaType}?api_key={Uri.EscapeDataString(apiKey)}&query={Uri.EscapeDataString(query.Title)}&include_adult=false";
-            if (query.Year.HasValue)
-            {
-                url += mediaType == "movie"
-                    ? $"&year={query.Year.Value}"
-                    : $"&first_air_date_year={query.Year.Value}";
-            }
-
-            using var searchDoc = await GetJsonAsync(url);
-            if (searchDoc == null || !searchDoc.RootElement.TryGetProperty("results", out var results) || results.ValueKind != JsonValueKind.Array)
+            var resultProperty = mediaType == "movie" ? "movie_results" : "tv_results";
+            if (!doc.RootElement.TryGetProperty(resultProperty, out var results) || results.ValueKind != JsonValueKind.Array)
             {
                 return null;
             }
 
-            var bestId = PickBestResult(results, query.Title, query.Year, mediaType);
-            return bestId == null ? null : await LoadDetailsAsync(apiKey, mediaType, bestId);
+            var id = results.EnumerateArray()
+                .Select(result => GetString(result, "id"))
+                .FirstOrDefault(value => !string.IsNullOrWhiteSpace(value));
+
+            return string.IsNullOrWhiteSpace(id) ? null : await LoadDetailsAsync(apiKey, mediaType, id);
+        }
+
+        private async Task<TmdbDetails?> SearchAndLoadAsync(string apiKey, string mediaType, string rawTitle, int? providerYear)
+        {
+            var queries = BuildSearchQueries(rawTitle, providerYear).ToList();
+            if (queries.Count == 0)
+            {
+                return null;
+            }
+
+            foreach (var query in queries)
+            {
+                var bestId = await SearchBestIdAsync(apiKey, mediaType, query);
+                if (string.IsNullOrWhiteSpace(bestId))
+                {
+                    continue;
+                }
+
+                var details = await LoadDetailsAsync(apiKey, mediaType, bestId);
+                if (details != null)
+                {
+                    return details;
+                }
+            }
+
+            return null;
+        }
+
+        private async Task<string?> SearchBestIdAsync(string apiKey, string mediaType, TmdbSearchQuery query)
+        {
+            foreach (var language in new[] { "tr-TR", "en-US" })
+            {
+                var url = $"{ApiBaseUrl}/search/{mediaType}?api_key={Uri.EscapeDataString(apiKey)}&query={Uri.EscapeDataString(query.Title)}&include_adult=false&language={language}";
+                if (query.Year.HasValue)
+                {
+                    url += mediaType == "movie"
+                        ? $"&year={query.Year.Value}"
+                        : $"&first_air_date_year={query.Year.Value}";
+                }
+
+                using var searchDoc = await GetJsonAsync(url);
+                if (searchDoc == null || !searchDoc.RootElement.TryGetProperty("results", out var results) || results.ValueKind != JsonValueKind.Array)
+                {
+                    continue;
+                }
+
+                var bestId = PickBestResult(results, query, mediaType);
+                if (!string.IsNullOrWhiteSpace(bestId))
+                {
+                    return bestId;
+                }
+            }
+
+            return null;
         }
 
         private async Task<TmdbDetails?> LoadDetailsAsync(string apiKey, string mediaType, string tmdbId)
@@ -267,30 +374,35 @@ namespace Kroira.App.Services.Metadata
             return string.IsNullOrWhiteSpace(json) ? null : JsonDocument.Parse(json);
         }
 
-        private static TmdbSearchQuery BuildSearchQuery(string rawTitle)
+        private static IEnumerable<TmdbSearchQuery> BuildSearchQueries(string rawTitle, int? providerYear)
         {
-            var title = rawTitle ?? string.Empty;
-            var year = YearPattern.Match(title);
-            int? parsedYear = year.Success && int.TryParse(year.Value, out var y) ? y : null;
+            var raw = rawTitle ?? string.Empty;
+            var year = providerYear ?? ExtractYear(raw);
+            var cleaned = CleanProviderTitle(raw);
+            var variants = new List<string> { cleaned };
 
-            title = BracketPattern.Replace(title, " ");
-            title = YearPattern.Replace(title, " ");
-            title = QualityPattern.Replace(title, " ");
-            title = title
-                .Replace('.', ' ')
-                .Replace('_', ' ')
-                .Replace('-', ' ')
-                .Replace("  ", " ")
-                .Trim();
+            variants.AddRange(BuildAlternateTitleVariants(cleaned));
+            variants.Add(RemoveTurkishDiacritics(cleaned));
 
-            return new TmdbSearchQuery(title, parsedYear);
+            foreach (var title in variants
+                         .Select(NormalizeSpacing)
+                         .Where(title => title.Length >= 2 && !LooksLikeNonFeature(title))
+                         .Distinct(StringComparer.OrdinalIgnoreCase))
+            {
+                if (year.HasValue)
+                {
+                    yield return new TmdbSearchQuery(title, year, true);
+                }
+
+                yield return new TmdbSearchQuery(title, null, false);
+            }
         }
 
-        private static string? PickBestResult(JsonElement results, string queryTitle, int? queryYear, string mediaType)
+        private static string? PickBestResult(JsonElement results, TmdbSearchQuery query, string mediaType)
         {
-            var normalizedQuery = NormalizeForCompare(queryTitle);
             string? fallbackId = null;
             double fallbackScore = double.MinValue;
+            var normalizedQuery = NormalizeForCompare(query.Title);
 
             foreach (var result in results.EnumerateArray().Take(8))
             {
@@ -307,22 +419,59 @@ namespace Kroira.App.Services.Metadata
                     ? GetString(result, "release_date")
                     : GetString(result, "first_air_date");
                 var popularity = GetDouble(result, "popularity");
-                var normalizedTitle = NormalizeForCompare(title ?? string.Empty);
-                var score = popularity;
+                var voteCount = GetDouble(result, "vote_count");
+                var originalTitle = mediaType == "movie"
+                    ? GetString(result, "original_title")
+                    : GetString(result, "original_name");
 
-                if (normalizedTitle == normalizedQuery)
+                if (LooksLikeNonFeature(title ?? string.Empty) || LooksLikeNonFeature(originalTitle ?? string.Empty))
                 {
-                    score += 1000;
-                }
-                else if (normalizedTitle.Contains(normalizedQuery) || normalizedQuery.Contains(normalizedTitle))
-                {
-                    score += 300;
+                    continue;
                 }
 
-                if (queryYear.HasValue && date?.StartsWith(queryYear.Value.ToString(CultureInfo.InvariantCulture), StringComparison.Ordinal) == true)
+                var titleScore = Math.Max(
+                    CalculateTitleScore(normalizedQuery, NormalizeForCompare(title ?? string.Empty)),
+                    CalculateTitleScore(normalizedQuery, NormalizeForCompare(originalTitle ?? string.Empty)));
+
+                if (titleScore < 70)
                 {
-                    score += 200;
+                    continue;
                 }
+
+                var yearScore = 0d;
+                var hasBadYearMismatch = false;
+                if (query.Year.HasValue && TryParseYear(date, out var resultYear))
+                {
+                    var delta = Math.Abs(resultYear - query.Year.Value);
+                    if (delta == 0)
+                    {
+                        yearScore = 18;
+                    }
+                    else if (delta == 1)
+                    {
+                        yearScore = 7;
+                    }
+                    else
+                    {
+                        yearScore = mediaType == "movie" ? -26 : -14;
+                        hasBadYearMismatch = true;
+                    }
+                }
+
+                if (hasBadYearMismatch && titleScore < 96)
+                {
+                    continue;
+                }
+
+                if (!query.Year.HasValue && titleScore < 84)
+                {
+                    continue;
+                }
+
+                var score = titleScore
+                    + yearScore
+                    + Math.Min(popularity / 12, 8)
+                    + Math.Min(voteCount / 1000, 4);
 
                 if (score > fallbackScore)
                 {
@@ -331,7 +480,185 @@ namespace Kroira.App.Services.Metadata
                 }
             }
 
-            return fallbackId;
+            var threshold = query.Year.HasValue ? 82 : 88;
+            return fallbackScore >= threshold ? fallbackId : null;
+        }
+
+        private static string CleanProviderTitle(string rawTitle)
+        {
+            var title = rawTitle ?? string.Empty;
+            title = title.Replace('&', ' ');
+            title = BracketPattern.Replace(title, " ");
+            title = EpisodePattern.Replace(title, " ");
+            title = YearPattern.Replace(title, " ");
+
+            for (var i = 0; i < 4; i++)
+            {
+                title = ProviderPrefixPattern.Replace(title, " ");
+            }
+
+            title = NoiseTokenPattern.Replace(title, " ");
+            title = Regex.Replace(title, @"\b\d{1,2}\s*(?:fps|bit|bitrate)\b", " ", RegexOptions.IgnoreCase);
+            title = Regex.Replace(title, @"[_|•·]+", " ");
+            title = Regex.Replace(title, @"\s*[-:]+\s*", " ");
+            title = Regex.Replace(title, @"[.]{2,}", " ");
+            title = Regex.Replace(title, @"\s+", " ");
+
+            return title.Trim(' ', '-', ':', '.', '_', '|', '/', '\\');
+        }
+
+        private static IEnumerable<string> BuildAlternateTitleVariants(string title)
+        {
+            foreach (var separator in new[] { " / ", " | ", " - ", " : " })
+            {
+                if (!title.Contains(separator, StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                foreach (var part in title.Split(separator, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                {
+                    if (part.Length >= 2)
+                    {
+                        yield return part;
+                    }
+                }
+            }
+        }
+
+        private static int? ExtractYear(string value)
+        {
+            var matches = YearPattern.Matches(value ?? string.Empty);
+            foreach (Match match in matches)
+            {
+                if (int.TryParse(match.Value, out var year) && year >= 1900 && year <= DateTime.UtcNow.Year + 2)
+                {
+                    return year;
+                }
+            }
+
+            return null;
+        }
+
+        private static bool TryParseYear(string? dateText, out int year)
+        {
+            year = 0;
+            if (string.IsNullOrWhiteSpace(dateText) || dateText.Length < 4)
+            {
+                return false;
+            }
+
+            return int.TryParse(dateText.Substring(0, 4), NumberStyles.Integer, CultureInfo.InvariantCulture, out year);
+        }
+
+        private static bool LooksLikeNonFeature(string title)
+        {
+            if (string.IsNullOrWhiteSpace(title))
+            {
+                return true;
+            }
+
+            return Regex.IsMatch(title, @"\b(trailer|fragman|teaser|clip|recap|preview|behind\s+the\s+scenes|kamera\s+arkası|feed|cdn)\b", RegexOptions.IgnoreCase);
+        }
+
+        private static string? NormalizeTmdbId(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return null;
+            }
+
+            var match = TmdbIdPattern.Match(value);
+            return match.Success ? match.Value : null;
+        }
+
+        private static string? NormalizeImdbId(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return null;
+            }
+
+            var match = ImdbIdPattern.Match(value);
+            return match.Success ? match.Value.ToLowerInvariant() : null;
+        }
+
+        private static string NormalizeSpacing(string value)
+        {
+            return Regex.Replace(value ?? string.Empty, @"\s+", " ").Trim();
+        }
+
+        private static double CalculateTitleScore(string normalizedQuery, string normalizedTitle)
+        {
+            if (string.IsNullOrWhiteSpace(normalizedQuery) || string.IsNullOrWhiteSpace(normalizedTitle))
+            {
+                return 0;
+            }
+
+            if (normalizedQuery == normalizedTitle)
+            {
+                return 100;
+            }
+
+            if (normalizedTitle.Contains(normalizedQuery, StringComparison.Ordinal) ||
+                normalizedQuery.Contains(normalizedTitle, StringComparison.Ordinal))
+            {
+                var shorter = Math.Min(normalizedQuery.Length, normalizedTitle.Length);
+                var longer = Math.Max(normalizedQuery.Length, normalizedTitle.Length);
+                return 86 + (12d * shorter / longer);
+            }
+
+            var editScore = 100d * (1d - (double)LevenshteinDistance(normalizedQuery, normalizedTitle) / Math.Max(normalizedQuery.Length, normalizedTitle.Length));
+            var tokenScore = TokenOverlapScore(normalizedQuery, normalizedTitle);
+            return Math.Max(editScore, tokenScore);
+        }
+
+        private static double TokenOverlapScore(string left, string right)
+        {
+            var leftTokens = SplitComparableTokens(left);
+            var rightTokens = SplitComparableTokens(right);
+            if (leftTokens.Count == 0 || rightTokens.Count == 0)
+            {
+                return 0;
+            }
+
+            var overlap = leftTokens.Intersect(rightTokens, StringComparer.Ordinal).Count();
+            return 100d * overlap / Math.Max(leftTokens.Count, rightTokens.Count);
+        }
+
+        private static HashSet<string> SplitComparableTokens(string value)
+        {
+            return Regex.Matches(value, @"[a-z0-9]+")
+                .Select(match => match.Value)
+                .Where(token => token.Length > 1)
+                .ToHashSet(StringComparer.Ordinal);
+        }
+
+        private static int LevenshteinDistance(string left, string right)
+        {
+            var previous = new int[right.Length + 1];
+            var current = new int[right.Length + 1];
+
+            for (var j = 0; j <= right.Length; j++)
+            {
+                previous[j] = j;
+            }
+
+            for (var i = 1; i <= left.Length; i++)
+            {
+                current[0] = i;
+                for (var j = 1; j <= right.Length; j++)
+                {
+                    var cost = left[i - 1] == right[j - 1] ? 0 : 1;
+                    current[j] = Math.Min(
+                        Math.Min(current[j - 1] + 1, previous[j] + 1),
+                        previous[j - 1] + cost);
+                }
+
+                (previous, current) = (current, previous);
+            }
+
+            return previous[right.Length];
         }
 
         private static TmdbDetails ParseDetails(JsonElement root, string mediaType)
@@ -366,12 +693,12 @@ namespace Kroira.App.Services.Metadata
             movie.TmdbBackdropPath = details.BackdropPath;
             movie.PosterUrl = string.IsNullOrWhiteSpace(movie.PosterUrl) ? details.PosterUrl : movie.PosterUrl;
             movie.BackdropUrl = string.IsNullOrWhiteSpace(movie.BackdropUrl) ? details.BackdropUrl : movie.BackdropUrl;
-            movie.Overview = details.Overview;
-            movie.Genres = details.Genres;
-            movie.ReleaseDate = details.Date;
-            movie.VoteAverage = details.VoteAverage;
-            movie.Popularity = details.Popularity;
-            movie.OriginalLanguage = details.OriginalLanguage;
+            movie.Overview = string.IsNullOrWhiteSpace(details.Overview) ? movie.Overview : details.Overview;
+            movie.Genres = string.IsNullOrWhiteSpace(details.Genres) ? movie.Genres : details.Genres;
+            movie.ReleaseDate = details.Date ?? movie.ReleaseDate;
+            movie.VoteAverage = details.VoteAverage > 0 ? details.VoteAverage : movie.VoteAverage;
+            movie.Popularity = details.Popularity > 0 ? details.Popularity : movie.Popularity;
+            movie.OriginalLanguage = string.IsNullOrWhiteSpace(details.OriginalLanguage) ? movie.OriginalLanguage : details.OriginalLanguage;
             movie.MetadataUpdatedAt = DateTime.UtcNow;
         }
 
@@ -383,12 +710,12 @@ namespace Kroira.App.Services.Metadata
             series.TmdbBackdropPath = details.BackdropPath;
             series.PosterUrl = string.IsNullOrWhiteSpace(series.PosterUrl) ? details.PosterUrl : series.PosterUrl;
             series.BackdropUrl = string.IsNullOrWhiteSpace(series.BackdropUrl) ? details.BackdropUrl : series.BackdropUrl;
-            series.Overview = details.Overview;
-            series.Genres = details.Genres;
-            series.FirstAirDate = details.Date;
-            series.VoteAverage = details.VoteAverage;
-            series.Popularity = details.Popularity;
-            series.OriginalLanguage = details.OriginalLanguage;
+            series.Overview = string.IsNullOrWhiteSpace(details.Overview) ? series.Overview : details.Overview;
+            series.Genres = string.IsNullOrWhiteSpace(details.Genres) ? series.Genres : details.Genres;
+            series.FirstAirDate = details.Date ?? series.FirstAirDate;
+            series.VoteAverage = details.VoteAverage > 0 ? details.VoteAverage : series.VoteAverage;
+            series.Popularity = details.Popularity > 0 ? details.Popularity : series.Popularity;
+            series.OriginalLanguage = string.IsNullOrWhiteSpace(details.OriginalLanguage) ? series.OriginalLanguage : details.OriginalLanguage;
             series.MetadataUpdatedAt = DateTime.UtcNow;
         }
 
@@ -419,7 +746,24 @@ namespace Kroira.App.Services.Metadata
 
         private static string NormalizeForCompare(string value)
         {
-            return Regex.Replace(value.ToLowerInvariant(), @"[^a-z0-9]+", string.Empty);
+            return Regex.Replace(RemoveTurkishDiacritics(value).ToLowerInvariant(), @"[^a-z0-9]+", string.Empty);
+        }
+
+        private static string RemoveTurkishDiacritics(string value)
+        {
+            return (value ?? string.Empty)
+                .Replace('ı', 'i')
+                .Replace('İ', 'I')
+                .Replace('ş', 's')
+                .Replace('Ş', 'S')
+                .Replace('ğ', 'g')
+                .Replace('Ğ', 'G')
+                .Replace('ü', 'u')
+                .Replace('Ü', 'U')
+                .Replace('ö', 'o')
+                .Replace('Ö', 'O')
+                .Replace('ç', 'c')
+                .Replace('Ç', 'C');
         }
 
         private static string? GetString(JsonElement element, string propertyName)
@@ -452,7 +796,7 @@ namespace Kroira.App.Services.Metadata
             };
         }
 
-        private sealed record TmdbSearchQuery(string Title, int? Year);
+        private sealed record TmdbSearchQuery(string Title, int? Year, bool IsYearQualified);
 
         private sealed record TmdbDetails(
             string TmdbId,
