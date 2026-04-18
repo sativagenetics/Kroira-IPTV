@@ -15,13 +15,48 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Kroira.App.ViewModels
 {
+    public partial class MovieBrowseItemViewModel : ObservableObject
+    {
+        public MovieBrowseItemViewModel(Movie movie, bool isFavorite)
+        {
+            Movie = movie;
+            IsFavorite = isFavorite;
+        }
+
+        public Movie Movie { get; }
+        public int Id => Movie.Id;
+        public string Title => Movie.Title;
+        public string StreamUrl => Movie.StreamUrl;
+        public string DisplayPosterUrl => Movie.DisplayPosterUrl;
+        public string DisplayHeroArtworkUrl => Movie.DisplayHeroArtworkUrl;
+        public string RatingText => Movie.RatingText;
+        public string MetadataLine => Movie.MetadataLine;
+        public string Overview => Movie.Overview;
+        public string CategoryName => Movie.CategoryName;
+        public double Popularity => Movie.Popularity;
+        public double VoteAverage => Movie.VoteAverage;
+        public string BackdropUrl => Movie.BackdropUrl;
+        public string TmdbBackdropPath => Movie.TmdbBackdropPath;
+        public string PosterUrl => Movie.PosterUrl;
+        public string TmdbPosterPath => Movie.TmdbPosterPath;
+
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(FavoriteGlyph))]
+        [NotifyPropertyChangedFor(nameof(FavoriteLabel))]
+        private bool _isFavorite;
+
+        public string FavoriteGlyph => IsFavorite ? "\uE735" : "\uE734";
+        public string FavoriteLabel => IsFavorite ? "Saved" : "Save";
+    }
+
     public partial class MoviesViewModel : ObservableObject
     {
+        private const string FixedFeaturedMovieTitle = "Kurtlar Vadisi Gladio";
         private readonly IServiceProvider _serviceProvider;
-        private List<Movie> _allMovies = new List<Movie>();
+        private List<MovieBrowseItemViewModel> _allMovies = new List<MovieBrowseItemViewModel>();
         private static readonly int _sessionRotationIndex = Math.Abs(Environment.TickCount % 5);
 
-        public ObservableCollection<Movie> FilteredMovies { get; } = new ObservableCollection<Movie>();
+        public ObservableCollection<MovieBrowseItemViewModel> FilteredMovies { get; } = new ObservableCollection<MovieBrowseItemViewModel>();
         public ObservableCollection<BrowserCategoryViewModel> Categories { get; } = new ObservableCollection<BrowserCategoryViewModel>();
 
         [ObservableProperty]
@@ -35,12 +70,7 @@ namespace Kroira.App.ViewModels
 
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(FeaturedMovieCanPlay))]
-        private Movie _featuredMovie = new Movie
-        {
-            Title = "Movies",
-            Overview = "Sync an Xtream VOD source to build a poster-first library with TMDb artwork, ratings, genres, and backdrops.",
-            CategoryName = "VOD library"
-        };
+        private MovieBrowseItemViewModel _featuredMovie = CreatePlaceholderFeaturedMovie();
 
         public bool FeaturedMovieCanPlay => !string.IsNullOrWhiteSpace(FeaturedMovie?.StreamUrl);
 
@@ -66,9 +96,15 @@ namespace Kroira.App.ViewModels
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             var languageCode = await AppLanguageService.GetLanguageAsync(db);
             var rawMovies = await db.Movies.ToListAsync();
+            var favoriteIds = (await db.Favorites
+                .Where(f => f.ContentType == FavoriteType.Movie)
+                .Select(f => f.ContentId)
+                .ToListAsync())
+                .ToHashSet();
 
             _allMovies = CatalogOrderingService
                 .OrderCatalog(rawMovies, languageCode, m => m.CategoryName, m => m.Title)
+                .Select(movie => new MovieBrowseItemViewModel(movie, favoriteIds.Contains(movie.Id)))
                 .ToList();
 
             Categories.Clear();
@@ -93,6 +129,7 @@ namespace Kroira.App.ViewModels
             }
 
             SelectedCategory = Categories.FirstOrDefault();
+            RefreshFeaturedMovie();
             ApplyFilter();
             StartMetadataEnrichment();
         }
@@ -119,7 +156,34 @@ namespace Kroira.App.ViewModels
             }
 
             IsEmpty = FilteredMovies.Count == 0;
-            FeaturedMovie = SelectFeaturedMovie(FilteredMovies);
+        }
+
+        [RelayCommand]
+        public async Task ToggleFavoriteAsync(int movieId)
+        {
+            var target = _allMovies.FirstOrDefault(m => m.Id == movieId);
+            if (target == null)
+            {
+                return;
+            }
+
+            using var scope = _serviceProvider.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var favorite = await db.Favorites
+                .FirstOrDefaultAsync(f => f.ContentType == FavoriteType.Movie && f.ContentId == movieId);
+
+            if (favorite == null)
+            {
+                db.Favorites.Add(new Favorite { ContentType = FavoriteType.Movie, ContentId = movieId });
+                target.IsFavorite = true;
+            }
+            else
+            {
+                db.Favorites.Remove(favorite);
+                target.IsFavorite = false;
+            }
+
+            await db.SaveChangesAsync();
         }
 
         private static string GetDisplayCategory(string categoryName)
@@ -127,7 +191,14 @@ namespace Kroira.App.ViewModels
             return string.IsNullOrWhiteSpace(categoryName) ? "Uncategorized" : categoryName.Trim();
         }
 
-        private static Movie SelectFeaturedMovie(IEnumerable<Movie> movies)
+        private void RefreshFeaturedMovie()
+        {
+            FeaturedMovie = _allMovies.FirstOrDefault(m =>
+                string.Equals(m.Title.Trim(), FixedFeaturedMovieTitle, StringComparison.OrdinalIgnoreCase))
+                ?? SelectFeaturedMovie(_allMovies);
+        }
+
+        private static MovieBrowseItemViewModel SelectFeaturedMovie(IEnumerable<MovieBrowseItemViewModel> movies)
         {
             var allRanked = movies
                 .OrderByDescending(m => GetArtworkScore(m))
@@ -135,8 +206,7 @@ namespace Kroira.App.ViewModels
                 .ThenByDescending(m => m.VoteAverage)
                 .ToList();
 
-            // Only rotate within candidates that have a real backdrop (score ≥ 3).
-            // This ensures the hero always shows a compelling wide image, not just a portrait poster.
+            // Rotate only within candidates that have real backdrop artwork.
             var backdropPool = allRanked
                 .Where(m => GetArtworkScore(m) >= 3)
                 .Take(5)
@@ -147,16 +217,10 @@ namespace Kroira.App.ViewModels
                 return backdropPool[_sessionRotationIndex % backdropPool.Count];
             }
 
-            // No backdrop-capable movies — use single best candidate, no rotation.
-            return allRanked.FirstOrDefault() ?? new Movie
-            {
-                Title = "Movies",
-                Overview = "Sync an Xtream VOD source to build a poster-first library with TMDb artwork, ratings, genres, and backdrops.",
-                CategoryName = "VOD library"
-            };
+            return allRanked.FirstOrDefault() ?? CreatePlaceholderFeaturedMovie();
         }
 
-        private static int GetArtworkScore(Movie movie)
+        private static int GetArtworkScore(MovieBrowseItemViewModel movie)
         {
             if (!string.IsNullOrWhiteSpace(movie.BackdropUrl))
             {
@@ -174,6 +238,16 @@ namespace Kroira.App.ViewModels
             }
 
             return string.IsNullOrWhiteSpace(movie.TmdbPosterPath) ? 0 : 1;
+        }
+
+        private static MovieBrowseItemViewModel CreatePlaceholderFeaturedMovie()
+        {
+            return new MovieBrowseItemViewModel(new Movie
+            {
+                Title = "Movies",
+                Overview = "Sync an Xtream VOD source to build a poster-first library with TMDb artwork, ratings, genres, and backdrops.",
+                CategoryName = "VOD library"
+            }, false);
         }
 
         private void StartMetadataEnrichment()

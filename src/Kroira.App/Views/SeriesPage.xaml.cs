@@ -70,6 +70,14 @@ namespace Kroira.App.Views
             }
         }
 
+        private async void FavoriteToggle_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is FrameworkElement { Tag: int id })
+            {
+                await ViewModel.ToggleFavoriteCommand.ExecuteAsync(id);
+            }
+        }
+
         private void PlayEpisode(Episode ep)
         {
             if (!string.IsNullOrWhiteSpace(ep.StreamUrl))

@@ -18,12 +18,40 @@ using Microsoft.UI.Xaml;
 
 namespace Kroira.App.ViewModels
 {
+    public partial class SeriesBrowseItemViewModel : ObservableObject
+    {
+        public SeriesBrowseItemViewModel(Series series, bool isFavorite)
+        {
+            Series = series;
+            IsFavorite = isFavorite;
+        }
+
+        public Series Series { get; }
+        public int Id => Series.Id;
+        public string Title => Series.Title;
+        public string DisplayPosterUrl => Series.DisplayPosterUrl;
+        public string DisplayHeroArtworkUrl => Series.DisplayHeroArtworkUrl;
+        public string RatingText => Series.RatingText;
+        public string MetadataLine => Series.MetadataLine;
+        public string Overview => Series.Overview;
+        public string CategoryName => Series.CategoryName;
+        public ICollection<Season>? Seasons => Series.Seasons;
+
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(FavoriteGlyph))]
+        [NotifyPropertyChangedFor(nameof(FavoriteLabel))]
+        private bool _isFavorite;
+
+        public string FavoriteGlyph => IsFavorite ? "\uE735" : "\uE734";
+        public string FavoriteLabel => IsFavorite ? "Saved" : "Save";
+    }
+
     public partial class SeriesViewModel : ObservableObject
     {
         private readonly IServiceProvider _serviceProvider;
-        private List<Series> _allSeries = new List<Series>();
+        private List<SeriesBrowseItemViewModel> _allSeries = new List<SeriesBrowseItemViewModel>();
 
-        public ObservableCollection<Series> FilteredSeries { get; } = new ObservableCollection<Series>();
+        public ObservableCollection<SeriesBrowseItemViewModel> FilteredSeries { get; } = new ObservableCollection<SeriesBrowseItemViewModel>();
         public ObservableCollection<BrowserCategoryViewModel> Categories { get; } = new ObservableCollection<BrowserCategoryViewModel>();
 
         [ObservableProperty]
@@ -33,7 +61,7 @@ namespace Kroira.App.ViewModels
         private BrowserCategoryViewModel? _selectedCategory;
 
         [ObservableProperty]
-        private Series? _selectedSeries;
+        private SeriesBrowseItemViewModel? _selectedSeries;
 
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(EpisodesListVisibility))]
@@ -60,6 +88,7 @@ namespace Kroira.App.ViewModels
 
         [ObservableProperty]
         private bool _isEmpty;
+
         partial void OnSearchQueryChanged(string value)
         {
             ApplyFilter();
@@ -71,7 +100,7 @@ namespace Kroira.App.ViewModels
             ApplyFilter();
         }
 
-        partial void OnSelectedSeriesChanged(Series? value)
+        partial void OnSelectedSeriesChanged(SeriesBrowseItemViewModel? value)
         {
             SelectedSeason = null;
             SelectedEpisode = null;
@@ -104,21 +133,28 @@ namespace Kroira.App.ViewModels
                 .Include(s => s.Seasons!)
                 .ThenInclude(sn => sn.Episodes)
                 .ToListAsync();
+            var favoriteIds = (await db.Favorites
+                .Where(f => f.ContentType == FavoriteType.Series)
+                .Select(f => f.ContentId)
+                .ToListAsync())
+                .ToHashSet();
 
             _allSeries = CatalogOrderingService
                 .OrderCatalog(rawSeries, languageCode, s => s.CategoryName, s => s.Title)
+                .Select(series => new SeriesBrowseItemViewModel(series, favoriteIds.Contains(series.Id)))
                 .ToList();
 
-            foreach (var s in _allSeries)
+            foreach (var item in _allSeries)
             {
-                if (s.Seasons != null)
+                var series = item.Series;
+                if (series.Seasons != null)
                 {
-                    s.Seasons = s.Seasons.OrderBy(sn => sn.SeasonNumber).ToList();
-                    foreach (var sn in s.Seasons)
+                    series.Seasons = series.Seasons.OrderBy(sn => sn.SeasonNumber).ToList();
+                    foreach (var season in series.Seasons)
                     {
-                        if (sn.Episodes != null)
+                        if (season.Episodes != null)
                         {
-                            sn.Episodes = sn.Episodes.OrderBy(e => e.EpisodeNumber).ToList();
+                            season.Episodes = season.Episodes.OrderBy(e => e.EpisodeNumber).ToList();
                         }
                     }
                 }
@@ -174,6 +210,34 @@ namespace Kroira.App.ViewModels
             IsEmpty = FilteredSeries.Count == 0;
         }
 
+        [RelayCommand]
+        public async Task ToggleFavoriteAsync(int seriesId)
+        {
+            var target = _allSeries.FirstOrDefault(s => s.Id == seriesId);
+            if (target == null)
+            {
+                return;
+            }
+
+            using var scope = _serviceProvider.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var favorite = await db.Favorites
+                .FirstOrDefaultAsync(f => f.ContentType == FavoriteType.Series && f.ContentId == seriesId);
+
+            if (favorite == null)
+            {
+                db.Favorites.Add(new Favorite { ContentType = FavoriteType.Series, ContentId = seriesId });
+                target.IsFavorite = true;
+            }
+            else
+            {
+                db.Favorites.Remove(favorite);
+                target.IsFavorite = false;
+            }
+
+            await db.SaveChangesAsync();
+        }
+
         private static string GetDisplayCategory(string categoryName)
         {
             return string.IsNullOrWhiteSpace(categoryName) ? "Uncategorized" : categoryName.Trim();
@@ -197,8 +261,10 @@ namespace Kroira.App.ViewModels
             });
         }
 
-        private async Task EnsureSeriesDetailsAsync(Series series)
+        private async Task EnsureSeriesDetailsAsync(SeriesBrowseItemViewModel item)
         {
+            var series = item.Series;
+
             if (!HasPlayableEpisodes(series))
             {
                 SelectedSeriesStatus = "Loading episode details...";

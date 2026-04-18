@@ -22,6 +22,20 @@
             <Setter Property="Padding" Value="0" />
             <Setter Property="HorizontalContentAlignment" Value="Stretch" />
         </Style>
+
+        <Style x:Key="CategoryRailItemContainerStyle" TargetType="ListViewItem">
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Margin" Value="0,0,0,7" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="MinHeight" Value="38" />
+            <Setter Property="CornerRadius" Value="10" />
+        </Style>
+
+        <Style x:Key="FavoritePillButtonStyle" TargetType="Button" BasedOn="{StaticResource KroiraGhostButtonStyle}">
+            <Setter Property="Padding" Value="12,9" />
+            <Setter Property="MinHeight" Value="38" />
+            <Setter Property="CornerRadius" Value="18" />
+        </Style>
     </Page.Resources>
 
     <Grid Padding="30,28,30,34"
@@ -67,31 +81,82 @@
             </Border>
         </Grid>
 
-        <Grid Grid.Row="1" ColumnSpacing="12">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" MaxWidth="520" />
-                <ColumnDefinition Width="236" />
-            </Grid.ColumnDefinitions>
-
-            <TextBox Grid.Column="0"
-                     Style="{StaticResource KroiraFilterTextBoxStyle}"
-                     Text="{x:Bind ViewModel.SearchQuery, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                     PlaceholderText="Search series" />
-
-            <ComboBox Grid.Column="1"
-                      Style="{StaticResource KroiraFilterComboBoxStyle}"
-                      ItemsSource="{x:Bind ViewModel.Categories, Mode=OneWay}"
-                      SelectedItem="{x:Bind ViewModel.SelectedCategory, Mode=TwoWay}"
-                      DisplayMemberPath="Name" />
-        </Grid>
+        <Border Grid.Row="1" Style="{StaticResource KroiraFilterStripStyle}">
+            <Grid MaxWidth="520" HorizontalAlignment="Stretch">
+                <TextBox Style="{StaticResource KroiraFilterTextBoxStyle}"
+                         Text="{x:Bind ViewModel.SearchQuery, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                         PlaceholderText="Search series" />
+                <FontIcon Glyph="&#xE721;"
+                          FontSize="14"
+                          Foreground="{StaticResource KroiraTextTertiaryBrush}"
+                          HorizontalAlignment="Right"
+                          Margin="0,0,16,0"
+                          VerticalAlignment="Center" />
+            </Grid>
+        </Border>
 
         <Grid Grid.Row="2" ColumnSpacing="22">
             <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="206" />
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="430" />
             </Grid.ColumnDefinitions>
 
-            <Grid Grid.Column="0">
+            <Border Grid.Column="0"
+                    Background="#D00A0D11"
+                    BorderBrush="{StaticResource KroiraGlassBorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="14"
+                    Padding="12">
+                <Grid RowSpacing="10">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="BROWSE BY"
+                                   Style="{StaticResource KroiraLabelStyle}"
+                                   Foreground="{StaticResource KroiraAccentBrush}" />
+                        <TextBlock Text="Categories"
+                                   Style="{StaticResource KroiraTitleStyle}"
+                                   FontSize="15" />
+                    </StackPanel>
+                    <ListView Grid.Row="1"
+                              ItemsSource="{x:Bind ViewModel.Categories, Mode=OneWay}"
+                              SelectedItem="{x:Bind ViewModel.SelectedCategory, Mode=TwoWay}"
+                              SelectionMode="Single"
+                              ItemContainerStyle="{StaticResource CategoryRailItemContainerStyle}"
+                              Background="Transparent"
+                              BorderThickness="0"
+                              Padding="0"
+                              ScrollViewer.VerticalScrollMode="Enabled"
+                              ScrollViewer.VerticalScrollBarVisibility="Auto">
+                        <ListView.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Padding="11,9" ColumnSpacing="8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="4" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <Border Width="4"
+                                            CornerRadius="2"
+                                            Background="{StaticResource KroiraAccentBrush}"
+                                            Opacity="0.72" />
+                                    <TextBlock Grid.Column="1"
+                                               Text="{Binding Name}"
+                                               Style="{StaticResource KroiraMetaStyle}"
+                                               Foreground="{StaticResource KroiraTextPrimaryBrush}"
+                                               FontSize="12"
+                                               FontWeight="SemiBold"
+                                               TextTrimming="CharacterEllipsis" />
+                                </Grid>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
+                </Grid>
+            </Border>
+
+            <Grid Grid.Column="1">
                 <StackPanel Visibility="{x:Bind ViewModel.IsEmpty, Mode=OneWay}"
                             HorizontalAlignment="Center"
                             VerticalAlignment="Center"
@@ -165,6 +230,25 @@
                                                 </LinearGradientBrush>
                                             </Border.Background>
                                         </Border>
+                                        <Button Click="FavoriteToggle_Click"
+                                                Tag="{Binding Id}"
+                                                ToolTipService.ToolTip="{Binding FavoriteLabel}"
+                                                Width="34"
+                                                Height="34"
+                                                Padding="0"
+                                                MinWidth="0"
+                                                MinHeight="0"
+                                                HorizontalAlignment="Left"
+                                                VerticalAlignment="Top"
+                                                Margin="8"
+                                                Background="#D0090B0F"
+                                                BorderBrush="{StaticResource KroiraChromeLineBrush}"
+                                                BorderThickness="1"
+                                                CornerRadius="17">
+                                            <FontIcon Glyph="{Binding FavoriteGlyph}"
+                                                      FontSize="12"
+                                                      Foreground="{StaticResource KroiraAccentBrush}" />
+                                        </Button>
                                     </Grid>
 
                                     <StackPanel Grid.Row="1" Spacing="4" Margin="2,10,2,4">
@@ -203,7 +287,7 @@
                 </GridView>
             </Grid>
 
-            <Border Grid.Column="1"
+            <Border Grid.Column="2"
                     Background="#D00B0E13"
                     BorderBrush="#24FFFFFF"
                     BorderThickness="1"
@@ -324,6 +408,18 @@
                                                        LineHeight="17"
                                                        MaxLines="3"
                                                        TextTrimming="CharacterEllipsis" />
+                                            <Button Click="FavoriteToggle_Click"
+                                                    Tag="{x:Bind ViewModel.SelectedSeries.Id, Mode=OneWay}"
+                                                    Style="{StaticResource FavoritePillButtonStyle}"
+                                                    HorizontalAlignment="Left"
+                                                    Margin="0,2,0,0">
+                                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                                    <FontIcon Glyph="{x:Bind ViewModel.SelectedSeries.FavoriteGlyph, Mode=OneWay}"
+                                                              FontSize="13"
+                                                              Foreground="{StaticResource KroiraAccentBrush}" />
+                                                    <TextBlock Text="{x:Bind ViewModel.SelectedSeries.FavoriteLabel, Mode=OneWay}" />
+                                                </StackPanel>
+                                            </Button>
                                         </StackPanel>
                                     </Grid>
                                 </Grid>

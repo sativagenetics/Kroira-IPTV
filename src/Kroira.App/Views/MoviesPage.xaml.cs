@@ -38,9 +38,17 @@ namespace Kroira.App.Views
             }
         }
 
+        private async void FavoriteToggle_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is FrameworkElement { Tag: int id })
+            {
+                await ViewModel.ToggleFavoriteCommand.ExecuteAsync(id);
+            }
+        }
+
         private void GridView_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (e.AddedItems.Count > 0 && e.AddedItems[0] is Movie movie)
+            if (e.AddedItems.Count > 0 && e.AddedItems[0] is MovieBrowseItemViewModel movie)
             {
                 if (!string.IsNullOrWhiteSpace(movie.StreamUrl))
                 {
