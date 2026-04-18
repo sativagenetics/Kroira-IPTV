@@ -14,12 +14,43 @@
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
-            <StackPanel Grid.Row="0" Spacing="6">
-                <TextBlock Text="Settings" Style="{StaticResource KroiraPageTitleStyle}" />
-                <TextBlock Text="Application preferences and local behavior."
-                           Style="{StaticResource KroiraPageSubtitleStyle}"
-                           MaxWidth="680" />
-            </StackPanel>
+            <Border Grid.Row="0"
+                    BorderBrush="{StaticResource KroiraGlassBorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="16"
+                    Padding="24">
+                <Border.Background>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                        <GradientStop Color="#241B10" Offset="0" />
+                        <GradientStop Color="#10141A" Offset="0.58" />
+                        <GradientStop Color="#090A0D" Offset="1" />
+                    </LinearGradientBrush>
+                </Border.Background>
+                <Grid ColumnSpacing="18">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="Settings" Style="{StaticResource KroiraPageTitleStyle}" />
+                        <TextBlock Text="Application preferences and local behavior."
+                                   Style="{StaticResource KroiraPageSubtitleStyle}"
+                                   MaxWidth="680" />
+                    </StackPanel>
+                    <Border Grid.Column="1"
+                            Width="70"
+                            Height="70"
+                            CornerRadius="16"
+                            Background="#8010141A"
+                            BorderBrush="{StaticResource KroiraChromeLineBrush}"
+                            BorderThickness="1"
+                            VerticalAlignment="Center">
+                        <FontIcon Glyph="&#xE713;"
+                                  FontSize="28"
+                                  Foreground="{StaticResource KroiraAccentBrush}" />
+                    </Border>
+                </Grid>
+            </Border>
 
             <Grid Grid.Row="1" ColumnSpacing="22">
                 <Grid.ColumnDefinitions>
@@ -61,6 +92,41 @@
                             </Grid>
                         </StackPanel>
                     </Border>
+
+                    <Grid ColumnSpacing="18">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <Border Style="{StaticResource KroiraSettingsGroupStyle}">
+                            <StackPanel Spacing="10">
+                                <TextBlock Text="Media behavior" Style="{StaticResource KroiraSectionTitleStyle}" />
+                                <TextBlock Text="Provider data remains the primary source for artwork, titles, and playback routing."
+                                           Style="{StaticResource KroiraBodyStyle}"
+                                           TextWrapping="Wrap" />
+                                <Border Height="1" Background="{StaticResource KroiraBorderBrush}" Opacity="0.45" />
+                                <TextBlock Text="Provider-first"
+                                           Foreground="{StaticResource KroiraAccentBrush}"
+                                           FontSize="12"
+                                           FontWeight="SemiBold" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border Grid.Column="1" Style="{StaticResource KroiraSettingsGroupStyle}">
+                            <StackPanel Spacing="10">
+                                <TextBlock Text="Metadata" Style="{StaticResource KroiraSectionTitleStyle}" />
+                                <TextBlock Text="TMDb is used as enrichment and fallback when local provider metadata is incomplete."
+                                           Style="{StaticResource KroiraBodyStyle}"
+                                           TextWrapping="Wrap" />
+                                <Border Height="1" Background="{StaticResource KroiraBorderBrush}" Opacity="0.45" />
+                                <TextBlock Text="Runtime secrets only"
+                                           Foreground="{StaticResource KroiraAccentBrush}"
+                                           FontSize="12"
+                                           FontWeight="SemiBold" />
+                            </StackPanel>
+                        </Border>
+                    </Grid>
                 </StackPanel>
 
                 <StackPanel Grid.Column="1" Spacing="18">

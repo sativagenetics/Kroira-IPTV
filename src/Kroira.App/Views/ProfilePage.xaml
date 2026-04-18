@@ -14,16 +14,50 @@
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
-            <StackPanel Grid.Row="0" Spacing="6">
-                <TextBlock Text="Profile" Style="{StaticResource KroiraPageTitleStyle}" />
-                <TextBlock Text="Account tier and license state for this installation."
-                           Style="{StaticResource KroiraPageSubtitleStyle}"
-                           MaxWidth="680" />
-            </StackPanel>
+            <Border Grid.Row="0"
+                    BorderBrush="{StaticResource KroiraGlassBorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="16"
+                    Padding="24">
+                <Border.Background>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                        <GradientStop Color="#281D10" Offset="0" />
+                        <GradientStop Color="#111722" Offset="0.6" />
+                        <GradientStop Color="#090A0D" Offset="1" />
+                    </LinearGradientBrush>
+                </Border.Background>
+                <Grid ColumnSpacing="18">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Border Width="72"
+                            Height="72"
+                            CornerRadius="18"
+                            Background="{StaticResource KroiraSurfaceElevatedBrush}"
+                            BorderBrush="{StaticResource KroiraChromeLineBrush}"
+                            BorderThickness="1">
+                        <FontIcon Glyph="&#xE77B;"
+                                  FontSize="30"
+                                  Foreground="{StaticResource KroiraAccentBrush}" />
+                    </Border>
+                    <StackPanel Grid.Column="1" Spacing="6" VerticalAlignment="Center">
+                        <TextBlock Text="Profile" Style="{StaticResource KroiraPageTitleStyle}" />
+                        <TextBlock Text="Account tier and license state for this installation."
+                                   Style="{StaticResource KroiraPageSubtitleStyle}"
+                                   MaxWidth="680" />
+                    </StackPanel>
+                </Grid>
+            </Border>
 
-            <Border Grid.Row="1"
-                    Style="{StaticResource KroiraSettingsGroupStyle}">
-                <StackPanel Spacing="18">
+            <Grid Grid.Row="1" ColumnSpacing="20">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="1.35*" />
+                    <ColumnDefinition Width="0.85*" />
+                </Grid.ColumnDefinitions>
+
+                <Border Style="{StaticResource KroiraSettingsGroupStyle}">
+                    <StackPanel Spacing="18">
                     <Grid ColumnSpacing="12">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
@@ -82,8 +116,29 @@
                                 HorizontalAlignment="Stretch"
                                 VerticalAlignment="Center" />
                     </Grid>
+                    </StackPanel>
+                </Border>
+
+                <StackPanel Grid.Column="1" Spacing="16">
+                    <Border Style="{StaticResource KroiraSettingsGroupStyle}">
+                        <StackPanel Spacing="10">
+                            <TextBlock Text="Install state" Style="{StaticResource KroiraSectionTitleStyle}" />
+                            <TextBlock Text="Licensing is scoped to this local app installation."
+                                       Style="{StaticResource KroiraBodyStyle}"
+                                       TextWrapping="Wrap" />
+                        </StackPanel>
+                    </Border>
+
+                    <Border Style="{StaticResource KroiraSettingsGroupStyle}">
+                        <StackPanel Spacing="10">
+                            <TextBlock Text="Account surface" Style="{StaticResource KroiraSectionTitleStyle}" />
+                            <TextBlock Text="Profile stays focused on tier state and account-oriented actions."
+                                       Style="{StaticResource KroiraBodyStyle}"
+                                       TextWrapping="Wrap" />
+                        </StackPanel>
+                    </Border>
                 </StackPanel>
-            </Border>
+            </Grid>
         </Grid>
     </ScrollViewer>
 </Page>

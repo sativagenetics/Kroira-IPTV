@@ -16,7 +16,12 @@
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
 
-            <StackPanel Spacing="6">
+            <StackPanel Spacing="10">
+                <Border Width="54"
+                        Height="5"
+                        Background="{StaticResource KroiraAccentGradientBrush}"
+                        CornerRadius="3"
+                        HorizontalAlignment="Left" />
                 <TextBlock Text="Favorites" Style="{StaticResource KroiraPageTitleStyle}" />
                 <TextBlock
                     Text="A saved hub for the live channels you return to most."
@@ -40,10 +45,10 @@
         </Grid>
 
         <Grid
-            Grid.Row="1"
-            Visibility="{x:Bind ViewModel.EmptyVisibility, Mode=OneWay}"
-            ColumnSpacing="22"
-            MaxWidth="1080"
+                Grid.Row="1"
+                Visibility="{x:Bind ViewModel.EmptyVisibility, Mode=OneWay}"
+                ColumnSpacing="22"
+                MaxWidth="1180"
             HorizontalAlignment="Left"
             VerticalAlignment="Stretch">
             <Grid.ColumnDefinitions>
@@ -51,14 +56,14 @@
                 <ColumnDefinition Width="0.9*" />
             </Grid.ColumnDefinitions>
 
-            <Border Style="{StaticResource KroiraPanelStyle}" Padding="28">
+            <Border Style="{StaticResource KroiraPanelStyle}" Padding="30">
                 <Grid RowSpacing="22">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
 
-                    <StackPanel Spacing="14">
+                    <StackPanel Spacing="16">
                         <Border
                             Width="58"
                             Height="58"
@@ -67,7 +72,7 @@
                             HorizontalAlignment="Left">
                             <FontIcon Glyph="&#xE734;" Foreground="{StaticResource KroiraGoldBrush}" FontSize="24" />
                         </Border>
-                        <TextBlock Text="No saved channels yet" Style="{StaticResource KroiraSectionTitleStyle}" />
+                        <TextBlock Text="No saved channels yet" Style="{StaticResource KroiraSectionTitleStyle}" FontSize="26" />
                         <TextBlock
                             Text="Mark channels as favorites and they will appear here as a focused live lineup with quick playback access."
                             Style="{StaticResource KroiraPageSubtitleStyle}"
@@ -109,15 +114,31 @@
             </Border>
 
             <StackPanel Grid.Column="1" Spacing="14">
-                <Border Style="{StaticResource KroiraPanelStyle}" Padding="20">
+                <Border Style="{StaticResource KroiraPanelStyle}" Padding="22">
                     <StackPanel Spacing="10">
+                        <Border Width="44"
+                                Height="44"
+                                CornerRadius="12"
+                                Background="{StaticResource KroiraSurfaceElevatedBrush}">
+                            <FontIcon Glyph="&#xE768;"
+                                      FontSize="18"
+                                      Foreground="{StaticResource KroiraAccentBrush}" />
+                        </Border>
                         <TextBlock Text="Fast access" Style="{StaticResource KroiraSectionTitleStyle}" />
                         <TextBlock Text="Your saved channels will appear as rows with logos, live status, and a remove action." Style="{StaticResource KroiraBodyStyle}" />
                     </StackPanel>
                 </Border>
 
-                <Border Style="{StaticResource KroiraPanelStyle}" Padding="20">
+                <Border Style="{StaticResource KroiraPanelStyle}" Padding="22">
                     <StackPanel Spacing="10">
+                        <Border Width="44"
+                                Height="44"
+                                CornerRadius="12"
+                                Background="{StaticResource KroiraSurfaceElevatedBrush}">
+                            <FontIcon Glyph="&#xE714;"
+                                      FontSize="18"
+                                      Foreground="{StaticResource KroiraLiveDotBrush}" />
+                        </Border>
                         <TextBlock Text="Playback behavior" Style="{StaticResource KroiraSectionTitleStyle}" />
                         <TextBlock Text="Selecting a favorite keeps the same playback launch path as Live TV." Style="{StaticResource KroiraBodyStyle}" />
                     </StackPanel>

@@ -192,29 +192,54 @@
             </Grid>
 
             <Border Grid.Column="1"
-                    Background="#99161B24"
+                    Background="#B0121620"
                     BorderBrush="#24FFFFFF"
                     BorderThickness="1"
                     CornerRadius="16"
-                    Padding="22"
+                    Padding="0"
                     VerticalAlignment="Stretch">
                 <Grid>
                     <StackPanel Visibility="{x:Bind ViewModel.SelectedSeries, Mode=OneWay, Converter={StaticResource NullToVisibleConverter}}"
-                                Spacing="10"
-                                VerticalAlignment="Top">
-                        <FontIcon Glyph="&#xE8A9;"
-                                  FontSize="24"
-                                  Foreground="{StaticResource KroiraTextTertiaryBrush}"
-                                  HorizontalAlignment="Left" />
-                        <TextBlock Text="Pick a show"
-                                   Style="{StaticResource KroiraSectionTitleStyle}" />
-                        <TextBlock Text="Select a title from the four-column browser to view seasons and episodes here."
-                                   Style="{StaticResource KroiraBodyStyle}"
-                                   TextWrapping="Wrap" />
+                                Spacing="18"
+                                Padding="24"
+                                VerticalAlignment="Stretch">
+                        <Border Height="190"
+                                CornerRadius="14"
+                                Background="{StaticResource KroiraMediaGradientBrush}"
+                                BorderBrush="{StaticResource KroiraGlassBorderBrush}"
+                                BorderThickness="1">
+                            <Grid>
+                                <FontIcon Glyph="&#xE8A9;"
+                                          FontSize="34"
+                                          Foreground="{StaticResource KroiraTextTertiaryBrush}"
+                                          Opacity="0.4" />
+                                <Border>
+                                    <Border.Background>
+                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                            <GradientStop Color="#3327150A" Offset="0" />
+                                            <GradientStop Color="#141A22" Offset="0.52" />
+                                            <GradientStop Color="#090A0D" Offset="1" />
+                                        </LinearGradientBrush>
+                                    </Border.Background>
+                                </Border>
+                                <Border Width="5"
+                                        HorizontalAlignment="Left"
+                                        Background="{StaticResource KroiraAccentGradientBrush}"
+                                        CornerRadius="14,0,0,14" />
+                            </Grid>
+                        </Border>
+                        <StackPanel Spacing="8">
+                            <TextBlock Text="Pick a show"
+                                       Style="{StaticResource KroiraSectionTitleStyle}" />
+                            <TextBlock Text="Select a title from the browser to load provider artwork, seasons, and episode playback actions here."
+                                       Style="{StaticResource KroiraBodyStyle}"
+                                       TextWrapping="Wrap" />
+                        </StackPanel>
                     </StackPanel>
 
                     <Grid Visibility="{x:Bind ViewModel.SelectedSeries, Mode=OneWay, Converter={StaticResource NullToCollapsedConverter}}"
-                          RowSpacing="14">
+                          RowSpacing="14"
+                          Padding="18">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
@@ -223,16 +248,70 @@
                             <RowDefinition Height="*" />
                         </Grid.RowDefinitions>
 
-                        <StackPanel Grid.Row="0" Spacing="6">
-                            <TextBlock Text="SHOW" Style="{StaticResource KroiraLabelStyle}" />
-                            <TextBlock Text="{x:Bind ViewModel.SelectedSeries.Title, Mode=OneWay}"
-                                       Style="{StaticResource KroiraSectionTitleStyle}"
-                                       FontSize="20"
-                                       TextWrapping="Wrap" />
-                            <TextBlock Text="{x:Bind ViewModel.SelectedSeries.MetadataLine, Mode=OneWay}"
-                                       Style="{StaticResource KroiraBodyStyle}"
-                                       Foreground="{StaticResource KroiraTextSecondaryBrush}" />
-                        </StackPanel>
+                        <Border Grid.Row="0"
+                                MinHeight="248"
+                                CornerRadius="14"
+                                BorderBrush="{StaticResource KroiraGlassBorderBrush}"
+                                BorderThickness="1"
+                                Background="{StaticResource KroiraMediaGradientBrush}">
+                            <Grid>
+                                <Image Source="{x:Bind ViewModel.SelectedSeries.DisplayHeroArtworkUrl, Mode=OneWay, Converter={StaticResource UrlToImageSourceConverter}}"
+                                       Stretch="UniformToFill"
+                                       Opacity="0.74" />
+                                <Border>
+                                    <Border.Background>
+                                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                            <GradientStop Color="#3A000000" Offset="0" />
+                                            <GradientStop Color="#E5090B0F" Offset="1" />
+                                        </LinearGradientBrush>
+                                    </Border.Background>
+                                </Border>
+                                <Grid Padding="16" ColumnSpacing="14" VerticalAlignment="Bottom">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="104" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <Border Width="104"
+                                            Height="150"
+                                            CornerRadius="10"
+                                            Background="{StaticResource KroiraPosterPlaceholderBrush}"
+                                            BorderBrush="{StaticResource KroiraGlassBorderBrush}"
+                                            BorderThickness="1">
+                                        <Grid>
+                                            <FontIcon Glyph="&#xE8A9;"
+                                                      FontSize="24"
+                                                      Foreground="{StaticResource KroiraTextTertiaryBrush}"
+                                                      Opacity="0.55" />
+                                            <Image Source="{x:Bind ViewModel.SelectedSeries.DisplayPosterUrl, Mode=OneWay, Converter={StaticResource UrlToImageSourceConverter}}"
+                                                   Stretch="UniformToFill" />
+                                        </Grid>
+                                    </Border>
+                                    <StackPanel Grid.Column="1"
+                                                Spacing="7"
+                                                VerticalAlignment="Bottom">
+                                        <TextBlock Text="SHOW"
+                                                   Style="{StaticResource KroiraLabelStyle}"
+                                                   Foreground="{StaticResource KroiraAccentBrush}" />
+                                        <TextBlock Text="{x:Bind ViewModel.SelectedSeries.Title, Mode=OneWay}"
+                                                   Style="{StaticResource KroiraSectionTitleStyle}"
+                                                   FontSize="21"
+                                                   MaxLines="2"
+                                                   TextWrapping="Wrap"
+                                                   TextTrimming="CharacterEllipsis" />
+                                        <TextBlock Text="{x:Bind ViewModel.SelectedSeries.MetadataLine, Mode=OneWay}"
+                                                   Style="{StaticResource KroiraBodyStyle}"
+                                                   Foreground="{StaticResource KroiraTextSecondaryBrush}"
+                                                   MaxLines="2"
+                                                   TextTrimming="CharacterEllipsis" />
+                                        <TextBlock Text="{x:Bind ViewModel.SelectedSeries.Overview, Mode=OneWay}"
+                                                   Style="{StaticResource KroiraBodyStyle}"
+                                                   FontSize="12"
+                                                   MaxLines="3"
+                                                   TextTrimming="CharacterEllipsis" />
+                                    </StackPanel>
+                                </Grid>
+                            </Grid>
+                        </Border>
 
                         <StackPanel Grid.Row="1" Spacing="8">
                             <TextBlock Text="SEASON" Style="{StaticResource KroiraLabelStyle}" />
