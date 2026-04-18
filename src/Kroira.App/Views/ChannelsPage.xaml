@@ -28,75 +28,136 @@
         </Style>
 
         <Style x:Key="ChannelInputStyle" TargetType="TextBox">
-            <Setter Property="Background" Value="{StaticResource KroiraControlBrush}" />
-            <Setter Property="BorderBrush" Value="{StaticResource KroiraControlBorderBrush}" />
+            <Setter Property="Background" Value="#E80A0D11" />
+            <Setter Property="BorderBrush" Value="{StaticResource KroiraGlassBorderBrush}" />
             <Setter Property="BorderThickness" Value="1" />
             <Setter Property="CornerRadius" Value="8" />
             <Setter Property="Foreground" Value="{StaticResource KroiraTextPrimaryBrush}" />
             <Setter Property="PlaceholderForeground" Value="{StaticResource KroiraTextTertiaryBrush}" />
-            <Setter Property="Padding" Value="15,8" />
-            <Setter Property="MinHeight" Value="38" />
+            <Setter Property="Padding" Value="16,10" />
+            <Setter Property="MinHeight" Value="44" />
             <Setter Property="FontSize" Value="13" />
         </Style>
 
         <Style x:Key="ChannelComboStyle" TargetType="ComboBox">
-            <Setter Property="Background" Value="{StaticResource KroiraControlBrush}" />
-            <Setter Property="BorderBrush" Value="{StaticResource KroiraControlBorderBrush}" />
+            <Setter Property="Background" Value="#E80A0D11" />
+            <Setter Property="BorderBrush" Value="{StaticResource KroiraGlassBorderBrush}" />
             <Setter Property="BorderThickness" Value="1" />
             <Setter Property="CornerRadius" Value="8" />
             <Setter Property="Foreground" Value="{StaticResource KroiraTextPrimaryBrush}" />
-            <Setter Property="Padding" Value="12,6" />
-            <Setter Property="MinHeight" Value="38" />
+            <Setter Property="Padding" Value="16,8" />
+            <Setter Property="MinHeight" Value="44" />
             <Setter Property="FontSize" Value="13" />
         </Style>
     </Page.Resources>
 
-    <Grid Padding="42,30,42,36" RowSpacing="28">
+    <Grid Padding="42,36,42,40"
+          MaxWidth="1440"
+          HorizontalAlignment="Center"
+          RowSpacing="20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <Grid Grid.Row="0" ColumnSpacing="14">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="250" />
-                <ColumnDefinition Width="120" />
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="Auto" />
-            </Grid.ColumnDefinitions>
+        <Border Grid.Row="0"
+                MinHeight="156"
+                BorderBrush="{StaticResource KroiraGlassBorderBrush}"
+                BorderThickness="1"
+                CornerRadius="14"
+                Padding="26,24">
+            <Border.Background>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                    <GradientStop Color="#172B2F" Offset="0" />
+                    <GradientStop Color="#151B22" Offset="0.48" />
+                    <GradientStop Color="#080A0E" Offset="1" />
+                </LinearGradientBrush>
+            </Border.Background>
 
-            <TextBox x:Name="SearchBox"
-                     Grid.Column="0"
-                     Style="{StaticResource ChannelInputStyle}"
-                     Text="{x:Bind ViewModel.SearchQuery, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                     PlaceholderText="Search"
-                     AutomationProperties.Name="Search channels"
-                     TabIndex="0"
-                     KeyDown="SearchBox_KeyDown" />
+            <Grid ColumnSpacing="28">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
 
-            <ComboBox x:Name="CategoryComboBox"
-                      Grid.Column="1"
-                      Style="{StaticResource ChannelComboStyle}"
-                      ItemsSource="{x:Bind ViewModel.Categories, Mode=OneWay}"
-                      SelectedItem="{x:Bind ViewModel.SelectedCategory, Mode=TwoWay}"
-                      DisplayMemberPath="Name"
-                      AutomationProperties.Name="Channel category"
-                      TabIndex="1" />
+                <StackPanel Spacing="10" VerticalAlignment="Center">
+                    <TextBlock Text="BROADCAST"
+                               Style="{StaticResource KroiraLabelStyle}"
+                               Foreground="{StaticResource KroiraAccentBrush}" />
+                    <TextBlock Text="Live TV"
+                               Style="{StaticResource KroiraDisplayLgStyle}"
+                               FontSize="42"
+                               LineHeight="48" />
+                    <TextBlock Text="Fast channel scanning with program progress, favorite access, and tuned category control."
+                               Style="{StaticResource KroiraPageSubtitleStyle}"
+                               MaxWidth="640" />
+                </StackPanel>
 
-            <TextBlock Grid.Column="3"
-                       Text="Live TV"
-                       Foreground="{StaticResource KroiraTextPrimaryBrush}"
-                       FontSize="18"
-                       FontWeight="SemiBold"
-                       VerticalAlignment="Center" />
-        </Grid>
+                <Border Grid.Column="1"
+                        Style="{StaticResource KroiraCountBadgeStyle}"
+                        VerticalAlignment="Bottom"
+                        MinWidth="148">
+                    <StackPanel Spacing="2">
+                        <TextBlock Text="{x:Bind ViewModel.FilteredChannels.Count, Mode=OneWay, Converter={StaticResource NumberFormatConverter}}"
+                                   Foreground="{StaticResource KroiraTextPrimaryBrush}"
+                                   FontSize="24"
+                                   FontWeight="SemiBold" />
+                        <TextBlock Text="CHANNELS"
+                                   Style="{StaticResource KroiraLabelStyle}"
+                                   FontSize="10" />
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </Border>
 
-        <TextBlock Grid.Row="1"
-                   Text="Channels"
-                   Foreground="{StaticResource KroiraTextPrimaryBrush}"
-                   FontSize="27"
-                   FontWeight="SemiBold" />
+        <Border Grid.Row="1" Style="{StaticResource KroiraFilterStripStyle}">
+            <Grid ColumnSpacing="12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" MaxWidth="620" />
+                    <ColumnDefinition Width="244" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <Grid Grid.Column="0">
+                    <TextBox x:Name="SearchBox"
+                             Style="{StaticResource ChannelInputStyle}"
+                             Text="{x:Bind ViewModel.SearchQuery, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                             PlaceholderText="Search channels"
+                             AutomationProperties.Name="Search channels"
+                             TabIndex="0"
+                             KeyDown="SearchBox_KeyDown" />
+                    <FontIcon Glyph="&#xE721;"
+                              FontSize="14"
+                              Foreground="{StaticResource KroiraTextTertiaryBrush}"
+                              HorizontalAlignment="Right"
+                              Margin="0,0,16,0"
+                              VerticalAlignment="Center" />
+                </Grid>
+
+                <ComboBox x:Name="CategoryComboBox"
+                          Grid.Column="1"
+                          Style="{StaticResource ChannelComboStyle}"
+                          ItemsSource="{x:Bind ViewModel.Categories, Mode=OneWay}"
+                          SelectedItem="{x:Bind ViewModel.SelectedCategory, Mode=TwoWay}"
+                          DisplayMemberPath="Name"
+                          AutomationProperties.Name="Channel category"
+                          TabIndex="1" />
+
+                <StackPanel Grid.Column="2"
+                            Orientation="Horizontal"
+                            Spacing="8"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Center">
+                    <Border Width="7"
+                            Height="7"
+                            CornerRadius="4"
+                            Background="{StaticResource KroiraStateInfoBrush}" />
+                    <TextBlock Text="LIVE GRID"
+                               Style="{StaticResource KroiraLabelStyle}" />
+                </StackPanel>
+            </Grid>
+        </Border>
 
         <Grid Grid.Row="2">
             <StackPanel Visibility="{x:Bind ViewModel.IsEmpty, Mode=OneWay}"
@@ -168,10 +229,16 @@
                                 </ToolTip>
                             </ToolTipService.ToolTip>
 
-                            <Border Background="#171326"
-                                    CornerRadius="10"
-                                    BorderBrush="#3A3451"
+                            <Border CornerRadius="10"
+                                    BorderBrush="{StaticResource KroiraGlassBorderBrush}"
                                     BorderThickness="1">
+                                <Border.Background>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                        <GradientStop Color="#1D252C" Offset="0" />
+                                        <GradientStop Color="#11161D" Offset="0.56" />
+                                        <GradientStop Color="#090B0F" Offset="1" />
+                                    </LinearGradientBrush>
+                                </Border.Background>
                                 <Grid Padding="13,14,13,12">
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height="*" />
@@ -183,7 +250,11 @@
                                         <Border Width="112"
                                                 Height="70"
                                                 HorizontalAlignment="Center"
-                                                VerticalAlignment="Center">
+                                                VerticalAlignment="Center"
+                                                Background="#5810141A"
+                                                BorderBrush="#18FFFFFF"
+                                                BorderThickness="1"
+                                                CornerRadius="8">
                                             <Grid>
                                                 <FontIcon Glyph="&#xE714;"
                                                           Foreground="{StaticResource KroiraTextTertiaryBrush}"

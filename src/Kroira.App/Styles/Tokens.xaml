@@ -13,18 +13,18 @@
     <x:Double x:Key="KroiraSpace9">56</x:Double>
     <x:Double x:Key="KroiraSpace10">72</x:Double>
 
-    <Thickness x:Key="KroiraPagePadding">42,32,42,44</Thickness>
-    <Thickness x:Key="KroiraPagePaddingCompact">28,24,28,32</Thickness>
-    <x:Double x:Key="KroiraPageMaxWidth">1460</x:Double>
-    <x:Double x:Key="KroiraPageContentMaxWidth">1240</x:Double>
+    <Thickness x:Key="KroiraPagePadding">48,38,48,48</Thickness>
+    <Thickness x:Key="KroiraPagePaddingCompact">30,26,30,34</Thickness>
+    <x:Double x:Key="KroiraPageMaxWidth">1500</x:Double>
+    <x:Double x:Key="KroiraPageContentMaxWidth">1320</x:Double>
     <x:Double x:Key="KroiraReadableMaxWidth">760</x:Double>
 
-    <CornerRadius x:Key="KroiraRadiusInput">9</CornerRadius>
+    <CornerRadius x:Key="KroiraRadiusInput">8</CornerRadius>
     <CornerRadius x:Key="KroiraRadiusChip">999</CornerRadius>
     <CornerRadius x:Key="KroiraRadiusRow">12</CornerRadius>
-    <CornerRadius x:Key="KroiraRadiusCard">14</CornerRadius>
-    <CornerRadius x:Key="KroiraRadiusPanel">16</CornerRadius>
-    <CornerRadius x:Key="KroiraRadiusSheet">18</CornerRadius>
+    <CornerRadius x:Key="KroiraRadiusCard">10</CornerRadius>
+    <CornerRadius x:Key="KroiraRadiusPanel">12</CornerRadius>
+    <CornerRadius x:Key="KroiraRadiusSheet">14</CornerRadius>
 
     <x:Double x:Key="KroiraDurationFast">120</x:Double>
     <x:Double x:Key="KroiraDurationBase">180</x:Double>

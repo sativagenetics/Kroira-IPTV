@@ -8,6 +8,10 @@
     mc:Ignorable="d">
 
     <Grid Background="{StaticResource KroiraPageAtmosphereBrush}">
+        <Border HorizontalAlignment="Stretch"
+                VerticalAlignment="Top"
+                Height="1"
+                Background="{StaticResource KroiraChromeLineBrush}" />
         <NavigationView x:Name="RootNavView"
                         ItemInvoked="RootNavView_ItemInvoked"
                         PaneOpening="RootNavView_PaneOpening"
@@ -17,50 +21,92 @@
                         IsSettingsVisible="False"
                         PaneDisplayMode="LeftCompact"
                         IsPaneOpen="True"
-                        OpenPaneLength="214"
-                        CompactPaneLength="58">
+                        OpenPaneLength="236"
+                        CompactPaneLength="64"
+                        UseSystemFocusVisuals="True">
             <NavigationView.PaneHeader>
-                <Grid x:Name="PaneHeaderRoot" Margin="16,26,12,28" ColumnSpacing="10">
+                <Grid x:Name="PaneHeaderRoot" Margin="18,28,14,30" ColumnSpacing="12">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="28" />
+                        <ColumnDefinition Width="30" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <Border Width="26"
-                            Height="26"
-                            CornerRadius="7"
-                            Background="{StaticResource KroiraAccentContainerBrush}"
-                            BorderBrush="{StaticResource KroiraGlassBorderBrush}"
+                    <Border Width="30"
+                            Height="30"
+                            CornerRadius="8"
+                            BorderBrush="{StaticResource KroiraChromeLineBrush}"
                             BorderThickness="1">
+                        <Border.Background>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                <GradientStop Color="#3A2A17" Offset="0" />
+                                <GradientStop Color="#12161D" Offset="1" />
+                            </LinearGradientBrush>
+                        </Border.Background>
                         <TextBlock Text="K"
                                    Foreground="{StaticResource KroiraAccentBrush}"
                                    FontWeight="SemiBold"
+                                   FontSize="13"
                                    HorizontalAlignment="Center"
                                    VerticalAlignment="Center" />
                     </Border>
-                    <TextBlock x:Name="PaneBrandText"
-                               Grid.Column="1"
-                               Text="KROIRA IPTV"
-                               Foreground="{StaticResource KroiraTextPrimaryBrush}"
-                               FontSize="13"
-                               FontWeight="SemiBold"
-                               CharacterSpacing="90"
-                               VerticalAlignment="Center" />
+                    <StackPanel x:Name="PaneBrandText"
+                                Grid.Column="1"
+                                VerticalAlignment="Center"
+                                Spacing="1">
+                        <TextBlock Text="KROIRA"
+                                   Foreground="{StaticResource KroiraTextPrimaryBrush}"
+                                   FontSize="14"
+                                   FontWeight="SemiBold"
+                                   CharacterSpacing="120" />
+                        <TextBlock Text="IPTV STUDIO"
+                                   Foreground="{StaticResource KroiraTextTertiaryBrush}"
+                                   FontSize="10"
+                                   FontWeight="SemiBold"
+                                   CharacterSpacing="160" />
+                    </StackPanel>
                 </Grid>
             </NavigationView.PaneHeader>
             <NavigationView.MenuItems>
-                <NavigationViewItem Icon="Home" Content="Home" Tag="Home" Margin="8,3" Height="38" />
+                <NavigationViewItem Icon="Home" Content="Home" Tag="Home" Margin="10,4" Height="42" />
                 <NavigationViewItemSeparator />
-                <NavigationViewItem Icon="Video" Content="Live TV" Tag="Channels" Margin="8,3" Height="38" />
-                <NavigationViewItem Icon="Video" Content="Movies" Tag="Movies" Margin="8,3" Height="38" />
-                <NavigationViewItem Icon="Library" Content="Series" Tag="Series" Margin="8,3" Height="38" />
-                <NavigationViewItem Icon="OutlineStar" Content="Favorites" Tag="Favorites" Margin="8,3" Height="38" />
+                <NavigationViewItem Icon="Video" Content="Live TV" Tag="Channels" Margin="10,4" Height="42" />
+                <NavigationViewItem Icon="Video" Content="Movies" Tag="Movies" Margin="10,4" Height="42" />
+                <NavigationViewItem Icon="Library" Content="Series" Tag="Series" Margin="10,4" Height="42" />
+                <NavigationViewItem Icon="OutlineStar" Content="Favorites" Tag="Favorites" Margin="10,4" Height="42" />
                 <NavigationViewItemSeparator />
-                <NavigationViewItem Icon="Library" Content="Sources" Tag="Sources" Margin="8,3" Height="38" />
-                <NavigationViewItem Icon="Library" Content="Settings" Tag="Settings" Margin="8,3" Height="38" />
+                <NavigationViewItem Icon="Library" Content="Sources" Tag="Sources" Margin="10,4" Height="42" />
+                <NavigationViewItem Icon="Library" Content="Settings" Tag="Settings" Margin="10,4" Height="42" />
                 <NavigationViewItemSeparator />
-                <NavigationViewItem Icon="Home" Content="Profile" Tag="Profile" Margin="8,3" Height="38" />
+                <NavigationViewItem Icon="Home" Content="Profile" Tag="Profile" Margin="10,4" Height="42" />
             </NavigationView.MenuItems>
-            <Frame x:Name="ContentFrame" />
+            <NavigationView.PaneFooter>
+                <Border x:Name="PaneFooterRoot"
+                        Margin="18,16,16,22"
+                        Padding="12,10"
+                        Background="#8A10141A"
+                        BorderBrush="{StaticResource KroiraGlassBorderBrush}"
+                        BorderThickness="1"
+                        CornerRadius="10">
+                    <StackPanel Spacing="3">
+                        <TextBlock Text="SESSION"
+                                   Foreground="{StaticResource KroiraTextTertiaryBrush}"
+                                   FontSize="10"
+                                   FontWeight="SemiBold"
+                                   CharacterSpacing="140" />
+                        <TextBlock Text="Ready"
+                                   Foreground="{StaticResource KroiraTextPrimaryBrush}"
+                                   FontSize="13"
+                                   FontWeight="SemiBold" />
+                    </StackPanel>
+                </Border>
+            </NavigationView.PaneFooter>
+            <Grid Background="Transparent">
+                <Border Margin="0,0,0,0"
+                        Background="#3305070A"
+                        BorderBrush="#14FFFFFF"
+                        BorderThickness="1,0,0,0">
+                    <Frame x:Name="ContentFrame" />
+                </Border>
+            </Grid>
         </NavigationView>
     </Grid>
 </Window>

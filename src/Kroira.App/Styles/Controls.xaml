@@ -3,23 +3,23 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
     <Style x:Key="KroiraPanelStyle" TargetType="Border">
-        <Setter Property="Background" Value="{StaticResource KroiraGlassBrush}" />
+        <Setter Property="Background" Value="{StaticResource KroiraSurfaceGradientBrush}" />
         <Setter Property="BorderBrush" Value="{StaticResource KroiraGlassBorderBrush}" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="CornerRadius" Value="{StaticResource KroiraRadiusPanel}" />
-        <Setter Property="Padding" Value="22" />
+        <Setter Property="Padding" Value="24" />
     </Style>
 
     <Style x:Key="KroiraCardStyle" TargetType="Border">
-        <Setter Property="Background" Value="{StaticResource KroiraGlassStrongBrush}" />
+        <Setter Property="Background" Value="{StaticResource KroiraGlassBrush}" />
         <Setter Property="BorderBrush" Value="{StaticResource KroiraGlassBorderBrush}" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="CornerRadius" Value="{StaticResource KroiraRadiusCard}" />
-        <Setter Property="Padding" Value="16" />
+        <Setter Property="Padding" Value="18" />
     </Style>
 
     <Style x:Key="KroiraPosterCardStyle" TargetType="Border">
-        <Setter Property="Background" Value="{StaticResource KroiraGlassStrongBrush}" />
+        <Setter Property="Background" Value="{StaticResource KroiraSurfaceGradientBrush}" />
         <Setter Property="BorderBrush" Value="{StaticResource KroiraGlassBorderBrush}" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="CornerRadius" Value="{StaticResource KroiraRadiusCard}" />
@@ -57,47 +57,47 @@
     </Style>
 
     <Style x:Key="KroiraTextBoxStyle" TargetType="TextBox">
-        <Setter Property="Background" Value="{StaticResource KroiraControlBrush}" />
+        <Setter Property="Background" Value="#CC0D1117" />
         <Setter Property="BorderBrush" Value="{StaticResource KroiraControlBorderBrush}" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="Foreground" Value="{StaticResource KroiraTextPrimaryBrush}" />
         <Setter Property="PlaceholderForeground" Value="{StaticResource KroiraTextTertiaryBrush}" />
         <Setter Property="CornerRadius" Value="{StaticResource KroiraRadiusInput}" />
-        <Setter Property="Padding" Value="14,9" />
+        <Setter Property="Padding" Value="15,10" />
         <Setter Property="FontSize" Value="13" />
-        <Setter Property="MinHeight" Value="40" />
+        <Setter Property="MinHeight" Value="42" />
     </Style>
 
     <Style x:Key="KroiraComboBoxStyle" TargetType="ComboBox">
-        <Setter Property="Background" Value="{StaticResource KroiraControlBrush}" />
+        <Setter Property="Background" Value="#CC0D1117" />
         <Setter Property="BorderBrush" Value="{StaticResource KroiraControlBorderBrush}" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="Foreground" Value="{StaticResource KroiraTextPrimaryBrush}" />
         <Setter Property="CornerRadius" Value="{StaticResource KroiraRadiusInput}" />
-        <Setter Property="Padding" Value="14,7" />
+        <Setter Property="Padding" Value="15,8" />
         <Setter Property="FontSize" Value="13" />
-        <Setter Property="MinHeight" Value="40" />
+        <Setter Property="MinHeight" Value="42" />
     </Style>
 
     <Style x:Key="KroiraButtonStyle" TargetType="Button">
-        <Setter Property="Background" Value="{StaticResource KroiraControlBrush}" />
+        <Setter Property="Background" Value="#A012161D" />
         <Setter Property="BorderBrush" Value="{StaticResource KroiraControlBorderBrush}" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="Foreground" Value="{StaticResource KroiraTextPrimaryBrush}" />
         <Setter Property="CornerRadius" Value="{StaticResource KroiraRadiusInput}" />
-        <Setter Property="Padding" Value="14,8" />
+        <Setter Property="Padding" Value="15,9" />
         <Setter Property="FontSize" Value="13" />
         <Setter Property="MinHeight" Value="38" />
         <Setter Property="MinWidth" Value="0" />
     </Style>
 
     <Style x:Key="KroiraGhostButtonStyle" TargetType="Button">
-        <Setter Property="Background" Value="{StaticResource KroiraControlBrush}" />
+        <Setter Property="Background" Value="#7812161D" />
         <Setter Property="BorderBrush" Value="{StaticResource KroiraControlBorderBrush}" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="Foreground" Value="{StaticResource KroiraTextPrimaryBrush}" />
         <Setter Property="CornerRadius" Value="{StaticResource KroiraRadiusInput}" />
-        <Setter Property="Padding" Value="14,8" />
+        <Setter Property="Padding" Value="15,9" />
         <Setter Property="FontSize" Value="13" />
         <Setter Property="MinHeight" Value="38" />
         <Setter Property="MinWidth" Value="0" />
@@ -105,14 +105,14 @@
 
     <Style x:Key="KroiraPrimaryButtonStyle" TargetType="Button">
         <Setter Property="Background" Value="{StaticResource KroiraAccentGradientBrush}" />
-        <Setter Property="BorderBrush" Value="#66AEBBFF" />
+        <Setter Property="BorderBrush" Value="#73F6D88B" />
         <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="Foreground" Value="{StaticResource KroiraTextPrimaryBrush}" />
+        <Setter Property="Foreground" Value="#1A1208" />
         <Setter Property="CornerRadius" Value="{StaticResource KroiraRadiusInput}" />
-        <Setter Property="Padding" Value="16,9" />
+        <Setter Property="Padding" Value="18,10" />
         <Setter Property="FontSize" Value="13" />
         <Setter Property="FontWeight" Value="SemiBold" />
-        <Setter Property="MinHeight" Value="40" />
+        <Setter Property="MinHeight" Value="42" />
         <Setter Property="MinWidth" Value="0" />
     </Style>
 
@@ -126,6 +126,30 @@
         <Setter Property="FontSize" Value="13" />
         <Setter Property="MinHeight" Value="38" />
         <Setter Property="MinWidth" Value="0" />
+    </Style>
+
+    <Style x:Key="KroiraChromePanelStyle" TargetType="Border">
+        <Setter Property="Background" Value="#B50D1117" />
+        <Setter Property="BorderBrush" Value="{StaticResource KroiraGlassBorderBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="{StaticResource KroiraRadiusPanel}" />
+        <Setter Property="Padding" Value="22" />
+    </Style>
+
+    <Style x:Key="KroiraFilterStripStyle" TargetType="Border">
+        <Setter Property="Background" Value="#D40A0D11" />
+        <Setter Property="BorderBrush" Value="{StaticResource KroiraGlassBorderBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="10" />
+        <Setter Property="Padding" Value="12" />
+    </Style>
+
+    <Style x:Key="KroiraCountBadgeStyle" TargetType="Border">
+        <Setter Property="Background" Value="#2221160C" />
+        <Setter Property="BorderBrush" Value="{StaticResource KroiraChromeLineBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="8" />
+        <Setter Property="Padding" Value="13,9" />
     </Style>
 
 </ResourceDictionary>

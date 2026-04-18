@@ -42,11 +42,17 @@
                     Style="{StaticResource HomeCardButtonStyle}">
                 <Border Width="300"
                         Height="148"
-                        Background="#B21A202B"
-                        BorderBrush="#2EFFFFFF"
+                        BorderBrush="{StaticResource KroiraGlassBorderBrush}"
                         BorderThickness="1"
-                        CornerRadius="14"
+                        CornerRadius="12"
                         Padding="18,16">
+                    <Border.Background>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                            <GradientStop Color="#252016" Offset="0" />
+                            <GradientStop Color="#11161D" Offset="0.6" />
+                            <GradientStop Color="#090B0F" Offset="1" />
+                        </LinearGradientBrush>
+                    </Border.Background>
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="*" />
@@ -92,11 +98,16 @@
                     Style="{StaticResource HomeCardButtonStyle}">
                 <Border Width="210"
                         Height="126"
-                        Background="{StaticResource KroiraSurfaceElevatedBrush}"
-                        BorderBrush="#2AFFFFFF"
+                        BorderBrush="{StaticResource KroiraGlassBorderBrush}"
                         BorderThickness="1"
-                        CornerRadius="14"
+                        CornerRadius="12"
                         Padding="14">
+                    <Border.Background>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                            <GradientStop Color="#1D252C" Offset="0" />
+                            <GradientStop Color="#10151C" Offset="1" />
+                        </LinearGradientBrush>
+                    </Border.Background>
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="*" />
@@ -156,11 +167,16 @@
             <Button Click="QuickAction_Click"
                     Style="{StaticResource HomeCardButtonStyle}">
                 <Border Height="118"
-                        Background="#99161B24"
-                        BorderBrush="#24FFFFFF"
+                        BorderBrush="{StaticResource KroiraGlassBorderBrush}"
                         BorderThickness="1"
-                        CornerRadius="14"
+                        CornerRadius="12"
                         Padding="16,14">
+                    <Border.Background>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                            <GradientStop Color="#1C222B" Offset="0" />
+                            <GradientStop Color="#10141A" Offset="1" />
+                        </LinearGradientBrush>
+                    </Border.Background>
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto" />
@@ -169,8 +185,10 @@
 
                         <Border Width="40"
                                 Height="40"
-                                CornerRadius="10"
-                                Background="#243A4D5E"
+                                CornerRadius="9"
+                                Background="{StaticResource KroiraAccentContainerBrush}"
+                                BorderBrush="{StaticResource KroiraChromeLineBrush}"
+                                BorderThickness="1"
                                 VerticalAlignment="Top">
                             <FontIcon Glyph="{Binding Glyph}"
                                       FontSize="18"
@@ -200,15 +218,15 @@
                   HorizontalScrollMode="Disabled">
         <StackPanel Padding="44,34,44,46" Spacing="34">
             <Border MinHeight="360"
-                    CornerRadius="22"
-                    BorderBrush="#2DFFFFFF"
+                    CornerRadius="14"
+                    BorderBrush="{StaticResource KroiraGlassBorderBrush}"
                     BorderThickness="1"
                     Padding="38,34">
                 <Border.Background>
                     <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                        <GradientStop Color="#263447" Offset="0" />
-                        <GradientStop Color="#151B25" Offset="0.54" />
-                        <GradientStop Color="#0D1118" Offset="1" />
+                        <GradientStop Color="#3B2814" Offset="0" />
+                        <GradientStop Color="#151B22" Offset="0.5" />
+                        <GradientStop Color="#07090C" Offset="1" />
                     </LinearGradientBrush>
                 </Border.Background>
 
@@ -222,11 +240,13 @@
                                 Spacing="18"
                                 VerticalAlignment="Center"
                                 MaxWidth="680">
-                        <TextBlock Text="DESKTOP MEDIA HUB"
+                        <TextBlock Text="MEDIA COMMAND"
                                    Style="{StaticResource KroiraEyebrowStyle}"
                                    Foreground="{StaticResource KroiraAccentBrush}" />
-                        <TextBlock Text="Watch without friction"
+                        <TextBlock Text="Kroira"
                                    Style="{StaticResource KroiraDisplayLgStyle}"
+                                   FontSize="52"
+                                   LineHeight="58"
                                    MaxLines="2"
                                    TextWrapping="Wrap" />
                         <TextBlock Text="{x:Bind ViewModel.HeroSubtitle, Mode=OneWay}"
@@ -249,10 +269,10 @@
                     </StackPanel>
 
                     <Border Grid.Column="1"
-                            Background="#7A0E131B"
-                            BorderBrush="#26FFFFFF"
+                            Background="#A00B0E13"
+                            BorderBrush="{StaticResource KroiraGlassBorderBrush}"
                             BorderThickness="1"
-                            CornerRadius="18"
+                            CornerRadius="12"
                             Padding="24"
                             VerticalAlignment="Stretch">
                         <StackPanel Spacing="18" VerticalAlignment="Center">
@@ -292,10 +312,10 @@
                                ScrollAmount="360" />
 
                 <Border Visibility="{x:Bind ViewModel.ContinueEmptyVisibility, Mode=OneWay}"
-                        Background="#99161B24"
-                        BorderBrush="#24FFFFFF"
+                        Background="#A00B0E13"
+                        BorderBrush="{StaticResource KroiraGlassBorderBrush}"
                         BorderThickness="1"
-                        CornerRadius="14"
+                        CornerRadius="12"
                         Padding="24,20">
                     <StackPanel Spacing="8" MaxWidth="500">
                         <FontIcon Glyph="&#xE768;"
@@ -341,10 +361,10 @@
                 </ItemsRepeater>
             </StackPanel>
 
-            <Border Background="#99161B24"
-                    BorderBrush="#24FFFFFF"
+            <Border Background="#A00B0E13"
+                    BorderBrush="{StaticResource KroiraGlassBorderBrush}"
                     BorderThickness="1"
-                    CornerRadius="14"
+                    CornerRadius="10"
                     Padding="18,14">
                 <Grid ColumnSpacing="14">
                     <Grid.ColumnDefinitions>

@@ -79,7 +79,8 @@ namespace Kroira.App
                 else
                 {
                     RootNavView.IsPaneVisible = true;
-                    RootNavView.PaneDisplayMode = NavigationViewPaneDisplayMode.Auto;
+                    RootNavView.PaneDisplayMode = NavigationViewPaneDisplayMode.LeftCompact;
+                    RootNavView.IsPaneOpen = true;
                 }
             }
             catch (Exception ex)
@@ -114,7 +115,8 @@ namespace Kroira.App
         private void UpdatePaneHeader(bool isOpen)
         {
             PaneBrandText.Visibility = isOpen ? Visibility.Visible : Visibility.Collapsed;
-            PaneHeaderRoot.Margin = isOpen ? new Thickness(16, 26, 12, 28) : new Thickness(15, 26, 0, 28);
+            PaneFooterRoot.Visibility = isOpen ? Visibility.Visible : Visibility.Collapsed;
+            PaneHeaderRoot.Margin = isOpen ? new Thickness(18, 28, 14, 30) : new Thickness(17, 28, 0, 30);
         }
 
         private void RootNavView_ItemInvoked(NavigationView sender, NavigationViewItemInvokedEventArgs args)
