@@ -20,8 +20,7 @@ namespace Kroira.App.ViewModels
 
         public ObservableCollection<LanguageOptionViewModel> Languages { get; } = new()
         {
-            new LanguageOptionViewModel(AppLanguageService.DefaultLanguageCode, "Türkçe"),
-            new LanguageOptionViewModel("en-US", "English")
+            new LanguageOptionViewModel(AppLanguageService.DefaultLanguageCode, "English")
         };
 
         [ObservableProperty]
@@ -37,7 +36,7 @@ namespace Kroira.App.ViewModels
         private LanguageOptionViewModel _selectedLanguage;
 
         [ObservableProperty]
-        private string _languageStatusText = "Türkçe is the default app language. English is available as the only secondary supported option.";
+        private string _languageStatusText = "English is selected. This stable option uses the working catalog language pipeline.";
 
         partial void OnSelectedLanguageChanged(LanguageOptionViewModel value)
         {
@@ -73,10 +72,7 @@ namespace Kroira.App.ViewModels
             using var scope = _serviceProvider.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             await AppLanguageService.SetLanguageAsync(db, languageCode);
-            var normalizedLanguageCode = AppLanguageService.NormalizeLanguageCode(languageCode);
-            LanguageStatusText = normalizedLanguageCode == AppLanguageService.DefaultLanguageCode
-                ? "Türkçe selected. Unsupported language options remain hidden until real app support exists."
-                : "English selected. Unsupported language options remain hidden until real app support exists.";
+            LanguageStatusText = "English selected. Unsupported language options remain hidden until real app support exists.";
         }
 
         [RelayCommand]

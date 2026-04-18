@@ -12,7 +12,7 @@ namespace Kroira.App.Services
         public const string LanguageSettingKey = "App.Language";
         public const string DefaultLanguageCode = "tr-TR";
 
-        public static readonly string[] SupportedLanguageCodes = { DefaultLanguageCode, "en-US" };
+        public static readonly string[] SupportedLanguageCodes = { DefaultLanguageCode };
 
         public static async Task<string> GetLanguageAsync(AppDbContext db)
         {
