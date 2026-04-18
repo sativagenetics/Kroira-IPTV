@@ -19,6 +19,7 @@ namespace Kroira.App.ViewModels
     {
         private readonly IServiceProvider _serviceProvider;
         private List<Movie> _allMovies = new List<Movie>();
+        private static readonly int _sessionRotationIndex = Math.Abs(Environment.TickCount % 5);
 
         public ObservableCollection<Movie> FilteredMovies { get; } = new ObservableCollection<Movie>();
         public ObservableCollection<BrowserCategoryViewModel> Categories { get; } = new ObservableCollection<BrowserCategoryViewModel>();
@@ -33,12 +34,15 @@ namespace Kroira.App.ViewModels
         private bool _isEmpty;
 
         [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(FeaturedMovieCanPlay))]
         private Movie _featuredMovie = new Movie
         {
             Title = "Movies",
             Overview = "Sync an Xtream VOD source to build a poster-first library with TMDb artwork, ratings, genres, and backdrops.",
             CategoryName = "VOD library"
         };
+
+        public bool FeaturedMovieCanPlay => !string.IsNullOrWhiteSpace(FeaturedMovie?.StreamUrl);
 
         partial void OnSearchQueryChanged(string value)
         {
@@ -125,13 +129,26 @@ namespace Kroira.App.ViewModels
 
         private static Movie SelectFeaturedMovie(IEnumerable<Movie> movies)
         {
-            var featured = movies
+            var allRanked = movies
                 .OrderByDescending(m => GetArtworkScore(m))
                 .ThenByDescending(m => m.Popularity)
                 .ThenByDescending(m => m.VoteAverage)
-                .FirstOrDefault();
+                .ToList();
 
-            return featured ?? new Movie
+            // Only rotate within candidates that have a real backdrop (score ≥ 3).
+            // This ensures the hero always shows a compelling wide image, not just a portrait poster.
+            var backdropPool = allRanked
+                .Where(m => GetArtworkScore(m) >= 3)
+                .Take(5)
+                .ToList();
+
+            if (backdropPool.Count > 0)
+            {
+                return backdropPool[_sessionRotationIndex % backdropPool.Count];
+            }
+
+            // No backdrop-capable movies — use single best candidate, no rotation.
+            return allRanked.FirstOrDefault() ?? new Movie
             {
                 Title = "Movies",
                 Overview = "Sync an Xtream VOD source to build a poster-first library with TMDb artwork, ratings, genres, and backdrops.",

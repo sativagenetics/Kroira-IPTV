@@ -36,11 +36,19 @@ namespace Kroira.App.ViewModels
         private Series? _selectedSeries;
 
         [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(EpisodesListVisibility))]
+        [NotifyPropertyChangedFor(nameof(EpisodesEmptyVisibility))]
         private Season? _selectedSeason;
 
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(SelectedEpisodePlayVisibility))]
         private Episode? _selectedEpisode;
+
+        public Visibility EpisodesListVisibility =>
+            SelectedSeason?.Episodes?.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+
+        public Visibility EpisodesEmptyVisibility =>
+            SelectedSeason != null && !(SelectedSeason.Episodes?.Count > 0) ? Visibility.Visible : Visibility.Collapsed;
 
         public Visibility SelectedEpisodePlayVisibility => SelectedEpisode == null ? Visibility.Collapsed : Visibility.Visible;
 
@@ -255,6 +263,8 @@ namespace Kroira.App.ViewModels
             }
 
             OnPropertyChanged(nameof(SelectedSeries));
+            OnPropertyChanged(nameof(EpisodesListVisibility));
+            OnPropertyChanged(nameof(EpisodesEmptyVisibility));
         }
 
         private void SelectSingleEpisodeForSeason(Season? season)

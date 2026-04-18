@@ -325,7 +325,8 @@
                   HorizontalScrollBarVisibility="Disabled"
                   HorizontalScrollMode="Disabled">
         <StackPanel Padding="44,32,44,46" Spacing="30">
-            <Border MinHeight="486"
+            <Border MinHeight="288"
+                    MaxHeight="344"
                     CornerRadius="18"
                     BorderBrush="{StaticResource KroiraGlassBorderBrush}"
                     BorderThickness="1">
@@ -334,12 +335,12 @@
                             CornerRadius="18" />
                     <Image Source="{x:Bind ViewModel.FeaturedItem.HeroArtworkUrl, Mode=OneWay, Converter={StaticResource UrlToImageSourceConverter}}"
                            Stretch="UniformToFill"
-                           Opacity="0.96" />
+                           Opacity="0.88" />
                     <Image Source="{x:Bind ViewModel.FeaturedItem.HeroPosterUrl, Mode=OneWay, Converter={StaticResource UrlToImageSourceConverter}}"
-                           Width="560"
+                           Width="440"
                            HorizontalAlignment="Right"
                            Stretch="UniformToFill"
-                           Opacity="0.26" />
+                           Opacity="0.20" />
                     <Border>
                         <Border.Background>
                             <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
@@ -364,23 +365,23 @@
                             Background="{StaticResource KroiraAccentGradientBrush}"
                             CornerRadius="18,0,0,18" />
 
-                    <Grid Padding="42,34" ColumnSpacing="34">
+                    <Grid Padding="36,24" ColumnSpacing="26">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="250" />
+                            <ColumnDefinition Width="188" />
                         </Grid.ColumnDefinitions>
 
                         <StackPanel Grid.Column="0"
-                                    Spacing="14"
+                                    Spacing="10"
                                     VerticalAlignment="Bottom"
-                                    MaxWidth="820">
+                                    MaxWidth="760">
                             <TextBlock Text="FEATURED"
                                        Style="{StaticResource KroiraEyebrowStyle}"
                                        Foreground="{StaticResource KroiraAccentBrush}" />
                             <TextBlock Text="{x:Bind ViewModel.FeaturedItem.Title, Mode=OneWay}"
                                        Style="{StaticResource KroiraDisplayLgStyle}"
-                                       FontSize="60"
-                                       LineHeight="66"
+                                       FontSize="44"
+                                       LineHeight="50"
                                        MaxLines="2"
                                        TextWrapping="Wrap" />
                             <StackPanel Orientation="Horizontal" Spacing="12">
@@ -402,33 +403,33 @@
                             </StackPanel>
                             <TextBlock Text="{x:Bind ViewModel.FeaturedItem.Overview, Mode=OneWay}"
                                        Style="{StaticResource KroiraBodyStyle}"
-                                       FontSize="15"
-                                       LineHeight="22"
-                                       MaxWidth="650"
-                                       MaxLines="3"
+                                       FontSize="13"
+                                       LineHeight="19"
+                                       MaxWidth="580"
+                                       MaxLines="2"
                                        TextTrimming="CharacterEllipsis" />
-                            <StackPanel Orientation="Horizontal" Spacing="12" Margin="0,8,0,0">
+                            <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,5,0,0">
                                 <Button Click="FeaturedPrimary_Click"
                                         Style="{StaticResource KroiraPrimaryButtonStyle}"
-                                        Padding="23,12"
-                                        MinWidth="150">
-                                    <StackPanel Orientation="Horizontal" Spacing="9">
-                                        <FontIcon Glyph="&#xE768;" FontSize="14" />
+                                        Padding="18,10"
+                                        MinWidth="132">
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <FontIcon Glyph="&#xE768;" FontSize="13" />
                                         <TextBlock Text="{x:Bind ViewModel.FeaturedItem.PrimaryActionLabel, Mode=OneWay}" />
                                     </StackPanel>
                                 </Button>
                                 <Button Click="LiveTv_Click"
                                         Style="{StaticResource KroiraGhostButtonStyle}"
-                                        Padding="20,12"
-                                        MinWidth="122"
+                                        Padding="16,10"
+                                        MinWidth="104"
                                         Content="Live TV" />
                             </StackPanel>
-                            <Border Margin="0,8,0,0"
-                                    Padding="8"
+                            <Border Margin="0,5,0,0"
+                                    Padding="7"
                                     Background="#5E090B0F"
                                     BorderBrush="{StaticResource KroiraGlassBorderBrush}"
                                     BorderThickness="1"
-                                    CornerRadius="13"
+                                    CornerRadius="12"
                                     HorizontalAlignment="Left">
                                 <ItemsControl ItemsSource="{x:Bind ViewModel.SummaryItems, Mode=OneWay}"
                                               ItemTemplate="{StaticResource SummaryStatTemplate}">
@@ -442,22 +443,22 @@
                         </StackPanel>
 
                         <StackPanel Grid.Column="1"
-                                    Spacing="12"
+                                    Spacing="10"
                                     VerticalAlignment="Bottom">
-                            <Border Width="218"
-                                    Height="324"
-                                    CornerRadius="14"
+                            <Border Width="164"
+                                    Height="244"
+                                    CornerRadius="12"
                                     BorderBrush="{StaticResource KroiraGlassBorderBrush}"
                                     BorderThickness="1"
                                     Background="{StaticResource KroiraPosterPlaceholderBrush}">
                                 <Grid>
                                     <FontIcon Glyph="&#xE8B2;"
                                           Foreground="{StaticResource KroiraTextTertiaryBrush}"
-                                          FontSize="34"
+                                          FontSize="28"
                                           Opacity="0.55" />
                                     <Image Source="{x:Bind ViewModel.FeaturedItem.HeroPosterUrl, Mode=OneWay, Converter={StaticResource UrlToImageSourceConverter}}"
                                            Stretch="UniformToFill" />
-                                    <Border Height="92"
+                                    <Border Height="72"
                                             VerticalAlignment="Bottom">
                                         <Border.Background>
                                             <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
@@ -468,13 +469,13 @@
                                     </Border>
                                 </Grid>
                             </Border>
-                            <Border Width="218"
-                                    Padding="12,10"
+                            <Border Width="164"
+                                    Padding="11,9"
                                     Background="#9A090B0F"
                                     BorderBrush="{StaticResource KroiraChromeLineBrush}"
                                     BorderThickness="1"
                                     CornerRadius="10">
-                                <StackPanel Spacing="3">
+                                <StackPanel Spacing="2">
                                     <TextBlock Text="Now featured"
                                                Style="{StaticResource KroiraLabelStyle}"
                                                Foreground="{StaticResource KroiraAccentBrush}" />

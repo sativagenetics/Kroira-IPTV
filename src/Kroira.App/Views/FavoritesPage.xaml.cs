@@ -40,6 +40,21 @@ namespace Kroira.App.Views
             ((ListView)sender).SelectedItem = null;
         }
 
+        private void FeaturedChannel_Click(object sender, RoutedEventArgs e)
+        {
+            var channel = ViewModel.FeaturedChannel;
+            if (channel != null && !string.IsNullOrWhiteSpace(channel.StreamUrl))
+            {
+                this.Frame.Navigate(typeof(EmbeddedPlaybackPage), new Kroira.App.Models.PlaybackLaunchContext
+                {
+                    ContentId = channel.Id,
+                    ContentType = Kroira.App.Models.PlaybackContentType.Channel,
+                    StreamUrl = channel.StreamUrl,
+                    StartPositionMs = 0
+                });
+            }
+        }
+
         private void RemoveFavorite_Click(object sender, RoutedEventArgs e)
         {
             if (sender is Button btn && btn.Tag is int id)

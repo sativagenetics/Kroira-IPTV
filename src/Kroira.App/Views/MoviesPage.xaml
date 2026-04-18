@@ -40,12 +40,12 @@
                        Width="430"
                        HorizontalAlignment="Right"
                        Stretch="UniformToFill"
-                       Opacity="0.18" />
+                       Opacity="0.16" />
                 <Border>
                     <Border.Background>
                         <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
                             <GradientStop Color="#F006080A" Offset="0" />
-                            <GradientStop Color="#C8090B0F" Offset="0.42" />
+                            <GradientStop Color="#D0090B0F" Offset="0.44" />
                             <GradientStop Color="#5410141A" Offset="0.72" />
                             <GradientStop Color="#D0080A0D" Offset="1" />
                         </LinearGradientBrush>
@@ -54,8 +54,9 @@
                 <Border>
                     <Border.Background>
                         <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                            <GradientStop Color="#18000000" Offset="0" />
-                            <GradientStop Color="#A8080A0D" Offset="1" />
+                            <GradientStop Color="#26000000" Offset="0" />
+                            <GradientStop Color="#08000000" Offset="0.44" />
+                            <GradientStop Color="#B8080A0D" Offset="1" />
                         </LinearGradientBrush>
                     </Border.Background>
                 </Border>
@@ -67,7 +68,7 @@
                 <Grid Padding="34,28" ColumnSpacing="28">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="186" />
+                        <ColumnDefinition Width="174" />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
 
@@ -75,13 +76,13 @@
                                 Spacing="11"
                                 VerticalAlignment="Bottom"
                                 MaxWidth="760">
-                        <TextBlock Text="VOD COLLECTION"
+                        <TextBlock Text="FEATURED FILM"
                                    Style="{StaticResource KroiraLabelStyle}"
                                    Foreground="{StaticResource KroiraAccentBrush}" />
                         <TextBlock Text="{x:Bind ViewModel.FeaturedMovie.Title, Mode=OneWay}"
                                    Style="{StaticResource KroiraDisplayLgStyle}"
-                                   FontSize="48"
-                                   LineHeight="54"
+                                   FontSize="46"
+                                   LineHeight="52"
                                    MaxLines="2"
                                    TextWrapping="Wrap" />
                         <StackPanel Orientation="Horizontal" Spacing="12">
@@ -105,14 +106,25 @@
                                    Style="{StaticResource KroiraBodyStyle}"
                                    FontSize="14"
                                    LineHeight="21"
-                                   MaxWidth="650"
+                                   MaxWidth="620"
                                    MaxLines="3"
                                    TextTrimming="CharacterEllipsis" />
+                        <Button Click="FeaturedPlay_Click"
+                                IsEnabled="{x:Bind ViewModel.FeaturedMovieCanPlay, Mode=OneWay}"
+                                Style="{StaticResource KroiraPrimaryButtonStyle}"
+                                Padding="20,11"
+                                MinWidth="136"
+                                Margin="0,6,0,0">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <FontIcon Glyph="&#xE102;" FontSize="13" />
+                                <TextBlock Text="Play movie" />
+                            </StackPanel>
+                        </Button>
                     </StackPanel>
 
                     <Border Grid.Column="1"
-                            Width="170"
-                            Height="248"
+                            Width="158"
+                            Height="238"
                             CornerRadius="14"
                             BorderBrush="{StaticResource KroiraGlassBorderBrush}"
                             BorderThickness="1"
@@ -121,11 +133,11 @@
                         <Grid>
                             <FontIcon Glyph="&#xE8B2;"
                                       Foreground="{StaticResource KroiraTextTertiaryBrush}"
-                                      FontSize="30"
+                                      FontSize="28"
                                       Opacity="0.55" />
                             <Image Source="{x:Bind ViewModel.FeaturedMovie.DisplayPosterUrl, Mode=OneWay, Converter={StaticResource UrlToImageSourceConverter}}"
                                    Stretch="UniformToFill" />
-                            <Border Height="76"
+                            <Border Height="72"
                                     VerticalAlignment="Bottom">
                                 <Border.Background>
                                     <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
@@ -140,11 +152,11 @@
                     <Border Grid.Column="2"
                             Style="{StaticResource KroiraCountBadgeStyle}"
                             VerticalAlignment="Bottom"
-                            MinWidth="132">
+                            MinWidth="128">
                         <StackPanel Spacing="1">
                             <TextBlock Text="{x:Bind ViewModel.FilteredMovies.Count, Mode=OneWay, Converter={StaticResource NumberFormatConverter}}"
                                        Foreground="{StaticResource KroiraTextPrimaryBrush}"
-                                       FontSize="30"
+                                       FontSize="28"
                                        FontWeight="SemiBold" />
                             <TextBlock Text="TITLES"
                                        Style="{StaticResource KroiraLabelStyle}"

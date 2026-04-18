@@ -97,6 +97,7 @@ namespace Kroira.App.ViewModels
     {
         private readonly IServiceProvider _serviceProvider;
         private readonly IEntitlementService _entitlementService;
+        private static readonly int _sessionRotationIndex = Math.Abs(Environment.TickCount % 5);
 
         public ObservableCollection<HomeSummaryItem> SummaryItems { get; } = new();
         public ObservableCollection<HomeActionItem> QuickActions { get; } = new();
@@ -232,19 +233,29 @@ namespace Kroira.App.ViewModels
                 .Take(24)
                 .ToListAsync();
 
-            var featuredMovie = movieCandidates
+            var topMoviePool = movieCandidates
                 .OrderByDescending(GetArtworkScore)
                 .ThenByDescending(m => m.Popularity)
                 .ThenByDescending(m => m.VoteAverage)
                 .ThenBy(m => m.Title)
-                .FirstOrDefault();
+                .Take(5)
+                .ToList();
 
-            var featuredSeries = seriesCandidates
+            var topSeriesPool = seriesCandidates
                 .OrderByDescending(GetArtworkScore)
                 .ThenByDescending(s => s.Popularity)
                 .ThenByDescending(s => s.VoteAverage)
                 .ThenBy(s => s.Title)
-                .FirstOrDefault();
+                .Take(5)
+                .ToList();
+
+            var featuredMovie = topMoviePool.Count > 0
+                ? topMoviePool[_sessionRotationIndex % topMoviePool.Count]
+                : null;
+
+            var featuredSeries = topSeriesPool.Count > 0
+                ? topSeriesPool[_sessionRotationIndex % topSeriesPool.Count]
+                : null;
 
             if (featuredMovie == null && featuredSeries == null)
             {

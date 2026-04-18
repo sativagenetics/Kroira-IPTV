@@ -118,41 +118,51 @@
                             <DataTemplate>
                                 <Border
                                     Background="{StaticResource KroiraSurfaceSoftBrush}"
-                                    CornerRadius="8"
-                                    Padding="14">
-                                    <Grid ColumnSpacing="16">
+                                    BorderBrush="{StaticResource KroiraGlassBorderBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="10"
+                                    Padding="12,14">
+                                    <Grid ColumnSpacing="14">
                                         <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="104" />
+                                            <ColumnDefinition Width="Auto" />
                                             <ColumnDefinition Width="*" />
                                             <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
 
                                         <Border
-                                            Width="96"
-                                            Height="58"
+                                            Width="68"
+                                            Height="68"
                                             CornerRadius="8"
                                             Background="{StaticResource KroiraMediaGradientBrush}"
                                             VerticalAlignment="Center">
                                             <Grid>
-                                                <FontIcon Glyph="&#xE768;" Foreground="{StaticResource KroiraAccentBrush}" FontSize="20" Opacity="0.45" />
-                                                <Image Source="{Binding LogoUrl, Converter={StaticResource UrlToImageSourceConverter}}" Stretch="UniformToFill" />
+                                                <FontIcon Glyph="&#xE768;" Foreground="{StaticResource KroiraAccentBrush}" FontSize="18" Opacity="0.4" />
+                                                <Border CornerRadius="8">
+                                                    <Image Source="{Binding LogoUrl, Converter={StaticResource UrlToImageSourceConverter}}" Stretch="UniformToFill" />
+                                                </Border>
                                                 <Border
-                                                    Height="4"
-                                                    Background="{StaticResource KroiraAccentBrush}"
-                                                    CornerRadius="2"
-                                                    VerticalAlignment="Bottom"
-                                                    Margin="8,0,38,8" />
-                                                <Border
-                                                    Height="4"
-                                                    Background="#4AFFFFFF"
-                                                    CornerRadius="2"
-                                                    VerticalAlignment="Bottom"
-                                                    Margin="8,0,8,8"
-                                                    Opacity="0.18" />
+                                                    Height="22"
+                                                    CornerRadius="0,0,8,8"
+                                                    VerticalAlignment="Bottom">
+                                                    <Border.Background>
+                                                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                                            <GradientStop Color="#00000000" Offset="0" />
+                                                            <GradientStop Color="#D8080A0D" Offset="1" />
+                                                        </LinearGradientBrush>
+                                                    </Border.Background>
+                                                    <TextBlock
+                                                        Text="{Binding ProgressText}"
+                                                        Foreground="{StaticResource KroiraAccentBrush}"
+                                                        FontSize="8"
+                                                        FontWeight="SemiBold"
+                                                        HorizontalAlignment="Center"
+                                                        VerticalAlignment="Bottom"
+                                                        Margin="0,0,0,3" />
+                                                </Border>
                                             </Grid>
                                         </Border>
 
-                                        <Grid Grid.Column="1" RowSpacing="5" VerticalAlignment="Center">
+                                        <Grid Grid.Column="1" RowSpacing="4" VerticalAlignment="Center">
                                             <Grid.RowDefinitions>
                                                 <RowDefinition Height="Auto" />
                                                 <RowDefinition Height="Auto" />
@@ -163,19 +173,20 @@
                                                 <TextBlock
                                                     Text="{Binding TypeLabel}"
                                                     Foreground="{StaticResource KroiraAccentBrush}"
-                                                    FontSize="12"
+                                                    FontSize="11"
                                                     FontWeight="SemiBold" />
                                                 <TextBlock
                                                     Text="{Binding LastWatchedText}"
                                                     Foreground="{StaticResource KroiraTextTertiaryBrush}"
-                                                    FontSize="12" />
+                                                    FontSize="11" />
                                             </StackPanel>
 
                                             <TextBlock
                                                 Grid.Row="1"
                                                 Text="{Binding Title}"
                                                 Style="{StaticResource KroiraTitleStyle}"
-                                                MaxLines="2"
+                                                FontSize="13"
+                                                MaxLines="1"
                                                 TextTrimming="CharacterEllipsis" />
 
                                             <TextBlock
@@ -186,21 +197,14 @@
                                                 TextTrimming="CharacterEllipsis" />
                                         </Grid>
 
-                                        <StackPanel Grid.Column="2" Spacing="8" VerticalAlignment="Center" MinWidth="92">
-                                            <TextBlock
-                                                Text="{Binding ProgressText}"
-                                                Foreground="{StaticResource KroiraTextPrimaryBrush}"
-                                                FontSize="12"
-                                                FontWeight="SemiBold"
-                                                HorizontalAlignment="Right" />
-                                            <Button
-                                                Content="Remove"
-                                                Tag="{Binding Id}"
-                                                Click="RemoveProgress_Click"
-                                                Style="{StaticResource KroiraDangerButtonStyle}"
-                                                FontSize="12"
-                                                HorizontalAlignment="Right" />
-                                        </StackPanel>
+                                        <Button
+                                            Grid.Column="2"
+                                            Content="Remove"
+                                            Tag="{Binding Id}"
+                                            Click="RemoveProgress_Click"
+                                            Style="{StaticResource KroiraDangerButtonStyle}"
+                                            FontSize="11"
+                                            VerticalAlignment="Center" />
                                     </Grid>
                                 </Border>
                             </DataTemplate>

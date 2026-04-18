@@ -24,6 +24,9 @@ namespace Kroira.App.ViewModels
         [NotifyPropertyChangedFor(nameof(FavoriteCountText))]
         private bool _isEmpty;
 
+        [ObservableProperty]
+        private BrowserChannelViewModel? _featuredChannel;
+
         public Visibility EmptyVisibility => IsEmpty ? Visibility.Visible : Visibility.Collapsed;
         public Visibility ContentVisibility => IsEmpty ? Visibility.Collapsed : Visibility.Visible;
         public string FavoriteCountText => FavoriteChannels.Count == 1 ? "1 saved channel" : $"{FavoriteChannels.Count} saved channels";
@@ -63,6 +66,7 @@ namespace Kroira.App.ViewModels
             }
 
             IsEmpty = FavoriteChannels.Count == 0;
+            FeaturedChannel = FavoriteChannels.FirstOrDefault();
             OnPropertyChanged(nameof(FavoriteCountText));
         }
 
@@ -83,6 +87,7 @@ namespace Kroira.App.ViewModels
                 }
                 FavoriteChannels.Remove(target);
                 IsEmpty = FavoriteChannels.Count == 0;
+                FeaturedChannel = FavoriteChannels.FirstOrDefault();
                 OnPropertyChanged(nameof(FavoriteCountText));
             }
         }

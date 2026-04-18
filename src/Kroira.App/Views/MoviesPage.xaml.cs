@@ -23,6 +23,21 @@ namespace Kroira.App.Views
             _ = ViewModel.LoadMoviesCommand.ExecuteAsync(null);
         }
 
+        private void FeaturedPlay_Click(object sender, RoutedEventArgs e)
+        {
+            var movie = ViewModel.FeaturedMovie;
+            if (movie != null && !string.IsNullOrWhiteSpace(movie.StreamUrl))
+            {
+                this.Frame.Navigate(typeof(EmbeddedPlaybackPage), new PlaybackLaunchContext
+                {
+                    ContentId = movie.Id,
+                    ContentType = PlaybackContentType.Movie,
+                    StreamUrl = movie.StreamUrl,
+                    StartPositionMs = 0
+                });
+            }
+        }
+
         private void GridView_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (e.AddedItems.Count > 0 && e.AddedItems[0] is Movie movie)
