@@ -33,7 +33,7 @@
             <Grid>
                 <Border Background="{StaticResource KroiraMediaGradientBrush}"
                         CornerRadius="14" />
-                <Image Source="{x:Bind ViewModel.FeaturedMovie.BackdropUrl, Mode=OneWay, Converter={StaticResource UrlToImageSourceConverter}}"
+                <Image Source="{x:Bind ViewModel.FeaturedMovie.DisplayHeroArtworkUrl, Mode=OneWay, Converter={StaticResource UrlToImageSourceConverter}}"
                        Stretch="UniformToFill"
                        Opacity="0.72" />
                 <Border>
@@ -114,7 +114,7 @@
                                       Foreground="{StaticResource KroiraTextTertiaryBrush}"
                                       FontSize="30"
                                       Opacity="0.55" />
-                            <Image Source="{x:Bind ViewModel.FeaturedMovie.PosterUrl, Mode=OneWay, Converter={StaticResource UrlToImageSourceConverter}}"
+                            <Image Source="{x:Bind ViewModel.FeaturedMovie.DisplayPosterUrl, Mode=OneWay, Converter={StaticResource UrlToImageSourceConverter}}"
                                    Stretch="UniformToFill" />
                         </Grid>
                     </Border>
@@ -248,7 +248,7 @@
                                                   Opacity="0.55" />
                                     </Border>
                                     <Border CornerRadius="9">
-                                        <Image Source="{Binding PosterUrl, Converter={StaticResource UrlToImageSourceConverter}}"
+                                        <Image Source="{Binding DisplayPosterUrl, Converter={StaticResource UrlToImageSourceConverter}}"
                                                Stretch="UniformToFill" />
                                     </Border>
                                     <Border Height="76"

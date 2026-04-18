@@ -254,8 +254,8 @@ namespace Kroira.App.ViewModels
 
             if (featuredMovie != null && ShouldUseMovieFeature(featuredMovie, featuredSeries))
             {
-                var posterUrl = ResolvePosterUrl(featuredMovie.PosterUrl, featuredMovie.TmdbPosterPath);
-                var backdropUrl = ResolveBackdropUrl(featuredMovie.BackdropUrl, featuredMovie.TmdbBackdropPath);
+                var posterUrl = featuredMovie.DisplayPosterUrl;
+                var backdropUrl = featuredMovie.DisplayBackdropUrl;
                 FeaturedItem = new HomeFeaturedItem
                 {
                     ContentId = featuredMovie.Id,
@@ -281,8 +281,8 @@ namespace Kroira.App.ViewModels
 
             if (featuredSeries != null)
             {
-                var posterUrl = ResolvePosterUrl(featuredSeries.PosterUrl, featuredSeries.TmdbPosterPath);
-                var backdropUrl = ResolveBackdropUrl(featuredSeries.BackdropUrl, featuredSeries.TmdbBackdropPath);
+                var posterUrl = featuredSeries.DisplayPosterUrl;
+                var backdropUrl = featuredSeries.DisplayBackdropUrl;
                 FeaturedItem = new HomeFeaturedItem
                 {
                     ContentId = featuredSeries.Id,
@@ -388,8 +388,8 @@ namespace Kroira.App.ViewModels
                 {
                     title = mv.Title;
                     streamUrl = mv.StreamUrl;
-                    posterUrl = ResolvePosterUrl(mv.PosterUrl, mv.TmdbPosterPath);
-                    backdropUrl = ResolveHeroArtworkUrl(ResolveBackdropUrl(mv.BackdropUrl, mv.TmdbBackdropPath), posterUrl);
+                    posterUrl = mv.DisplayPosterUrl;
+                    backdropUrl = mv.DisplayHeroArtworkUrl;
                     overview = mv.Overview;
                     voteAverage = mv.VoteAverage;
                 }
@@ -399,9 +399,9 @@ namespace Kroira.App.ViewModels
                     streamUrl = ep.StreamUrl;
                     if (episodeSeriesBySeasonId.TryGetValue(ep.SeasonId, out var series))
                     {
-                        var seriesPosterUrl = ResolvePosterUrl(series.PosterUrl, series.TmdbPosterPath);
+                        var seriesPosterUrl = series.DisplayPosterUrl;
                         posterUrl = string.IsNullOrWhiteSpace(seriesPosterUrl) ? posterUrl : seriesPosterUrl;
-                        backdropUrl = ResolveHeroArtworkUrl(ResolveBackdropUrl(series.BackdropUrl, series.TmdbBackdropPath), posterUrl);
+                        backdropUrl = string.IsNullOrWhiteSpace(series.DisplayHeroArtworkUrl) ? posterUrl : series.DisplayHeroArtworkUrl;
                         overview = series.Overview;
                         voteAverage = series.VoteAverage;
                         title = string.IsNullOrWhiteSpace(series.Title) ? title : $"{series.Title}: {title}";
@@ -557,8 +557,8 @@ namespace Kroira.App.ViewModels
                 Title = movie.Title,
                 Detail = BuildMediaDetail(movie.ReleaseDate, movie.Genres, movie.OriginalLanguage),
                 StreamUrl = movie.StreamUrl,
-                PosterUrl = ResolvePosterUrl(movie.PosterUrl, movie.TmdbPosterPath),
-                BackdropUrl = ResolveBackdropUrl(movie.BackdropUrl, movie.TmdbBackdropPath),
+                PosterUrl = movie.DisplayPosterUrl,
+                BackdropUrl = movie.DisplayBackdropUrl,
                 Overview = movie.Overview,
                 Target = "Movies",
                 VoteAverage = movie.VoteAverage,
@@ -575,8 +575,8 @@ namespace Kroira.App.ViewModels
                 ContentType = PlaybackContentType.Episode,
                 Title = series.Title,
                 Detail = BuildMediaDetail(series.FirstAirDate, series.Genres, series.OriginalLanguage),
-                PosterUrl = ResolvePosterUrl(series.PosterUrl, series.TmdbPosterPath),
-                BackdropUrl = ResolveBackdropUrl(series.BackdropUrl, series.TmdbBackdropPath),
+                PosterUrl = series.DisplayPosterUrl,
+                BackdropUrl = series.DisplayBackdropUrl,
                 Overview = series.Overview,
                 Target = "Series",
                 VoteAverage = series.VoteAverage,

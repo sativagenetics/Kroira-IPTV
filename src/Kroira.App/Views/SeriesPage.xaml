@@ -152,7 +152,7 @@
                                                       VerticalAlignment="Center" />
                                         </Border>
                                         <Border CornerRadius="10">
-                                            <Image Source="{Binding PosterUrl, Converter={StaticResource UrlToImageSourceConverter}}"
+                                            <Image Source="{Binding DisplayPosterUrl, Converter={StaticResource UrlToImageSourceConverter}}"
                                                    Stretch="UniformToFill" />
                                         </Border>
                                     </Grid>
@@ -229,7 +229,7 @@
                                        Style="{StaticResource KroiraSectionTitleStyle}"
                                        FontSize="20"
                                        TextWrapping="Wrap" />
-                            <TextBlock Text="{x:Bind ViewModel.SelectedSeries.CategoryName, Mode=OneWay}"
+                            <TextBlock Text="{x:Bind ViewModel.SelectedSeries.MetadataLine, Mode=OneWay}"
                                        Style="{StaticResource KroiraBodyStyle}"
                                        Foreground="{StaticResource KroiraTextSecondaryBrush}" />
                         </StackPanel>

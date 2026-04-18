@@ -126,8 +126,7 @@ namespace Kroira.App.ViewModels
         private static Movie SelectFeaturedMovie(IEnumerable<Movie> movies)
         {
             var featured = movies
-                .Where(m => !string.IsNullOrWhiteSpace(m.BackdropUrl) || !string.IsNullOrWhiteSpace(m.PosterUrl))
-                .OrderByDescending(m => !string.IsNullOrWhiteSpace(m.BackdropUrl))
+                .OrderByDescending(m => GetArtworkScore(m))
                 .ThenByDescending(m => m.Popularity)
                 .ThenByDescending(m => m.VoteAverage)
                 .FirstOrDefault();
@@ -138,6 +137,26 @@ namespace Kroira.App.ViewModels
                 Overview = "Sync an Xtream VOD source to build a poster-first library with TMDb artwork, ratings, genres, and backdrops.",
                 CategoryName = "VOD library"
             };
+        }
+
+        private static int GetArtworkScore(Movie movie)
+        {
+            if (!string.IsNullOrWhiteSpace(movie.BackdropUrl))
+            {
+                return 4;
+            }
+
+            if (!string.IsNullOrWhiteSpace(movie.TmdbBackdropPath))
+            {
+                return 3;
+            }
+
+            if (!string.IsNullOrWhiteSpace(movie.PosterUrl))
+            {
+                return 2;
+            }
+
+            return string.IsNullOrWhiteSpace(movie.TmdbPosterPath) ? 0 : 1;
         }
 
         private void StartMetadataEnrichment()

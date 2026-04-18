@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Kroira.App.Models
 {
@@ -27,5 +28,41 @@ namespace Kroira.App.Models
         public string CategoryName { get; set; } = string.Empty;
 
         public ICollection<Season>? Seasons { get; set; }
+
+        public string DisplayYear => FirstAirDate.HasValue ? FirstAirDate.Value.Year.ToString() : string.Empty;
+
+        public string RatingText => VoteAverage > 0 ? VoteAverage.ToString("0.0") : string.Empty;
+
+        public string DisplayPosterUrl => !string.IsNullOrWhiteSpace(PosterUrl)
+            ? PosterUrl
+            : BuildTmdbImageUrl(TmdbPosterPath, "w500");
+
+        public string DisplayBackdropUrl => !string.IsNullOrWhiteSpace(BackdropUrl)
+            ? BackdropUrl
+            : BuildTmdbImageUrl(TmdbBackdropPath, "w1280");
+
+        public string DisplayHeroArtworkUrl => !string.IsNullOrWhiteSpace(DisplayBackdropUrl)
+            ? DisplayBackdropUrl
+            : DisplayPosterUrl;
+
+        public string MetadataLine
+        {
+            get
+            {
+                var parts = new[]
+                {
+                    DisplayYear,
+                    string.IsNullOrWhiteSpace(Genres) ? CategoryName : Genres,
+                    string.IsNullOrWhiteSpace(OriginalLanguage) ? string.Empty : OriginalLanguage.ToUpperInvariant()
+                };
+
+                return string.Join(" / ", parts.Where(p => !string.IsNullOrWhiteSpace(p)));
+            }
+        }
+
+        private static string BuildTmdbImageUrl(string path, string size)
+        {
+            return string.IsNullOrWhiteSpace(path) ? string.Empty : $"https://image.tmdb.org/t/p/{size}{path}";
+        }
     }
 }

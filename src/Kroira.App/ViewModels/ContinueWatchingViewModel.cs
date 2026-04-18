@@ -95,7 +95,7 @@ namespace Kroira.App.ViewModels
                 else if (r.ContentType == PlaybackContentType.Movie && movies.TryGetValue(r.ContentId, out var mv))
                 {
                     title = mv.Title;
-                    logo = mv.PosterUrl ?? string.Empty;
+                    logo = mv.DisplayPosterUrl;
                     streamUrl = mv.StreamUrl;
                 }
                 else if (r.ContentType == PlaybackContentType.Episode && episodes.TryGetValue(r.ContentId, out var ep))
@@ -104,7 +104,7 @@ namespace Kroira.App.ViewModels
                         series.TryGetValue(season.SeriesId, out var parentSeries))
                     {
                         title = $"{parentSeries.Title} - {ep.Title}";
-                        logo = parentSeries.PosterUrl ?? string.Empty;
+                        logo = parentSeries.DisplayPosterUrl;
                     }
                     else
                     {

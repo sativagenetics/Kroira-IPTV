@@ -30,6 +30,18 @@ namespace Kroira.App.Models
 
         public string RatingText => VoteAverage > 0 ? VoteAverage.ToString("0.0") : string.Empty;
 
+        public string DisplayPosterUrl => !string.IsNullOrWhiteSpace(PosterUrl)
+            ? PosterUrl
+            : BuildTmdbImageUrl(TmdbPosterPath, "w500");
+
+        public string DisplayBackdropUrl => !string.IsNullOrWhiteSpace(BackdropUrl)
+            ? BackdropUrl
+            : BuildTmdbImageUrl(TmdbBackdropPath, "w1280");
+
+        public string DisplayHeroArtworkUrl => !string.IsNullOrWhiteSpace(DisplayBackdropUrl)
+            ? DisplayBackdropUrl
+            : DisplayPosterUrl;
+
         public string MetadataLine
         {
             get
@@ -43,6 +55,11 @@ namespace Kroira.App.Models
 
                 return string.Join(" / ", parts.Where(p => !string.IsNullOrWhiteSpace(p)));
             }
+        }
+
+        private static string BuildTmdbImageUrl(string path, string size)
+        {
+            return string.IsNullOrWhiteSpace(path) ? string.Empty : $"https://image.tmdb.org/t/p/{size}{path}";
         }
     }
 }

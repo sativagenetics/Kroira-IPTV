@@ -96,10 +96,18 @@ namespace Kroira.App.Services.Metadata
             var apiKey = await GetApiKeyAsync(db);
             if (string.IsNullOrWhiteSpace(apiKey))
             {
+                await WriteDiagnosticsAsync(db, "Movie", new TmdbDiagnostics { MissingCredential = true }, 0, 0);
                 return;
             }
 
-            var candidates = movies
+            var inputMovies = movies.ToList();
+            var inputIds = inputMovies.Where(m => m.Id > 0).Select(m => m.Id).Distinct().ToList();
+            var trackedMovies = inputIds.Count > 0
+                ? await db.Movies.Where(m => inputIds.Contains(m.Id)).ToListAsync()
+                : inputMovies;
+
+            var diagnostics = new TmdbDiagnostics();
+            var candidates = trackedMovies
                 .Where(ShouldRefresh)
                 .OrderByDescending(m => HasAnyProviderPoster(m.PosterUrl))
                 .ThenByDescending(m => m.Popularity)
@@ -111,28 +119,46 @@ namespace Kroira.App.Services.Metadata
             {
                 try
                 {
-                    var details = await MatchMovieAsync(apiKey, movie);
+                    diagnostics.Attempted++;
+                    var details = await MatchMovieAsync(apiKey, movie, diagnostics);
 
                     if (details == null)
                     {
+                        diagnostics.Missed++;
                         Debug.WriteLine($"TMDb movie miss: {movie.Id} '{movie.Title}'");
                         movie.MetadataUpdatedAt = DateTime.UtcNow;
                         continue;
                     }
 
+                    diagnostics.Matched++;
                     ApplyMovie(movie, details);
                 }
                 catch
                 {
+                    diagnostics.Errors++;
                     Debug.WriteLine($"TMDb movie error: {movie.Id} '{movie.Title}'");
                     movie.MetadataUpdatedAt = DateTime.UtcNow;
                 }
             }
 
+            var savedChanges = 0;
             if (candidates.Count > 0)
             {
-                await db.SaveChangesAsync();
+                savedChanges = await db.SaveChangesAsync();
             }
+
+            var candidateIds = candidates.Select(m => m.Id).ToList();
+            var persistedRows = candidateIds.Count == 0
+                ? 0
+                : await db.Movies.CountAsync(m =>
+                    candidateIds.Contains(m.Id) &&
+                    m.TmdbId != string.Empty &&
+                    (m.TmdbPosterPath != string.Empty ||
+                     m.TmdbBackdropPath != string.Empty ||
+                     m.Overview != string.Empty ||
+                     m.VoteAverage > 0));
+
+            await WriteDiagnosticsAsync(db, "Movie", diagnostics, persistedRows, savedChanges);
         }
 
         public async Task EnrichSeriesAsync(AppDbContext db, IEnumerable<Series> series, int maxItems = 24)
@@ -140,10 +166,18 @@ namespace Kroira.App.Services.Metadata
             var apiKey = await GetApiKeyAsync(db);
             if (string.IsNullOrWhiteSpace(apiKey))
             {
+                await WriteDiagnosticsAsync(db, "Series", new TmdbDiagnostics { MissingCredential = true }, 0, 0);
                 return;
             }
 
-            var candidates = series
+            var inputSeries = series.ToList();
+            var inputIds = inputSeries.Where(s => s.Id > 0).Select(s => s.Id).Distinct().ToList();
+            var trackedSeries = inputIds.Count > 0
+                ? await db.Series.Where(s => inputIds.Contains(s.Id)).ToListAsync()
+                : inputSeries;
+
+            var diagnostics = new TmdbDiagnostics();
+            var candidates = trackedSeries
                 .Where(ShouldRefresh)
                 .OrderByDescending(s => HasAnyProviderPoster(s.PosterUrl))
                 .ThenByDescending(s => s.Popularity)
@@ -155,45 +189,108 @@ namespace Kroira.App.Services.Metadata
             {
                 try
                 {
-                    var details = await MatchSeriesAsync(apiKey, show);
+                    diagnostics.Attempted++;
+                    var details = await MatchSeriesAsync(apiKey, show, diagnostics);
 
                     if (details == null)
                     {
+                        diagnostics.Missed++;
                         Debug.WriteLine($"TMDb series miss: {show.Id} '{show.Title}'");
                         show.MetadataUpdatedAt = DateTime.UtcNow;
                         continue;
                     }
 
+                    diagnostics.Matched++;
                     ApplySeries(show, details);
                 }
                 catch
                 {
+                    diagnostics.Errors++;
                     Debug.WriteLine($"TMDb series error: {show.Id} '{show.Title}'");
                     show.MetadataUpdatedAt = DateTime.UtcNow;
                 }
             }
 
+            var savedChanges = 0;
             if (candidates.Count > 0)
             {
-                await db.SaveChangesAsync();
+                savedChanges = await db.SaveChangesAsync();
             }
+
+            var candidateIds = candidates.Select(s => s.Id).ToList();
+            var persistedRows = candidateIds.Count == 0
+                ? 0
+                : await db.Series.CountAsync(s =>
+                    candidateIds.Contains(s.Id) &&
+                    s.TmdbId != string.Empty &&
+                    (s.TmdbPosterPath != string.Empty ||
+                     s.TmdbBackdropPath != string.Empty ||
+                     s.Overview != string.Empty ||
+                     s.VoteAverage > 0));
+
+            await WriteDiagnosticsAsync(db, "Series", diagnostics, persistedRows, savedChanges);
         }
 
         private static bool ShouldRefresh(Movie movie)
         {
-            return movie.MetadataUpdatedAt == null
+            return string.IsNullOrWhiteSpace(movie.TmdbId)
+                || string.IsNullOrWhiteSpace(movie.Overview)
+                || string.IsNullOrWhiteSpace(movie.TmdbBackdropPath)
+                || movie.VoteAverage <= 0
+                || movie.MetadataUpdatedAt == null
                 || DateTime.UtcNow - movie.MetadataUpdatedAt.Value > CacheTtl;
         }
 
         private static bool ShouldRefresh(Series series)
         {
-            return series.MetadataUpdatedAt == null
+            return string.IsNullOrWhiteSpace(series.TmdbId)
+                || string.IsNullOrWhiteSpace(series.Overview)
+                || string.IsNullOrWhiteSpace(series.TmdbBackdropPath)
+                || series.VoteAverage <= 0
+                || series.MetadataUpdatedAt == null
                 || DateTime.UtcNow - series.MetadataUpdatedAt.Value > CacheTtl;
         }
 
         private static bool HasAnyProviderPoster(string posterUrl)
         {
             return !string.IsNullOrWhiteSpace(posterUrl);
+        }
+
+        private static async Task WriteDiagnosticsAsync(AppDbContext db, string mediaType, TmdbDiagnostics diagnostics, int persistedRows, int savedChanges)
+        {
+            var prefix = $"Diagnostics.TMDb.{mediaType}.LastRun";
+            var values = new Dictionary<string, string>
+            {
+                [$"{prefix}.Utc"] = DateTime.UtcNow.ToString("O", CultureInfo.InvariantCulture),
+                [$"{prefix}.MissingCredential"] = diagnostics.MissingCredential ? "1" : "0",
+                [$"{prefix}.Attempted"] = diagnostics.Attempted.ToString(CultureInfo.InvariantCulture),
+                [$"{prefix}.Matched"] = diagnostics.Matched.ToString(CultureInfo.InvariantCulture),
+                [$"{prefix}.Missed"] = diagnostics.Missed.ToString(CultureInfo.InvariantCulture),
+                [$"{prefix}.Errors"] = diagnostics.Errors.ToString(CultureInfo.InvariantCulture),
+                [$"{prefix}.PersistedRows"] = persistedRows.ToString(CultureInfo.InvariantCulture),
+                [$"{prefix}.SavedChanges"] = savedChanges.ToString(CultureInfo.InvariantCulture),
+                [$"{prefix}.SearchRequests"] = diagnostics.SearchRequests.ToString(CultureInfo.InvariantCulture),
+                [$"{prefix}.DetailsRequests"] = diagnostics.DetailsRequests.ToString(CultureInfo.InvariantCulture),
+                [$"{prefix}.FindRequests"] = diagnostics.FindRequests.ToString(CultureInfo.InvariantCulture),
+                [$"{prefix}.ProviderTmdbIdAttempts"] = diagnostics.ProviderTmdbIdAttempts.ToString(CultureInfo.InvariantCulture),
+                [$"{prefix}.ProviderImdbIdAttempts"] = diagnostics.ProviderImdbIdAttempts.ToString(CultureInfo.InvariantCulture)
+            };
+
+            foreach (var item in values)
+            {
+                var setting = await db.AppSettings.FirstOrDefaultAsync(s => s.Key == item.Key);
+                if (setting == null)
+                {
+                    db.AppSettings.Add(new AppSetting { Key = item.Key, Value = item.Value });
+                }
+                else
+                {
+                    setting.Value = item.Value;
+                }
+            }
+
+            await db.SaveChangesAsync();
+            Debug.WriteLine($"TMDb {mediaType}: attempted={diagnostics.Attempted}, matched={diagnostics.Matched}, persisted={persistedRows}, search={diagnostics.SearchRequests}, details={diagnostics.DetailsRequests}, find={diagnostics.FindRequests}, errors={diagnostics.Errors}");
         }
 
         private async Task<string> GetApiKeyAsync(AppDbContext db)
@@ -218,12 +315,13 @@ namespace Kroira.App.Services.Metadata
                 ?? string.Empty;
         }
 
-        private async Task<TmdbDetails?> MatchMovieAsync(string apiKey, Movie movie)
+        private async Task<TmdbDetails?> MatchMovieAsync(string apiKey, Movie movie, TmdbDiagnostics diagnostics)
         {
             var providerTmdbId = NormalizeTmdbId(movie.TmdbId);
             if (!string.IsNullOrWhiteSpace(providerTmdbId))
             {
-                var details = await LoadDetailsAsync(apiKey, "movie", providerTmdbId);
+                diagnostics.ProviderTmdbIdAttempts++;
+                var details = await LoadDetailsAsync(apiKey, "movie", providerTmdbId, diagnostics);
                 if (details != null)
                 {
                     return details;
@@ -233,22 +331,24 @@ namespace Kroira.App.Services.Metadata
             var providerImdbId = NormalizeImdbId(movie.ImdbId) ?? NormalizeImdbId(movie.ExternalId);
             if (!string.IsNullOrWhiteSpace(providerImdbId))
             {
-                var details = await FindByImdbIdAsync(apiKey, "movie", providerImdbId);
+                diagnostics.ProviderImdbIdAttempts++;
+                var details = await FindByImdbIdAsync(apiKey, "movie", providerImdbId, diagnostics);
                 if (details != null)
                 {
                     return details;
                 }
             }
 
-            return await SearchAndLoadAsync(apiKey, "movie", movie.Title, movie.ReleaseDate?.Year);
+            return await SearchAndLoadAsync(apiKey, "movie", movie.Title, movie.ReleaseDate?.Year, diagnostics);
         }
 
-        private async Task<TmdbDetails?> MatchSeriesAsync(string apiKey, Series series)
+        private async Task<TmdbDetails?> MatchSeriesAsync(string apiKey, Series series, TmdbDiagnostics diagnostics)
         {
             var providerTmdbId = NormalizeTmdbId(series.TmdbId);
             if (!string.IsNullOrWhiteSpace(providerTmdbId))
             {
-                var details = await LoadDetailsAsync(apiKey, "tv", providerTmdbId);
+                diagnostics.ProviderTmdbIdAttempts++;
+                var details = await LoadDetailsAsync(apiKey, "tv", providerTmdbId, diagnostics);
                 if (details != null)
                 {
                     return details;
@@ -258,18 +358,20 @@ namespace Kroira.App.Services.Metadata
             var providerImdbId = NormalizeImdbId(series.ImdbId) ?? NormalizeImdbId(series.ExternalId);
             if (!string.IsNullOrWhiteSpace(providerImdbId))
             {
-                var details = await FindByImdbIdAsync(apiKey, "tv", providerImdbId);
+                diagnostics.ProviderImdbIdAttempts++;
+                var details = await FindByImdbIdAsync(apiKey, "tv", providerImdbId, diagnostics);
                 if (details != null)
                 {
                     return details;
                 }
             }
 
-            return await SearchAndLoadAsync(apiKey, "tv", series.Title, series.FirstAirDate?.Year);
+            return await SearchAndLoadAsync(apiKey, "tv", series.Title, series.FirstAirDate?.Year, diagnostics);
         }
 
-        private async Task<TmdbDetails?> FindByImdbIdAsync(string apiKey, string mediaType, string imdbId)
+        private async Task<TmdbDetails?> FindByImdbIdAsync(string apiKey, string mediaType, string imdbId, TmdbDiagnostics diagnostics)
         {
+            diagnostics.FindRequests++;
             var url = $"{ApiBaseUrl}/find/{Uri.EscapeDataString(imdbId)}?api_key={Uri.EscapeDataString(apiKey)}&external_source=imdb_id";
             using var doc = await GetJsonAsync(url);
             if (doc == null)
@@ -287,10 +389,10 @@ namespace Kroira.App.Services.Metadata
                 .Select(result => GetString(result, "id"))
                 .FirstOrDefault(value => !string.IsNullOrWhiteSpace(value));
 
-            return string.IsNullOrWhiteSpace(id) ? null : await LoadDetailsAsync(apiKey, mediaType, id);
+            return string.IsNullOrWhiteSpace(id) ? null : await LoadDetailsAsync(apiKey, mediaType, id, diagnostics);
         }
 
-        private async Task<TmdbDetails?> SearchAndLoadAsync(string apiKey, string mediaType, string rawTitle, int? providerYear)
+        private async Task<TmdbDetails?> SearchAndLoadAsync(string apiKey, string mediaType, string rawTitle, int? providerYear, TmdbDiagnostics diagnostics)
         {
             var queries = BuildSearchQueries(rawTitle, providerYear).ToList();
             if (queries.Count == 0)
@@ -300,13 +402,13 @@ namespace Kroira.App.Services.Metadata
 
             foreach (var query in queries)
             {
-                var bestId = await SearchBestIdAsync(apiKey, mediaType, query);
+                var bestId = await SearchBestIdAsync(apiKey, mediaType, query, diagnostics);
                 if (string.IsNullOrWhiteSpace(bestId))
                 {
                     continue;
                 }
 
-                var details = await LoadDetailsAsync(apiKey, mediaType, bestId);
+                var details = await LoadDetailsAsync(apiKey, mediaType, bestId, diagnostics);
                 if (details != null)
                 {
                     return details;
@@ -316,10 +418,11 @@ namespace Kroira.App.Services.Metadata
             return null;
         }
 
-        private async Task<string?> SearchBestIdAsync(string apiKey, string mediaType, TmdbSearchQuery query)
+        private async Task<string?> SearchBestIdAsync(string apiKey, string mediaType, TmdbSearchQuery query, TmdbDiagnostics diagnostics)
         {
             foreach (var language in new[] { "tr-TR", "en-US" })
             {
+                diagnostics.SearchRequests++;
                 var url = $"{ApiBaseUrl}/search/{mediaType}?api_key={Uri.EscapeDataString(apiKey)}&query={Uri.EscapeDataString(query.Title)}&include_adult=false&language={language}";
                 if (query.Year.HasValue)
                 {
@@ -344,13 +447,14 @@ namespace Kroira.App.Services.Metadata
             return null;
         }
 
-        private async Task<TmdbDetails?> LoadDetailsAsync(string apiKey, string mediaType, string tmdbId)
+        private async Task<TmdbDetails?> LoadDetailsAsync(string apiKey, string mediaType, string tmdbId, TmdbDiagnostics diagnostics)
         {
             if (string.IsNullOrWhiteSpace(tmdbId))
             {
                 return null;
             }
 
+            diagnostics.DetailsRequests++;
             var append = mediaType == "movie" ? "external_ids" : "external_ids";
             var url = $"{ApiBaseUrl}/{mediaType}/{Uri.EscapeDataString(tmdbId)}?api_key={Uri.EscapeDataString(apiKey)}&append_to_response={append}";
             using var doc = await GetJsonAsync(url);
@@ -797,6 +901,20 @@ namespace Kroira.App.Services.Metadata
         }
 
         private sealed record TmdbSearchQuery(string Title, int? Year, bool IsYearQualified);
+
+        private sealed class TmdbDiagnostics
+        {
+            public bool MissingCredential { get; set; }
+            public int Attempted { get; set; }
+            public int Matched { get; set; }
+            public int Missed { get; set; }
+            public int Errors { get; set; }
+            public int SearchRequests { get; set; }
+            public int DetailsRequests { get; set; }
+            public int FindRequests { get; set; }
+            public int ProviderTmdbIdAttempts { get; set; }
+            public int ProviderImdbIdAttempts { get; set; }
+        }
 
         private sealed record TmdbDetails(
             string TmdbId,
