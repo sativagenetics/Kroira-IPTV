@@ -89,8 +89,8 @@
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="74" />
                         <ColumnDefinition Width="2*" />
-                        <ColumnDefinition Width="330" />
-                        <ColumnDefinition Width="294" />
+                        <ColumnDefinition Width="300" />
+                        <ColumnDefinition Width="430" />
                     </Grid.ColumnDefinitions>
 
                     <TextBlock Text="TYPE" Style="{StaticResource KroiraLabelStyle}" />
@@ -111,8 +111,8 @@
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="74" />
                                         <ColumnDefinition Width="2*" />
-                                        <ColumnDefinition Width="330" />
-                                        <ColumnDefinition Width="294" />
+                                        <ColumnDefinition Width="300" />
+                                        <ColumnDefinition Width="430" />
                                     </Grid.ColumnDefinitions>
 
                                     <Border
@@ -203,18 +203,17 @@
                                         </StackPanel>
                                     </Grid>
 
-                                    <StackPanel Grid.Column="3" Spacing="6" VerticalAlignment="Center" HorizontalAlignment="Right">
-                                        <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Right">
-                                            <Button Content="Browse" Tag="{Binding Id}" Click="BrowseSource_Click" Visibility="{Binding BrowseVisibility}" Style="{StaticResource KroiraButtonStyle}" />
-                                            <Button Content="Import" Tag="{Binding Id}" Click="ParseSource_Click" Visibility="{Binding ParseVisibility}" Style="{StaticResource KroiraButtonStyle}" />
-                                            <Button Content="Delete" Tag="{Binding Id}" Click="DeleteSource_Click" Style="{StaticResource KroiraDangerButtonStyle}" />
-                                        </StackPanel>
-
-                                        <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Right">
-                                            <Button Content="EPG" Tag="{Binding Id}" Click="SyncEpgSource_Click" Visibility="{Binding SyncEpgVisibility}" Style="{StaticResource KroiraButtonStyle}" />
-                                            <Button Content="Live" Tag="{Binding Id}" Click="SyncXtreamSource_Click" Visibility="{Binding SyncXtreamVisibility}" Style="{StaticResource KroiraButtonStyle}" />
-                                            <Button Content="VOD" Tag="{Binding Id}" Click="SyncXtreamVodSource_Click" Visibility="{Binding SyncXtreamVisibility}" Style="{StaticResource KroiraButtonStyle}" />
-                                        </StackPanel>
+                                    <StackPanel Grid.Column="3"
+                                                Orientation="Horizontal"
+                                                Spacing="6"
+                                                VerticalAlignment="Center"
+                                                HorizontalAlignment="Right">
+                                        <Button Content="Browse" Tag="{Binding Id}" Click="BrowseSource_Click" Visibility="{Binding BrowseVisibility}" Style="{StaticResource KroiraButtonStyle}" Padding="10,7" />
+                                        <Button Content="Import" Tag="{Binding Id}" Click="ParseSource_Click" Visibility="{Binding ParseVisibility}" Style="{StaticResource KroiraButtonStyle}" Padding="10,7" />
+                                        <Button Content="EPG" Tag="{Binding Id}" Click="SyncEpgSource_Click" Visibility="{Binding SyncEpgVisibility}" Style="{StaticResource KroiraButtonStyle}" Padding="10,7" />
+                                        <Button Content="Live" Tag="{Binding Id}" Click="SyncXtreamSource_Click" Visibility="{Binding SyncXtreamVisibility}" Style="{StaticResource KroiraButtonStyle}" Padding="10,7" />
+                                        <Button Content="VOD" Tag="{Binding Id}" Click="SyncXtreamVodSource_Click" Visibility="{Binding SyncXtreamVisibility}" Style="{StaticResource KroiraButtonStyle}" Padding="10,7" />
+                                        <Button Content="Delete" Tag="{Binding Id}" Click="DeleteSource_Click" Style="{StaticResource KroiraDangerButtonStyle}" Padding="10,7" />
                                     </StackPanel>
                                 </Grid>
                             </Border>

@@ -13,8 +13,8 @@
         </Style>
     </Page.Resources>
 
-    <Grid Padding="34,26,34,32"
-          MaxWidth="1320"
+    <Grid Padding="28,26,28,32"
+          MaxWidth="1280"
           HorizontalAlignment="Center"
           RowSpacing="18">
         <Grid.RowDefinitions>
@@ -104,13 +104,15 @@
                 <GridView.ItemsPanel>
                     <ItemsPanelTemplate>
                         <ItemsWrapGrid Orientation="Horizontal"
+                                       ItemWidth="184"
+                                       ItemHeight="236"
                                        MaximumRowsOrColumns="6" />
                     </ItemsPanelTemplate>
                 </GridView.ItemsPanel>
                 <GridView.ItemTemplate>
                     <DataTemplate>
-                        <Border Width="198"
-                                Height="246"
+                        <Border Width="176"
+                                Height="226"
                                 Background="#99161B24"
                                 BorderBrush="#24FFFFFF"
                                 BorderThickness="1"
@@ -118,7 +120,7 @@
                                 Padding="10">
                             <Grid>
                                 <Grid.RowDefinitions>
-                                    <RowDefinition Height="154" />
+                                    <RowDefinition Height="138" />
                                     <RowDefinition Height="*" />
                                     <RowDefinition Height="Auto" />
                                 </Grid.RowDefinitions>

@@ -24,8 +24,8 @@
         </Style>
     </Page.Resources>
 
-    <Grid Padding="34,26,34,32"
-          MaxWidth="1460"
+    <Grid Padding="28,26,28,32"
+          MaxWidth="1280"
           HorizontalAlignment="Center"
           RowSpacing="18">
         <Grid.RowDefinitions>
@@ -88,7 +88,7 @@
         <Grid Grid.Row="2" ColumnSpacing="22">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="430" />
+                <ColumnDefinition Width="390" />
             </Grid.ColumnDefinitions>
 
             <Grid Grid.Column="0">
@@ -121,13 +121,15 @@
                     <GridView.ItemsPanel>
                         <ItemsPanelTemplate>
                             <ItemsWrapGrid Orientation="Horizontal"
+                                           ItemWidth="176"
+                                           ItemHeight="236"
                                            MaximumRowsOrColumns="4" />
                         </ItemsPanelTemplate>
                     </GridView.ItemsPanel>
                     <GridView.ItemTemplate>
                         <DataTemplate>
-                            <Border Width="198"
-                                    Height="246"
+                            <Border Width="168"
+                                    Height="226"
                                     Background="#99161B24"
                                     BorderBrush="#24FFFFFF"
                                     BorderThickness="1"
@@ -135,7 +137,7 @@
                                     Padding="10">
                                 <Grid>
                                     <Grid.RowDefinitions>
-                                        <RowDefinition Height="154" />
+                                        <RowDefinition Height="138" />
                                         <RowDefinition Height="*" />
                                         <RowDefinition Height="Auto" />
                                     </Grid.RowDefinitions>

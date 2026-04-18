@@ -55,6 +55,7 @@ namespace Kroira.App
 
                 _windowManager.FullscreenStateChanged += WindowManager_FullscreenStateChanged;
                 Debug.WriteLine("MW 12: subscribed to FullscreenStateChanged");
+                UpdatePaneHeader(true);
             }
             catch (Exception ex)
             {
@@ -98,6 +99,22 @@ namespace Kroira.App
             throw new InvalidOperationException(
                 $"Navigation to {e.SourcePageType?.FullName} failed.",
                 e.Exception);
+        }
+
+        private void RootNavView_PaneOpening(NavigationView sender, object args)
+        {
+            UpdatePaneHeader(true);
+        }
+
+        private void RootNavView_PaneClosing(NavigationView sender, NavigationViewPaneClosingEventArgs args)
+        {
+            UpdatePaneHeader(false);
+        }
+
+        private void UpdatePaneHeader(bool isOpen)
+        {
+            PaneBrandText.Visibility = isOpen ? Visibility.Visible : Visibility.Collapsed;
+            PaneHeaderRoot.Margin = isOpen ? new Thickness(16, 26, 12, 28) : new Thickness(15, 26, 0, 28);
         }
 
         private void RootNavView_ItemInvoked(NavigationView sender, NavigationViewItemInvokedEventArgs args)

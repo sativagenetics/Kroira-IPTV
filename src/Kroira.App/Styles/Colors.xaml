@@ -2,91 +2,73 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
-    <!--
-        Cinematic Noir palette.
-        Near-black base, tonal surface layers, single sky-blue accent,
-        gold reserved for highlights. No magenta, no strong purple.
-    -->
+    <!-- Premium media palette: ink canvas, smoky glass surfaces, restrained blue accent. -->
 
-    <!-- Surfaces -->
-    <SolidColorBrush x:Key="KroiraPageBackgroundBrush" Color="#0B0C10" />
-    <SolidColorBrush x:Key="KroiraSurfaceSoftBrush"    Color="#0F1116" />
-    <SolidColorBrush x:Key="KroiraSurfaceBrush"        Color="#14161C" />
-    <SolidColorBrush x:Key="KroiraSurfaceElevatedBrush" Color="#1A1D24" />
-    <SolidColorBrush x:Key="KroiraSurfaceHighBrush"     Color="#22262E" />
+    <SolidColorBrush x:Key="KroiraPageBackgroundBrush" Color="#120F1D" />
+    <SolidColorBrush x:Key="KroiraShellBackgroundBrush" Color="#0C0A15" />
+    <SolidColorBrush x:Key="KroiraGlassBrush" Color="#5A211E33" />
+    <SolidColorBrush x:Key="KroiraGlassStrongBrush" Color="#74272240" />
+    <SolidColorBrush x:Key="KroiraSurfaceSoftBrush" Color="#1A1728" />
+    <SolidColorBrush x:Key="KroiraSurfaceBrush" Color="#211D33" />
+    <SolidColorBrush x:Key="KroiraSurfaceElevatedBrush" Color="#2A2540" />
+    <SolidColorBrush x:Key="KroiraSurfaceHighBrush" Color="#352F4E" />
 
-    <!-- Borders: ghost-only, used sparingly -->
-    <SolidColorBrush x:Key="KroiraBorderBrush"       Color="#22252C" />
-    <SolidColorBrush x:Key="KroiraBorderStrongBrush" Color="#2E323B" />
-    <SolidColorBrush x:Key="KroiraGhostBorderBrush"  Color="#454851" Opacity="0.15" />
+    <SolidColorBrush x:Key="KroiraBorderBrush" Color="#3A3451" />
+    <SolidColorBrush x:Key="KroiraBorderStrongBrush" Color="#554C73" />
+    <SolidColorBrush x:Key="KroiraGhostBorderBrush" Color="#FFFFFF" Opacity="0.16" />
+    <SolidColorBrush x:Key="KroiraGlassBorderBrush" Color="#FFFFFF" Opacity="0.22" />
 
-    <!-- Text -->
-    <SolidColorBrush x:Key="KroiraTextPrimaryBrush"   Color="#E6E8EF" />
-    <SolidColorBrush x:Key="KroiraTextSecondaryBrush" Color="#A8ABB5" />
-    <SolidColorBrush x:Key="KroiraTextTertiaryBrush"  Color="#6E727C" />
+    <SolidColorBrush x:Key="KroiraTextPrimaryBrush" Color="#F4F6FA" />
+    <SolidColorBrush x:Key="KroiraTextSecondaryBrush" Color="#C5CBD5" />
+    <SolidColorBrush x:Key="KroiraTextTertiaryBrush" Color="#8B93A1" />
 
-    <!-- Single restrained accent (sky blue) -->
-    <SolidColorBrush x:Key="KroiraAccentBrush"        Color="#A7C8FF" />
-    <SolidColorBrush x:Key="KroiraAccentStrongBrush"  Color="#6FA5FF" />
-    <SolidColorBrush x:Key="KroiraAccentContainerBrush" Color="#1E2A3E" />
+    <SolidColorBrush x:Key="KroiraAccentBrush" Color="#AEBBFF" />
+    <SolidColorBrush x:Key="KroiraAccentStrongBrush" Color="#768BFF" />
+    <SolidColorBrush x:Key="KroiraAccentContainerBrush" Color="#312D59" />
+    <SolidColorBrush x:Key="KroiraGoldBrush" Color="#E8C987" />
+    <SolidColorBrush x:Key="KroiraLiveDotBrush" Color="#E85C66" />
 
-    <!-- Gold: reserved for premium / highlight only -->
-    <SolidColorBrush x:Key="KroiraGoldBrush" Color="#FFE2AF" />
+    <SolidColorBrush x:Key="KroiraStateSuccessBrush" Color="#5AC178" />
+    <SolidColorBrush x:Key="KroiraStateSuccessSoftBrush" Color="#5AC178" Opacity="0.16" />
+    <SolidColorBrush x:Key="KroiraStateWarningBrush" Color="#F3BA55" />
+    <SolidColorBrush x:Key="KroiraStateWarningSoftBrush" Color="#F3BA55" Opacity="0.16" />
+    <SolidColorBrush x:Key="KroiraStateDangerBrush" Color="#E85C66" />
+    <SolidColorBrush x:Key="KroiraStateDangerSoftBrush" Color="#E85C66" Opacity="0.16" />
+    <SolidColorBrush x:Key="KroiraStateInfoBrush" Color="#91B6FF" />
+    <SolidColorBrush x:Key="KroiraStateInfoSoftBrush" Color="#91B6FF" Opacity="0.16" />
+    <SolidColorBrush x:Key="KroiraStateNeutralBrush" Color="#AEB6C3" />
+    <SolidColorBrush x:Key="KroiraStateNeutralSoftBrush" Color="#AEB6C3" Opacity="0.10" />
 
-    <!-- Live indicator: calm, desaturated red. Only for LIVE state, never UI chrome. -->
-    <SolidColorBrush x:Key="KroiraLiveDotBrush" Color="#FF5A5F" />
+    <SolidColorBrush x:Key="KroiraMagentaBrush" Color="#8EA0E8" />
 
-    <!--
-        Operational state brushes. Use only on StatusPill, health chips,
-        inline banners, and row accents. Never on chrome, never as fills
-        larger than a pill or a 1px edge.
-    -->
-    <SolidColorBrush x:Key="KroiraStateSuccessBrush"      Color="#46A758" />
-    <SolidColorBrush x:Key="KroiraStateSuccessSoftBrush"  Color="#46A758" Opacity="0.14" />
-    <SolidColorBrush x:Key="KroiraStateWarningBrush"      Color="#F5A524" />
-    <SolidColorBrush x:Key="KroiraStateWarningSoftBrush"  Color="#F5A524" Opacity="0.14" />
-    <SolidColorBrush x:Key="KroiraStateDangerBrush"       Color="#E5484D" />
-    <SolidColorBrush x:Key="KroiraStateDangerSoftBrush"   Color="#E5484D" Opacity="0.14" />
-    <SolidColorBrush x:Key="KroiraStateInfoBrush"         Color="#6EA8FF" />
-    <SolidColorBrush x:Key="KroiraStateInfoSoftBrush"     Color="#6EA8FF" Opacity="0.14" />
-    <SolidColorBrush x:Key="KroiraStateNeutralBrush"      Color="#A8ABB5" />
-    <SolidColorBrush x:Key="KroiraStateNeutralSoftBrush"  Color="#A8ABB5" Opacity="0.10" />
+    <SolidColorBrush x:Key="KroiraControlBrush" Color="#EAF0F8" Opacity="0.08" />
+    <SolidColorBrush x:Key="KroiraControlBorderBrush" Color="#FFFFFF" Opacity="0.18" />
 
-    <!--
-        Legacy magenta key kept for binding compatibility while unrefactored
-        pages still reference it. Aliased to the muted accent so it no longer
-        reads as a competing second accent.
-    -->
-    <SolidColorBrush x:Key="KroiraMagentaBrush" Color="#7A9BD6" />
-
-    <!-- Controls -->
-    <SolidColorBrush x:Key="KroiraControlBrush"       Color="#16181F" />
-    <SolidColorBrush x:Key="KroiraControlBorderBrush" Color="#2A2D35" />
-
-    <!--
-        Atmosphere / surface gradients. Intentionally very subtle tonal
-        shifts rather than the previous saturated purple bleeds.
-    -->
     <LinearGradientBrush x:Key="KroiraPageAtmosphereBrush" StartPoint="0,0" EndPoint="1,1">
-        <GradientStop Color="#0B0C10" Offset="0" />
-        <GradientStop Color="#0D0F14" Offset="0.55" />
-        <GradientStop Color="#0B0C10" Offset="1" />
+        <GradientStop Color="#201B34" Offset="0" />
+        <GradientStop Color="#120F1D" Offset="0.52" />
+        <GradientStop Color="#0B0913" Offset="1" />
+    </LinearGradientBrush>
+
+    <LinearGradientBrush x:Key="KroiraShellGradientBrush" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#211D31" Offset="0" />
+        <GradientStop Color="#121020" Offset="0.48" />
+        <GradientStop Color="#080712" Offset="1" />
     </LinearGradientBrush>
 
     <LinearGradientBrush x:Key="KroiraSurfaceGradientBrush" StartPoint="0,0" EndPoint="0,1">
-        <GradientStop Color="#1A1D24" Offset="0" />
-        <GradientStop Color="#14161C" Offset="1" />
+        <GradientStop Color="#302A47" Offset="0" />
+        <GradientStop Color="#1B1729" Offset="1" />
     </LinearGradientBrush>
 
     <LinearGradientBrush x:Key="KroiraMediaGradientBrush" StartPoint="0,0" EndPoint="1,1">
-        <GradientStop Color="#1F242E" Offset="0" />
-        <GradientStop Color="#14161C" Offset="1" />
+        <GradientStop Color="#302A47" Offset="0" />
+        <GradientStop Color="#191525" Offset="1" />
     </LinearGradientBrush>
 
-    <!-- Primary CTA gradient (subtle accent-container -> accent-strong) -->
     <LinearGradientBrush x:Key="KroiraAccentGradientBrush" StartPoint="0,0" EndPoint="1,1">
-        <GradientStop Color="#2A3F5E" Offset="0" />
-        <GradientStop Color="#1E2A3E" Offset="1" />
+        <GradientStop Color="#5F66C5" Offset="0" />
+        <GradientStop Color="#3A376D" Offset="1" />
     </LinearGradientBrush>
 
 </ResourceDictionary>

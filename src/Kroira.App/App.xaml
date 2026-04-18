@@ -22,54 +22,54 @@
                 NavigationView theming overrides. These system keys retune
                 the built-in NavigationView without requiring a custom shell.
             -->
-            <SolidColorBrush x:Key="NavigationViewDefaultPaneBackground"       Color="#0B0C10" />
-            <SolidColorBrush x:Key="NavigationViewExpandedPaneBackground"      Color="#0B0C10" />
-            <SolidColorBrush x:Key="NavigationViewContentBackground"           Color="#0B0C10" />
-            <SolidColorBrush x:Key="NavigationViewTopPaneBackground"           Color="#0B0C10" />
-            <SolidColorBrush x:Key="NavigationViewItemForeground"              Color="#A8ABB5" />
-            <SolidColorBrush x:Key="NavigationViewItemForegroundPointerOver"   Color="#E6E8EF" />
-            <SolidColorBrush x:Key="NavigationViewItemForegroundSelected"      Color="#E6E8EF" />
-            <SolidColorBrush x:Key="NavigationViewItemForegroundSelectedPointerOver" Color="#E6E8EF" />
-            <SolidColorBrush x:Key="NavigationViewItemBackgroundPointerOver"   Color="#16181F" />
-            <SolidColorBrush x:Key="NavigationViewItemBackgroundSelected"      Color="#16181F" />
-            <SolidColorBrush x:Key="NavigationViewItemBackgroundSelectedPointerOver" Color="#1A1D24" />
-            <SolidColorBrush x:Key="NavigationViewSelectionIndicatorForeground" Color="#A7C8FF" />
+            <SolidColorBrush x:Key="NavigationViewDefaultPaneBackground"       Color="#0B111B" />
+            <SolidColorBrush x:Key="NavigationViewExpandedPaneBackground"      Color="#0B111B" />
+            <SolidColorBrush x:Key="NavigationViewContentBackground"           Color="#11161E" />
+            <SolidColorBrush x:Key="NavigationViewTopPaneBackground"           Color="#0B111B" />
+            <SolidColorBrush x:Key="NavigationViewItemForeground"              Color="#B6BECA" />
+            <SolidColorBrush x:Key="NavigationViewItemForegroundPointerOver"   Color="#F4F6FA" />
+            <SolidColorBrush x:Key="NavigationViewItemForegroundSelected"      Color="#F4F6FA" />
+            <SolidColorBrush x:Key="NavigationViewItemForegroundSelectedPointerOver" Color="#F4F6FA" />
+            <SolidColorBrush x:Key="NavigationViewItemBackgroundPointerOver"   Color="#26303F" />
+            <SolidColorBrush x:Key="NavigationViewItemBackgroundSelected"      Color="#3D4654" />
+            <SolidColorBrush x:Key="NavigationViewItemBackgroundSelectedPointerOver" Color="#465364" />
+            <SolidColorBrush x:Key="NavigationViewSelectionIndicatorForeground" Color="#AEBBFF" />
 
             <!--
                 GridViewItem / ListViewItem overrides: subtle sky-accent tint
                 on hover, pressed, and selected. No selection border.
             -->
             <SolidColorBrush x:Key="GridViewItemBackground" Color="Transparent" />
-            <SolidColorBrush x:Key="GridViewItemBackgroundPointerOver"         Color="#A7C8FF" Opacity="0.08" />
-            <SolidColorBrush x:Key="GridViewItemBackgroundPressed"             Color="#A7C8FF" Opacity="0.12" />
-            <SolidColorBrush x:Key="GridViewItemBackgroundSelected"            Color="#A7C8FF" Opacity="0.14" />
-            <SolidColorBrush x:Key="GridViewItemBackgroundSelectedPointerOver" Color="#A7C8FF" Opacity="0.18" />
-            <SolidColorBrush x:Key="GridViewItemBackgroundSelectedPressed"     Color="#A7C8FF" Opacity="0.16" />
-            <SolidColorBrush x:Key="GridViewItemForegroundPointerOver"         Color="#E6E8EF" />
-            <SolidColorBrush x:Key="GridViewItemForegroundSelected"            Color="#E6E8EF" />
-            <SolidColorBrush x:Key="GridViewItemForegroundSelectedPointerOver" Color="#E6E8EF" />
+            <SolidColorBrush x:Key="GridViewItemBackgroundPointerOver"         Color="#AEBBFF" Opacity="0.08" />
+            <SolidColorBrush x:Key="GridViewItemBackgroundPressed"             Color="#AEBBFF" Opacity="0.12" />
+            <SolidColorBrush x:Key="GridViewItemBackgroundSelected"            Color="#AEBBFF" Opacity="0.14" />
+            <SolidColorBrush x:Key="GridViewItemBackgroundSelectedPointerOver" Color="#AEBBFF" Opacity="0.18" />
+            <SolidColorBrush x:Key="GridViewItemBackgroundSelectedPressed"     Color="#AEBBFF" Opacity="0.16" />
+            <SolidColorBrush x:Key="GridViewItemForegroundPointerOver"         Color="#F4F6FA" />
+            <SolidColorBrush x:Key="GridViewItemForegroundSelected"            Color="#F4F6FA" />
+            <SolidColorBrush x:Key="GridViewItemForegroundSelectedPointerOver" Color="#F4F6FA" />
             <SolidColorBrush x:Key="GridViewItemCheckBrush"                    Color="Transparent" />
             <SolidColorBrush x:Key="GridViewItemCheckBoxBrush"                 Color="Transparent" />
             <SolidColorBrush x:Key="GridViewItemCheckBoxBorderBrush"           Color="Transparent" />
-            <SolidColorBrush x:Key="GridViewItemFocusVisualPrimaryBrush"       Color="#A7C8FF" />
-            <SolidColorBrush x:Key="GridViewItemFocusBorderBrush"              Color="#A7C8FF" />
+            <SolidColorBrush x:Key="GridViewItemFocusVisualPrimaryBrush"       Color="#AEBBFF" />
+            <SolidColorBrush x:Key="GridViewItemFocusBorderBrush"              Color="#AEBBFF" />
             <SolidColorBrush x:Key="GridViewItemFocusSecondaryBorderBrush"     Color="Transparent" />
             <Thickness x:Key="GridViewItemSelectedBorderThemeThickness">0</Thickness>
 
             <SolidColorBrush x:Key="ListViewItemBackground" Color="Transparent" />
-            <SolidColorBrush x:Key="ListViewItemBackgroundPointerOver"         Color="#A7C8FF" Opacity="0.08" />
-            <SolidColorBrush x:Key="ListViewItemBackgroundPressed"             Color="#A7C8FF" Opacity="0.12" />
-            <SolidColorBrush x:Key="ListViewItemBackgroundSelected"            Color="#A7C8FF" Opacity="0.14" />
-            <SolidColorBrush x:Key="ListViewItemBackgroundSelectedPointerOver" Color="#A7C8FF" Opacity="0.18" />
-            <SolidColorBrush x:Key="ListViewItemBackgroundSelectedPressed"     Color="#A7C8FF" Opacity="0.16" />
-            <SolidColorBrush x:Key="ListViewItemForegroundPointerOver"         Color="#E6E8EF" />
-            <SolidColorBrush x:Key="ListViewItemForegroundSelected"            Color="#E6E8EF" />
-            <SolidColorBrush x:Key="ListViewItemForegroundSelectedPointerOver" Color="#E6E8EF" />
+            <SolidColorBrush x:Key="ListViewItemBackgroundPointerOver"         Color="#AEBBFF" Opacity="0.08" />
+            <SolidColorBrush x:Key="ListViewItemBackgroundPressed"             Color="#AEBBFF" Opacity="0.12" />
+            <SolidColorBrush x:Key="ListViewItemBackgroundSelected"            Color="#AEBBFF" Opacity="0.14" />
+            <SolidColorBrush x:Key="ListViewItemBackgroundSelectedPointerOver" Color="#AEBBFF" Opacity="0.18" />
+            <SolidColorBrush x:Key="ListViewItemBackgroundSelectedPressed"     Color="#AEBBFF" Opacity="0.16" />
+            <SolidColorBrush x:Key="ListViewItemForegroundPointerOver"         Color="#F4F6FA" />
+            <SolidColorBrush x:Key="ListViewItemForegroundSelected"            Color="#F4F6FA" />
+            <SolidColorBrush x:Key="ListViewItemForegroundSelectedPointerOver" Color="#F4F6FA" />
             <SolidColorBrush x:Key="ListViewItemCheckBrush"                    Color="Transparent" />
             <SolidColorBrush x:Key="ListViewItemCheckBoxBrush"                 Color="Transparent" />
             <SolidColorBrush x:Key="ListViewItemCheckBoxBorderBrush"           Color="Transparent" />
-            <SolidColorBrush x:Key="ListViewItemFocusVisualPrimaryBrush"       Color="#A7C8FF" />
-            <SolidColorBrush x:Key="ListViewItemFocusBorderBrush"              Color="#A7C8FF" />
+            <SolidColorBrush x:Key="ListViewItemFocusVisualPrimaryBrush"       Color="#AEBBFF" />
+            <SolidColorBrush x:Key="ListViewItemFocusBorderBrush"              Color="#AEBBFF" />
             <SolidColorBrush x:Key="ListViewItemFocusSecondaryBorderBrush"     Color="Transparent" />
             <Thickness x:Key="ListViewItemSelectedBorderThemeThickness">0</Thickness>
 
