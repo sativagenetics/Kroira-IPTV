@@ -35,8 +35,7 @@ namespace Kroira.App.Data
         {
             if (!optionsBuilder.IsConfigured)
             {
-                string dbPath = System.IO.Path.Combine(System.Environment.GetFolderPath(System.Environment.SpecialFolder.LocalApplicationData), "Kroira", "kroira.db");
-                optionsBuilder.UseSqlite($"Data Source={dbPath}");
+                optionsBuilder.UseSqlite($"Data Source={DatabaseBootstrapper.RuntimeDatabasePath}");
             }
         }
 
@@ -74,6 +73,18 @@ namespace Kroira.App.Data
 
             modelBuilder.Entity<PlaybackProgress>()
                 .HasIndex(p => new { p.ContentType, p.ContentId });
+
+            modelBuilder.Entity<Movie>()
+                .HasIndex(m => m.TmdbId);
+
+            modelBuilder.Entity<Movie>()
+                .HasIndex(m => m.MetadataUpdatedAt);
+
+            modelBuilder.Entity<Series>()
+                .HasIndex(s => s.TmdbId);
+
+            modelBuilder.Entity<Series>()
+                .HasIndex(s => s.MetadataUpdatedAt);
 
             modelBuilder.Entity<SchemaVersion>()
                 .HasData(new SchemaVersion

@@ -216,9 +216,6 @@ namespace Kroira.App.Services.Parsing
                         }
                     }
                 }
-                var seriesCategoryLabels = ContentClassifier.BuildCategoryLabelSet(sd.Values);
-                var allVodCategoryLabels = ContentClassifier.BuildCategoryLabelSet(md.Values.Concat(sd.Values));
-
                 var moviesJson = await client.GetStringAsync($"{baseUrl}/player_api.php{authQuery}&action=get_vod_streams");
                 if (string.IsNullOrWhiteSpace(moviesJson)) moviesJson = "[]";
                 using var moviesDoc = JsonDocument.Parse(moviesJson);
@@ -236,17 +233,13 @@ namespace Kroira.App.Services.Parsing
                         var ext = (element.TryGetProperty("container_extension", out var exProp) ? exProp.GetString() : null) ?? "mp4";
                         var name = element.TryGetProperty("name", out var nProp) ? nProp.GetString() : "Unknown";
                         var logo = element.TryGetProperty("stream_icon", out var lProp) ? lProp.GetString() : string.Empty;
+                        var tmdbId = GetJsonString(element, "tmdb") ?? GetJsonString(element, "tmdb_id");
 
                         md.TryGetValue(catId ?? "", out var mappedCatName);
 
-                        // --- Garbage filter ---
                         if (ContentClassifier.IsGarbageMovieExtension(ext)) continue;
                         if (ContentClassifier.IsGarbageCategoryName(mappedCatName)) continue;
-                        if (!ContentClassifier.IsPlayableXtreamMovie(
-                                name ?? string.Empty,
-                                $"{baseUrl}/movie/{cred.Username}/{cred.Password}/{streamId}.{ext}",
-                                allVodCategoryLabels)) continue;
-                        // ----------------------
+                        if (ContentClassifier.IsGarbageTitle(name ?? string.Empty)) continue;
 
                         parsedMovies.Add(new Movie
                         {
@@ -255,6 +248,7 @@ namespace Kroira.App.Services.Parsing
                             Title = string.IsNullOrWhiteSpace(name) ? "Unknown Movie" : name,
                             StreamUrl = $"{baseUrl}/movie/{cred.Username}/{cred.Password}/{streamId}.{ext}",
                             PosterUrl = logo ?? string.Empty,
+                            TmdbId = tmdbId ?? string.Empty,
                             CategoryName = mappedCatName ?? "Uncategorized"
                         });
                     }
@@ -276,13 +270,12 @@ namespace Kroira.App.Services.Parsing
 
                         var name = element.TryGetProperty("name", out var nProp) ? nProp.GetString() : "Unknown";
                         var cover = element.TryGetProperty("cover", out var lProp) ? lProp.GetString() : string.Empty;
+                        var tmdbId = GetJsonString(element, "tmdb") ?? GetJsonString(element, "tmdb_id");
 
                         sd.TryGetValue(catId ?? "", out var mappedCatName);
 
-                        // --- Garbage filter ---
                         if (ContentClassifier.IsGarbageCategoryName(mappedCatName)) continue;
-                        if (!ContentClassifier.IsBrowsableXtreamSeries(name ?? string.Empty, allVodCategoryLabels)) continue;
-                        // ----------------------
+                        if (ContentClassifier.IsGarbageTitle(name ?? string.Empty)) continue;
 
                         pendingSeries.Add((seriesId, new Series
                         {
@@ -290,6 +283,7 @@ namespace Kroira.App.Services.Parsing
                             ExternalId = seriesId,
                             Title = string.IsNullOrWhiteSpace(name) ? "Unknown Series" : name,
                             PosterUrl = cover ?? string.Empty,
+                            TmdbId = tmdbId ?? string.Empty,
                             CategoryName = mappedCatName ?? "Uncategorized",
                             Seasons = new List<Season>()
                         }));
@@ -378,7 +372,13 @@ namespace Kroira.App.Services.Parsing
                             // UPDATE in place — Id stays the same, favorites/progress survive
                             existing.Title = incoming.Title;
                             existing.StreamUrl = incoming.StreamUrl;
-                            existing.PosterUrl = incoming.PosterUrl;
+                            existing.PosterUrl = string.IsNullOrWhiteSpace(existing.TmdbPosterPath)
+                                ? incoming.PosterUrl
+                                : existing.PosterUrl;
+                            if (string.IsNullOrWhiteSpace(existing.TmdbId) && !string.IsNullOrWhiteSpace(incoming.TmdbId))
+                            {
+                                existing.TmdbId = incoming.TmdbId;
+                            }
                             existing.CategoryName = incoming.CategoryName;
                             movUpdated++;
                         }
@@ -436,7 +436,13 @@ namespace Kroira.App.Services.Parsing
                         {
                             // UPDATE metadata in place — Series.Id stays the same
                             existingSer.Title = sInfo.BaseObj.Title;
-                            existingSer.PosterUrl = sInfo.BaseObj.PosterUrl;
+                            existingSer.PosterUrl = string.IsNullOrWhiteSpace(existingSer.TmdbPosterPath)
+                                ? sInfo.BaseObj.PosterUrl
+                                : existingSer.PosterUrl;
+                            if (string.IsNullOrWhiteSpace(existingSer.TmdbId) && !string.IsNullOrWhiteSpace(sInfo.BaseObj.TmdbId))
+                            {
+                                existingSer.TmdbId = sInfo.BaseObj.TmdbId;
+                            }
                             existingSer.CategoryName = sInfo.BaseObj.CategoryName;
 
                             // Upsert seasons and episodes instead of rebuild-from-scratch
@@ -603,6 +609,21 @@ namespace Kroira.App.Services.Parsing
                 }
                 throw;
             }
+        }
+
+        private static string GetJsonString(JsonElement element, string propertyName)
+        {
+            if (!element.TryGetProperty(propertyName, out var property))
+            {
+                return string.Empty;
+            }
+
+            return property.ValueKind switch
+            {
+                JsonValueKind.String => property.GetString() ?? string.Empty,
+                JsonValueKind.Number => property.GetRawText(),
+                _ => string.Empty
+            };
         }
 
     }

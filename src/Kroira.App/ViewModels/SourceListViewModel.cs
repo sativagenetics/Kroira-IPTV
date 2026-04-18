@@ -221,6 +221,7 @@ namespace Kroira.App.ViewModels
                 var parser = scope.ServiceProvider.GetRequiredService<Kroira.App.Services.Parsing.IXtreamParserService>();
 
                 await parser.ParseAndImportXtreamAsync(db, id);
+                await parser.ParseAndImportXtreamVodAsync(db, id);
                 await LoadSourcesAsync();
             }
             catch (Exception ex)

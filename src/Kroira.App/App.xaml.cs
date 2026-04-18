@@ -4,6 +4,7 @@ using System.IO;
 using System.Threading.Tasks;
 using Kroira.App.Data;
 using Kroira.App.Services;
+using Kroira.App.Services.Metadata;
 using Kroira.App.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
@@ -65,6 +66,7 @@ namespace Kroira.App
                     DatabaseBootstrapper.Initialize(dbContext);
                 }
                 SafeAppendLog("APP 08: after database bootstrap");
+                StartMetadataBackfill();
 
                 SafeAppendLog("APP 09: before MainWindow ctor");
                 _window = new MainWindow();
@@ -90,6 +92,33 @@ namespace Kroira.App
                 SafeLogException("APP ONLAUNCHED EXCEPTION", ex);
                 ShowStartupErrorWindow(ex);
             }
+        }
+
+        private void StartMetadataBackfill()
+        {
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    SafeAppendLog("APP TMDB 01: metadata backfill starting");
+                    using var scope = Services.CreateScope();
+                    var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                    var tmdb = scope.ServiceProvider.GetRequiredService<ITmdbMetadataService>();
+
+                    if (!await tmdb.HasCredentialAsync(dbContext))
+                    {
+                        SafeAppendLog("APP TMDB 02: metadata backfill skipped; no TMDb credential");
+                        return;
+                    }
+
+                    await tmdb.BackfillMissingMetadataAsync(dbContext, maxMovies: 240, maxSeries: 160);
+                    SafeAppendLog("APP TMDB 03: metadata backfill completed");
+                }
+                catch (Exception ex)
+                {
+                    SafeLogException("APP TMDB BACKFILL ERROR", ex);
+                }
+            });
         }
 
         private void RegisterGlobalExceptionHandlers()
@@ -155,6 +184,7 @@ namespace Kroira.App
             services.AddSingleton<IEntitlementService, MockEntitlementService>();
             services.AddSingleton<IWindowManagerService, WindowManagerService>();
             services.AddSingleton<IInputInterceptorService, InputInterceptorService>();
+            services.AddSingleton<ITmdbMetadataService, TmdbMetadataService>();
             services.AddSingleton<Kroira.App.Services.Parsing.IM3uParserService, Kroira.App.Services.Parsing.M3uParserService>();
             services.AddSingleton<Kroira.App.Services.Parsing.IXmltvParserService, Kroira.App.Services.Parsing.XmltvParserService>();
             services.AddSingleton<Kroira.App.Services.Parsing.IXtreamParserService, Kroira.App.Services.Parsing.XtreamParserService>();

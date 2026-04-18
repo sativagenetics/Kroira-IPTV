@@ -9,6 +9,7 @@ using CommunityToolkit.Mvvm.Input;
 using Kroira.App.Data;
 using Kroira.App.Models;
 using Kroira.App.Services;
+using Kroira.App.Services.Metadata;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -31,6 +32,14 @@ namespace Kroira.App.ViewModels
         [ObservableProperty]
         private bool _isEmpty;
 
+        [ObservableProperty]
+        private Movie _featuredMovie = new Movie
+        {
+            Title = "Movies",
+            Overview = "Sync an Xtream VOD source to build a poster-first library with TMDb artwork, ratings, genres, and backdrops.",
+            CategoryName = "VOD library"
+        };
+
         partial void OnSearchQueryChanged(string value)
         {
             ApplyFilter();
@@ -52,21 +61,10 @@ namespace Kroira.App.ViewModels
             using var scope = _serviceProvider.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             var languageCode = await AppLanguageService.GetLanguageAsync(db);
-            var rawMovies = await db.Movies
-                .Where(m => m.StreamUrl != null && m.StreamUrl != "")
-                .ToListAsync();
-
-            var categoryLabels = rawMovies
-                .Select(m => m.CategoryName)
-                .Where(c => !string.IsNullOrWhiteSpace(c))
-                .Select(ContentClassifier.NormalizeLabel)
-                .ToHashSet(StringComparer.OrdinalIgnoreCase);
-
-            var cleanMovies = rawMovies
-                .Where(m => ContentClassifier.IsPlayableXtreamMovie(m.Title, m.StreamUrl, categoryLabels));
+            var rawMovies = await db.Movies.ToListAsync();
 
             _allMovies = CatalogOrderingService
-                .OrderCatalog(cleanMovies, languageCode, m => m.CategoryName, m => m.Title)
+                .OrderCatalog(rawMovies, languageCode, m => m.CategoryName, m => m.Title)
                 .ToList();
 
             Categories.Clear();
@@ -92,6 +90,7 @@ namespace Kroira.App.ViewModels
 
             SelectedCategory = Categories.FirstOrDefault();
             ApplyFilter();
+            StartMetadataEnrichment();
         }
 
         private void ApplyFilter()
@@ -116,11 +115,47 @@ namespace Kroira.App.ViewModels
             }
 
             IsEmpty = FilteredMovies.Count == 0;
+            FeaturedMovie = SelectFeaturedMovie(FilteredMovies);
         }
 
         private static string GetDisplayCategory(string categoryName)
         {
             return string.IsNullOrWhiteSpace(categoryName) ? "Uncategorized" : categoryName.Trim();
+        }
+
+        private static Movie SelectFeaturedMovie(IEnumerable<Movie> movies)
+        {
+            var featured = movies
+                .Where(m => !string.IsNullOrWhiteSpace(m.BackdropUrl) || !string.IsNullOrWhiteSpace(m.PosterUrl))
+                .OrderByDescending(m => !string.IsNullOrWhiteSpace(m.BackdropUrl))
+                .ThenByDescending(m => m.Popularity)
+                .ThenByDescending(m => m.VoteAverage)
+                .FirstOrDefault();
+
+            return featured ?? new Movie
+            {
+                Title = "Movies",
+                Overview = "Sync an Xtream VOD source to build a poster-first library with TMDb artwork, ratings, genres, and backdrops.",
+                CategoryName = "VOD library"
+            };
+        }
+
+        private void StartMetadataEnrichment()
+        {
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    using var scope = _serviceProvider.CreateScope();
+                    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                    var metadataService = scope.ServiceProvider.GetRequiredService<ITmdbMetadataService>();
+                    var movies = await db.Movies.Take(36).ToListAsync();
+                    await metadataService.EnrichMoviesAsync(db, movies, 36);
+                }
+                catch
+                {
+                }
+            });
         }
     }
 }

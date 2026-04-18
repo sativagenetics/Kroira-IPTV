@@ -33,6 +33,29 @@ namespace Kroira.App.Views
             Frame.Navigate(typeof(ContinueWatchingPage));
         }
 
+        private void FeaturedPrimary_Click(object sender, RoutedEventArgs e)
+        {
+            var item = ViewModel.FeaturedItem;
+            if (item == null)
+            {
+                return;
+            }
+
+            if (!string.IsNullOrWhiteSpace(item.StreamUrl))
+            {
+                Frame.Navigate(typeof(EmbeddedPlaybackPage), new PlaybackLaunchContext
+                {
+                    ContentId = item.ContentId,
+                    ContentType = item.ContentType,
+                    StreamUrl = item.StreamUrl,
+                    StartPositionMs = 0
+                });
+                return;
+            }
+
+            NavigateToTarget(item.Target);
+        }
+
         private void QuickAction_Click(object sender, RoutedEventArgs e)
         {
             if (GetTemplateItem<HomeActionItem>(sender) is { } item)
@@ -47,6 +70,28 @@ namespace Kroira.App.Views
             {
                 OpenContinueItem(item);
             }
+        }
+
+        private void MediaItem_Click(object sender, RoutedEventArgs e)
+        {
+            if (GetTemplateItem<HomeMediaItem>(sender) is not { } item)
+            {
+                return;
+            }
+
+            if (!string.IsNullOrWhiteSpace(item.StreamUrl))
+            {
+                Frame.Navigate(typeof(EmbeddedPlaybackPage), new PlaybackLaunchContext
+                {
+                    ContentId = item.ContentId,
+                    ContentType = item.ContentType,
+                    StreamUrl = item.StreamUrl,
+                    StartPositionMs = 0
+                });
+                return;
+            }
+
+            NavigateToTarget(item.Target);
         }
 
         private void OpenContinueItem(HomeContinueItem item)
@@ -102,6 +147,11 @@ namespace Kroira.App.Views
         private void LiveTv_Click(object sender, RoutedEventArgs e)
         {
             Frame.Navigate(typeof(ChannelsPage));
+        }
+
+        private void Movies_Click(object sender, RoutedEventArgs e)
+        {
+            Frame.Navigate(typeof(MoviesPage));
         }
 
         private void NavigateToTarget(string target)

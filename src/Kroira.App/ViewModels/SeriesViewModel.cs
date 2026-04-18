@@ -11,6 +11,7 @@ using CommunityToolkit.Mvvm.Input;
 using Kroira.App.Data;
 using Kroira.App.Models;
 using Kroira.App.Services;
+using Kroira.App.Services.Metadata;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
@@ -96,17 +97,8 @@ namespace Kroira.App.ViewModels
                 .ThenInclude(sn => sn.Episodes)
                 .ToListAsync();
 
-            var categoryLabels = rawSeries
-                .Select(s => s.CategoryName)
-                .Where(c => !string.IsNullOrWhiteSpace(c))
-                .Select(ContentClassifier.NormalizeLabel)
-                .ToHashSet(StringComparer.OrdinalIgnoreCase);
-
-            var cleanSeries = rawSeries
-                .Where(s => ContentClassifier.IsBrowsableXtreamSeries(s.Title, categoryLabels));
-
             _allSeries = CatalogOrderingService
-                .OrderCatalog(cleanSeries, languageCode, s => s.CategoryName, s => s.Title)
+                .OrderCatalog(rawSeries, languageCode, s => s.CategoryName, s => s.Title)
                 .ToList();
 
             foreach (var s in _allSeries)
@@ -147,6 +139,7 @@ namespace Kroira.App.ViewModels
 
             SelectedCategory = Categories.FirstOrDefault();
             ApplyFilter();
+            StartMetadataEnrichment();
         }
 
         private void ApplyFilter()
@@ -176,6 +169,24 @@ namespace Kroira.App.ViewModels
         private static string GetDisplayCategory(string categoryName)
         {
             return string.IsNullOrWhiteSpace(categoryName) ? "Uncategorized" : categoryName.Trim();
+        }
+
+        private void StartMetadataEnrichment()
+        {
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    using var scope = _serviceProvider.CreateScope();
+                    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                    var metadataService = scope.ServiceProvider.GetRequiredService<ITmdbMetadataService>();
+                    var series = await db.Series.Take(28).ToListAsync();
+                    await metadataService.EnrichSeriesAsync(db, series, 28);
+                }
+                catch
+                {
+                }
+            });
         }
 
         private async Task EnsureSeriesDetailsAsync(Series series)
