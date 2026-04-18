@@ -46,12 +46,39 @@ namespace Kroira.App.ViewModels
         public string FavoriteLabel => IsFavorite ? "Saved" : "Save";
     }
 
+    public partial class SeriesBrowseSlotViewModel : ObservableObject
+    {
+        public SeriesBrowseSlotViewModel(SeriesBrowseItemViewModel? series)
+        {
+            Series = series;
+        }
+
+        public SeriesBrowseItemViewModel? Series { get; }
+        public bool HasSeries => Series != null;
+        public int Id => Series?.Id ?? 0;
+        public string Title => Series?.Title ?? string.Empty;
+        public string DisplayPosterUrl => Series?.DisplayPosterUrl ?? string.Empty;
+        public string CategoryName => Series?.CategoryName ?? string.Empty;
+        public string FavoriteGlyph => Series?.FavoriteGlyph ?? "\uE734";
+        public string FavoriteLabel => Series?.FavoriteLabel ?? string.Empty;
+        public Visibility SeriesVisibility => HasSeries ? Visibility.Visible : Visibility.Collapsed;
+        public Visibility PlaceholderVisibility => HasSeries ? Visibility.Collapsed : Visibility.Visible;
+
+        public void RefreshFavoriteState()
+        {
+            OnPropertyChanged(nameof(FavoriteGlyph));
+            OnPropertyChanged(nameof(FavoriteLabel));
+        }
+    }
+
     public partial class SeriesViewModel : ObservableObject
     {
+        private const int BrowseGridColumns = 3;
         private readonly IServiceProvider _serviceProvider;
         private List<SeriesBrowseItemViewModel> _allSeries = new List<SeriesBrowseItemViewModel>();
 
         public ObservableCollection<SeriesBrowseItemViewModel> FilteredSeries { get; } = new ObservableCollection<SeriesBrowseItemViewModel>();
+        public ObservableCollection<SeriesBrowseSlotViewModel> DisplaySeriesSlots { get; } = new ObservableCollection<SeriesBrowseSlotViewModel>();
         public ObservableCollection<BrowserCategoryViewModel> Categories { get; } = new ObservableCollection<BrowserCategoryViewModel>();
 
         [ObservableProperty]
@@ -96,7 +123,6 @@ namespace Kroira.App.ViewModels
 
         partial void OnSelectedCategoryChanged(BrowserCategoryViewModel? value)
         {
-            SelectedSeries = null;
             ApplyFilter();
         }
 
@@ -208,6 +234,7 @@ namespace Kroira.App.ViewModels
             }
 
             IsEmpty = FilteredSeries.Count == 0;
+            RefreshDisplaySeriesSlots();
         }
 
         [RelayCommand]
@@ -236,11 +263,46 @@ namespace Kroira.App.ViewModels
             }
 
             await db.SaveChangesAsync();
+
+            foreach (var slot in DisplaySeriesSlots.Where(slot => slot.Series?.Id == seriesId))
+            {
+                slot.RefreshFavoriteState();
+            }
         }
 
         private static string GetDisplayCategory(string categoryName)
         {
             return string.IsNullOrWhiteSpace(categoryName) ? "Uncategorized" : categoryName.Trim();
+        }
+
+        public void SelectSeriesFromSlot(SeriesBrowseSlotViewModel slot)
+        {
+            if (slot.HasSeries && slot.Series != null)
+            {
+                SelectedSeries = slot.Series;
+            }
+        }
+
+        private void RefreshDisplaySeriesSlots()
+        {
+            DisplaySeriesSlots.Clear();
+
+            foreach (var show in FilteredSeries)
+            {
+                DisplaySeriesSlots.Add(new SeriesBrowseSlotViewModel(show));
+            }
+
+            if (FilteredSeries.Count == 0)
+            {
+                return;
+            }
+
+            var remainder = FilteredSeries.Count % BrowseGridColumns;
+            var placeholderCount = remainder == 0 ? 0 : BrowseGridColumns - remainder;
+            for (var i = 0; i < placeholderCount; i++)
+            {
+                DisplaySeriesSlots.Add(new SeriesBrowseSlotViewModel(null));
+            }
         }
 
         private void StartMetadataEnrichment()

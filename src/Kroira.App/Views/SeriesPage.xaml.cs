@@ -62,6 +62,16 @@ namespace Kroira.App.Views
             ((ListView)sender).SelectedItem = null;
         }
 
+        private void SeriesGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (e.AddedItems.Count > 0 && e.AddedItems[0] is SeriesBrowseSlotViewModel slot)
+            {
+                ViewModel.SelectSeriesFromSlot(slot);
+            }
+
+            ((GridView)sender).SelectedItem = null;
+        }
+
         private void PlaySelectedEpisode_Click(object sender, RoutedEventArgs e)
         {
             if (ViewModel.SelectedEpisode != null)

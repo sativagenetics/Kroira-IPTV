@@ -40,26 +40,54 @@ namespace Kroira.App.Views
             ((ListView)sender).SelectedItem = null;
         }
 
-        private void FeaturedChannel_Click(object sender, RoutedEventArgs e)
+        private void MovieList_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            var channel = ViewModel.FeaturedChannel;
-            if (channel != null && !string.IsNullOrWhiteSpace(channel.StreamUrl))
+            if (e.AddedItems.Count > 0 && e.AddedItems[0] is FavoriteMovieViewModel movie)
             {
-                this.Frame.Navigate(typeof(EmbeddedPlaybackPage), new Kroira.App.Models.PlaybackLaunchContext
+                if (!string.IsNullOrWhiteSpace(movie.StreamUrl))
                 {
-                    ContentId = channel.Id,
-                    ContentType = Kroira.App.Models.PlaybackContentType.Channel,
-                    StreamUrl = channel.StreamUrl,
-                    StartPositionMs = 0
-                });
+                    this.Frame.Navigate(typeof(EmbeddedPlaybackPage), new Kroira.App.Models.PlaybackLaunchContext
+                    {
+                        ContentId = movie.Id,
+                        ContentType = Kroira.App.Models.PlaybackContentType.Movie,
+                        StreamUrl = movie.StreamUrl,
+                        StartPositionMs = 0
+                    });
+                }
             }
+            ((ListView)sender).SelectedItem = null;
         }
 
-        private void RemoveFavorite_Click(object sender, RoutedEventArgs e)
+        private void SeriesList_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (e.AddedItems.Count > 0 && e.AddedItems[0] is FavoriteSeriesViewModel)
+            {
+                this.Frame.Navigate(typeof(SeriesPage));
+            }
+            ((ListView)sender).SelectedItem = null;
+        }
+
+        private void RemoveChannelFavorite_Click(object sender, RoutedEventArgs e)
         {
             if (sender is Button btn && btn.Tag is int id)
             {
                 ViewModel.ToggleFavoriteCommand.Execute(id);
+            }
+        }
+
+        private void RemoveMovieFavorite_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.Tag is int id)
+            {
+                ViewModel.RemoveMovieFavoriteCommand.Execute(id);
+            }
+        }
+
+        private void RemoveSeriesFavorite_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.Tag is int id)
+            {
+                ViewModel.RemoveSeriesFavoriteCommand.Execute(id);
             }
         }
     }

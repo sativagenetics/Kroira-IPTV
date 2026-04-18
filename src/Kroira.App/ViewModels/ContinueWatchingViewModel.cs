@@ -34,14 +34,29 @@ namespace Kroira.App.ViewModels
         private readonly IServiceProvider _serviceProvider;
 
         public ObservableCollection<ProgressItemViewModel> ProgressItems { get; } = new();
+        public ObservableCollection<ProgressItemViewModel> LiveProgressItems { get; } = new();
+        public ObservableCollection<ProgressItemViewModel> MovieProgressItems { get; } = new();
+        public ObservableCollection<ProgressItemViewModel> SeriesProgressItems { get; } = new();
 
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(EmptyVisibility))]
         [NotifyPropertyChangedFor(nameof(ContentVisibility))]
+        [NotifyPropertyChangedFor(nameof(LiveCountText))]
+        [NotifyPropertyChangedFor(nameof(MovieCountText))]
+        [NotifyPropertyChangedFor(nameof(SeriesCountText))]
+        [NotifyPropertyChangedFor(nameof(LiveEmptyVisibility))]
+        [NotifyPropertyChangedFor(nameof(MovieEmptyVisibility))]
+        [NotifyPropertyChangedFor(nameof(SeriesEmptyVisibility))]
         private bool _isEmpty = true;
 
         public Visibility EmptyVisibility => IsEmpty ? Visibility.Visible : Visibility.Collapsed;
         public Visibility ContentVisibility => IsEmpty ? Visibility.Collapsed : Visibility.Visible;
+        public string LiveCountText => LiveProgressItems.Count == 1 ? "1 live item" : $"{LiveProgressItems.Count} live items";
+        public string MovieCountText => MovieProgressItems.Count == 1 ? "1 movie" : $"{MovieProgressItems.Count} movies";
+        public string SeriesCountText => SeriesProgressItems.Count == 1 ? "1 episode" : $"{SeriesProgressItems.Count} episodes";
+        public Visibility LiveEmptyVisibility => LiveProgressItems.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+        public Visibility MovieEmptyVisibility => MovieProgressItems.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+        public Visibility SeriesEmptyVisibility => SeriesProgressItems.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
 
         public ContinueWatchingViewModel(IServiceProvider serviceProvider)
         {
@@ -52,6 +67,9 @@ namespace Kroira.App.ViewModels
         public async Task LoadProgressAsync()
         {
             ProgressItems.Clear();
+            LiveProgressItems.Clear();
+            MovieProgressItems.Clear();
+            SeriesProgressItems.Clear();
             using var scope = _serviceProvider.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
@@ -63,6 +81,7 @@ namespace Kroira.App.ViewModels
             if (recs.Count == 0)
             {
                 IsEmpty = true;
+                NotifyCountsChanged();
                 return;
             }
 
@@ -135,7 +154,7 @@ namespace Kroira.App.ViewModels
                     ? string.Empty
                     : $"Saved {r.LastWatched.ToLocalTime():MMM d, HH:mm}";
 
-                ProgressItems.Add(new ProgressItemViewModel
+                var item = new ProgressItemViewModel
                 {
                     Id = r.Id,
                     ContentId = r.ContentId,
@@ -149,10 +168,25 @@ namespace Kroira.App.ViewModels
                     ResumeContextText = contextText,
                     LastWatchedText = lastWatched,
                     SavedPositionMs = r.PositionMs
-                });
+                };
+
+                ProgressItems.Add(item);
+                switch (item.ContentType)
+                {
+                    case PlaybackContentType.Channel:
+                        LiveProgressItems.Add(item);
+                        break;
+                    case PlaybackContentType.Movie:
+                        MovieProgressItems.Add(item);
+                        break;
+                    case PlaybackContentType.Episode:
+                        SeriesProgressItems.Add(item);
+                        break;
+                }
             }
 
             IsEmpty = ProgressItems.Count == 0;
+            NotifyCountsChanged();
         }
 
         [RelayCommand]
@@ -166,9 +200,26 @@ namespace Kroira.App.ViewModels
                 db.PlaybackProgresses.Remove(r);
                 await db.SaveChangesAsync();
                 var vm = ProgressItems.FirstOrDefault(x => x.Id == progressId);
-                if (vm != null) ProgressItems.Remove(vm);
+                if (vm != null)
+                {
+                    ProgressItems.Remove(vm);
+                    LiveProgressItems.Remove(vm);
+                    MovieProgressItems.Remove(vm);
+                    SeriesProgressItems.Remove(vm);
+                }
                 IsEmpty = ProgressItems.Count == 0;
+                NotifyCountsChanged();
             }
+        }
+
+        private void NotifyCountsChanged()
+        {
+            OnPropertyChanged(nameof(LiveCountText));
+            OnPropertyChanged(nameof(MovieCountText));
+            OnPropertyChanged(nameof(SeriesCountText));
+            OnPropertyChanged(nameof(LiveEmptyVisibility));
+            OnPropertyChanged(nameof(MovieEmptyVisibility));
+            OnPropertyChanged(nameof(SeriesEmptyVisibility));
         }
     }
 }
