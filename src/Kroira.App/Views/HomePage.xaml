@@ -19,10 +19,15 @@
         </Style>
 
         <DataTemplate x:Key="SummaryStatTemplate">
-            <Border MinWidth="126" Padding="0,0,18,0">
-                <StackPanel Spacing="2">
+            <Border MinWidth="118"
+                    Padding="14,10"
+                    Background="#7A090B0F"
+                    BorderBrush="#18FFFFFF"
+                    BorderThickness="1"
+                    CornerRadius="10">
+                <StackPanel Spacing="1">
                     <TextBlock Text="{Binding Value}"
-                               FontSize="21"
+                               FontSize="20"
                                FontWeight="SemiBold"
                                Foreground="{StaticResource KroiraTextPrimaryBrush}" />
                     <TextBlock Text="{Binding Label}"
@@ -35,8 +40,8 @@
         <DataTemplate x:Key="ContinueItemCardTemplate">
             <Button Click="ContinueItem_Click"
                     Style="{StaticResource HomeCardButtonStyle}">
-                <Border Width="342"
-                        Height="214"
+                <Border Width="372"
+                        Height="218"
                         BorderBrush="{StaticResource KroiraGlassBorderBrush}"
                         BorderThickness="1"
                         CornerRadius="12">
@@ -56,9 +61,9 @@
                             </Border.Background>
                         </Border>
 
-                        <Grid Padding="14" ColumnSpacing="14">
+                        <Grid Padding="16" ColumnSpacing="15">
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="106" />
+                                <ColumnDefinition Width="112" />
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
                             <Grid.RowDefinitions>
@@ -66,8 +71,8 @@
                                 <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
 
-                            <Border Width="106"
-                                    Height="150"
+                            <Border Width="112"
+                                    Height="158"
                                     CornerRadius="9"
                                     Background="{StaticResource KroiraPosterPlaceholderBrush}"
                                     BorderBrush="{StaticResource KroiraGlassBorderBrush}"
@@ -105,7 +110,8 @@
                                 <TextBlock Text="{Binding Overview}"
                                            Style="{StaticResource KroiraBodyStyle}"
                                            FontSize="12"
-                                           MaxLines="3"
+                                           LineHeight="17"
+                                           MaxLines="2"
                                            TextTrimming="CharacterEllipsis" />
                                 <StackPanel Orientation="Horizontal" Spacing="8">
                                     <TextBlock Text="{Binding Detail}"
@@ -122,7 +128,7 @@
                             <Grid Grid.Row="1"
                                   Grid.ColumnSpan="2"
                                   ColumnSpacing="10"
-                                  Margin="0,12,0,0">
+                                  Margin="0,13,0,0">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />
@@ -318,8 +324,8 @@
                   VerticalScrollMode="Auto"
                   HorizontalScrollBarVisibility="Disabled"
                   HorizontalScrollMode="Disabled">
-        <StackPanel Padding="44,34,44,46" Spacing="34">
-            <Border MinHeight="530"
+        <StackPanel Padding="44,32,44,46" Spacing="30">
+            <Border MinHeight="486"
                     CornerRadius="18"
                     BorderBrush="{StaticResource KroiraGlassBorderBrush}"
                     BorderThickness="1">
@@ -328,12 +334,12 @@
                             CornerRadius="18" />
                     <Image Source="{x:Bind ViewModel.FeaturedItem.HeroArtworkUrl, Mode=OneWay, Converter={StaticResource UrlToImageSourceConverter}}"
                            Stretch="UniformToFill"
-                           Opacity="0.90" />
+                           Opacity="0.96" />
                     <Image Source="{x:Bind ViewModel.FeaturedItem.HeroPosterUrl, Mode=OneWay, Converter={StaticResource UrlToImageSourceConverter}}"
                            Width="560"
                            HorizontalAlignment="Right"
                            Stretch="UniformToFill"
-                           Opacity="0.34" />
+                           Opacity="0.26" />
                     <Border>
                         <Border.Background>
                             <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
@@ -358,14 +364,14 @@
                             Background="{StaticResource KroiraAccentGradientBrush}"
                             CornerRadius="18,0,0,18" />
 
-                    <Grid Padding="44,38" ColumnSpacing="40">
+                    <Grid Padding="42,34" ColumnSpacing="34">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="260" />
+                            <ColumnDefinition Width="250" />
                         </Grid.ColumnDefinitions>
 
                         <StackPanel Grid.Column="0"
-                                    Spacing="16"
+                                    Spacing="14"
                                     VerticalAlignment="Bottom"
                                     MaxWidth="820">
                             <TextBlock Text="FEATURED"
@@ -417,13 +423,29 @@
                                         MinWidth="122"
                                         Content="Live TV" />
                             </StackPanel>
+                            <Border Margin="0,8,0,0"
+                                    Padding="8"
+                                    Background="#5E090B0F"
+                                    BorderBrush="{StaticResource KroiraGlassBorderBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="13"
+                                    HorizontalAlignment="Left">
+                                <ItemsControl ItemsSource="{x:Bind ViewModel.SummaryItems, Mode=OneWay}"
+                                              ItemTemplate="{StaticResource SummaryStatTemplate}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <ItemsStackPanel Orientation="Horizontal" />
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                </ItemsControl>
+                            </Border>
                         </StackPanel>
 
                         <StackPanel Grid.Column="1"
-                                    Spacing="18"
+                                    Spacing="12"
                                     VerticalAlignment="Bottom">
-                            <Border Width="232"
-                                    Height="342"
+                            <Border Width="218"
+                                    Height="324"
                                     CornerRadius="14"
                                     BorderBrush="{StaticResource KroiraGlassBorderBrush}"
                                     BorderThickness="1"
@@ -446,14 +468,22 @@
                                     </Border>
                                 </Grid>
                             </Border>
-                            <ItemsControl ItemsSource="{x:Bind ViewModel.SummaryItems, Mode=OneWay}"
-                                          ItemTemplate="{StaticResource SummaryStatTemplate}">
-                                <ItemsControl.ItemsPanel>
-                                    <ItemsPanelTemplate>
-                                        <ItemsStackPanel Orientation="Horizontal" />
-                                    </ItemsPanelTemplate>
-                                </ItemsControl.ItemsPanel>
-                            </ItemsControl>
+                            <Border Width="218"
+                                    Padding="12,10"
+                                    Background="#9A090B0F"
+                                    BorderBrush="{StaticResource KroiraChromeLineBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="10">
+                                <StackPanel Spacing="3">
+                                    <TextBlock Text="Now featured"
+                                               Style="{StaticResource KroiraLabelStyle}"
+                                               Foreground="{StaticResource KroiraAccentBrush}" />
+                                    <TextBlock Text="{x:Bind ViewModel.FeaturedItem.Detail, Mode=OneWay}"
+                                               Style="{StaticResource KroiraMetaStyle}"
+                                               MaxLines="1"
+                                               TextTrimming="CharacterEllipsis" />
+                                </StackPanel>
+                            </Border>
                         </StackPanel>
                     </Grid>
                 </Grid>
@@ -475,9 +505,9 @@
                                Visibility="{x:Bind ViewModel.ContinueItemsVisibility, Mode=OneWay}"
                                ItemsSource="{x:Bind ViewModel.ContinueItems, Mode=OneWay}"
                                ItemTemplate="{StaticResource ContinueItemCardTemplate}"
-                               RailHeight="220"
+                               RailHeight="224"
                                ItemSpacing="16"
-                               ScrollAmount="388" />
+                               ScrollAmount="404" />
 
                 <Border Visibility="{x:Bind ViewModel.ContinueEmptyVisibility, Mode=OneWay}"
                         Background="#A00B0E13"

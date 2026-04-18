@@ -24,10 +24,10 @@
         </Style>
     </Page.Resources>
 
-    <Grid Padding="28,26,28,32"
-          MaxWidth="1280"
+    <Grid Padding="30,28,30,34"
+          MaxWidth="1360"
           HorizontalAlignment="Center"
-          RowSpacing="18">
+          RowSpacing="16">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
@@ -70,7 +70,7 @@
         <Grid Grid.Row="1" ColumnSpacing="12">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" MaxWidth="520" />
-                <ColumnDefinition Width="220" />
+                <ColumnDefinition Width="236" />
             </Grid.ColumnDefinitions>
 
             <TextBox Grid.Column="0"
@@ -88,7 +88,7 @@
         <Grid Grid.Row="2" ColumnSpacing="22">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="390" />
+                <ColumnDefinition Width="430" />
             </Grid.ColumnDefinitions>
 
             <Grid Grid.Column="0">
@@ -121,23 +121,23 @@
                     <GridView.ItemsPanel>
                         <ItemsPanelTemplate>
                             <ItemsWrapGrid Orientation="Horizontal"
-                                           ItemWidth="176"
-                                           ItemHeight="236"
+                                           ItemWidth="182"
+                                           ItemHeight="248"
                                            MaximumRowsOrColumns="4" />
                         </ItemsPanelTemplate>
                     </GridView.ItemsPanel>
                     <GridView.ItemTemplate>
                         <DataTemplate>
-                            <Border Width="168"
-                                    Height="226"
-                                    Background="#99161B24"
+                            <Border Width="174"
+                                    Height="238"
+                                    Background="#AA11161E"
                                     BorderBrush="#24FFFFFF"
                                     BorderThickness="1"
                                     CornerRadius="14"
                                     Padding="10">
                                 <Grid>
                                     <Grid.RowDefinitions>
-                                        <RowDefinition Height="138" />
+                                        <RowDefinition Height="148" />
                                         <RowDefinition Height="*" />
                                         <RowDefinition Height="Auto" />
                                     </Grid.RowDefinitions>
@@ -155,6 +155,16 @@
                                             <Image Source="{Binding DisplayPosterUrl, Converter={StaticResource UrlToImageSourceConverter}}"
                                                    Stretch="UniformToFill" />
                                         </Border>
+                                        <Border Height="54"
+                                                VerticalAlignment="Bottom"
+                                                CornerRadius="0,0,10,10">
+                                            <Border.Background>
+                                                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                                    <GradientStop Color="#0010141A" Offset="0" />
+                                                    <GradientStop Color="#C8080A0D" Offset="1" />
+                                                </LinearGradientBrush>
+                                            </Border.Background>
+                                        </Border>
                                     </Grid>
 
                                     <StackPanel Grid.Row="1" Spacing="4" Margin="2,10,2,4">
@@ -171,7 +181,9 @@
 
                                     <Border Grid.Row="2"
                                             HorizontalAlignment="Left"
-                                            Background="{StaticResource KroiraSurfaceSoftBrush}"
+                                            Background="#24231A10"
+                                            BorderBrush="{StaticResource KroiraChromeLineBrush}"
+                                            BorderThickness="1"
                                             CornerRadius="10"
                                             Padding="9,4">
                                         <StackPanel Orientation="Horizontal" Spacing="6">
@@ -192,7 +204,7 @@
             </Grid>
 
             <Border Grid.Column="1"
-                    Background="#B0121620"
+                    Background="#D00B0E13"
                     BorderBrush="#24FFFFFF"
                     BorderThickness="1"
                     CornerRadius="16"
@@ -238,8 +250,8 @@
                     </StackPanel>
 
                     <Grid Visibility="{x:Bind ViewModel.SelectedSeries, Mode=OneWay, Converter={StaticResource NullToCollapsedConverter}}"
-                          RowSpacing="14"
-                          Padding="18">
+                          RowSpacing="12"
+                          Padding="16">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
@@ -249,7 +261,7 @@
                         </Grid.RowDefinitions>
 
                         <Border Grid.Row="0"
-                                MinHeight="248"
+                                MinHeight="286"
                                 CornerRadius="14"
                                 BorderBrush="{StaticResource KroiraGlassBorderBrush}"
                                 BorderThickness="1"
@@ -257,22 +269,27 @@
                             <Grid>
                                 <Image Source="{x:Bind ViewModel.SelectedSeries.DisplayHeroArtworkUrl, Mode=OneWay, Converter={StaticResource UrlToImageSourceConverter}}"
                                        Stretch="UniformToFill"
-                                       Opacity="0.74" />
+                                       Opacity="0.88" />
                                 <Border>
                                     <Border.Background>
-                                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                            <GradientStop Color="#3A000000" Offset="0" />
-                                            <GradientStop Color="#E5090B0F" Offset="1" />
+                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                            <GradientStop Color="#28000000" Offset="0" />
+                                            <GradientStop Color="#B0090B0F" Offset="0.56" />
+                                            <GradientStop Color="#F0090B0F" Offset="1" />
                                         </LinearGradientBrush>
                                     </Border.Background>
                                 </Border>
-                                <Grid Padding="16" ColumnSpacing="14" VerticalAlignment="Bottom">
+                                <Border Width="4"
+                                        HorizontalAlignment="Left"
+                                        Background="{StaticResource KroiraAccentGradientBrush}"
+                                        CornerRadius="14,0,0,14" />
+                                <Grid Padding="16" ColumnSpacing="15" VerticalAlignment="Bottom">
                                     <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="104" />
+                                        <ColumnDefinition Width="118" />
                                         <ColumnDefinition Width="*" />
                                     </Grid.ColumnDefinitions>
-                                    <Border Width="104"
-                                            Height="150"
+                                    <Border Width="118"
+                                            Height="174"
                                             CornerRadius="10"
                                             Background="{StaticResource KroiraPosterPlaceholderBrush}"
                                             BorderBrush="{StaticResource KroiraGlassBorderBrush}"
@@ -294,7 +311,7 @@
                                                    Foreground="{StaticResource KroiraAccentBrush}" />
                                         <TextBlock Text="{x:Bind ViewModel.SelectedSeries.Title, Mode=OneWay}"
                                                    Style="{StaticResource KroiraSectionTitleStyle}"
-                                                   FontSize="21"
+                                                   FontSize="24"
                                                    MaxLines="2"
                                                    TextWrapping="Wrap"
                                                    TextTrimming="CharacterEllipsis" />
@@ -306,44 +323,63 @@
                                         <TextBlock Text="{x:Bind ViewModel.SelectedSeries.Overview, Mode=OneWay}"
                                                    Style="{StaticResource KroiraBodyStyle}"
                                                    FontSize="12"
-                                                   MaxLines="3"
+                                                   LineHeight="17"
+                                                   MaxLines="4"
                                                    TextTrimming="CharacterEllipsis" />
                                     </StackPanel>
                                 </Grid>
                             </Grid>
                         </Border>
 
-                        <StackPanel Grid.Row="1" Spacing="8">
-                            <TextBlock Text="SEASON" Style="{StaticResource KroiraLabelStyle}" />
-                            <ComboBox Style="{StaticResource KroiraFilterComboBoxStyle}"
-                                      ItemsSource="{x:Bind ViewModel.SelectedSeries.Seasons, Mode=OneWay}"
-                                      SelectedItem="{x:Bind ViewModel.SelectedSeason, Mode=TwoWay}"
-                                      HorizontalAlignment="Stretch">
-                                <ComboBox.ItemTemplate>
-                                    <DataTemplate>
-                                        <TextBlock Text="{Binding SeasonNumber, Converter={StaticResource SeasonPrefixConverter}}" />
-                                    </DataTemplate>
-                                </ComboBox.ItemTemplate>
-                            </ComboBox>
-                        </StackPanel>
+                        <Border Grid.Row="1"
+                                Background="#9611161E"
+                                BorderBrush="{StaticResource KroiraChromeLineBrush}"
+                                BorderThickness="1"
+                                CornerRadius="12"
+                                Padding="13">
+                            <Grid ColumnSpacing="12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Spacing="7">
+                                    <TextBlock Text="SEASON"
+                                               Style="{StaticResource KroiraLabelStyle}"
+                                               Foreground="{StaticResource KroiraAccentBrush}" />
+                                    <ComboBox Style="{StaticResource KroiraFilterComboBoxStyle}"
+                                              ItemsSource="{x:Bind ViewModel.SelectedSeries.Seasons, Mode=OneWay}"
+                                              SelectedItem="{x:Bind ViewModel.SelectedSeason, Mode=TwoWay}"
+                                              HorizontalAlignment="Stretch">
+                                        <ComboBox.ItemTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding SeasonNumber, Converter={StaticResource SeasonPrefixConverter}}" />
+                                            </DataTemplate>
+                                        </ComboBox.ItemTemplate>
+                                    </ComboBox>
+                                </StackPanel>
+                                <Button Grid.Column="1"
+                                        Content="Play"
+                                        Visibility="{x:Bind ViewModel.SelectedEpisodePlayVisibility, Mode=OneWay}"
+                                        Click="PlaySelectedEpisode_Click"
+                                        Style="{StaticResource KroiraPrimaryButtonStyle}"
+                                        Padding="18,11"
+                                        VerticalAlignment="Bottom" />
+                            </Grid>
+                        </Border>
 
-                        <StackPanel Grid.Row="2" Spacing="10">
+                        <StackPanel Grid.Row="2" Spacing="8">
                             <TextBlock Text="{x:Bind ViewModel.SelectedSeriesStatus, Mode=OneWay}"
                                        Visibility="{x:Bind ViewModel.SelectedSeriesStatusVisibility, Mode=OneWay}"
                                        Style="{StaticResource KroiraBodyStyle}"
                                        FontSize="12"
                                        TextWrapping="Wrap" />
-                            <Button Content="Play selected episode"
-                                    Visibility="{x:Bind ViewModel.SelectedEpisodePlayVisibility, Mode=OneWay}"
-                                    Click="PlaySelectedEpisode_Click"
-                                    Style="{StaticResource KroiraPrimaryButtonStyle}"
-                                    HorizontalAlignment="Left" />
                         </StackPanel>
 
                         <TextBlock Grid.Row="3"
                                    Text="EPISODES"
                                    Style="{StaticResource KroiraLabelStyle}"
-                                   Margin="0,4,0,0" />
+                                   Foreground="{StaticResource KroiraAccentBrush}"
+                                   Margin="0,2,0,0" />
 
                         <ListView Grid.Row="4"
                                   ItemsSource="{x:Bind ViewModel.SelectedSeason.Episodes, Mode=OneWay}"
@@ -356,9 +392,11 @@
                                   ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                             <ListView.ItemTemplate>
                                 <DataTemplate>
-                                    <Border Background="{StaticResource KroiraSurfaceSoftBrush}"
-                                            CornerRadius="8"
-                                            Padding="13,10">
+                                    <Border Background="#B111161E"
+                                            BorderBrush="{StaticResource KroiraChromeLineBrush}"
+                                            BorderThickness="1"
+                                            CornerRadius="9"
+                                            Padding="13,11">
                                         <Grid ColumnSpacing="10">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="Auto" />
