@@ -48,7 +48,8 @@ namespace Kroira.App.Views
 
         private void GridView_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (e.AddedItems.Count > 0 && e.AddedItems[0] is MovieBrowseItemViewModel movie)
+            if (e.AddedItems.Count > 0 &&
+                e.AddedItems[0] is MovieBrowseSlotViewModel { HasMovie: true, Movie: { } movie })
             {
                 if (!string.IsNullOrWhiteSpace(movie.StreamUrl))
                 {

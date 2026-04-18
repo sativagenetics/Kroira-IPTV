@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Text.Json;
 using System.Text.RegularExpressions;
@@ -27,6 +28,12 @@ namespace Kroira.App.Services.Metadata
         private const string ApiBaseUrl = "https://api.themoviedb.org/3";
         private const string ImageBaseUrl = "https://image.tmdb.org/t/p";
         private static readonly TimeSpan CacheTtl = TimeSpan.FromDays(30);
+        private static readonly TimeSpan RecentFailureTtl = TimeSpan.FromHours(6);
+        private static readonly TimeSpan NotFoundTtl = TimeSpan.FromDays(7);
+        private static readonly TimeSpan CircuitOpenTtl = TimeSpan.FromMinutes(10);
+        private static readonly TimeSpan InitialRetryDelay = TimeSpan.FromSeconds(1);
+        private const int MaxRequestAttempts = 2;
+        private const int BroadFailureCircuitThreshold = 6;
         private static readonly Regex BracketPattern = new Regex(@"\[[^\]]*\]|\([^\)]*\)|\{[^\}]*\}", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         private static readonly Regex YearPattern = new Regex(@"\b(19\d{2}|20\d{2})\b", RegexOptions.Compiled);
         private static readonly Regex EpisodePattern = new Regex(@"\b(s\d{1,2}\s*e\d{1,3}|s\d{1,2}|season\s*\d+|sezon\s*\d+|episode\s*\d+|ep\s*\d+|bolum\s*\d+|bölüm\s*\d+)\b", RegexOptions.IgnoreCase | RegexOptions.Compiled);
@@ -100,6 +107,19 @@ namespace Kroira.App.Services.Metadata
                 return;
             }
 
+            var circuitOpenUntil = await GetCircuitOpenUntilAsync(db, "Movie");
+            if (circuitOpenUntil > DateTime.UtcNow)
+            {
+                var circuitDiagnostics = new TmdbDiagnostics
+                {
+                    CircuitOpen = true,
+                    CircuitOpenUntilUtc = circuitOpenUntil
+                };
+                Debug.WriteLine($"TMDb Movie skipped: circuit open until {circuitOpenUntil:O}");
+                await WriteDiagnosticsAsync(db, "Movie", circuitDiagnostics, 0, 0);
+                return;
+            }
+
             var inputMovies = movies.ToList();
             var inputIds = inputMovies.Where(m => m.Id > 0).Select(m => m.Id).Distinct().ToList();
             var trackedMovies = inputIds.Count > 0
@@ -112,11 +132,21 @@ namespace Kroira.App.Services.Metadata
                 .OrderByDescending(m => HasAnyProviderPoster(m.PosterUrl))
                 .ThenByDescending(m => m.Popularity)
                 .ThenBy(m => m.Title)
-                .Take(maxItems)
+                .Take(Math.Max(maxItems * 3, maxItems))
                 .ToList();
 
             foreach (var movie in candidates)
             {
+                if (diagnostics.Attempted >= maxItems)
+                {
+                    break;
+                }
+
+                if (await IsItemSuppressedAsync(db, "Movie", movie.Id, movie.Title, diagnostics))
+                {
+                    continue;
+                }
+
                 try
                 {
                     diagnostics.Attempted++;
@@ -125,18 +155,37 @@ namespace Kroira.App.Services.Metadata
                     if (details == null)
                     {
                         diagnostics.Missed++;
-                        Debug.WriteLine($"TMDb movie miss: {movie.Id} '{movie.Title}'");
+                        Debug.WriteLine($"TMDb movie miss: id={movie.Id}, title='{movie.Title}', retry=no, nextRetryUtc={(DateTime.UtcNow + NotFoundTtl):O}");
+                        await MarkItemFailureAsync(db, "Movie", movie.Id, movie.Title, TmdbFailureKind.NotFound, null, "No TMDb match", false, NotFoundTtl);
                         movie.MetadataUpdatedAt = DateTime.UtcNow;
                         continue;
                     }
 
                     diagnostics.Matched++;
+                    await ClearItemFailureAsync(db, "Movie", movie.Id);
                     ApplyMovie(movie, details);
                 }
-                catch
+                catch (TmdbRequestException ex)
                 {
                     diagnostics.Errors++;
-                    Debug.WriteLine($"TMDb movie error: {movie.Id} '{movie.Title}'");
+                    diagnostics.RecordFailure(ex.Kind);
+                    Debug.WriteLine(FormatItemFailureLog("Movie", movie.Id, movie.Title, ex));
+                    await MarkItemFailureAsync(db, "Movie", movie.Id, movie.Title, ex.Kind, ex.StatusCode, GetExceptionMessage(ex), ex.Retryable, ex.NextRetryUtc - DateTime.UtcNow);
+                    movie.MetadataUpdatedAt = DateTime.UtcNow;
+
+                    if (ShouldOpenCircuit(diagnostics))
+                    {
+                        await OpenCircuitAsync(db, "Movie", diagnostics);
+                        break;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    diagnostics.Errors++;
+                    diagnostics.RecordFailure(TmdbFailureKind.Unexpected);
+                    var nextRetryUtc = DateTime.UtcNow + RecentFailureTtl;
+                    Debug.WriteLine($"TMDb Movie failure: id={movie.Id}, title='{movie.Title}', request=unknown, kind=Unexpected, status=none, message='{GetExceptionMessage(ex)}', retry=no, nextRetryUtc={nextRetryUtc:O}");
+                    await MarkItemFailureAsync(db, "Movie", movie.Id, movie.Title, TmdbFailureKind.Unexpected, null, GetExceptionMessage(ex), false, RecentFailureTtl);
                     movie.MetadataUpdatedAt = DateTime.UtcNow;
                 }
             }
@@ -170,6 +219,19 @@ namespace Kroira.App.Services.Metadata
                 return;
             }
 
+            var circuitOpenUntil = await GetCircuitOpenUntilAsync(db, "Series");
+            if (circuitOpenUntil > DateTime.UtcNow)
+            {
+                var circuitDiagnostics = new TmdbDiagnostics
+                {
+                    CircuitOpen = true,
+                    CircuitOpenUntilUtc = circuitOpenUntil
+                };
+                Debug.WriteLine($"TMDb Series skipped: circuit open until {circuitOpenUntil:O}");
+                await WriteDiagnosticsAsync(db, "Series", circuitDiagnostics, 0, 0);
+                return;
+            }
+
             var inputSeries = series.ToList();
             var inputIds = inputSeries.Where(s => s.Id > 0).Select(s => s.Id).Distinct().ToList();
             var trackedSeries = inputIds.Count > 0
@@ -182,11 +244,21 @@ namespace Kroira.App.Services.Metadata
                 .OrderByDescending(s => HasAnyProviderPoster(s.PosterUrl))
                 .ThenByDescending(s => s.Popularity)
                 .ThenBy(s => s.Title)
-                .Take(maxItems)
+                .Take(Math.Max(maxItems * 3, maxItems))
                 .ToList();
 
             foreach (var show in candidates)
             {
+                if (diagnostics.Attempted >= maxItems)
+                {
+                    break;
+                }
+
+                if (await IsItemSuppressedAsync(db, "Series", show.Id, show.Title, diagnostics))
+                {
+                    continue;
+                }
+
                 try
                 {
                     diagnostics.Attempted++;
@@ -195,18 +267,37 @@ namespace Kroira.App.Services.Metadata
                     if (details == null)
                     {
                         diagnostics.Missed++;
-                        Debug.WriteLine($"TMDb series miss: {show.Id} '{show.Title}'");
+                        Debug.WriteLine($"TMDb series miss: id={show.Id}, title='{show.Title}', retry=no, nextRetryUtc={(DateTime.UtcNow + NotFoundTtl):O}");
+                        await MarkItemFailureAsync(db, "Series", show.Id, show.Title, TmdbFailureKind.NotFound, null, "No TMDb match", false, NotFoundTtl);
                         show.MetadataUpdatedAt = DateTime.UtcNow;
                         continue;
                     }
 
                     diagnostics.Matched++;
+                    await ClearItemFailureAsync(db, "Series", show.Id);
                     ApplySeries(show, details);
                 }
-                catch
+                catch (TmdbRequestException ex)
                 {
                     diagnostics.Errors++;
-                    Debug.WriteLine($"TMDb series error: {show.Id} '{show.Title}'");
+                    diagnostics.RecordFailure(ex.Kind);
+                    Debug.WriteLine(FormatItemFailureLog("Series", show.Id, show.Title, ex));
+                    await MarkItemFailureAsync(db, "Series", show.Id, show.Title, ex.Kind, ex.StatusCode, GetExceptionMessage(ex), ex.Retryable, ex.NextRetryUtc - DateTime.UtcNow);
+                    show.MetadataUpdatedAt = DateTime.UtcNow;
+
+                    if (ShouldOpenCircuit(diagnostics))
+                    {
+                        await OpenCircuitAsync(db, "Series", diagnostics);
+                        break;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    diagnostics.Errors++;
+                    diagnostics.RecordFailure(TmdbFailureKind.Unexpected);
+                    var nextRetryUtc = DateTime.UtcNow + RecentFailureTtl;
+                    Debug.WriteLine($"TMDb Series failure: id={show.Id}, title='{show.Title}', request=unknown, kind=Unexpected, status=none, message='{GetExceptionMessage(ex)}', retry=no, nextRetryUtc={nextRetryUtc:O}");
+                    await MarkItemFailureAsync(db, "Series", show.Id, show.Title, TmdbFailureKind.Unexpected, null, GetExceptionMessage(ex), false, RecentFailureTtl);
                     show.MetadataUpdatedAt = DateTime.UtcNow;
                 }
             }
@@ -233,6 +324,13 @@ namespace Kroira.App.Services.Metadata
 
         private static bool ShouldRefresh(Movie movie)
         {
+            if (movie.MetadataUpdatedAt.HasValue &&
+                DateTime.UtcNow - movie.MetadataUpdatedAt.Value < RecentFailureTtl &&
+                string.IsNullOrWhiteSpace(movie.TmdbId))
+            {
+                return false;
+            }
+
             return string.IsNullOrWhiteSpace(movie.TmdbId)
                 || string.IsNullOrWhiteSpace(movie.Overview)
                 || string.IsNullOrWhiteSpace(movie.TmdbBackdropPath)
@@ -243,6 +341,13 @@ namespace Kroira.App.Services.Metadata
 
         private static bool ShouldRefresh(Series series)
         {
+            if (series.MetadataUpdatedAt.HasValue &&
+                DateTime.UtcNow - series.MetadataUpdatedAt.Value < RecentFailureTtl &&
+                string.IsNullOrWhiteSpace(series.TmdbId))
+            {
+                return false;
+            }
+
             return string.IsNullOrWhiteSpace(series.TmdbId)
                 || string.IsNullOrWhiteSpace(series.Overview)
                 || string.IsNullOrWhiteSpace(series.TmdbBackdropPath)
@@ -273,7 +378,16 @@ namespace Kroira.App.Services.Metadata
                 [$"{prefix}.DetailsRequests"] = diagnostics.DetailsRequests.ToString(CultureInfo.InvariantCulture),
                 [$"{prefix}.FindRequests"] = diagnostics.FindRequests.ToString(CultureInfo.InvariantCulture),
                 [$"{prefix}.ProviderTmdbIdAttempts"] = diagnostics.ProviderTmdbIdAttempts.ToString(CultureInfo.InvariantCulture),
-                [$"{prefix}.ProviderImdbIdAttempts"] = diagnostics.ProviderImdbIdAttempts.ToString(CultureInfo.InvariantCulture)
+                [$"{prefix}.ProviderImdbIdAttempts"] = diagnostics.ProviderImdbIdAttempts.ToString(CultureInfo.InvariantCulture),
+                [$"{prefix}.Suppressed"] = diagnostics.Suppressed.ToString(CultureInfo.InvariantCulture),
+                [$"{prefix}.CircuitOpen"] = diagnostics.CircuitOpen ? "1" : "0",
+                [$"{prefix}.CircuitOpenUntilUtc"] = diagnostics.CircuitOpenUntilUtc?.ToString("O", CultureInfo.InvariantCulture) ?? string.Empty,
+                [$"{prefix}.NetworkFailures"] = diagnostics.NetworkFailures.ToString(CultureInfo.InvariantCulture),
+                [$"{prefix}.TimeoutFailures"] = diagnostics.TimeoutFailures.ToString(CultureInfo.InvariantCulture),
+                [$"{prefix}.AuthFailures"] = diagnostics.AuthFailures.ToString(CultureInfo.InvariantCulture),
+                [$"{prefix}.RateLimitFailures"] = diagnostics.RateLimitFailures.ToString(CultureInfo.InvariantCulture),
+                [$"{prefix}.NotFoundFailures"] = diagnostics.NotFoundFailures.ToString(CultureInfo.InvariantCulture),
+                [$"{prefix}.ServerFailures"] = diagnostics.ServerFailures.ToString(CultureInfo.InvariantCulture)
             };
 
             foreach (var item in values)
@@ -290,7 +404,129 @@ namespace Kroira.App.Services.Metadata
             }
 
             await db.SaveChangesAsync();
-            Debug.WriteLine($"TMDb {mediaType}: attempted={diagnostics.Attempted}, matched={diagnostics.Matched}, persisted={persistedRows}, search={diagnostics.SearchRequests}, details={diagnostics.DetailsRequests}, find={diagnostics.FindRequests}, errors={diagnostics.Errors}");
+            Debug.WriteLine($"TMDb {mediaType}: attempted={diagnostics.Attempted}, matched={diagnostics.Matched}, persisted={persistedRows}, search={diagnostics.SearchRequests}, details={diagnostics.DetailsRequests}, find={diagnostics.FindRequests}, errors={diagnostics.Errors}, suppressed={diagnostics.Suppressed}, circuitOpen={diagnostics.CircuitOpen}");
+        }
+
+        private static async Task<DateTime?> GetCircuitOpenUntilAsync(AppDbContext db, string mediaType)
+        {
+            var value = await db.AppSettings
+                .Where(s => s.Key == GetCircuitKey(mediaType) || s.Key == GetCircuitKey("All"))
+                .OrderByDescending(s => s.Key == GetCircuitKey(mediaType))
+                .Select(s => s.Value)
+                .FirstOrDefaultAsync();
+
+            return DateTime.TryParse(value, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var untilUtc)
+                ? untilUtc.ToUniversalTime()
+                : null;
+        }
+
+        private static async Task<bool> IsItemSuppressedAsync(AppDbContext db, string mediaType, int id, string title, TmdbDiagnostics diagnostics)
+        {
+            var key = GetItemKey(mediaType, id, "NextRetryUtc");
+            var value = await db.AppSettings
+                .Where(s => s.Key == key)
+                .Select(s => s.Value)
+                .FirstOrDefaultAsync();
+
+            if (!DateTime.TryParse(value, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var nextRetryUtc) ||
+                nextRetryUtc.ToUniversalTime() <= DateTime.UtcNow)
+            {
+                return false;
+            }
+
+            diagnostics.Suppressed++;
+            Debug.WriteLine($"TMDb {mediaType} suppressed: id={id}, title='{title}', nextRetryUtc={nextRetryUtc.ToUniversalTime():O}");
+            return true;
+        }
+
+        private static async Task MarkItemFailureAsync(
+            AppDbContext db,
+            string mediaType,
+            int id,
+            string title,
+            TmdbFailureKind kind,
+            HttpStatusCode? statusCode,
+            string message,
+            bool retryable,
+            TimeSpan cooldown)
+        {
+            var safeCooldown = cooldown <= TimeSpan.Zero ? RecentFailureTtl : cooldown;
+            var nextRetryUtc = DateTime.UtcNow + safeCooldown;
+            await UpsertSettingAsync(db, GetItemKey(mediaType, id, "Title"), title);
+            await UpsertSettingAsync(db, GetItemKey(mediaType, id, "LastFailureUtc"), DateTime.UtcNow.ToString("O", CultureInfo.InvariantCulture));
+            await UpsertSettingAsync(db, GetItemKey(mediaType, id, "NextRetryUtc"), nextRetryUtc.ToString("O", CultureInfo.InvariantCulture));
+            await UpsertSettingAsync(db, GetItemKey(mediaType, id, "FailureKind"), kind.ToString());
+            await UpsertSettingAsync(db, GetItemKey(mediaType, id, "StatusCode"), statusCode.HasValue ? ((int)statusCode.Value).ToString(CultureInfo.InvariantCulture) : string.Empty);
+            await UpsertSettingAsync(db, GetItemKey(mediaType, id, "Retryable"), retryable ? "1" : "0");
+            await UpsertSettingAsync(db, GetItemKey(mediaType, id, "Message"), TrimForDiagnostics(message));
+        }
+
+        private static async Task ClearItemFailureAsync(AppDbContext db, string mediaType, int id)
+        {
+            var prefix = $"Diagnostics.TMDb.{mediaType}.Item.{id}.";
+            var settings = await db.AppSettings
+                .Where(s => s.Key.StartsWith(prefix))
+                .ToListAsync();
+
+            if (settings.Count > 0)
+            {
+                db.AppSettings.RemoveRange(settings);
+            }
+        }
+
+        private static bool ShouldOpenCircuit(TmdbDiagnostics diagnostics)
+        {
+            return diagnostics.BroadFailures >= BroadFailureCircuitThreshold;
+        }
+
+        private static async Task OpenCircuitAsync(AppDbContext db, string mediaType, TmdbDiagnostics diagnostics)
+        {
+            var openUntilUtc = DateTime.UtcNow + CircuitOpenTtl;
+            diagnostics.CircuitOpen = true;
+            diagnostics.CircuitOpenUntilUtc = openUntilUtc;
+            await UpsertSettingAsync(db, GetCircuitKey(mediaType), openUntilUtc.ToString("O", CultureInfo.InvariantCulture));
+            Debug.WriteLine($"TMDb {mediaType} circuit opened: broadFailures={diagnostics.BroadFailures}, openUntilUtc={openUntilUtc:O}");
+        }
+
+        private static async Task UpsertSettingAsync(AppDbContext db, string key, string value)
+        {
+            var setting = await db.AppSettings.FirstOrDefaultAsync(s => s.Key == key);
+            if (setting == null)
+            {
+                db.AppSettings.Add(new AppSetting { Key = key, Value = value });
+            }
+            else
+            {
+                setting.Value = value;
+            }
+        }
+
+        private static string GetCircuitKey(string mediaType)
+        {
+            return $"Diagnostics.TMDb.{mediaType}.CircuitOpenUntilUtc";
+        }
+
+        private static string GetItemKey(string mediaType, int id, string field)
+        {
+            return $"Diagnostics.TMDb.{mediaType}.Item.{id}.{field}";
+        }
+
+        private static string FormatItemFailureLog(string mediaType, int id, string title, TmdbRequestException ex)
+        {
+            var status = ex.StatusCode.HasValue ? ((int)ex.StatusCode.Value).ToString(CultureInfo.InvariantCulture) : "none";
+            return $"TMDb {mediaType} failure: id={id}, title='{title}', request={ex.RequestType}, kind={ex.Kind}, status={status}, message='{GetExceptionMessage(ex)}', retry={(ex.Retryable ? "yes" : "no")}, nextRetryUtc={ex.NextRetryUtc:O}";
+        }
+
+        private static string GetExceptionMessage(Exception ex)
+        {
+            var inner = ex.InnerException == null ? string.Empty : $" | inner={ex.InnerException.Message}";
+            return TrimForDiagnostics($"{ex.Message}{inner}");
+        }
+
+        private static string TrimForDiagnostics(string value)
+        {
+            var sanitized = Regex.Replace(value ?? string.Empty, @"api_key=[^&\s]+", "api_key=<redacted>", RegexOptions.IgnoreCase);
+            return sanitized.Length <= 360 ? sanitized : sanitized.Substring(0, 360);
         }
 
         private async Task<string> GetApiKeyAsync(AppDbContext db)
@@ -317,11 +553,12 @@ namespace Kroira.App.Services.Metadata
 
         private async Task<TmdbDetails?> MatchMovieAsync(string apiKey, Movie movie, TmdbDiagnostics diagnostics)
         {
+            var context = new TmdbRequestContext("Movie", movie.Id, movie.Title);
             var providerTmdbId = NormalizeTmdbId(movie.TmdbId);
             if (!string.IsNullOrWhiteSpace(providerTmdbId))
             {
                 diagnostics.ProviderTmdbIdAttempts++;
-                var details = await LoadDetailsAsync(apiKey, "movie", providerTmdbId, diagnostics);
+                var details = await LoadDetailsAsync(apiKey, "movie", providerTmdbId, diagnostics, context, "details:provider-tmdb-id");
                 if (details != null)
                 {
                     return details;
@@ -332,23 +569,24 @@ namespace Kroira.App.Services.Metadata
             if (!string.IsNullOrWhiteSpace(providerImdbId))
             {
                 diagnostics.ProviderImdbIdAttempts++;
-                var details = await FindByImdbIdAsync(apiKey, "movie", providerImdbId, diagnostics);
+                var details = await FindByImdbIdAsync(apiKey, "movie", providerImdbId, diagnostics, context);
                 if (details != null)
                 {
                     return details;
                 }
             }
 
-            return await SearchAndLoadAsync(apiKey, "movie", movie.Title, movie.ReleaseDate?.Year, diagnostics);
+            return await SearchAndLoadAsync(apiKey, "movie", movie.Title, movie.ReleaseDate?.Year, diagnostics, context);
         }
 
         private async Task<TmdbDetails?> MatchSeriesAsync(string apiKey, Series series, TmdbDiagnostics diagnostics)
         {
+            var context = new TmdbRequestContext("Series", series.Id, series.Title);
             var providerTmdbId = NormalizeTmdbId(series.TmdbId);
             if (!string.IsNullOrWhiteSpace(providerTmdbId))
             {
                 diagnostics.ProviderTmdbIdAttempts++;
-                var details = await LoadDetailsAsync(apiKey, "tv", providerTmdbId, diagnostics);
+                var details = await LoadDetailsAsync(apiKey, "tv", providerTmdbId, diagnostics, context, "details:provider-tmdb-id");
                 if (details != null)
                 {
                     return details;
@@ -359,21 +597,21 @@ namespace Kroira.App.Services.Metadata
             if (!string.IsNullOrWhiteSpace(providerImdbId))
             {
                 diagnostics.ProviderImdbIdAttempts++;
-                var details = await FindByImdbIdAsync(apiKey, "tv", providerImdbId, diagnostics);
+                var details = await FindByImdbIdAsync(apiKey, "tv", providerImdbId, diagnostics, context);
                 if (details != null)
                 {
                     return details;
                 }
             }
 
-            return await SearchAndLoadAsync(apiKey, "tv", series.Title, series.FirstAirDate?.Year, diagnostics);
+            return await SearchAndLoadAsync(apiKey, "tv", series.Title, series.FirstAirDate?.Year, diagnostics, context);
         }
 
-        private async Task<TmdbDetails?> FindByImdbIdAsync(string apiKey, string mediaType, string imdbId, TmdbDiagnostics diagnostics)
+        private async Task<TmdbDetails?> FindByImdbIdAsync(string apiKey, string mediaType, string imdbId, TmdbDiagnostics diagnostics, TmdbRequestContext context)
         {
             diagnostics.FindRequests++;
             var url = $"{ApiBaseUrl}/find/{Uri.EscapeDataString(imdbId)}?api_key={Uri.EscapeDataString(apiKey)}&external_source=imdb_id";
-            using var doc = await GetJsonAsync(url);
+            using var doc = await GetJsonAsync(url, diagnostics, context, "find:imdb-id");
             if (doc == null)
             {
                 return null;
@@ -389,10 +627,10 @@ namespace Kroira.App.Services.Metadata
                 .Select(result => GetString(result, "id"))
                 .FirstOrDefault(value => !string.IsNullOrWhiteSpace(value));
 
-            return string.IsNullOrWhiteSpace(id) ? null : await LoadDetailsAsync(apiKey, mediaType, id, diagnostics);
+            return string.IsNullOrWhiteSpace(id) ? null : await LoadDetailsAsync(apiKey, mediaType, id, diagnostics, context, "details:imdb-match");
         }
 
-        private async Task<TmdbDetails?> SearchAndLoadAsync(string apiKey, string mediaType, string rawTitle, int? providerYear, TmdbDiagnostics diagnostics)
+        private async Task<TmdbDetails?> SearchAndLoadAsync(string apiKey, string mediaType, string rawTitle, int? providerYear, TmdbDiagnostics diagnostics, TmdbRequestContext context)
         {
             var queries = BuildSearchQueries(rawTitle, providerYear).ToList();
             if (queries.Count == 0)
@@ -402,13 +640,13 @@ namespace Kroira.App.Services.Metadata
 
             foreach (var query in queries)
             {
-                var bestId = await SearchBestIdAsync(apiKey, mediaType, query, diagnostics);
+                var bestId = await SearchBestIdAsync(apiKey, mediaType, query, diagnostics, context);
                 if (string.IsNullOrWhiteSpace(bestId))
                 {
                     continue;
                 }
 
-                var details = await LoadDetailsAsync(apiKey, mediaType, bestId, diagnostics);
+                var details = await LoadDetailsAsync(apiKey, mediaType, bestId, diagnostics, context, "details:search-match");
                 if (details != null)
                 {
                     return details;
@@ -418,7 +656,7 @@ namespace Kroira.App.Services.Metadata
             return null;
         }
 
-        private async Task<string?> SearchBestIdAsync(string apiKey, string mediaType, TmdbSearchQuery query, TmdbDiagnostics diagnostics)
+        private async Task<string?> SearchBestIdAsync(string apiKey, string mediaType, TmdbSearchQuery query, TmdbDiagnostics diagnostics, TmdbRequestContext context)
         {
             foreach (var language in new[] { "tr-TR", "en-US" })
             {
@@ -431,7 +669,7 @@ namespace Kroira.App.Services.Metadata
                         : $"&first_air_date_year={query.Year.Value}";
                 }
 
-                using var searchDoc = await GetJsonAsync(url);
+                using var searchDoc = await GetJsonAsync(url, diagnostics, context, "search");
                 if (searchDoc == null || !searchDoc.RootElement.TryGetProperty("results", out var results) || results.ValueKind != JsonValueKind.Array)
                 {
                     continue;
@@ -447,7 +685,7 @@ namespace Kroira.App.Services.Metadata
             return null;
         }
 
-        private async Task<TmdbDetails?> LoadDetailsAsync(string apiKey, string mediaType, string tmdbId, TmdbDiagnostics diagnostics)
+        private async Task<TmdbDetails?> LoadDetailsAsync(string apiKey, string mediaType, string tmdbId, TmdbDiagnostics diagnostics, TmdbRequestContext context, string requestType)
         {
             if (string.IsNullOrWhiteSpace(tmdbId))
             {
@@ -457,7 +695,7 @@ namespace Kroira.App.Services.Metadata
             diagnostics.DetailsRequests++;
             var append = mediaType == "movie" ? "external_ids" : "external_ids";
             var url = $"{ApiBaseUrl}/{mediaType}/{Uri.EscapeDataString(tmdbId)}?api_key={Uri.EscapeDataString(apiKey)}&append_to_response={append}";
-            using var doc = await GetJsonAsync(url);
+            using var doc = await GetJsonAsync(url, diagnostics, context, requestType);
             if (doc == null)
             {
                 return null;
@@ -466,16 +704,147 @@ namespace Kroira.App.Services.Metadata
             return ParseDetails(doc.RootElement, mediaType);
         }
 
-        private async Task<JsonDocument?> GetJsonAsync(string url)
+        private async Task<JsonDocument?> GetJsonAsync(string url, TmdbDiagnostics diagnostics, TmdbRequestContext context, string requestType)
         {
-            using var response = await _httpClient.GetAsync(url);
-            if (!response.IsSuccessStatusCode)
+            for (var attempt = 1; attempt <= MaxRequestAttempts; attempt++)
             {
-                return null;
+                try
+                {
+                    using var response = await _httpClient.GetAsync(url);
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        var kind = ClassifyStatusCode(response.StatusCode);
+                        var retryable = IsRetryable(kind);
+                        var nextRetryUtc = DateTime.UtcNow + GetRetryDelay(kind, attempt, response);
+                        LogRequestFailure(context, requestType, kind, response.StatusCode, null, retryable && attempt < MaxRequestAttempts, nextRetryUtc);
+
+                        if (retryable && attempt < MaxRequestAttempts)
+                        {
+                            await Task.Delay(GetRetryDelay(kind, attempt, response));
+                            continue;
+                        }
+
+                        throw new TmdbRequestException(kind, response.StatusCode, requestType, $"TMDb returned HTTP {(int)response.StatusCode} {response.ReasonPhrase}", retryable, DateTime.UtcNow + GetFailureCooldown(kind, response));
+                    }
+
+                    var json = await response.Content.ReadAsStringAsync();
+                    if (string.IsNullOrWhiteSpace(json))
+                    {
+                        return null;
+                    }
+
+                    try
+                    {
+                        return JsonDocument.Parse(json);
+                    }
+                    catch (JsonException ex)
+                    {
+                        throw new TmdbRequestException(TmdbFailureKind.Parse, response.StatusCode, requestType, "TMDb returned invalid JSON", false, DateTime.UtcNow + GetFailureCooldown(TmdbFailureKind.Parse, response), ex);
+                    }
+                }
+                catch (HttpRequestException ex)
+                {
+                    var nextRetryUtc = DateTime.UtcNow + GetRetryDelay(TmdbFailureKind.Network, attempt, null);
+                    LogRequestFailure(context, requestType, TmdbFailureKind.Network, ex.StatusCode, ex, attempt < MaxRequestAttempts, nextRetryUtc);
+
+                    if (attempt < MaxRequestAttempts)
+                    {
+                        await Task.Delay(GetRetryDelay(TmdbFailureKind.Network, attempt, null));
+                        continue;
+                    }
+
+                    throw new TmdbRequestException(TmdbFailureKind.Network, ex.StatusCode, requestType, "TMDb network request failed", true, DateTime.UtcNow + GetFailureCooldown(TmdbFailureKind.Network, null), ex);
+                }
+                catch (TaskCanceledException ex)
+                {
+                    var nextRetryUtc = DateTime.UtcNow + GetRetryDelay(TmdbFailureKind.Timeout, attempt, null);
+                    LogRequestFailure(context, requestType, TmdbFailureKind.Timeout, null, ex, attempt < MaxRequestAttempts, nextRetryUtc);
+
+                    if (attempt < MaxRequestAttempts)
+                    {
+                        await Task.Delay(GetRetryDelay(TmdbFailureKind.Timeout, attempt, null));
+                        continue;
+                    }
+
+                    throw new TmdbRequestException(TmdbFailureKind.Timeout, null, requestType, "TMDb request timed out", true, DateTime.UtcNow + GetFailureCooldown(TmdbFailureKind.Timeout, null), ex);
+                }
             }
 
-            var json = await response.Content.ReadAsStringAsync();
-            return string.IsNullOrWhiteSpace(json) ? null : JsonDocument.Parse(json);
+            return null;
+        }
+
+        private static TmdbFailureKind ClassifyStatusCode(HttpStatusCode statusCode)
+        {
+            var numeric = (int)statusCode;
+            return statusCode switch
+            {
+                HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden => TmdbFailureKind.Auth,
+                HttpStatusCode.NotFound => TmdbFailureKind.NotFound,
+                (HttpStatusCode)429 => TmdbFailureKind.RateLimit,
+                HttpStatusCode.RequestTimeout => TmdbFailureKind.Timeout,
+                _ when numeric >= 500 => TmdbFailureKind.Server,
+                _ => TmdbFailureKind.Http
+            };
+        }
+
+        private static bool IsRetryable(TmdbFailureKind kind)
+        {
+            return kind is TmdbFailureKind.Network or TmdbFailureKind.Timeout or TmdbFailureKind.RateLimit or TmdbFailureKind.Server;
+        }
+
+        private static TimeSpan GetRetryDelay(TmdbFailureKind kind, int attempt, HttpResponseMessage? response)
+        {
+            if (kind == TmdbFailureKind.NotFound || kind == TmdbFailureKind.Auth)
+            {
+                return kind == TmdbFailureKind.NotFound ? NotFoundTtl : CircuitOpenTtl;
+            }
+
+            if (kind == TmdbFailureKind.RateLimit &&
+                response?.Headers.RetryAfter?.Delta is { } retryAfterDelta &&
+                retryAfterDelta > TimeSpan.Zero)
+            {
+                return retryAfterDelta > CircuitOpenTtl ? CircuitOpenTtl : retryAfterDelta;
+            }
+
+            var multiplier = Math.Pow(2, Math.Max(0, attempt - 1));
+            var delay = TimeSpan.FromMilliseconds(InitialRetryDelay.TotalMilliseconds * multiplier);
+            return delay > TimeSpan.FromSeconds(8) ? TimeSpan.FromSeconds(8) : delay;
+        }
+
+        private static TimeSpan GetFailureCooldown(TmdbFailureKind kind, HttpResponseMessage? response)
+        {
+            if (kind == TmdbFailureKind.NotFound)
+            {
+                return NotFoundTtl;
+            }
+
+            if (kind == TmdbFailureKind.Auth)
+            {
+                return CircuitOpenTtl;
+            }
+
+            if (kind == TmdbFailureKind.RateLimit &&
+                response?.Headers.RetryAfter?.Delta is { } retryAfterDelta &&
+                retryAfterDelta > TimeSpan.Zero)
+            {
+                return retryAfterDelta > CircuitOpenTtl ? CircuitOpenTtl : retryAfterDelta;
+            }
+
+            return RecentFailureTtl;
+        }
+
+        private static void LogRequestFailure(
+            TmdbRequestContext context,
+            string requestType,
+            TmdbFailureKind kind,
+            HttpStatusCode? statusCode,
+            Exception? exception,
+            bool willRetry,
+            DateTime nextRetryUtc)
+        {
+            var status = statusCode.HasValue ? ((int)statusCode.Value).ToString(CultureInfo.InvariantCulture) : "none";
+            var message = exception == null ? string.Empty : GetExceptionMessage(exception);
+            Debug.WriteLine($"TMDb request failure: media={context.MediaType}, id={context.ContentId}, title='{context.Title}', request={requestType}, kind={kind}, status={status}, message='{message}', retry={(willRetry ? "yes" : "no")}, nextRetryUtc={nextRetryUtc:O}");
         }
 
         private static IEnumerable<TmdbSearchQuery> BuildSearchQueries(string rawTitle, int? providerYear)
@@ -902,18 +1271,107 @@ namespace Kroira.App.Services.Metadata
 
         private sealed record TmdbSearchQuery(string Title, int? Year, bool IsYearQualified);
 
+        private sealed record TmdbRequestContext(string MediaType, int ContentId, string Title);
+
+        private enum TmdbFailureKind
+        {
+            Network,
+            Timeout,
+            Auth,
+            RateLimit,
+            NotFound,
+            Server,
+            Http,
+            Parse,
+            Unexpected
+        }
+
+        private sealed class TmdbRequestException : Exception
+        {
+            public TmdbRequestException(
+                TmdbFailureKind kind,
+                HttpStatusCode? statusCode,
+                string requestType,
+                string message,
+                bool retryable,
+                DateTime nextRetryUtc,
+                Exception? innerException = null)
+                : base(message, innerException)
+            {
+                Kind = kind;
+                StatusCode = statusCode;
+                RequestType = requestType;
+                Retryable = retryable;
+                NextRetryUtc = nextRetryUtc;
+            }
+
+            public TmdbFailureKind Kind { get; }
+            public HttpStatusCode? StatusCode { get; }
+            public string RequestType { get; }
+            public bool Retryable { get; }
+            public DateTime NextRetryUtc { get; }
+        }
+
         private sealed class TmdbDiagnostics
         {
             public bool MissingCredential { get; set; }
+            public bool CircuitOpen { get; set; }
+            public DateTime? CircuitOpenUntilUtc { get; set; }
             public int Attempted { get; set; }
             public int Matched { get; set; }
             public int Missed { get; set; }
             public int Errors { get; set; }
+            public int Suppressed { get; set; }
             public int SearchRequests { get; set; }
             public int DetailsRequests { get; set; }
             public int FindRequests { get; set; }
             public int ProviderTmdbIdAttempts { get; set; }
             public int ProviderImdbIdAttempts { get; set; }
+            public int NetworkFailures { get; set; }
+            public int TimeoutFailures { get; set; }
+            public int AuthFailures { get; set; }
+            public int RateLimitFailures { get; set; }
+            public int NotFoundFailures { get; set; }
+            public int ServerFailures { get; set; }
+            public int HttpFailures { get; set; }
+            public int ParseFailures { get; set; }
+            public int UnexpectedFailures { get; set; }
+
+            public int BroadFailures => NetworkFailures + TimeoutFailures + AuthFailures + RateLimitFailures + ServerFailures;
+
+            public void RecordFailure(TmdbFailureKind kind)
+            {
+                switch (kind)
+                {
+                    case TmdbFailureKind.Network:
+                        NetworkFailures++;
+                        break;
+                    case TmdbFailureKind.Timeout:
+                        TimeoutFailures++;
+                        break;
+                    case TmdbFailureKind.Auth:
+                        AuthFailures++;
+                        break;
+                    case TmdbFailureKind.RateLimit:
+                        RateLimitFailures++;
+                        break;
+                    case TmdbFailureKind.NotFound:
+                        NotFoundFailures++;
+                        break;
+                    case TmdbFailureKind.Server:
+                        ServerFailures++;
+                        break;
+                    case TmdbFailureKind.Http:
+                        HttpFailures++;
+                        break;
+                    case TmdbFailureKind.Parse:
+                        ParseFailures++;
+                        break;
+                    case TmdbFailureKind.Unexpected:
+                        UnexpectedFailures++;
+                        break;
+                }
+            }
         }
 
         private sealed record TmdbDetails(

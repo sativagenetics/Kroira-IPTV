@@ -12,6 +12,7 @@ using Kroira.App.Services;
 using Kroira.App.Services.Metadata;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.UI.Xaml;
 
 namespace Kroira.App.ViewModels
 {
@@ -49,14 +50,42 @@ namespace Kroira.App.ViewModels
         public string FavoriteLabel => IsFavorite ? "Saved" : "Save";
     }
 
+    public partial class MovieBrowseSlotViewModel : ObservableObject
+    {
+        public MovieBrowseSlotViewModel(MovieBrowseItemViewModel? movie)
+        {
+            Movie = movie;
+        }
+
+        public MovieBrowseItemViewModel? Movie { get; }
+        public bool HasMovie => Movie != null;
+        public int Id => Movie?.Id ?? 0;
+        public string Title => Movie?.Title ?? string.Empty;
+        public string DisplayPosterUrl => Movie?.DisplayPosterUrl ?? string.Empty;
+        public string RatingText => Movie?.RatingText ?? string.Empty;
+        public string MetadataLine => Movie?.MetadataLine ?? string.Empty;
+        public string FavoriteGlyph => Movie?.FavoriteGlyph ?? "\uE734";
+        public string FavoriteLabel => Movie?.FavoriteLabel ?? string.Empty;
+        public Visibility MovieVisibility => HasMovie ? Visibility.Visible : Visibility.Collapsed;
+        public Visibility PlaceholderVisibility => HasMovie ? Visibility.Collapsed : Visibility.Visible;
+
+        public void RefreshFavoriteState()
+        {
+            OnPropertyChanged(nameof(FavoriteGlyph));
+            OnPropertyChanged(nameof(FavoriteLabel));
+        }
+    }
+
     public partial class MoviesViewModel : ObservableObject
     {
         private const string FixedFeaturedMovieTitle = "Kurtlar Vadisi Gladio";
+        private const int BrowseGridColumns = 5;
         private readonly IServiceProvider _serviceProvider;
         private List<MovieBrowseItemViewModel> _allMovies = new List<MovieBrowseItemViewModel>();
         private static readonly int _sessionRotationIndex = Math.Abs(Environment.TickCount % 5);
 
         public ObservableCollection<MovieBrowseItemViewModel> FilteredMovies { get; } = new ObservableCollection<MovieBrowseItemViewModel>();
+        public ObservableCollection<MovieBrowseSlotViewModel> DisplayMovieSlots { get; } = new ObservableCollection<MovieBrowseSlotViewModel>();
         public ObservableCollection<BrowserCategoryViewModel> Categories { get; } = new ObservableCollection<BrowserCategoryViewModel>();
 
         [ObservableProperty]
@@ -156,6 +185,7 @@ namespace Kroira.App.ViewModels
             }
 
             IsEmpty = FilteredMovies.Count == 0;
+            RefreshDisplayMovieSlots();
         }
 
         [RelayCommand]
@@ -184,11 +214,38 @@ namespace Kroira.App.ViewModels
             }
 
             await db.SaveChangesAsync();
+
+            foreach (var slot in DisplayMovieSlots.Where(slot => slot.Movie?.Id == movieId))
+            {
+                slot.RefreshFavoriteState();
+            }
         }
 
         private static string GetDisplayCategory(string categoryName)
         {
             return string.IsNullOrWhiteSpace(categoryName) ? "Uncategorized" : categoryName.Trim();
+        }
+
+        private void RefreshDisplayMovieSlots()
+        {
+            DisplayMovieSlots.Clear();
+
+            foreach (var movie in FilteredMovies)
+            {
+                DisplayMovieSlots.Add(new MovieBrowseSlotViewModel(movie));
+            }
+
+            if (FilteredMovies.Count == 0)
+            {
+                return;
+            }
+
+            var remainder = FilteredMovies.Count % BrowseGridColumns;
+            var placeholderCount = remainder == 0 ? 0 : BrowseGridColumns - remainder;
+            for (var i = 0; i < placeholderCount; i++)
+            {
+                DisplayMovieSlots.Add(new MovieBrowseSlotViewModel(null));
+            }
         }
 
         private void RefreshFeaturedMovie()

@@ -312,10 +312,12 @@
                                TextAlignment="Center" />
                 </StackPanel>
 
-                <GridView ItemsSource="{x:Bind ViewModel.FilteredMovies, Mode=OneWay}"
+                <GridView ItemsSource="{x:Bind ViewModel.DisplayMovieSlots, Mode=OneWay}"
                           SelectionMode="Single"
                           SelectionChanged="GridView_SelectionChanged"
                           ItemContainerStyle="{StaticResource MovieTileContainerStyle}"
+                          HorizontalAlignment="Left"
+                          Width="1030"
                           ScrollViewer.HorizontalScrollMode="Disabled"
                           ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                           ScrollViewer.VerticalScrollMode="Enabled"
@@ -326,128 +328,148 @@
                             <ItemsWrapGrid Orientation="Horizontal"
                                            ItemWidth="206"
                                            ItemHeight="334"
-                                           MaximumRowsOrColumns="6" />
+                                           MaximumRowsOrColumns="5" />
                         </ItemsPanelTemplate>
                     </GridView.ItemsPanel>
                     <GridView.ItemTemplate>
                         <DataTemplate>
-                            <Border Width="194"
-                                    Height="322"
-                                    BorderBrush="{StaticResource KroiraGlassBorderBrush}"
-                                    BorderThickness="1"
-                                    CornerRadius="14"
-                                    Padding="10,10,10,12">
-                                <Border.Background>
-                                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                        <GradientStop Color="#252016" Offset="0" />
-                                        <GradientStop Color="#10151C" Offset="0.54" />
-                                        <GradientStop Color="#080A0D" Offset="1" />
-                                    </LinearGradientBrush>
-                                </Border.Background>
-                                <Grid>
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition Height="230" />
-                                        <RowDefinition Height="*" />
-                                        <RowDefinition Height="Auto" />
-                                    </Grid.RowDefinitions>
-
+                            <Grid Width="194" Height="322">
+                                <Border Visibility="{Binding MovieVisibility}"
+                                        BorderBrush="{StaticResource KroiraGlassBorderBrush}"
+                                        BorderThickness="1"
+                                        CornerRadius="14"
+                                        Padding="10,10,10,12">
+                                    <Border.Background>
+                                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                            <GradientStop Color="#252016" Offset="0" />
+                                            <GradientStop Color="#10151C" Offset="0.54" />
+                                            <GradientStop Color="#080A0D" Offset="1" />
+                                        </LinearGradientBrush>
+                                    </Border.Background>
                                     <Grid>
-                                        <Border CornerRadius="9"
-                                                Background="{StaticResource KroiraPosterPlaceholderBrush}"
-                                                BorderBrush="#1EFFFFFF"
-                                                BorderThickness="1">
-                                            <FontIcon Glyph="&#xE8B2;"
-                                                      Foreground="{StaticResource KroiraTextTertiaryBrush}"
-                                                      FontSize="28"
-                                                      HorizontalAlignment="Center"
-                                                      VerticalAlignment="Center"
-                                                      Opacity="0.55" />
-                                        </Border>
-                                        <Border CornerRadius="9">
-                                            <Image Source="{Binding DisplayPosterUrl, Converter={StaticResource UrlToImageSourceConverter}}"
-                                                   Stretch="UniformToFill" />
-                                        </Border>
-                                        <Border Height="76"
-                                                VerticalAlignment="Bottom"
-                                                CornerRadius="0,0,9,9">
-                                            <Border.Background>
-                                                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                                    <GradientStop Color="#0010141A" Offset="0" />
-                                                    <GradientStop Color="#D8080A0D" Offset="1" />
-                                                </LinearGradientBrush>
-                                            </Border.Background>
-                                        </Border>
-                                        <Button Click="FavoriteToggle_Click"
-                                                Tag="{Binding Id}"
-                                                ToolTipService.ToolTip="{Binding FavoriteLabel}"
-                                                Width="36"
-                                                Height="36"
-                                                Padding="0"
-                                                MinWidth="0"
-                                                MinHeight="0"
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="230" />
+                                            <RowDefinition Height="*" />
+                                            <RowDefinition Height="Auto" />
+                                        </Grid.RowDefinitions>
+
+                                        <Grid>
+                                            <Border CornerRadius="9"
+                                                    Background="{StaticResource KroiraPosterPlaceholderBrush}"
+                                                    BorderBrush="#1EFFFFFF"
+                                                    BorderThickness="1">
+                                                <FontIcon Glyph="&#xE8B2;"
+                                                          Foreground="{StaticResource KroiraTextTertiaryBrush}"
+                                                          FontSize="28"
+                                                          HorizontalAlignment="Center"
+                                                          VerticalAlignment="Center"
+                                                          Opacity="0.55" />
+                                            </Border>
+                                            <Border CornerRadius="9">
+                                                <Image Source="{Binding DisplayPosterUrl, Converter={StaticResource UrlToImageSourceConverter}}"
+                                                       Stretch="UniformToFill" />
+                                            </Border>
+                                            <Border Height="76"
+                                                    VerticalAlignment="Bottom"
+                                                    CornerRadius="0,0,9,9">
+                                                <Border.Background>
+                                                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                                        <GradientStop Color="#0010141A" Offset="0" />
+                                                        <GradientStop Color="#D8080A0D" Offset="1" />
+                                                    </LinearGradientBrush>
+                                                </Border.Background>
+                                            </Border>
+                                            <Button Click="FavoriteToggle_Click"
+                                                    Tag="{Binding Id}"
+                                                    ToolTipService.ToolTip="{Binding FavoriteLabel}"
+                                                    Width="36"
+                                                    Height="36"
+                                                    Padding="0"
+                                                    MinWidth="0"
+                                                    MinHeight="0"
+                                                    HorizontalAlignment="Left"
+                                                    VerticalAlignment="Top"
+                                                    Margin="8"
+                                                    Background="#D0090B0F"
+                                                    BorderBrush="{StaticResource KroiraChromeLineBrush}"
+                                                    BorderThickness="1"
+                                                    CornerRadius="18">
+                                                <FontIcon Glyph="{Binding FavoriteGlyph}"
+                                                          FontSize="13"
+                                                          Foreground="{StaticResource KroiraAccentBrush}" />
+                                            </Button>
+                                            <Border Background="#D0090B0F"
+                                                    BorderBrush="{StaticResource KroiraChromeLineBrush}"
+                                                    BorderThickness="1"
+                                                    CornerRadius="8"
+                                                    Padding="8,4"
+                                                    HorizontalAlignment="Right"
+                                                    VerticalAlignment="Top"
+                                                    Margin="8">
+                                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                                    <FontIcon Glyph="&#xE7BA;"
+                                                              FontSize="10"
+                                                              Foreground="{StaticResource KroiraAccentBrush}" />
+                                                    <TextBlock Text="{Binding RatingText}"
+                                                               Foreground="{StaticResource KroiraAccentBrush}"
+                                                               FontSize="11"
+                                                               FontWeight="SemiBold" />
+                                                </StackPanel>
+                                            </Border>
+                                        </Grid>
+
+                                        <StackPanel Grid.Row="1" Spacing="3" Margin="2,9,2,4">
+                                            <TextBlock Text="{Binding Title}"
+                                                       Style="{StaticResource KroiraTitleStyle}"
+                                                       FontSize="13"
+                                                       MaxLines="2"
+                                                       TextWrapping="Wrap"
+                                                       TextTrimming="CharacterEllipsis" />
+                                            <TextBlock Text="{Binding MetadataLine}"
+                                                       Style="{StaticResource KroiraMetaStyle}"
+                                                       MaxLines="1"
+                                                       TextTrimming="CharacterEllipsis" />
+                                        </StackPanel>
+
+                                        <Border Grid.Row="2"
                                                 HorizontalAlignment="Left"
-                                                VerticalAlignment="Top"
-                                                Margin="8"
-                                                Background="#D0090B0F"
-                                                BorderBrush="{StaticResource KroiraChromeLineBrush}"
-                                                BorderThickness="1"
-                                                CornerRadius="18">
-                                            <FontIcon Glyph="{Binding FavoriteGlyph}"
-                                                      FontSize="13"
-                                                      Foreground="{StaticResource KroiraAccentBrush}" />
-                                        </Button>
-                                        <Border Background="#D0090B0F"
+                                                Background="#26231A10"
                                                 BorderBrush="{StaticResource KroiraChromeLineBrush}"
                                                 BorderThickness="1"
                                                 CornerRadius="8"
-                                                Padding="8,4"
-                                                HorizontalAlignment="Right"
-                                                VerticalAlignment="Top"
-                                                Margin="8">
-                                            <StackPanel Orientation="Horizontal" Spacing="4">
-                                                <FontIcon Glyph="&#xE7BA;"
-                                                          FontSize="10"
+                                                Padding="9,4">
+                                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                                <FontIcon Glyph="&#xE768;"
+                                                          FontSize="11"
                                                           Foreground="{StaticResource KroiraAccentBrush}" />
-                                                <TextBlock Text="{Binding RatingText}"
-                                                           Foreground="{StaticResource KroiraAccentBrush}"
+                                                <TextBlock Text="Play"
                                                            FontSize="11"
-                                                           FontWeight="SemiBold" />
+                                                           FontWeight="SemiBold"
+                                                           Foreground="{StaticResource KroiraAccentBrush}" />
                                             </StackPanel>
                                         </Border>
                                     </Grid>
+                                </Border>
 
-                                    <StackPanel Grid.Row="1" Spacing="3" Margin="2,9,2,4">
-                                        <TextBlock Text="{Binding Title}"
-                                                   Style="{StaticResource KroiraTitleStyle}"
-                                                   FontSize="13"
-                                                   MaxLines="2"
-                                                   TextWrapping="Wrap"
-                                                   TextTrimming="CharacterEllipsis" />
-                                        <TextBlock Text="{Binding MetadataLine}"
-                                                   Style="{StaticResource KroiraMetaStyle}"
-                                                   MaxLines="1"
-                                                   TextTrimming="CharacterEllipsis" />
-                                    </StackPanel>
-
-                                    <Border Grid.Row="2"
-                                            HorizontalAlignment="Left"
-                                            Background="#26231A10"
-                                            BorderBrush="{StaticResource KroiraChromeLineBrush}"
-                                            BorderThickness="1"
-                                            CornerRadius="8"
-                                            Padding="9,4">
-                                        <StackPanel Orientation="Horizontal" Spacing="6">
-                                            <FontIcon Glyph="&#xE768;"
-                                                      FontSize="11"
-                                                      Foreground="{StaticResource KroiraAccentBrush}" />
-                                            <TextBlock Text="Play"
-                                                       FontSize="11"
-                                                       FontWeight="SemiBold"
-                                                       Foreground="{StaticResource KroiraAccentBrush}" />
-                                        </StackPanel>
-                                    </Border>
-                                </Grid>
-                            </Border>
+                                <Border Visibility="{Binding PlaceholderVisibility}"
+                                        BorderBrush="#14FFFFFF"
+                                        BorderThickness="1"
+                                        CornerRadius="14"
+                                        Background="#220A0D11"
+                                        Opacity="0.72">
+                                    <Grid>
+                                        <Border Margin="10"
+                                                CornerRadius="9"
+                                                BorderBrush="#0FFFFFFF"
+                                                BorderThickness="1"
+                                                Background="#18000000" />
+                                        <FontIcon Glyph="&#xE8B2;"
+                                                  FontSize="24"
+                                                  Foreground="{StaticResource KroiraTextTertiaryBrush}"
+                                                  Opacity="0.16" />
+                                    </Grid>
+                                </Border>
+                            </Grid>
                         </DataTemplate>
                     </GridView.ItemTemplate>
                 </GridView>
