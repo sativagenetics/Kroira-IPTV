@@ -20,10 +20,8 @@ namespace Kroira.App.ViewModels
 
         public ObservableCollection<LanguageOptionViewModel> Languages { get; } = new()
         {
-            new LanguageOptionViewModel("tr-TR", "Turkish"),
-            new LanguageOptionViewModel("en-US", "English"),
-            new LanguageOptionViewModel("de-DE", "German"),
-            new LanguageOptionViewModel("ar-SA", "Arabic")
+            new LanguageOptionViewModel(AppLanguageService.DefaultLanguageCode, "Türkçe"),
+            new LanguageOptionViewModel("en-US", "English")
         };
 
         [ObservableProperty]
@@ -39,7 +37,7 @@ namespace Kroira.App.ViewModels
         private LanguageOptionViewModel _selectedLanguage;
 
         [ObservableProperty]
-        private string _languageStatusText = "Language preference is used for catalog ordering.";
+        private string _languageStatusText = "Türkçe is the default app language. English is available as the only secondary supported option.";
 
         partial void OnSelectedLanguageChanged(LanguageOptionViewModel value)
         {
@@ -62,6 +60,7 @@ namespace Kroira.App.ViewModels
             using var scope = _serviceProvider.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             var languageCode = await AppLanguageService.GetLanguageAsync(db);
+            await AppLanguageService.SetLanguageAsync(db, languageCode);
 
             _isLoadingLanguage = true;
             SelectedLanguage = Languages.FirstOrDefault(language => language.Code == languageCode)
@@ -74,7 +73,10 @@ namespace Kroira.App.ViewModels
             using var scope = _serviceProvider.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             await AppLanguageService.SetLanguageAsync(db, languageCode);
-            LanguageStatusText = "Language preference saved. Catalog ordering will update when Movies or Series reload.";
+            var normalizedLanguageCode = AppLanguageService.NormalizeLanguageCode(languageCode);
+            LanguageStatusText = normalizedLanguageCode == AppLanguageService.DefaultLanguageCode
+                ? "Türkçe selected. Unsupported language options remain hidden until real app support exists."
+                : "English selected. Unsupported language options remain hidden until real app support exists.";
         }
 
         [RelayCommand]

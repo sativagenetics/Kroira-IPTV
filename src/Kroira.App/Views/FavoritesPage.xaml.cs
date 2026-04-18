@@ -58,13 +58,47 @@ namespace Kroira.App.Views
             ((ListView)sender).SelectedItem = null;
         }
 
-        private void SeriesList_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private async void SeriesList_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (e.AddedItems.Count > 0 && e.AddedItems[0] is FavoriteSeriesViewModel)
+            if (e.AddedItems.Count > 0 && e.AddedItems[0] is FavoriteSeriesViewModel series)
             {
-                this.Frame.Navigate(typeof(SeriesPage));
+                await ViewModel.SelectSeriesAsync(series.Id);
             }
             ((ListView)sender).SelectedItem = null;
+        }
+
+        private void EpisodeList_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (e.AddedItems.Count > 0 && e.AddedItems[0] is Kroira.App.Models.Episode episode)
+            {
+                ViewModel.SelectEpisode(episode);
+            }
+            ((ListView)sender).SelectedItem = null;
+        }
+
+        private void PlaySelectedEpisode_Click(object sender, RoutedEventArgs e)
+        {
+            var episode = ViewModel.SelectedEpisode;
+            if (episode != null && !string.IsNullOrWhiteSpace(episode.StreamUrl))
+            {
+                this.Frame.Navigate(typeof(EmbeddedPlaybackPage), new Kroira.App.Models.PlaybackLaunchContext
+                {
+                    ContentId = episode.Id,
+                    ContentType = Kroira.App.Models.PlaybackContentType.Episode,
+                    StreamUrl = episode.StreamUrl,
+                    StartPositionMs = 0
+                });
+            }
+        }
+
+        private void OpenSeriesPage_Click(object sender, RoutedEventArgs e)
+        {
+            this.Frame.Navigate(typeof(SeriesPage));
+        }
+
+        private void CloseSeriesDetail_Click(object sender, RoutedEventArgs e)
+        {
+            ViewModel.ClearSelectedSeries();
         }
 
         private void RemoveChannelFavorite_Click(object sender, RoutedEventArgs e)

@@ -304,5 +304,218 @@
                 </Grid>
             </Border>
         </Grid>
+
+        <Border Grid.Row="1"
+                Width="540"
+                HorizontalAlignment="Right"
+                VerticalAlignment="Stretch"
+                Visibility="{x:Bind ViewModel.SeriesDetailVisibility, Mode=OneWay}"
+                Background="#F0080A0D"
+                BorderBrush="{StaticResource KroiraGlassBorderBrush}"
+                BorderThickness="1"
+                CornerRadius="18"
+                Padding="0"
+                Margin="0,0,0,0">
+            <Grid>
+                <Border Width="5"
+                        HorizontalAlignment="Left"
+                        Background="{StaticResource KroiraAccentGradientBrush}"
+                        CornerRadius="18,0,0,18" />
+                <ScrollViewer VerticalScrollMode="Auto"
+                              VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollMode="Disabled"
+                              HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel Padding="18,18,18,20" Spacing="14">
+                        <Grid ColumnSpacing="12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Spacing="3">
+                                <TextBlock Text="SAVED SERIES"
+                                           Style="{StaticResource KroiraLabelStyle}"
+                                           Foreground="{StaticResource KroiraAccentBrush}" />
+                                <TextBlock Text="Inline inspect"
+                                           Style="{StaticResource KroiraSectionTitleStyle}" />
+                            </StackPanel>
+                            <Button Grid.Column="1"
+                                    Content="Close"
+                                    Click="CloseSeriesDetail_Click"
+                                    Style="{StaticResource KroiraGhostButtonStyle}"
+                                    Padding="12,8"
+                                    VerticalAlignment="Top" />
+                        </Grid>
+
+                        <Border MinHeight="232"
+                                CornerRadius="14"
+                                Background="{StaticResource KroiraMediaGradientBrush}"
+                                BorderBrush="{StaticResource KroiraGlassBorderBrush}"
+                                BorderThickness="1">
+                            <Grid>
+                                <Image Source="{x:Bind ViewModel.SelectedSeries.HeroArtworkUrl, Mode=OneWay, Converter={StaticResource UrlToImageSourceConverter}}"
+                                       Stretch="UniformToFill"
+                                       Opacity="0.72" />
+                                <Border>
+                                    <Border.Background>
+                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                            <GradientStop Color="#44000000" Offset="0" />
+                                            <GradientStop Color="#B0090B0F" Offset="0.52" />
+                                            <GradientStop Color="#F0080A0D" Offset="1" />
+                                        </LinearGradientBrush>
+                                    </Border.Background>
+                                </Border>
+                                <Grid Padding="16" ColumnSpacing="14" VerticalAlignment="Bottom">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="104" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <Border Width="104"
+                                            Height="154"
+                                            CornerRadius="10"
+                                            Background="{StaticResource KroiraPosterPlaceholderBrush}"
+                                            BorderBrush="{StaticResource KroiraGlassBorderBrush}"
+                                            BorderThickness="1">
+                                        <Image Source="{x:Bind ViewModel.SelectedSeries.PosterUrl, Mode=OneWay, Converter={StaticResource UrlToImageSourceConverter}}"
+                                               Stretch="UniformToFill" />
+                                    </Border>
+                                    <StackPanel Grid.Column="1"
+                                                Spacing="6"
+                                                VerticalAlignment="Bottom">
+                                        <TextBlock Text="{x:Bind ViewModel.SelectedSeries.Title, Mode=OneWay}"
+                                                   Style="{StaticResource KroiraSectionTitleStyle}"
+                                                   FontSize="22"
+                                                   MaxLines="2"
+                                                   TextWrapping="Wrap"
+                                                   TextTrimming="CharacterEllipsis" />
+                                        <TextBlock Text="{x:Bind ViewModel.SelectedSeries.MetadataLine, Mode=OneWay}"
+                                                   Style="{StaticResource KroiraBodyStyle}"
+                                                   Foreground="{StaticResource KroiraTextSecondaryBrush}"
+                                                   MaxLines="1"
+                                                   TextTrimming="CharacterEllipsis" />
+                                        <TextBlock Text="{x:Bind ViewModel.SelectedSeries.Overview, Mode=OneWay}"
+                                                   Style="{StaticResource KroiraBodyStyle}"
+                                                   FontSize="12"
+                                                   LineHeight="17"
+                                                   MaxLines="4"
+                                                   TextTrimming="CharacterEllipsis" />
+                                    </StackPanel>
+                                </Grid>
+                            </Grid>
+                        </Border>
+
+                        <Border Background="#9611161E"
+                                BorderBrush="{StaticResource KroiraChromeLineBrush}"
+                                BorderThickness="1"
+                                CornerRadius="12"
+                                Padding="13">
+                            <Grid ColumnSpacing="12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Spacing="7">
+                                    <TextBlock Text="SEASON"
+                                               Style="{StaticResource KroiraLabelStyle}"
+                                               Foreground="{StaticResource KroiraAccentBrush}" />
+                                    <ComboBox Style="{StaticResource KroiraFilterComboBoxStyle}"
+                                              ItemsSource="{x:Bind ViewModel.SelectedSeries.Seasons, Mode=OneWay}"
+                                              SelectedItem="{x:Bind ViewModel.SelectedSeason, Mode=TwoWay}"
+                                              HorizontalAlignment="Stretch">
+                                        <ComboBox.ItemTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding SeasonNumber}" />
+                                            </DataTemplate>
+                                        </ComboBox.ItemTemplate>
+                                    </ComboBox>
+                                </StackPanel>
+                                <Button Grid.Column="1"
+                                        Content="Play"
+                                        Click="PlaySelectedEpisode_Click"
+                                        Visibility="{x:Bind ViewModel.SelectedEpisodePlayVisibility, Mode=OneWay}"
+                                        Style="{StaticResource KroiraPrimaryButtonStyle}"
+                                        Padding="16,11"
+                                        VerticalAlignment="Bottom" />
+                                <Button Grid.Column="2"
+                                        Content="Open Series page"
+                                        Click="OpenSeriesPage_Click"
+                                        Style="{StaticResource KroiraGhostButtonStyle}"
+                                        Padding="14,11"
+                                        VerticalAlignment="Bottom" />
+                            </Grid>
+                        </Border>
+
+                        <Border Visibility="{x:Bind ViewModel.SelectedSeriesEpisodesEmptyVisibility, Mode=OneWay}"
+                                Background="#7A0B0E14"
+                                BorderBrush="{StaticResource KroiraGlassBorderBrush}"
+                                BorderThickness="1"
+                                CornerRadius="12"
+                                Padding="18">
+                            <StackPanel Spacing="8">
+                                <FontIcon Glyph="&#xE8A9;"
+                                          FontSize="22"
+                                          Foreground="{StaticResource KroiraTextTertiaryBrush}"
+                                          HorizontalAlignment="Left" />
+                                <TextBlock Text="No playable episodes"
+                                           Style="{StaticResource KroiraTitleStyle}" />
+                                <TextBlock Text="This saved series does not currently have playable episode data in the local library."
+                                           Style="{StaticResource KroiraBodyStyle}"
+                                           TextWrapping="Wrap" />
+                            </StackPanel>
+                        </Border>
+
+                        <ListView Visibility="{x:Bind ViewModel.SelectedSeriesEpisodesVisibility, Mode=OneWay}"
+                                  ItemsSource="{x:Bind ViewModel.SelectedSeason.Episodes, Mode=OneWay}"
+                                  SelectionMode="Single"
+                                  SelectionChanged="EpisodeList_SelectionChanged"
+                                  ItemContainerStyle="{StaticResource HubItemContainerStyle}"
+                                  MaxHeight="330"
+                                  Padding="0"
+                                  ScrollViewer.VerticalScrollMode="Enabled"
+                                  ScrollViewer.VerticalScrollBarVisibility="Auto">
+                            <ListView.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Background="#B111161E"
+                                            BorderBrush="{StaticResource KroiraChromeLineBrush}"
+                                            BorderThickness="1"
+                                            CornerRadius="10"
+                                            Padding="12,10">
+                                        <Grid ColumnSpacing="10">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <Border Background="#24FFFFFF"
+                                                    CornerRadius="6"
+                                                    Padding="6,2"
+                                                    MinWidth="28"
+                                                    VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding EpisodeNumber}"
+                                                           FontSize="11"
+                                                           FontWeight="SemiBold"
+                                                           Foreground="{StaticResource KroiraTextTertiaryBrush}"
+                                                           HorizontalAlignment="Center" />
+                                            </Border>
+                                            <TextBlock Grid.Column="1"
+                                                       Text="{Binding Title}"
+                                                       Style="{StaticResource KroiraTitleStyle}"
+                                                       FontSize="13"
+                                                       TextTrimming="CharacterEllipsis"
+                                                       VerticalAlignment="Center" />
+                                            <FontIcon Grid.Column="2"
+                                                      Glyph="&#xE102;"
+                                                      FontSize="11"
+                                                      Foreground="{StaticResource KroiraAccentBrush}"
+                                                      VerticalAlignment="Center" />
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ListView.ItemTemplate>
+                        </ListView>
+                    </StackPanel>
+                </ScrollViewer>
+            </Grid>
+        </Border>
     </Grid>
 </Page>

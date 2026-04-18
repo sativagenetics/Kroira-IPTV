@@ -1,3 +1,4 @@
+#nullable enable
 using System.Linq;
 using System.Threading.Tasks;
 using Kroira.App.Data;
@@ -11,6 +12,8 @@ namespace Kroira.App.Services
         public const string LanguageSettingKey = "App.Language";
         public const string DefaultLanguageCode = "tr-TR";
 
+        public static readonly string[] SupportedLanguageCodes = { DefaultLanguageCode, "en-US" };
+
         public static async Task<string> GetLanguageAsync(AppDbContext db)
         {
             var value = await db.AppSettings
@@ -18,14 +21,12 @@ namespace Kroira.App.Services
                 .Select(setting => setting.Value)
                 .FirstOrDefaultAsync();
 
-            return string.IsNullOrWhiteSpace(value) ? DefaultLanguageCode : value;
+            return NormalizeLanguageCode(value);
         }
 
         public static async Task SetLanguageAsync(AppDbContext db, string languageCode)
         {
-            var normalized = string.IsNullOrWhiteSpace(languageCode)
-                ? DefaultLanguageCode
-                : languageCode;
+            var normalized = NormalizeLanguageCode(languageCode);
 
             var setting = await db.AppSettings.FirstOrDefaultAsync(item => item.Key == LanguageSettingKey);
             if (setting == null)
@@ -43,6 +44,13 @@ namespace Kroira.App.Services
             }
 
             await db.SaveChangesAsync();
+        }
+
+        public static string NormalizeLanguageCode(string? languageCode)
+        {
+            return SupportedLanguageCodes.Contains(languageCode)
+                ? languageCode!
+                : DefaultLanguageCode;
         }
     }
 }

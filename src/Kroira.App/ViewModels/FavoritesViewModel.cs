@@ -24,10 +24,14 @@ namespace Kroira.App.ViewModels
 
     public partial class FavoriteSeriesViewModel : ObservableObject
     {
+        public Series Series { get; set; } = new Series();
         public int Id { get; set; }
         public string Title { get; set; } = string.Empty;
         public string PosterUrl { get; set; } = string.Empty;
+        public string HeroArtworkUrl { get; set; } = string.Empty;
         public string MetadataLine { get; set; } = string.Empty;
+        public string Overview { get; set; } = string.Empty;
+        public ObservableCollection<Season> Seasons { get; } = new();
     }
 
     public partial class FavoritesViewModel : ObservableObject
@@ -53,6 +57,22 @@ namespace Kroira.App.ViewModels
         [ObservableProperty]
         private BrowserChannelViewModel? _featuredChannel;
 
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(SeriesDetailVisibility))]
+        [NotifyPropertyChangedFor(nameof(SeriesDetailEmptyVisibility))]
+        [NotifyPropertyChangedFor(nameof(SelectedSeriesEpisodesVisibility))]
+        [NotifyPropertyChangedFor(nameof(SelectedSeriesEpisodesEmptyVisibility))]
+        private FavoriteSeriesViewModel? _selectedSeries;
+
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(SelectedSeriesEpisodesVisibility))]
+        [NotifyPropertyChangedFor(nameof(SelectedSeriesEpisodesEmptyVisibility))]
+        private Season? _selectedSeason;
+
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(SelectedEpisodePlayVisibility))]
+        private Episode? _selectedEpisode;
+
         public Visibility EmptyVisibility => IsEmpty ? Visibility.Visible : Visibility.Collapsed;
         public Visibility ContentVisibility => IsEmpty ? Visibility.Collapsed : Visibility.Visible;
         public string FavoriteCountText => TotalFavorites == 1 ? "1 saved item" : $"{TotalFavorites} saved items";
@@ -63,6 +83,11 @@ namespace Kroira.App.ViewModels
         public Visibility ChannelsEmptyVisibility => FavoriteChannels.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
         public Visibility MoviesEmptyVisibility => FavoriteMovies.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
         public Visibility SeriesEmptyVisibility => FavoriteSeries.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+        public Visibility SeriesDetailVisibility => SelectedSeries == null ? Visibility.Collapsed : Visibility.Visible;
+        public Visibility SeriesDetailEmptyVisibility => SelectedSeries == null ? Visibility.Visible : Visibility.Collapsed;
+        public Visibility SelectedSeriesEpisodesVisibility => SelectedSeason?.Episodes?.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+        public Visibility SelectedSeriesEpisodesEmptyVisibility => SelectedSeries != null && !(SelectedSeason?.Episodes?.Count > 0) ? Visibility.Visible : Visibility.Collapsed;
+        public Visibility SelectedEpisodePlayVisibility => SelectedEpisode == null ? Visibility.Collapsed : Visibility.Visible;
 
         public FavoritesViewModel(IServiceProvider serviceProvider)
         {
@@ -128,22 +153,80 @@ namespace Kroira.App.ViewModels
 
             if (seriesIds.Count > 0)
             {
-                var series = await db.Series.Where(s => seriesIds.Contains(s.Id)).ToListAsync();
+                var series = await db.Series
+                    .AsNoTracking()
+                    .Include(s => s.Seasons!)
+                    .ThenInclude(season => season.Episodes)
+                    .Where(s => seriesIds.Contains(s.Id))
+                    .ToListAsync();
                 foreach (var show in series.OrderBy(s => s.Title))
                 {
-                    FavoriteSeries.Add(new FavoriteSeriesViewModel
-                    {
-                        Id = show.Id,
-                        Title = show.Title,
-                        PosterUrl = show.DisplayPosterUrl,
-                        MetadataLine = show.MetadataLine
-                    });
+                    FavoriteSeries.Add(BuildFavoriteSeriesViewModel(show));
                 }
             }
 
             IsEmpty = TotalFavorites == 0;
             FeaturedChannel = FavoriteChannels.FirstOrDefault();
             NotifyCountsChanged();
+        }
+
+        partial void OnSelectedSeriesChanged(FavoriteSeriesViewModel? value)
+        {
+            SelectedEpisode = null;
+            if (value == null)
+            {
+                SelectedSeason = null;
+            }
+        }
+
+        partial void OnSelectedSeasonChanged(Season? value)
+        {
+            var playableEpisodes = value?.Episodes?
+                .Where(episode => !string.IsNullOrWhiteSpace(episode.StreamUrl))
+                .OrderBy(episode => episode.EpisodeNumber)
+                .ToList();
+
+            SelectedEpisode = playableEpisodes?.Count == 1 ? playableEpisodes[0] : null;
+        }
+
+        public async Task SelectSeriesAsync(int seriesId)
+        {
+            ClearSelectedSeries();
+
+            if (seriesId <= 0)
+            {
+                return;
+            }
+
+            using var scope = _serviceProvider.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var show = await db.Series
+                .AsNoTracking()
+                .Include(s => s.Seasons!)
+                .ThenInclude(season => season.Episodes)
+                .FirstOrDefaultAsync(s => s.Id == seriesId);
+
+            if (show == null)
+            {
+                return;
+            }
+
+            var hydratedSeries = BuildFavoriteSeriesViewModel(show);
+            SelectedSeries = hydratedSeries;
+            SelectedSeason = hydratedSeries.Seasons.FirstOrDefault(season => season.Episodes?.Count > 0)
+                ?? hydratedSeries.Seasons.FirstOrDefault();
+        }
+
+        public void SelectEpisode(Episode episode)
+        {
+            SelectedEpisode = episode;
+        }
+
+        public void ClearSelectedSeries()
+        {
+            SelectedSeries = null;
+            SelectedSeason = null;
+            SelectedEpisode = null;
         }
 
         [RelayCommand]
@@ -208,6 +291,11 @@ namespace Kroira.App.ViewModels
                 FavoriteSeries.Remove(target);
             }
 
+            if (SelectedSeries?.Id == seriesId)
+            {
+                ClearSelectedSeries();
+            }
+
             IsEmpty = TotalFavorites == 0;
             NotifyCountsChanged();
         }
@@ -222,6 +310,36 @@ namespace Kroira.App.ViewModels
             OnPropertyChanged(nameof(ChannelsEmptyVisibility));
             OnPropertyChanged(nameof(MoviesEmptyVisibility));
             OnPropertyChanged(nameof(SeriesEmptyVisibility));
+        }
+
+        private static FavoriteSeriesViewModel BuildFavoriteSeriesViewModel(Series show)
+        {
+            var favoriteSeries = new FavoriteSeriesViewModel
+            {
+                Series = show,
+                Id = show.Id,
+                Title = show.Title,
+                PosterUrl = show.DisplayPosterUrl,
+                HeroArtworkUrl = show.DisplayHeroArtworkUrl,
+                MetadataLine = show.MetadataLine,
+                Overview = show.Overview
+            };
+
+            var seasons = (show.Seasons ?? Array.Empty<Season>())
+                .OrderBy(season => season.SeasonNumber)
+                .ToList();
+
+            foreach (var season in seasons)
+            {
+                season.Episodes = (season.Episodes ?? Array.Empty<Episode>())
+                    .Where(episode => !string.IsNullOrWhiteSpace(episode.StreamUrl))
+                    .OrderBy(episode => episode.EpisodeNumber)
+                    .ToList();
+
+                favoriteSeries.Seasons.Add(season);
+            }
+
+            return favoriteSeries;
         }
     }
 }
