@@ -50,6 +50,12 @@ namespace Kroira.App.Services.Playback
         }
     }
 
+    internal sealed class MpvPlaybackEndedInfo
+    {
+        public NativeMpv.MpvEndFileReason Reason { get; init; } = NativeMpv.MpvEndFileReason.Unknown;
+        public int ErrorCode { get; init; }
+    }
+
     // Page-scoped wrapper around a single libmpv handle. One playback session = one
     // MpvPlayer instance. Owns its event-loop thread. Disposal is synchronous and
     // joins the event thread so that no native state or audio leaks into the next
@@ -70,6 +76,11 @@ namespace Kroira.App.Services.Playback
         private Thread _eventThread;
         private bool _disposed;
 
+        private static string LogPath => System.IO.Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "Kroira",
+            "startup-log.txt");
+
         public event Action<TimeSpan> PositionChanged;
         public event Action<TimeSpan> DurationChanged;
         public event Action<bool> PauseChanged;
@@ -77,7 +88,7 @@ namespace Kroira.App.Services.Playback
         public event Action<bool> BufferingChanged;
         public event Action FileLoaded;
         public event Action OutputReady;
-        public event Action PlaybackEnded;
+        internal event Action<MpvPlaybackEndedInfo> PlaybackEnded;
         public event Action TrackListChanged;
         public event Action<string> WarningMessage;
 
@@ -134,7 +145,6 @@ namespace Kroira.App.Services.Playback
             NativeMpv.mpv_observe_property(_ctx, PropIdDuration, "duration", NativeMpv.MpvFormat.Double);
             NativeMpv.mpv_observe_property(_ctx, PropIdPause, "pause", NativeMpv.MpvFormat.Flag);
             NativeMpv.mpv_observe_property(_ctx, PropIdSeekable, "seekable", NativeMpv.MpvFormat.Flag);
-            NativeMpv.mpv_observe_property(_ctx, PropIdEof, "eof-reached", NativeMpv.MpvFormat.Flag);
             NativeMpv.mpv_observe_property(_ctx, PropIdBuffering, "paused-for-cache", NativeMpv.MpvFormat.Flag);
 
             _eventThread = new Thread(EventLoop)
@@ -143,6 +153,20 @@ namespace Kroira.App.Services.Playback
                 IsBackground = true,
             };
             _eventThread.Start(_ctx);
+        }
+
+        private static void Log(string message)
+        {
+            try
+            {
+                System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(LogPath)!);
+                System.IO.File.AppendAllText(
+                    LogPath,
+                    $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] MPV {message}{Environment.NewLine}");
+            }
+            catch
+            {
+            }
         }
 
         public void Play(string url, long startPositionMs)
@@ -403,7 +427,7 @@ namespace Kroira.App.Services.Playback
                         HandleLogMessage(ev);
                         break;
                     case NativeMpv.MpvEventId.EndFile:
-                        EnqueueCallback(() => PlaybackEnded?.Invoke());
+                        HandleEndFileEvent(ev);
                         break;
                     case NativeMpv.MpvEventId.FileLoaded:
                         EnqueueCallback(() =>
@@ -483,12 +507,6 @@ namespace Kroira.App.Services.Playback
                         });
                         break;
                     }
-                case PropIdEof:
-                    {
-                        var flag = Marshal.ReadInt32(prop.Data) != 0;
-                        if (flag) EnqueueCallback(() => PlaybackEnded?.Invoke());
-                        break;
-                    }
                 case PropIdBuffering:
                     {
                         var flag = Marshal.ReadInt32(prop.Data) != 0;
@@ -510,6 +528,31 @@ namespace Kroira.App.Services.Playback
             if (string.IsNullOrWhiteSpace(message)) return;
 
             EnqueueCallback(() => WarningMessage?.Invoke(message.Trim()));
+        }
+
+        private void HandleEndFileEvent(NativeMpv.MpvEvent ev)
+        {
+            var endFile = NativeMpv.ReadEventEndFile(ev.Data);
+            Log($"ENDFILE: reason={endFile.Reason} error={endFile.Error}");
+            var shouldSignalEnded =
+                endFile.Reason == NativeMpv.MpvEndFileReason.Eof ||
+                endFile.Reason == NativeMpv.MpvEndFileReason.Error ||
+                endFile.Reason == NativeMpv.MpvEndFileReason.Unknown;
+
+            if (!shouldSignalEnded)
+            {
+                Log($"ENDFILE: ignored reason={endFile.Reason} error={endFile.Error}");
+                EnqueueCallback(() => WarningMessage?.Invoke(
+                    $"mpv end-file ignored: reason={endFile.Reason} error={endFile.Error}"));
+                return;
+            }
+
+            Log($"ENDFILE: dispatching playback-ended reason={endFile.Reason} error={endFile.Error}");
+            EnqueueCallback(() => PlaybackEnded?.Invoke(new MpvPlaybackEndedInfo
+            {
+                Reason = endFile.Reason,
+                ErrorCode = endFile.Error
+            }));
         }
 
         private bool IsDisposed

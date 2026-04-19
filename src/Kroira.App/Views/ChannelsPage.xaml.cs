@@ -56,6 +56,7 @@ namespace Kroira.App.Views
             Log("02: after InitializeComponent");
             ViewModel = ((App)Application.Current).Services.GetRequiredService<ChannelsPageViewModel>();
             Log("03: after resolving ChannelsPageViewModel");
+            Loaded += ChannelsPage_Loaded;
         }
 
         protected override void OnNavigatedTo(NavigationEventArgs e)
@@ -134,6 +135,7 @@ namespace Kroira.App.Views
                 return;
             }
 
+            Log($"06: LaunchChannelAsync channelId={channel.Id} name='{channel.Name}'");
             await ViewModel.RecordChannelLaunchAsync(channel.Id);
 
             Frame.Navigate(typeof(EmbeddedPlaybackPage), new PlaybackLaunchContext
@@ -143,6 +145,16 @@ namespace Kroira.App.Views
                 StreamUrl = channel.StreamUrl,
                 StartPositionMs = 0
             });
+        }
+
+        private void ChannelsPage_Loaded(object sender, RoutedEventArgs e)
+        {
+            Log($"05a: page Loaded fired; current grid items={ViewModel.FilteredChannels.Count}");
+        }
+
+        private void ChannelList_Loaded(object sender, RoutedEventArgs e)
+        {
+            Log($"05b: ChannelList Loaded fired; current grid items={ViewModel.FilteredChannels.Count}");
         }
 
         private void ActivateChannelFromKey(KeyRoutedEventArgs e)

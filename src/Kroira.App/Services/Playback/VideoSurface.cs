@@ -83,6 +83,10 @@ namespace Kroira.App.Services.Playback
 
         [DllImport("user32.dll")]
         [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool ClientToScreen(IntPtr hWnd, ref POINT lpPoint);
+
+        [DllImport("user32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
         private static extern bool BringWindowToTop(IntPtr hWnd);
 
         [DllImport("user32.dll")]
@@ -95,6 +99,13 @@ namespace Kroira.App.Services.Playback
 
         [StructLayout(LayoutKind.Sequential)]
         private struct RECT { public int Left, Top, Right, Bottom; }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct POINT
+        {
+            public int X;
+            public int Y;
+        }
 
         [DllImport("user32.dll")]
         [return: MarshalAs(UnmanagedType.Bool)]
@@ -113,7 +124,7 @@ namespace Kroira.App.Services.Playback
         private readonly FrameworkElement _host;
         private readonly Action _onDoubleClick;
         private readonly Action _onClick;
-        private readonly Action _onMouseMoved;
+        private readonly Action<Point> _onMouseMoved;
         private readonly object _clickLock = new();
 
         private IntPtr _hwnd;
@@ -128,7 +139,7 @@ namespace Kroira.App.Services.Playback
         public IntPtr Handle => _hwnd;
 
         public VideoSurface(IntPtr parentHwnd, FrameworkElement host,
-            Action onClick, Action onDoubleClick, Action onMouseMoved)
+            Action onClick, Action onDoubleClick, Action<Point> onMouseMoved)
         {
             _parentHwnd = parentHwnd;
             _host = host;
@@ -272,11 +283,35 @@ namespace Kroira.App.Services.Playback
                         self.ScheduleSingleClick();
                         return IntPtr.Zero;
                     case WM_MOUSEMOVE:
-                        self._onMouseMoved?.Invoke();
+                        self.HandleMouseMove(lParam);
                         return IntPtr.Zero;
                 }
             }
             return DefWindowProc(hWnd, msg, wParam, lParam);
+        }
+
+        private void HandleMouseMove(IntPtr lParam)
+        {
+            if (_onMouseMoved == null)
+            {
+                return;
+            }
+
+            var point = new POINT
+            {
+                X = (short)(lParam.ToInt64() & 0xFFFF),
+                Y = (short)((lParam.ToInt64() >> 16) & 0xFFFF)
+            };
+
+            // Convert child-window client coordinates into screen coordinates so a
+            // surface resize/reposition does not look like real mouse movement.
+            if (ClientToScreen(_hwnd, ref point))
+            {
+                _onMouseMoved(new Point(point.X, point.Y));
+                return;
+            }
+
+            _onMouseMoved(new Point(point.X, point.Y));
         }
 
         private void ScheduleSingleClick()

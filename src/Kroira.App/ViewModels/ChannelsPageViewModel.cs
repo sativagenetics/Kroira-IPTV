@@ -22,6 +22,7 @@ namespace Kroira.App.ViewModels
         private const string SmartSportsCategoryKey = "__smart_sports";
         private const string SmartTurkishSportsCategoryKey = "__smart_turkish_sports";
         private const string SmartRecentCategoryKey = "__smart_recent";
+        private static readonly bool EnableDeferredSpotlightHelpers = false;
         private static string LogPath => Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "Kroira",
@@ -115,6 +116,7 @@ namespace Kroira.App.ViewModels
 
         partial void OnSearchQueryChanged(string value)
         {
+            Log($"SEL: search query changed -> '{value}'");
             QueueApplyFilter();
         }
 
@@ -126,6 +128,7 @@ namespace Kroira.App.ViewModels
             }
 
             _preferences.SelectedCategoryKey = value?.FilterKey ?? string.Empty;
+            Log($"SEL: category -> {value?.FilterKey ?? "(all)"} ({value?.Name ?? "All channels"})");
             NotifyBrowseResultChanged();
             _ = SavePreferencesAndRefreshAsync(rebuildCollections: false);
         }
@@ -139,6 +142,7 @@ namespace Kroira.App.ViewModels
 
             _preferences.SortKey = value?.Key ?? DefaultPrioritySortKey;
             _preferences.HasExplicitLiveSortPreference = true;
+            Log($"SEL: sort -> {_preferences.SortKey}");
             _ = SavePreferencesAndRefreshAsync(rebuildCollections: false);
         }
 
@@ -150,6 +154,7 @@ namespace Kroira.App.ViewModels
             }
 
             _preferences.SelectedSourceId = value?.Id ?? 0;
+            Log($"SEL: source filter -> {_preferences.SelectedSourceId}");
             _ = SavePreferencesAndRefreshAsync(rebuildCollections: true);
         }
 
@@ -161,6 +166,7 @@ namespace Kroira.App.ViewModels
             }
 
             _preferences.FavoritesOnly = value;
+            Log($"SEL: favorites only -> {value}");
             _ = SavePreferencesAndRefreshAsync(rebuildCollections: false);
         }
 
@@ -172,6 +178,7 @@ namespace Kroira.App.ViewModels
             }
 
             _preferences.GuideMatchedOnly = value;
+            Log($"SEL: guide matched only -> {value}");
             _ = SavePreferencesAndRefreshAsync(rebuildCollections: false);
         }
 
@@ -468,66 +475,30 @@ namespace Kroira.App.ViewModels
             var nowUtc = DateTime.UtcNow;
             Log($"08: filtered down to {filteredList.Count} channels before guide load");
 
-            try
-            {
-                using var scope = _serviceProvider.CreateScope();
-                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-                var guideService = scope.ServiceProvider.GetRequiredService<ILiveGuideService>();
-                var summaries = await guideService.GetGuideSummariesAsync(
-                    db,
-                    filteredList.Select(channel => channel.Id).ToList(),
-                    nowUtc);
-
-                foreach (var channel in filteredList)
-                {
-                    summaries.TryGetValue(channel.Id, out var summary);
-                    channel.ApplyGuideSummary(summary, nowUtc);
-                }
-
-                await RefreshSpotlightSectionsAsync(db, guideService, baseVisibleChannels, nowUtc);
-                Log("09: guide summaries and spotlight sections refreshed");
-            }
-            catch
-            {
-                foreach (var channel in filteredList)
-                {
-                    channel.ApplyGuideSummary(null, nowUtc);
-                }
-
-                ResetSpotlightSections(baseVisibleChannels);
-                Log("10: guide load failed; spotlight sections reset");
-            }
-
-            if (GuideMatchedOnly)
-            {
-                filteredList = filteredList.Where(channel => channel.HasMatchedGuide).ToList();
-            }
-
-            filteredList = SortChannels(filteredList).ToList();
-
             if (requestVersion != _filterRequestVersion)
             {
+                Log($"08a: request {requestVersion} became stale before initial grid apply");
                 return;
             }
 
-            EnsureSelectedSourceOption();
-
-            FilteredChannels.Clear();
-            foreach (var channel in filteredList)
+            if (!GuideMatchedOnly)
             {
-                FilteredChannels.Add(channel);
+                var initialSorted = SortChannels(filteredList).ToList();
+                ApplyVisibleChannels(initialSorted, requestVersion, "08b: initial grid applied before deferred guide refresh");
+                await Task.Yield();
+            }
+            else
+            {
+                Log("08b: guide matched filter active; deferring initial grid until guide refresh completes");
             }
 
-            HasAdvancedFilters = FavoritesOnly ||
-                                 GuideMatchedOnly ||
-                                 SourceVisibilityOptions.Any(option => !option.IsVisible) ||
-                                 _preferences.HiddenCategoryKeys.Count > 0 ||
-                                 _preferences.CategoryRemaps.Count > 0 ||
-                                 (SelectedSourceOption?.Id ?? 0) != 0 ||
-                                 !string.Equals(SelectedSortOption?.Key ?? DefaultPrioritySortKey, DefaultPrioritySortKey, StringComparison.OrdinalIgnoreCase);
-            IsEmpty = FilteredChannels.Count == 0;
-            NotifyBrowseResultChanged();
-            Log($"11: ApplyFilterAsync completed with {FilteredChannels.Count} visible channels");
+            if (requestVersion != _filterRequestVersion)
+            {
+                Log($"08c: request {requestVersion} became stale before deferred guide refresh");
+                return;
+            }
+
+            await RefreshGuideAndDeferredSectionsAsync(requestVersion, baseVisibleChannels, filteredList, nowUtc);
         }
 
         [RelayCommand]
@@ -608,6 +579,7 @@ namespace Kroira.App.ViewModels
 
         private async Task SavePreferencesAndRefreshAsync(bool rebuildCollections)
         {
+            Log($"REFRESH: SavePreferencesAndRefreshAsync rebuildCollections={rebuildCollections}");
             using var scope = _serviceProvider.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             var browsePreferencesService = scope.ServiceProvider.GetRequiredService<IBrowsePreferencesService>();
@@ -1052,6 +1024,8 @@ namespace Kroira.App.ViewModels
             {
                 Categories.Add(category);
             }
+
+            Log($"RAIL: BuildVisibleCategories completed with {Categories.Count} categories from {visibleChannels.Count} visible channels");
         }
 
         private void BuildCategoryManagerOptions()
@@ -1151,7 +1125,121 @@ namespace Kroira.App.ViewModels
                 _preferences.HiddenSourceIds.Add(sourceOption.Id);
             }
 
+            Log($"SEL: source visibility -> id={sourceOption.Id}, visible={isVisible}");
             _ = SavePreferencesAndRefreshAsync(rebuildCollections: true);
+        }
+
+        private async Task RefreshGuideAndDeferredSectionsAsync(
+            int requestVersion,
+            IReadOnlyCollection<BrowserChannelViewModel> baseVisibleChannels,
+            List<BrowserChannelViewModel> filteredList,
+            DateTime nowUtc)
+        {
+            Log($"09: deferred guide refresh start request={requestVersion} channels={filteredList.Count}");
+
+            try
+            {
+                using var scope = _serviceProvider.CreateScope();
+                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                var guideService = scope.ServiceProvider.GetRequiredService<ILiveGuideService>();
+                var summaries = await guideService.GetGuideSummariesAsync(
+                    db,
+                    filteredList.Select(channel => channel.Id).ToList(),
+                    nowUtc);
+
+                if (requestVersion != _filterRequestVersion)
+                {
+                    Log($"10: request {requestVersion} became stale during guide query");
+                    return;
+                }
+
+                foreach (var channel in filteredList)
+                {
+                    summaries.TryGetValue(channel.Id, out var summary);
+                    channel.ApplyGuideSummary(summary, nowUtc);
+                }
+
+                await RefreshDeferredSpotlightSectionsAsync(requestVersion, baseVisibleChannels);
+                Log($"11: guide summaries applied for request={requestVersion}");
+            }
+            catch (Exception ex)
+            {
+                if (requestVersion != _filterRequestVersion)
+                {
+                    Log($"10: request {requestVersion} became stale after guide failure");
+                    return;
+                }
+
+                foreach (var channel in filteredList)
+                {
+                    channel.ApplyGuideSummary(null, nowUtc);
+                }
+
+                ClearSpotlightSections();
+                Log($"11: guide refresh failed for request={requestVersion}: {ex.GetType().Name}");
+            }
+
+            var finalList = GuideMatchedOnly
+                ? filteredList.Where(channel => channel.HasMatchedGuide).ToList()
+                : filteredList;
+            finalList = SortChannels(finalList).ToList();
+
+            ApplyVisibleChannels(finalList, requestVersion, "12: final grid applied after deferred guide refresh");
+        }
+
+        private async Task RefreshDeferredSpotlightSectionsAsync(
+            int requestVersion,
+            IReadOnlyCollection<BrowserChannelViewModel> baseVisibleChannels)
+        {
+            ApplyLastTunedState(_allChannels);
+
+            if (!EnableDeferredSpotlightHelpers)
+            {
+                ClearSpotlightSections();
+                Log($"10: spotlight helper build skipped for browser-first render request={requestVersion}");
+                return;
+            }
+
+            await Task.Yield();
+            if (requestVersion != _filterRequestVersion)
+            {
+                Log($"10: request {requestVersion} became stale before spotlight helper build");
+                return;
+            }
+
+            ResetSpotlightSections(baseVisibleChannels);
+            Log($"10: spotlight helper build completed for request={requestVersion}");
+        }
+
+        private void ApplyVisibleChannels(
+            IReadOnlyList<BrowserChannelViewModel> visibleChannels,
+            int requestVersion,
+            string phaseLogMessage)
+        {
+            if (requestVersion != _filterRequestVersion)
+            {
+                Log($"{phaseLogMessage} skipped because request {requestVersion} is stale");
+                return;
+            }
+
+            EnsureSelectedSourceOption();
+
+            FilteredChannels.Clear();
+            foreach (var channel in visibleChannels)
+            {
+                FilteredChannels.Add(channel);
+            }
+
+            HasAdvancedFilters = FavoritesOnly ||
+                                 GuideMatchedOnly ||
+                                 SourceVisibilityOptions.Any(option => !option.IsVisible) ||
+                                 _preferences.HiddenCategoryKeys.Count > 0 ||
+                                 _preferences.CategoryRemaps.Count > 0 ||
+                                 (SelectedSourceOption?.Id ?? 0) != 0 ||
+                                 !string.Equals(SelectedSortOption?.Key ?? DefaultPrioritySortKey, DefaultPrioritySortKey, StringComparison.OrdinalIgnoreCase);
+            IsEmpty = FilteredChannels.Count == 0;
+            NotifyBrowseResultChanged();
+            Log($"{phaseLogMessage}; visible channels={FilteredChannels.Count}");
         }
     }
 }

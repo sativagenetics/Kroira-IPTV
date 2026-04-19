@@ -42,6 +42,16 @@ namespace Kroira.App.Services.Playback
             QueueOverflow = 24,
         }
 
+        public enum MpvEndFileReason : int
+        {
+            Eof = 0,
+            Stop = 2,
+            Quit = 3,
+            Error = 4,
+            Redirect = 5,
+            Unknown = -1,
+        }
+
         [StructLayout(LayoutKind.Sequential, Pack = 8)]
         public struct MpvEvent
         {
@@ -66,6 +76,12 @@ namespace Kroira.App.Services.Playback
             public IntPtr Level;
             public IntPtr Text;
             public int LogLevel;
+        }
+
+        public struct MpvEventEndFile
+        {
+            public MpvEndFileReason Reason;
+            public int Error;
         }
 
         [DllImport(Dll, CallingConvention = CallingConvention.Cdecl)]
@@ -140,6 +156,24 @@ namespace Kroira.App.Services.Playback
                 Level = Marshal.ReadIntPtr(ptr, IntPtr.Size),
                 Text = Marshal.ReadIntPtr(ptr, IntPtr.Size * 2),
                 LogLevel = Marshal.ReadInt32(ptr, IntPtr.Size * 3),
+            };
+        }
+
+        public static MpvEventEndFile ReadEventEndFile(IntPtr ptr)
+        {
+            if (ptr == IntPtr.Zero)
+            {
+                return new MpvEventEndFile
+                {
+                    Reason = MpvEndFileReason.Unknown,
+                    Error = 0
+                };
+            }
+
+            return new MpvEventEndFile
+            {
+                Reason = (MpvEndFileReason)Marshal.ReadInt32(ptr, 0),
+                Error = Marshal.ReadInt32(ptr, 4)
             };
         }
 
