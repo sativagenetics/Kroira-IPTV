@@ -4,13 +4,16 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Kroira.App.Data;
 using Kroira.App.Models;
+using Kroira.App.Services;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.EntityFrameworkCore;
 
 namespace Kroira.App.ViewModels
 {
     public partial class SourceOnboardingViewModel : ObservableObject
     {
         private readonly IServiceProvider _serviceProvider;
+        private readonly IEntitlementService _entitlementService;
 
         [ObservableProperty]
         private string _sourceName = string.Empty;
@@ -47,15 +50,23 @@ namespace Kroira.App.ViewModels
 
         public bool HasStatus => !string.IsNullOrEmpty(StatusMessage);
         public Microsoft.UI.Xaml.Visibility StatusVisibility => HasStatus ? Microsoft.UI.Xaml.Visibility.Visible : Microsoft.UI.Xaml.Visibility.Collapsed;
+        public bool CanSaveSource => _entitlementService.IsFeatureEnabled(EntitlementFeatureKeys.SourcesAdd);
 
-        public SourceOnboardingViewModel(IServiceProvider serviceProvider)
+        public SourceOnboardingViewModel(IServiceProvider serviceProvider, IEntitlementService entitlementService)
         {
             _serviceProvider = serviceProvider;
+            _entitlementService = entitlementService;
         }
 
         [RelayCommand]
         public async Task SaveSourceAsync()
         {
+            if (!CanSaveSource)
+            {
+                StatusMessage = "Adding sources is unavailable for this entitlement.";
+                return;
+            }
+
             if (string.IsNullOrWhiteSpace(SourceName))
             {
                 StatusMessage = "Name is required.";
@@ -78,6 +89,17 @@ namespace Kroira.App.ViewModels
             {
                 using var scope = _serviceProvider.CreateScope();
                 var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                var sourceLimit = _entitlementService.GetLimit(EntitlementLimitKeys.SourcesMaxCount);
+                if (sourceLimit.HasValue)
+                {
+                    var existingSourceCount = await db.SourceProfiles.CountAsync();
+                    if (existingSourceCount >= sourceLimit.Value)
+                    {
+                        StatusMessage = $"This entitlement supports up to {sourceLimit.Value} source{(sourceLimit.Value == 1 ? string.Empty : "s")}.";
+                        return;
+                    }
+                }
+
                 using var transaction = await db.Database.BeginTransactionAsync();
 
                 try

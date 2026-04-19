@@ -82,16 +82,117 @@
         </Grid>
 
         <Border Grid.Row="1" Style="{StaticResource KroiraFilterStripStyle}">
-            <Grid MaxWidth="520" HorizontalAlignment="Stretch">
-                <TextBox Style="{StaticResource KroiraFilterTextBoxStyle}"
-                         Text="{x:Bind ViewModel.SearchQuery, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                         PlaceholderText="Search series" />
-                <FontIcon Glyph="&#xE721;"
-                          FontSize="14"
-                          Foreground="{StaticResource KroiraTextTertiaryBrush}"
-                          HorizontalAlignment="Right"
-                          Margin="0,0,16,0"
-                          VerticalAlignment="Center" />
+            <Grid RowSpacing="12">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <Grid ColumnSpacing="12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="2.2*" />
+                        <ColumnDefinition Width="1.2*" />
+                        <ColumnDefinition Width="1.1*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <Grid Grid.Column="0">
+                        <TextBox Style="{StaticResource KroiraFilterTextBoxStyle}"
+                                 Text="{x:Bind ViewModel.SearchQuery, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                 PlaceholderText="Search series" />
+                        <FontIcon Glyph="&#xE721;"
+                                  FontSize="14"
+                                  Foreground="{StaticResource KroiraTextTertiaryBrush}"
+                                  HorizontalAlignment="Right"
+                                  Margin="0,0,16,0"
+                                  VerticalAlignment="Center" />
+                    </Grid>
+
+                    <ComboBox Grid.Column="1"
+                              Style="{StaticResource KroiraFilterComboBoxStyle}"
+                              ItemsSource="{x:Bind ViewModel.SourceOptions, Mode=OneWay}"
+                              SelectedItem="{x:Bind ViewModel.SelectedSourceOption, Mode=TwoWay}"
+                              DisplayMemberPath="DisplayName" />
+
+                    <ComboBox Grid.Column="2"
+                              Style="{StaticResource KroiraFilterComboBoxStyle}"
+                              ItemsSource="{x:Bind ViewModel.SortOptions, Mode=OneWay}"
+                              SelectedItem="{x:Bind ViewModel.SelectedSortOption, Mode=TwoWay}"
+                              DisplayMemberPath="Label" />
+
+                    <StackPanel Grid.Column="3"
+                                Orientation="Horizontal"
+                                Spacing="10"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Center">
+                        <CheckBox Content="Favorites"
+                                  IsChecked="{x:Bind ViewModel.FavoritesOnly, Mode=TwoWay}" />
+                        <CheckBox Content="Primary only"
+                                  IsChecked="{x:Bind ViewModel.HideSecondaryContent, Mode=TwoWay}" />
+                        <Border Width="7"
+                                Height="7"
+                                CornerRadius="4"
+                                Background="{StaticResource KroiraAccentBrush}" />
+                        <TextBlock Text="SERIES GRID"
+                                   Style="{StaticResource KroiraLabelStyle}" />
+                    </StackPanel>
+                </Grid>
+
+                <Expander Grid.Row="1"
+                          Header="Advanced browse controls"
+                          IsExpanded="{x:Bind ViewModel.HasAdvancedFilters, Mode=OneWay}">
+                    <Grid Margin="0,12,0,0" ColumnSpacing="18">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="1.1*" />
+                            <ColumnDefinition Width="1.2*" />
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel Grid.Column="0" Spacing="10">
+                            <TextBlock Text="Visible providers"
+                                       Style="{StaticResource KroiraLabelStyle}"
+                                       Foreground="{StaticResource KroiraAccentBrush}" />
+                            <ItemsControl ItemsSource="{x:Bind ViewModel.SourceVisibilityOptions, Mode=OneWay}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <CheckBox IsChecked="{Binding IsVisible, Mode=TwoWay}" Margin="0,2,0,2">
+                                            <StackPanel>
+                                                <TextBlock Text="{Binding Name}" />
+                                                <TextBlock Text="{Binding Detail}"
+                                                           Foreground="{StaticResource KroiraTextTertiaryBrush}"
+                                                           FontSize="11" />
+                                            </StackPanel>
+                                        </CheckBox>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="1" Spacing="10">
+                            <TextBlock Text="Category alias / hide"
+                                       Style="{StaticResource KroiraLabelStyle}"
+                                       Foreground="{StaticResource KroiraAccentBrush}" />
+                            <ComboBox Style="{StaticResource KroiraFilterComboBoxStyle}"
+                                      ItemsSource="{x:Bind ViewModel.ManageCategoryOptions, Mode=OneWay}"
+                                      SelectedItem="{x:Bind ViewModel.SelectedManageCategory, Mode=TwoWay}"
+                                      DisplayMemberPath="DisplayName" />
+                            <TextBox Style="{StaticResource KroiraFilterTextBoxStyle}"
+                                     IsEnabled="{x:Bind ViewModel.HasManageCategorySelection, Mode=OneWay}"
+                                     Text="{x:Bind ViewModel.ManageCategoryAliasDraft, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                     PlaceholderText="Rename selected category for browsing" />
+                            <ToggleSwitch Header="Hide selected category"
+                                          IsEnabled="{x:Bind ViewModel.HasManageCategorySelection, Mode=OneWay}"
+                                          IsOn="{x:Bind ViewModel.IsManageCategoryHidden, Mode=TwoWay}" />
+                            <StackPanel Orientation="Horizontal" Spacing="10">
+                                <Button Content="Save category rule"
+                                        Command="{x:Bind ViewModel.SaveCategoryPreferenceCommand}"
+                                        IsEnabled="{x:Bind ViewModel.HasManageCategorySelection, Mode=OneWay}" />
+                                <Button Content="Clear rule"
+                                        Command="{x:Bind ViewModel.ClearCategoryPreferenceCommand}"
+                                        IsEnabled="{x:Bind ViewModel.HasManageCategorySelection, Mode=OneWay}" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Grid>
+                </Expander>
             </Grid>
         </Border>
 

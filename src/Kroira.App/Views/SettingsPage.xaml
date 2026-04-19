@@ -186,12 +186,12 @@
                                 <Button Grid.Column="0"
                                         Content="Export"
                                         Click="OnExportBackupClick"
-                                        IsEnabled="{x:Bind ViewModel.IsBackupIdle, Mode=OneWay}" />
+                                        IsEnabled="{x:Bind ViewModel.CanStartBackupAction, Mode=OneWay}" />
 
                                 <Button Grid.Column="1"
                                         Content="Restore"
                                         Click="OnRestoreBackupClick"
-                                        IsEnabled="{x:Bind ViewModel.IsBackupIdle, Mode=OneWay}" />
+                                        IsEnabled="{x:Bind ViewModel.CanStartBackupAction, Mode=OneWay}" />
 
                                 <ProgressRing Grid.Column="2"
                                               Width="18"

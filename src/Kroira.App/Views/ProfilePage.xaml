@@ -80,9 +80,11 @@
                                         Command="{x:Bind ViewModel.SaveProfileNameCommand}"
                                         Style="{StaticResource KroiraPrimaryButtonStyle}" />
                                 <Button Content="Add profile"
-                                        Command="{x:Bind ViewModel.AddProfileCommand}" />
+                                        Command="{x:Bind ViewModel.AddProfileCommand}"
+                                        IsEnabled="{x:Bind ViewModel.CanAddProfiles, Mode=OneWay}" />
                                 <Button Content="Add kids profile"
-                                        Command="{x:Bind ViewModel.AddKidsProfileCommand}" />
+                                        Command="{x:Bind ViewModel.AddKidsProfileCommand}"
+                                        IsEnabled="{x:Bind ViewModel.CanAddProfiles, Mode=OneWay}" />
                             </StackPanel>
                         </StackPanel>
                     </Border>
@@ -91,8 +93,10 @@
                         <StackPanel Spacing="14">
                             <TextBlock Text="Access behavior" Style="{StaticResource KroiraSectionTitleStyle}" />
                             <ToggleSwitch Header="Kids-safe mode"
+                                          IsEnabled="{x:Bind ViewModel.CanManageParentalControls, Mode=OneWay}"
                                           IsOn="{x:Bind ViewModel.IsKidsSafeMode, Mode=TwoWay}" />
                             <ToggleSwitch Header="Hide locked content until unlocked"
+                                          IsEnabled="{x:Bind ViewModel.CanManageParentalControls, Mode=OneWay}"
                                           IsOn="{x:Bind ViewModel.HideLockedContent, Mode=TwoWay}" />
                             <TextBlock Text="{x:Bind ViewModel.AccessStatusText, Mode=OneWay}"
                                        Style="{StaticResource KroiraBodyStyle}"
@@ -108,33 +112,40 @@
                                        TextWrapping="Wrap" />
 
                             <TextBox Header="Set or replace PIN"
+                                     IsEnabled="{x:Bind ViewModel.CanManageParentalControls, Mode=OneWay}"
                                      Text="{x:Bind ViewModel.PinDraft, Mode=TwoWay}"
                                      PlaceholderText="Enter PIN digits" />
 
                             <StackPanel Orientation="Horizontal" Spacing="12">
                                 <Button Content="Save PIN"
                                         Visibility="{x:Bind ViewModel.SetPinVisibility, Mode=OneWay}"
+                                        IsEnabled="{x:Bind ViewModel.CanManageParentalControls, Mode=OneWay}"
                                         Command="{x:Bind ViewModel.SetPinCommand}"
                                         Style="{StaticResource KroiraPrimaryButtonStyle}" />
                                 <Button Content="Replace PIN"
                                         Visibility="{x:Bind ViewModel.ClearPinVisibility, Mode=OneWay}"
+                                        IsEnabled="{x:Bind ViewModel.CanManageParentalControls, Mode=OneWay}"
                                         Command="{x:Bind ViewModel.SetPinCommand}"
                                         Style="{StaticResource KroiraPrimaryButtonStyle}" />
                                 <Button Content="Clear PIN"
                                         Visibility="{x:Bind ViewModel.ClearPinVisibility, Mode=OneWay}"
+                                        IsEnabled="{x:Bind ViewModel.CanManageParentalControls, Mode=OneWay}"
                                         Command="{x:Bind ViewModel.ClearPinCommand}" />
                             </StackPanel>
 
                             <TextBox Header="Unlock locked content"
+                                     IsEnabled="{x:Bind ViewModel.CanManageParentalControls, Mode=OneWay}"
                                      Text="{x:Bind ViewModel.UnlockPinDraft, Mode=TwoWay}"
                                      PlaceholderText="Enter PIN for this session" />
 
                             <StackPanel Orientation="Horizontal" Spacing="12">
                                 <Button Content="Unlock"
                                         Visibility="{x:Bind ViewModel.UnlockVisibility, Mode=OneWay}"
+                                        IsEnabled="{x:Bind ViewModel.CanManageParentalControls, Mode=OneWay}"
                                         Command="{x:Bind ViewModel.UnlockLockedContentCommand}" />
                                 <Button Content="Hide locked content"
                                         Visibility="{x:Bind ViewModel.RelockVisibility, Mode=OneWay}"
+                                        IsEnabled="{x:Bind ViewModel.CanManageParentalControls, Mode=OneWay}"
                                         Command="{x:Bind ViewModel.RelockContentCommand}" />
                             </StackPanel>
                         </StackPanel>
@@ -150,7 +161,8 @@
                     <Border Style="{StaticResource KroiraSettingsGroupStyle}">
                         <StackPanel Spacing="14">
                             <TextBlock Text="Locked sources" Style="{StaticResource KroiraSectionTitleStyle}" />
-                            <ItemsControl ItemsSource="{x:Bind ViewModel.SourceLocks, Mode=OneWay}">
+                            <ItemsControl ItemsSource="{x:Bind ViewModel.SourceLocks, Mode=OneWay}"
+                                          IsEnabled="{x:Bind ViewModel.CanManageParentalControls, Mode=OneWay}">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate x:DataType="viewModels:ProfileLockOptionViewModel">
                                         <CheckBox IsChecked="{x:Bind IsLocked, Mode=TwoWay}"
@@ -171,7 +183,8 @@
                     <Border Grid.Row="1" Style="{StaticResource KroiraSettingsGroupStyle}">
                         <StackPanel Spacing="14">
                             <TextBlock Text="Locked categories" Style="{StaticResource KroiraSectionTitleStyle}" />
-                            <ItemsControl ItemsSource="{x:Bind ViewModel.CategoryLocks, Mode=OneWay}">
+                            <ItemsControl ItemsSource="{x:Bind ViewModel.CategoryLocks, Mode=OneWay}"
+                                          IsEnabled="{x:Bind ViewModel.CanManageParentalControls, Mode=OneWay}">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate x:DataType="viewModels:ProfileLockOptionViewModel">
                                         <CheckBox IsChecked="{x:Bind IsLocked, Mode=TwoWay}"

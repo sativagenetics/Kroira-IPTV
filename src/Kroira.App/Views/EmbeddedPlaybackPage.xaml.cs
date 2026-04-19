@@ -34,6 +34,7 @@ namespace Kroira.App.Views
 
         private readonly PlaybackSessionStateMachine _stateMachine = new();
         private readonly PlaybackProgressCoordinator _progressCoordinator;
+        private readonly IEntitlementService _entitlementService;
 
         private PlaybackLaunchContext _context;
         private MpvPlayer _player;
@@ -72,7 +73,9 @@ namespace Kroira.App.Views
         public EmbeddedPlaybackPage()
         {
             InitializeComponent();
-            _progressCoordinator = new PlaybackProgressCoordinator(((App)Application.Current).Services);
+            var services = ((App)Application.Current).Services;
+            _progressCoordinator = new PlaybackProgressCoordinator(services);
+            _entitlementService = services.GetRequiredService<IEntitlementService>();
             _stateMachine.StateChanged += OnPlaybackStateChanged;
 
             TimelineSlider.AddHandler(UIElement.PointerPressedEvent, new PointerEventHandler(TimelineSlider_PointerPressed), true);
@@ -686,7 +689,7 @@ namespace Kroira.App.Views
 
         private void Fullscreen_Click(object sender, RoutedEventArgs e)
         {
-            if (_teardownStarted) return;
+            if (_teardownStarted || !CanUseFeature(EntitlementFeatureKeys.PlaybackFullscreen)) return;
             _windowManager?.ToggleFullscreen();
             RestartControlsHideTimer();
         }
@@ -712,7 +715,7 @@ namespace Kroira.App.Views
         {
             DispatcherQueue.TryEnqueue(() =>
             {
-                if (_teardownStarted) return;
+                if (_teardownStarted || !CanUseFeature(EntitlementFeatureKeys.PlaybackFullscreen)) return;
                 _windowManager?.ToggleFullscreen();
                 RestartControlsHideTimer();
             });
@@ -810,7 +813,10 @@ namespace Kroira.App.Views
 
         private void AudioTrackItem_Click(object sender, RoutedEventArgs e)
         {
-            if (_player == null || sender is not ToggleMenuFlyoutItem item || item.Tag is not string trackId)
+            if (!CanUseFeature(EntitlementFeatureKeys.PlaybackAudioTrackSelection) ||
+                _player == null ||
+                sender is not ToggleMenuFlyoutItem item ||
+                item.Tag is not string trackId)
             {
                 return;
             }
@@ -822,7 +828,9 @@ namespace Kroira.App.Views
 
         private void SubtitleTrackItem_Click(object sender, RoutedEventArgs e)
         {
-            if (_player == null || sender is not ToggleMenuFlyoutItem item)
+            if (!CanUseFeature(EntitlementFeatureKeys.PlaybackSubtitleTrackSelection) ||
+                _player == null ||
+                sender is not ToggleMenuFlyoutItem item)
             {
                 return;
             }
@@ -835,7 +843,10 @@ namespace Kroira.App.Views
 
         private void AspectItem_Click(object sender, RoutedEventArgs e)
         {
-            if (_player == null || sender is not ToggleMenuFlyoutItem item || item.Tag is not PlaybackAspectMode aspectMode)
+            if (!CanUseFeature(EntitlementFeatureKeys.PlaybackAspectControls) ||
+                _player == null ||
+                sender is not ToggleMenuFlyoutItem item ||
+                item.Tag is not PlaybackAspectMode aspectMode)
             {
                 return;
             }
@@ -939,15 +950,21 @@ namespace Kroira.App.Views
             var trackSwitchEnabled = isReady &&
                                      _stateMachine.State != PlaybackSessionState.Loading &&
                                      _stateMachine.State != PlaybackSessionState.Reconnecting;
+            var canUseFullscreen = CanUseFeature(EntitlementFeatureKeys.PlaybackFullscreen);
+            var canUseAudioTracks = CanUseFeature(EntitlementFeatureKeys.PlaybackAudioTrackSelection);
+            var canUseSubtitles = CanUseFeature(EntitlementFeatureKeys.PlaybackSubtitleTrackSelection);
+            var canUseAspectControls = CanUseFeature(EntitlementFeatureKeys.PlaybackAspectControls);
 
             PlayPauseButton.IsEnabled = isReady && _stateMachine.State != PlaybackSessionState.Reconnecting;
             StopButton.IsEnabled = isReady;
-            FullscreenButton.IsEnabled = isReady;
+            FullscreenButton.IsEnabled = isReady && canUseFullscreen;
+            FullscreenButton.Visibility = canUseFullscreen ? Visibility.Visible : Visibility.Collapsed;
             MuteButton.IsEnabled = isReady;
             VolumeSlider.IsEnabled = isReady;
-            AudioTrackButton.IsEnabled = trackSwitchEnabled;
-            SubtitleTrackButton.IsEnabled = trackSwitchEnabled;
-            AspectButton.IsEnabled = isReady;
+            AudioTrackButton.IsEnabled = trackSwitchEnabled && canUseAudioTracks;
+            SubtitleTrackButton.IsEnabled = trackSwitchEnabled && canUseSubtitles;
+            AspectButton.IsEnabled = isReady && canUseAspectControls;
+            AspectButton.Visibility = canUseAspectControls ? Visibility.Visible : Visibility.Collapsed;
             UpdateLiveAndSeekUi();
         }
 
@@ -1011,6 +1028,12 @@ namespace Kroira.App.Views
         private void PopulateAudioTrackMenu(IReadOnlyList<MpvTrackInfo> audioTracks)
         {
             AudioTrackFlyout.Items.Clear();
+            if (!CanUseFeature(EntitlementFeatureKeys.PlaybackAudioTrackSelection))
+            {
+                AudioTrackButton.Visibility = Visibility.Collapsed;
+                return;
+            }
+
             foreach (var track in audioTracks)
             {
                 var item = new ToggleMenuFlyoutItem
@@ -1031,6 +1054,11 @@ namespace Kroira.App.Views
         private void PopulateSubtitleTrackMenu(IReadOnlyList<MpvTrackInfo> subtitleTracks)
         {
             SubtitleTrackFlyout.Items.Clear();
+            if (!CanUseFeature(EntitlementFeatureKeys.PlaybackSubtitleTrackSelection))
+            {
+                SubtitleTrackButton.Visibility = Visibility.Collapsed;
+                return;
+            }
 
             var offItem = new ToggleMenuFlyoutItem
             {
@@ -1078,6 +1106,11 @@ namespace Kroira.App.Views
             SubtitleTrackFlyout.Items.Clear();
             AudioTrackButton.Visibility = Visibility.Collapsed;
             SubtitleTrackButton.Visibility = Visibility.Collapsed;
+        }
+
+        private bool CanUseFeature(string featureKey)
+        {
+            return _entitlementService.IsFeatureEnabled(featureKey);
         }
 
         // --- Controls auto-hide ---

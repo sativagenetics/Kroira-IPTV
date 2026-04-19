@@ -44,8 +44,10 @@ namespace Kroira.App.ViewModels
     public partial class ProfileViewModel : ObservableObject
     {
         private readonly IServiceProvider _serviceProvider;
+        private readonly IEntitlementService _entitlementService;
         private bool _isLoading;
         private bool _isSavingLocks;
+        private int? _profileLimit;
 
         public ObservableCollection<AppProfile> Profiles { get; } = new();
         public ObservableCollection<ProfileLockOptionViewModel> SourceLocks { get; } = new();
@@ -95,10 +97,15 @@ namespace Kroira.App.ViewModels
         public Visibility ClearPinVisibility => HasPin ? Visibility.Visible : Visibility.Collapsed;
         public Visibility UnlockVisibility => HasPin && !IsLockedContentUnlocked ? Visibility.Visible : Visibility.Collapsed;
         public Visibility RelockVisibility => HasPin && IsLockedContentUnlocked ? Visibility.Visible : Visibility.Collapsed;
+        public bool CanAddProfiles => _entitlementService.IsFeatureEnabled(EntitlementFeatureKeys.ProfilesMultiple) &&
+                                      (!_profileLimit.HasValue || Profiles.Count < _profileLimit.Value);
+        public bool CanManageParentalControls => _entitlementService.IsFeatureEnabled(EntitlementFeatureKeys.ProfilesParentalControls);
 
-        public ProfileViewModel(IServiceProvider serviceProvider)
+        public ProfileViewModel(IServiceProvider serviceProvider, IEntitlementService entitlementService)
         {
             _serviceProvider = serviceProvider;
+            _entitlementService = entitlementService;
+            _profileLimit = _entitlementService.GetLimit(EntitlementLimitKeys.ProfilesMaxCount);
         }
 
         partial void OnSelectedProfileChanged(AppProfile? value)
@@ -156,6 +163,8 @@ namespace Kroira.App.ViewModels
                 _isLoading = false;
                 OnPropertyChanged(nameof(ProfileSwitcherVisibility));
                 OnPropertyChanged(nameof(ProfileCountText));
+                OnPropertyChanged(nameof(CanAddProfiles));
+                OnPropertyChanged(nameof(CanManageParentalControls));
             }
         }
 
@@ -190,7 +199,7 @@ namespace Kroira.App.ViewModels
         [RelayCommand]
         public async Task SetPinAsync()
         {
-            if (SelectedProfile == null || string.IsNullOrWhiteSpace(PinDraft))
+            if (SelectedProfile == null || string.IsNullOrWhiteSpace(PinDraft) || !CanManageParentalControls)
             {
                 return;
             }
@@ -208,7 +217,7 @@ namespace Kroira.App.ViewModels
         [RelayCommand]
         public async Task ClearPinAsync()
         {
-            if (SelectedProfile == null)
+            if (SelectedProfile == null || !CanManageParentalControls)
             {
                 return;
             }
@@ -225,7 +234,7 @@ namespace Kroira.App.ViewModels
         [RelayCommand]
         public async Task UnlockLockedContentAsync()
         {
-            if (SelectedProfile == null || string.IsNullOrWhiteSpace(UnlockPinDraft))
+            if (SelectedProfile == null || string.IsNullOrWhiteSpace(UnlockPinDraft) || !CanManageParentalControls)
             {
                 return;
             }
@@ -245,7 +254,7 @@ namespace Kroira.App.ViewModels
         [RelayCommand]
         public async Task RelockContentAsync()
         {
-            if (SelectedProfile == null)
+            if (SelectedProfile == null || !CanManageParentalControls)
             {
                 return;
             }
@@ -261,6 +270,14 @@ namespace Kroira.App.ViewModels
 
         private async Task CreateProfileAsync(bool isKidsProfile)
         {
+            if (!CanAddProfiles)
+            {
+                PinStatusText = _profileLimit.HasValue
+                    ? $"This entitlement supports up to {_profileLimit.Value} profile{(_profileLimit.Value == 1 ? string.Empty : "s")}."
+                    : "Profile creation is unavailable for this entitlement.";
+                return;
+            }
+
             using var scope = _serviceProvider.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             var profileService = scope.ServiceProvider.GetRequiredService<IProfileStateService>();
@@ -395,7 +412,7 @@ namespace Kroira.App.ViewModels
 
         private async Task SaveSourceLocksAsync(IProfileStateService profileService, int profileId)
         {
-            if (_isLoading || _isSavingLocks)
+            if (_isLoading || _isSavingLocks || !CanManageParentalControls)
             {
                 return;
             }
@@ -419,7 +436,7 @@ namespace Kroira.App.ViewModels
 
         private async Task SaveCategoryLocksAsync(IProfileStateService profileService, int profileId)
         {
-            if (_isLoading || _isSavingLocks)
+            if (_isLoading || _isSavingLocks || !CanManageParentalControls)
             {
                 return;
             }
@@ -443,6 +460,11 @@ namespace Kroira.App.ViewModels
 
         private async Task UpdateKidsSafeModeAsync(bool value)
         {
+            if (!CanManageParentalControls)
+            {
+                return;
+            }
+
             using var scope = _serviceProvider.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             var profileService = scope.ServiceProvider.GetRequiredService<IProfileStateService>();
@@ -457,6 +479,11 @@ namespace Kroira.App.ViewModels
 
         private async Task UpdateHideLockedContentAsync(bool value)
         {
+            if (!CanManageParentalControls)
+            {
+                return;
+            }
+
             using var scope = _serviceProvider.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             var profileService = scope.ServiceProvider.GetRequiredService<IProfileStateService>();

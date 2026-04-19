@@ -78,9 +78,10 @@ namespace Kroira.App.ViewModels
 
     public partial class SeriesBrowseItemViewModel : ObservableObject
     {
-        public SeriesBrowseItemViewModel(CatalogSeriesGroup group, bool isFavorite)
+        public SeriesBrowseItemViewModel(CatalogSeriesGroup group, bool isFavorite, string displayCategoryName)
         {
             Group = group;
+            DisplayCategoryName = displayCategoryName;
             IsFavorite = isFavorite;
             foreach (var variant in group.Variants)
             {
@@ -94,6 +95,7 @@ namespace Kroira.App.ViewModels
 
         public CatalogSeriesGroup Group { get; }
         public Series PreferredSeries => Group.PreferredSeries;
+        public string GroupKey => Group.GroupKey;
         public Series ActiveSeries => SelectedSourceOption?.Variant.Series ?? PreferredSeries;
         public ObservableCollection<SeriesSourceOptionViewModel> SourceOptions { get; } = new();
         public IReadOnlyList<int> VariantIds => Group.Variants.Select(variant => variant.Series.Id).ToList();
@@ -110,6 +112,7 @@ namespace Kroira.App.ViewModels
                 : ActiveSeries.MetadataLine;
         public string Overview => string.IsNullOrWhiteSpace(ActiveSeries.Overview) ? PreferredSeries.Overview : ActiveSeries.Overview;
         public string CategoryName => PreferredSeries.CategoryName;
+        public string DisplayCategoryName { get; }
         public ICollection<Season>? Seasons => ActiveSeries.Seasons;
         public bool HasAlternateSources => SourceOptions.Count > 1;
         public Visibility SourceSelectionVisibility => HasAlternateSources ? Visibility.Visible : Visibility.Collapsed;
@@ -150,7 +153,7 @@ namespace Kroira.App.ViewModels
         public int Id => Series?.Id ?? 0;
         public string Title => Series?.Title ?? string.Empty;
         public string DisplayPosterUrl => Series?.DisplayPosterUrl ?? string.Empty;
-        public string CategoryName => Series?.CategoryName ?? string.Empty;
+        public string CategoryName => Series?.DisplayCategoryName ?? string.Empty;
         public string FavoriteGlyph => Series?.FavoriteGlyph ?? "\uE734";
         public string FavoriteLabel => Series?.FavoriteLabel ?? string.Empty;
         public Visibility SeriesVisibility => HasSeries ? Visibility.Visible : Visibility.Collapsed;
@@ -165,25 +168,60 @@ namespace Kroira.App.ViewModels
 
     public partial class SeriesViewModel : ObservableObject
     {
+        private const string Domain = ProfileDomains.Series;
         private const int BrowseGridColumns = 3;
         private readonly IServiceProvider _serviceProvider;
+        private readonly List<CatalogSeriesGroup> _allSeriesGroups = new();
         private List<SeriesBrowseItemViewModel> _allSeries = new List<SeriesBrowseItemViewModel>();
+        private readonly List<(string CategoryName, int Count)> _allCategories = new();
         private readonly Dictionary<int, WatchProgressSnapshot> _selectedEpisodeSnapshots = new();
         private bool _isLoadingWatchPreferences;
+        private bool _isInitializingBrowsePreferences;
         private int _activeProfileId;
         private int? _pendingEpisodeSelectionId;
+        private BrowsePreferences _browsePreferences = new();
+        private HashSet<int> _favoriteSeriesIds = new();
+        private string _browseLanguageCode = AppLanguageService.DefaultLanguageCode;
 
         public ObservableCollection<SeriesBrowseItemViewModel> FilteredSeries { get; } = new ObservableCollection<SeriesBrowseItemViewModel>();
         public ObservableCollection<SeriesBrowseSlotViewModel> DisplaySeriesSlots { get; } = new ObservableCollection<SeriesBrowseSlotViewModel>();
         public ObservableCollection<BrowserCategoryViewModel> Categories { get; } = new ObservableCollection<BrowserCategoryViewModel>();
         public ObservableCollection<SeriesSeasonOptionViewModel> SeasonOptions { get; } = new ObservableCollection<SeriesSeasonOptionViewModel>();
         public ObservableCollection<SeriesEpisodeItemViewModel> EpisodeItems { get; } = new ObservableCollection<SeriesEpisodeItemViewModel>();
+        public ObservableCollection<BrowseSortOptionViewModel> SortOptions { get; } = new ObservableCollection<BrowseSortOptionViewModel>();
+        public ObservableCollection<BrowseSourceFilterOptionViewModel> SourceOptions { get; } = new ObservableCollection<BrowseSourceFilterOptionViewModel>();
+        public ObservableCollection<BrowseSourceVisibilityViewModel> SourceVisibilityOptions { get; } = new ObservableCollection<BrowseSourceVisibilityViewModel>();
+        public ObservableCollection<BrowseCategoryManagerOptionViewModel> ManageCategoryOptions { get; } = new ObservableCollection<BrowseCategoryManagerOptionViewModel>();
 
         [ObservableProperty]
         private string _searchQuery = string.Empty;
 
         [ObservableProperty]
         private BrowserCategoryViewModel? _selectedCategory;
+
+        [ObservableProperty]
+        private BrowseSortOptionViewModel? _selectedSortOption;
+
+        [ObservableProperty]
+        private BrowseSourceFilterOptionViewModel? _selectedSourceOption;
+
+        [ObservableProperty]
+        private BrowseCategoryManagerOptionViewModel? _selectedManageCategory;
+
+        [ObservableProperty]
+        private string _manageCategoryAliasDraft = string.Empty;
+
+        [ObservableProperty]
+        private bool _isManageCategoryHidden;
+
+        [ObservableProperty]
+        private bool _favoritesOnly;
+
+        [ObservableProperty]
+        private bool _hideSecondaryContent;
+
+        [ObservableProperty]
+        private bool _hasAdvancedFilters;
 
         [ObservableProperty]
         private SeriesBrowseItemViewModel? _selectedSeries;
@@ -207,6 +245,7 @@ namespace Kroira.App.ViewModels
             SelectedSeason != null && EpisodeItems.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
 
         public Visibility SelectedEpisodePlayVisibility => SelectedEpisode == null ? Visibility.Collapsed : Visibility.Visible;
+        public bool HasManageCategorySelection => SelectedManageCategory != null;
 
         [ObservableProperty]
         private string _selectedSeriesStatus = string.Empty;
@@ -224,7 +263,80 @@ namespace Kroira.App.ViewModels
 
         partial void OnSelectedCategoryChanged(BrowserCategoryViewModel? value)
         {
-            ApplyFilter();
+            if (!_isInitializingBrowsePreferences)
+            {
+                ApplyFilter();
+            }
+        }
+
+        partial void OnSelectedSortOptionChanged(BrowseSortOptionViewModel? value)
+        {
+            if (_isInitializingBrowsePreferences)
+            {
+                return;
+            }
+
+            _browsePreferences.SortKey = value?.Key ?? "recommended";
+            _ = SaveBrowsePreferencesAsync(rebuildCollections: false);
+        }
+
+        partial void OnSelectedSourceOptionChanged(BrowseSourceFilterOptionViewModel? value)
+        {
+            if (_isInitializingBrowsePreferences)
+            {
+                return;
+            }
+
+            _browsePreferences.SelectedSourceId = value?.Id ?? 0;
+            _ = SaveBrowsePreferencesAsync(rebuildCollections: false);
+        }
+
+        partial void OnSelectedManageCategoryChanged(BrowseCategoryManagerOptionViewModel? value)
+        {
+            if (value == null)
+            {
+                ManageCategoryAliasDraft = string.Empty;
+                IsManageCategoryHidden = false;
+                OnPropertyChanged(nameof(HasManageCategorySelection));
+                return;
+            }
+
+            _isInitializingBrowsePreferences = true;
+            try
+            {
+                ManageCategoryAliasDraft = string.Equals(value.RawName, value.EffectiveName, StringComparison.OrdinalIgnoreCase)
+                    ? string.Empty
+                    : value.EffectiveName;
+                IsManageCategoryHidden = value.IsHidden;
+            }
+            finally
+            {
+                _isInitializingBrowsePreferences = false;
+            }
+
+            OnPropertyChanged(nameof(HasManageCategorySelection));
+        }
+
+        partial void OnFavoritesOnlyChanged(bool value)
+        {
+            if (_isInitializingBrowsePreferences)
+            {
+                return;
+            }
+
+            _browsePreferences.FavoritesOnly = value;
+            _ = SaveBrowsePreferencesAsync(rebuildCollections: false);
+        }
+
+        partial void OnHideSecondaryContentChanged(bool value)
+        {
+            if (_isInitializingBrowsePreferences)
+            {
+                return;
+            }
+
+            _browsePreferences.HideSecondaryContent = value;
+            _ = SaveBrowsePreferencesAsync(rebuildCollections: true);
         }
 
         partial void OnSelectedSeriesChanged(SeriesBrowseItemViewModel? value)
@@ -270,6 +382,12 @@ namespace Kroira.App.ViewModels
         public SeriesViewModel(IServiceProvider serviceProvider)
         {
             _serviceProvider = serviceProvider;
+            SortOptions.Add(new BrowseSortOptionViewModel("recommended", "Recommended"));
+            SortOptions.Add(new BrowseSortOptionViewModel("title_asc", "Title A-Z"));
+            SortOptions.Add(new BrowseSortOptionViewModel("rating_desc", "Highest rated"));
+            SortOptions.Add(new BrowseSortOptionViewModel("popularity_desc", "Most popular"));
+            SortOptions.Add(new BrowseSortOptionViewModel("year_desc", "Newest first"));
+            SortOptions.Add(new BrowseSortOptionViewModel("favorites_first", "Favorites first"));
         }
 
         [RelayCommand]
@@ -280,6 +398,7 @@ namespace Kroira.App.ViewModels
             var deduplicationService = scope.ServiceProvider.GetRequiredService<ICatalogDeduplicationService>();
             var profileService = scope.ServiceProvider.GetRequiredService<IProfileStateService>();
             var watchStateService = scope.ServiceProvider.GetRequiredService<ILibraryWatchStateService>();
+            var browsePreferencesService = scope.ServiceProvider.GetRequiredService<IBrowsePreferencesService>();
             var access = await profileService.GetAccessSnapshotAsync(db);
             _activeProfileId = access.ProfileId;
             _isLoadingWatchPreferences = true;
@@ -291,27 +410,26 @@ namespace Kroira.App.ViewModels
             {
                 _isLoadingWatchPreferences = false;
             }
+            _browsePreferences = await browsePreferencesService.GetAsync(db, Domain, _activeProfileId);
             var languageCode = await AppLanguageService.GetLanguageAsync(db, access.ProfileId);
+            _browseLanguageCode = languageCode;
             var seriesGroups = (await deduplicationService.LoadSeriesGroupsAsync(db))
                 .Select(group => FilterGroup(group, access))
                 .OfType<CatalogSeriesGroup>()
                 .ToList();
-            var favoriteIds = (await db.Favorites
+            _favoriteSeriesIds = (await db.Favorites
                 .Where(f => f.ProfileId == access.ProfileId && f.ContentType == FavoriteType.Series)
                 .Select(f => f.ContentId)
                 .ToListAsync())
                 .ToHashSet();
 
-            _allSeries = CatalogOrderingService
-                .OrderCatalog(seriesGroups, languageCode, g => g.PreferredSeries.CategoryName, g => g.PreferredSeries.Title)
-                .Select(group => new SeriesBrowseItemViewModel(
-                    group,
-                    group.Variants.Any(variant => favoriteIds.Contains(variant.Series.Id))))
-                .ToList();
+            _allSeriesGroups.Clear();
+            _allSeriesGroups.AddRange(CatalogOrderingService
+                .OrderCatalog(seriesGroups, languageCode, g => g.PreferredSeries.CategoryName, g => g.PreferredSeries.Title));
 
-            foreach (var item in _allSeries)
+            foreach (var item in _allSeriesGroups)
             {
-                foreach (var variant in item.Group.Variants.Select(groupVariant => groupVariant.Series))
+                foreach (var variant in item.Variants.Select(groupVariant => groupVariant.Series))
                 {
                     if (variant.Seasons == null)
                     {
@@ -329,53 +447,74 @@ namespace Kroira.App.ViewModels
                 }
             }
 
-            Categories.Clear();
-            Categories.Add(new BrowserCategoryViewModel { Id = 0, Name = "All Categories", OrderIndex = -1 });
+            _allCategories.Clear();
+            _allCategories.AddRange(_allSeriesGroups
+                .GroupBy(group => GetRawCategory(group.PreferredSeries.CategoryName))
+                .Select(group => (group.Key, group.Count()))
+                .OrderBy(group => group.Key, StringComparer.CurrentCultureIgnoreCase));
 
-            var categoryIndex = 1;
-            var orderedCategories = CatalogOrderingService.OrderCategories(
-                _allSeries
-                    .Select(s => string.IsNullOrWhiteSpace(s.CategoryName) ? "Uncategorized" : s.CategoryName.Trim())
-                    .Distinct(StringComparer.OrdinalIgnoreCase),
-                languageCode);
+            BuildSourceOptions();
+            BuildCategoryManagerOptions();
 
-            foreach (var categoryName in orderedCategories)
+            _isInitializingBrowsePreferences = true;
+            try
             {
-                Categories.Add(new BrowserCategoryViewModel
-                {
-                    Id = categoryIndex,
-                    Name = categoryName,
-                    OrderIndex = categoryIndex
-                });
-                categoryIndex++;
+                FavoritesOnly = _browsePreferences.FavoritesOnly;
+                HideSecondaryContent = _browsePreferences.HideSecondaryContent;
+                SelectedSortOption = SortOptions.FirstOrDefault(option => string.Equals(option.Key, _browsePreferences.SortKey, StringComparison.OrdinalIgnoreCase))
+                    ?? SortOptions.First();
+                SelectedSourceOption = SourceOptions.FirstOrDefault(option => option.Id == _browsePreferences.SelectedSourceId)
+                    ?? SourceOptions.FirstOrDefault();
+                BuildVisibleCategories(languageCode);
+                SelectedCategory = Categories.FirstOrDefault();
+            }
+            finally
+            {
+                _isInitializingBrowsePreferences = false;
             }
 
-            SelectedCategory = Categories.FirstOrDefault();
             ApplyFilter();
             StartMetadataEnrichment();
         }
 
         private void ApplyFilter()
         {
+            var previousSelectedGroupKey = SelectedSeries?.GroupKey ?? string.Empty;
+            foreach (var item in _allSeries)
+            {
+                item.ActiveSeriesChanged -= SelectedSeries_ActiveSeriesChanged;
+            }
+
+            var filteredGroups = BuildFilteredSeriesGroups().ToList();
+            var currentCategoryKey = SelectedCategory?.FilterKey ?? string.Empty;
+            BuildVisibleCategories(_browseLanguageCode);
+            if (!string.IsNullOrWhiteSpace(currentCategoryKey))
+            {
+                SelectedCategory = Categories.FirstOrDefault(category => string.Equals(category.FilterKey, currentCategoryKey, StringComparison.OrdinalIgnoreCase))
+                    ?? Categories.FirstOrDefault();
+            }
+
+            _allSeries = filteredGroups
+                .Select(group => new SeriesBrowseItemViewModel(
+                    group,
+                    group.Variants.Any(variant => _favoriteSeriesIds.Contains(variant.Series.Id)),
+                    GetEffectiveCategoryName(group.PreferredSeries.CategoryName)))
+                .ToList();
+
             FilteredSeries.Clear();
-            var filtered = _allSeries.AsEnumerable();
-
-            if (SelectedCategory != null && SelectedCategory.Id != 0)
-            {
-                filtered = filtered.Where(s =>
-                    string.Equals(GetDisplayCategory(s.CategoryName), SelectedCategory.Name, StringComparison.OrdinalIgnoreCase));
-            }
-
-            if (!string.IsNullOrWhiteSpace(SearchQuery))
-            {
-                filtered = filtered.Where(s => s.Title.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase));
-            }
-
-            foreach (var item in filtered)
+            foreach (var item in _allSeries)
             {
                 FilteredSeries.Add(item);
             }
 
+            SelectedSeries = _allSeries.FirstOrDefault(item => string.Equals(item.GroupKey, previousSelectedGroupKey, StringComparison.OrdinalIgnoreCase));
+            HasAdvancedFilters = FavoritesOnly ||
+                                 HideSecondaryContent ||
+                                 SourceVisibilityOptions.Any(option => !option.IsVisible) ||
+                                 _browsePreferences.HiddenCategoryKeys.Count > 0 ||
+                                 _browsePreferences.CategoryRemaps.Count > 0 ||
+                                 (SelectedSourceOption?.Id ?? 0) != 0 ||
+                                 !string.Equals(SelectedSortOption?.Key ?? "recommended", "recommended", StringComparison.OrdinalIgnoreCase);
             IsEmpty = FilteredSeries.Count == 0;
             RefreshDisplaySeriesSlots();
         }
@@ -383,8 +522,8 @@ namespace Kroira.App.ViewModels
         [RelayCommand]
         public async Task ToggleFavoriteAsync(int seriesId)
         {
-            var target = _allSeries.FirstOrDefault(s => s.Id == seriesId);
-            if (target == null)
+            var targetGroup = _allSeriesGroups.FirstOrDefault(group => group.Variants.Any(variant => variant.Series.Id == seriesId));
+            if (targetGroup == null)
             {
                 return;
             }
@@ -393,27 +532,84 @@ namespace Kroira.App.ViewModels
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             var profileService = scope.ServiceProvider.GetRequiredService<IProfileStateService>();
             var activeProfileId = await profileService.GetActiveProfileIdAsync(db);
+            var variantIds = targetGroup.Variants.Select(variant => variant.Series.Id).ToList();
             var existingFavorites = await db.Favorites
-                .Where(f => f.ProfileId == activeProfileId && f.ContentType == FavoriteType.Series && target.VariantIds.Contains(f.ContentId))
+                .Where(f => f.ProfileId == activeProfileId && f.ContentType == FavoriteType.Series && variantIds.Contains(f.ContentId))
                 .ToListAsync();
 
             if (existingFavorites.Count == 0)
             {
                 db.Favorites.Add(new Favorite { ProfileId = activeProfileId, ContentType = FavoriteType.Series, ContentId = seriesId });
-                target.IsFavorite = true;
+                _favoriteSeriesIds.Add(seriesId);
             }
             else
             {
                 db.Favorites.RemoveRange(existingFavorites);
-                target.IsFavorite = false;
+                foreach (var favorite in existingFavorites)
+                {
+                    _favoriteSeriesIds.Remove(favorite.ContentId);
+                }
             }
 
             await db.SaveChangesAsync();
+            ApplyFilter();
+        }
 
-            foreach (var slot in DisplaySeriesSlots.Where(slot => slot.Series?.Id == seriesId))
+        [RelayCommand]
+        public async Task SaveCategoryPreferenceAsync()
+        {
+            if (SelectedManageCategory == null)
             {
-                slot.RefreshFavoriteState();
+                return;
             }
+
+            if (IsManageCategoryHidden)
+            {
+                if (!_browsePreferences.HiddenCategoryKeys.Contains(SelectedManageCategory.Key, StringComparer.OrdinalIgnoreCase))
+                {
+                    _browsePreferences.HiddenCategoryKeys.Add(SelectedManageCategory.Key);
+                }
+            }
+            else
+            {
+                _browsePreferences.HiddenCategoryKeys.RemoveAll(value => string.Equals(value, SelectedManageCategory.Key, StringComparison.OrdinalIgnoreCase));
+            }
+
+            var alias = ManageCategoryAliasDraft.Trim();
+            if (string.IsNullOrWhiteSpace(alias) || string.Equals(alias, SelectedManageCategory.RawName, StringComparison.OrdinalIgnoreCase))
+            {
+                _browsePreferences.CategoryRemaps.Remove(SelectedManageCategory.Key);
+            }
+            else
+            {
+                _browsePreferences.CategoryRemaps[SelectedManageCategory.Key] = alias;
+            }
+
+            await SaveBrowsePreferencesAsync(true);
+        }
+
+        [RelayCommand]
+        public async Task ClearCategoryPreferenceAsync()
+        {
+            if (SelectedManageCategory == null)
+            {
+                return;
+            }
+
+            _browsePreferences.HiddenCategoryKeys.RemoveAll(value => string.Equals(value, SelectedManageCategory.Key, StringComparison.OrdinalIgnoreCase));
+            _browsePreferences.CategoryRemaps.Remove(SelectedManageCategory.Key);
+            _isInitializingBrowsePreferences = true;
+            try
+            {
+                ManageCategoryAliasDraft = string.Empty;
+                IsManageCategoryHidden = false;
+            }
+            finally
+            {
+                _isInitializingBrowsePreferences = false;
+            }
+
+            await SaveBrowsePreferencesAsync(true);
         }
 
         private static string GetDisplayCategory(string categoryName)
@@ -449,6 +645,229 @@ namespace Kroira.App.ViewModels
             {
                 DisplaySeriesSlots.Add(new SeriesBrowseSlotViewModel(null));
             }
+        }
+
+        private IEnumerable<CatalogSeriesGroup> BuildFilteredSeriesGroups()
+        {
+            var visibleSourceIds = SourceVisibilityOptions
+                .Where(option => option.IsVisible)
+                .Select(option => option.Id)
+                .ToHashSet();
+            if (visibleSourceIds.Count == 0)
+            {
+                visibleSourceIds = _allSeriesGroups.SelectMany(group => group.Variants).Select(variant => variant.SourceProfile.Id).ToHashSet();
+            }
+
+            var selectedCategoryKey = SelectedCategory?.FilterKey ?? string.Empty;
+            var selectedSourceId = SelectedSourceOption?.Id ?? 0;
+            var results = new List<CatalogSeriesGroup>();
+
+            foreach (var group in _allSeriesGroups)
+            {
+                var variants = group.Variants
+                    .Where(variant => visibleSourceIds.Contains(variant.SourceProfile.Id))
+                    .Where(variant => selectedSourceId == 0 || variant.SourceProfile.Id == selectedSourceId)
+                    .Where(variant => !HideSecondaryContent || string.Equals(variant.Series.ContentKind, "Primary", StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+
+                if (variants.Count == 0)
+                {
+                    continue;
+                }
+
+                var preferredSeries = variants.FirstOrDefault(variant => variant.Series.Id == group.PreferredSeries.Id)?.Series ?? variants[0].Series;
+                if (IsCategoryHidden(preferredSeries.CategoryName))
+                {
+                    continue;
+                }
+
+                var displayCategory = GetEffectiveCategoryName(preferredSeries.CategoryName);
+                if (!string.IsNullOrWhiteSpace(selectedCategoryKey) &&
+                    !string.Equals(NormalizeCategoryKey(displayCategory), selectedCategoryKey, StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                var filteredGroup = new CatalogSeriesGroup
+                {
+                    GroupKey = group.GroupKey,
+                    PreferredSeries = preferredSeries,
+                    Variants = variants,
+                    SourceSummary = BuildSourceSummary(variants.Select(variant => variant.SourceProfile.Name))
+                };
+
+                if (FavoritesOnly && !filteredGroup.Variants.Any(variant => _favoriteSeriesIds.Contains(variant.Series.Id)))
+                {
+                    continue;
+                }
+
+                if (!string.IsNullOrWhiteSpace(SearchQuery) &&
+                    !MatchesSeriesSearch(filteredGroup, displayCategory))
+                {
+                    continue;
+                }
+
+                results.Add(filteredGroup);
+            }
+
+            return SortSeriesGroups(results);
+        }
+
+        private void BuildSourceOptions()
+        {
+            var existingSelection = _browsePreferences.SelectedSourceId;
+            SourceOptions.Clear();
+            SourceVisibilityOptions.Clear();
+            SourceOptions.Add(new BrowseSourceFilterOptionViewModel(0, "All providers", _allSeriesGroups.Count));
+
+            foreach (var group in _allSeriesGroups
+                         .SelectMany(item => item.Variants)
+                         .GroupBy(variant => variant.SourceProfile.Id)
+                         .Select(group => new { Id = group.Key, Name = group.First().SourceProfile.Name, Count = group.Count() })
+                         .OrderBy(group => group.Name))
+            {
+                var isVisible = !_browsePreferences.HiddenSourceIds.Contains(group.Id);
+                SourceOptions.Add(new BrowseSourceFilterOptionViewModel(group.Id, group.Name, group.Count));
+                SourceVisibilityOptions.Add(new BrowseSourceVisibilityViewModel(group.Id, group.Name, $"{group.Count:N0} variants", isVisible, OnSourceVisibilityChanged));
+            }
+
+            SelectedSourceOption = SourceOptions.FirstOrDefault(option => option.Id == existingSelection) ?? SourceOptions.FirstOrDefault();
+        }
+
+        private void BuildVisibleCategories(string languageCode)
+        {
+            var currentKey = SelectedCategory?.FilterKey ?? string.Empty;
+            Categories.Clear();
+            Categories.Add(new BrowserCategoryViewModel { Id = 0, FilterKey = string.Empty, Name = "All Categories", OrderIndex = -1 });
+
+            var visibleSourceIds = SourceVisibilityOptions.Where(option => option.IsVisible).Select(option => option.Id).ToHashSet();
+            if (visibleSourceIds.Count == 0)
+            {
+                visibleSourceIds = _allSeriesGroups.SelectMany(group => group.Variants).Select(variant => variant.SourceProfile.Id).ToHashSet();
+            }
+
+            var categoryNames = _allSeriesGroups
+                .Where(group => group.Variants.Any(variant => visibleSourceIds.Contains(variant.SourceProfile.Id)))
+                .Where(group => group.Variants.Any(variant => !HideSecondaryContent || string.Equals(variant.Series.ContentKind, "Primary", StringComparison.OrdinalIgnoreCase)))
+                .Select(group => group.PreferredSeries.CategoryName)
+                .Where(category => !IsCategoryHidden(category))
+                .Select(GetEffectiveCategoryName)
+                .Distinct(StringComparer.OrdinalIgnoreCase);
+
+            var orderedCategories = CatalogOrderingService.OrderCategories(categoryNames, languageCode);
+            var categoryIndex = 1;
+            foreach (var categoryName in orderedCategories)
+            {
+                Categories.Add(new BrowserCategoryViewModel
+                {
+                    Id = categoryIndex,
+                    FilterKey = NormalizeCategoryKey(categoryName),
+                    Name = categoryName,
+                    OrderIndex = categoryIndex
+                });
+                categoryIndex++;
+            }
+
+            if (!string.IsNullOrWhiteSpace(currentKey))
+            {
+                SelectedCategory = Categories.FirstOrDefault(category => string.Equals(category.FilterKey, currentKey, StringComparison.OrdinalIgnoreCase))
+                    ?? Categories.FirstOrDefault();
+            }
+        }
+
+        private void BuildCategoryManagerOptions()
+        {
+            var currentKey = SelectedManageCategory?.Key ?? string.Empty;
+            ManageCategoryOptions.Clear();
+
+            foreach (var category in _allCategories.OrderBy(item => item.CategoryName, StringComparer.CurrentCultureIgnoreCase))
+            {
+                var key = NormalizeCategoryKey(category.CategoryName);
+                ManageCategoryOptions.Add(new BrowseCategoryManagerOptionViewModel(
+                    key,
+                    category.CategoryName,
+                    GetEffectiveCategoryName(category.CategoryName),
+                    category.Count,
+                    _browsePreferences.HiddenCategoryKeys.Contains(key, StringComparer.OrdinalIgnoreCase)));
+            }
+
+            SelectedManageCategory = ManageCategoryOptions.FirstOrDefault(option => string.Equals(option.Key, currentKey, StringComparison.OrdinalIgnoreCase));
+        }
+
+        private async Task SaveBrowsePreferencesAsync(bool rebuildCollections)
+        {
+            using var scope = _serviceProvider.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var browsePreferencesService = scope.ServiceProvider.GetRequiredService<IBrowsePreferencesService>();
+            await browsePreferencesService.SaveAsync(db, Domain, _activeProfileId, _browsePreferences);
+
+            if (rebuildCollections)
+            {
+                BuildSourceOptions();
+                BuildCategoryManagerOptions();
+                BuildVisibleCategories(_browseLanguageCode);
+            }
+
+            ApplyFilter();
+        }
+
+        private IEnumerable<CatalogSeriesGroup> SortSeriesGroups(IEnumerable<CatalogSeriesGroup> groups)
+        {
+            return (SelectedSortOption?.Key ?? "recommended") switch
+            {
+                "title_asc" => groups.OrderBy(group => group.PreferredSeries.Title, StringComparer.CurrentCultureIgnoreCase),
+                "rating_desc" => groups.OrderByDescending(group => group.PreferredSeries.VoteAverage).ThenByDescending(group => group.PreferredSeries.Popularity).ThenBy(group => group.PreferredSeries.Title, StringComparer.CurrentCultureIgnoreCase),
+                "popularity_desc" => groups.OrderByDescending(group => group.PreferredSeries.Popularity).ThenByDescending(group => group.PreferredSeries.VoteAverage).ThenBy(group => group.PreferredSeries.Title, StringComparer.CurrentCultureIgnoreCase),
+                "year_desc" => groups.OrderByDescending(group => group.PreferredSeries.FirstAirDate ?? DateTime.MinValue).ThenBy(group => group.PreferredSeries.Title, StringComparer.CurrentCultureIgnoreCase),
+                "favorites_first" => groups.OrderByDescending(group => group.Variants.Any(variant => _favoriteSeriesIds.Contains(variant.Series.Id))).ThenBy(group => group.PreferredSeries.Title, StringComparer.CurrentCultureIgnoreCase),
+                _ => groups
+            };
+        }
+
+        private bool MatchesSeriesSearch(CatalogSeriesGroup group, string displayCategory)
+        {
+            return group.PreferredSeries.Title.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase) ||
+                   displayCategory.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase) ||
+                   group.SourceSummary.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase);
+        }
+
+        private void OnSourceVisibilityChanged(BrowseSourceVisibilityViewModel option, bool isVisible)
+        {
+            if (_isInitializingBrowsePreferences)
+            {
+                return;
+            }
+
+            if (isVisible)
+            {
+                _browsePreferences.HiddenSourceIds.RemoveAll(id => id == option.Id);
+            }
+            else if (!_browsePreferences.HiddenSourceIds.Contains(option.Id))
+            {
+                _browsePreferences.HiddenSourceIds.Add(option.Id);
+            }
+
+            _ = SaveBrowsePreferencesAsync(true);
+        }
+
+        private string NormalizeCategoryKey(string categoryName)
+        {
+            return _serviceProvider.GetRequiredService<IBrowsePreferencesService>().NormalizeCategoryKey(categoryName);
+        }
+
+        private string GetEffectiveCategoryName(string categoryName)
+        {
+            return _serviceProvider.GetRequiredService<IBrowsePreferencesService>().GetEffectiveCategoryName(_browsePreferences, GetRawCategory(categoryName));
+        }
+
+        private bool IsCategoryHidden(string categoryName)
+        {
+            return _serviceProvider.GetRequiredService<IBrowsePreferencesService>().IsCategoryHidden(_browsePreferences, GetRawCategory(categoryName));
+        }
+
+        private static string GetRawCategory(string categoryName)
+        {
+            return string.IsNullOrWhiteSpace(categoryName) ? "Uncategorized" : categoryName.Trim();
         }
 
         private void StartMetadataEnrichment()

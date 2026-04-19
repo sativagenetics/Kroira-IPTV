@@ -185,6 +185,7 @@ namespace Kroira.App
             services.AddSingleton<IEntitlementService, MockEntitlementService>();
             services.AddSingleton<ILibraryWatchStateService, LibraryWatchStateService>();
             services.AddSingleton<IProfileStateService, ProfileStateService>();
+            services.AddSingleton<IBrowsePreferencesService, BrowsePreferencesService>();
             services.AddSingleton<IWindowManagerService, WindowManagerService>();
             services.AddSingleton<IInputInterceptorService, InputInterceptorService>();
             services.AddSingleton<ITmdbMetadataService, TmdbMetadataService>();

@@ -13,6 +13,7 @@ namespace Kroira.App.Services
     public class InputInterceptorService : IInputInterceptorService
     {
         private readonly IWindowManagerService _windowManager;
+        private readonly IEntitlementService _entitlementService;
         private Window _window;
         private DispatcherTimer _pointerTimer;
         private bool _isPointerHidden = false;
@@ -21,9 +22,10 @@ namespace Kroira.App.Services
         [DllImport("user32.dll")]
         private static extern int ShowCursor(bool bShow);
 
-        public InputInterceptorService(IWindowManagerService windowManager)
+        public InputInterceptorService(IWindowManagerService windowManager, IEntitlementService entitlementService)
         {
             _windowManager = windowManager;
+            _entitlementService = entitlementService;
 
             _pointerTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(3) };
             _pointerTimer.Tick += PointerTimer_Tick;
@@ -54,7 +56,16 @@ namespace Kroira.App.Services
 
                 // Attach global Keyboard Accelerators for decoupled bindings
                 var f11 = new KeyboardAccelerator { Key = Windows.System.VirtualKey.F11 };
-                f11.Invoked += (s, e) => { _windowManager.ToggleFullscreen(); e.Handled = true; };
+                f11.Invoked += (s, e) =>
+                {
+                    if (!_entitlementService.IsFeatureEnabled(EntitlementFeatureKeys.PlaybackFullscreen))
+                    {
+                        return;
+                    }
+
+                    _windowManager.ToggleFullscreen();
+                    e.Handled = true;
+                };
 
                 var esc = new KeyboardAccelerator { Key = Windows.System.VirtualKey.Escape };
                 esc.Invoked += (s, e) =>

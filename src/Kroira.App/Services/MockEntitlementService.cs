@@ -10,6 +10,18 @@ namespace Kroira.App.Services
     public class MockEntitlementService : IEntitlementService
     {
         public bool HasProLicense { get; private set; } = false;
+        public string CurrentTierKey => HasProLicense ? "pro" : "free";
+        public string CurrentTierDisplayName => HasProLicense ? "Pro" : "Free";
+
+        public bool IsFeatureEnabled(string featureKey)
+        {
+            return true;
+        }
+
+        public int? GetLimit(string limitKey)
+        {
+            return null;
+        }
 
         public Task<bool> RefreshLicenseAsync()
         {

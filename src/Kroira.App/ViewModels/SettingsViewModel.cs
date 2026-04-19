@@ -41,6 +41,7 @@ namespace Kroira.App.ViewModels
 
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(IsBackupIdle))]
+        [NotifyPropertyChangedFor(nameof(CanStartBackupAction))]
         private bool _isBackupBusy;
 
         [ObservableProperty]
@@ -48,6 +49,8 @@ namespace Kroira.App.ViewModels
         private string _backupStatusText = "Export or restore a versioned local package for sources, profiles, favorites, watch state, and local preferences.";
 
         public bool IsBackupIdle => !IsBackupBusy;
+        public bool CanUseBackupRestore => _entitlementService.IsFeatureEnabled(EntitlementFeatureKeys.LibraryBackupRestore);
+        public bool CanStartBackupAction => CanUseBackupRestore && !IsBackupBusy;
         public bool HasBackupStatus => !string.IsNullOrWhiteSpace(BackupStatusText);
 
         partial void OnSelectedLanguageChanged(LanguageOptionViewModel value)
@@ -104,17 +107,22 @@ namespace Kroira.App.ViewModels
 
         private void UpdateState()
         {
-            bool isPro = _entitlementService.HasProLicense;
+            bool isPro = string.Equals(_entitlementService.CurrentTierKey, "pro", StringComparison.OrdinalIgnoreCase);
             ProTierVisibility = isPro ? Visibility.Visible : Visibility.Collapsed;
             FreeTierVisibility = !isPro ? Visibility.Visible : Visibility.Collapsed;
 
-            LicenseStatusDescription = isPro
-                ? "Pro features are enabled for this installation."
-                : "Free tier is active. Upgrade to enable multi-monitor, recording, and premium playback features.";
+            var backupRestoreState = CanUseBackupRestore ? "enabled" : "disabled";
+            LicenseStatusDescription = $"{_entitlementService.CurrentTierDisplayName} tier is active. Central entitlement routing is ready; backup/restore is currently {backupRestoreState}.";
         }
 
         public async Task ExportBackupAsync(string filePath)
         {
+            if (!CanUseBackupRestore)
+            {
+                BackupStatusText = "Backup export is unavailable for this entitlement.";
+                return;
+            }
+
             if (IsBackupBusy)
             {
                 return;
@@ -145,6 +153,12 @@ namespace Kroira.App.ViewModels
 
         public async Task RestoreBackupAsync(string filePath)
         {
+            if (!CanUseBackupRestore)
+            {
+                BackupStatusText = "Backup restore is unavailable for this entitlement.";
+                return;
+            }
+
             if (IsBackupBusy)
             {
                 return;

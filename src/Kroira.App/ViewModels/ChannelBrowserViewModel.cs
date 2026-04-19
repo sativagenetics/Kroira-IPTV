@@ -18,6 +18,7 @@ namespace Kroira.App.ViewModels
     public partial class BrowserCategoryViewModel : ObservableObject
     {
         public int Id { get; set; }
+        public string FilterKey { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
         public int OrderIndex { get; set; }
     }
@@ -26,7 +27,11 @@ namespace Kroira.App.ViewModels
     {
         public int Id { get; set; }
         public int CategoryId { get; set; }
+        public int SourceProfileId { get; set; }
+        public string SourceName { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
+        public string CategoryName { get; set; } = string.Empty;
+        public string DisplayCategoryName { get; set; } = string.Empty;
         public string StreamUrl { get; set; } = string.Empty;
         public string LogoUrl { get; set; } = string.Empty;
         public string CurrentProgramTitle { get; set; } = string.Empty;
@@ -43,6 +48,8 @@ namespace Kroira.App.ViewModels
         public Visibility DescriptionVisibility { get; set; } = Visibility.Collapsed;
         public Visibility SubtitleVisibility { get; set; } = Visibility.Collapsed;
         public Visibility CategoryVisibility { get; set; } = Visibility.Collapsed;
+        public bool HasGuideData { get; set; }
+        public bool HasMatchedGuide { get; set; }
 
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(FavoriteIcon))]
@@ -73,6 +80,8 @@ namespace Kroira.App.ViewModels
 
             if (current == null)
             {
+                channel.HasGuideData = true;
+                channel.HasMatchedGuide = true;
                 channel.CurrentProgramTitle = next == null ? "No current listing" : $"Upcoming: {next.Title}";
                 channel.CurrentProgramSubtitle = string.Empty;
                 channel.CurrentProgramTimeText = next == null
@@ -95,6 +104,8 @@ namespace Kroira.App.ViewModels
             }
 
             channel.CurrentProgramTitle = current.Title;
+            channel.HasGuideData = true;
+            channel.HasMatchedGuide = true;
             channel.CurrentProgramSubtitle = current.Subtitle ?? string.Empty;
             channel.CurrentProgramTimeText = FormatTimeRange(current.StartTimeUtc, current.EndTimeUtc);
             channel.CurrentProgramDescription = current.Description;
@@ -128,6 +139,8 @@ namespace Kroira.App.ViewModels
 
         private static void ApplyUnmatched(BrowserChannelViewModel channel)
         {
+            channel.HasGuideData = false;
+            channel.HasMatchedGuide = false;
             channel.CurrentProgramTitle = "No guide data";
             channel.CurrentProgramSubtitle = string.Empty;
             channel.CurrentProgramTimeText = string.Empty;
@@ -146,6 +159,8 @@ namespace Kroira.App.ViewModels
 
         private static void ApplyUnavailable(BrowserChannelViewModel channel)
         {
+            channel.HasGuideData = false;
+            channel.HasMatchedGuide = false;
             channel.CurrentProgramTitle = "Guide unavailable";
             channel.CurrentProgramSubtitle = string.Empty;
             channel.CurrentProgramTimeText = string.Empty;

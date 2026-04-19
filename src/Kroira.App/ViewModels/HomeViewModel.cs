@@ -152,9 +152,7 @@ namespace Kroira.App.ViewModels
             _entitlementService = entitlementService;
             FeaturedItem = BuildFallbackFeaturedItem();
 
-            LicenseStatusMessage = _entitlementService.HasProLicense
-                ? "Pro license active"
-                : "Free tier active";
+            LicenseStatusMessage = $"{_entitlementService.CurrentTierDisplayName} tier active";
 
             QuickActions.Add(new HomeActionItem { Title = "Live Channels", Detail = "Open live TV and guide-ready streams", Glyph = "\uE714", Target = "Channels" });
             QuickActions.Add(new HomeActionItem { Title = "Movies", Detail = "Browse VOD with fast playback resume", Glyph = "\uE8B2", Target = "Movies" });

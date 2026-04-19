@@ -49,7 +49,12 @@
                         <PasswordBox Header="Password" Password="{x:Bind ViewModel.XtreamPassword, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                     </StackPanel>
 
-                    <Button Content="Save Source" Command="{x:Bind ViewModel.SaveSourceCommand}" Style="{StaticResource KroiraPrimaryButtonStyle}" HorizontalAlignment="Left" Margin="0,8,0,0" />
+                    <Button Content="Save Source"
+                            Command="{x:Bind ViewModel.SaveSourceCommand}"
+                            IsEnabled="{x:Bind ViewModel.CanSaveSource, Mode=OneWay}"
+                            Style="{StaticResource KroiraPrimaryButtonStyle}"
+                            HorizontalAlignment="Left"
+                            Margin="0,8,0,0" />
 
                     <Border Visibility="{x:Bind ViewModel.StatusVisibility, Mode=OneWay}" BorderBrush="{StaticResource KroiraBorderStrongBrush}" BorderThickness="1" CornerRadius="12" Padding="12" Background="#1B2134">
                         <TextBlock Text="{x:Bind ViewModel.StatusMessage, Mode=OneWay}" Foreground="{StaticResource KroiraAccentBrush}" TextWrapping="WrapWholeWords" />
