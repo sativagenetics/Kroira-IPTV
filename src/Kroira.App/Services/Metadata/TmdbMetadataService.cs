@@ -1173,6 +1173,7 @@ namespace Kroira.App.Services.Metadata
             movie.Popularity = details.Popularity > 0 ? details.Popularity : movie.Popularity;
             movie.OriginalLanguage = string.IsNullOrWhiteSpace(details.OriginalLanguage) ? movie.OriginalLanguage : details.OriginalLanguage;
             movie.MetadataUpdatedAt = DateTime.UtcNow;
+            CatalogFingerprinting.Apply(movie);
         }
 
         private static void ApplySeries(Series series, TmdbDetails details)
@@ -1190,6 +1191,7 @@ namespace Kroira.App.Services.Metadata
             series.Popularity = details.Popularity > 0 ? details.Popularity : series.Popularity;
             series.OriginalLanguage = string.IsNullOrWhiteSpace(details.OriginalLanguage) ? series.OriginalLanguage : details.OriginalLanguage;
             series.MetadataUpdatedAt = DateTime.UtcNow;
+            CatalogFingerprinting.Apply(series);
         }
 
         private static string ParseGenres(JsonElement root)

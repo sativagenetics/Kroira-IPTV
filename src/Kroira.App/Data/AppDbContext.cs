@@ -99,11 +99,23 @@ namespace Kroira.App.Data
             modelBuilder.Entity<Movie>()
                 .HasIndex(m => m.MetadataUpdatedAt);
 
+            modelBuilder.Entity<Movie>()
+                .HasIndex(m => m.CanonicalTitleKey);
+
+            modelBuilder.Entity<Movie>()
+                .HasIndex(m => m.DedupFingerprint);
+
             modelBuilder.Entity<Series>()
                 .HasIndex(s => s.TmdbId);
 
             modelBuilder.Entity<Series>()
                 .HasIndex(s => s.MetadataUpdatedAt);
+
+            modelBuilder.Entity<Series>()
+                .HasIndex(s => s.CanonicalTitleKey);
+
+            modelBuilder.Entity<Series>()
+                .HasIndex(s => s.DedupFingerprint);
 
             modelBuilder.Entity<SchemaVersion>()
                 .HasData(new SchemaVersion

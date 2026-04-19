@@ -70,6 +70,11 @@ namespace Kroira.App.Data
             EnsureColumn(conn, "Movies", "MetadataUpdatedAt", "TEXT");
             EnsureColumn(conn, "Movies", "OriginalLanguage", "TEXT");
             EnsureColumn(conn, "Movies", "Overview", "TEXT");
+            EnsureColumn(conn, "Movies", "CanonicalTitleKey", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "Movies", "DedupFingerprint", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "Movies", "RawSourceCategoryName", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "Movies", "RawSourceTitle", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "Movies", "ContentKind", "TEXT NOT NULL DEFAULT 'Primary'");
             EnsureColumn(conn, "Movies", "Popularity", "REAL NOT NULL DEFAULT 0.0");
             EnsureColumn(conn, "Movies", "ReleaseDate", "TEXT");
             EnsureColumn(conn, "Movies", "TmdbBackdropPath", "TEXT");
@@ -83,6 +88,11 @@ namespace Kroira.App.Data
             EnsureColumn(conn, "Series", "MetadataUpdatedAt", "TEXT");
             EnsureColumn(conn, "Series", "OriginalLanguage", "TEXT NOT NULL DEFAULT ''");
             EnsureColumn(conn, "Series", "Overview", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "Series", "CanonicalTitleKey", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "Series", "DedupFingerprint", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "Series", "RawSourceCategoryName", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "Series", "RawSourceTitle", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "Series", "ContentKind", "TEXT NOT NULL DEFAULT 'Primary'");
             EnsureColumn(conn, "Series", "Popularity", "REAL NOT NULL DEFAULT 0.0");
             EnsureColumn(conn, "Series", "TmdbBackdropPath", "TEXT NOT NULL DEFAULT ''");
             EnsureColumn(conn, "Series", "TmdbPosterPath", "TEXT NOT NULL DEFAULT ''");
@@ -108,8 +118,12 @@ namespace Kroira.App.Data
             EnsureEpgSyncLogsTable(conn);
 
             EnsureIndex(conn, "IX_Movies_MetadataUpdatedAt", "Movies", "MetadataUpdatedAt");
+            EnsureIndex(conn, "IX_Movies_CanonicalTitleKey", "Movies", "CanonicalTitleKey");
+            EnsureIndex(conn, "IX_Movies_DedupFingerprint", "Movies", "DedupFingerprint");
             EnsureIndex(conn, "IX_Movies_TmdbId", "Movies", "TmdbId");
             EnsureIndex(conn, "IX_Series_MetadataUpdatedAt", "Series", "MetadataUpdatedAt");
+            EnsureIndex(conn, "IX_Series_CanonicalTitleKey", "Series", "CanonicalTitleKey");
+            EnsureIndex(conn, "IX_Series_DedupFingerprint", "Series", "DedupFingerprint");
             EnsureIndex(conn, "IX_Series_TmdbId", "Series", "TmdbId");
             EnsureIndex(conn, "IX_Channels_EpgChannelId", "Channels", "EpgChannelId");
             EnsureCompositeIndex(conn, "IX_EpgPrograms_ChannelId_StartTimeUtc", "EpgPrograms", "ChannelId", "StartTimeUtc");

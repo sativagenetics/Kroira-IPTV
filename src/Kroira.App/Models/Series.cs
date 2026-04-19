@@ -12,6 +12,9 @@ namespace Kroira.App.Models
         /// <summary>Xtream series_id — stable identity key used for upsert across syncs.</summary>
         public string ExternalId { get; set; } = string.Empty;
         public string Title { get; set; } = string.Empty;
+        public string RawSourceTitle { get; set; } = string.Empty;
+        public string CanonicalTitleKey { get; set; } = string.Empty;
+        public string DedupFingerprint { get; set; } = string.Empty;
         public string PosterUrl { get; set; } = string.Empty;
         public string TmdbId { get; set; } = string.Empty;
         public string ImdbId { get; set; } = string.Empty;
@@ -26,6 +29,8 @@ namespace Kroira.App.Models
         public string OriginalLanguage { get; set; } = string.Empty;
         public DateTime? MetadataUpdatedAt { get; set; }
         public string CategoryName { get; set; } = string.Empty;
+        public string RawSourceCategoryName { get; set; } = string.Empty;
+        public string ContentKind { get; set; } = "Primary";
 
         public ICollection<Season>? Seasons { get; set; }
 

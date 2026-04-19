@@ -19,6 +19,13 @@ namespace Kroira.App.Services.Parsing
 
     public class XtreamParserService : IXtreamParserService
     {
+        private readonly ICatalogNormalizationService _catalogNormalizationService;
+
+        public XtreamParserService(ICatalogNormalizationService catalogNormalizationService)
+        {
+            _catalogNormalizationService = catalogNormalizationService;
+        }
+
         public async Task ParseAndImportXtreamAsync(AppDbContext db, int sourceProfileId)
         {
             var profile = await db.SourceProfiles.FindAsync(sourceProfileId);
@@ -244,17 +251,27 @@ namespace Kroira.App.Services.Parsing
                         if (ContentClassifier.IsGarbageCategoryName(mappedCatName)) continue;
                         if (ContentClassifier.IsGarbageTitle(name ?? string.Empty)) continue;
 
-                        parsedMovies.Add(new Movie
+                        var normalized = _catalogNormalizationService.NormalizeMovie(
+                            SourceType.Xtream,
+                            string.IsNullOrWhiteSpace(name) ? "Unknown Movie" : name,
+                            mappedCatName ?? "Uncategorized");
+
+                        var movie = new Movie
                         {
                             SourceProfileId = sourceProfileId,
                             ExternalId = streamId,
-                            Title = string.IsNullOrWhiteSpace(name) ? "Unknown Movie" : name,
+                            Title = normalized.Title,
+                            RawSourceTitle = normalized.RawTitle,
                             StreamUrl = $"{baseUrl}/movie/{cred.Username}/{cred.Password}/{streamId}.{ext}",
                             PosterUrl = logo ?? string.Empty,
                             TmdbId = tmdbId ?? string.Empty,
                             ImdbId = imdbId ?? string.Empty,
-                            CategoryName = mappedCatName ?? "Uncategorized"
-                        });
+                            CategoryName = normalized.CategoryName,
+                            RawSourceCategoryName = normalized.RawCategoryName,
+                            ContentKind = normalized.ContentKind
+                        };
+                        CatalogFingerprinting.Apply(movie);
+                        parsedMovies.Add(movie);
                     }
                 }
 
@@ -282,17 +299,27 @@ namespace Kroira.App.Services.Parsing
                         if (ContentClassifier.IsGarbageCategoryName(mappedCatName)) continue;
                         if (ContentClassifier.IsGarbageTitle(name ?? string.Empty)) continue;
 
-                        pendingSeries.Add((seriesId, new Series
+                        var normalized = _catalogNormalizationService.NormalizeSeries(
+                            SourceType.Xtream,
+                            string.IsNullOrWhiteSpace(name) ? "Unknown Series" : name,
+                            mappedCatName ?? "Uncategorized");
+
+                        var series = new Series
                         {
                             SourceProfileId = sourceProfileId,
                             ExternalId = seriesId,
-                            Title = string.IsNullOrWhiteSpace(name) ? "Unknown Series" : name,
+                            Title = normalized.Title,
+                            RawSourceTitle = normalized.RawTitle,
                             PosterUrl = cover ?? string.Empty,
                             TmdbId = tmdbId ?? string.Empty,
                             ImdbId = imdbId ?? string.Empty,
-                            CategoryName = mappedCatName ?? "Uncategorized",
+                            CategoryName = normalized.CategoryName,
+                            RawSourceCategoryName = normalized.RawCategoryName,
+                            ContentKind = normalized.ContentKind,
                             Seasons = new List<Season>()
-                        }));
+                        };
+                        CatalogFingerprinting.Apply(series);
+                        pendingSeries.Add((seriesId, series));
                     }
                 }
 
@@ -377,6 +404,7 @@ namespace Kroira.App.Services.Parsing
                         {
                             // UPDATE in place — Id stays the same, favorites/progress survive
                             existing.Title = incoming.Title;
+                            existing.RawSourceTitle = incoming.RawSourceTitle;
                             existing.StreamUrl = incoming.StreamUrl;
                             existing.PosterUrl = string.IsNullOrWhiteSpace(existing.TmdbPosterPath)
                                 ? incoming.PosterUrl
@@ -390,6 +418,10 @@ namespace Kroira.App.Services.Parsing
                                 existing.ImdbId = incoming.ImdbId;
                             }
                             existing.CategoryName = incoming.CategoryName;
+                            existing.RawSourceCategoryName = incoming.RawSourceCategoryName;
+                            existing.ContentKind = incoming.ContentKind;
+                            existing.CanonicalTitleKey = incoming.CanonicalTitleKey;
+                            existing.DedupFingerprint = incoming.DedupFingerprint;
                             movUpdated++;
                         }
                         else
@@ -446,6 +478,7 @@ namespace Kroira.App.Services.Parsing
                         {
                             // UPDATE metadata in place — Series.Id stays the same
                             existingSer.Title = sInfo.BaseObj.Title;
+                            existingSer.RawSourceTitle = sInfo.BaseObj.RawSourceTitle;
                             existingSer.PosterUrl = string.IsNullOrWhiteSpace(existingSer.TmdbPosterPath)
                                 ? sInfo.BaseObj.PosterUrl
                                 : existingSer.PosterUrl;
@@ -458,6 +491,10 @@ namespace Kroira.App.Services.Parsing
                                 existingSer.ImdbId = sInfo.BaseObj.ImdbId;
                             }
                             existingSer.CategoryName = sInfo.BaseObj.CategoryName;
+                            existingSer.RawSourceCategoryName = sInfo.BaseObj.RawSourceCategoryName;
+                            existingSer.ContentKind = sInfo.BaseObj.ContentKind;
+                            existingSer.CanonicalTitleKey = sInfo.BaseObj.CanonicalTitleKey;
+                            existingSer.DedupFingerprint = sInfo.BaseObj.DedupFingerprint;
 
                             // Upsert seasons and episodes instead of rebuild-from-scratch
                             var incomingSeasons = sInfo.BaseObj.Seasons?.ToList() ?? new List<Season>();

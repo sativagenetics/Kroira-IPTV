@@ -18,20 +18,28 @@ namespace Kroira.App.ViewModels
 {
     public partial class MovieBrowseItemViewModel : ObservableObject
     {
-        public MovieBrowseItemViewModel(Movie movie, bool isFavorite)
+        public MovieBrowseItemViewModel(CatalogMovieGroup group, bool isFavorite)
         {
-            Movie = movie;
+            Group = group;
             IsFavorite = isFavorite;
         }
 
-        public Movie Movie { get; }
+        public CatalogMovieGroup Group { get; }
+        public Movie Movie => Group.PreferredMovie;
+        public IReadOnlyList<CatalogMovieVariant> Variants => Group.Variants;
+        public IReadOnlyList<int> VariantIds => Group.Variants.Select(variant => variant.Movie.Id).ToList();
         public int Id => Movie.Id;
         public string Title => Movie.Title;
         public string StreamUrl => Movie.StreamUrl;
         public string DisplayPosterUrl => Movie.DisplayPosterUrl;
         public string DisplayHeroArtworkUrl => Movie.DisplayHeroArtworkUrl;
         public string RatingText => Movie.RatingText;
-        public string MetadataLine => Movie.MetadataLine;
+        public string MetadataLine =>
+            Group.Variants.Count > 1 && !string.IsNullOrWhiteSpace(Group.SourceSummary)
+                ? string.IsNullOrWhiteSpace(Movie.MetadataLine)
+                    ? Group.SourceSummary
+                    : $"{Movie.MetadataLine} / {Group.SourceSummary}"
+                : Movie.MetadataLine;
         public string Overview => Movie.Overview;
         public string CategoryName => Movie.CategoryName;
         public double Popularity => Movie.Popularity;
@@ -40,6 +48,8 @@ namespace Kroira.App.ViewModels
         public string TmdbBackdropPath => Movie.TmdbBackdropPath;
         public string PosterUrl => Movie.PosterUrl;
         public string TmdbPosterPath => Movie.TmdbPosterPath;
+        public bool HasAlternateSources => Group.Variants.Count > 1;
+        public string SourceSummary => Group.SourceSummary;
 
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(FavoriteGlyph))]
@@ -124,8 +134,9 @@ namespace Kroira.App.ViewModels
         {
             using var scope = _serviceProvider.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var deduplicationService = scope.ServiceProvider.GetRequiredService<ICatalogDeduplicationService>();
             var languageCode = await AppLanguageService.GetLanguageAsync(db);
-            var rawMovies = await db.Movies.ToListAsync();
+            var movieGroups = await deduplicationService.LoadMovieGroupsAsync(db);
             var favoriteIds = (await db.Favorites
                 .Where(f => f.ContentType == FavoriteType.Movie)
                 .Select(f => f.ContentId)
@@ -133,14 +144,16 @@ namespace Kroira.App.ViewModels
                 .ToHashSet();
 
             _allMovies = CatalogOrderingService
-                .OrderCatalog(rawMovies, languageCode, m => m.CategoryName, m => m.Title)
-                .Select(movie => new MovieBrowseItemViewModel(movie, favoriteIds.Contains(movie.Id)))
+                .OrderCatalog(movieGroups, languageCode, g => g.PreferredMovie.CategoryName, g => g.PreferredMovie.Title)
+                .Select(group => new MovieBrowseItemViewModel(
+                    group,
+                    group.Variants.Any(variant => favoriteIds.Contains(variant.Movie.Id))))
                 .ToList();
 
             // Cache SourceProfileId -> SourceType for featured-safety gate.
             // The M3U safety rules are applied only to M3U items; Xtream
             // items pass through untouched.
-            var sourceIds = rawMovies.Select(m => m.SourceProfileId).Distinct().ToList();
+            var sourceIds = movieGroups.Select(group => group.PreferredMovie.SourceProfileId).Distinct().ToList();
             _sourceTypeById = await db.SourceProfiles
                 .Where(p => sourceIds.Contains(p.Id))
                 .ToDictionaryAsync(p => p.Id, p => p.Type);
@@ -208,17 +221,18 @@ namespace Kroira.App.ViewModels
 
             using var scope = _serviceProvider.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            var favorite = await db.Favorites
-                .FirstOrDefaultAsync(f => f.ContentType == FavoriteType.Movie && f.ContentId == movieId);
+            var existingFavorites = await db.Favorites
+                .Where(f => f.ContentType == FavoriteType.Movie && target.VariantIds.Contains(f.ContentId))
+                .ToListAsync();
 
-            if (favorite == null)
+            if (existingFavorites.Count == 0)
             {
                 db.Favorites.Add(new Favorite { ContentType = FavoriteType.Movie, ContentId = movieId });
                 target.IsFavorite = true;
             }
             else
             {
-                db.Favorites.Remove(favorite);
+                db.Favorites.RemoveRange(existingFavorites);
                 target.IsFavorite = false;
             }
 
@@ -349,12 +363,19 @@ namespace Kroira.App.ViewModels
 
         private static MovieBrowseItemViewModel CreatePlaceholderFeaturedMovie()
         {
-            return new MovieBrowseItemViewModel(new Movie
-            {
-                Title = "Movies",
-                Overview = "Sync an Xtream VOD source to build a poster-first library with TMDb artwork, ratings, genres, and backdrops.",
-                CategoryName = "VOD library"
-            }, false);
+            return new MovieBrowseItemViewModel(
+                new CatalogMovieGroup
+                {
+                    GroupKey = "placeholder",
+                    PreferredMovie = new Movie
+                    {
+                        Title = "Movies",
+                        Overview = "Sync an Xtream VOD source to build a poster-first library with TMDb artwork, ratings, genres, and backdrops.",
+                        CategoryName = "VOD library"
+                    },
+                    Variants = new List<CatalogMovieVariant>()
+                },
+                false);
         }
 
         private void StartMetadataEnrichment()

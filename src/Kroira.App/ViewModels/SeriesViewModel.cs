@@ -18,24 +18,59 @@ using Microsoft.UI.Xaml;
 
 namespace Kroira.App.ViewModels
 {
-    public partial class SeriesBrowseItemViewModel : ObservableObject
+    public sealed class SeriesSourceOptionViewModel
     {
-        public SeriesBrowseItemViewModel(Series series, bool isFavorite)
+        public SeriesSourceOptionViewModel(CatalogSeriesVariant variant)
         {
-            Series = series;
-            IsFavorite = isFavorite;
+            Variant = variant;
         }
 
-        public Series Series { get; }
-        public int Id => Series.Id;
-        public string Title => Series.Title;
-        public string DisplayPosterUrl => Series.DisplayPosterUrl;
-        public string DisplayHeroArtworkUrl => Series.DisplayHeroArtworkUrl;
-        public string RatingText => Series.RatingText;
-        public string MetadataLine => Series.MetadataLine;
-        public string Overview => Series.Overview;
-        public string CategoryName => Series.CategoryName;
-        public ICollection<Season>? Seasons => Series.Seasons;
+        public CatalogSeriesVariant Variant { get; }
+        public int Id => Variant.Series.Id;
+        public string Label => Variant.DisplayName;
+    }
+
+    public partial class SeriesBrowseItemViewModel : ObservableObject
+    {
+        public SeriesBrowseItemViewModel(CatalogSeriesGroup group, bool isFavorite)
+        {
+            Group = group;
+            IsFavorite = isFavorite;
+            foreach (var variant in group.Variants)
+            {
+                SourceOptions.Add(new SeriesSourceOptionViewModel(variant));
+            }
+
+            SelectedSourceOption = SourceOptions.FirstOrDefault();
+        }
+
+        public event EventHandler? ActiveSeriesChanged;
+
+        public CatalogSeriesGroup Group { get; }
+        public Series PreferredSeries => Group.PreferredSeries;
+        public Series ActiveSeries => SelectedSourceOption?.Variant.Series ?? PreferredSeries;
+        public ObservableCollection<SeriesSourceOptionViewModel> SourceOptions { get; } = new();
+        public IReadOnlyList<int> VariantIds => Group.Variants.Select(variant => variant.Series.Id).ToList();
+        public int Id => PreferredSeries.Id;
+        public string Title => PreferredSeries.Title;
+        public string DisplayPosterUrl => ActiveSeries.DisplayPosterUrl;
+        public string DisplayHeroArtworkUrl => ActiveSeries.DisplayHeroArtworkUrl;
+        public string RatingText => ActiveSeries.RatingText;
+        public string MetadataLine =>
+            Group.Variants.Count > 1 && !string.IsNullOrWhiteSpace(Group.SourceSummary)
+                ? string.IsNullOrWhiteSpace(ActiveSeries.MetadataLine)
+                    ? Group.SourceSummary
+                    : $"{ActiveSeries.MetadataLine} / {Group.SourceSummary}"
+                : ActiveSeries.MetadataLine;
+        public string Overview => string.IsNullOrWhiteSpace(ActiveSeries.Overview) ? PreferredSeries.Overview : ActiveSeries.Overview;
+        public string CategoryName => PreferredSeries.CategoryName;
+        public ICollection<Season>? Seasons => ActiveSeries.Seasons;
+        public bool HasAlternateSources => SourceOptions.Count > 1;
+        public Visibility SourceSelectionVisibility => HasAlternateSources ? Visibility.Visible : Visibility.Collapsed;
+        public string SourceSummary => Group.SourceSummary;
+
+        [ObservableProperty]
+        private SeriesSourceOptionViewModel? _selectedSourceOption;
 
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(FavoriteGlyph))]
@@ -44,6 +79,17 @@ namespace Kroira.App.ViewModels
 
         public string FavoriteGlyph => IsFavorite ? "\uE735" : "\uE734";
         public string FavoriteLabel => IsFavorite ? "Saved" : "Save";
+
+        partial void OnSelectedSourceOptionChanged(SeriesSourceOptionViewModel? value)
+        {
+            OnPropertyChanged(nameof(DisplayPosterUrl));
+            OnPropertyChanged(nameof(DisplayHeroArtworkUrl));
+            OnPropertyChanged(nameof(RatingText));
+            OnPropertyChanged(nameof(MetadataLine));
+            OnPropertyChanged(nameof(Overview));
+            OnPropertyChanged(nameof(Seasons));
+            ActiveSeriesChanged?.Invoke(this, EventArgs.Empty);
+        }
     }
 
     public partial class SeriesBrowseSlotViewModel : ObservableObject
@@ -133,10 +179,19 @@ namespace Kroira.App.ViewModels
             SelectedSeriesStatus = string.Empty;
             SelectedSeriesStatusVisibility = Visibility.Collapsed;
 
-            if (value != null)
+            foreach (var item in _allSeries)
             {
-                _ = EnsureSeriesDetailsAsync(value);
+                item.ActiveSeriesChanged -= SelectedSeries_ActiveSeriesChanged;
             }
+
+            if (value == null)
+            {
+                return;
+            }
+
+            value.ActiveSeriesChanged -= SelectedSeries_ActiveSeriesChanged;
+            value.ActiveSeriesChanged += SelectedSeries_ActiveSeriesChanged;
+            _ = EnsureSeriesDetailsAsync(value);
         }
 
         partial void OnSelectedSeasonChanged(Season? value)
@@ -154,11 +209,9 @@ namespace Kroira.App.ViewModels
         {
             using var scope = _serviceProvider.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var deduplicationService = scope.ServiceProvider.GetRequiredService<ICatalogDeduplicationService>();
             var languageCode = await AppLanguageService.GetLanguageAsync(db);
-            var rawSeries = await db.Series
-                .Include(s => s.Seasons!)
-                .ThenInclude(sn => sn.Episodes)
-                .ToListAsync();
+            var seriesGroups = await deduplicationService.LoadSeriesGroupsAsync(db);
             var favoriteIds = (await db.Favorites
                 .Where(f => f.ContentType == FavoriteType.Series)
                 .Select(f => f.ContentId)
@@ -166,17 +219,23 @@ namespace Kroira.App.ViewModels
                 .ToHashSet();
 
             _allSeries = CatalogOrderingService
-                .OrderCatalog(rawSeries, languageCode, s => s.CategoryName, s => s.Title)
-                .Select(series => new SeriesBrowseItemViewModel(series, favoriteIds.Contains(series.Id)))
+                .OrderCatalog(seriesGroups, languageCode, g => g.PreferredSeries.CategoryName, g => g.PreferredSeries.Title)
+                .Select(group => new SeriesBrowseItemViewModel(
+                    group,
+                    group.Variants.Any(variant => favoriteIds.Contains(variant.Series.Id))))
                 .ToList();
 
             foreach (var item in _allSeries)
             {
-                var series = item.Series;
-                if (series.Seasons != null)
+                foreach (var variant in item.Group.Variants.Select(groupVariant => groupVariant.Series))
                 {
-                    series.Seasons = series.Seasons.OrderBy(sn => sn.SeasonNumber).ToList();
-                    foreach (var season in series.Seasons)
+                    if (variant.Seasons == null)
+                    {
+                        continue;
+                    }
+
+                    variant.Seasons = variant.Seasons.OrderBy(sn => sn.SeasonNumber).ToList();
+                    foreach (var season in variant.Seasons)
                     {
                         if (season.Episodes != null)
                         {
@@ -248,17 +307,18 @@ namespace Kroira.App.ViewModels
 
             using var scope = _serviceProvider.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            var favorite = await db.Favorites
-                .FirstOrDefaultAsync(f => f.ContentType == FavoriteType.Series && f.ContentId == seriesId);
+            var existingFavorites = await db.Favorites
+                .Where(f => f.ContentType == FavoriteType.Series && target.VariantIds.Contains(f.ContentId))
+                .ToListAsync();
 
-            if (favorite == null)
+            if (existingFavorites.Count == 0)
             {
                 db.Favorites.Add(new Favorite { ContentType = FavoriteType.Series, ContentId = seriesId });
                 target.IsFavorite = true;
             }
             else
             {
-                db.Favorites.Remove(favorite);
+                db.Favorites.RemoveRange(existingFavorites);
                 target.IsFavorite = false;
             }
 
@@ -325,7 +385,7 @@ namespace Kroira.App.ViewModels
 
         private async Task EnsureSeriesDetailsAsync(SeriesBrowseItemViewModel item)
         {
-            var series = item.Series;
+            var series = item.ActiveSeries;
 
             if (!HasPlayableEpisodes(series))
             {
@@ -344,7 +404,7 @@ namespace Kroira.App.ViewModels
 
             NormalizeSeasonOrder(series);
 
-            if (SelectedSeries?.Id != series.Id)
+            if (!ReferenceEquals(SelectedSeries, item))
             {
                 return;
             }
@@ -485,6 +545,16 @@ namespace Kroira.App.ViewModels
             await db.SaveChangesAsync();
 
             series.Seasons = fetchedSeasons;
+        }
+
+        private void SelectedSeries_ActiveSeriesChanged(object? sender, EventArgs e)
+        {
+            if (sender is SeriesBrowseItemViewModel item && ReferenceEquals(SelectedSeries, item))
+            {
+                SelectedSeason = null;
+                SelectedEpisode = null;
+                _ = EnsureSeriesDetailsAsync(item);
+            }
         }
 
         private static List<Season> ExtractSeasons(JsonElement root, string baseUrl, string username, string password)

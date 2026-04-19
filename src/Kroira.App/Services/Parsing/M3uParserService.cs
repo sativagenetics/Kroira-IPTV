@@ -61,6 +61,8 @@ namespace Kroira.App.Services.Parsing
     /// </summary>
     public class M3uParserService : IM3uParserService
     {
+        private readonly ICatalogNormalizationService _catalogNormalizationService;
+
         private static readonly Regex _groupRegex =
             new Regex(@"group-title=""([^""]*)""", RegexOptions.Compiled);
         private static readonly Regex _logoRegex =
@@ -69,6 +71,11 @@ namespace Kroira.App.Services.Parsing
             new Regex(@"tvg-type=""([^""]*)""", RegexOptions.Compiled);
         private static readonly Regex _tvgIdRegex =
             new Regex(@"tvg-id=""([^""]*)""", RegexOptions.Compiled);
+
+        public M3uParserService(ICatalogNormalizationService catalogNormalizationService)
+        {
+            _catalogNormalizationService = catalogNormalizationService;
+        }
 
         public async Task ParseAndImportM3uAsync(AppDbContext db, int sourceProfileId)
         {
@@ -265,7 +272,7 @@ namespace Kroira.App.Services.Parsing
             // Confidence gate: only episode groups that pass all signals become
             // Series. The rest are demoted to Movies.
             var (seriesList, demotedToMovies) = BuildSeriesList(
-                sourceProfileId, episodeEntries, normalizedCategoryLabels);
+                sourceProfileId, episodeEntries, normalizedCategoryLabels, _catalogNormalizationService);
             movieList.AddRange(demotedToMovies);
 
             int totalMovies = movieList.Count;
@@ -327,15 +334,28 @@ namespace Kroira.App.Services.Parsing
 
         // ── Private helpers ───────────────────────────────────────────────
 
-        private static Movie BuildMovie(int sourceProfileId, M3uEntry entry) => new Movie
+        private Movie BuildMovie(int sourceProfileId, M3uEntry entry)
         {
-            SourceProfileId = sourceProfileId,
-            ExternalId = string.Empty,
-            Title = entry.Name,
-            StreamUrl = entry.Url,
-            PosterUrl = entry.LogoUrl,
-            CategoryName = entry.GroupName
-        };
+            var normalized = _catalogNormalizationService.NormalizeMovie(
+                SourceType.M3U,
+                entry.Name,
+                entry.GroupName);
+
+            var movie = new Movie
+            {
+                SourceProfileId = sourceProfileId,
+                ExternalId = string.Empty,
+                Title = normalized.Title,
+                RawSourceTitle = normalized.RawTitle,
+                StreamUrl = entry.Url,
+                PosterUrl = entry.LogoUrl,
+                CategoryName = normalized.CategoryName,
+                RawSourceCategoryName = normalized.RawCategoryName,
+                ContentKind = normalized.ContentKind
+            };
+            CatalogFingerprinting.Apply(movie);
+            return movie;
+        }
 
         /// <summary>
         /// Returns true when a group-title should prevent all VOD items in
@@ -416,7 +436,8 @@ namespace Kroira.App.Services.Parsing
         private static (List<Series> Series, List<Movie> DemotedMovies) BuildSeriesList(
             int sourceProfileId,
             List<EpisodeEntry> entries,
-            HashSet<string> normalizedCategoryLabels)
+            HashSet<string> normalizedCategoryLabels,
+            ICatalogNormalizationService catalogNormalizationService)
         {
             var seriesResult = new List<Series>();
             var demoted = new List<Movie>();
@@ -435,7 +456,7 @@ namespace Kroira.App.Services.Parsing
                     ContentClassifier.IsM3uBucketOrAdultLabel(key))
                 {
                     foreach (var ep in items)
-                        demoted.Add(DemoteEpisodeToMovie(sourceProfileId, ep));
+                        demoted.Add(DemoteEpisodeToMovie(sourceProfileId, ep, catalogNormalizationService));
                     continue;
                 }
 
@@ -453,7 +474,7 @@ namespace Kroira.App.Services.Parsing
                 if (!confident)
                 {
                     foreach (var ep in items)
-                        demoted.Add(DemoteEpisodeToMovie(sourceProfileId, ep));
+                        demoted.Add(DemoteEpisodeToMovie(sourceProfileId, ep, catalogNormalizationService));
                     continue;
                 }
 
@@ -472,6 +493,18 @@ namespace Kroira.App.Services.Parsing
                     .First()
                     .Key;
 
+                var representativeRawTitle = items
+                    .GroupBy(i => i.Name, StringComparer.OrdinalIgnoreCase)
+                    .OrderByDescending(gg => gg.Count())
+                    .ThenBy(gg => gg.Key, StringComparer.OrdinalIgnoreCase)
+                    .First()
+                    .Key;
+
+                var normalized = catalogNormalizationService.NormalizeSeries(
+                    SourceType.M3U,
+                    representativeRawTitle,
+                    categoryName);
+
                 // Poster: first non-empty logo from any episode entry.
                 var logo = items
                     .Select(i => i.LogoUrl)
@@ -482,10 +515,14 @@ namespace Kroira.App.Services.Parsing
                     SourceProfileId = sourceProfileId,
                     ExternalId = string.Empty,
                     Title = displayTitle,
-                    CategoryName = categoryName,
+                    RawSourceTitle = normalized.RawTitle,
+                    CategoryName = normalized.CategoryName,
+                    RawSourceCategoryName = normalized.RawCategoryName,
+                    ContentKind = normalized.ContentKind,
                     PosterUrl = logo,
                     Seasons = new List<Season>()
                 };
+                CatalogFingerprinting.Apply(series);
 
                 var seasonGroups = items.GroupBy(e => e.SeasonNumber).OrderBy(gg => gg.Key);
                 foreach (var seasonGroup in seasonGroups)
@@ -526,15 +563,31 @@ namespace Kroira.App.Services.Parsing
             return (seriesResult, demoted);
         }
 
-        private static Movie DemoteEpisodeToMovie(int sourceProfileId, EpisodeEntry ep) => new Movie
+        private static Movie DemoteEpisodeToMovie(
+            int sourceProfileId,
+            EpisodeEntry ep,
+            ICatalogNormalizationService catalogNormalizationService)
         {
-            SourceProfileId = sourceProfileId,
-            ExternalId = string.Empty,
-            Title = ep.Name,
-            StreamUrl = ep.Url,
-            PosterUrl = ep.LogoUrl,
-            CategoryName = ep.GroupName
-        };
+            var normalized = catalogNormalizationService.NormalizeMovie(
+                SourceType.M3U,
+                ep.Name,
+                ep.GroupName);
+
+            var movie = new Movie
+            {
+                SourceProfileId = sourceProfileId,
+                ExternalId = string.Empty,
+                Title = normalized.Title,
+                RawSourceTitle = normalized.RawTitle,
+                StreamUrl = ep.Url,
+                PosterUrl = ep.LogoUrl,
+                CategoryName = normalized.CategoryName,
+                RawSourceCategoryName = normalized.RawCategoryName,
+                ContentKind = normalized.ContentKind
+            };
+            CatalogFingerprinting.Apply(movie);
+            return movie;
+        }
 
         // ── Private inner types ───────────────────────────────────────────
 

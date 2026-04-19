@@ -458,7 +458,18 @@
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
-                                    <StackPanel Spacing="7">
+                                    <StackPanel Spacing="10">
+                                        <StackPanel Spacing="7"
+                                                    Visibility="{x:Bind ViewModel.SelectedSeries.SourceSelectionVisibility, Mode=OneWay}">
+                                            <TextBlock Text="SOURCE"
+                                                       Style="{StaticResource KroiraLabelStyle}"
+                                                       Foreground="{StaticResource KroiraAccentBrush}" />
+                                            <ComboBox Style="{StaticResource KroiraFilterComboBoxStyle}"
+                                                      ItemsSource="{x:Bind ViewModel.SelectedSeries.SourceOptions, Mode=OneWay}"
+                                                      SelectedItem="{x:Bind ViewModel.SelectedSeries.SelectedSourceOption, Mode=TwoWay}"
+                                                      DisplayMemberPath="Label"
+                                                      HorizontalAlignment="Stretch" />
+                                        </StackPanel>
                                         <TextBlock Text="SEASON"
                                                    Style="{StaticResource KroiraLabelStyle}"
                                                    Foreground="{StaticResource KroiraAccentBrush}" />
