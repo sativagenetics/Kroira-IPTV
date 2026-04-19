@@ -132,6 +132,17 @@ namespace Kroira.App.Services.Playback
             };
         }
 
+        public static MpvEventLogMessage ReadEventLogMessage(IntPtr ptr)
+        {
+            return new MpvEventLogMessage
+            {
+                Prefix = Marshal.ReadIntPtr(ptr, 0),
+                Level = Marshal.ReadIntPtr(ptr, IntPtr.Size),
+                Text = Marshal.ReadIntPtr(ptr, IntPtr.Size * 2),
+                LogLevel = Marshal.ReadInt32(ptr, IntPtr.Size * 3),
+            };
+        }
+
         // Convenience wrapper: pack a variadic command into the char** form mpv expects.
         public static int Command(IntPtr ctx, params string[] args)
         {

@@ -1,7 +1,6 @@
 using System;
-using System.Linq;
+using System.Collections.Generic;
 using System.Threading.Tasks;
-using Kroira.App.Data;
 using Kroira.App.Models;
 using Kroira.App.Services;
 using Kroira.App.Services.Playback;
@@ -11,7 +10,6 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Input;
-using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Navigation;
 using Windows.Foundation;
 using WinRT.Interop;
@@ -26,13 +24,24 @@ namespace Kroira.App.Views
         private static readonly TimeSpan ControlsHideDelay = TimeSpan.FromMilliseconds(1350);
         private static readonly TimeSpan PointerHideSuppressDelay = TimeSpan.FromMilliseconds(350);
         private static readonly TimeSpan PointerTimerResetThrottle = TimeSpan.FromMilliseconds(250);
+        private static readonly TimeSpan StreamLoadTimeout = TimeSpan.FromSeconds(15);
+        private static readonly TimeSpan StreamBufferTimeout = TimeSpan.FromSeconds(12);
+        private static readonly TimeSpan StreamRetryDelay = TimeSpan.FromSeconds(2);
+        private static readonly TimeSpan ProgressPersistInterval = TimeSpan.FromSeconds(15);
+        private const int MaxRetryAttempts = 3;
         private const double PointerMoveResetDistance = 4.0;
+
+        private readonly PlaybackSessionStateMachine _stateMachine = new();
+        private readonly PlaybackProgressCoordinator _progressCoordinator;
 
         private PlaybackLaunchContext _context;
         private MpvPlayer _player;
         private VideoSurface _surface;
         private IWindowManagerService _windowManager;
         private DispatcherTimer _controlsHideTimer;
+        private DispatcherTimer _loadTimeoutTimer;
+        private DispatcherTimer _bufferTimeoutTimer;
+        private DispatcherTimer _progressPersistTimer;
         private bool _isUserSeeking;
         private bool _suppressSliderUpdates;
         private bool _controlsVisible = true;
@@ -40,24 +49,38 @@ namespace Kroira.App.Views
         private long _lastPositionMs;
         private long _lastDurationMs;
         private bool _playbackStarted;
+        private bool _isStartingPlayback;
         private bool _teardownStarted;
-        private bool _progressSaveQueued;
         private bool _isNavigatingBack;
         private bool _isMuted;
         private bool _isVolumeSliderUpdating;
+        private bool _recoveryInProgress;
+        private bool _fullscreenSubscribed;
         private double _lastNonZeroVolume = 100;
         private DateTime _ignorePointerUntilUtc = DateTime.MinValue;
         private DateTime _lastPointerTimerRestartUtc = DateTime.MinValue;
         private Point _lastPointerPosition;
         private bool _hasLastPointerPosition;
+        private int _activeAttemptId;
+        private int _retryAttempt;
+        private int _loadTimeoutAttemptId;
+        private int _bufferTimeoutAttemptId;
+        private string _lastPlayerWarning = string.Empty;
+        private PlaybackAspectMode _selectedAspectMode = PlaybackAspectMode.Automatic;
 
         public EmbeddedPlaybackPage()
         {
-            this.InitializeComponent();
+            InitializeComponent();
+            _progressCoordinator = new PlaybackProgressCoordinator(((App)Application.Current).Services);
+            _stateMachine.StateChanged += OnPlaybackStateChanged;
+
             TimelineSlider.AddHandler(UIElement.PointerPressedEvent, new PointerEventHandler(TimelineSlider_PointerPressed), true);
             TimelineSlider.AddHandler(UIElement.PointerReleasedEvent, new PointerEventHandler(TimelineSlider_PointerReleased), true);
-            this.Loaded += OnPageLoaded;
-            this.Unloaded += OnPageUnloaded;
+
+            BuildAspectMenu();
+
+            Loaded += OnPageLoaded;
+            Unloaded += OnPageUnloaded;
         }
 
         protected override void OnNavigatedTo(NavigationEventArgs e)
@@ -66,13 +89,17 @@ namespace Kroira.App.Views
             _context = e.Parameter as PlaybackLaunchContext;
             if (_context == null)
             {
-                ShowError("Missing playback context.");
+                ShowFatalError("Missing playback context.");
                 return;
             }
 
             TitleText.Text = TitleForContext(_context);
             _windowManager = ((App)Application.Current).Services.GetRequiredService<IWindowManagerService>();
             _wasFullscreenOnEnter = _windowManager.IsFullscreen;
+            _windowManager.FullscreenStateChanged += WindowManager_FullscreenStateChanged;
+            _fullscreenSubscribed = true;
+            UpdateFullscreenUi();
+            UpdateAspectUi();
         }
 
         protected override void OnNavigatedFrom(NavigationEventArgs e)
@@ -80,27 +107,29 @@ namespace Kroira.App.Views
             TeardownPlayback();
             base.OnNavigatedFrom(e);
 
-            // Leave the window in whatever fullscreen state the user had before entering.
             if (_windowManager != null && _windowManager.IsFullscreen && !_wasFullscreenOnEnter)
             {
                 _windowManager.ExitFullscreen();
             }
         }
 
-        private void OnPageLoaded(object sender, RoutedEventArgs e)
+        private async void OnPageLoaded(object sender, RoutedEventArgs e)
         {
             if (_context == null) return;
-            TryStartPlayback();
+            await TryStartPlaybackAsync();
         }
 
-        private void VideoHost_StartSizeChanged(object sender, SizeChangedEventArgs e)
+        private async void VideoHost_StartSizeChanged(object sender, SizeChangedEventArgs e)
         {
-            TryStartPlayback();
+            await TryStartPlaybackAsync();
         }
 
-        private void TryStartPlayback()
+        private async Task TryStartPlaybackAsync()
         {
-            if (_playbackStarted || _teardownStarted || _context == null) return;
+            if (_playbackStarted || _isStartingPlayback || _teardownStarted || _context == null)
+            {
+                return;
+            }
 
             if (VideoHost.XamlRoot == null || VideoHost.ActualWidth <= 0 || VideoHost.ActualHeight <= 0)
             {
@@ -110,7 +139,7 @@ namespace Kroira.App.Views
             }
 
             VideoHost.SizeChanged -= VideoHost_StartSizeChanged;
-            _playbackStarted = true;
+            _isStartingPlayback = true;
 
             try
             {
@@ -119,8 +148,6 @@ namespace Kroira.App.Views
                     onClick: OnVideoClick,
                     onDoubleClick: OnVideoDoubleClick,
                     onMouseMoved: OnVideoMouseMoved);
-
-                // Ensure the HWND is sized to the host rectangle before handing it to mpv.
                 _surface.UpdatePlacement(force: true);
 
                 _player = new MpvPlayer(DispatcherQueue.GetForCurrentThread(), _surface.Handle);
@@ -128,51 +155,71 @@ namespace Kroira.App.Views
                 _player.DurationChanged += OnDurationChanged;
                 _player.PauseChanged += OnPauseChanged;
                 _player.SeekableChanged += OnSeekableChanged;
+                _player.BufferingChanged += OnBufferingChanged;
                 _player.PlaybackEnded += OnPlaybackEnded;
                 _player.FileLoaded += OnFileLoaded;
                 _player.OutputReady += OnOutputReady;
+                _player.TrackListChanged += OnTrackListChanged;
+                _player.WarningMessage += OnWarningMessage;
 
-                _controlsHideTimer = new DispatcherTimer { Interval = ControlsHideDelay };
-                _controlsHideTimer.Tick += (_, __) => HideControls();
-
+                EnsureTimers();
+                ResetTrackMenus();
                 UpdateLiveAndSeekUi();
-                ResolveResumePosition(_context);
-                _lastPositionMs = _context.StartPositionMs;
-                _player.Play(_context.StreamUrl, _context.StartPositionMs);
+                UpdateInteractionState();
+                ClearError();
+                HideStatusOverlay();
+
+                _lastPositionMs = await _progressCoordinator.ResolveResumePositionAsync(_context);
+                if (_teardownStarted || _player == null || _context == null)
+                {
+                    return;
+                }
+
+                _playbackStarted = true;
+                BeginPlaybackAttempt(isRetry: false, retryReason: null, startPositionMs: _lastPositionMs);
                 RestartControlsHideTimer();
             }
             catch (Exception ex)
             {
-                ShowError(ex.Message);
+                ShowFatalError(ex.Message);
                 TeardownPlayback();
+            }
+            finally
+            {
+                _isStartingPlayback = false;
             }
         }
 
         private void OnPageUnloaded(object sender, RoutedEventArgs e)
         {
-            // Fallback guard: if the frame navigated away without calling OnNavigatedFrom
-            // (e.g. window close), still tear everything down synchronously.
             TeardownPlayback();
         }
 
         private void TeardownPlayback()
         {
-            if (_teardownStarted && _player == null && _surface == null) return;
-            _teardownStarted = true;
-            VideoHost.SizeChanged -= VideoHost_StartSizeChanged;
-
-            if (_controlsHideTimer != null)
+            if (_teardownStarted && _player == null && _surface == null)
             {
-                _controlsHideTimer.Stop();
-                _controlsHideTimer = null;
+                return;
             }
 
-            // Save VOD progress before unloading the player so we still have a valid
-            // _lastPositionMs to persist.
-            if (!_progressSaveQueued && _context != null && _context.ContentType != PlaybackContentType.Channel)
+            _teardownStarted = true;
+            _recoveryInProgress = false;
+            VideoHost.SizeChanged -= VideoHost_StartSizeChanged;
+
+            if (_fullscreenSubscribed && _windowManager != null)
             {
-                _progressSaveQueued = true;
-                _ = SaveProgressAsync(_context, _lastPositionMs, _lastDurationMs);
+                _windowManager.FullscreenStateChanged -= WindowManager_FullscreenStateChanged;
+                _fullscreenSubscribed = false;
+            }
+
+            StopTimer(ref _controlsHideTimer);
+            StopTimer(ref _loadTimeoutTimer);
+            StopTimer(ref _bufferTimeoutTimer);
+            StopTimer(ref _progressPersistTimer);
+
+            if (_context != null)
+            {
+                _progressCoordinator.PersistBlocking(_context, _lastPositionMs, _lastDurationMs, force: true);
             }
 
             if (_player != null)
@@ -183,9 +230,12 @@ namespace Kroira.App.Views
                 player.DurationChanged -= OnDurationChanged;
                 player.PauseChanged -= OnPauseChanged;
                 player.SeekableChanged -= OnSeekableChanged;
+                player.BufferingChanged -= OnBufferingChanged;
                 player.PlaybackEnded -= OnPlaybackEnded;
                 player.FileLoaded -= OnFileLoaded;
                 player.OutputReady -= OnOutputReady;
+                player.TrackListChanged -= OnTrackListChanged;
+                player.WarningMessage -= OnWarningMessage;
                 try { player.Dispose(); } catch { }
             }
 
@@ -195,6 +245,250 @@ namespace Kroira.App.Views
                 _surface = null;
                 try { surface.Dispose(); } catch { }
             }
+
+            ResetTrackMenus();
+            _stateMachine.Reset();
+        }
+
+        private void EnsureTimers()
+        {
+            if (_controlsHideTimer == null)
+            {
+                _controlsHideTimer = new DispatcherTimer { Interval = ControlsHideDelay };
+                _controlsHideTimer.Tick += ControlsHideTimer_Tick;
+            }
+
+            if (_loadTimeoutTimer == null)
+            {
+                _loadTimeoutTimer = new DispatcherTimer { Interval = StreamLoadTimeout };
+                _loadTimeoutTimer.Tick += LoadTimeoutTimer_Tick;
+            }
+
+            if (_bufferTimeoutTimer == null)
+            {
+                _bufferTimeoutTimer = new DispatcherTimer { Interval = StreamBufferTimeout };
+                _bufferTimeoutTimer.Tick += BufferTimeoutTimer_Tick;
+            }
+
+            if (_progressPersistTimer == null)
+            {
+                _progressPersistTimer = new DispatcherTimer { Interval = ProgressPersistInterval };
+                _progressPersistTimer.Tick += ProgressPersistTimer_Tick;
+            }
+        }
+
+        private void ControlsHideTimer_Tick(object sender, object e)
+        {
+            HideControls();
+        }
+
+        private void LoadTimeoutTimer_Tick(object sender, object e)
+        {
+            _loadTimeoutTimer?.Stop();
+            if (_teardownStarted || _player == null) return;
+            if (_loadTimeoutAttemptId != _activeAttemptId) return;
+
+            _ = AttemptRecoveryAsync("Stream timed out while starting.");
+        }
+
+        private void BufferTimeoutTimer_Tick(object sender, object e)
+        {
+            _bufferTimeoutTimer?.Stop();
+            if (_teardownStarted || _player == null) return;
+            if (_bufferTimeoutAttemptId != _activeAttemptId) return;
+
+            _ = AttemptRecoveryAsync("Stream stalled while buffering.");
+        }
+
+        private async void ProgressPersistTimer_Tick(object sender, object e)
+        {
+            await PersistProgressAsync(force: false);
+        }
+
+        private void BeginPlaybackAttempt(bool isRetry, string retryReason, long startPositionMs)
+        {
+            if (_player == null || _context == null || _teardownStarted)
+            {
+                return;
+            }
+
+            _activeAttemptId++;
+            _lastPlayerWarning = string.Empty;
+            _lastPositionMs = Math.Max(startPositionMs, 0);
+
+            ResetTrackMenus();
+            ClearError();
+            StopBufferTimeout();
+
+            if (isRetry)
+            {
+                _stateMachine.BeginReconnect(_retryAttempt, MaxRetryAttempts, retryReason ?? "Trying to recover stream.");
+            }
+            else
+            {
+                _retryAttempt = 0;
+                _stateMachine.BeginLoad();
+            }
+
+            _player.Play(_context.StreamUrl, IsLivePlayback() ? 0 : _lastPositionMs);
+            _player.SetVolume(VolumeSlider.Value);
+            _player.SetMuted(_isMuted);
+            _player.SetAspectMode(_selectedAspectMode);
+            _progressPersistTimer?.Start();
+            StartLoadTimeout();
+            UpdateLiveAndSeekUi();
+            UpdateInteractionState();
+        }
+
+        private void StartLoadTimeout()
+        {
+            if (_loadTimeoutTimer == null) return;
+            _loadTimeoutAttemptId = _activeAttemptId;
+            _loadTimeoutTimer.Stop();
+            _loadTimeoutTimer.Start();
+        }
+
+        private void StopLoadTimeout()
+        {
+            _loadTimeoutTimer?.Stop();
+        }
+
+        private void StartBufferTimeout()
+        {
+            if (_bufferTimeoutTimer == null) return;
+            _bufferTimeoutAttemptId = _activeAttemptId;
+            _bufferTimeoutTimer.Stop();
+            _bufferTimeoutTimer.Start();
+        }
+
+        private void StopBufferTimeout()
+        {
+            _bufferTimeoutTimer?.Stop();
+        }
+
+        private void MarkPlaybackActive()
+        {
+            if (_teardownStarted || _player == null)
+            {
+                return;
+            }
+
+            StopLoadTimeout();
+            StopBufferTimeout();
+            if (_retryAttempt > 0)
+            {
+                _retryAttempt = 0;
+            }
+
+            if (_stateMachine.State != PlaybackSessionState.Paused)
+            {
+                _stateMachine.SetPlaying();
+            }
+            UpdateInteractionState();
+        }
+
+        private async Task AttemptRecoveryAsync(string reason)
+        {
+            if (_teardownStarted || _player == null || _context == null || _recoveryInProgress)
+            {
+                return;
+            }
+
+            if (_retryAttempt >= MaxRetryAttempts)
+            {
+                ShowFatalError(reason);
+                await PersistProgressAsync(force: true);
+                return;
+            }
+
+            _recoveryInProgress = true;
+            _retryAttempt++;
+            StopLoadTimeout();
+            StopBufferTimeout();
+            _stateMachine.BeginReconnect(_retryAttempt, MaxRetryAttempts, BuildFailureMessage(reason));
+            ShowControls(persist: true);
+            UpdateInteractionState();
+
+            await PersistProgressAsync(force: true);
+
+            try
+            {
+                await Task.Delay(StreamRetryDelay);
+                if (_teardownStarted || _player == null || _context == null)
+                {
+                    return;
+                }
+
+                var retryPositionMs = GetRetryPositionMs();
+                BeginPlaybackAttempt(isRetry: true, retryReason: reason, startPositionMs: retryPositionMs);
+            }
+            finally
+            {
+                _recoveryInProgress = false;
+            }
+        }
+
+        private long GetRetryPositionMs()
+        {
+            if (IsLivePlayback())
+            {
+                return 0;
+            }
+
+            return Math.Max(_lastPositionMs - 2_000, 0);
+        }
+
+        private async Task PersistProgressAsync(bool force)
+        {
+            if (_context == null || _teardownStarted)
+            {
+                return;
+            }
+
+            await _progressCoordinator.PersistAsync(_context, _lastPositionMs, _lastDurationMs, force);
+        }
+
+        private void OnPlaybackStateChanged(PlaybackSessionStateSnapshot snapshot)
+        {
+            if (_teardownStarted)
+            {
+                return;
+            }
+
+            switch (snapshot.State)
+            {
+                case PlaybackSessionState.Loading:
+                    ShowStatusOverlay("Loading", snapshot.Message);
+                    ShowControls(persist: true);
+                    break;
+                case PlaybackSessionState.Buffering:
+                    ShowStatusOverlay("Buffering", snapshot.Message);
+                    ShowControls(persist: true);
+                    break;
+                case PlaybackSessionState.Reconnecting:
+                    ShowStatusOverlay("Reconnecting", snapshot.Message);
+                    ShowControls(persist: true);
+                    break;
+                case PlaybackSessionState.Paused:
+                    HideStatusOverlay();
+                    ShowControls(persist: true);
+                    break;
+                case PlaybackSessionState.Error:
+                    HideStatusOverlay();
+                    ShowError(snapshot.Message);
+                    ShowControls(persist: true);
+                    break;
+                default:
+                    HideStatusOverlay();
+                    ClearError();
+                    if (snapshot.State == PlaybackSessionState.Playing)
+                    {
+                        RestartControlsHideTimer();
+                    }
+                    break;
+            }
+
+            UpdateInteractionState();
         }
 
         // --- Player event handlers (already on UI thread via MpvPlayer dispatcher) ---
@@ -202,6 +496,7 @@ namespace Kroira.App.Views
         private void OnPositionChanged(TimeSpan position)
         {
             if (_teardownStarted) return;
+
             _lastPositionMs = (long)position.TotalMilliseconds;
             PositionText.Text = FormatTime(position);
 
@@ -214,6 +509,11 @@ namespace Kroira.App.Views
                     0, 1000);
                 _suppressSliderUpdates = false;
             }
+
+            if (!_player.IsPaused && !_player.IsBuffering)
+            {
+                MarkPlaybackActive();
+            }
         }
 
         private void OnDurationChanged(TimeSpan duration)
@@ -224,10 +524,21 @@ namespace Kroira.App.Views
             UpdateLiveAndSeekUi();
         }
 
-        private void OnPauseChanged(bool isPaused)
+        private async void OnPauseChanged(bool isPaused)
         {
             if (_teardownStarted) return;
-            PlayPauseIcon.Glyph = isPaused ? "\uE768" /* Play */ : "\uE769" /* Pause */;
+
+            PlayPauseIcon.Glyph = isPaused ? "\uE768" : "\uE769";
+            if (isPaused && _player?.IsBuffering != true)
+            {
+                _stateMachine.SetPaused();
+                await PersistProgressAsync(force: true);
+            }
+            else if (!isPaused && _player?.IsBuffering != true)
+            {
+                MarkPlaybackActive();
+            }
+
             if (isPaused) ShowControls(persist: true);
             else RestartControlsHideTimer();
         }
@@ -238,49 +549,94 @@ namespace Kroira.App.Views
             UpdateLiveAndSeekUi();
         }
 
+        private void OnBufferingChanged(bool isBuffering)
+        {
+            if (_teardownStarted || _player == null) return;
+
+            if (isBuffering)
+            {
+                StopLoadTimeout();
+                StartBufferTimeout();
+                if (_stateMachine.State != PlaybackSessionState.Reconnecting)
+                {
+                    _stateMachine.SetBuffering();
+                }
+            }
+            else
+            {
+                StopBufferTimeout();
+                if (!_player.IsPaused)
+                {
+                    MarkPlaybackActive();
+                }
+            }
+
+            UpdateInteractionState();
+        }
+
         private void OnFileLoaded()
         {
             if (_teardownStarted) return;
-            // Once the first frame is on-screen, repositioning the HWND resolves the
-            // rare case where mpv's output size lags layout.
+
             _surface?.UpdatePlacement(force: true);
+            _ = RefreshTrackMenusAsync();
         }
 
         private void OnOutputReady()
         {
             if (_teardownStarted) return;
+
             _surface?.UpdatePlacement(force: true);
+            _ = RefreshTrackMenusAsync();
+            if (_player != null && !_player.IsPaused && !_player.IsBuffering)
+            {
+                MarkPlaybackActive();
+            }
         }
 
-        private void OnPlaybackEnded()
+        private void OnTrackListChanged()
         {
             if (_teardownStarted) return;
-            if (IsLivePlayback())
+            _ = RefreshTrackMenusAsync();
+        }
+
+        private void OnWarningMessage(string message)
+        {
+            if (string.IsNullOrWhiteSpace(message))
             {
-                // Live streams can emit EndFile/eof during reloads, pause recovery, or
-                // transient network stalls. That is not a completion signal.
-                UpdateLiveAndSeekUi();
-                ShowControls(persist: _player?.IsPaused == true);
                 return;
             }
 
-            // Mark VOD as completed (by saving near-duration) and navigate back.
-            if (_context != null && _context.ContentType != PlaybackContentType.Channel && _player != null)
-            {
-                var finalMs = (long)_player.Duration.TotalMilliseconds;
-                if (finalMs > 0) _lastPositionMs = finalMs;
-            }
-
-            NavigateBack();
+            _lastPlayerWarning = NormalizePlayerMessage(message);
         }
 
-        private void NavigateBack()
+        private async void OnPlaybackEnded()
         {
-            if (_isNavigatingBack) return;
-            _isNavigatingBack = true;
+            if (_teardownStarted) return;
 
-            TeardownPlayback();
-            if (Frame != null && Frame.CanGoBack) Frame.GoBack();
+            if (_stateMachine.State == PlaybackSessionState.Reconnecting)
+            {
+                return;
+            }
+
+            if (!IsPlaybackComplete())
+            {
+                await AttemptRecoveryAsync("Stream ended unexpectedly.");
+                return;
+            }
+
+            _stateMachine.SetEnded();
+            if (_player != null)
+            {
+                var finalMs = (long)_player.Duration.TotalMilliseconds;
+                if (finalMs > 0)
+                {
+                    _lastPositionMs = finalMs;
+                }
+            }
+
+            await PersistProgressAsync(force: true);
+            NavigateBack();
         }
 
         // --- UI handlers ---
@@ -381,7 +737,7 @@ namespace Kroira.App.Views
             CommitTimelineSeek(force: true);
         }
 
-        private void CommitTimelineSeek(bool force = false)
+        private async void CommitTimelineSeek(bool force = false)
         {
             if (_teardownStarted) return;
             if (!_isUserSeeking && !force) return;
@@ -392,10 +748,12 @@ namespace Kroira.App.Views
 
             var durationSeconds = _player.Duration.TotalSeconds;
             if (durationSeconds <= 0) return;
+
             var fraction = TimelineSlider.Value / 1000.0;
             var targetSeconds = fraction * durationSeconds;
             _lastPositionMs = (long)(targetSeconds * 1000);
             _player.SeekAbsoluteSeconds(targetSeconds);
+            await PersistProgressAsync(force: true);
             RestartControlsHideTimer();
         }
 
@@ -428,6 +786,50 @@ namespace Kroira.App.Views
             RestartControlsHideTimer();
         }
 
+        private void WindowManager_FullscreenStateChanged(object sender, EventArgs e)
+        {
+            if (_teardownStarted) return;
+            UpdateFullscreenUi();
+        }
+
+        private void AudioTrackItem_Click(object sender, RoutedEventArgs e)
+        {
+            if (_player == null || sender is not ToggleMenuFlyoutItem item || item.Tag is not string trackId)
+            {
+                return;
+            }
+
+            _player.SelectAudioTrack(trackId);
+            _ = RefreshTrackMenusAsync();
+            RestartControlsHideTimer();
+        }
+
+        private void SubtitleTrackItem_Click(object sender, RoutedEventArgs e)
+        {
+            if (_player == null || sender is not ToggleMenuFlyoutItem item)
+            {
+                return;
+            }
+
+            var trackId = item.Tag as string;
+            _player.SelectSubtitleTrack(trackId);
+            _ = RefreshTrackMenusAsync();
+            RestartControlsHideTimer();
+        }
+
+        private void AspectItem_Click(object sender, RoutedEventArgs e)
+        {
+            if (_player == null || sender is not ToggleMenuFlyoutItem item || item.Tag is not PlaybackAspectMode aspectMode)
+            {
+                return;
+            }
+
+            _selectedAspectMode = aspectMode;
+            _player.SetAspectMode(aspectMode);
+            UpdateAspectUi();
+            RestartControlsHideTimer();
+        }
+
         private void SetMutedUi(bool muted)
         {
             _isMuted = muted;
@@ -445,6 +847,11 @@ namespace Kroira.App.Views
         private void TogglePlayPauseOrLive()
         {
             if (_player == null) return;
+            if (_stateMachine.State == PlaybackSessionState.Loading ||
+                _stateMachine.State == PlaybackSessionState.Reconnecting)
+            {
+                return;
+            }
 
             if (IsLivePlayback() && _player.IsPaused)
             {
@@ -466,10 +873,11 @@ namespace Kroira.App.Views
             {
                 _player.SeekAbsolutePercent(100);
                 _player.Resume();
+                MarkPlaybackActive();
             }
             else
             {
-                _player.Play(_context.StreamUrl, 0);
+                BeginPlaybackAttempt(isRetry: false, retryReason: null, startPositionMs: 0);
                 _player.SetVolume(volume);
                 _player.SetMuted(muted);
             }
@@ -493,7 +901,9 @@ namespace Kroira.App.Views
             if (_teardownStarted) return;
 
             var isLive = IsLivePlayback();
-            var canSeek = IsTimelineSeekAllowed();
+            var canSeek = IsTimelineSeekAllowed() &&
+                          _stateMachine.State != PlaybackSessionState.Loading &&
+                          _stateMachine.State != PlaybackSessionState.Reconnecting;
 
             TimelineSlider.IsEnabled = canSeek;
             LivePill.Visibility = isLive ? Visibility.Visible : Visibility.Collapsed;
@@ -505,6 +915,153 @@ namespace Kroira.App.Views
                 isLive
                     ? canSeek ? "Seek within live buffer" : "Live stream has no seekable buffer"
                     : canSeek ? "Seek" : "Seeking unavailable");
+        }
+
+        private void UpdateInteractionState()
+        {
+            var isReady = _player != null && !_teardownStarted;
+            var trackSwitchEnabled = isReady &&
+                                     _stateMachine.State != PlaybackSessionState.Loading &&
+                                     _stateMachine.State != PlaybackSessionState.Reconnecting;
+
+            PlayPauseButton.IsEnabled = isReady && _stateMachine.State != PlaybackSessionState.Reconnecting;
+            StopButton.IsEnabled = isReady;
+            FullscreenButton.IsEnabled = isReady;
+            MuteButton.IsEnabled = isReady;
+            VolumeSlider.IsEnabled = isReady;
+            AudioTrackButton.IsEnabled = trackSwitchEnabled;
+            SubtitleTrackButton.IsEnabled = trackSwitchEnabled;
+            AspectButton.IsEnabled = isReady;
+            UpdateLiveAndSeekUi();
+        }
+
+        private void UpdateFullscreenUi()
+        {
+            var isFullscreen = _windowManager?.IsFullscreen == true;
+            FullscreenIcon.Glyph = isFullscreen ? "\uE73F" : "\uE740";
+            ToolTipService.SetToolTip(FullscreenButton, isFullscreen ? "Exit fullscreen" : "Fullscreen");
+        }
+
+        private void BuildAspectMenu()
+        {
+            AspectFlyout.Items.Clear();
+            AddAspectItem("Automatic", PlaybackAspectMode.Automatic);
+            AddAspectItem("Fill window", PlaybackAspectMode.FillWindow);
+            AddAspectItem("16:9", PlaybackAspectMode.Ratio16x9);
+            AddAspectItem("4:3", PlaybackAspectMode.Ratio4x3);
+            AddAspectItem("1.85:1", PlaybackAspectMode.Ratio185x1);
+            AddAspectItem("2.35:1", PlaybackAspectMode.Ratio235x1);
+            UpdateAspectUi();
+        }
+
+        private void AddAspectItem(string label, PlaybackAspectMode aspectMode)
+        {
+            var item = new ToggleMenuFlyoutItem
+            {
+                Text = label,
+                Tag = aspectMode,
+                IsChecked = _selectedAspectMode == aspectMode
+            };
+            item.Click += AspectItem_Click;
+            AspectFlyout.Items.Add(item);
+        }
+
+        private void UpdateAspectUi()
+        {
+            foreach (var entry in AspectFlyout.Items)
+            {
+                if (entry is ToggleMenuFlyoutItem item && item.Tag is PlaybackAspectMode aspectMode)
+                {
+                    item.IsChecked = aspectMode == _selectedAspectMode;
+                }
+            }
+
+            ToolTipService.SetToolTip(AspectButton, $"Aspect: {AspectModeLabel(_selectedAspectMode)}");
+        }
+
+        private Task RefreshTrackMenusAsync()
+        {
+            if (_teardownStarted || _player == null)
+            {
+                ResetTrackMenus();
+                return Task.CompletedTask;
+            }
+
+            PopulateAudioTrackMenu(_player.GetAudioTracks());
+            PopulateSubtitleTrackMenu(_player.GetSubtitleTracks());
+            return Task.CompletedTask;
+        }
+
+        private void PopulateAudioTrackMenu(IReadOnlyList<MpvTrackInfo> audioTracks)
+        {
+            AudioTrackFlyout.Items.Clear();
+            foreach (var track in audioTracks)
+            {
+                var item = new ToggleMenuFlyoutItem
+                {
+                    Text = track.DisplayName,
+                    Tag = track.Id,
+                    IsChecked = track.IsSelected
+                };
+                item.Click += AudioTrackItem_Click;
+                AudioTrackFlyout.Items.Add(item);
+            }
+
+            AudioTrackButton.Visibility = audioTracks.Count > 1 ? Visibility.Visible : Visibility.Collapsed;
+            var selectedTrack = FindSelectedTrack(audioTracks);
+            ToolTipService.SetToolTip(AudioTrackButton, selectedTrack != null ? $"Audio: {selectedTrack.DisplayName}" : "Audio track");
+        }
+
+        private void PopulateSubtitleTrackMenu(IReadOnlyList<MpvTrackInfo> subtitleTracks)
+        {
+            SubtitleTrackFlyout.Items.Clear();
+
+            var offItem = new ToggleMenuFlyoutItem
+            {
+                Text = "Off",
+                Tag = null,
+                IsChecked = true
+            };
+            offItem.Click += SubtitleTrackItem_Click;
+            SubtitleTrackFlyout.Items.Add(offItem);
+
+            foreach (var track in subtitleTracks)
+            {
+                var item = new ToggleMenuFlyoutItem
+                {
+                    Text = track.DisplayName,
+                    Tag = track.Id,
+                    IsChecked = track.IsSelected
+                };
+                item.Click += SubtitleTrackItem_Click;
+                SubtitleTrackFlyout.Items.Add(item);
+            }
+
+            var selectedTrack = FindSelectedTrack(subtitleTracks);
+            offItem.IsChecked = selectedTrack == null;
+            SubtitleTrackButton.Visibility = subtitleTracks.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+            ToolTipService.SetToolTip(SubtitleTrackButton, selectedTrack != null ? $"Subtitles: {selectedTrack.DisplayName}" : "Subtitles off");
+        }
+
+        private static MpvTrackInfo FindSelectedTrack(IReadOnlyList<MpvTrackInfo> tracks)
+        {
+            foreach (var track in tracks)
+            {
+                if (track.IsSelected)
+                {
+                    return track;
+                }
+            }
+
+            return null;
+        }
+
+        private void ResetTrackMenus()
+        {
+            AudioTrackFlyout.Items.Clear();
+            SubtitleTrackFlyout.Items.Clear();
+            AudioTrackButton.Visibility = Visibility.Collapsed;
+            SubtitleTrackButton.Visibility = Visibility.Collapsed;
         }
 
         // --- Controls auto-hide ---
@@ -556,8 +1113,6 @@ namespace Kroira.App.Views
                 TopBar.Visibility = Visibility.Visible;
                 BottomBar.Visibility = Visibility.Visible;
                 _controlsVisible = true;
-                // Changing row heights will cause VideoHost to resize; the surface
-                // listens for SizeChanged/LayoutUpdated and repositions the HWND.
                 QueueSurfacePlacementUpdate();
             }
 
@@ -571,6 +1126,7 @@ namespace Kroira.App.Views
         {
             if (_player != null && _player.IsPaused) return;
             if (ErrorOverlay.Visibility == Visibility.Visible) return;
+            if (StatusOverlay.Visibility == Visibility.Visible) return;
             if (!_controlsVisible) return;
 
             TopRow.Height = new GridLength(0);
@@ -594,6 +1150,7 @@ namespace Kroira.App.Views
             _controlsHideTimer.Stop();
             if (_player != null && _player.IsPaused) return;
             if (ErrorOverlay.Visibility == Visibility.Visible) return;
+            if (StatusOverlay.Visibility == Visibility.Visible) return;
             _lastPointerTimerRestartUtc = now;
             _controlsHideTimer.Start();
         }
@@ -616,10 +1173,85 @@ namespace Kroira.App.Views
 
         // --- Helpers ---
 
+        private void ShowStatusOverlay(string title, string message)
+        {
+            StatusTitle.Text = title;
+            StatusMessage.Text = string.IsNullOrWhiteSpace(message) ? title : message;
+            StatusRing.IsActive = true;
+            StatusOverlay.Visibility = Visibility.Visible;
+            ClearError();
+        }
+
+        private void HideStatusOverlay()
+        {
+            StatusRing.IsActive = false;
+            StatusOverlay.Visibility = Visibility.Collapsed;
+        }
+
         private void ShowError(string message)
         {
             ErrorMessage.Text = string.IsNullOrWhiteSpace(message) ? "Unable to start playback." : message;
             ErrorOverlay.Visibility = Visibility.Visible;
+        }
+
+        private void ClearError()
+        {
+            ErrorOverlay.Visibility = Visibility.Collapsed;
+        }
+
+        private void ShowFatalError(string message)
+        {
+            _stateMachine.SetError(BuildFailureMessage(message));
+        }
+
+        private string BuildFailureMessage(string fallbackMessage)
+        {
+            return string.IsNullOrWhiteSpace(_lastPlayerWarning)
+                ? fallbackMessage
+                : $"{fallbackMessage} {_lastPlayerWarning}";
+        }
+
+        private bool IsPlaybackComplete()
+        {
+            return _lastDurationMs > 0 && _lastPositionMs >= _lastDurationMs * 0.95;
+        }
+
+        private static string NormalizePlayerMessage(string message)
+        {
+            var normalized = message.Replace("\r", " ").Replace("\n", " ").Trim();
+            if (normalized.Length > 180)
+            {
+                normalized = normalized[..180].TrimEnd() + "...";
+            }
+
+            return normalized;
+        }
+
+        private void NavigateBack()
+        {
+            if (_isNavigatingBack) return;
+            _isNavigatingBack = true;
+
+            TeardownPlayback();
+            if (Frame != null && Frame.CanGoBack) Frame.GoBack();
+        }
+
+        private static void StopTimer(ref DispatcherTimer timer)
+        {
+            timer?.Stop();
+        }
+
+        private static string AspectModeLabel(PlaybackAspectMode aspectMode)
+        {
+            return aspectMode switch
+            {
+                PlaybackAspectMode.FillWindow => "Fill window",
+                PlaybackAspectMode.Ratio16x9 => "16:9",
+                PlaybackAspectMode.Ratio4x3 => "4:3",
+                PlaybackAspectMode.Ratio185x1 => "1.85:1",
+                PlaybackAspectMode.Ratio235x1 => "2.35:1",
+                _ => "Automatic",
+            };
         }
 
         private static string FormatTime(TimeSpan t)
@@ -639,69 +1271,6 @@ namespace Kroira.App.Views
                 PlaybackContentType.Episode => "Episode",
                 _ => string.Empty,
             };
-        }
-
-        private static void ResolveResumePosition(PlaybackLaunchContext ctx)
-        {
-            if (ctx == null || ctx.ContentType == PlaybackContentType.Channel || ctx.StartPositionMs > 0) return;
-
-            try
-            {
-                using var scope = ((App)Application.Current).Services.CreateScope();
-                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-                var existing = db.PlaybackProgresses.FirstOrDefault(
-                    p => p.ContentType == ctx.ContentType && p.ContentId == ctx.ContentId && !p.IsCompleted);
-
-                if (existing != null && existing.PositionMs >= 5_000)
-                {
-                    ctx.StartPositionMs = existing.PositionMs;
-                }
-            }
-            catch
-            {
-                // Resume lookup is best-effort.
-            }
-        }
-
-        private static async Task SaveProgressAsync(PlaybackLaunchContext ctx, long positionMs, long durationMs)
-        {
-            if (ctx == null) return;
-            // Only bother persisting progress if the user got past the first few seconds.
-            if (positionMs < 5_000) return;
-            var isCompleted = durationMs > 0 && positionMs >= durationMs * 0.95;
-
-            try
-            {
-                using var scope = ((App)Application.Current).Services.CreateScope();
-                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-
-                var existing = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.FirstOrDefaultAsync(
-                    db.PlaybackProgresses,
-                    p => p.ContentType == ctx.ContentType && p.ContentId == ctx.ContentId);
-
-                if (existing == null)
-                {
-                    db.PlaybackProgresses.Add(new PlaybackProgress
-                    {
-                        ContentType = ctx.ContentType,
-                        ContentId = ctx.ContentId,
-                        PositionMs = positionMs,
-                        IsCompleted = isCompleted,
-                        LastWatched = DateTime.UtcNow,
-                    });
-                }
-                else
-                {
-                    existing.PositionMs = positionMs;
-                    existing.IsCompleted = isCompleted;
-                    existing.LastWatched = DateTime.UtcNow;
-                }
-                await db.SaveChangesAsync();
-            }
-            catch
-            {
-                // Progress persistence is best-effort.
-            }
         }
     }
 }

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -6,6 +7,49 @@ using Microsoft.UI.Dispatching;
 
 namespace Kroira.App.Services.Playback
 {
+    public enum PlaybackAspectMode
+    {
+        Automatic,
+        FillWindow,
+        Ratio16x9,
+        Ratio4x3,
+        Ratio185x1,
+        Ratio235x1
+    }
+
+    public sealed class MpvTrackInfo
+    {
+        public string Id { get; init; } = string.Empty;
+        public string Type { get; init; } = string.Empty;
+        public string Title { get; init; } = string.Empty;
+        public string Language { get; init; } = string.Empty;
+        public bool IsSelected { get; init; }
+        public bool IsExternal { get; init; }
+
+        public string DisplayName
+        {
+            get
+            {
+                if (!string.IsNullOrWhiteSpace(Title) && !string.IsNullOrWhiteSpace(Language))
+                {
+                    return $"{Title} ({Language})";
+                }
+
+                if (!string.IsNullOrWhiteSpace(Title))
+                {
+                    return Title;
+                }
+
+                if (!string.IsNullOrWhiteSpace(Language))
+                {
+                    return Language;
+                }
+
+                return Type == "sub" ? $"Subtitle {Id}" : $"Audio {Id}";
+            }
+        }
+    }
+
     // Page-scoped wrapper around a single libmpv handle. One playback session = one
     // MpvPlayer instance. Owns its event-loop thread. Disposal is synchronous and
     // joins the event thread so that no native state or audio leaks into the next
@@ -17,6 +61,7 @@ namespace Kroira.App.Services.Playback
         private const ulong PropIdPause = 3;
         private const ulong PropIdSeekable = 4;
         private const ulong PropIdEof = 5;
+        private const ulong PropIdBuffering = 6;
 
         private readonly DispatcherQueue _dispatcher;
         private readonly object _lifecycleLock = new();
@@ -29,14 +74,18 @@ namespace Kroira.App.Services.Playback
         public event Action<TimeSpan> DurationChanged;
         public event Action<bool> PauseChanged;
         public event Action<bool> SeekableChanged;
+        public event Action<bool> BufferingChanged;
         public event Action FileLoaded;
         public event Action OutputReady;
         public event Action PlaybackEnded;
+        public event Action TrackListChanged;
+        public event Action<string> WarningMessage;
 
         public TimeSpan Position { get; private set; }
         public TimeSpan Duration { get; private set; }
         public bool IsPaused { get; private set; }
         public bool IsSeekable { get; private set; }
+        public bool IsBuffering { get; private set; }
         public double Volume { get; private set; } = 100;
         public bool IsMuted { get; private set; }
 
@@ -80,11 +129,13 @@ namespace Kroira.App.Services.Playback
                 throw new InvalidOperationException($"mpv_initialize failed with code {initResult}");
             }
 
+            NativeMpv.mpv_request_log_messages(_ctx, "warn");
             NativeMpv.mpv_observe_property(_ctx, PropIdTimePos, "time-pos", NativeMpv.MpvFormat.Double);
             NativeMpv.mpv_observe_property(_ctx, PropIdDuration, "duration", NativeMpv.MpvFormat.Double);
             NativeMpv.mpv_observe_property(_ctx, PropIdPause, "pause", NativeMpv.MpvFormat.Flag);
             NativeMpv.mpv_observe_property(_ctx, PropIdSeekable, "seekable", NativeMpv.MpvFormat.Flag);
             NativeMpv.mpv_observe_property(_ctx, PropIdEof, "eof-reached", NativeMpv.MpvFormat.Flag);
+            NativeMpv.mpv_observe_property(_ctx, PropIdBuffering, "paused-for-cache", NativeMpv.MpvFormat.Flag);
 
             _eventThread = new Thread(EventLoop)
             {
@@ -169,6 +220,56 @@ namespace Kroira.App.Services.Playback
             SetMuted(!IsMuted);
         }
 
+        public IReadOnlyList<MpvTrackInfo> GetAudioTracks()
+        {
+            return GetTracks("audio");
+        }
+
+        public IReadOnlyList<MpvTrackInfo> GetSubtitleTracks()
+        {
+            return GetTracks("sub");
+        }
+
+        public void SelectAudioTrack(string trackId)
+        {
+            SetTrackProperty("aid", string.IsNullOrWhiteSpace(trackId) ? "auto" : trackId);
+        }
+
+        public void SelectSubtitleTrack(string trackId)
+        {
+            SetTrackProperty("sid", string.IsNullOrWhiteSpace(trackId) ? "no" : trackId);
+        }
+
+        public void SetAspectMode(PlaybackAspectMode aspectMode)
+        {
+            UseCtx(ctx =>
+            {
+                switch (aspectMode)
+                {
+                    case PlaybackAspectMode.FillWindow:
+                        NativeMpv.mpv_set_property_string(ctx, "keepaspect", "no");
+                        NativeMpv.mpv_set_property_string(ctx, "video-aspect-override", "-1");
+                        break;
+                    case PlaybackAspectMode.Ratio16x9:
+                        ApplyAspectOverride(ctx, "16:9");
+                        break;
+                    case PlaybackAspectMode.Ratio4x3:
+                        ApplyAspectOverride(ctx, "4:3");
+                        break;
+                    case PlaybackAspectMode.Ratio185x1:
+                        ApplyAspectOverride(ctx, "1.85");
+                        break;
+                    case PlaybackAspectMode.Ratio235x1:
+                        ApplyAspectOverride(ctx, "2.35");
+                        break;
+                    default:
+                        NativeMpv.mpv_set_property_string(ctx, "keepaspect", "yes");
+                        NativeMpv.mpv_set_property_string(ctx, "video-aspect-override", "-1");
+                        break;
+                }
+            });
+        }
+
         private void SetOption(string name, string value)
         {
             NativeMpv.mpv_set_option_string(_ctx, name, value);
@@ -182,6 +283,17 @@ namespace Kroira.App.Services.Playback
             {
                 if (IsDisposed) return;
                 action(ctx);
+            }
+        }
+
+        private T UseCtx<T>(Func<IntPtr, T> action, T fallback)
+        {
+            if (action == null || !TryGetCtx(out var ctx)) return fallback;
+
+            lock (_apiLock)
+            {
+                if (IsDisposed) return fallback;
+                return action(ctx);
             }
         }
 
@@ -200,6 +312,62 @@ namespace Kroira.App.Services.Playback
             NativeMpv.mpv_set_property_string(ctx, "volume", "100");
             if (selectAudio) NativeMpv.mpv_set_property_string(ctx, "aid", "auto");
             NativeMpv.mpv_set_property_string(ctx, "pause", "no");
+        }
+
+        private IReadOnlyList<MpvTrackInfo> GetTracks(string requestedType)
+        {
+            return UseCtx(ctx =>
+            {
+                var tracks = new List<MpvTrackInfo>();
+                if (!TryReadIntProperty(ctx, "track-list/count", out var trackCount) || trackCount <= 0)
+                {
+                    return (IReadOnlyList<MpvTrackInfo>)tracks;
+                }
+
+                for (var index = 0; index < trackCount; index++)
+                {
+                    var baseName = $"track-list/{index}";
+                    var type = NativeMpv.GetPropertyString(ctx, $"{baseName}/type");
+                    if (string.IsNullOrWhiteSpace(type))
+                    {
+                        continue;
+                    }
+
+                    if (requestedType == "audio" && !string.Equals(type, "audio", StringComparison.OrdinalIgnoreCase))
+                    {
+                        continue;
+                    }
+
+                    if (requestedType == "sub" && !string.Equals(type, "sub", StringComparison.OrdinalIgnoreCase))
+                    {
+                        continue;
+                    }
+
+                    var id = NativeMpv.GetPropertyString(ctx, $"{baseName}/id");
+                    if (string.IsNullOrWhiteSpace(id))
+                    {
+                        continue;
+                    }
+
+                    tracks.Add(new MpvTrackInfo
+                    {
+                        Id = id.Trim(),
+                        Type = type.Trim(),
+                        Title = (NativeMpv.GetPropertyString(ctx, $"{baseName}/title") ?? string.Empty).Trim(),
+                        Language = (NativeMpv.GetPropertyString(ctx, $"{baseName}/lang") ?? string.Empty).Trim(),
+                        IsSelected = IsTruthy(NativeMpv.GetPropertyString(ctx, $"{baseName}/selected")),
+                        IsExternal = IsTruthy(NativeMpv.GetPropertyString(ctx, $"{baseName}/external")),
+                    });
+                }
+
+                return (IReadOnlyList<MpvTrackInfo>)tracks;
+            }, Array.Empty<MpvTrackInfo>());
+        }
+
+        private void SetTrackProperty(string propertyName, string propertyValue)
+        {
+            UseCtx(ctx => NativeMpv.mpv_set_property_string(ctx, propertyName, propertyValue));
+            EnqueueCallback(() => TrackListChanged?.Invoke());
         }
 
         private bool TryGetCtx(out IntPtr ctx)
@@ -231,6 +399,9 @@ namespace Kroira.App.Services.Playback
                     case NativeMpv.MpvEventId.PropertyChange:
                         HandlePropertyChange(ev);
                         break;
+                    case NativeMpv.MpvEventId.LogMessage:
+                        HandleLogMessage(ev);
+                        break;
                     case NativeMpv.MpvEventId.EndFile:
                         EnqueueCallback(() => PlaybackEnded?.Invoke());
                         break;
@@ -239,14 +410,22 @@ namespace Kroira.App.Services.Playback
                         {
                             EnsurePlaybackActive(ctx, selectAudio: true);
                             FileLoaded?.Invoke();
+                            TrackListChanged?.Invoke();
                             OutputReady?.Invoke();
                         });
                         break;
                     case NativeMpv.MpvEventId.PlaybackRestart:
-                        EnqueueCallback(() => OutputReady?.Invoke());
+                        EnqueueCallback(() =>
+                        {
+                            TrackListChanged?.Invoke();
+                            OutputReady?.Invoke();
+                        });
                         break;
                     case NativeMpv.MpvEventId.VideoReconfig:
                         EnqueueCallback(() => OutputReady?.Invoke());
+                        break;
+                    case NativeMpv.MpvEventId.AudioReconfig:
+                        EnqueueCallback(() => TrackListChanged?.Invoke());
                         break;
                 }
             }
@@ -310,7 +489,27 @@ namespace Kroira.App.Services.Playback
                         if (flag) EnqueueCallback(() => PlaybackEnded?.Invoke());
                         break;
                     }
+                case PropIdBuffering:
+                    {
+                        var flag = Marshal.ReadInt32(prop.Data) != 0;
+                        EnqueueCallback(() =>
+                        {
+                            IsBuffering = flag;
+                            BufferingChanged?.Invoke(flag);
+                        });
+                        break;
+                    }
             }
+        }
+
+        private void HandleLogMessage(NativeMpv.MpvEvent ev)
+        {
+            if (ev.Data == IntPtr.Zero) return;
+            var log = NativeMpv.ReadEventLogMessage(ev.Data);
+            var message = Marshal.PtrToStringUTF8(log.Text);
+            if (string.IsNullOrWhiteSpace(message)) return;
+
+            EnqueueCallback(() => WarningMessage?.Invoke(message.Trim()));
         }
 
         private bool IsDisposed
@@ -337,6 +536,28 @@ namespace Kroira.App.Services.Playback
         {
             long bits = Marshal.ReadInt64(ptr);
             return BitConverter.Int64BitsToDouble(bits);
+        }
+
+        private static void ApplyAspectOverride(IntPtr ctx, string ratio)
+        {
+            NativeMpv.mpv_set_property_string(ctx, "keepaspect", "yes");
+            NativeMpv.mpv_set_property_string(ctx, "video-aspect-override", ratio);
+        }
+
+        private static bool IsTruthy(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value)) return false;
+            return value.Equals("yes", StringComparison.OrdinalIgnoreCase) ||
+                   value.Equals("true", StringComparison.OrdinalIgnoreCase) ||
+                   value.Equals("1", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool TryReadIntProperty(IntPtr ctx, string propertyName, out int value)
+        {
+            value = 0;
+            var raw = NativeMpv.GetPropertyString(ctx, propertyName);
+            return !string.IsNullOrWhiteSpace(raw) &&
+                   int.TryParse(raw.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out value);
         }
 
         public void Dispose()

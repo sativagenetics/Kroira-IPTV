@@ -105,14 +105,46 @@
                             Padding="10">
                         <FontIcon x:Name="PlayPauseIcon" FontFamily="Segoe MDL2 Assets" Glyph="&#xE769;" />
                     </Button>
-                    <Button Click="Stop_Click"
+                    <Button x:Name="StopButton" Click="Stop_Click"
                             Background="Transparent" BorderThickness="0"
                             Foreground="{StaticResource KroiraTextPrimaryBrush}"
                             ToolTipService.ToolTip="Stop"
                             Padding="10">
                         <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE71A;" />
                     </Button>
-                    <Button Click="Fullscreen_Click"
+                    <Button x:Name="AudioTrackButton"
+                            Visibility="Collapsed"
+                            Background="Transparent" BorderThickness="0"
+                            Foreground="{StaticResource KroiraTextPrimaryBrush}"
+                            Padding="10,6"
+                            ToolTipService.ToolTip="Audio track">
+                        <Button.Flyout>
+                            <MenuFlyout x:Name="AudioTrackFlyout" />
+                        </Button.Flyout>
+                        <TextBlock Text="Audio" FontSize="12" FontWeight="SemiBold" />
+                    </Button>
+                    <Button x:Name="SubtitleTrackButton"
+                            Visibility="Collapsed"
+                            Background="Transparent" BorderThickness="0"
+                            Foreground="{StaticResource KroiraTextPrimaryBrush}"
+                            Padding="10,6"
+                            ToolTipService.ToolTip="Subtitles">
+                        <Button.Flyout>
+                            <MenuFlyout x:Name="SubtitleTrackFlyout" />
+                        </Button.Flyout>
+                        <TextBlock Text="Subs" FontSize="12" FontWeight="SemiBold" />
+                    </Button>
+                    <Button x:Name="AspectButton"
+                            Background="Transparent" BorderThickness="0"
+                            Foreground="{StaticResource KroiraTextPrimaryBrush}"
+                            Padding="10,6"
+                            ToolTipService.ToolTip="Aspect">
+                        <Button.Flyout>
+                            <MenuFlyout x:Name="AspectFlyout" />
+                        </Button.Flyout>
+                        <TextBlock Text="Aspect" FontSize="12" FontWeight="SemiBold" />
+                    </Button>
+                    <Button x:Name="FullscreenButton" Click="Fullscreen_Click"
                             Background="Transparent" BorderThickness="0"
                             Foreground="{StaticResource KroiraTextPrimaryBrush}"
                             ToolTipService.ToolTip="Fullscreen"
@@ -140,6 +172,23 @@
                     </StackPanel>
                 </StackPanel>
             </Grid>
+        </Border>
+
+        <Border x:Name="StatusOverlay" Grid.RowSpan="3"
+                Background="#96090B13"
+                Visibility="Collapsed"
+                IsHitTestVisible="False">
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="12" MaxWidth="420" Padding="24">
+                <ProgressRing x:Name="StatusRing" Width="34" Height="34" IsActive="False" HorizontalAlignment="Center" />
+                <TextBlock x:Name="StatusTitle"
+                           FontSize="20" FontWeight="SemiBold"
+                           Foreground="{StaticResource KroiraTextPrimaryBrush}"
+                           HorizontalAlignment="Center" />
+                <TextBlock x:Name="StatusMessage"
+                           Foreground="{StaticResource KroiraTextSecondaryBrush}"
+                           TextWrapping="Wrap" HorizontalAlignment="Center"
+                           TextAlignment="Center" />
+            </StackPanel>
         </Border>
 
         <!-- Error overlay -->
