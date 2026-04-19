@@ -533,7 +533,6 @@ namespace Kroira.App.ViewModels
         private void BuildVisibleCategories()
         {
             var browsePreferencesService = _serviceProvider.GetRequiredService<IBrowsePreferencesService>();
-            var currentSelection = SelectedCategory?.FilterKey ?? string.Empty;
             Categories.Clear();
             Categories.Add(new BrowserCategoryViewModel
             {
@@ -569,12 +568,6 @@ namespace Kroira.App.ViewModels
             foreach (var category in categories)
             {
                 Categories.Add(category);
-            }
-
-            if (!string.IsNullOrWhiteSpace(currentSelection))
-            {
-                SelectedCategory = Categories.FirstOrDefault(category => string.Equals(category.FilterKey, currentSelection, StringComparison.OrdinalIgnoreCase))
-                    ?? Categories.FirstOrDefault();
             }
         }
 
@@ -620,12 +613,15 @@ namespace Kroira.App.ViewModels
         private void EnsureSelectedCategory()
         {
             var currentKey = SelectedCategory?.FilterKey ?? string.Empty;
-            if (!Categories.Any(category => string.Equals(category.FilterKey, currentKey, StringComparison.OrdinalIgnoreCase)))
+            var targetCategory = Categories.FirstOrDefault(category => string.Equals(category.FilterKey, currentKey, StringComparison.OrdinalIgnoreCase))
+                ?? Categories.FirstOrDefault();
+
+            if (!ReferenceEquals(SelectedCategory, targetCategory))
             {
                 _isInitializing = true;
                 try
                 {
-                    SelectedCategory = Categories.FirstOrDefault();
+                    SelectedCategory = targetCategory;
                 }
                 finally
                 {
