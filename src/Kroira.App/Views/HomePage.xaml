@@ -539,7 +539,8 @@
                             Click="BrowseCatalog_Click"
                             Style="{StaticResource KroiraGhostButtonStyle}" />
                 </Grid>
-                <controls:Rail ItemsSource="{x:Bind ViewModel.PopularItems, Mode=OneWay}"
+                <controls:Rail x:Name="RecommendedRail"
+                               ItemsSource="{x:Bind ViewModel.PopularItems, Mode=OneWay}"
                                ItemTemplate="{StaticResource MediaPosterCardTemplate}"
                                RailHeight="306"
                                ItemSpacing="16"
@@ -549,7 +550,8 @@
             <StackPanel Spacing="16" Visibility="{x:Bind ViewModel.RecentlyAddedItemsVisibility, Mode=OneWay}">
                 <TextBlock Text="Recently Added"
                            Style="{StaticResource KroiraSectionTitleStyle}" />
-                <controls:Rail ItemsSource="{x:Bind ViewModel.RecentlyAddedItems, Mode=OneWay}"
+                <controls:Rail x:Name="RecentlyAddedRail"
+                               ItemsSource="{x:Bind ViewModel.RecentlyAddedItems, Mode=OneWay}"
                                ItemTemplate="{StaticResource MediaPosterCardTemplate}"
                                RailHeight="306"
                                ItemSpacing="16"
@@ -559,7 +561,8 @@
             <StackPanel Spacing="16" Visibility="{x:Bind ViewModel.TopRatedItemsVisibility, Mode=OneWay}">
                 <TextBlock Text="Top Rated"
                            Style="{StaticResource KroiraSectionTitleStyle}" />
-                <controls:Rail ItemsSource="{x:Bind ViewModel.TopRatedItems, Mode=OneWay}"
+                <controls:Rail x:Name="TopRatedRail"
+                               ItemsSource="{x:Bind ViewModel.TopRatedItems, Mode=OneWay}"
                                ItemTemplate="{StaticResource MediaPosterCardTemplate}"
                                RailHeight="306"
                                ItemSpacing="16"
@@ -578,7 +581,8 @@
                             Style="{StaticResource KroiraGhostButtonStyle}" />
                 </Grid>
 
-                <controls:Rail ItemsSource="{x:Bind ViewModel.LiveItems, Mode=OneWay}"
+                <controls:Rail x:Name="LiveNowRail"
+                               ItemsSource="{x:Bind ViewModel.LiveItems, Mode=OneWay}"
                                ItemTemplate="{StaticResource LiveNowCardTemplate}"
                                RailHeight="144"
                                ItemSpacing="16"

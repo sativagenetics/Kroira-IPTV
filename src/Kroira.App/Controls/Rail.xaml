@@ -30,9 +30,10 @@
             x:Name="RailScrollViewer"
             Grid.Column="1"
             HorizontalScrollBarVisibility="Hidden"
-            HorizontalScrollMode="Enabled"
+            HorizontalScrollMode="Disabled"
             VerticalScrollBarVisibility="Disabled"
             VerticalScrollMode="Disabled"
+            BringIntoViewOnFocusChange="False"
             ZoomMode="Disabled"
             ViewChanged="RailScrollViewer_ViewChanged">
             <ItemsRepeater
