@@ -1,4 +1,7 @@
 using System;
+using System.Collections.Specialized;
+using System.ComponentModel;
+using System.Linq;
 using System.Threading.Tasks;
 using Kroira.App.Models;
 using Kroira.App.Services;
@@ -41,18 +44,107 @@ namespace Kroira.App.Views
 
     public sealed partial class SeriesPage : Page
     {
+        private bool _isRestoringCategorySelection;
+        private bool _isCategorySelectionRestoreQueued;
+
         public SeriesViewModel ViewModel { get; }
 
         public SeriesPage()
         {
             this.InitializeComponent();
             ViewModel = ((App)Application.Current).Services.GetRequiredService<SeriesViewModel>();
+            ViewModel.PropertyChanged += ViewModel_PropertyChanged;
+            ViewModel.Categories.CollectionChanged += Categories_CollectionChanged;
+            Loaded += SeriesPage_Loaded;
         }
 
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
             _ = ViewModel.LoadSeriesCommand.ExecuteAsync(null);
+        }
+
+        private void SeriesPage_Loaded(object sender, RoutedEventArgs e)
+        {
+            QueueRestoreCategorySelection("page-loaded");
+        }
+
+        private void ViewModel_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (string.Equals(e.PropertyName, nameof(ViewModel.SelectedCategory), StringComparison.Ordinal))
+            {
+                QueueRestoreCategorySelection("selected-category-changed");
+            }
+        }
+
+        private void Categories_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+        {
+            QueueRestoreCategorySelection($"categories-{e.Action.ToString().ToLowerInvariant()}");
+        }
+
+        private void QueueRestoreCategorySelection(string reason)
+        {
+            if (_isCategorySelectionRestoreQueued)
+            {
+                return;
+            }
+
+            var dispatcherQueue = DispatcherQueue;
+            if (dispatcherQueue == null)
+            {
+                RestoreCategorySelection(reason);
+                return;
+            }
+
+            _isCategorySelectionRestoreQueued = true;
+            var enqueued = dispatcherQueue.TryEnqueue(() =>
+            {
+                _isCategorySelectionRestoreQueued = false;
+                RestoreCategorySelection(reason);
+            });
+            if (!enqueued)
+            {
+                _isCategorySelectionRestoreQueued = false;
+            }
+
+            BrowseRuntimeLogger.Log("SERIES UI", $"selection restore queued reason={reason} enqueued={enqueued}");
+        }
+
+        private void RestoreCategorySelection(string reason)
+        {
+            if (_isRestoringCategorySelection || CategoryList == null)
+            {
+                return;
+            }
+
+            var selected = ViewModel.SelectedCategory;
+            if (selected == null)
+            {
+                return;
+            }
+
+            var resolved = ViewModel.Categories.FirstOrDefault(category =>
+                string.Equals(category.FilterKey, selected.FilterKey, StringComparison.OrdinalIgnoreCase));
+            if (resolved == null)
+            {
+                return;
+            }
+
+            if (ReferenceEquals(CategoryList.SelectedItem, resolved))
+            {
+                return;
+            }
+
+            try
+            {
+                _isRestoringCategorySelection = true;
+                CategoryList.SelectedItem = resolved;
+                BrowseRuntimeLogger.Log("SERIES UI", $"selection restored reason={reason} key={resolved.FilterKey}");
+            }
+            finally
+            {
+                _isRestoringCategorySelection = false;
+            }
         }
 
         private void EpisodeList_SelectionChanged(object sender, SelectionChangedEventArgs e)

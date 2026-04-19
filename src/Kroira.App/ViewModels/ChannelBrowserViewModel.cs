@@ -24,10 +24,18 @@ namespace Kroira.App.ViewModels
         public int ItemCount { get; set; }
         public int OrderIndex { get; set; }
         public bool IsSmartCategory { get; set; }
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(SelectionBackgroundOpacity))]
+        [NotifyPropertyChangedFor(nameof(SelectionChromeOpacity))]
+        [NotifyPropertyChangedFor(nameof(SelectionAccentOpacity))]
+        private bool _isSelected;
         public string DisplayName => ItemCount > 0 ? $"{Name} ({ItemCount:N0})" : Name;
         public string CountText => ItemCount > 0 ? $"{ItemCount:N0}" : string.Empty;
         public Visibility CountVisibility => ItemCount > 0 ? Visibility.Visible : Visibility.Collapsed;
         public Visibility DescriptionVisibility => string.IsNullOrWhiteSpace(Description) ? Visibility.Collapsed : Visibility.Visible;
+        public double SelectionBackgroundOpacity => IsSelected ? 1 : 0;
+        public double SelectionChromeOpacity => IsSelected ? 0.9 : 0;
+        public double SelectionAccentOpacity => IsSelected ? 1 : 0.22;
     }
 
     public partial class BrowserChannelViewModel : ObservableObject

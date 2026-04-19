@@ -157,6 +157,7 @@ namespace Kroira.App.ViewModels
                 return;
             }
 
+            UpdateCategorySelectionState(value.FilterKey, "selected-category-changed");
             LogBrowse(
                 $"category changed key={value.FilterKey} name={value.Name} initializing={_isInitializing} applying={_isApplyingFilter}");
             if (!_isInitializing)
@@ -658,12 +659,24 @@ namespace Kroira.App.ViewModels
 
             if (selectionAlreadyBound || selectionHasCurrentKey)
             {
+                UpdateCategorySelectionState(targetKey, $"rebind-skip:{reason}");
                 LogBrowse($"category rebind skipped reason={reason} key={targetKey}");
                 return;
             }
 
             LogBrowse($"category reassigned reason={reason} from={currentKey} to={targetKey}");
             SelectedCategory = category;
+            UpdateCategorySelectionState(targetKey, $"rebind:{reason}");
+        }
+
+        private void UpdateCategorySelectionState(string selectedKey, string reason)
+        {
+            foreach (var category in Categories)
+            {
+                category.IsSelected = string.Equals(category.FilterKey, selectedKey, StringComparison.OrdinalIgnoreCase);
+            }
+
+            LogBrowse($"category selection state updated reason={reason} key={selectedKey}");
         }
 
         private void BuildCategoryManagerOptions()
