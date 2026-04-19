@@ -1,6 +1,7 @@
 using System;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -37,6 +38,17 @@ namespace Kroira.App.ViewModels
 
         [ObservableProperty]
         private string _languageStatusText = "English is selected. This stable option uses the working catalog language pipeline.";
+
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(IsBackupIdle))]
+        private bool _isBackupBusy;
+
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(HasBackupStatus))]
+        private string _backupStatusText = "Export or restore a versioned local package for sources, profiles, favorites, watch state, and local preferences.";
+
+        public bool IsBackupIdle => !IsBackupBusy;
+        public bool HasBackupStatus => !string.IsNullOrWhiteSpace(BackupStatusText);
 
         partial void OnSelectedLanguageChanged(LanguageOptionViewModel value)
         {
@@ -99,6 +111,80 @@ namespace Kroira.App.ViewModels
             LicenseStatusDescription = isPro
                 ? "Pro features are enabled for this installation."
                 : "Free tier is active. Upgrade to enable multi-monitor, recording, and premium playback features.";
+        }
+
+        public async Task ExportBackupAsync(string filePath)
+        {
+            if (IsBackupBusy)
+            {
+                return;
+            }
+
+            IsBackupBusy = true;
+            BackupStatusText = "Exporting backup package...";
+
+            try
+            {
+                using var scope = _serviceProvider.CreateScope();
+                var backupService = scope.ServiceProvider.GetRequiredService<IBackupPackageService>();
+                var result = await backupService.ExportAsync(filePath);
+
+                BackupStatusText =
+                    $"Exported {result.SourceCount} sources, {result.ProfileCount} profiles, " +
+                    $"{result.FavoriteCount} favorites, and {result.WatchStateCount} watch-state records.";
+            }
+            catch (Exception ex)
+            {
+                BackupStatusText = $"Backup export failed: {ex.Message}";
+            }
+            finally
+            {
+                IsBackupBusy = false;
+            }
+        }
+
+        public async Task RestoreBackupAsync(string filePath)
+        {
+            if (IsBackupBusy)
+            {
+                return;
+            }
+
+            IsBackupBusy = true;
+            BackupStatusText = "Restoring backup package...";
+
+            try
+            {
+                using var scope = _serviceProvider.CreateScope();
+                var backupService = scope.ServiceProvider.GetRequiredService<IBackupPackageService>();
+                var result = await backupService.RestoreAsync(filePath);
+                await LoadSettingsAsync();
+
+                var builder = new StringBuilder();
+                builder.Append(
+                    $"Restored {result.SourceCount} sources, {result.ProfileCount} profiles, " +
+                    $"{result.FavoriteCount} favorites, and {result.WatchStateCount} watch-state records.");
+
+                if (result.SourceSyncFailureCount > 0)
+                {
+                    builder.Append($" {result.SourceSyncFailureCount} sources need attention after re-import.");
+                }
+
+                if (result.Warnings.Count > 0)
+                {
+                    builder.Append($" {result.Warnings[0]}");
+                }
+
+                BackupStatusText = builder.ToString();
+            }
+            catch (Exception ex)
+            {
+                BackupStatusText = $"Backup restore failed: {ex.Message}";
+            }
+            finally
+            {
+                IsBackupBusy = false;
+            }
         }
 
         public string AppVersion
