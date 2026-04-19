@@ -18,6 +18,7 @@ namespace Kroira.App.ViewModels
     {
         private readonly IServiceProvider _serviceProvider;
         private List<BrowserChannelViewModel> _allChannels = new();
+        private int _filterRequestVersion;
 
         public ObservableCollection<BrowserChannelViewModel> FilteredChannels { get; } = new();
         public ObservableCollection<BrowserCategoryViewModel> Categories { get; } = new();
@@ -33,12 +34,12 @@ namespace Kroira.App.ViewModels
 
         partial void OnSearchQueryChanged(string value)
         {
-            ApplyFilter();
+            QueueApplyFilter();
         }
 
         partial void OnSelectedCategoryChanged(BrowserCategoryViewModel? value)
         {
-            ApplyFilter();
+            QueueApplyFilter();
         }
 
         public ChannelsPageViewModel(IServiceProvider serviceProvider)
@@ -76,9 +77,6 @@ namespace Kroira.App.ViewModels
                 .Where(f => f.ContentType == FavoriteType.Channel)
                 .Select(f => f.ContentId)
                 .ToListAsync();
-
-            // Build channel view models first — always succeeds regardless of EPG state
-            var now = DateTime.UtcNow;
             var channelVMs = channels.Select(ch => new BrowserChannelViewModel
             {
                 Id = ch.Id,
@@ -88,34 +86,6 @@ namespace Kroira.App.ViewModels
                 LogoUrl = ch.LogoUrl ?? string.Empty,
                 IsFavorite = favIds.Contains(ch.Id)
             }).ToList();
-
-            // EPG decoration — optional; failure leaves channels with neutral "No guide data" state
-            try
-            {
-                var channelIds = channels.Select(c => c.Id).ToList();
-                var epgWindowEnd = now.AddHours(8);
-                var epgs = await db.EpgPrograms
-                    .Where(e => channelIds.Contains(e.ChannelId)
-                             && e.EndTimeUtc > now
-                             && e.StartTimeUtc < epgWindowEnd)
-                    .OrderBy(e => e.StartTimeUtc)
-                    .ToListAsync();
-
-                foreach (var item in channelVMs)
-                {
-                    var chEpg = epgs.Where(e => e.ChannelId == item.Id).ToList();
-                    var current = chEpg.FirstOrDefault(e => e.StartTimeUtc <= now && e.EndTimeUtc > now);
-                    var next = chEpg
-                        .Where(e => e.StartTimeUtc >= (current?.EndTimeUtc ?? now))
-                        .OrderBy(e => e.StartTimeUtc)
-                        .FirstOrDefault();
-                    item.ApplyEpg(current, next, now);
-                }
-            }
-            catch
-            {
-                // EpgPrograms schema mismatch or missing columns — channels still shown, EPG skipped
-            }
 
             foreach (var item in channelVMs)
                 _allChannels.Add(item);
@@ -134,13 +104,15 @@ namespace Kroira.App.ViewModels
             }
 
             SelectedCategory = Categories.FirstOrDefault();
-            ApplyFilter();
         }
 
-        private void ApplyFilter()
+        private void QueueApplyFilter()
         {
-            FilteredChannels.Clear();
+            _ = ApplyFilterAsync(System.Threading.Interlocked.Increment(ref _filterRequestVersion));
+        }
 
+        private async Task ApplyFilterAsync(int requestVersion)
+        {
             var query = _allChannels.AsEnumerable();
 
             if (SelectedCategory != null && SelectedCategory.Id != 0)
@@ -153,7 +125,40 @@ namespace Kroira.App.ViewModels
                 query = query.Where(c => c.Name.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase));
             }
 
-            foreach (var ch in query)
+            var filtered = query.ToList();
+            var nowUtc = DateTime.UtcNow;
+
+            try
+            {
+                using var scope = _serviceProvider.CreateScope();
+                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                var guideService = scope.ServiceProvider.GetRequiredService<ILiveGuideService>();
+                var summaries = await guideService.GetGuideSummariesAsync(
+                    db,
+                    filtered.Select(channel => channel.Id).ToList(),
+                    nowUtc);
+
+                foreach (var channel in filtered)
+                {
+                    summaries.TryGetValue(channel.Id, out var summary);
+                    channel.ApplyGuideSummary(summary, nowUtc);
+                }
+            }
+            catch
+            {
+                foreach (var channel in filtered)
+                {
+                    channel.ApplyGuideSummary(null, nowUtc);
+                }
+            }
+
+            if (requestVersion != _filterRequestVersion)
+            {
+                return;
+            }
+
+            FilteredChannels.Clear();
+            foreach (var ch in filtered)
             {
                 FilteredChannels.Add(ch);
             }

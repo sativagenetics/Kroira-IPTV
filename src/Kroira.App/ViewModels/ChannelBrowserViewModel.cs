@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
@@ -28,7 +29,7 @@ namespace Kroira.App.ViewModels
         public string Name { get; set; } = string.Empty;
         public string StreamUrl { get; set; } = string.Empty;
         public string LogoUrl { get; set; } = string.Empty;
-        public string CurrentProgramTitle { get; set; } = "Guide not synced";
+        public string CurrentProgramTitle { get; set; } = string.Empty;
         public string CurrentProgramSubtitle { get; set; } = string.Empty;
         public string CurrentProgramTimeText { get; set; } = string.Empty;
         public string CurrentProgramDescription { get; set; } = string.Empty;
@@ -52,13 +53,31 @@ namespace Kroira.App.ViewModels
 
     public static class EpgProgramDisplay
     {
-        public static void ApplyEpg(this BrowserChannelViewModel channel, EpgProgram? current, EpgProgram? next, DateTime nowUtc)
+        public static void ApplyGuideSummary(this BrowserChannelViewModel channel, ChannelGuideSummary? summary, DateTime nowUtc)
         {
+            var normalizedNowUtc = NormalizeUtc(nowUtc);
+            if (summary == null)
+            {
+                ApplyUnavailable(channel);
+                return;
+            }
+
+            if (!summary.HasGuideData)
+            {
+                ApplyUnmatched(channel);
+                return;
+            }
+
+            var current = summary.CurrentProgram;
+            var next = summary.NextProgram;
+
             if (current == null)
             {
-                channel.CurrentProgramTitle = next == null ? "No guide data" : "No current program";
+                channel.CurrentProgramTitle = next == null ? "No current listing" : $"Upcoming: {next.Title}";
                 channel.CurrentProgramSubtitle = string.Empty;
-                channel.CurrentProgramTimeText = string.Empty;
+                channel.CurrentProgramTimeText = next == null
+                    ? string.Empty
+                    : $"Starts {FormatTimeRange(next.StartTimeUtc, next.EndTimeUtc)}";
                 channel.CurrentProgramDescription = string.Empty;
                 channel.CurrentProgramCategory = string.Empty;
                 channel.LiveProgressValue = 0;
@@ -68,18 +87,9 @@ namespace Kroira.App.ViewModels
                 channel.SubtitleVisibility = Visibility.Collapsed;
                 channel.CategoryVisibility = Visibility.Collapsed;
 
-                if (next != null)
-                {
-                    channel.NextProgramTitle = $"Upcoming: {next.Title}";
-                    channel.NextProgramTimeText = FormatTimeRange(next.StartTimeUtc, next.EndTimeUtc);
-                    channel.NextProgramVisibility = Visibility.Visible;
-                }
-                else
-                {
-                    channel.NextProgramTitle = string.Empty;
-                    channel.NextProgramTimeText = string.Empty;
-                    channel.NextProgramVisibility = Visibility.Collapsed;
-                }
+                channel.NextProgramTitle = string.Empty;
+                channel.NextProgramTimeText = string.Empty;
+                channel.NextProgramVisibility = Visibility.Collapsed;
 
                 return;
             }
@@ -89,7 +99,7 @@ namespace Kroira.App.ViewModels
             channel.CurrentProgramTimeText = FormatTimeRange(current.StartTimeUtc, current.EndTimeUtc);
             channel.CurrentProgramDescription = current.Description;
             channel.CurrentProgramCategory = current.Category ?? string.Empty;
-            channel.LiveProgressValue = CalculateProgress(current.StartTimeUtc, current.EndTimeUtc, nowUtc);
+            channel.LiveProgressValue = CalculateProgress(current.StartTimeUtc, current.EndTimeUtc, normalizedNowUtc);
             channel.LiveProgressText = $"{Math.Round(channel.LiveProgressValue):0}% live";
             channel.EpgVisibility = Visibility.Visible;
             channel.DescriptionVisibility = string.IsNullOrWhiteSpace(current.Description)
@@ -116,6 +126,42 @@ namespace Kroira.App.ViewModels
             }
         }
 
+        private static void ApplyUnmatched(BrowserChannelViewModel channel)
+        {
+            channel.CurrentProgramTitle = "No guide data";
+            channel.CurrentProgramSubtitle = string.Empty;
+            channel.CurrentProgramTimeText = string.Empty;
+            channel.CurrentProgramDescription = string.Empty;
+            channel.CurrentProgramCategory = string.Empty;
+            channel.NextProgramTitle = string.Empty;
+            channel.NextProgramTimeText = string.Empty;
+            channel.LiveProgressValue = 0;
+            channel.LiveProgressText = string.Empty;
+            channel.EpgVisibility = Visibility.Collapsed;
+            channel.NextProgramVisibility = Visibility.Collapsed;
+            channel.DescriptionVisibility = Visibility.Collapsed;
+            channel.SubtitleVisibility = Visibility.Collapsed;
+            channel.CategoryVisibility = Visibility.Collapsed;
+        }
+
+        private static void ApplyUnavailable(BrowserChannelViewModel channel)
+        {
+            channel.CurrentProgramTitle = "Guide unavailable";
+            channel.CurrentProgramSubtitle = string.Empty;
+            channel.CurrentProgramTimeText = string.Empty;
+            channel.CurrentProgramDescription = string.Empty;
+            channel.CurrentProgramCategory = string.Empty;
+            channel.NextProgramTitle = string.Empty;
+            channel.NextProgramTimeText = string.Empty;
+            channel.LiveProgressValue = 0;
+            channel.LiveProgressText = string.Empty;
+            channel.EpgVisibility = Visibility.Collapsed;
+            channel.NextProgramVisibility = Visibility.Collapsed;
+            channel.DescriptionVisibility = Visibility.Collapsed;
+            channel.SubtitleVisibility = Visibility.Collapsed;
+            channel.CategoryVisibility = Visibility.Collapsed;
+        }
+
         private static double CalculateProgress(DateTime startUtc, DateTime endUtc, DateTime nowUtc)
         {
             var duration = (endUtc - startUtc).TotalSeconds;
@@ -127,15 +173,24 @@ namespace Kroira.App.ViewModels
 
         private static string FormatTimeRange(DateTime startUtc, DateTime endUtc)
         {
-            return $"{startUtc.ToLocalTime():HH:mm} - {endUtc.ToLocalTime():HH:mm}";
+            var localStart = NormalizeUtc(startUtc).ToLocalTime();
+            var localEnd = NormalizeUtc(endUtc).ToLocalTime();
+            return $"{localStart:HH:mm} - {localEnd:HH:mm}";
+        }
+
+        private static DateTime NormalizeUtc(DateTime value)
+        {
+            return value.Kind == DateTimeKind.Utc
+                ? value
+                : DateTime.SpecifyKind(value, DateTimeKind.Utc);
         }
     }
 
     public partial class ChannelBrowserViewModel : ObservableObject
     {
         private readonly IServiceProvider _serviceProvider;
-        private int _sourceProfileId;
-        private System.Collections.Generic.List<BrowserChannelViewModel> _allChannelsCache = new();
+        private List<BrowserChannelViewModel> _allChannelsCache = new();
+        private int _filterRequestVersion;
 
         public ObservableCollection<BrowserCategoryViewModel> Categories { get; } = new();
         public ObservableCollection<BrowserChannelViewModel> DisplayedChannels { get; } = new();
@@ -153,7 +208,6 @@ namespace Kroira.App.ViewModels
 
         public async Task LoadSourceAsync(int sourceProfileId)
         {
-            _sourceProfileId = sourceProfileId;
             Categories.Clear();
             DisplayedChannels.Clear();
             _allChannelsCache.Clear();
@@ -183,8 +237,6 @@ namespace Kroira.App.ViewModels
                 .Select(f => f.ContentId)
                 .ToListAsync();
 
-            var now = DateTime.UtcNow;
-
             // Populate category list
             Categories.Add(new BrowserCategoryViewModel { Id = 0, Name = "All Categories", OrderIndex = -1 });
             foreach (var c in cats.Where(c => chans.Any(ch => ch.ChannelCategoryId == c.Id)))
@@ -208,52 +260,28 @@ namespace Kroira.App.ViewModels
                 IsFavorite = favIds.Contains(ch.Id)
             }).ToList();
 
-            // EPG decoration — optional; failure leaves channels with neutral "No guide data" state
-            try
-            {
-                var chIds = chans.Select(c => c.Id).ToList();
-                var epgWindowEnd = now.AddHours(8);
-                var epgs = await db.EpgPrograms
-                    .Where(e => chIds.Contains(e.ChannelId)
-                             && e.EndTimeUtc > now
-                             && e.StartTimeUtc < epgWindowEnd)
-                    .OrderBy(e => e.StartTimeUtc)
-                    .ToListAsync();
-
-                foreach (var item in channelVMs)
-                {
-                    var chEpg = epgs.Where(e => e.ChannelId == item.Id).ToList();
-                    var curr = chEpg.FirstOrDefault(e => e.StartTimeUtc <= now && e.EndTimeUtc > now);
-                    var next = chEpg
-                        .Where(e => e.StartTimeUtc >= (curr?.EndTimeUtc ?? now))
-                        .OrderBy(e => e.StartTimeUtc)
-                        .FirstOrDefault();
-                    item.ApplyEpg(curr, next, now);
-                }
-            }
-            catch
-            {
-                // EpgPrograms schema mismatch or missing columns — channels still shown, EPG skipped
-            }
-
             foreach (var item in channelVMs)
                 _allChannelsCache.Add(item);
 
             SelectedCategory = Categories.FirstOrDefault();
-            ApplyFilter();
         }
 
         partial void OnSelectedCategoryChanged(BrowserCategoryViewModel? value)
         {
-            ApplyFilter();
+            QueueApplyFilter();
         }
 
         partial void OnSearchQueryChanged(string value)
         {
-            ApplyFilter();
+            QueueApplyFilter();
         }
 
-        private void ApplyFilter()
+        private void QueueApplyFilter()
+        {
+            _ = ApplyFilterAsync(System.Threading.Interlocked.Increment(ref _filterRequestVersion));
+        }
+
+        private async Task ApplyFilterAsync(int requestVersion)
         {
             var query = _allChannelsCache.AsEnumerable();
 
@@ -267,8 +295,40 @@ namespace Kroira.App.ViewModels
                 query = query.Where(c => c.Name.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase));
             }
 
+            var filtered = query.ToList();
+            var nowUtc = DateTime.UtcNow;
+
+            try
+            {
+                using var scope = _serviceProvider.CreateScope();
+                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                var guideService = scope.ServiceProvider.GetRequiredService<ILiveGuideService>();
+                var summaries = await guideService.GetGuideSummariesAsync(
+                    db,
+                    filtered.Select(channel => channel.Id).ToList(),
+                    nowUtc);
+
+                foreach (var channel in filtered)
+                {
+                    summaries.TryGetValue(channel.Id, out var summary);
+                    channel.ApplyGuideSummary(summary, nowUtc);
+                }
+            }
+            catch
+            {
+                foreach (var channel in filtered)
+                {
+                    channel.ApplyGuideSummary(null, nowUtc);
+                }
+            }
+
+            if (requestVersion != _filterRequestVersion)
+            {
+                return;
+            }
+
             DisplayedChannels.Clear();
-            foreach (var ch in query)
+            foreach (var ch in filtered)
             {
                 DisplayedChannels.Add(ch);
             }
