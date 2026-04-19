@@ -183,22 +183,34 @@
                     <Border Grid.Row="1" Style="{StaticResource KroiraSettingsGroupStyle}">
                         <StackPanel Spacing="14">
                             <TextBlock Text="Locked categories" Style="{StaticResource KroiraSectionTitleStyle}" />
-                            <ItemsControl ItemsSource="{x:Bind ViewModel.CategoryLocks, Mode=OneWay}"
-                                          IsEnabled="{x:Bind ViewModel.CanManageParentalControls, Mode=OneWay}">
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate x:DataType="viewModels:ProfileLockOptionViewModel">
-                                        <CheckBox IsChecked="{x:Bind IsLocked, Mode=TwoWay}"
-                                                  Margin="0,4,0,4">
-                                            <StackPanel>
-                                                <TextBlock Text="{x:Bind Label}" />
-                                                <TextBlock Text="{x:Bind Detail}"
-                                                           Foreground="{StaticResource KroiraTextTertiaryBrush}"
-                                                           FontSize="12" />
-                                            </StackPanel>
-                                        </CheckBox>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
+                            <Border MaxHeight="360"
+                                    Padding="10"
+                                    Background="{StaticResource KroiraSurfaceElevatedBrush}"
+                                    BorderBrush="{StaticResource KroiraChromeLineBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="12">
+                                <ScrollViewer VerticalScrollBarVisibility="Auto"
+                                              VerticalScrollMode="Auto"
+                                              HorizontalScrollBarVisibility="Disabled"
+                                              HorizontalScrollMode="Disabled">
+                                    <ItemsControl ItemsSource="{x:Bind ViewModel.CategoryLocks, Mode=OneWay}"
+                                                  IsEnabled="{x:Bind ViewModel.CanManageParentalControls, Mode=OneWay}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate x:DataType="viewModels:ProfileLockOptionViewModel">
+                                                <CheckBox IsChecked="{x:Bind IsLocked, Mode=TwoWay}"
+                                                          Margin="0,4,0,4">
+                                                    <StackPanel>
+                                                        <TextBlock Text="{x:Bind Label}" />
+                                                        <TextBlock Text="{x:Bind Detail}"
+                                                                   Foreground="{StaticResource KroiraTextTertiaryBrush}"
+                                                                   FontSize="12" />
+                                                    </StackPanel>
+                                                </CheckBox>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </ScrollViewer>
+                            </Border>
                         </StackPanel>
                     </Border>
                 </Grid>
