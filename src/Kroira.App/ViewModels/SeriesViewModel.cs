@@ -182,6 +182,9 @@ namespace Kroira.App.ViewModels
         private BrowsePreferences _browsePreferences = new();
         private HashSet<int> _favoriteSeriesIds = new();
         private string _browseLanguageCode = AppLanguageService.DefaultLanguageCode;
+        private bool _isApplyingFilter;
+        private bool _pendingApplyFilter;
+        private string _pendingApplyFilterReason = string.Empty;
 
         public ObservableCollection<SeriesBrowseItemViewModel> FilteredSeries { get; } = new ObservableCollection<SeriesBrowseItemViewModel>();
         public ObservableCollection<SeriesBrowseSlotViewModel> DisplaySeriesSlots { get; } = new ObservableCollection<SeriesBrowseSlotViewModel>();
@@ -258,14 +261,23 @@ namespace Kroira.App.ViewModels
 
         partial void OnSearchQueryChanged(string value)
         {
-            ApplyFilter();
+            LogBrowse($"search changed query='{value}'");
+            ApplyFilter("search-query-changed");
         }
 
         partial void OnSelectedCategoryChanged(BrowserCategoryViewModel? value)
         {
+            if (value == null)
+            {
+                LogBrowse("category changed key=<null> ignored transient-null selection");
+                return;
+            }
+
+            LogBrowse(
+                $"category changed key={value.FilterKey} name={value.Name} initializing={_isInitializingBrowsePreferences} applying={_isApplyingFilter}");
             if (!_isInitializingBrowsePreferences)
             {
-                ApplyFilter();
+                ApplyFilter("selected-category-changed");
             }
         }
 
@@ -465,20 +477,53 @@ namespace Kroira.App.ViewModels
                     ?? SortOptions.First();
                 SelectedSourceOption = SourceOptions.FirstOrDefault(option => option.Id == _browsePreferences.SelectedSourceId)
                     ?? SourceOptions.FirstOrDefault();
-                BuildVisibleCategories(languageCode);
-                SelectedCategory = Categories.FirstOrDefault();
+                var selectedCategory = BuildVisibleCategories(languageCode, SelectedCategory?.FilterKey ?? string.Empty);
+                ReassignSelectedCategory(selectedCategory, "load-initial");
             }
             finally
             {
                 _isInitializingBrowsePreferences = false;
             }
 
-            ApplyFilter();
+            ApplyFilter("load-series");
             StartMetadataEnrichment();
         }
 
-        private void ApplyFilter()
+        private void ApplyFilter(string reason = "direct")
         {
+            if (_isApplyingFilter)
+            {
+                _pendingApplyFilter = true;
+                _pendingApplyFilterReason = reason;
+                LogBrowse($"apply queued reason={reason}");
+                return;
+            }
+
+            _isApplyingFilter = true;
+            try
+            {
+                var nextReason = reason;
+                do
+                {
+                    _pendingApplyFilter = false;
+                    ApplyFilterCore(nextReason);
+                    nextReason = _pendingApplyFilterReason;
+                }
+                while (_pendingApplyFilter);
+            }
+            finally
+            {
+                _pendingApplyFilterReason = string.Empty;
+                _isApplyingFilter = false;
+            }
+        }
+
+        private void ApplyFilterCore(string reason)
+        {
+            var currentCategoryKey = SelectedCategory?.FilterKey ?? string.Empty;
+            LogBrowse(
+                $"apply start reason={reason} selectedKey={currentCategoryKey} search='{SearchQuery}' source={SelectedSourceOption?.Id ?? 0}");
+
             var previousSelectedGroupKey = SelectedSeries?.GroupKey ?? string.Empty;
             foreach (var item in _allSeries)
             {
@@ -486,12 +531,16 @@ namespace Kroira.App.ViewModels
             }
 
             var filteredGroups = BuildFilteredSeriesGroups().ToList();
-            var currentCategoryKey = SelectedCategory?.FilterKey ?? string.Empty;
-            BuildVisibleCategories(_browseLanguageCode);
-            if (!string.IsNullOrWhiteSpace(currentCategoryKey))
+
+            _isInitializingBrowsePreferences = true;
+            try
             {
-                SelectedCategory = Categories.FirstOrDefault(category => string.Equals(category.FilterKey, currentCategoryKey, StringComparison.OrdinalIgnoreCase))
-                    ?? Categories.FirstOrDefault();
+                var selectedCategory = BuildVisibleCategories(_browseLanguageCode, currentCategoryKey);
+                ReassignSelectedCategory(selectedCategory, $"apply:{reason}");
+            }
+            finally
+            {
+                _isInitializingBrowsePreferences = false;
             }
 
             _allSeries = filteredGroups
@@ -517,6 +566,8 @@ namespace Kroira.App.ViewModels
                                  !string.Equals(SelectedSortOption?.Key ?? "recommended", "recommended", StringComparison.OrdinalIgnoreCase);
             IsEmpty = FilteredSeries.Count == 0;
             RefreshDisplaySeriesSlots();
+            LogBrowse(
+                $"apply end reason={reason} groups={filteredGroups.Count} results={FilteredSeries.Count} slots={DisplaySeriesSlots.Count} selectedKey={SelectedCategory?.FilterKey ?? "<all>"}");
         }
 
         [RelayCommand]
@@ -552,7 +603,7 @@ namespace Kroira.App.ViewModels
             }
 
             await db.SaveChangesAsync();
-            ApplyFilter();
+            ApplyFilter("toggle-favorite");
         }
 
         [RelayCommand]
@@ -734,9 +785,9 @@ namespace Kroira.App.ViewModels
             SelectedSourceOption = SourceOptions.FirstOrDefault(option => option.Id == existingSelection) ?? SourceOptions.FirstOrDefault();
         }
 
-        private void BuildVisibleCategories(string languageCode)
+        private BrowserCategoryViewModel? BuildVisibleCategories(string languageCode, string currentKey)
         {
-            var currentKey = SelectedCategory?.FilterKey ?? string.Empty;
+            LogBrowse($"categories rebuild start preserveKey={currentKey}");
             Categories.Clear();
             Categories.Add(new BrowserCategoryViewModel { Id = 0, FilterKey = string.Empty, Name = "All Categories", OrderIndex = -1 });
 
@@ -768,11 +819,32 @@ namespace Kroira.App.ViewModels
                 categoryIndex++;
             }
 
-            if (!string.IsNullOrWhiteSpace(currentKey))
+            var resolvedCategory = !string.IsNullOrWhiteSpace(currentKey)
+                ? Categories.FirstOrDefault(category => string.Equals(category.FilterKey, currentKey, StringComparison.OrdinalIgnoreCase))
+                    ?? Categories.FirstOrDefault()
+                : Categories.FirstOrDefault();
+
+            LogBrowse($"categories rebuild end count={Categories.Count} resolvedKey={resolvedCategory?.FilterKey ?? "<all>"}");
+            return resolvedCategory;
+        }
+
+        private void ReassignSelectedCategory(BrowserCategoryViewModel? category, string reason)
+        {
+            var currentKey = SelectedCategory?.FilterKey ?? string.Empty;
+            var targetKey = category?.FilterKey ?? string.Empty;
+            var selectionAlreadyBound = ReferenceEquals(SelectedCategory, category);
+            var selectionHasCurrentKey = SelectedCategory != null &&
+                                         Categories.Contains(SelectedCategory) &&
+                                         string.Equals(currentKey, targetKey, StringComparison.OrdinalIgnoreCase);
+
+            if (selectionAlreadyBound || selectionHasCurrentKey)
             {
-                SelectedCategory = Categories.FirstOrDefault(category => string.Equals(category.FilterKey, currentKey, StringComparison.OrdinalIgnoreCase))
-                    ?? Categories.FirstOrDefault();
+                LogBrowse($"category rebind skipped reason={reason} key={targetKey}");
+                return;
             }
+
+            LogBrowse($"category reassigned reason={reason} from={currentKey} to={targetKey}");
+            SelectedCategory = category;
         }
 
         private void BuildCategoryManagerOptions()
@@ -805,10 +877,10 @@ namespace Kroira.App.ViewModels
             {
                 BuildSourceOptions();
                 BuildCategoryManagerOptions();
-                BuildVisibleCategories(_browseLanguageCode);
+                LogBrowse("save preferences requested collection rebuild");
             }
 
-            ApplyFilter();
+            ApplyFilter(rebuildCollections ? "save-preferences-rebuild" : "save-preferences");
         }
 
         private IEnumerable<CatalogSeriesGroup> SortSeriesGroups(IEnumerable<CatalogSeriesGroup> groups)
@@ -848,6 +920,11 @@ namespace Kroira.App.ViewModels
             }
 
             _ = SaveBrowsePreferencesAsync(true);
+        }
+
+        private void LogBrowse(string message)
+        {
+            BrowseRuntimeLogger.Log("SERIES", message);
         }
 
         private string NormalizeCategoryKey(string categoryName)

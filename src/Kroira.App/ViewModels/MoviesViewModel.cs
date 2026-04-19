@@ -102,6 +102,9 @@ namespace Kroira.App.ViewModels
         private int _activeProfileId;
         private string _languageCode = AppLanguageService.DefaultLanguageCode;
         private bool _isInitializing;
+        private bool _isApplyingFilter;
+        private bool _pendingApplyFilter;
+        private string _pendingApplyFilterReason = string.Empty;
 
         public ObservableCollection<MovieBrowseItemViewModel> FilteredMovies { get; } = new();
         public ObservableCollection<MovieBrowseSlotViewModel> DisplayMovieSlots { get; } = new();
@@ -140,8 +143,27 @@ namespace Kroira.App.ViewModels
             SortOptions.Add(new BrowseSortOptionViewModel("favorites_first", "Favorites first"));
         }
 
-        partial void OnSearchQueryChanged(string value) => ApplyFilter();
-        partial void OnSelectedCategoryChanged(BrowserCategoryViewModel? value) { if (!_isInitializing) ApplyFilter(); }
+        partial void OnSearchQueryChanged(string value)
+        {
+            LogBrowse($"search changed query='{value}'");
+            ApplyFilter("search-query-changed");
+        }
+
+        partial void OnSelectedCategoryChanged(BrowserCategoryViewModel? value)
+        {
+            if (value == null)
+            {
+                LogBrowse("category changed key=<null> ignored transient-null selection");
+                return;
+            }
+
+            LogBrowse(
+                $"category changed key={value.FilterKey} name={value.Name} initializing={_isInitializing} applying={_isApplyingFilter}");
+            if (!_isInitializing)
+            {
+                ApplyFilter("selected-category-changed");
+            }
+        }
         partial void OnSelectedSortOptionChanged(BrowseSortOptionViewModel? value) { if (!_isInitializing) { _preferences.SortKey = value?.Key ?? "recommended"; _ = SavePreferencesAsync(false); } }
         partial void OnSelectedSourceOptionChanged(BrowseSourceFilterOptionViewModel? value) { if (!_isInitializing) { _preferences.SelectedSourceId = value?.Id ?? 0; _ = SavePreferencesAsync(false); } }
         partial void OnFavoritesOnlyChanged(bool value) { if (!_isInitializing) { _preferences.FavoritesOnly = value; _ = SavePreferencesAsync(false); } }
@@ -228,15 +250,15 @@ namespace Kroira.App.ViewModels
                     ?? SortOptions.First();
                 SelectedSourceOption = SourceOptions.FirstOrDefault(option => option.Id == _preferences.SelectedSourceId)
                     ?? SourceOptions.FirstOrDefault();
-                BuildVisibleCategories();
-                SelectedCategory = Categories.FirstOrDefault();
+                var selectedCategory = BuildVisibleCategories(SelectedCategory?.FilterKey ?? string.Empty);
+                ReassignSelectedCategory(selectedCategory, "load-initial");
             }
             finally
             {
                 _isInitializing = false;
             }
 
-            ApplyFilter();
+            ApplyFilter("load-movies");
             StartMetadataEnrichment();
         }
 
@@ -297,16 +319,52 @@ namespace Kroira.App.ViewModels
             await SavePreferencesAsync(true);
         }
 
-        private void ApplyFilter()
+        private void ApplyFilter(string reason = "direct")
         {
-            var filteredGroups = BuildFilteredMovieGroups().ToList();
-            var currentCategoryKey = SelectedCategory?.FilterKey ?? string.Empty;
-
-            BuildVisibleCategories();
-            if (!string.IsNullOrWhiteSpace(currentCategoryKey))
+            if (_isApplyingFilter)
             {
-                SelectedCategory = Categories.FirstOrDefault(category => string.Equals(category.FilterKey, currentCategoryKey, StringComparison.OrdinalIgnoreCase))
-                    ?? Categories.FirstOrDefault();
+                _pendingApplyFilter = true;
+                _pendingApplyFilterReason = reason;
+                LogBrowse($"apply queued reason={reason}");
+                return;
+            }
+
+            _isApplyingFilter = true;
+            try
+            {
+                var nextReason = reason;
+                do
+                {
+                    _pendingApplyFilter = false;
+                    ApplyFilterCore(nextReason);
+                    nextReason = _pendingApplyFilterReason;
+                }
+                while (_pendingApplyFilter);
+            }
+            finally
+            {
+                _pendingApplyFilterReason = string.Empty;
+                _isApplyingFilter = false;
+            }
+        }
+
+        private void ApplyFilterCore(string reason)
+        {
+            string currentCategoryKey = SelectedCategory?.FilterKey ?? string.Empty;
+            LogBrowse(
+                $"apply start reason={reason} selectedKey={currentCategoryKey} search='{SearchQuery}' source={SelectedSourceOption?.Id ?? 0}");
+
+            var filteredGroups = BuildFilteredMovieGroups().ToList();
+
+            _isInitializing = true;
+            try
+            {
+                var selectedCategory = BuildVisibleCategories(currentCategoryKey);
+                ReassignSelectedCategory(selectedCategory, $"apply:{reason}");
+            }
+            finally
+            {
+                _isInitializing = false;
             }
 
             FilteredMovies.Clear();
@@ -328,6 +386,8 @@ namespace Kroira.App.ViewModels
                                  (SelectedSourceOption?.Id ?? 0) != 0 ||
                                  !string.Equals(SelectedSortOption?.Key ?? "recommended", "recommended", StringComparison.OrdinalIgnoreCase);
             RefreshDisplayMovieSlots();
+            LogBrowse(
+                $"apply end reason={reason} groups={filteredGroups.Count} results={FilteredMovies.Count} slots={DisplayMovieSlots.Count} selectedKey={SelectedCategory?.FilterKey ?? "<all>"}");
         }
 
         [RelayCommand]
@@ -363,7 +423,7 @@ namespace Kroira.App.ViewModels
             }
 
             await db.SaveChangesAsync();
-            ApplyFilter();
+            ApplyFilter("toggle-favorite");
         }
 
         private IEnumerable<CatalogMovieGroup> BuildFilteredMovieGroups()
@@ -545,9 +605,9 @@ namespace Kroira.App.ViewModels
             SelectedSourceOption = SourceOptions.FirstOrDefault(option => option.Id == existingSelection) ?? SourceOptions.FirstOrDefault();
         }
 
-        private void BuildVisibleCategories()
+        private BrowserCategoryViewModel? BuildVisibleCategories(string currentKey)
         {
-            var currentKey = SelectedCategory?.FilterKey ?? string.Empty;
+            LogBrowse($"categories rebuild start preserveKey={currentKey ?? string.Empty}");
             Categories.Clear();
             Categories.Add(new BrowserCategoryViewModel { Id = 0, FilterKey = string.Empty, Name = "All Categories", OrderIndex = -1 });
 
@@ -578,11 +638,32 @@ namespace Kroira.App.ViewModels
                 Categories.Add(category);
             }
 
-            if (!string.IsNullOrWhiteSpace(currentKey))
+            var resolvedCategory = !string.IsNullOrWhiteSpace(currentKey)
+                ? Categories.FirstOrDefault(category => string.Equals(category.FilterKey, currentKey, StringComparison.OrdinalIgnoreCase))
+                    ?? Categories.FirstOrDefault()
+                : Categories.FirstOrDefault();
+
+            LogBrowse($"categories rebuild end count={Categories.Count} resolvedKey={resolvedCategory?.FilterKey ?? "<all>"}");
+            return resolvedCategory;
+        }
+
+        private void ReassignSelectedCategory(BrowserCategoryViewModel? category, string reason)
+        {
+            var currentKey = SelectedCategory?.FilterKey ?? string.Empty;
+            var targetKey = category?.FilterKey ?? string.Empty;
+            var selectionAlreadyBound = ReferenceEquals(SelectedCategory, category);
+            var selectionHasCurrentKey = SelectedCategory != null &&
+                                         Categories.Contains(SelectedCategory) &&
+                                         string.Equals(currentKey, targetKey, StringComparison.OrdinalIgnoreCase);
+
+            if (selectionAlreadyBound || selectionHasCurrentKey)
             {
-                SelectedCategory = Categories.FirstOrDefault(category => string.Equals(category.FilterKey, currentKey, StringComparison.OrdinalIgnoreCase))
-                    ?? Categories.FirstOrDefault();
+                LogBrowse($"category rebind skipped reason={reason} key={targetKey}");
+                return;
             }
+
+            LogBrowse($"category reassigned reason={reason} from={currentKey} to={targetKey}");
+            SelectedCategory = category;
         }
 
         private void BuildCategoryManagerOptions()
@@ -615,10 +696,10 @@ namespace Kroira.App.ViewModels
             {
                 BuildSourceOptions();
                 BuildCategoryManagerOptions();
-                BuildVisibleCategories();
+                LogBrowse("save preferences requested collection rebuild");
             }
 
-            ApplyFilter();
+            ApplyFilter(rebuildCollections ? "save-preferences-rebuild" : "save-preferences");
         }
 
         private IEnumerable<CatalogMovieGroup> SortMovieGroups(IEnumerable<CatalogMovieGroup> groups)
@@ -658,6 +739,11 @@ namespace Kroira.App.ViewModels
             }
 
             _ = SavePreferencesAsync(true);
+        }
+
+        private void LogBrowse(string message)
+        {
+            BrowseRuntimeLogger.Log("MOVIES", message);
         }
 
         private string NormalizeCategoryKey(string categoryName)
