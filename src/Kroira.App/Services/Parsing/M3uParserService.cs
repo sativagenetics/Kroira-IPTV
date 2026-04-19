@@ -67,6 +67,8 @@ namespace Kroira.App.Services.Parsing
             new Regex(@"tvg-logo=""([^""]*)""", RegexOptions.Compiled);
         private static readonly Regex _tvgTypeRegex =
             new Regex(@"tvg-type=""([^""]*)""", RegexOptions.Compiled);
+        private static readonly Regex _tvgIdRegex =
+            new Regex(@"tvg-id=""([^""]*)""", RegexOptions.Compiled);
 
         public async Task ParseAndImportM3uAsync(AppDbContext db, int sourceProfileId)
         {
@@ -95,6 +97,7 @@ namespace Kroira.App.Services.Parsing
             string currentLogo = string.Empty;
             string currentName = string.Empty;
             string currentTvgType = string.Empty;
+            string currentTvgId = string.Empty;
             bool expectsUrl = false;
 
             foreach (var line in lines)
@@ -111,6 +114,9 @@ namespace Kroira.App.Services.Parsing
                     var tvgTypeMatch = _tvgTypeRegex.Match(line);
                     currentTvgType = tvgTypeMatch.Success ? tvgTypeMatch.Groups[1].Value.Trim() : string.Empty;
 
+                    var tvgIdMatch = _tvgIdRegex.Match(line);
+                    currentTvgId = tvgIdMatch.Success ? tvgIdMatch.Groups[1].Value.Trim() : string.Empty;
+
                     var commaIndex = line.LastIndexOf(',');
                     currentName = (commaIndex != -1 && commaIndex < line.Length - 1)
                         ? line.Substring(commaIndex + 1).Trim()
@@ -126,7 +132,8 @@ namespace Kroira.App.Services.Parsing
                         Name = currentName,
                         Url = line.Trim(),
                         LogoUrl = currentLogo,
-                        TvgType = currentTvgType
+                        TvgType = currentTvgType,
+                        TvgId = currentTvgId
                     });
                     expectsUrl = false;
                 }
@@ -182,7 +189,8 @@ namespace Kroira.App.Services.Parsing
                         {
                             Name = entry.Name,
                             StreamUrl = entry.Url,
-                            LogoUrl = entry.LogoUrl
+                            LogoUrl = entry.LogoUrl,
+                            EpgChannelId = entry.TvgId
                         });
                         totalChannels++;
                         break;
@@ -537,6 +545,7 @@ namespace Kroira.App.Services.Parsing
             public string Url { get; set; } = string.Empty;
             public string LogoUrl { get; set; } = string.Empty;
             public string TvgType { get; set; } = string.Empty;
+            public string TvgId { get; set; } = string.Empty;
         }
 
         private sealed class EpisodeEntry

@@ -115,6 +115,7 @@ namespace Kroira.App.Services.Parsing
 
                             var name = element.TryGetProperty("name", out var nProp) ? nProp.GetString() : "Unknown";
                             var logo = element.TryGetProperty("stream_icon", out var lProp) ? lProp.GetString() : string.Empty;
+                            var epgChannelId = GetFirstJsonString(element, "epg_channel_id", "epg_id", "tvg_id");
 
                             if (string.IsNullOrEmpty(streamId)) continue;
 
@@ -128,7 +129,8 @@ namespace Kroira.App.Services.Parsing
                                     ChannelCategoryId = mappedCat.Id,
                                     Name = string.IsNullOrWhiteSpace(name) ? "Unknown Channel" : name,
                                     StreamUrl = streamUrl,
-                                    LogoUrl = logo ?? string.Empty
+                                    LogoUrl = logo ?? string.Empty,
+                                    EpgChannelId = string.IsNullOrWhiteSpace(epgChannelId) ? streamId : epgChannelId
                                 });
                             }
                         }

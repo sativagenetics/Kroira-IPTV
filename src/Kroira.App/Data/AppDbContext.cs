@@ -82,6 +82,10 @@ namespace Kroira.App.Data
                 .HasIndex(e => new { e.ChannelId, e.StartTimeUtc })
                 .HasDatabaseName("IX_EpgPrograms_ChannelId_StartTimeUtc");
 
+            modelBuilder.Entity<Channel>()
+                .HasIndex(e => e.EpgChannelId)
+                .HasDatabaseName("IX_Channels_EpgChannelId");
+
             // Optimize query access
             modelBuilder.Entity<Favorite>()
                 .HasIndex(f => new { f.ContentType, f.ContentId });

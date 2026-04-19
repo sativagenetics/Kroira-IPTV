@@ -89,6 +89,7 @@ namespace Kroira.App.Data
             EnsureColumn(conn, "Series", "VoteAverage", "REAL NOT NULL DEFAULT 0.0");
 
             // EPG pass: nullable programme metadata columns
+            EnsureColumn(conn, "Channels", "EpgChannelId", "TEXT NOT NULL DEFAULT ''");
             EnsureColumn(conn, "EpgPrograms", "Subtitle", "TEXT");
             EnsureColumn(conn, "EpgPrograms", "Category", "TEXT");
 
@@ -110,6 +111,7 @@ namespace Kroira.App.Data
             EnsureIndex(conn, "IX_Movies_TmdbId", "Movies", "TmdbId");
             EnsureIndex(conn, "IX_Series_MetadataUpdatedAt", "Series", "MetadataUpdatedAt");
             EnsureIndex(conn, "IX_Series_TmdbId", "Series", "TmdbId");
+            EnsureIndex(conn, "IX_Channels_EpgChannelId", "Channels", "EpgChannelId");
             EnsureCompositeIndex(conn, "IX_EpgPrograms_ChannelId_StartTimeUtc", "EpgPrograms", "ChannelId", "StartTimeUtc");
         }
 

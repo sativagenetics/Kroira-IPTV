@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Kroira.App.Data;
+using Kroira.App.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -23,6 +24,7 @@ namespace Kroira.App.ViewModels
 
         // EPG health (set at load time)
         public bool HasEpgUrl { get; set; }
+        public bool CanSyncEpg { get; set; }
         public bool HasEpgData { get; set; }
         public string EpgLastSyncText { get; set; } = string.Empty;
         public int EpgMatchedChannels { get; set; }
@@ -37,7 +39,7 @@ namespace Kroira.App.ViewModels
         private bool _isEpgSyncing;
 
         public string EpgSyncButtonText => IsEpgSyncing ? "Syncing…" : "EPG";
-        public bool IsEpgSyncEnabled => HasEpgUrl && !IsEpgSyncing;
+        public bool IsEpgSyncEnabled => CanSyncEpg && !IsEpgSyncing;
 
         [ObservableProperty]
         private string _status = string.Empty;
@@ -46,7 +48,7 @@ namespace Kroira.App.ViewModels
         private string _healthLabel = "Saved";
 
         public Microsoft.UI.Xaml.Visibility ParseVisibility => Type == "M3U" ? Microsoft.UI.Xaml.Visibility.Visible : Microsoft.UI.Xaml.Visibility.Collapsed;
-        public Microsoft.UI.Xaml.Visibility SyncEpgVisibility => HasEpgUrl ? Microsoft.UI.Xaml.Visibility.Visible : Microsoft.UI.Xaml.Visibility.Collapsed;
+        public Microsoft.UI.Xaml.Visibility SyncEpgVisibility => CanSyncEpg ? Microsoft.UI.Xaml.Visibility.Visible : Microsoft.UI.Xaml.Visibility.Collapsed;
         public Microsoft.UI.Xaml.Visibility SyncXtreamVisibility => Type == "Xtream" ? Microsoft.UI.Xaml.Visibility.Visible : Microsoft.UI.Xaml.Visibility.Collapsed;
         public Microsoft.UI.Xaml.Visibility BrowseVisibility => (Type == "M3U" || Type == "Xtream") ? Microsoft.UI.Xaml.Visibility.Visible : Microsoft.UI.Xaml.Visibility.Collapsed;
         public Microsoft.UI.Xaml.Visibility HealthyVisibility => HealthLabel is "Healthy" or "Ready" ? Microsoft.UI.Xaml.Visibility.Visible : Microsoft.UI.Xaml.Visibility.Collapsed;
@@ -159,6 +161,7 @@ namespace Kroira.App.ViewModels
                     : hasSyncIssue ? "Attention" : "Healthy";
 
                 var hasEpgUrl = credEpgUrls.TryGetValue(item.Profile.Id, out var epgUrl) && !string.IsNullOrWhiteSpace(epgUrl);
+                var canSyncEpg = item.Profile.Type is SourceType.M3U or SourceType.Xtream;
                 epgLogs.TryGetValue(item.Profile.Id, out var epgLog);
 
                 var epgSummary = epgLog != null
@@ -180,6 +183,7 @@ namespace Kroira.App.ViewModels
                     HealthLabel = healthLabel,
                     Status = statusStr,
                     HasEpgUrl = hasEpgUrl,
+                    CanSyncEpg = canSyncEpg,
                     HasEpgData = epgLog != null,
                     EpgLastSyncText = epgLastSync,
                     EpgMatchedChannels = epgLog?.MatchedChannelCount ?? 0,
@@ -238,15 +242,6 @@ namespace Kroira.App.ViewModels
             {
                 using var scope = _serviceProvider.CreateScope();
                 var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-
-                var cred = await db.SourceCredentials.FirstOrDefaultAsync(c => c.SourceProfileId == id);
-                if (cred == null || string.IsNullOrWhiteSpace(cred.EpgUrl))
-                {
-                    item.IsEpgSyncing = false;
-                    item.HealthLabel = "Attention";
-                    item.Status = "No EPG URL configured. Edit the source to add one.";
-                    return;
-                }
 
                 var parser = scope.ServiceProvider.GetRequiredService<Kroira.App.Services.Parsing.IXmltvParserService>();
                 await parser.ParseAndImportEpgAsync(db, id);
