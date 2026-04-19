@@ -474,15 +474,20 @@
                                                    Style="{StaticResource KroiraLabelStyle}"
                                                    Foreground="{StaticResource KroiraAccentBrush}" />
                                         <ComboBox Style="{StaticResource KroiraFilterComboBoxStyle}"
-                                                  ItemsSource="{x:Bind ViewModel.SelectedSeries.Seasons, Mode=OneWay}"
+                                                  ItemsSource="{x:Bind ViewModel.SeasonOptions, Mode=OneWay}"
                                                   SelectedItem="{x:Bind ViewModel.SelectedSeason, Mode=TwoWay}"
                                                   HorizontalAlignment="Stretch">
                                             <ComboBox.ItemTemplate>
                                                 <DataTemplate>
-                                                    <TextBlock Text="{Binding SeasonNumber, Converter={StaticResource SeasonPrefixConverter}}" />
+                                                    <TextBlock Text="{Binding DisplayName}" />
                                                 </DataTemplate>
                                             </ComboBox.ItemTemplate>
                                         </ComboBox>
+                                        <ToggleSwitch Header="Hide watched episodes"
+                                                      IsOn="{x:Bind ViewModel.HideWatchedEpisodes, Mode=TwoWay}"
+                                                      OnContent=""
+                                                      OffContent=""
+                                                      HorizontalAlignment="Left" />
                                     </StackPanel>
                                     <Button Grid.Column="1"
                                             Content="Play"
@@ -513,7 +518,7 @@
                                            Foreground="{StaticResource KroiraAccentBrush}"
                                            VerticalAlignment="Center" />
                                 <TextBlock Grid.Column="1"
-                                           Text="{x:Bind ViewModel.SelectedSeason.Episodes.Count, Mode=OneWay}"
+                                           Text="{x:Bind ViewModel.EpisodeItems.Count, Mode=OneWay}"
                                            Visibility="{x:Bind ViewModel.EpisodesListVisibility, Mode=OneWay}"
                                            Style="{StaticResource KroiraMetaStyle}"
                                            VerticalAlignment="Center" />
@@ -541,7 +546,7 @@
 
                             <!-- Episodes list with constrained max height so it scrolls within the panel -->
                             <ListView Visibility="{x:Bind ViewModel.EpisodesListVisibility, Mode=OneWay}"
-                                      ItemsSource="{x:Bind ViewModel.SelectedSeason.Episodes, Mode=OneWay}"
+                                      ItemsSource="{x:Bind ViewModel.EpisodeItems, Mode=OneWay}"
                                       MaxHeight="380"
                                       SelectionMode="Single"
                                       SelectionChanged="EpisodeList_SelectionChanged"
@@ -558,11 +563,11 @@
                                                 BorderThickness="1"
                                                 CornerRadius="9"
                                                 Padding="13,11">
-                                            <Grid ColumnSpacing="10">
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="Auto" />
-                                                    <ColumnDefinition Width="*" />
-                                                    <ColumnDefinition Width="Auto" />
+                                                <Grid ColumnSpacing="10">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
                                                 </Grid.ColumnDefinitions>
 
                                                 <Border Grid.Column="0"
@@ -578,18 +583,31 @@
                                                                HorizontalAlignment="Center" />
                                                 </Border>
 
-                                                <TextBlock Grid.Column="1"
-                                                           Text="{Binding Title}"
-                                                           Style="{StaticResource KroiraTitleStyle}"
-                                                           FontSize="13"
-                                                           TextTrimming="CharacterEllipsis"
-                                                           VerticalAlignment="Center" />
+                                                    <StackPanel Grid.Column="1" Spacing="3" VerticalAlignment="Center">
+                                                        <TextBlock Text="{Binding Title}"
+                                                                   Style="{StaticResource KroiraTitleStyle}"
+                                                                   FontSize="13"
+                                                                   TextTrimming="CharacterEllipsis" />
+                                                        <TextBlock Text="{Binding StatusText}"
+                                                                   Style="{StaticResource KroiraMetaStyle}" />
+                                                    </StackPanel>
 
-                                                <FontIcon Grid.Column="2"
-                                                          Glyph="&#xE102;"
-                                                          FontSize="11"
-                                                          Foreground="{StaticResource KroiraAccentBrush}"
-                                                          VerticalAlignment="Center" />
+                                                    <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                                        <Button Content="Watched"
+                                                                Click="MarkEpisodeWatched_Click"
+                                                                Style="{StaticResource KroiraGhostButtonStyle}"
+                                                                FontSize="11"
+                                                                Visibility="{Binding MarkWatchedVisibility}" />
+                                                        <Button Content="Unwatched"
+                                                                Click="MarkEpisodeUnwatched_Click"
+                                                                Style="{StaticResource KroiraGhostButtonStyle}"
+                                                                FontSize="11"
+                                                                Visibility="{Binding MarkUnwatchedVisibility}" />
+                                                        <FontIcon Glyph="&#xE102;"
+                                                                  FontSize="11"
+                                                                  Foreground="{StaticResource KroiraAccentBrush}"
+                                                                  VerticalAlignment="Center" />
+                                                    </StackPanel>
                                             </Grid>
                                         </Border>
                                     </DataTemplate>

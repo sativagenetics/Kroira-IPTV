@@ -5,6 +5,7 @@ namespace Kroira.App.Models
     public class Favorite
     {
         public int Id { get; set; }
+        public int ProfileId { get; set; } = 1;
         public FavoriteType ContentType { get; set; }
         public int ContentId { get; set; }
     }

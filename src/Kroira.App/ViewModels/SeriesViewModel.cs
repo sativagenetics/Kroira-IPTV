@@ -30,6 +30,52 @@ namespace Kroira.App.ViewModels
         public string Label => Variant.DisplayName;
     }
 
+    public sealed class SeriesSeasonOptionViewModel
+    {
+        public SeriesSeasonOptionViewModel(Season season, int watchedEpisodeCount, int totalEpisodeCount)
+        {
+            Season = season;
+            WatchedEpisodeCount = watchedEpisodeCount;
+            TotalEpisodeCount = totalEpisodeCount;
+        }
+
+        public Season Season { get; }
+        public int Id => Season.Id;
+        public int SeasonNumber => Season.SeasonNumber;
+        public int WatchedEpisodeCount { get; }
+        public int TotalEpisodeCount { get; }
+        public string DisplayName => TotalEpisodeCount > 0
+            ? $"Season {SeasonNumber} ({WatchedEpisodeCount}/{TotalEpisodeCount})"
+            : $"Season {SeasonNumber}";
+    }
+
+    public sealed class SeriesEpisodeItemViewModel
+    {
+        public SeriesEpisodeItemViewModel(Episode episode, int seasonNumber, WatchProgressSnapshot? snapshot)
+        {
+            Episode = episode;
+            SeasonNumber = seasonNumber;
+            Snapshot = snapshot;
+        }
+
+        public Episode Episode { get; }
+        public WatchProgressSnapshot? Snapshot { get; }
+        public int Id => Episode.Id;
+        public int SeasonNumber { get; }
+        public int EpisodeNumber => Episode.EpisodeNumber;
+        public string Title => Episode.Title;
+        public string StreamUrl => Episode.StreamUrl;
+        public bool IsWatched => Snapshot?.IsWatched == true;
+        public long ResumePositionMs => Snapshot?.ResumePositionMs ?? 0;
+        public string StatusText => IsWatched
+            ? "Watched"
+            : Snapshot?.HasResumePoint == true
+                ? $"Resume {TimeSpan.FromMilliseconds(ResumePositionMs):hh\\:mm\\:ss}"
+                : "Unwatched";
+        public Visibility MarkWatchedVisibility => IsWatched ? Visibility.Collapsed : Visibility.Visible;
+        public Visibility MarkUnwatchedVisibility => IsWatched ? Visibility.Visible : Visibility.Collapsed;
+    }
+
     public partial class SeriesBrowseItemViewModel : ObservableObject
     {
         public SeriesBrowseItemViewModel(CatalogSeriesGroup group, bool isFavorite)
@@ -122,10 +168,16 @@ namespace Kroira.App.ViewModels
         private const int BrowseGridColumns = 3;
         private readonly IServiceProvider _serviceProvider;
         private List<SeriesBrowseItemViewModel> _allSeries = new List<SeriesBrowseItemViewModel>();
+        private readonly Dictionary<int, WatchProgressSnapshot> _selectedEpisodeSnapshots = new();
+        private bool _isLoadingWatchPreferences;
+        private int _activeProfileId;
+        private int? _pendingEpisodeSelectionId;
 
         public ObservableCollection<SeriesBrowseItemViewModel> FilteredSeries { get; } = new ObservableCollection<SeriesBrowseItemViewModel>();
         public ObservableCollection<SeriesBrowseSlotViewModel> DisplaySeriesSlots { get; } = new ObservableCollection<SeriesBrowseSlotViewModel>();
         public ObservableCollection<BrowserCategoryViewModel> Categories { get; } = new ObservableCollection<BrowserCategoryViewModel>();
+        public ObservableCollection<SeriesSeasonOptionViewModel> SeasonOptions { get; } = new ObservableCollection<SeriesSeasonOptionViewModel>();
+        public ObservableCollection<SeriesEpisodeItemViewModel> EpisodeItems { get; } = new ObservableCollection<SeriesEpisodeItemViewModel>();
 
         [ObservableProperty]
         private string _searchQuery = string.Empty;
@@ -139,17 +191,20 @@ namespace Kroira.App.ViewModels
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(EpisodesListVisibility))]
         [NotifyPropertyChangedFor(nameof(EpisodesEmptyVisibility))]
-        private Season? _selectedSeason;
+        private SeriesSeasonOptionViewModel? _selectedSeason;
 
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(SelectedEpisodePlayVisibility))]
-        private Episode? _selectedEpisode;
+        private SeriesEpisodeItemViewModel? _selectedEpisode;
+
+        [ObservableProperty]
+        private bool _hideWatchedEpisodes;
 
         public Visibility EpisodesListVisibility =>
-            SelectedSeason?.Episodes?.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+            EpisodeItems.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
 
         public Visibility EpisodesEmptyVisibility =>
-            SelectedSeason != null && !(SelectedSeason.Episodes?.Count > 0) ? Visibility.Visible : Visibility.Collapsed;
+            SelectedSeason != null && EpisodeItems.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
 
         public Visibility SelectedEpisodePlayVisibility => SelectedEpisode == null ? Visibility.Collapsed : Visibility.Visible;
 
@@ -176,6 +231,8 @@ namespace Kroira.App.ViewModels
         {
             SelectedSeason = null;
             SelectedEpisode = null;
+            SeasonOptions.Clear();
+            EpisodeItems.Clear();
             SelectedSeriesStatus = string.Empty;
             SelectedSeriesStatusVisibility = Visibility.Collapsed;
 
@@ -194,9 +251,20 @@ namespace Kroira.App.ViewModels
             _ = EnsureSeriesDetailsAsync(value);
         }
 
-        partial void OnSelectedSeasonChanged(Season? value)
+        partial void OnSelectedSeasonChanged(SeriesSeasonOptionViewModel? value)
         {
-            SelectSingleEpisodeForSeason(value);
+            BuildEpisodeItems(value, _pendingEpisodeSelectionId);
+            _pendingEpisodeSelectionId = null;
+        }
+
+        partial void OnHideWatchedEpisodesChanged(bool value)
+        {
+            if (_isLoadingWatchPreferences)
+            {
+                return;
+            }
+
+            _ = SaveHideWatchedEpisodesAsync(value);
         }
 
         public SeriesViewModel(IServiceProvider serviceProvider)
@@ -210,10 +278,26 @@ namespace Kroira.App.ViewModels
             using var scope = _serviceProvider.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             var deduplicationService = scope.ServiceProvider.GetRequiredService<ICatalogDeduplicationService>();
-            var languageCode = await AppLanguageService.GetLanguageAsync(db);
-            var seriesGroups = await deduplicationService.LoadSeriesGroupsAsync(db);
+            var profileService = scope.ServiceProvider.GetRequiredService<IProfileStateService>();
+            var watchStateService = scope.ServiceProvider.GetRequiredService<ILibraryWatchStateService>();
+            var access = await profileService.GetAccessSnapshotAsync(db);
+            _activeProfileId = access.ProfileId;
+            _isLoadingWatchPreferences = true;
+            try
+            {
+                HideWatchedEpisodes = await watchStateService.GetHideWatchedEpisodesAsync(db, _activeProfileId);
+            }
+            finally
+            {
+                _isLoadingWatchPreferences = false;
+            }
+            var languageCode = await AppLanguageService.GetLanguageAsync(db, access.ProfileId);
+            var seriesGroups = (await deduplicationService.LoadSeriesGroupsAsync(db))
+                .Select(group => FilterGroup(group, access))
+                .OfType<CatalogSeriesGroup>()
+                .ToList();
             var favoriteIds = (await db.Favorites
-                .Where(f => f.ContentType == FavoriteType.Series)
+                .Where(f => f.ProfileId == access.ProfileId && f.ContentType == FavoriteType.Series)
                 .Select(f => f.ContentId)
                 .ToListAsync())
                 .ToHashSet();
@@ -307,13 +391,15 @@ namespace Kroira.App.ViewModels
 
             using var scope = _serviceProvider.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var profileService = scope.ServiceProvider.GetRequiredService<IProfileStateService>();
+            var activeProfileId = await profileService.GetActiveProfileIdAsync(db);
             var existingFavorites = await db.Favorites
-                .Where(f => f.ContentType == FavoriteType.Series && target.VariantIds.Contains(f.ContentId))
+                .Where(f => f.ProfileId == activeProfileId && f.ContentType == FavoriteType.Series && target.VariantIds.Contains(f.ContentId))
                 .ToListAsync();
 
             if (existingFavorites.Count == 0)
             {
-                db.Favorites.Add(new Favorite { ContentType = FavoriteType.Series, ContentId = seriesId });
+                db.Favorites.Add(new Favorite { ProfileId = activeProfileId, ContentType = FavoriteType.Series, ContentId = seriesId });
                 target.IsFavorite = true;
             }
             else
@@ -421,23 +507,7 @@ namespace Kroira.App.ViewModels
                 .Where(item => item.Episodes.Count > 0)
                 .OrderBy(item => item.Season.SeasonNumber)
                 .ToList();
-
-            var allPlayableEpisodes = playableSeasonEpisodes
-                .SelectMany(item => item.Episodes.Select(episode => new { item.Season, Episode = episode }))
-                .ToList();
-
-            if (allPlayableEpisodes.Count == 1)
-            {
-                SelectedSeason = allPlayableEpisodes[0].Season;
-                SelectedEpisode = allPlayableEpisodes[0].Episode;
-            }
-            else
-            {
-                SelectedSeason = playableSeasonEpisodes.Count == 1
-                    ? playableSeasonEpisodes[0].Season
-                    : playableSeasonEpisodes.FirstOrDefault()?.Season;
-                SelectSingleEpisodeForSeason(SelectedSeason);
-            }
+            await RefreshSelectedSeriesWatchStateAsync(series);
 
             if (SelectedSeason == null)
             {
@@ -453,16 +523,6 @@ namespace Kroira.App.ViewModels
             OnPropertyChanged(nameof(SelectedSeries));
             OnPropertyChanged(nameof(EpisodesListVisibility));
             OnPropertyChanged(nameof(EpisodesEmptyVisibility));
-        }
-
-        private void SelectSingleEpisodeForSeason(Season? season)
-        {
-            var playableEpisodes = season?.Episodes?
-                .Where(episode => !string.IsNullOrWhiteSpace(episode.StreamUrl))
-                .OrderBy(episode => episode.EpisodeNumber)
-                .ToList();
-
-            SelectedEpisode = playableEpisodes?.Count == 1 ? playableEpisodes[0] : null;
         }
 
         private async Task TryLoadEpisodesFromProviderAsync(Series series)
@@ -553,7 +613,45 @@ namespace Kroira.App.ViewModels
             {
                 SelectedSeason = null;
                 SelectedEpisode = null;
+                SeasonOptions.Clear();
+                EpisodeItems.Clear();
                 _ = EnsureSeriesDetailsAsync(item);
+            }
+        }
+
+        [RelayCommand]
+        public async Task MarkEpisodeWatchedAsync(SeriesEpisodeItemViewModel? item)
+        {
+            if (item == null)
+            {
+                return;
+            }
+
+            using var scope = _serviceProvider.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var watchStateService = scope.ServiceProvider.GetRequiredService<ILibraryWatchStateService>();
+            await watchStateService.MarkWatchedAsync(db, _activeProfileId, PlaybackContentType.Episode, item.Id);
+            if (SelectedSeries != null)
+            {
+                await RefreshSelectedSeriesWatchStateAsync(SelectedSeries.ActiveSeries);
+            }
+        }
+
+        [RelayCommand]
+        public async Task MarkEpisodeUnwatchedAsync(SeriesEpisodeItemViewModel? item)
+        {
+            if (item == null)
+            {
+                return;
+            }
+
+            using var scope = _serviceProvider.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var watchStateService = scope.ServiceProvider.GetRequiredService<ILibraryWatchStateService>();
+            await watchStateService.MarkUnwatchedAsync(db, _activeProfileId, PlaybackContentType.Episode, item.Id);
+            if (SelectedSeries != null)
+            {
+                await RefreshSelectedSeriesWatchStateAsync(SelectedSeries.ActiveSeries);
             }
         }
 
@@ -716,6 +814,157 @@ namespace Kroira.App.ViewModels
                         .ToList();
                 }
             }
+        }
+
+        private async Task RefreshSelectedSeriesWatchStateAsync(Series series)
+        {
+            using var scope = _serviceProvider.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var watchStateService = scope.ServiceProvider.GetRequiredService<ILibraryWatchStateService>();
+
+            if (_activeProfileId <= 0)
+            {
+                var profileService = scope.ServiceProvider.GetRequiredService<IProfileStateService>();
+                _activeProfileId = await profileService.GetActiveProfileIdAsync(db);
+            }
+
+            _selectedEpisodeSnapshots.Clear();
+            var episodeIds = (series.Seasons ?? Array.Empty<Season>())
+                .SelectMany(season => season.Episodes ?? Array.Empty<Episode>())
+                .Select(episode => episode.Id)
+                .Where(id => id > 0)
+                .Distinct()
+                .ToList();
+
+            var snapshots = await watchStateService.LoadSnapshotsAsync(db, _activeProfileId, PlaybackContentType.Episode, episodeIds);
+            foreach (var snapshot in snapshots)
+            {
+                _selectedEpisodeSnapshots[snapshot.Key] = snapshot.Value;
+            }
+
+            BuildSeasonOptions(series);
+
+            var queueSelection = watchStateService.BuildSeriesQueueSelection(series, _selectedEpisodeSnapshots, includeWatched: !HideWatchedEpisodes);
+            _pendingEpisodeSelectionId = queueSelection?.Episode.Id;
+            SelectedSeason = queueSelection != null
+                ? SeasonOptions.FirstOrDefault(option => option.Id == queueSelection.Season.Id)
+                : SeasonOptions.FirstOrDefault();
+        }
+
+        private void BuildSeasonOptions(Series series)
+        {
+            SeasonOptions.Clear();
+
+            foreach (var season in (series.Seasons ?? Array.Empty<Season>()).OrderBy(item => item.SeasonNumber))
+            {
+                var playableEpisodes = (season.Episodes ?? Array.Empty<Episode>())
+                    .Where(episode => !string.IsNullOrWhiteSpace(episode.StreamUrl))
+                    .OrderBy(episode => episode.EpisodeNumber)
+                    .ToList();
+
+                if (playableEpisodes.Count == 0)
+                {
+                    continue;
+                }
+
+                var watchedEpisodeCount = playableEpisodes.Count(episode =>
+                    _selectedEpisodeSnapshots.TryGetValue(episode.Id, out var snapshot) && snapshot.IsWatched);
+
+                SeasonOptions.Add(new SeriesSeasonOptionViewModel(season, watchedEpisodeCount, playableEpisodes.Count));
+            }
+
+            OnPropertyChanged(nameof(SeasonOptions));
+        }
+
+        private void BuildEpisodeItems(SeriesSeasonOptionViewModel? seasonOption, int? preferredEpisodeId)
+        {
+            EpisodeItems.Clear();
+            SelectedEpisode = null;
+
+            var season = seasonOption?.Season;
+            if (season == null)
+            {
+                OnPropertyChanged(nameof(EpisodesListVisibility));
+                OnPropertyChanged(nameof(EpisodesEmptyVisibility));
+                return;
+            }
+
+            foreach (var episode in (season.Episodes ?? Array.Empty<Episode>())
+                         .Where(episode => !string.IsNullOrWhiteSpace(episode.StreamUrl))
+                         .OrderBy(episode => episode.EpisodeNumber))
+            {
+                _selectedEpisodeSnapshots.TryGetValue(episode.Id, out var snapshot);
+                if (HideWatchedEpisodes && snapshot?.IsWatched == true)
+                {
+                    continue;
+                }
+
+                EpisodeItems.Add(new SeriesEpisodeItemViewModel(episode, season.SeasonNumber, snapshot));
+            }
+
+            SelectedEpisode = preferredEpisodeId.HasValue
+                ? EpisodeItems.FirstOrDefault(item => item.Id == preferredEpisodeId.Value)
+                : EpisodeItems.FirstOrDefault(item => item.ResumePositionMs > 0) ?? EpisodeItems.FirstOrDefault();
+
+            OnPropertyChanged(nameof(EpisodesListVisibility));
+            OnPropertyChanged(nameof(EpisodesEmptyVisibility));
+        }
+
+        private async Task SaveHideWatchedEpisodesAsync(bool value)
+        {
+            using var scope = _serviceProvider.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var watchStateService = scope.ServiceProvider.GetRequiredService<ILibraryWatchStateService>();
+            await watchStateService.SetHideWatchedEpisodesAsync(db, _activeProfileId, value);
+            if (SelectedSeries != null)
+            {
+                await RefreshSelectedSeriesWatchStateAsync(SelectedSeries.ActiveSeries);
+            }
+        }
+
+        private static CatalogSeriesGroup? FilterGroup(CatalogSeriesGroup group, ProfileAccessSnapshot access)
+        {
+            var variants = group.Variants
+                .Where(variant => access.IsSeriesAllowed(variant.Series))
+                .ToList();
+
+            if (variants.Count == 0)
+            {
+                return null;
+            }
+
+            return new CatalogSeriesGroup
+            {
+                GroupKey = group.GroupKey,
+                PreferredSeries = variants[0].Series,
+                Variants = variants,
+                SourceSummary = BuildSourceSummary(variants.Select(variant => variant.SourceProfile.Name))
+            };
+        }
+
+        private static string BuildSourceSummary(IEnumerable<string> sourceNames)
+        {
+            var distinct = sourceNames
+                .Where(name => !string.IsNullOrWhiteSpace(name))
+                .Distinct(StringComparer.CurrentCultureIgnoreCase)
+                .ToList();
+
+            if (distinct.Count == 0)
+            {
+                return string.Empty;
+            }
+
+            if (distinct.Count == 1)
+            {
+                return distinct[0];
+            }
+
+            if (distinct.Count == 2)
+            {
+                return $"{distinct[0]} + {distinct[1]}";
+            }
+
+            return $"{distinct[0]} +{distinct.Count - 1} more";
         }
     }
 }

@@ -7,6 +7,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Kroira.App.Data;
 using Kroira.App.Models;
+using Kroira.App.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
@@ -102,17 +103,28 @@ namespace Kroira.App.ViewModels
             FavoriteSeries.Clear();
             using var scope = _serviceProvider.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var profileService = scope.ServiceProvider.GetRequiredService<IProfileStateService>();
+            var access = await profileService.GetAccessSnapshotAsync(db);
 
             var channelIds = await db.Favorites
-                .Where(f => f.ContentType == FavoriteType.Channel)
+                .Where(f => f.ProfileId == access.ProfileId && f.ContentType == FavoriteType.Channel)
                 .Select(f => f.ContentId)
                 .ToListAsync();
 
             if (channelIds.Count > 0)
             {
                 var channels = await db.Channels.Where(c => channelIds.Contains(c.Id)).ToListAsync();
+                var categoryIds = channels.Select(channel => channel.ChannelCategoryId).Distinct().ToList();
+                var categories = await db.ChannelCategories
+                    .Where(category => categoryIds.Contains(category.Id))
+                    .ToDictionaryAsync(category => category.Id);
                 foreach (var ch in channels)
                 {
+                    if (!categories.TryGetValue(ch.ChannelCategoryId, out var category) || !access.IsLiveChannelAllowed(ch, category))
+                    {
+                        continue;
+                    }
+
                     FavoriteChannels.Add(new BrowserChannelViewModel
                     {
                         Id = ch.Id,
@@ -126,14 +138,14 @@ namespace Kroira.App.ViewModels
             }
 
             var movieIds = await db.Favorites
-                .Where(f => f.ContentType == FavoriteType.Movie)
+                .Where(f => f.ProfileId == access.ProfileId && f.ContentType == FavoriteType.Movie)
                 .Select(f => f.ContentId)
                 .ToListAsync();
 
             if (movieIds.Count > 0)
             {
                 var movies = await db.Movies.Where(m => movieIds.Contains(m.Id)).ToListAsync();
-                foreach (var movie in movies.OrderBy(m => m.Title))
+                foreach (var movie in movies.Where(access.IsMovieAllowed).OrderBy(m => m.Title))
                 {
                     FavoriteMovies.Add(new FavoriteMovieViewModel
                     {
@@ -147,7 +159,7 @@ namespace Kroira.App.ViewModels
             }
 
             var seriesIds = await db.Favorites
-                .Where(f => f.ContentType == FavoriteType.Series)
+                .Where(f => f.ProfileId == access.ProfileId && f.ContentType == FavoriteType.Series)
                 .Select(f => f.ContentId)
                 .ToListAsync();
 
@@ -159,7 +171,7 @@ namespace Kroira.App.ViewModels
                     .ThenInclude(season => season.Episodes)
                     .Where(s => seriesIds.Contains(s.Id))
                     .ToListAsync();
-                foreach (var show in series.OrderBy(s => s.Title))
+                foreach (var show in series.Where(access.IsSeriesAllowed).OrderBy(s => s.Title))
                 {
                     FavoriteSeries.Add(BuildFavoriteSeriesViewModel(show));
                 }
@@ -237,8 +249,10 @@ namespace Kroira.App.ViewModels
             {
                 using var scope = _serviceProvider.CreateScope();
                 var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                var profileService = scope.ServiceProvider.GetRequiredService<IProfileStateService>();
+                var activeProfileId = await profileService.GetActiveProfileIdAsync(db);
 
-                var fav = await db.Favorites.FirstOrDefaultAsync(f => f.ContentType == FavoriteType.Channel && f.ContentId == channelId);
+                var fav = await db.Favorites.FirstOrDefaultAsync(f => f.ProfileId == activeProfileId && f.ContentType == FavoriteType.Channel && f.ContentId == channelId);
                 if (fav != null)
                 {
                     db.Favorites.Remove(fav);
@@ -256,7 +270,9 @@ namespace Kroira.App.ViewModels
         {
             using var scope = _serviceProvider.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            var fav = await db.Favorites.FirstOrDefaultAsync(f => f.ContentType == FavoriteType.Movie && f.ContentId == movieId);
+            var profileService = scope.ServiceProvider.GetRequiredService<IProfileStateService>();
+            var activeProfileId = await profileService.GetActiveProfileIdAsync(db);
+            var fav = await db.Favorites.FirstOrDefaultAsync(f => f.ProfileId == activeProfileId && f.ContentType == FavoriteType.Movie && f.ContentId == movieId);
             if (fav != null)
             {
                 db.Favorites.Remove(fav);
@@ -278,7 +294,9 @@ namespace Kroira.App.ViewModels
         {
             using var scope = _serviceProvider.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            var fav = await db.Favorites.FirstOrDefaultAsync(f => f.ContentType == FavoriteType.Series && f.ContentId == seriesId);
+            var profileService = scope.ServiceProvider.GetRequiredService<IProfileStateService>();
+            var activeProfileId = await profileService.GetActiveProfileIdAsync(db);
+            var fav = await db.Favorites.FirstOrDefaultAsync(f => f.ProfileId == activeProfileId && f.ContentType == FavoriteType.Series && f.ContentId == seriesId);
             if (fav != null)
             {
                 db.Favorites.Remove(fav);

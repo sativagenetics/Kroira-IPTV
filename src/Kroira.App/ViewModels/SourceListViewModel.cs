@@ -382,6 +382,11 @@ namespace Kroira.App.ViewModels
                                 .ToListAsync();
                             if (favs.Count > 0) db.Favorites.RemoveRange(favs);
 
+                            var progress = await db.PlaybackProgresses
+                                .Where(item => item.ContentType == PlaybackContentType.Channel && channelIds.Contains(item.ContentId))
+                                .ToListAsync();
+                            if (progress.Count > 0) db.PlaybackProgresses.RemoveRange(progress);
+
                             var channels = await db.Channels.Where(channel => channelIds.Contains(channel.Id)).ToListAsync();
                             db.Channels.RemoveRange(channels);
                         }
@@ -396,15 +401,43 @@ namespace Kroira.App.ViewModels
                         var seasonIds = await db.Seasons.Where(season => seriesIds.Contains(season.SeriesId)).Select(season => season.Id).ToListAsync();
                         if (seasonIds.Count > 0)
                         {
+                            var episodeIds = await db.Episodes.Where(episode => seasonIds.Contains(episode.SeasonId)).Select(episode => episode.Id).ToListAsync();
                             var episodes = await db.Episodes.Where(episode => seasonIds.Contains(episode.SeasonId)).ToListAsync();
                             if (episodes.Count > 0) db.Episodes.RemoveRange(episodes);
+
+                            if (episodeIds.Count > 0)
+                            {
+                                var episodeProgress = await db.PlaybackProgresses
+                                    .Where(item => item.ContentType == PlaybackContentType.Episode && episodeIds.Contains(item.ContentId))
+                                    .ToListAsync();
+                                if (episodeProgress.Count > 0) db.PlaybackProgresses.RemoveRange(episodeProgress);
+                            }
 
                             var seasons = await db.Seasons.Where(season => seasonIds.Contains(season.Id)).ToListAsync();
                             db.Seasons.RemoveRange(seasons);
                         }
 
+                        var seriesFavorites = await db.Favorites
+                            .Where(favorite => favorite.ContentType == FavoriteType.Series && seriesIds.Contains(favorite.ContentId))
+                            .ToListAsync();
+                        if (seriesFavorites.Count > 0) db.Favorites.RemoveRange(seriesFavorites);
+
                         var series = await db.Series.Where(series => seriesIds.Contains(series.Id)).ToListAsync();
                         db.Series.RemoveRange(series);
+                    }
+
+                    var movieIds = await db.Movies.Where(movie => movie.SourceProfileId == id).Select(movie => movie.Id).ToListAsync();
+                    if (movieIds.Count > 0)
+                    {
+                        var movieFavorites = await db.Favorites
+                            .Where(favorite => favorite.ContentType == FavoriteType.Movie && movieIds.Contains(favorite.ContentId))
+                            .ToListAsync();
+                        if (movieFavorites.Count > 0) db.Favorites.RemoveRange(movieFavorites);
+
+                        var movieProgress = await db.PlaybackProgresses
+                            .Where(item => item.ContentType == PlaybackContentType.Movie && movieIds.Contains(item.ContentId))
+                            .ToListAsync();
+                        if (movieProgress.Count > 0) db.PlaybackProgresses.RemoveRange(movieProgress);
                     }
 
                     var movies = await db.Movies.Where(movie => movie.SourceProfileId == id).ToListAsync();

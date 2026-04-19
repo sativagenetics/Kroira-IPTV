@@ -171,6 +171,7 @@ namespace Kroira.App
 
             services.AddTransient<MainViewModel>();
             services.AddTransient<HomeViewModel>();
+            services.AddTransient<ProfileViewModel>();
             services.AddTransient<SettingsViewModel>();
             services.AddTransient<SourceOnboardingViewModel>();
             services.AddTransient<SourceListViewModel>();
@@ -182,6 +183,8 @@ namespace Kroira.App
             services.AddTransient<ChannelsPageViewModel>();
 
             services.AddSingleton<IEntitlementService, MockEntitlementService>();
+            services.AddSingleton<ILibraryWatchStateService, LibraryWatchStateService>();
+            services.AddSingleton<IProfileStateService, ProfileStateService>();
             services.AddSingleton<IWindowManagerService, WindowManagerService>();
             services.AddSingleton<IInputInterceptorService, InputInterceptorService>();
             services.AddSingleton<ITmdbMetadataService, TmdbMetadataService>();

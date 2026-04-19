@@ -7,18 +7,18 @@ namespace Kroira.App.Views
 {
     public sealed partial class ProfilePage : Page
     {
-        public SettingsViewModel ViewModel { get; }
+        public ProfileViewModel ViewModel { get; }
 
         public ProfilePage()
         {
             this.InitializeComponent();
-            ViewModel = ((App)Microsoft.UI.Xaml.Application.Current).Services.GetRequiredService<SettingsViewModel>();
+            ViewModel = ((App)Microsoft.UI.Xaml.Application.Current).Services.GetRequiredService<ProfileViewModel>();
         }
 
         protected override async void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
-            await ViewModel.LoadSettingsCommand.ExecuteAsync(null);
+            await ViewModel.LoadCommand.ExecuteAsync(null);
         }
     }
 }

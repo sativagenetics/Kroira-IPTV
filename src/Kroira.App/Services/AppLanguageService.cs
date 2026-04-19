@@ -14,26 +14,36 @@ namespace Kroira.App.Services
 
         public static readonly string[] SupportedLanguageCodes = { DefaultLanguageCode };
 
-        public static async Task<string> GetLanguageAsync(AppDbContext db)
+        public static async Task<string> GetLanguageAsync(AppDbContext db, int profileId = 0)
         {
+            var scopedKey = BuildScopedLanguageKey(profileId);
             var value = await db.AppSettings
-                .Where(setting => setting.Key == LanguageSettingKey)
+                .Where(setting => setting.Key == scopedKey)
                 .Select(setting => setting.Value)
                 .FirstOrDefaultAsync();
+
+            if (value == null && profileId > 0)
+            {
+                value = await db.AppSettings
+                    .Where(setting => setting.Key == LanguageSettingKey)
+                    .Select(setting => setting.Value)
+                    .FirstOrDefaultAsync();
+            }
 
             return NormalizeLanguageCode(value);
         }
 
-        public static async Task SetLanguageAsync(AppDbContext db, string languageCode)
+        public static async Task SetLanguageAsync(AppDbContext db, string languageCode, int profileId = 0)
         {
             var normalized = NormalizeLanguageCode(languageCode);
+            var scopedKey = BuildScopedLanguageKey(profileId);
 
-            var setting = await db.AppSettings.FirstOrDefaultAsync(item => item.Key == LanguageSettingKey);
+            var setting = await db.AppSettings.FirstOrDefaultAsync(item => item.Key == scopedKey);
             if (setting == null)
             {
                 setting = new AppSetting
                 {
-                    Key = LanguageSettingKey,
+                    Key = scopedKey,
                     Value = normalized
                 };
                 db.AppSettings.Add(setting);
@@ -51,6 +61,13 @@ namespace Kroira.App.Services
             return SupportedLanguageCodes.Contains(languageCode)
                 ? languageCode!
                 : DefaultLanguageCode;
+        }
+
+        private static string BuildScopedLanguageKey(int profileId)
+        {
+            return profileId > 0
+                ? $"{LanguageSettingKey}.Profile.{profileId}"
+                : LanguageSettingKey;
         }
     }
 }

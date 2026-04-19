@@ -58,21 +58,26 @@ namespace Kroira.App.ViewModels
         {
             using var scope = _serviceProvider.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            var languageCode = await AppLanguageService.GetLanguageAsync(db);
-            await AppLanguageService.SetLanguageAsync(db, languageCode);
+            var profileService = scope.ServiceProvider.GetRequiredService<IProfileStateService>();
+            var activeProfile = await profileService.GetActiveProfileAsync(db);
+            var languageCode = await AppLanguageService.GetLanguageAsync(db, activeProfile.Id);
+            await AppLanguageService.SetLanguageAsync(db, languageCode, activeProfile.Id);
 
             _isLoadingLanguage = true;
             SelectedLanguage = Languages.FirstOrDefault(language => language.Code == languageCode)
                 ?? Languages.First(language => language.Code == AppLanguageService.DefaultLanguageCode);
             _isLoadingLanguage = false;
+            LanguageStatusText = $"{activeProfile.Name} uses the current language preference.";
         }
 
         private async Task SaveLanguageAsync(string languageCode)
         {
             using var scope = _serviceProvider.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            await AppLanguageService.SetLanguageAsync(db, languageCode);
-            LanguageStatusText = "English selected. Unsupported language options remain hidden until real app support exists.";
+            var profileService = scope.ServiceProvider.GetRequiredService<IProfileStateService>();
+            var activeProfile = await profileService.GetActiveProfileAsync(db);
+            await AppLanguageService.SetLanguageAsync(db, languageCode, activeProfile.Id);
+            LanguageStatusText = $"{activeProfile.Name} now uses the selected language preference.";
         }
 
         [RelayCommand]

@@ -169,14 +169,20 @@ namespace Kroira.App.ViewModels
         {
             using var scope = _serviceProvider.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var profileService = scope.ServiceProvider.GetRequiredService<IProfileStateService>();
+            var access = await profileService.GetAccessSnapshotAsync(db);
 
-            var channelsCount = await db.Channels.CountAsync();
-            var moviesCount = await db.Movies.CountAsync();
-            var seriesCount = await db.Series.CountAsync();
-            var favoritesCount = await db.Favorites.CountAsync();
+            var channelCategories = await db.ChannelCategories.AsNoTracking().ToListAsync();
+            var categoryById = channelCategories.ToDictionary(category => category.Id);
+            var channelsCount = (await db.Channels.AsNoTracking().ToListAsync())
+                .Count(channel => categoryById.TryGetValue(channel.ChannelCategoryId, out var category) &&
+                                  access.IsLiveChannelAllowed(channel, category));
+            var moviesCount = (await db.Movies.AsNoTracking().ToListAsync()).Count(access.IsMovieAllowed);
+            var seriesCount = (await db.Series.AsNoTracking().ToListAsync()).Count(access.IsSeriesAllowed);
+            var favoritesCount = await db.Favorites.CountAsync(favorite => favorite.ProfileId == access.ProfileId);
             var sourcesCount = await db.SourceProfiles.CountAsync();
             var sourceIssuesCount = await db.SourceSyncStates.CountAsync(s => s.ErrorLog != string.Empty || s.HttpStatusCode >= 400);
-            await PrepareFeaturedMetadataAsync(db);
+            await PrepareFeaturedMetadataAsync(db, access);
 
             SummaryItems.Clear();
             SummaryItems.Add(new HomeSummaryItem { Label = "Channels", Value = channelsCount.ToString("N0"), Detail = "Live entries", Glyph = "\uE714" });
@@ -208,12 +214,12 @@ namespace Kroira.App.ViewModels
                 ? $"Last source sync: {lastSync.Value:g}"
                 : "No source sync has completed yet";
 
-            await LoadContinueItemsAsync(db);
-            await LoadLiveItemsAsync(db);
-            await LoadMediaRailsAsync(db);
+            await LoadContinueItemsAsync(db, access);
+            await LoadLiveItemsAsync(db, access);
+            await LoadMediaRailsAsync(db, access);
         }
 
-        private async Task PrepareFeaturedMetadataAsync(AppDbContext db)
+        private async Task PrepareFeaturedMetadataAsync(AppDbContext db, ProfileAccessSnapshot access)
         {
             var movieCandidates = await db.Movies
                 .OrderByDescending(m => m.BackdropUrl != string.Empty || m.TmdbBackdropPath != string.Empty)
@@ -232,6 +238,8 @@ namespace Kroira.App.ViewModels
                 .ThenBy(s => s.Title)
                 .Take(24)
                 .ToListAsync();
+            movieCandidates = movieCandidates.Where(access.IsMovieAllowed).ToList();
+            seriesCandidates = seriesCandidates.Where(access.IsSeriesAllowed).ToList();
 
             // Featured safety: M3U bucket/adult/category items are stripped
             // before ranking. Xtream items are NEVER filtered by this gate —
@@ -379,124 +387,169 @@ namespace Kroira.App.ViewModels
             };
         }
 
-        private async Task LoadContinueItemsAsync(AppDbContext db)
+        private async Task LoadContinueItemsAsync(AppDbContext db, ProfileAccessSnapshot access)
         {
             ContinueItems.Clear();
+            var watchStateService = _serviceProvider.GetRequiredService<ILibraryWatchStateService>();
+            var hideWatched = await watchStateService.GetHideWatchedInContinueAsync(db, access.ProfileId);
 
-            var recs = await db.PlaybackProgresses
-                .Where(p => !p.IsCompleted)
-                .OrderByDescending(p => p.LastWatched)
+            var continueItems = new List<(HomeContinueItem Item, DateTime SortAtUtc)>();
+
+            var liveRows = await db.PlaybackProgresses
+                .Where(progress => progress.ProfileId == access.ProfileId &&
+                                   progress.ContentType == PlaybackContentType.Channel &&
+                                   !progress.IsCompleted)
+                .OrderByDescending(progress => progress.LastWatched)
                 .Take(8)
                 .ToListAsync();
+            var liveChannelIds = liveRows.Select(progress => progress.ContentId).Distinct().ToList();
+            var liveChannels = await db.Channels.Where(channel => liveChannelIds.Contains(channel.Id)).ToDictionaryAsync(channel => channel.Id);
+            var liveCategoryIds = liveChannels.Values.Select(channel => channel.ChannelCategoryId).Distinct().ToList();
+            var liveCategories = await db.ChannelCategories.Where(category => liveCategoryIds.Contains(category.Id)).ToDictionaryAsync(category => category.Id);
 
-            if (recs.Count == 0)
+            foreach (var progress in liveRows)
             {
-                ContinueItemsVisibility = Visibility.Collapsed;
-                ContinueEmptyVisibility = Visibility.Visible;
-                return;
-            }
-
-            var channelIds = recs.Where(r => r.ContentType == PlaybackContentType.Channel).Select(r => r.ContentId).ToList();
-            var channels = await db.Channels.Where(c => channelIds.Contains(c.Id)).ToDictionaryAsync(c => c.Id);
-
-            var movieIds = recs.Where(r => r.ContentType == PlaybackContentType.Movie).Select(r => r.ContentId).ToList();
-            var movies = await db.Movies.Where(m => movieIds.Contains(m.Id)).ToDictionaryAsync(m => m.Id);
-
-            var episodeIds = recs.Where(r => r.ContentType == PlaybackContentType.Episode).Select(r => r.ContentId).ToList();
-            var episodes = await db.Episodes.Where(e => episodeIds.Contains(e.Id)).ToDictionaryAsync(e => e.Id);
-            var episodeSeasonIds = episodes.Values.Select(e => e.SeasonId).Distinct().ToList();
-            var episodeSeriesBySeasonId = await db.Seasons
-                .Where(s => episodeSeasonIds.Contains(s.Id))
-                .Join(db.Series,
-                    season => season.SeriesId,
-                    series => series.Id,
-                    (season, series) => new { season.Id, Series = series })
-                .ToDictionaryAsync(item => item.Id, item => item.Series);
-
-            var continueItems = new List<HomeContinueItem>();
-            foreach (var r in recs)
-            {
-                var title = string.Empty;
-                var streamUrl = string.Empty;
-                var posterUrl = string.Empty;
-                var backdropUrl = string.Empty;
-                var overview = string.Empty;
-                var voteAverage = 0d;
-
-                if (r.ContentType == PlaybackContentType.Channel && channels.TryGetValue(r.ContentId, out var ch))
-                {
-                    title = ch.Name;
-                    streamUrl = ch.StreamUrl;
-                    posterUrl = ch.LogoUrl;
-                }
-                else if (r.ContentType == PlaybackContentType.Movie && movies.TryGetValue(r.ContentId, out var mv))
-                {
-                    title = mv.Title;
-                    streamUrl = mv.StreamUrl;
-                    posterUrl = mv.DisplayPosterUrl;
-                    backdropUrl = mv.DisplayHeroArtworkUrl;
-                    overview = mv.Overview;
-                    voteAverage = mv.VoteAverage;
-                }
-                else if (r.ContentType == PlaybackContentType.Episode && episodes.TryGetValue(r.ContentId, out var ep))
-                {
-                    title = ep.Title;
-                    streamUrl = ep.StreamUrl;
-                    if (episodeSeriesBySeasonId.TryGetValue(ep.SeasonId, out var series))
-                    {
-                        var seriesPosterUrl = series.DisplayPosterUrl;
-                        posterUrl = string.IsNullOrWhiteSpace(seriesPosterUrl) ? posterUrl : seriesPosterUrl;
-                        backdropUrl = string.IsNullOrWhiteSpace(series.DisplayHeroArtworkUrl) ? posterUrl : series.DisplayHeroArtworkUrl;
-                        overview = series.Overview;
-                        voteAverage = series.VoteAverage;
-                        title = string.IsNullOrWhiteSpace(series.Title) ? title : $"{series.Title}: {title}";
-                    }
-                }
-
-                if (string.IsNullOrWhiteSpace(title) || string.IsNullOrWhiteSpace(streamUrl))
+                if (!liveChannels.TryGetValue(progress.ContentId, out var channel))
                 {
                     continue;
                 }
 
-                continueItems.Add(new HomeContinueItem
+                if (!liveCategories.TryGetValue(channel.ChannelCategoryId, out var category) || !access.IsLiveChannelAllowed(channel, category))
                 {
-                    ContentId = r.ContentId,
-                    ContentType = r.ContentType,
-                    Title = title,
-                    Detail = r.ContentType == PlaybackContentType.Channel
-                        ? "Live channel"
-                        : $"Saved at {TimeSpan.FromMilliseconds(r.PositionMs):hh\\:mm\\:ss}",
-                    StreamUrl = streamUrl,
-                    PosterUrl = posterUrl,
-                    BackdropUrl = backdropUrl,
-                    Overview = overview,
-                    VoteAverage = voteAverage,
-                    ProgressValue = 58,
-                    SavedPositionMs = r.PositionMs
-                });
+                    continue;
+                }
+
+                continueItems.Add((new HomeContinueItem
+                {
+                    ContentId = channel.Id,
+                    ContentType = PlaybackContentType.Channel,
+                    Title = channel.Name,
+                    Detail = "Live channel",
+                    StreamUrl = channel.StreamUrl,
+                    PosterUrl = channel.LogoUrl,
+                    SavedPositionMs = progress.PositionMs
+                }, progress.LastWatched));
             }
 
-            foreach (var item in continueItems
-                         .OrderByDescending(item => IsTurkishHint(item.Title) || IsTurkishHint(item.Detail))
-                         .ThenBy(item => item.Title, StringComparer.CurrentCultureIgnoreCase))
+            var movieRows = await db.PlaybackProgresses
+                .Where(progress => progress.ProfileId == access.ProfileId &&
+                                   progress.ContentType == PlaybackContentType.Movie)
+                .OrderByDescending(progress => progress.LastWatched)
+                .ToListAsync();
+            var movieIds = movieRows.Select(progress => progress.ContentId).Distinct().ToList();
+            var movies = await db.Movies.Where(movie => movieIds.Contains(movie.Id)).ToDictionaryAsync(movie => movie.Id);
+            var movieSnapshots = await watchStateService.LoadSnapshotsAsync(db, access.ProfileId, PlaybackContentType.Movie, movieIds);
+
+            foreach (var progress in movieRows)
             {
-                ContinueItems.Add(item);
+                if (!movies.TryGetValue(progress.ContentId, out var movie) || !access.IsMovieAllowed(movie))
+                {
+                    continue;
+                }
+
+                if (!movieSnapshots.TryGetValue(movie.Id, out var snapshot))
+                {
+                    continue;
+                }
+
+                if (hideWatched && snapshot.IsWatched)
+                {
+                    continue;
+                }
+
+                continueItems.Add((new HomeContinueItem
+                {
+                    ContentId = movie.Id,
+                    ContentType = PlaybackContentType.Movie,
+                    Title = movie.Title,
+                    Detail = snapshot.IsWatched
+                        ? "Watched"
+                        : snapshot.HasResumePoint
+                            ? $"Resume at {TimeSpan.FromMilliseconds(snapshot.ResumePositionMs):hh\\:mm\\:ss}"
+                            : "Ready to start",
+                    StreamUrl = movie.StreamUrl,
+                    PosterUrl = movie.DisplayPosterUrl,
+                    BackdropUrl = movie.DisplayHeroArtworkUrl,
+                    Overview = movie.Overview,
+                    VoteAverage = movie.VoteAverage,
+                    ProgressValue = snapshot.ProgressPercent,
+                    SavedPositionMs = snapshot.ResumePositionMs
+                }, snapshot.LastWatched));
+            }
+
+            var episodeRows = await db.PlaybackProgresses
+                .Where(progress => progress.ProfileId == access.ProfileId &&
+                                   progress.ContentType == PlaybackContentType.Episode)
+                .OrderByDescending(progress => progress.LastWatched)
+                .ToListAsync();
+            var episodeIds = episodeRows.Select(progress => progress.ContentId).Distinct().ToList();
+            var episodes = await db.Episodes.Where(episode => episodeIds.Contains(episode.Id)).ToDictionaryAsync(episode => episode.Id);
+            var seasonIds = episodes.Values.Select(episode => episode.SeasonId).Distinct().ToList();
+            var seasons = await db.Seasons.Where(season => seasonIds.Contains(season.Id)).ToDictionaryAsync(season => season.Id);
+            var seriesIds = seasons.Values.Select(season => season.SeriesId).Distinct().ToList();
+            var seriesList = await db.Series
+                .AsNoTracking()
+                .Include(series => series.Seasons!)
+                .ThenInclude(season => season.Episodes)
+                .Where(series => seriesIds.Contains(series.Id))
+                .ToListAsync();
+            var episodeSnapshots = await watchStateService.LoadSnapshotsAsync(db, access.ProfileId, PlaybackContentType.Episode, episodeIds);
+
+            foreach (var selection in seriesList
+                         .Where(access.IsSeriesAllowed)
+                         .Select(series => watchStateService.BuildSeriesQueueSelection(series, episodeSnapshots, includeWatched: !hideWatched))
+                         .Where(selection => selection != null)
+                         .Cast<SeriesQueueSelection>())
+            {
+                var episodeCode = $"S{selection.Season.SeasonNumber:00} E{selection.Episode.EpisodeNumber:00}";
+                continueItems.Add((new HomeContinueItem
+                {
+                    ContentId = selection.Episode.Id,
+                    ContentType = PlaybackContentType.Episode,
+                    Title = selection.Series.Title,
+                    Detail = selection.IsWatched
+                        ? $"Watched through {episodeCode}"
+                        : selection.IsResumeCandidate
+                            ? $"Resume {episodeCode}"
+                            : $"Next up {episodeCode}",
+                    StreamUrl = selection.Episode.StreamUrl,
+                    PosterUrl = selection.Series.DisplayPosterUrl,
+                    BackdropUrl = selection.Series.DisplayHeroArtworkUrl,
+                    Overview = selection.Series.Overview,
+                    VoteAverage = selection.Series.VoteAverage,
+                    ProgressValue = selection.EpisodeSnapshot?.ProgressPercent ?? (selection.IsWatched ? 100 : 0),
+                    SavedPositionMs = selection.ResumePositionMs
+                }, selection.SortAtUtc));
+            }
+
+            foreach (var entry in continueItems
+                         .OrderByDescending(entry => entry.SortAtUtc)
+                         .ThenByDescending(entry => IsTurkishHint(entry.Item.Title) || IsTurkishHint(entry.Item.Detail))
+                         .ThenBy(entry => entry.Item.Title, StringComparer.CurrentCultureIgnoreCase)
+                         .Take(8))
+            {
+                ContinueItems.Add(entry.Item);
             }
 
             ContinueItemsVisibility = ContinueItems.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
             ContinueEmptyVisibility = ContinueItems.Count > 0 ? Visibility.Collapsed : Visibility.Visible;
         }
 
-        private async Task LoadLiveItemsAsync(AppDbContext db)
+        private async Task LoadLiveItemsAsync(AppDbContext db, ProfileAccessSnapshot access)
         {
             LiveItems.Clear();
 
-            var channels = await db.Channels
-                .Where(c => c.StreamUrl != string.Empty)
-                .OrderByDescending(c => IsTurkishHint(c.Name) || IsTurkishHint(c.LogoUrl))
-                .ThenBy(c => c.Name)
+            var categories = await db.ChannelCategories.AsNoTracking().ToDictionaryAsync(category => category.Id);
+            var channels = (await db.Channels
+                    .Where(c => c.StreamUrl != string.Empty)
+                    .OrderByDescending(c => IsTurkishHint(c.Name) || IsTurkishHint(c.LogoUrl))
+                    .ThenBy(c => c.Name)
+                    .Take(24)
+                    .ToListAsync())
+                .Where(channel => categories.TryGetValue(channel.ChannelCategoryId, out var category) &&
+                                  access.IsLiveChannelAllowed(channel, category))
                 .Take(8)
-                .ToListAsync();
+                .ToList();
 
             foreach (var channel in channels)
             {
@@ -512,7 +565,7 @@ namespace Kroira.App.ViewModels
             LiveItemsVisibility = LiveItems.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
         }
 
-        private async Task LoadMediaRailsAsync(AppDbContext db)
+        private async Task LoadMediaRailsAsync(AppDbContext db, ProfileAccessSnapshot access)
         {
             PopularItems.Clear();
             RecentlyAddedItems.Clear();
@@ -526,6 +579,7 @@ namespace Kroira.App.ViewModels
                 .ThenBy(m => m.Title)
                 .Take(10)
                 .ToListAsync();
+            popularMovies = popularMovies.Where(access.IsMovieAllowed).ToList();
 
             var popularSeries = await db.Series
                 .OrderByDescending(s => s.Popularity)
@@ -535,6 +589,7 @@ namespace Kroira.App.ViewModels
                 .ThenBy(s => s.Title)
                 .Take(10)
                 .ToListAsync();
+            popularSeries = popularSeries.Where(access.IsSeriesAllowed).ToList();
 
             foreach (var item in popularMovies.Select(BuildMovieRailItem)
                          .Concat(popularSeries.Select(BuildSeriesRailItem))
@@ -551,11 +606,13 @@ namespace Kroira.App.ViewModels
                 .OrderByDescending(m => m.Id)
                 .Take(10)
                 .ToListAsync();
+            recentMovies = recentMovies.Where(access.IsMovieAllowed).ToList();
 
             var recentSeries = await db.Series
                 .OrderByDescending(s => s.Id)
                 .Take(10)
                 .ToListAsync();
+            recentSeries = recentSeries.Where(access.IsSeriesAllowed).ToList();
 
             foreach (var item in recentMovies.Select(BuildMovieRailItem)
                          .Concat(recentSeries.Select(BuildSeriesRailItem))
@@ -571,6 +628,7 @@ namespace Kroira.App.ViewModels
                 .ThenBy(m => m.Title)
                 .Take(10)
                 .ToListAsync();
+            topRatedMovies = topRatedMovies.Where(access.IsMovieAllowed).ToList();
 
             var topRatedSeries = await db.Series
                 .OrderByDescending(s => s.VoteAverage)
@@ -578,6 +636,7 @@ namespace Kroira.App.ViewModels
                 .ThenBy(s => s.Title)
                 .Take(10)
                 .ToListAsync();
+            topRatedSeries = topRatedSeries.Where(access.IsSeriesAllowed).ToList();
 
             foreach (var item in topRatedMovies.Select(BuildMovieRailItem)
                          .Concat(topRatedSeries.Select(BuildSeriesRailItem))

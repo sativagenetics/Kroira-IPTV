@@ -12,6 +12,7 @@ namespace Kroira.App.Data
         }
 
         public DbSet<AppSetting> AppSettings { get; set; } = null!;
+        public DbSet<AppProfile> AppProfiles { get; set; } = null!;
         public DbSet<FeatureEntitlement> FeatureEntitlements { get; set; } = null!;
         public DbSet<ParentalControlSetting> ParentalControlSettings { get; set; } = null!;
         public DbSet<SchemaVersion> SchemaVersions { get; set; } = null!;
@@ -86,9 +87,22 @@ namespace Kroira.App.Data
                 .HasIndex(e => e.EpgChannelId)
                 .HasDatabaseName("IX_Channels_EpgChannelId");
 
+            modelBuilder.Entity<ParentalControlSetting>()
+                .HasIndex(setting => setting.ProfileId)
+                .IsUnique();
+
+            modelBuilder.Entity<AppProfile>()
+                .HasIndex(profile => profile.Name);
+
             // Optimize query access
             modelBuilder.Entity<Favorite>()
+                .HasIndex(f => new { f.ProfileId, f.ContentType, f.ContentId });
+
+            modelBuilder.Entity<Favorite>()
                 .HasIndex(f => new { f.ContentType, f.ContentId });
+
+            modelBuilder.Entity<PlaybackProgress>()
+                .HasIndex(p => new { p.ProfileId, p.ContentType, p.ContentId });
 
             modelBuilder.Entity<PlaybackProgress>()
                 .HasIndex(p => new { p.ContentType, p.ContentId });

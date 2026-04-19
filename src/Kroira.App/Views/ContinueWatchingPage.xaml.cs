@@ -48,5 +48,21 @@ namespace Kroira.App.Views
                 _ = ViewModel.RemoveProgressCommand.ExecuteAsync(id);
             }
         }
+
+        private void MarkWatched_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is FrameworkElement { DataContext: ProgressItemViewModel item })
+            {
+                _ = ViewModel.MarkWatchedCommand.ExecuteAsync(item);
+            }
+        }
+
+        private void MarkUnwatched_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is FrameworkElement { DataContext: ProgressItemViewModel item })
+            {
+                _ = ViewModel.MarkUnwatchedCommand.ExecuteAsync(item);
+            }
+        }
     }
 }

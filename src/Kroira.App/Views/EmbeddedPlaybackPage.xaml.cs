@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Kroira.App.Data;
 using Kroira.App.Models;
 using Kroira.App.Services;
 using Kroira.App.Services.Playback;
@@ -91,6 +92,21 @@ namespace Kroira.App.Views
             {
                 ShowFatalError("Missing playback context.");
                 return;
+            }
+
+            if (_context.ProfileId <= 0)
+            {
+                try
+                {
+                    using var scope = ((App)Application.Current).Services.CreateScope();
+                    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                    var profileService = scope.ServiceProvider.GetRequiredService<IProfileStateService>();
+                    _context.ProfileId = profileService.GetActiveProfileIdAsync(db).GetAwaiter().GetResult();
+                }
+                catch
+                {
+                    _context.ProfileId = 1;
+                }
             }
 
             TitleText.Text = TitleForContext(_context);

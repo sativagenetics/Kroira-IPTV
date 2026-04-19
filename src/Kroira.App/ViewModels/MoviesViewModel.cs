@@ -135,10 +135,15 @@ namespace Kroira.App.ViewModels
             using var scope = _serviceProvider.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             var deduplicationService = scope.ServiceProvider.GetRequiredService<ICatalogDeduplicationService>();
-            var languageCode = await AppLanguageService.GetLanguageAsync(db);
-            var movieGroups = await deduplicationService.LoadMovieGroupsAsync(db);
+            var profileService = scope.ServiceProvider.GetRequiredService<IProfileStateService>();
+            var access = await profileService.GetAccessSnapshotAsync(db);
+            var languageCode = await AppLanguageService.GetLanguageAsync(db, access.ProfileId);
+            var movieGroups = (await deduplicationService.LoadMovieGroupsAsync(db))
+                .Select(group => FilterGroup(group, access))
+                .OfType<CatalogMovieGroup>()
+                .ToList();
             var favoriteIds = (await db.Favorites
-                .Where(f => f.ContentType == FavoriteType.Movie)
+                .Where(f => f.ProfileId == access.ProfileId && f.ContentType == FavoriteType.Movie)
                 .Select(f => f.ContentId)
                 .ToListAsync())
                 .ToHashSet();
@@ -221,13 +226,15 @@ namespace Kroira.App.ViewModels
 
             using var scope = _serviceProvider.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var profileService = scope.ServiceProvider.GetRequiredService<IProfileStateService>();
+            var activeProfileId = await profileService.GetActiveProfileIdAsync(db);
             var existingFavorites = await db.Favorites
-                .Where(f => f.ContentType == FavoriteType.Movie && target.VariantIds.Contains(f.ContentId))
+                .Where(f => f.ProfileId == activeProfileId && f.ContentType == FavoriteType.Movie && target.VariantIds.Contains(f.ContentId))
                 .ToListAsync();
 
             if (existingFavorites.Count == 0)
             {
-                db.Favorites.Add(new Favorite { ContentType = FavoriteType.Movie, ContentId = movieId });
+                db.Favorites.Add(new Favorite { ProfileId = activeProfileId, ContentType = FavoriteType.Movie, ContentId = movieId });
                 target.IsFavorite = true;
             }
             else
@@ -394,6 +401,51 @@ namespace Kroira.App.ViewModels
                 {
                 }
             });
+        }
+
+        private static CatalogMovieGroup? FilterGroup(CatalogMovieGroup group, ProfileAccessSnapshot access)
+        {
+            var variants = group.Variants
+                .Where(variant => access.IsMovieAllowed(variant.Movie))
+                .ToList();
+
+            if (variants.Count == 0)
+            {
+                return null;
+            }
+
+            return new CatalogMovieGroup
+            {
+                GroupKey = group.GroupKey,
+                PreferredMovie = variants[0].Movie,
+                Variants = variants,
+                SourceSummary = BuildSourceSummary(variants.Select(variant => variant.SourceProfile.Name))
+            };
+        }
+
+        private static string BuildSourceSummary(IEnumerable<string> sourceNames)
+        {
+            var distinct = sourceNames
+                .Where(name => !string.IsNullOrWhiteSpace(name))
+                .Distinct(StringComparer.CurrentCultureIgnoreCase)
+                .ToList();
+
+            if (distinct.Count == 0)
+            {
+                return string.Empty;
+            }
+
+            if (distinct.Count == 1)
+            {
+                return distinct[0];
+            }
+
+            if (distinct.Count == 2)
+            {
+                return $"{distinct[0]} + {distinct[1]}";
+            }
+
+            return $"{distinct[0]} +{distinct.Count - 1} more";
         }
     }
 }

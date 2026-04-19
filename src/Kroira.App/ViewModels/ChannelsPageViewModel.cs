@@ -55,6 +55,9 @@ namespace Kroira.App.ViewModels
 
             using var scope = _serviceProvider.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var profileService = scope.ServiceProvider.GetRequiredService<IProfileStateService>();
+            var access = await profileService.GetAccessSnapshotAsync(db);
+            var activeProfileId = access.ProfileId;
 
             var cats = await db.ChannelCategories
                 .OrderBy(c => c.Name)
@@ -71,10 +74,12 @@ namespace Kroira.App.ViewModels
             var channels = (await db.Channels.ToListAsync())
                 .Where(ch => categorySourceTypes.TryGetValue(ch.ChannelCategoryId, out var sourceType) &&
                              ContentClassifier.IsPlayableStoredLiveChannel(ch.Name, ch.StreamUrl, sourceType, categoryLabels))
+                .Where(ch => categoryMap.TryGetValue(ch.ChannelCategoryId, out var category) &&
+                             access.IsLiveChannelAllowed(ch, category))
                 .Where(ch => categoryMap.ContainsKey(ch.ChannelCategoryId))
                 .ToList();
             var favIds = await db.Favorites
-                .Where(f => f.ContentType == FavoriteType.Channel)
+                .Where(f => f.ProfileId == activeProfileId && f.ContentType == FavoriteType.Channel)
                 .Select(f => f.ContentId)
                 .ToListAsync();
             var channelVMs = channels.Select(ch => new BrowserChannelViewModel
@@ -175,10 +180,12 @@ namespace Kroira.App.ViewModels
 
             using var scope = _serviceProvider.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var profileService = scope.ServiceProvider.GetRequiredService<IProfileStateService>();
+            var activeProfileId = await profileService.GetActiveProfileIdAsync(db);
 
             if (target.IsFavorite)
             {
-                var fav = await db.Favorites.FirstOrDefaultAsync(f => f.ContentType == FavoriteType.Channel && f.ContentId == channelId);
+                var fav = await db.Favorites.FirstOrDefaultAsync(f => f.ProfileId == activeProfileId && f.ContentType == FavoriteType.Channel && f.ContentId == channelId);
                 if (fav != null)
                 {
                     db.Favorites.Remove(fav);
@@ -188,7 +195,7 @@ namespace Kroira.App.ViewModels
             }
             else
             {
-                var fav = new Favorite { ContentType = FavoriteType.Channel, ContentId = channelId };
+                var fav = new Favorite { ProfileId = activeProfileId, ContentType = FavoriteType.Channel, ContentId = channelId };
                 db.Favorites.Add(fav);
                 await db.SaveChangesAsync();
                 target.IsFavorite = true;

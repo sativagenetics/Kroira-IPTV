@@ -64,6 +64,20 @@ namespace Kroira.App.Data
             using var conn = new SqliteConnection($"Data Source={dbPath}");
             conn.Open();
 
+            EnsureAppProfilesTable(conn);
+            EnsureDefaultProfile(conn);
+            EnsureActiveProfileSetting(conn);
+
+            EnsureColumn(conn, "Favorites", "ProfileId", "INTEGER NOT NULL DEFAULT 1");
+            EnsureColumn(conn, "PlaybackProgresses", "ProfileId", "INTEGER NOT NULL DEFAULT 1");
+            EnsureColumn(conn, "PlaybackProgresses", "DurationMs", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "PlaybackProgresses", "WatchStateOverride", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "PlaybackProgresses", "CompletedAtUtc", "TEXT");
+            EnsureColumn(conn, "ParentalControlSettings", "ProfileId", "INTEGER NOT NULL DEFAULT 1");
+            EnsureColumn(conn, "ParentalControlSettings", "LockedSourceIdsJson", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "ParentalControlSettings", "IsKidsSafeMode", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "ParentalControlSettings", "HideLockedContent", "INTEGER NOT NULL DEFAULT 1");
+
             EnsureColumn(conn, "Movies", "BackdropUrl", "TEXT");
             EnsureColumn(conn, "Movies", "Genres", "TEXT");
             EnsureColumn(conn, "Movies", "ImdbId", "TEXT");
@@ -121,12 +135,18 @@ namespace Kroira.App.Data
             EnsureIndex(conn, "IX_Movies_CanonicalTitleKey", "Movies", "CanonicalTitleKey");
             EnsureIndex(conn, "IX_Movies_DedupFingerprint", "Movies", "DedupFingerprint");
             EnsureIndex(conn, "IX_Movies_TmdbId", "Movies", "TmdbId");
+            EnsureIndex(conn, "IX_AppProfiles_Name", "AppProfiles", "Name");
             EnsureIndex(conn, "IX_Series_MetadataUpdatedAt", "Series", "MetadataUpdatedAt");
             EnsureIndex(conn, "IX_Series_CanonicalTitleKey", "Series", "CanonicalTitleKey");
             EnsureIndex(conn, "IX_Series_DedupFingerprint", "Series", "DedupFingerprint");
             EnsureIndex(conn, "IX_Series_TmdbId", "Series", "TmdbId");
             EnsureIndex(conn, "IX_Channels_EpgChannelId", "Channels", "EpgChannelId");
+            EnsureIndex(conn, "IX_ParentalControlSettings_ProfileId", "ParentalControlSettings", "ProfileId", unique: true);
+            EnsureTripleCompositeIndex(conn, "IX_Favorites_ProfileId_ContentType_ContentId", "Favorites", "ProfileId", "ContentType", "ContentId");
+            EnsureTripleCompositeIndex(conn, "IX_PlaybackProgresses_ProfileId_ContentType_ContentId", "PlaybackProgresses", "ProfileId", "ContentType", "ContentId");
             EnsureCompositeIndex(conn, "IX_EpgPrograms_ChannelId_StartTimeUtc", "EpgPrograms", "ChannelId", "StartTimeUtc");
+
+            BackfillLegacyProfileState(conn);
         }
 
         private static void BumpLegacyM3uImportMode(SqliteConnection conn)
@@ -137,6 +157,103 @@ namespace Kroira.App.Data
             using var cmd = conn.CreateCommand();
             cmd.CommandText = "UPDATE \"SourceCredentials\" SET \"M3uImportMode\" = 2 WHERE \"M3uImportMode\" = 1;";
             cmd.ExecuteNonQuery();
+        }
+
+        private static void EnsureAppProfilesTable(SqliteConnection conn)
+        {
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = @"
+                CREATE TABLE IF NOT EXISTS ""AppProfiles"" (
+                    ""Id""           INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                    ""Name""         TEXT    NOT NULL DEFAULT '',
+                    ""IsKidsProfile"" INTEGER NOT NULL DEFAULT 0,
+                    ""CreatedAtUtc"" TEXT    NOT NULL DEFAULT ''
+                );";
+            cmd.ExecuteNonQuery();
+        }
+
+        private static void EnsureDefaultProfile(SqliteConnection conn)
+        {
+            using var countCmd = conn.CreateCommand();
+            countCmd.CommandText = "SELECT COUNT(1) FROM \"AppProfiles\";";
+            var count = Convert.ToInt32(countCmd.ExecuteScalar());
+            if (count > 0)
+            {
+                return;
+            }
+
+            using var insertCmd = conn.CreateCommand();
+            insertCmd.CommandText = @"
+                INSERT INTO ""AppProfiles"" (""Id"", ""Name"", ""IsKidsProfile"", ""CreatedAtUtc"")
+                VALUES (1, 'Primary', 0, $createdAtUtc);";
+            insertCmd.Parameters.AddWithValue("$createdAtUtc", DateTime.UtcNow.ToString("o"));
+            insertCmd.ExecuteNonQuery();
+        }
+
+        private static void EnsureActiveProfileSetting(SqliteConnection conn)
+        {
+            if (!TableExists(conn, "AppSettings"))
+            {
+                return;
+            }
+
+            using var checkCmd = conn.CreateCommand();
+            checkCmd.CommandText = "SELECT 1 FROM \"AppSettings\" WHERE \"Key\" = 'Profiles.ActiveProfileId' LIMIT 1;";
+            if (checkCmd.ExecuteScalar() != null)
+            {
+                return;
+            }
+
+            using var insertCmd = conn.CreateCommand();
+            insertCmd.CommandText = @"
+                INSERT INTO ""AppSettings"" (""Key"", ""Value"")
+                VALUES ('Profiles.ActiveProfileId', '1');";
+            insertCmd.ExecuteNonQuery();
+        }
+
+        private static void BackfillLegacyProfileState(SqliteConnection conn)
+        {
+            if (TableExists(conn, "Favorites") && ColumnExists(conn, "Favorites", "ProfileId"))
+            {
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = "UPDATE \"Favorites\" SET \"ProfileId\" = 1 WHERE \"ProfileId\" IS NULL OR \"ProfileId\" <= 0;";
+                cmd.ExecuteNonQuery();
+            }
+
+            if (TableExists(conn, "PlaybackProgresses") && ColumnExists(conn, "PlaybackProgresses", "ProfileId"))
+            {
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = "UPDATE \"PlaybackProgresses\" SET \"ProfileId\" = 1 WHERE \"ProfileId\" IS NULL OR \"ProfileId\" <= 0;";
+                cmd.ExecuteNonQuery();
+            }
+
+            if (!TableExists(conn, "ParentalControlSettings"))
+            {
+                return;
+            }
+
+            if (ColumnExists(conn, "ParentalControlSettings", "ProfileId"))
+            {
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = "UPDATE \"ParentalControlSettings\" SET \"ProfileId\" = 1 WHERE \"ProfileId\" IS NULL OR \"ProfileId\" <= 0;";
+                cmd.ExecuteNonQuery();
+            }
+
+            using var countCmd = conn.CreateCommand();
+            countCmd.CommandText = "SELECT COUNT(1) FROM \"ParentalControlSettings\";";
+            var count = Convert.ToInt32(countCmd.ExecuteScalar());
+            if (count > 0)
+            {
+                return;
+            }
+
+            using var insertCmd = conn.CreateCommand();
+            insertCmd.CommandText = @"
+                INSERT INTO ""ParentalControlSettings""
+                    (""ProfileId"", ""PinHash"", ""LockedCategoryIdsJson"", ""LockedSourceIdsJson"", ""IsKidsSafeMode"", ""HideLockedContent"")
+                VALUES
+                    (1, '', '', '', 0, 1);";
+            insertCmd.ExecuteNonQuery();
         }
 
         private static void EnsureEpgSyncLogsTable(SqliteConnection conn)
@@ -201,7 +318,7 @@ namespace Kroira.App.Data
             return false;
         }
 
-        private static void EnsureIndex(SqliteConnection conn, string indexName, string tableName, string columnName)
+        private static void EnsureIndex(SqliteConnection conn, string indexName, string tableName, string columnName, bool unique = false)
         {
             if (!TableExists(conn, tableName) || !ColumnExists(conn, tableName, columnName) || IndexExists(conn, indexName))
             {
@@ -209,7 +326,7 @@ namespace Kroira.App.Data
             }
 
             using var cmd = conn.CreateCommand();
-            cmd.CommandText = $"CREATE INDEX \"{indexName}\" ON \"{tableName}\" (\"{columnName}\");";
+            cmd.CommandText = $"CREATE {(unique ? "UNIQUE " : string.Empty)}INDEX \"{indexName}\" ON \"{tableName}\" (\"{columnName}\");";
             cmd.ExecuteNonQuery();
         }
 
@@ -227,6 +344,23 @@ namespace Kroira.App.Data
 
             using var cmd = conn.CreateCommand();
             cmd.CommandText = $"CREATE INDEX \"{indexName}\" ON \"{tableName}\" (\"{col1}\", \"{col2}\");";
+            cmd.ExecuteNonQuery();
+        }
+
+        private static void EnsureTripleCompositeIndex(SqliteConnection conn, string indexName, string tableName, string col1, string col2, string col3)
+        {
+            if (!TableExists(conn, tableName) || IndexExists(conn, indexName))
+            {
+                return;
+            }
+
+            if (!ColumnExists(conn, tableName, col1) || !ColumnExists(conn, tableName, col2) || !ColumnExists(conn, tableName, col3))
+            {
+                return;
+            }
+
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = $"CREATE INDEX \"{indexName}\" ON \"{tableName}\" (\"{col1}\", \"{col2}\", \"{col3}\");";
             cmd.ExecuteNonQuery();
         }
 

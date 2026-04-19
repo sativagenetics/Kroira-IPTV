@@ -55,9 +55,9 @@ namespace Kroira.App.Views
 
         private void EpisodeList_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (e.AddedItems.Count > 0 && e.AddedItems[0] is Episode ep)
+            if (e.AddedItems.Count > 0 && e.AddedItems[0] is SeriesEpisodeItemViewModel item)
             {
-                PlayEpisode(ep);
+                PlayEpisode(item);
             }
             ((ListView)sender).SelectedItem = null;
         }
@@ -88,16 +88,32 @@ namespace Kroira.App.Views
             }
         }
 
-        private void PlayEpisode(Episode ep)
+        private async void MarkEpisodeWatched_Click(object sender, RoutedEventArgs e)
         {
-            if (!string.IsNullOrWhiteSpace(ep.StreamUrl))
+            if (sender is FrameworkElement { DataContext: SeriesEpisodeItemViewModel item })
+            {
+                await ViewModel.MarkEpisodeWatchedCommand.ExecuteAsync(item);
+            }
+        }
+
+        private async void MarkEpisodeUnwatched_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is FrameworkElement { DataContext: SeriesEpisodeItemViewModel item })
+            {
+                await ViewModel.MarkEpisodeUnwatchedCommand.ExecuteAsync(item);
+            }
+        }
+
+        private void PlayEpisode(SeriesEpisodeItemViewModel item)
+        {
+            if (!string.IsNullOrWhiteSpace(item.StreamUrl))
             {
                 this.Frame.Navigate(typeof(EmbeddedPlaybackPage), new PlaybackLaunchContext
                 {
-                    ContentId = ep.Id,
+                    ContentId = item.Id,
                     ContentType = PlaybackContentType.Episode,
-                    StreamUrl = ep.StreamUrl,
-                    StartPositionMs = 0
+                    StreamUrl = item.StreamUrl,
+                    StartPositionMs = item.ResumePositionMs
                 });
             }
         }
