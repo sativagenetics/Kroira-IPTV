@@ -26,6 +26,8 @@ namespace Kroira.App.ViewModels
         public string ParseWarningsText { get; set; } = string.Empty;
         public string NetworkFailureText { get; set; } = string.Empty;
         public string LastSuccessfulSyncText { get; set; } = string.Empty;
+        public int ImportWarningCount { get; set; }
+        public int GuideWarningCount { get; set; }
 
         public bool HasEpgUrl { get; set; }
         public bool CanSyncEpg { get; set; }
@@ -166,6 +168,8 @@ namespace Kroira.App.ViewModels
                     0,
                     0,
                     0,
+                    0,
+                    0,
                     profile.LastSync.HasValue ? "Ready" : "Not synced",
                     profile.LastSync.HasValue
                         ? $"Last import completed {profile.LastSync.Value.ToLocalTime():g}."
@@ -206,7 +210,9 @@ namespace Kroira.App.ViewModels
                     EpgCoverageText = snapshot.EpgCoverageText,
                     ParseWarningsText = snapshot.WarningSummaryText,
                     NetworkFailureText = snapshot.FailureSummaryText,
-                    LastSuccessfulSyncText = snapshot.LastSuccessfulSyncText
+                    LastSuccessfulSyncText = snapshot.LastSuccessfulSyncText,
+                    ImportWarningCount = snapshot.ImportWarningCount,
+                    GuideWarningCount = snapshot.GuideWarningCount
                 });
             }
 

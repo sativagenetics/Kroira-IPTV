@@ -167,16 +167,25 @@ namespace Kroira.App.Services
                 var importFailure = DetectImportFailure(syncState);
                 var epgFailure = epgLog is { IsSuccess: false };
 
-                var warnings = BuildWarnings(
+                var importWarnings = BuildImportWarnings(
                     type,
                     hasAnyCatalog,
+                    liveCount,
+                    syncState);
+
+                var guideWarnings = BuildGuideWarnings(
+                    type,
                     liveCount,
                     matchedCount,
                     unmatchedCount,
                     hasEpgUrl,
                     hasPersistedGuideData,
-                    syncState,
                     epgLog);
+
+                var warnings = importWarnings
+                    .Concat(guideWarnings)
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToList();
 
                 var healthLabel = ComputeHealthLabel(
                     profile?.LastSync,
@@ -188,14 +197,23 @@ namespace Kroira.App.Services
                     liveCount,
                     matchedCount);
 
+                var primaryReason = BuildPrimaryReason(
+                    healthLabel,
+                    importFailure,
+                    epgFailure,
+                    warnings,
+                    syncState,
+                    epgLog,
+                    liveCount,
+                    matchedCount,
+                    unmatchedCount,
+                    hasAnyCatalog,
+                    hasEpgUrl);
+
                 var status = BuildStatusSummary(
                     healthLabel,
                     profile?.LastSync,
-                    importFailure,
-                    epgFailure,
-                    liveCount,
-                    matchedCount,
-                    hasEpgUrl);
+                    primaryReason);
 
                 snapshots[sourceId] = new SourceDiagnosticsSnapshot(
                     sourceId,
@@ -208,11 +226,13 @@ namespace Kroira.App.Services
                     matchedCount,
                     unmatchedCount,
                     epgLog?.ProgrammeCount ?? 0,
+                    importWarnings.Count,
+                    guideWarnings.Count,
                     healthLabel,
                     status,
-                    BuildImportResultText(profile?.LastSync, liveCount, movieCount, seriesCount, hasAnyCatalog),
+                    BuildImportResultText(syncState, profile?.LastSync, liveCount, movieCount, seriesCount, hasAnyCatalog),
                     BuildEpgCoverageText(hasEpgUrl, liveCount, matchedCount, unmatchedCount, epgLog),
-                    BuildWarningSummary(warnings),
+                    BuildWarningSummary(importWarnings.Count, guideWarnings.Count, warnings),
                     BuildFailureSummary(syncState, epgLog),
                     BuildLastSuccessfulSyncText(profile?.LastSync, epgLog, hasEpgUrl),
                     FormatTimestamp(profile?.LastSync),
@@ -233,16 +253,11 @@ namespace Kroira.App.Services
             return !syncState.ErrorLog.StartsWith("EPG", StringComparison.OrdinalIgnoreCase);
         }
 
-        private static List<string> BuildWarnings(
+        private static List<string> BuildImportWarnings(
             SourceType type,
             bool hasAnyCatalog,
             int liveCount,
-            int matchedCount,
-            int unmatchedCount,
-            bool hasEpgUrl,
-            bool hasPersistedGuideData,
-            SourceSyncState? syncState,
-            EpgSyncLog? epgLog)
+            SourceSyncState? syncState)
         {
             var warnings = new List<string>();
 
@@ -255,6 +270,37 @@ namespace Kroira.App.Services
             {
                 warnings.Add("no live channels imported");
             }
+
+            if (syncState != null &&
+                syncState.HttpStatusCode == 200 &&
+                syncState.ErrorLog.Contains("suppressed", StringComparison.OrdinalIgnoreCase))
+            {
+                warnings.Add("import applied source filtering");
+            }
+
+            if (type == SourceType.M3U &&
+                syncState != null &&
+                syncState.HttpStatusCode == 200 &&
+                syncState.ErrorLog.Contains("LiveOnly mode", StringComparison.OrdinalIgnoreCase))
+            {
+                warnings.Add("VOD import disabled by source mode");
+            }
+
+            return warnings
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+        }
+
+        private static List<string> BuildGuideWarnings(
+            SourceType type,
+            int liveCount,
+            int matchedCount,
+            int unmatchedCount,
+            bool hasEpgUrl,
+            bool hasPersistedGuideData,
+            EpgSyncLog? epgLog)
+        {
+            var warnings = new List<string>();
 
             if (hasEpgUrl && liveCount > 0)
             {
@@ -270,13 +316,6 @@ namespace Kroira.App.Services
                 {
                     warnings.Add("guide configured but not synced");
                 }
-            }
-
-            if (syncState != null &&
-                syncState.HttpStatusCode == 200 &&
-                syncState.ErrorLog.Contains("suppressed", StringComparison.OrdinalIgnoreCase))
-            {
-                warnings.Add("import applied source filtering");
             }
 
             if (type == SourceType.M3U && liveCount > 0 && matchedCount == 0 && hasEpgUrl)
@@ -330,22 +369,15 @@ namespace Kroira.App.Services
         private static string BuildStatusSummary(
             string healthLabel,
             DateTime? lastImportSuccessUtc,
-            bool importFailure,
-            bool epgFailure,
-            int liveCount,
-            int matchedCount,
-            bool hasEpgUrl)
+            string primaryReason)
         {
             return healthLabel switch
             {
-                "Healthy" => hasEpgUrl && liveCount > 0
-                    ? $"Import stable. Guide matched {matchedCount} live channels."
-                    : "Import stable. No active diagnostics issues.",
-                "Degraded" when epgFailure => "Catalog is available, but guide sync is failing or incomplete.",
-                "Degraded" when hasEpgUrl && liveCount > 0 && matchedCount < liveCount => "Catalog is available, but guide coverage is partial.",
-                "Degraded" => "Catalog is available, but diagnostics found recoverable issues.",
-                "Failing" when importFailure => "Latest source import attempt failed.",
-                "Failing" => "Source has not produced a healthy catalog state.",
+                "Healthy" => string.IsNullOrWhiteSpace(primaryReason)
+                    ? "Import stable. No active diagnostics issues."
+                    : primaryReason,
+                "Degraded" => primaryReason,
+                "Failing" => primaryReason,
                 _ => lastImportSuccessUtc.HasValue
                     ? "Import history is incomplete."
                     : "Source saved. No successful import recorded yet."
@@ -353,12 +385,30 @@ namespace Kroira.App.Services
         }
 
         private static string BuildImportResultText(
+            SourceSyncState? syncState,
             DateTime? lastImportSuccessUtc,
             int liveCount,
             int movieCount,
             int seriesCount,
             bool hasAnyCatalog)
         {
+            if (syncState != null)
+            {
+                if (syncState.HttpStatusCode >= 400)
+                {
+                    var httpSummary = syncState.HttpStatusCode > 0
+                        ? $"HTTP {syncState.HttpStatusCode}"
+                        : "network failure";
+                    return $"Failed - {httpSummary} - {TrimSummary(syncState.ErrorLog, 72)}";
+                }
+
+                if (!string.IsNullOrWhiteSpace(syncState.ErrorLog) &&
+                    !syncState.ErrorLog.StartsWith("EPG", StringComparison.OrdinalIgnoreCase))
+                {
+                    return TrimSummary(syncState.ErrorLog, 96);
+                }
+            }
+
             if (!lastImportSuccessUtc.HasValue)
             {
                 return "No successful import recorded";
@@ -401,7 +451,10 @@ namespace Kroira.App.Services
             return $"{coverage}% coverage - {matchedCount} matched / {unmatchedCount} unmatched";
         }
 
-        private static string BuildWarningSummary(IReadOnlyList<string> warnings)
+        private static string BuildWarningSummary(
+            int importWarningCount,
+            int guideWarningCount,
+            IReadOnlyList<string> warnings)
         {
             if (warnings.Count == 0)
             {
@@ -409,9 +462,68 @@ namespace Kroira.App.Services
             }
 
             var preview = string.Join(" - ", warnings.Take(2));
+            var scope = importWarningCount > 0 && guideWarningCount > 0
+                ? $"{importWarningCount} import/classification, {guideWarningCount} guide"
+                : importWarningCount > 0
+                    ? $"{importWarningCount} import/classification"
+                    : $"{guideWarningCount} guide";
+
             return warnings.Count > 2
-                ? $"{warnings.Count} warnings - {preview}"
-                : $"{warnings.Count} warning{(warnings.Count == 1 ? string.Empty : "s")} - {preview}";
+                ? $"{scope} warnings - {preview}"
+                : $"{scope} warning{(warnings.Count == 1 ? string.Empty : "s")} - {preview}";
+        }
+
+        private static string BuildPrimaryReason(
+            string healthLabel,
+            bool importFailure,
+            bool epgFailure,
+            IReadOnlyList<string> warnings,
+            SourceSyncState? syncState,
+            EpgSyncLog? epgLog,
+            int liveCount,
+            int matchedCount,
+            int unmatchedCount,
+            bool hasAnyCatalog,
+            bool hasEpgUrl)
+        {
+            if (importFailure)
+            {
+                var httpSummary = syncState?.HttpStatusCode > 0
+                    ? $"Import failed with HTTP {syncState.HttpStatusCode}"
+                    : "Latest import attempt failed";
+                return $"{httpSummary}: {TrimSummary(syncState?.ErrorLog ?? string.Empty, 72)}";
+            }
+
+            if (!hasAnyCatalog)
+            {
+                return "No catalog items imported";
+            }
+
+            if (epgFailure)
+            {
+                return $"Guide sync failed: {TrimSummary(epgLog?.FailureReason ?? string.Empty, 72)}";
+            }
+
+            if (hasEpgUrl && liveCount > 0 && matchedCount < liveCount)
+            {
+                return matchedCount == 0
+                    ? "Guide coverage is missing for all live channels"
+                    : $"{unmatchedCount} live channels are still unmatched to guide data";
+            }
+
+            if (warnings.Count > 0)
+            {
+                return warnings[0];
+            }
+
+            return healthLabel switch
+            {
+                "Healthy" => hasEpgUrl && liveCount > 0
+                    ? $"Guide matched {matchedCount} live channels"
+                    : "Import stable",
+                "Not synced" => "No successful import recorded yet",
+                _ => string.Empty
+            };
         }
 
         private static string BuildFailureSummary(SourceSyncState? syncState, EpgSyncLog? epgLog)
@@ -500,6 +612,8 @@ namespace Kroira.App.Services
         int MatchedLiveChannelCount,
         int UnmatchedLiveChannelCount,
         int EpgProgramCount,
+        int ImportWarningCount,
+        int GuideWarningCount,
         string HealthLabel,
         string StatusSummary,
         string ImportResultText,

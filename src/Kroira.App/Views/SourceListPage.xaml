@@ -248,7 +248,7 @@
                                                            Foreground="{StaticResource KroiraTextTertiaryBrush}"
                                                            MaxLines="1"
                                                            TextTrimming="CharacterEllipsis">
-                                                    <Run Text="Import: " />
+                                                    <Run Text="Last result: " />
                                                     <Run Text="{Binding ImportResultText}" />
                                                 </TextBlock>
                                                 <TextBlock FontSize="11"
@@ -262,7 +262,7 @@
                                                            Foreground="{StaticResource KroiraTextTertiaryBrush}"
                                                            MaxLines="1"
                                                            TextTrimming="CharacterEllipsis">
-                                                    <Run Text="Success: " />
+                                                    <Run Text="Last success: " />
                                                     <Run Text="{Binding LastSuccessfulSyncText}" />
                                                 </TextBlock>
                                                 <TextBlock Visibility="{Binding ParseWarningsVisibility}"

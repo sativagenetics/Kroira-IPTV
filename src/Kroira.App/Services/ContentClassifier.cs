@@ -760,7 +760,7 @@ namespace Kroira.App.Services
             new(@"\s{2,}", RegexOptions.Compiled);
 
         private static readonly Regex _promotionalBoundaryRegex =
-            new(@"(?:^|[\s\[\(\{\|:\-~])(?:(?:official|final|exclusive|extended)\s+)?(?:trailer|teaser|preview|clip|sample)s?(?:$|[\s\]\)\}\|:\-~])",
+            new(@"(?:^|[\[\(\{\|:\-~])\s*(?:(?:official|final|exclusive|extended)\s+)?(?:trailer|teaser|preview|clip|sample)s?(?=\s*(?:$|[\]\)\}\|:\-~]))",
                 RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
         /// <summary>
