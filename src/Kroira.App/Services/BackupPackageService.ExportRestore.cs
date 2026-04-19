@@ -20,11 +20,15 @@ namespace Kroira.App.Services
         private async Task<BackupExportResult> ExportPackageAsync(string filePath)
         {
             var fullPath = NormalizeBackupPath(filePath);
+            BackupRuntimeLogger.Log("BACKUP EXPORT", $"export start path='{fullPath}'");
 
             using var scope = _services.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            BackupRuntimeLogger.Log("BACKUP EXPORT", "snapshot load start");
             var snapshot = await LoadCatalogLocatorSnapshotAsync(db);
+            BackupRuntimeLogger.Log("BACKUP EXPORT", $"snapshot load end channels={snapshot.Channels.Count} movies={snapshot.Movies.Count} series={snapshot.Series.Count} episodes={snapshot.Episodes.Count}");
 
+            BackupRuntimeLogger.Log("BACKUP EXPORT", "package projection start");
             var package = new BackupPackage
             {
                 ExportedAtUtc = DateTime.UtcNow,
@@ -54,31 +58,42 @@ namespace Kroira.App.Services
                         HideLockedContent = setting.HideLockedContent
                     })
                     .ToListAsync(),
-                Settings = await db.AppSettings
-                    .AsNoTracking()
-                    .OrderBy(setting => setting.Key)
+                Settings = (await db.AppSettings
+                        .AsNoTracking()
+                        .OrderBy(setting => setting.Id)
+                        .ToListAsync())
+                    .GroupBy(setting => setting.Key, StringComparer.Ordinal)
+                    .Select(group => group.Last())
+                    .OrderBy(setting => setting.Key, StringComparer.Ordinal)
                     .Select(setting => new BackupAppSettingRecord
                     {
                         Key = setting.Key,
                         Value = setting.Value
                     })
-                    .ToListAsync(),
+                    .ToList(),
                 Favorites = await ExportFavoritesAsync(db, snapshot),
                 WatchStates = await ExportWatchStatesAsync(db, snapshot)
             };
+            BackupRuntimeLogger.Log("BACKUP EXPORT", $"package projection end sources={package.Sources.Count} profiles={package.Profiles.Count} settings={package.Settings.Count} favorites={package.Favorites.Count} watch={package.WatchStates.Count}");
 
             ValidatePackage(package);
+            BackupRuntimeLogger.Log("BACKUP EXPORT", "package validation end");
 
             Directory.CreateDirectory(Path.GetDirectoryName(fullPath)!);
+            BackupRuntimeLogger.Log("BACKUP EXPORT", "serialization start");
             var json = JsonSerializer.Serialize(package, JsonOptions);
             var byteCount = Encoding.UTF8.GetByteCount(json);
+            BackupRuntimeLogger.Log("BACKUP EXPORT", $"serialization end bytes={byteCount}");
             if (byteCount > MaxPackageSizeBytes)
             {
                 throw new InvalidOperationException($"Backup package is too large ({byteCount / 1024 / 1024.0:0.0} MB).");
             }
 
+            BackupRuntimeLogger.Log("BACKUP EXPORT", "file write start");
             await File.WriteAllTextAsync(fullPath, json, Encoding.UTF8);
+            BackupRuntimeLogger.Log("BACKUP EXPORT", "file write end");
 
+            BackupRuntimeLogger.Log("BACKUP EXPORT", "export completed");
             return new BackupExportResult
             {
                 FilePath = fullPath,
@@ -331,7 +346,7 @@ namespace Kroira.App.Services
                 throw new InvalidDataException($"Unsupported backup schema version {package.SchemaVersion}.");
             }
 
-            if (package.Sources.Count > 128 || package.Profiles.Count > 32 || package.Settings.Count > 2048 ||
+            if (package.Sources.Count > 128 || package.Profiles.Count > 32 || package.Settings.Count > 20000 ||
                 package.Favorites.Count > 50000 || package.WatchStates.Count > 50000)
             {
                 throw new InvalidDataException("Backup package exceeds supported record limits.");

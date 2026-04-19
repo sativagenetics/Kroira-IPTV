@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Kroira.App.Services;
 using Kroira.App.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
@@ -10,6 +11,8 @@ namespace Kroira.App.Views
 {
     public sealed partial class SettingsPage : Page
     {
+        private bool _isExportPickerOpen;
+
         public SettingsViewModel ViewModel { get; }
 
         public SettingsPage()
@@ -26,14 +29,40 @@ namespace Kroira.App.Views
 
         private async void OnExportBackupClick(object sender, RoutedEventArgs e)
         {
-            var picker = CreateSavePicker();
-            var file = await picker.PickSaveFileAsync();
-            if (file == null)
+            if (_isExportPickerOpen)
             {
+                LogExport("picker launch ignored because export picker is already open");
                 return;
             }
 
-            await ViewModel.ExportBackupAsync(file.Path);
+            _isExportPickerOpen = true;
+            LogExport($"command entry hasThreadAccess={DispatcherQueue.HasThreadAccess}");
+
+            try
+            {
+                var picker = CreateSavePicker();
+                LogExport("picker created");
+                var file = await picker.PickSaveFileAsync();
+                if (file == null)
+                {
+                    LogExport("picker cancelled");
+                    return;
+                }
+
+                LogExport($"picker completed path='{file.Path}'");
+                await ViewModel.ExportBackupAsync(file.Path);
+                LogExport("viewmodel export completed");
+            }
+            catch (Exception ex)
+            {
+                LogExport($"export click failed type={ex.GetType().Name} message='{ex.Message}'");
+                ViewModel.BackupStatusText = $"Backup export failed: {ex.Message}";
+            }
+            finally
+            {
+                _isExportPickerOpen = false;
+                LogExport("picker state cleared");
+            }
         }
 
         private async void OnRestoreBackupClick(object sender, RoutedEventArgs e)
@@ -71,7 +100,7 @@ namespace Kroira.App.Views
                 SuggestedFileName = $"kroira-backup-{DateTime.Now:yyyyMMdd-HHmm}"
             };
 
-            picker.FileTypeChoices.Add("Kroira Backup", new List<string> { ".kroira-backup.json" });
+            picker.FileTypeChoices.Add("Kroira Backup", new List<string> { ".json" });
             InitializePicker(picker);
             return picker;
         }
@@ -90,6 +119,11 @@ namespace Kroira.App.Views
             var window = ((App)Application.Current).MainWindow;
             var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(window);
             WinRT.Interop.InitializeWithWindow.Initialize(picker, hwnd);
+        }
+
+        private static void LogExport(string message)
+        {
+            BackupRuntimeLogger.Log("SETTINGS PAGE", message);
         }
     }
 }

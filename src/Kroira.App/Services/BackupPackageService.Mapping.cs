@@ -23,13 +23,14 @@ namespace Kroira.App.Services
                     db.ChannelCategories.AsNoTracking(),
                     channel => channel.ChannelCategoryId,
                     category => category.Id,
-                    (channel, category) => new ChannelLocatorCandidate(
-                        channel.Id,
-                        category.SourceProfileId,
-                        channel.Name,
-                        channel.StreamUrl,
-                        channel.EpgChannelId))
-                .OrderBy(item => item.Id)
+                    (channel, category) => new { channel, category })
+                .OrderBy(item => item.channel.Id)
+                .Select(item => new ChannelLocatorCandidate(
+                    item.channel.Id,
+                    item.category.SourceProfileId,
+                    item.channel.Name,
+                    item.channel.StreamUrl,
+                    item.channel.EpgChannelId))
                 .ToDictionaryAsync(item => item.Id);
 
             var movies = await db.Movies
@@ -68,19 +69,20 @@ namespace Kroira.App.Services
                     db.Series.AsNoTracking(),
                     pair => pair.season.SeriesId,
                     seriesItem => seriesItem.Id,
-                    (pair, seriesItem) => new EpisodeLocatorCandidate(
-                        pair.episode.Id,
-                        seriesItem.SourceProfileId,
-                        pair.episode.Title,
-                        pair.episode.ExternalId,
-                        pair.episode.StreamUrl,
-                        pair.season.SeasonNumber,
-                        pair.episode.EpisodeNumber,
-                        seriesItem.Title,
-                        seriesItem.ExternalId,
-                        seriesItem.CanonicalTitleKey,
-                        seriesItem.DedupFingerprint))
-                .OrderBy(item => item.Id)
+                    (pair, seriesItem) => new { pair.episode, pair.season, seriesItem })
+                .OrderBy(item => item.episode.Id)
+                .Select(item => new EpisodeLocatorCandidate(
+                    item.episode.Id,
+                    item.seriesItem.SourceProfileId,
+                    item.episode.Title,
+                    item.episode.ExternalId,
+                    item.episode.StreamUrl,
+                    item.season.SeasonNumber,
+                    item.episode.EpisodeNumber,
+                    item.seriesItem.Title,
+                    item.seriesItem.ExternalId,
+                    item.seriesItem.CanonicalTitleKey,
+                    item.seriesItem.DedupFingerprint))
                 .ToDictionaryAsync(item => item.Id);
 
             return new CatalogLocatorSnapshot(channels, movies, series, episodes);

@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -188,37 +189,52 @@ namespace Kroira.App.ViewModels
 
         public async Task ExportBackupAsync(string filePath)
         {
+            LogBackup($"export command entered path='{filePath}' busy={IsBackupBusy}");
+
             if (!CanUseBackupRestore)
             {
                 BackupStatusText = "Backup export is unavailable for this entitlement.";
+                LogBackup("export command denied by entitlement");
                 return;
             }
 
             if (IsBackupBusy)
             {
+                LogBackup("export command ignored because backup is already busy");
                 return;
             }
 
             IsBackupBusy = true;
             BackupStatusText = "Exporting backup package...";
+            LogBackup("export status set busy");
 
             try
             {
-                using var scope = _serviceProvider.CreateScope();
-                var backupService = scope.ServiceProvider.GetRequiredService<IBackupPackageService>();
-                var result = await backupService.ExportAsync(filePath);
+                var result = await Task.Run(async () =>
+                {
+                    LogBackup("export background task started");
+                    using var scope = _serviceProvider.CreateScope();
+                    var backupService = scope.ServiceProvider.GetRequiredService<IBackupPackageService>();
+                    LogBackup("export service resolved on background thread");
+                    return await backupService.ExportAsync(filePath);
+                });
+                LogBackup($"export background task completed file='{result.FilePath}' sources={result.SourceCount} profiles={result.ProfileCount} favorites={result.FavoriteCount} watch={result.WatchStateCount}");
 
                 BackupStatusText =
                     $"Exported {result.SourceCount} sources, {result.ProfileCount} profiles, " +
                     $"{result.FavoriteCount} favorites, and {result.WatchStateCount} watch-state records.";
+                LogBackup("export status updated success");
             }
             catch (Exception ex)
             {
+                TryDeleteEmptyBackupFile(filePath);
                 BackupStatusText = $"Backup export failed: {ex.Message}";
+                LogBackup($"export failed type={ex.GetType().Name} message='{ex.Message}'");
             }
             finally
             {
                 IsBackupBusy = false;
+                LogBackup("export status cleared busy");
             }
         }
 
@@ -299,6 +315,31 @@ namespace Kroira.App.ViewModels
         public async Task OpenSupportAsync()
         {
             await Windows.System.Launcher.LaunchUriAsync(new Uri("https://sativagenetics.github.io/KroiraIPTV/support.html"));
+        }
+
+        private void LogBackup(string message)
+        {
+            BackupRuntimeLogger.Log("SETTINGS EXPORT", message);
+        }
+
+        private void TryDeleteEmptyBackupFile(string filePath)
+        {
+            try
+            {
+                if (File.Exists(filePath))
+                {
+                    var info = new FileInfo(filePath);
+                    if (info.Length == 0)
+                    {
+                        File.Delete(filePath);
+                        LogBackup($"deleted empty backup file path='{filePath}'");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                LogBackup($"failed to delete empty backup file path='{filePath}' message='{ex.Message}'");
+            }
         }
     }
 
