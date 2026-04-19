@@ -16,11 +16,13 @@ namespace Kroira.App.Services
         public string SelectedCategoryKey { get; set; } = string.Empty;
         public int SelectedSourceId { get; set; }
         public int LastChannelId { get; set; }
+        public bool HasExplicitLiveSortPreference { get; set; }
         public bool FavoritesOnly { get; set; }
         public bool HideSecondaryContent { get; set; }
         public bool GuideMatchedOnly { get; set; }
         public List<int> HiddenSourceIds { get; set; } = new();
         public List<int> RecentChannelIds { get; set; } = new();
+        public Dictionary<int, int> LiveChannelWatchCounts { get; set; } = new();
         public List<string> HiddenCategoryKeys { get; set; } = new();
         public Dictionary<string, string> CategoryRemaps { get; set; } = new(StringComparer.OrdinalIgnoreCase);
     }
@@ -69,8 +71,12 @@ namespace Kroira.App.Services
                 preferences.RecentChannelIds = preferences.RecentChannelIds
                     .Where(id => id > 0)
                     .Distinct()
-                    .Take(8)
+                    .Take(12)
                     .ToList();
+                preferences.LiveChannelWatchCounts = preferences.LiveChannelWatchCounts
+                    .Where(pair => pair.Key > 0 && pair.Value > 0)
+                    .GroupBy(pair => pair.Key)
+                    .ToDictionary(group => group.Key, group => group.Max(pair => pair.Value));
                 preferences.HiddenCategoryKeys = preferences.HiddenCategoryKeys
                     .Select(NormalizeCategoryKey)
                     .Where(value => !string.IsNullOrWhiteSpace(value))
@@ -149,6 +155,7 @@ namespace Kroira.App.Services
                     : ContentClassifier.NormalizeLabel(preferences.SelectedCategoryKey).Trim().ToLowerInvariant(),
                 SelectedSourceId = Math.Max(0, preferences.SelectedSourceId),
                 LastChannelId = Math.Max(0, preferences.LastChannelId),
+                HasExplicitLiveSortPreference = preferences.HasExplicitLiveSortPreference,
                 FavoritesOnly = preferences.FavoritesOnly,
                 HideSecondaryContent = preferences.HideSecondaryContent,
                 GuideMatchedOnly = preferences.GuideMatchedOnly
@@ -163,8 +170,13 @@ namespace Kroira.App.Services
             normalized.RecentChannelIds = preferences.RecentChannelIds
                 .Where(id => id > 0)
                 .Distinct()
-                .Take(8)
+                .Take(12)
                 .ToList();
+
+            normalized.LiveChannelWatchCounts = preferences.LiveChannelWatchCounts
+                .Where(pair => pair.Key > 0 && pair.Value > 0)
+                .GroupBy(pair => pair.Key)
+                .ToDictionary(group => group.Key, group => group.Max(pair => pair.Value));
 
             normalized.HiddenCategoryKeys = preferences.HiddenCategoryKeys
                 .Select(value => string.IsNullOrWhiteSpace(value) ? string.Empty : value.Trim().ToLowerInvariant())

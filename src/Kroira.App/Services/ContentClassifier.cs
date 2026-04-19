@@ -763,6 +763,25 @@ namespace Kroira.App.Services
             new(@"(?:^|[\[\(\{\|:\-~])\s*(?:(?:official|final|exclusive|extended)\s+)?(?:trailer|teaser|preview|clip|sample)s?(?=\s*(?:$|[\]\)\}\|:\-~]))",
                 RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
+        private static readonly string[] _sportsTokens =
+        {
+            "sport", "sports", "spor", "futbol", "football", "soccer", "basket", "basketball",
+            "tennis", "golf", "baseball", "hockey", "motorsport", "motor sport", "formula 1", "f1",
+            "motogp", "racing", "fight", "boxing", "wrestling", "ufc", "mma", "premier league",
+            "champions league", "europa league", "conference league", "uefa", "bundesliga",
+            "laliga", "la liga", "serie a", "ligue 1", "super lig", "süper lig", "nba", "nfl",
+            "nhl", "mlb", "euroleague", "eurolig", "euroliga"
+        };
+
+        private static readonly string[] _turkishTokens =
+        {
+            "turk", "türk", "turkish", "turkiye", "türkiye", "turki", "anatolia", "anadolu",
+            "super lig", "süper lig", "trt", "istanbul"
+        };
+
+        private static readonly Regex _turkishBoundaryRegex =
+            new(@"\b(?:tr|turk(?:ish)?|türk|turkiye|türkiye)\b", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
         /// <summary>
         /// Cleans an extracted series base title. Strips leading language tags
         /// and trailing "Season N" style suffixes without aggressively stripping
@@ -809,6 +828,60 @@ namespace Kroira.App.Services
             s = _leadingSeparators.Replace(s, string.Empty);
             s = _multiSpace.Replace(s, " ");
             return s.Trim();
+        }
+
+        public static bool IsSportsLikeLabel(string? value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return false;
+            }
+
+            var normalized = NormalizeLabel(value).ToLowerInvariant();
+            foreach (var token in _sportsTokens)
+            {
+                if (normalized.Contains(token, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        public static bool IsTurkishLikeLabel(string? value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return false;
+            }
+
+            var normalized = NormalizeLabel(value).ToLowerInvariant();
+            if (_turkishBoundaryRegex.IsMatch(normalized))
+            {
+                return true;
+            }
+
+            foreach (var token in _turkishTokens)
+            {
+                if (normalized.Contains(token, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        public static bool IsSportsLikeChannel(string? title, string? categoryName)
+        {
+            return IsSportsLikeLabel(title) || IsSportsLikeLabel(categoryName);
+        }
+
+        public static bool IsTurkishSportsLikeChannel(string? title, string? categoryName)
+        {
+            return IsSportsLikeChannel(title, categoryName) &&
+                   (IsTurkishLikeLabel(title) || IsTurkishLikeLabel(categoryName));
         }
     }
 }

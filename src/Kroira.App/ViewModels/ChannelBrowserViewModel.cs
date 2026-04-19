@@ -20,9 +20,14 @@ namespace Kroira.App.ViewModels
         public int Id { get; set; }
         public string FilterKey { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
         public int ItemCount { get; set; }
         public int OrderIndex { get; set; }
+        public bool IsSmartCategory { get; set; }
         public string DisplayName => ItemCount > 0 ? $"{Name} ({ItemCount:N0})" : Name;
+        public string CountText => ItemCount > 0 ? $"{ItemCount:N0}" : string.Empty;
+        public Visibility CountVisibility => ItemCount > 0 ? Visibility.Visible : Visibility.Collapsed;
+        public Visibility DescriptionVisibility => string.IsNullOrWhiteSpace(Description) ? Visibility.Collapsed : Visibility.Visible;
     }
 
     public partial class BrowserChannelViewModel : ObservableObject
@@ -58,6 +63,10 @@ namespace Kroira.App.ViewModels
         public bool HasGuideData { get; set; }
         public bool HasMatchedGuide { get; set; }
         public bool IsLastTuned { get; set; }
+        public bool IsSportsChannel { get; set; }
+        public bool IsTurkishSportsChannel { get; set; }
+        public int WatchCount { get; set; }
+        public DateTime? LastWatchedAtUtc { get; set; }
         public string QuickAccessBadgeText { get; set; } = string.Empty;
 
         [ObservableProperty]
@@ -65,6 +74,23 @@ namespace Kroira.App.ViewModels
         private bool _isFavorite;
 
         public string FavoriteIcon => IsFavorite ? "★" : "☆";
+    }
+
+    public sealed class LiveChannelSectionViewModel : ObservableObject
+    {
+        public LiveChannelSectionViewModel(string key, string title, string subtitle)
+        {
+            Key = key;
+            Title = title;
+            Subtitle = subtitle;
+            Channels.CollectionChanged += (_, _) => OnPropertyChanged(nameof(Visibility));
+        }
+
+        public string Key { get; }
+        public string Title { get; }
+        public string Subtitle { get; }
+        public ObservableCollection<BrowserChannelViewModel> Channels { get; } = new();
+        public Visibility Visibility => Channels.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
     }
 
     public static class EpgProgramDisplay
