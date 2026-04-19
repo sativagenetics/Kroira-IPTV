@@ -8,6 +8,7 @@ using System.Net;
 using System.Net.Http;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using Kroira.App.Data;
 using Kroira.App.Models;
@@ -18,9 +19,9 @@ namespace Kroira.App.Services.Metadata
     public interface ITmdbMetadataService
     {
         Task<bool> HasCredentialAsync(AppDbContext db);
-        Task BackfillMissingMetadataAsync(AppDbContext db, int maxMovies = 120, int maxSeries = 80);
-        Task EnrichMoviesAsync(AppDbContext db, IEnumerable<Movie> movies, int maxItems = 24);
-        Task EnrichSeriesAsync(AppDbContext db, IEnumerable<Series> series, int maxItems = 24);
+        Task BackfillMissingMetadataAsync(AppDbContext db, int maxMovies = 120, int maxSeries = 80, CancellationToken cancellationToken = default);
+        Task EnrichMoviesAsync(AppDbContext db, IEnumerable<Movie> movies, int maxItems = 24, CancellationToken cancellationToken = default);
+        Task EnrichSeriesAsync(AppDbContext db, IEnumerable<Series> series, int maxItems = 24, CancellationToken cancellationToken = default);
     }
 
     public sealed class TmdbMetadataService : ITmdbMetadataService
@@ -56,8 +57,9 @@ namespace Kroira.App.Services.Metadata
             return !string.IsNullOrWhiteSpace(await GetApiKeyAsync(db));
         }
 
-        public async Task BackfillMissingMetadataAsync(AppDbContext db, int maxMovies = 120, int maxSeries = 80)
+        public async Task BackfillMissingMetadataAsync(AppDbContext db, int maxMovies = 120, int maxSeries = 80, CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             var staleBefore = DateTime.UtcNow - CacheTtl;
             var missingMovies = await db.Movies
                 .Where(m => m.StreamUrl != string.Empty &&
@@ -71,13 +73,14 @@ namespace Kroira.App.Services.Metadata
                 .ThenByDescending(m => m.PosterUrl != string.Empty)
                 .ThenBy(m => m.Title)
                 .Take(maxMovies)
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
 
             if (missingMovies.Count > 0)
             {
-                await EnrichMoviesAsync(db, missingMovies, maxMovies);
+                await EnrichMoviesAsync(db, missingMovies, maxMovies, cancellationToken);
             }
 
+            cancellationToken.ThrowIfCancellationRequested();
             var missingSeries = await db.Series
                 .Where(s =>
                     (s.MetadataUpdatedAt == null || s.MetadataUpdatedAt < staleBefore) &&
@@ -90,16 +93,17 @@ namespace Kroira.App.Services.Metadata
                 .ThenByDescending(s => s.PosterUrl != string.Empty)
                 .ThenBy(s => s.Title)
                 .Take(maxSeries)
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
 
             if (missingSeries.Count > 0)
             {
-                await EnrichSeriesAsync(db, missingSeries, maxSeries);
+                await EnrichSeriesAsync(db, missingSeries, maxSeries, cancellationToken);
             }
         }
 
-        public async Task EnrichMoviesAsync(AppDbContext db, IEnumerable<Movie> movies, int maxItems = 24)
+        public async Task EnrichMoviesAsync(AppDbContext db, IEnumerable<Movie> movies, int maxItems = 24, CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             var apiKey = await GetApiKeyAsync(db);
             if (string.IsNullOrWhiteSpace(apiKey))
             {
@@ -123,7 +127,7 @@ namespace Kroira.App.Services.Metadata
             var inputMovies = movies.ToList();
             var inputIds = inputMovies.Where(m => m.Id > 0).Select(m => m.Id).Distinct().ToList();
             var trackedMovies = inputIds.Count > 0
-                ? await db.Movies.Where(m => inputIds.Contains(m.Id)).ToListAsync()
+                ? await db.Movies.Where(m => inputIds.Contains(m.Id)).ToListAsync(cancellationToken)
                 : inputMovies;
 
             var diagnostics = new TmdbDiagnostics();
@@ -137,6 +141,7 @@ namespace Kroira.App.Services.Metadata
 
             foreach (var movie in candidates)
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 if (diagnostics.Attempted >= maxItems)
                 {
                     break;
@@ -150,7 +155,7 @@ namespace Kroira.App.Services.Metadata
                 try
                 {
                     diagnostics.Attempted++;
-                    var details = await MatchMovieAsync(apiKey, movie, diagnostics);
+                    var details = await MatchMovieAsync(apiKey, movie, diagnostics, cancellationToken);
 
                     if (details == null)
                     {
@@ -193,7 +198,7 @@ namespace Kroira.App.Services.Metadata
             var savedChanges = 0;
             if (candidates.Count > 0)
             {
-                savedChanges = await db.SaveChangesAsync();
+                savedChanges = await db.SaveChangesAsync(cancellationToken);
             }
 
             var candidateIds = candidates.Select(m => m.Id).ToList();
@@ -205,13 +210,14 @@ namespace Kroira.App.Services.Metadata
                     (m.TmdbPosterPath != string.Empty ||
                      m.TmdbBackdropPath != string.Empty ||
                      m.Overview != string.Empty ||
-                     m.VoteAverage > 0));
+                     m.VoteAverage > 0), cancellationToken);
 
             await WriteDiagnosticsAsync(db, "Movie", diagnostics, persistedRows, savedChanges);
         }
 
-        public async Task EnrichSeriesAsync(AppDbContext db, IEnumerable<Series> series, int maxItems = 24)
+        public async Task EnrichSeriesAsync(AppDbContext db, IEnumerable<Series> series, int maxItems = 24, CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             var apiKey = await GetApiKeyAsync(db);
             if (string.IsNullOrWhiteSpace(apiKey))
             {
@@ -235,7 +241,7 @@ namespace Kroira.App.Services.Metadata
             var inputSeries = series.ToList();
             var inputIds = inputSeries.Where(s => s.Id > 0).Select(s => s.Id).Distinct().ToList();
             var trackedSeries = inputIds.Count > 0
-                ? await db.Series.Where(s => inputIds.Contains(s.Id)).ToListAsync()
+                ? await db.Series.Where(s => inputIds.Contains(s.Id)).ToListAsync(cancellationToken)
                 : inputSeries;
 
             var diagnostics = new TmdbDiagnostics();
@@ -249,6 +255,7 @@ namespace Kroira.App.Services.Metadata
 
             foreach (var show in candidates)
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 if (diagnostics.Attempted >= maxItems)
                 {
                     break;
@@ -262,7 +269,7 @@ namespace Kroira.App.Services.Metadata
                 try
                 {
                     diagnostics.Attempted++;
-                    var details = await MatchSeriesAsync(apiKey, show, diagnostics);
+                    var details = await MatchSeriesAsync(apiKey, show, diagnostics, cancellationToken);
 
                     if (details == null)
                     {
@@ -305,7 +312,7 @@ namespace Kroira.App.Services.Metadata
             var savedChanges = 0;
             if (candidates.Count > 0)
             {
-                savedChanges = await db.SaveChangesAsync();
+                savedChanges = await db.SaveChangesAsync(cancellationToken);
             }
 
             var candidateIds = candidates.Select(s => s.Id).ToList();
@@ -317,7 +324,7 @@ namespace Kroira.App.Services.Metadata
                     (s.TmdbPosterPath != string.Empty ||
                      s.TmdbBackdropPath != string.Empty ||
                      s.Overview != string.Empty ||
-                     s.VoteAverage > 0));
+                     s.VoteAverage > 0), cancellationToken);
 
             await WriteDiagnosticsAsync(db, "Series", diagnostics, persistedRows, savedChanges);
         }
@@ -551,14 +558,14 @@ namespace Kroira.App.Services.Metadata
                 ?? string.Empty;
         }
 
-        private async Task<TmdbDetails?> MatchMovieAsync(string apiKey, Movie movie, TmdbDiagnostics diagnostics)
+        private async Task<TmdbDetails?> MatchMovieAsync(string apiKey, Movie movie, TmdbDiagnostics diagnostics, CancellationToken cancellationToken)
         {
             var context = new TmdbRequestContext("Movie", movie.Id, movie.Title);
             var providerTmdbId = NormalizeTmdbId(movie.TmdbId);
             if (!string.IsNullOrWhiteSpace(providerTmdbId))
             {
                 diagnostics.ProviderTmdbIdAttempts++;
-                var details = await LoadDetailsAsync(apiKey, "movie", providerTmdbId, diagnostics, context, "details:provider-tmdb-id");
+                var details = await LoadDetailsAsync(apiKey, "movie", providerTmdbId, diagnostics, context, "details:provider-tmdb-id", cancellationToken);
                 if (details != null)
                 {
                     return details;
@@ -569,24 +576,24 @@ namespace Kroira.App.Services.Metadata
             if (!string.IsNullOrWhiteSpace(providerImdbId))
             {
                 diagnostics.ProviderImdbIdAttempts++;
-                var details = await FindByImdbIdAsync(apiKey, "movie", providerImdbId, diagnostics, context);
+                var details = await FindByImdbIdAsync(apiKey, "movie", providerImdbId, diagnostics, context, cancellationToken);
                 if (details != null)
                 {
                     return details;
                 }
             }
 
-            return await SearchAndLoadAsync(apiKey, "movie", movie.Title, movie.ReleaseDate?.Year, diagnostics, context);
+            return await SearchAndLoadAsync(apiKey, "movie", movie.Title, movie.ReleaseDate?.Year, diagnostics, context, cancellationToken);
         }
 
-        private async Task<TmdbDetails?> MatchSeriesAsync(string apiKey, Series series, TmdbDiagnostics diagnostics)
+        private async Task<TmdbDetails?> MatchSeriesAsync(string apiKey, Series series, TmdbDiagnostics diagnostics, CancellationToken cancellationToken)
         {
             var context = new TmdbRequestContext("Series", series.Id, series.Title);
             var providerTmdbId = NormalizeTmdbId(series.TmdbId);
             if (!string.IsNullOrWhiteSpace(providerTmdbId))
             {
                 diagnostics.ProviderTmdbIdAttempts++;
-                var details = await LoadDetailsAsync(apiKey, "tv", providerTmdbId, diagnostics, context, "details:provider-tmdb-id");
+                var details = await LoadDetailsAsync(apiKey, "tv", providerTmdbId, diagnostics, context, "details:provider-tmdb-id", cancellationToken);
                 if (details != null)
                 {
                     return details;
@@ -597,21 +604,21 @@ namespace Kroira.App.Services.Metadata
             if (!string.IsNullOrWhiteSpace(providerImdbId))
             {
                 diagnostics.ProviderImdbIdAttempts++;
-                var details = await FindByImdbIdAsync(apiKey, "tv", providerImdbId, diagnostics, context);
+                var details = await FindByImdbIdAsync(apiKey, "tv", providerImdbId, diagnostics, context, cancellationToken);
                 if (details != null)
                 {
                     return details;
                 }
             }
 
-            return await SearchAndLoadAsync(apiKey, "tv", series.Title, series.FirstAirDate?.Year, diagnostics, context);
+            return await SearchAndLoadAsync(apiKey, "tv", series.Title, series.FirstAirDate?.Year, diagnostics, context, cancellationToken);
         }
 
-        private async Task<TmdbDetails?> FindByImdbIdAsync(string apiKey, string mediaType, string imdbId, TmdbDiagnostics diagnostics, TmdbRequestContext context)
+        private async Task<TmdbDetails?> FindByImdbIdAsync(string apiKey, string mediaType, string imdbId, TmdbDiagnostics diagnostics, TmdbRequestContext context, CancellationToken cancellationToken)
         {
             diagnostics.FindRequests++;
             var url = $"{ApiBaseUrl}/find/{Uri.EscapeDataString(imdbId)}?api_key={Uri.EscapeDataString(apiKey)}&external_source=imdb_id";
-            using var doc = await GetJsonAsync(url, diagnostics, context, "find:imdb-id");
+            using var doc = await GetJsonAsync(url, diagnostics, context, "find:imdb-id", cancellationToken);
             if (doc == null)
             {
                 return null;
@@ -627,10 +634,10 @@ namespace Kroira.App.Services.Metadata
                 .Select(result => GetString(result, "id"))
                 .FirstOrDefault(value => !string.IsNullOrWhiteSpace(value));
 
-            return string.IsNullOrWhiteSpace(id) ? null : await LoadDetailsAsync(apiKey, mediaType, id, diagnostics, context, "details:imdb-match");
+            return string.IsNullOrWhiteSpace(id) ? null : await LoadDetailsAsync(apiKey, mediaType, id, diagnostics, context, "details:imdb-match", cancellationToken);
         }
 
-        private async Task<TmdbDetails?> SearchAndLoadAsync(string apiKey, string mediaType, string rawTitle, int? providerYear, TmdbDiagnostics diagnostics, TmdbRequestContext context)
+        private async Task<TmdbDetails?> SearchAndLoadAsync(string apiKey, string mediaType, string rawTitle, int? providerYear, TmdbDiagnostics diagnostics, TmdbRequestContext context, CancellationToken cancellationToken)
         {
             var queries = BuildSearchQueries(rawTitle, providerYear).ToList();
             if (queries.Count == 0)
@@ -640,13 +647,14 @@ namespace Kroira.App.Services.Metadata
 
             foreach (var query in queries)
             {
-                var bestId = await SearchBestIdAsync(apiKey, mediaType, query, diagnostics, context);
+                cancellationToken.ThrowIfCancellationRequested();
+                var bestId = await SearchBestIdAsync(apiKey, mediaType, query, diagnostics, context, cancellationToken);
                 if (string.IsNullOrWhiteSpace(bestId))
                 {
                     continue;
                 }
 
-                var details = await LoadDetailsAsync(apiKey, mediaType, bestId, diagnostics, context, "details:search-match");
+                var details = await LoadDetailsAsync(apiKey, mediaType, bestId, diagnostics, context, "details:search-match", cancellationToken);
                 if (details != null)
                 {
                     return details;
@@ -656,10 +664,11 @@ namespace Kroira.App.Services.Metadata
             return null;
         }
 
-        private async Task<string?> SearchBestIdAsync(string apiKey, string mediaType, TmdbSearchQuery query, TmdbDiagnostics diagnostics, TmdbRequestContext context)
+        private async Task<string?> SearchBestIdAsync(string apiKey, string mediaType, TmdbSearchQuery query, TmdbDiagnostics diagnostics, TmdbRequestContext context, CancellationToken cancellationToken)
         {
             foreach (var language in new[] { "tr-TR", "en-US" })
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 diagnostics.SearchRequests++;
                 var url = $"{ApiBaseUrl}/search/{mediaType}?api_key={Uri.EscapeDataString(apiKey)}&query={Uri.EscapeDataString(query.Title)}&include_adult=false&language={language}";
                 if (query.Year.HasValue)
@@ -669,7 +678,7 @@ namespace Kroira.App.Services.Metadata
                         : $"&first_air_date_year={query.Year.Value}";
                 }
 
-                using var searchDoc = await GetJsonAsync(url, diagnostics, context, "search");
+                using var searchDoc = await GetJsonAsync(url, diagnostics, context, "search", cancellationToken);
                 if (searchDoc == null || !searchDoc.RootElement.TryGetProperty("results", out var results) || results.ValueKind != JsonValueKind.Array)
                 {
                     continue;
@@ -685,7 +694,7 @@ namespace Kroira.App.Services.Metadata
             return null;
         }
 
-        private async Task<TmdbDetails?> LoadDetailsAsync(string apiKey, string mediaType, string tmdbId, TmdbDiagnostics diagnostics, TmdbRequestContext context, string requestType)
+        private async Task<TmdbDetails?> LoadDetailsAsync(string apiKey, string mediaType, string tmdbId, TmdbDiagnostics diagnostics, TmdbRequestContext context, string requestType, CancellationToken cancellationToken)
         {
             if (string.IsNullOrWhiteSpace(tmdbId))
             {
@@ -695,7 +704,7 @@ namespace Kroira.App.Services.Metadata
             diagnostics.DetailsRequests++;
             var append = mediaType == "movie" ? "external_ids" : "external_ids";
             var url = $"{ApiBaseUrl}/{mediaType}/{Uri.EscapeDataString(tmdbId)}?api_key={Uri.EscapeDataString(apiKey)}&append_to_response={append}";
-            using var doc = await GetJsonAsync(url, diagnostics, context, requestType);
+            using var doc = await GetJsonAsync(url, diagnostics, context, requestType, cancellationToken);
             if (doc == null)
             {
                 return null;
@@ -704,13 +713,14 @@ namespace Kroira.App.Services.Metadata
             return ParseDetails(doc.RootElement, mediaType);
         }
 
-        private async Task<JsonDocument?> GetJsonAsync(string url, TmdbDiagnostics diagnostics, TmdbRequestContext context, string requestType)
+        private async Task<JsonDocument?> GetJsonAsync(string url, TmdbDiagnostics diagnostics, TmdbRequestContext context, string requestType, CancellationToken cancellationToken)
         {
             for (var attempt = 1; attempt <= MaxRequestAttempts; attempt++)
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 try
                 {
-                    using var response = await _httpClient.GetAsync(url);
+                    using var response = await _httpClient.GetAsync(url, cancellationToken);
                     if (!response.IsSuccessStatusCode)
                     {
                         var kind = ClassifyStatusCode(response.StatusCode);
@@ -720,14 +730,14 @@ namespace Kroira.App.Services.Metadata
 
                         if (retryable && attempt < MaxRequestAttempts)
                         {
-                            await Task.Delay(GetRetryDelay(kind, attempt, response));
+                            await Task.Delay(GetRetryDelay(kind, attempt, response), cancellationToken);
                             continue;
                         }
 
                         throw new TmdbRequestException(kind, response.StatusCode, requestType, $"TMDb returned HTTP {(int)response.StatusCode} {response.ReasonPhrase}", retryable, DateTime.UtcNow + GetFailureCooldown(kind, response));
                     }
 
-                    var json = await response.Content.ReadAsStringAsync();
+                    var json = await response.Content.ReadAsStringAsync(cancellationToken);
                     if (string.IsNullOrWhiteSpace(json))
                     {
                         return null;
@@ -749,11 +759,15 @@ namespace Kroira.App.Services.Metadata
 
                     if (attempt < MaxRequestAttempts)
                     {
-                        await Task.Delay(GetRetryDelay(TmdbFailureKind.Network, attempt, null));
+                        await Task.Delay(GetRetryDelay(TmdbFailureKind.Network, attempt, null), cancellationToken);
                         continue;
                     }
 
                     throw new TmdbRequestException(TmdbFailureKind.Network, ex.StatusCode, requestType, "TMDb network request failed", true, DateTime.UtcNow + GetFailureCooldown(TmdbFailureKind.Network, null), ex);
+                }
+                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+                {
+                    throw;
                 }
                 catch (TaskCanceledException ex)
                 {
@@ -762,7 +776,7 @@ namespace Kroira.App.Services.Metadata
 
                     if (attempt < MaxRequestAttempts)
                     {
-                        await Task.Delay(GetRetryDelay(TmdbFailureKind.Timeout, attempt, null));
+                        await Task.Delay(GetRetryDelay(TmdbFailureKind.Timeout, attempt, null), cancellationToken);
                         continue;
                     }
 

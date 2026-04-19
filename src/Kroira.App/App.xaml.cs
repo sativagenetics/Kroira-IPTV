@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Kroira.App.Data;
 using Kroira.App.Services;
@@ -14,7 +15,10 @@ namespace Kroira.App
 {
     public partial class App : Application
     {
+        private static readonly TimeSpan StartupMetadataDelay = TimeSpan.FromSeconds(6);
+        private static readonly TimeSpan StartupMetadataBudget = TimeSpan.FromSeconds(15);
         private Window? _window;
+        private readonly CancellationTokenSource _startupMetadataCts = new();
         public Window? MainWindow => _window;
 
         public IServiceProvider Services { get; private set; } = null!;
@@ -67,12 +71,12 @@ namespace Kroira.App
                 }
                 SafeAppendLog("APP 08: after database bootstrap");
                 Services.GetRequiredService<IAppAppearanceService>().InitializeAsync().GetAwaiter().GetResult();
-                StartMetadataBackfill();
                 Services.GetRequiredService<IMediaJobService>().Start();
 
                 SafeAppendLog("APP 09: before MainWindow ctor");
                 _window = new MainWindow();
                 SafeAppendLog("APP 10: after MainWindow ctor");
+                _window.Closed += (_, _) => CancelStartupMetadataBackfill("window closed");
 
                 SafeAppendLog("APP 11: before IWindowManagerService.Initialize");
                 var winManager = Services.GetRequiredService<IWindowManagerService>();
@@ -87,6 +91,15 @@ namespace Kroira.App
                 SafeAppendLog("APP 15: before window.Activate");
                 _window.Activate();
                 SafeAppendLog("APP 16: after window.Activate");
+
+                if (_window is MainWindow mainWindow)
+                {
+                    SafeAppendLog("APP 17: before queue initial navigation");
+                    mainWindow.QueueInitialNavigation();
+                    SafeAppendLog("APP 18: after queue initial navigation");
+                }
+
+                ScheduleMetadataBackfillAfterShellVisible();
             }
             catch (Exception ex)
             {
@@ -96,31 +109,59 @@ namespace Kroira.App
             }
         }
 
-        private void StartMetadataBackfill()
+        private void ScheduleMetadataBackfillAfterShellVisible()
         {
-            _ = Task.Run(async () =>
+            SafeAppendLog("APP TMDB 00: scheduling metadata backfill after shell is visible");
+            _ = RunMetadataBackfillAfterShellVisibleAsync(_startupMetadataCts.Token);
+        }
+
+        private async Task RunMetadataBackfillAfterShellVisibleAsync(CancellationToken cancellationToken)
+        {
+            try
             {
-                try
-                {
-                    SafeAppendLog("APP TMDB 01: metadata backfill starting");
-                    using var scope = Services.CreateScope();
-                    var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-                    var tmdb = scope.ServiceProvider.GetRequiredService<ITmdbMetadataService>();
+                SafeAppendLog($"APP TMDB 01: delaying metadata backfill by {StartupMetadataDelay.TotalSeconds:0}s");
+                await Task.Delay(StartupMetadataDelay, cancellationToken);
 
-                    if (!await tmdb.HasCredentialAsync(dbContext))
-                    {
-                        SafeAppendLog("APP TMDB 02: metadata backfill skipped; no TMDb credential");
-                        return;
-                    }
+                using var scope = Services.CreateScope();
+                var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                var tmdb = scope.ServiceProvider.GetRequiredService<ITmdbMetadataService>();
 
-                    await tmdb.BackfillMissingMetadataAsync(dbContext, maxMovies: 240, maxSeries: 160);
-                    SafeAppendLog("APP TMDB 03: metadata backfill completed");
-                }
-                catch (Exception ex)
+                if (!await tmdb.HasCredentialAsync(dbContext))
                 {
-                    SafeLogException("APP TMDB BACKFILL ERROR", ex);
+                    SafeAppendLog("APP TMDB 02: metadata backfill skipped; no TMDb credential");
+                    return;
                 }
-            });
+
+                using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+                timeoutCts.CancelAfter(StartupMetadataBudget);
+
+                SafeAppendLog($"APP TMDB 03: metadata backfill starting with {StartupMetadataBudget.TotalSeconds:0}s budget");
+                await tmdb.BackfillMissingMetadataAsync(dbContext, maxMovies: 24, maxSeries: 16, timeoutCts.Token);
+                SafeAppendLog("APP TMDB 04: metadata backfill completed");
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                SafeAppendLog("APP TMDB 05: metadata backfill cancelled");
+            }
+            catch (OperationCanceledException)
+            {
+                SafeAppendLog("APP TMDB 06: metadata backfill stopped after startup budget");
+            }
+            catch (Exception ex)
+            {
+                SafeLogException("APP TMDB BACKFILL ERROR", ex);
+            }
+        }
+
+        private void CancelStartupMetadataBackfill(string reason)
+        {
+            if (_startupMetadataCts.IsCancellationRequested)
+            {
+                return;
+            }
+
+            SafeAppendLog($"APP TMDB 07: cancelling metadata backfill ({reason})");
+            _startupMetadataCts.Cancel();
         }
 
         private void RegisterGlobalExceptionHandlers()
@@ -208,6 +249,16 @@ namespace Kroira.App
             services.AddSingleton<Kroira.App.Services.Parsing.IXtreamParserService, Kroira.App.Services.Parsing.XtreamParserService>();
 
             return services.BuildServiceProvider();
+        }
+
+        internal void LogStartupCheckpoint(string message)
+        {
+            SafeAppendLog(message);
+        }
+
+        internal void LogStartupException(string title, Exception ex)
+        {
+            SafeLogException(title, ex);
         }
 
         private void ShowStartupErrorWindow(Exception ex)

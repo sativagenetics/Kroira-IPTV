@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -8,7 +10,6 @@ using CommunityToolkit.Mvvm.Input;
 using Kroira.App.Data;
 using Kroira.App.Models;
 using Kroira.App.Services;
-using Kroira.App.Services.Metadata;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
@@ -95,6 +96,43 @@ namespace Kroira.App.ViewModels
 
     public partial class HomeViewModel : ObservableObject
     {
+        private enum HomeLoadSection
+        {
+            ResolveAccess,
+            LoadSummary,
+            ApplySummary,
+            LoadLastSync,
+            BuildRecommendations,
+            ApplyRecommendations,
+            LoadContinue,
+            LoadLive
+        }
+
+        private sealed class HomeLoadContext
+        {
+            public required AppDbContext Db { get; init; }
+            public required IProfileStateService ProfileService { get; init; }
+            public required IHomeRecommendationService RecommendationService { get; init; }
+            public ProfileAccessSnapshot? Access { get; set; }
+            public HomeSummarySnapshot? Summary { get; set; }
+            public HomeRecommendationSnapshot? Recommendations { get; set; }
+        }
+
+        private sealed class HomeSummarySnapshot
+        {
+            public int ChannelsCount { get; init; }
+            public int MoviesCount { get; init; }
+            public int SeriesCount { get; init; }
+            public int FavoritesCount { get; init; }
+            public int SourcesCount { get; init; }
+            public int SourceIssuesCount { get; init; }
+        }
+
+        private static readonly string StartupLogPath =
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Kroira", "startup-log.txt");
+        private static readonly string LoadSectionsOverridePath =
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Kroira", "home-load-sections.txt");
+
         private readonly IServiceProvider _serviceProvider;
         private readonly IEntitlementService _entitlementService;
         private static readonly int _sessionRotationIndex = Math.Abs(Environment.TickCount % 5);
@@ -166,12 +204,68 @@ namespace Kroira.App.ViewModels
         [RelayCommand]
         public async Task LoadAsync()
         {
+            LogLoadCheckpoint("HOMEVM 01: LoadAsync entered");
             using var scope = _serviceProvider.CreateScope();
-            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            var profileService = scope.ServiceProvider.GetRequiredService<IProfileStateService>();
-            var recommendationService = scope.ServiceProvider.GetRequiredService<IHomeRecommendationService>();
-            var access = await profileService.GetAccessSnapshotAsync(db);
+            var context = new HomeLoadContext
+            {
+                Db = scope.ServiceProvider.GetRequiredService<AppDbContext>(),
+                ProfileService = scope.ServiceProvider.GetRequiredService<IProfileStateService>(),
+                RecommendationService = scope.ServiceProvider.GetRequiredService<IHomeRecommendationService>()
+            };
 
+            var enabledSections = GetEnabledLoadSections();
+            LogLoadCheckpoint($"HOMEVM 02: enabled sections = {(enabledSections.Count == 0 ? "<none>" : string.Join(", ", enabledSections.OrderBy(section => section.ToString())))}");
+
+            await RunLoadSectionAsync(HomeLoadSection.ResolveAccess, enabledSections, async () =>
+            {
+                context.Access = await ResolveAccessAsync(context);
+            });
+
+            await RunLoadSectionAsync(HomeLoadSection.LoadSummary, enabledSections, async () =>
+            {
+                context.Summary = await LoadSummaryAsync(context.Db, RequireAccess(context.Access));
+            });
+
+            await RunLoadSectionAsync(HomeLoadSection.ApplySummary, enabledSections, () =>
+            {
+                ApplySummary(RequireSummary(context.Summary));
+                return Task.CompletedTask;
+            });
+
+            await RunLoadSectionAsync(HomeLoadSection.LoadLastSync, enabledSections, async () =>
+            {
+                LastSyncMessage = await LoadLastSyncMessageAsync(context.Db);
+            });
+
+            await RunLoadSectionAsync(HomeLoadSection.BuildRecommendations, enabledSections, async () =>
+            {
+                context.Recommendations = await BuildRecommendationsAsync(context);
+            });
+
+            await RunLoadSectionAsync(HomeLoadSection.ApplyRecommendations, enabledSections, () =>
+            {
+                ApplyRecommendationSnapshot(context.Recommendations ?? EmptyRecommendationSnapshot);
+                return Task.CompletedTask;
+            });
+
+            await RunLoadSectionAsync(HomeLoadSection.LoadContinue, enabledSections, () =>
+                LoadContinueItemsAsync(context.Db, RequireAccess(context.Access)));
+
+            await RunLoadSectionAsync(HomeLoadSection.LoadLive, enabledSections, () =>
+                LoadLiveItemsAsync(context.Db, RequireAccess(context.Access)));
+
+            LogLoadCheckpoint("HOMEVM 99: LoadAsync completed");
+        }
+
+        private static readonly HomeRecommendationSnapshot EmptyRecommendationSnapshot = new();
+
+        private async Task<ProfileAccessSnapshot> ResolveAccessAsync(HomeLoadContext context)
+        {
+            return await context.ProfileService.GetAccessSnapshotAsync(context.Db);
+        }
+
+        private async Task<HomeSummarySnapshot> LoadSummaryAsync(AppDbContext db, ProfileAccessSnapshot access)
+        {
             var channelCategories = await db.ChannelCategories.AsNoTracking().ToListAsync();
             var categoryById = channelCategories.ToDictionary(category => category.Id);
             var channelsCount = (await db.Channels.AsNoTracking().ToListAsync())
@@ -182,42 +276,138 @@ namespace Kroira.App.ViewModels
             var favoritesCount = await db.Favorites.CountAsync(favorite => favorite.ProfileId == access.ProfileId);
             var sourcesCount = await db.SourceProfiles.CountAsync();
             var sourceIssuesCount = await db.SourceSyncStates.CountAsync(s => s.ErrorLog != string.Empty || s.HttpStatusCode >= 400);
-            var recommendationSnapshot = await recommendationService.BuildAsync(db, access);
 
+            return new HomeSummarySnapshot
+            {
+                ChannelsCount = channelsCount,
+                MoviesCount = moviesCount,
+                SeriesCount = seriesCount,
+                FavoritesCount = favoritesCount,
+                SourcesCount = sourcesCount,
+                SourceIssuesCount = sourceIssuesCount
+            };
+        }
+
+        private void ApplySummary(HomeSummarySnapshot summary)
+        {
             SummaryItems.Clear();
-            SummaryItems.Add(new HomeSummaryItem { Label = "Channels", Value = channelsCount.ToString("N0"), Detail = "Live entries", Glyph = "\uE714" });
-            SummaryItems.Add(new HomeSummaryItem { Label = "Movies", Value = moviesCount.ToString("N0"), Detail = "VOD titles", Glyph = "\uE8B2" });
-            SummaryItems.Add(new HomeSummaryItem { Label = "Series", Value = seriesCount.ToString("N0"), Detail = "Shows imported", Glyph = "\uE8A9" });
-            SummaryItems.Add(new HomeSummaryItem { Label = "Favorites", Value = favoritesCount.ToString("N0"), Detail = "Saved items", Glyph = "\uE734" });
+            SummaryItems.Add(new HomeSummaryItem { Label = "Channels", Value = summary.ChannelsCount.ToString("N0"), Detail = "Live entries", Glyph = "\uE714" });
+            SummaryItems.Add(new HomeSummaryItem { Label = "Movies", Value = summary.MoviesCount.ToString("N0"), Detail = "VOD titles", Glyph = "\uE8B2" });
+            SummaryItems.Add(new HomeSummaryItem { Label = "Series", Value = summary.SeriesCount.ToString("N0"), Detail = "Shows imported", Glyph = "\uE8A9" });
+            SummaryItems.Add(new HomeSummaryItem { Label = "Favorites", Value = summary.FavoritesCount.ToString("N0"), Detail = "Saved items", Glyph = "\uE734" });
 
-            var totalItems = channelsCount + moviesCount + seriesCount;
+            var totalItems = summary.ChannelsCount + summary.MoviesCount + summary.SeriesCount;
             LibraryStatusMessage = totalItems > 0
                 ? $"{totalItems:N0} library items available across live TV and VOD"
                 : "No imported library items yet";
 
-            SourceStatusMessage = sourcesCount > 0
-                ? $"{sourcesCount:N0} source{(sourcesCount == 1 ? string.Empty : "s")} configured"
+            SourceStatusMessage = summary.SourcesCount > 0
+                ? $"{summary.SourcesCount:N0} source{(summary.SourcesCount == 1 ? string.Empty : "s")} configured"
                 : "No sources configured";
 
-            SourceIssueVisibility = sourceIssuesCount > 0 ? Visibility.Visible : Visibility.Collapsed;
-            HeroSubtitle = sourcesCount > 0
+            SourceIssueVisibility = summary.SourceIssuesCount > 0 ? Visibility.Visible : Visibility.Collapsed;
+            HeroSubtitle = summary.SourcesCount > 0
                 ? "Your library is staged for fast live TV, VOD, source management, and saved progress."
                 : "Add a source to unlock live channels, movies, series, and guide-ready playback.";
+        }
 
+        private async Task<string> LoadLastSyncMessageAsync(AppDbContext db)
+        {
             var lastSync = await db.SourceProfiles
                 .Where(s => s.LastSync != null)
                 .OrderByDescending(s => s.LastSync)
                 .Select(s => s.LastSync)
                 .FirstOrDefaultAsync();
 
-            LastSyncMessage = lastSync.HasValue
+            return lastSync.HasValue
                 ? $"Last source sync: {lastSync.Value:g}"
                 : "No source sync has completed yet";
+        }
 
-            await LoadContinueItemsAsync(db, access);
-            await LoadLiveItemsAsync(db, access);
-            ApplyRecommendationSnapshot(recommendationSnapshot);
-            StartHomeMetadataEnrichment();
+        private async Task<HomeRecommendationSnapshot> BuildRecommendationsAsync(HomeLoadContext context)
+        {
+            return await context.RecommendationService.BuildAsync(context.Db, RequireAccess(context.Access));
+        }
+
+        private static ProfileAccessSnapshot RequireAccess(ProfileAccessSnapshot? access)
+        {
+            return access ?? throw new InvalidOperationException("Home load section requires profile access snapshot.");
+        }
+
+        private static HomeSummarySnapshot RequireSummary(HomeSummarySnapshot? summary)
+        {
+            return summary ?? throw new InvalidOperationException("Home load section requires summary snapshot.");
+        }
+
+        private async Task RunLoadSectionAsync(
+            HomeLoadSection section,
+            ISet<HomeLoadSection> enabledSections,
+            Func<Task> action)
+        {
+            if (!enabledSections.Contains(section))
+            {
+                LogLoadCheckpoint($"HOMEVM STEP {section}: skipped");
+                return;
+            }
+
+            var stopwatch = Stopwatch.StartNew();
+            LogLoadCheckpoint($"HOMEVM STEP {section}: start");
+            try
+            {
+                await action();
+                stopwatch.Stop();
+                LogLoadCheckpoint($"HOMEVM STEP {section}: end ({stopwatch.ElapsedMilliseconds} ms)");
+            }
+            catch (Exception ex)
+            {
+                stopwatch.Stop();
+                LogLoadCheckpoint($"HOMEVM STEP {section}: error after {stopwatch.ElapsedMilliseconds} ms - {ex.GetType().Name}: {ex.Message}");
+                throw;
+            }
+        }
+
+        private static HashSet<HomeLoadSection> GetEnabledLoadSections()
+        {
+            var raw = Environment.GetEnvironmentVariable("KROIRA_HOME_LOAD_SECTIONS");
+            if (string.IsNullOrWhiteSpace(raw) && File.Exists(LoadSectionsOverridePath))
+            {
+                raw = File.ReadAllText(LoadSectionsOverridePath);
+            }
+
+            var enabled = new HashSet<HomeLoadSection>();
+
+            if (string.IsNullOrWhiteSpace(raw))
+            {
+                return enabled;
+            }
+
+            foreach (var token in raw.Split(new[] { ',', ';', '|', ' ' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+            {
+                if (string.Equals(token, "all", StringComparison.OrdinalIgnoreCase))
+                {
+                    return Enum.GetValues<HomeLoadSection>().ToHashSet();
+                }
+
+                if (Enum.TryParse<HomeLoadSection>(token, true, out var section))
+                {
+                    enabled.Add(section);
+                }
+            }
+
+            return enabled;
+        }
+
+        private static void LogLoadCheckpoint(string message)
+        {
+            try
+            {
+                var line = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] {message}";
+                Debug.WriteLine(line);
+                File.AppendAllText(StartupLogPath, line + Environment.NewLine);
+            }
+            catch
+            {
+            }
         }
 
         private void ApplyRecommendationSnapshot(HomeRecommendationSnapshot snapshot)
@@ -395,7 +585,6 @@ namespace Kroira.App.ViewModels
                     PrimaryActionLabel = "Play movie",
                     Target = "Movies"
                 };
-                StartHomeMetadataEnrichment();
                 return;
             }
 
@@ -421,25 +610,7 @@ namespace Kroira.App.ViewModels
                     PrimaryActionLabel = "View series",
                     Target = "Series"
                 };
-                StartHomeMetadataEnrichment();
             }
-        }
-
-        private void StartHomeMetadataEnrichment()
-        {
-            _ = Task.Run(async () =>
-            {
-                try
-                {
-                    using var scope = _serviceProvider.CreateScope();
-                    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-                    var metadataService = scope.ServiceProvider.GetRequiredService<ITmdbMetadataService>();
-                    await metadataService.BackfillMissingMetadataAsync(db, 48, 32);
-                }
-                catch
-                {
-                }
-            });
         }
 
         private static HomeFeaturedItem BuildFallbackFeaturedItem()

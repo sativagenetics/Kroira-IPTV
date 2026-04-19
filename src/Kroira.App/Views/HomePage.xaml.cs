@@ -1,4 +1,6 @@
 using System;
+using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using Kroira.App.Models;
 using Kroira.App.ViewModels;
@@ -11,18 +13,70 @@ namespace Kroira.App.Views
 {
     public sealed partial class HomePage : Page
     {
+        private static readonly bool BypassInitialHomeLoad = false;
+        private static readonly string StartupLogPath =
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Kroira", "startup-log.txt");
+
+        private static readonly string StartupErrorPath =
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Kroira", "startup-error.txt");
+
         public HomeViewModel ViewModel { get; }
 
         public HomePage()
         {
-            this.InitializeComponent();
-            ViewModel = ((App)Application.Current).Services.GetRequiredService<HomeViewModel>();
+            LogStartupCheckpoint("HOME 01: constructor entered");
+
+            try
+            {
+                LogStartupCheckpoint("HOME 02: before InitializeComponent");
+                this.InitializeComponent();
+                LogStartupCheckpoint("HOME 03: after InitializeComponent");
+
+                LogStartupCheckpoint("HOME 04: before resolving HomeViewModel");
+                ViewModel = ((App)Application.Current).Services.GetRequiredService<HomeViewModel>();
+                LogStartupCheckpoint("HOME 05: after resolving HomeViewModel");
+
+                Loaded += HomePage_Loaded;
+            }
+            catch (Exception ex)
+            {
+                LogStartupCheckpoint("HOME FATAL: constructor exception");
+                LogStartupException("HOMEPAGE CONSTRUCTOR EXCEPTION", ex);
+                throw;
+            }
         }
 
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
-            _ = ViewModel.LoadCommand.ExecuteAsync(null);
+            LogStartupCheckpoint($"HOME 06: OnNavigatedTo entered, mode={e.NavigationMode}, parameterType={e.Parameter?.GetType().Name ?? "null"}, bypass={BypassInitialHomeLoad}");
+
+            if (BypassInitialHomeLoad)
+            {
+                LogStartupCheckpoint("HOME 07: skipping ViewModel.LoadCommand for startup isolation");
+                return;
+            }
+
+            LogStartupCheckpoint("HOME 07: OnNavigatedTo before queue LoadCommand");
+            var dispatcherQueue = Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread();
+            if (dispatcherQueue == null)
+            {
+                throw new InvalidOperationException("UI dispatcher queue is unavailable for Home load.");
+            }
+
+            var enqueued = dispatcherQueue.TryEnqueue(() =>
+            {
+                LogStartupCheckpoint("HOME 08: starting queued LoadCommand");
+                _ = ViewModel.LoadCommand.ExecuteAsync(null);
+                LogStartupCheckpoint("HOME 09: queued LoadCommand returned control");
+            });
+
+            LogStartupCheckpoint($"HOME 10: OnNavigatedTo after queue LoadCommand, enqueued={enqueued}");
+        }
+
+        private void HomePage_Loaded(object sender, RoutedEventArgs e)
+        {
+            LogStartupCheckpoint("HOME 11: Loaded fired");
         }
 
         private void AddSource_Click(object sender, RoutedEventArgs e)
@@ -193,6 +247,36 @@ namespace Kroira.App.Views
                 case "Settings":
                     Frame.Navigate(typeof(SettingsPage));
                     break;
+            }
+        }
+
+        private static void LogStartupCheckpoint(string message)
+        {
+            try
+            {
+                var line = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] {message}";
+                Debug.WriteLine(line);
+                File.AppendAllText(StartupLogPath, line + Environment.NewLine);
+            }
+            catch
+            {
+            }
+        }
+
+        private static void LogStartupException(string title, Exception ex)
+        {
+            try
+            {
+                var text =
+                    $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] {title}{Environment.NewLine}" +
+                    ex + Environment.NewLine +
+                    new string('-', 80) + Environment.NewLine;
+                Debug.WriteLine(text);
+                File.AppendAllText(StartupErrorPath, text);
+                File.AppendAllText(StartupLogPath, text);
+            }
+            catch
+            {
             }
         }
     }

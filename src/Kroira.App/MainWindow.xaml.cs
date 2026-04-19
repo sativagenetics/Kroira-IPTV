@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.IO;
 using Kroira.App.Models;
 using Kroira.App.Services;
 using Kroira.App.ViewModels;
@@ -15,53 +16,43 @@ namespace Kroira.App
     {
         public MainViewModel ViewModel { get; }
         private readonly IWindowManagerService _windowManager;
+        private static readonly string StartupLogPath =
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Kroira", "startup-log.txt");
+
+        private static readonly string StartupErrorPath =
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Kroira", "startup-error.txt");
 
         public MainWindow()
         {
-            Debug.WriteLine("MW 01: constructor entered");
+            LogStartupCheckpoint("MW 01: constructor entered");
 
             try
             {
-                Debug.WriteLine("MW 02: before InitializeComponent");
+                LogStartupCheckpoint("MW 02: before InitializeComponent");
                 InitializeComponent();
-                Debug.WriteLine("MW 03: after InitializeComponent");
+                LogStartupCheckpoint("MW 03: after InitializeComponent");
 
                 ContentFrame.NavigationFailed += ContentFrame_NavigationFailed;
 
-                Debug.WriteLine("MW 04: before resolving MainViewModel");
+                LogStartupCheckpoint("MW 04: before resolving MainViewModel");
                 ViewModel = ((App)Application.Current).Services.GetRequiredService<MainViewModel>();
-                Debug.WriteLine("MW 05: after resolving MainViewModel");
+                LogStartupCheckpoint("MW 05: after resolving MainViewModel");
 
-                Debug.WriteLine("MW 06: before resolving IWindowManagerService");
+                LogStartupCheckpoint("MW 06: before resolving IWindowManagerService");
                 _windowManager = ((App)Application.Current).Services.GetRequiredService<IWindowManagerService>();
-                Debug.WriteLine("MW 07: after resolving IWindowManagerService");
+                LogStartupCheckpoint("MW 07: after resolving IWindowManagerService");
 
                 Title = "Kroira IPTV";
-                Debug.WriteLine("MW 08: title set");
-
-                Debug.WriteLine("MW 09: before initial navigation to HomePage");
-                var navigated = ContentFrame.Navigate(typeof(HomePage));
-                Debug.WriteLine($"MW 10: after initial navigation to HomePage, result={navigated}");
-
-                if (!navigated)
-                {
-                    throw new InvalidOperationException("Initial navigation to HomePage returned false.");
-                }
-
-                if (RootNavView.MenuItems.Count > 0)
-                {
-                    RootNavView.SelectedItem = RootNavView.MenuItems[0];
-                    Debug.WriteLine("MW 11: selected first nav item");
-                }
+                LogStartupCheckpoint("MW 08: title set");
 
                 _windowManager.FullscreenStateChanged += WindowManager_FullscreenStateChanged;
-                Debug.WriteLine("MW 12: subscribed to FullscreenStateChanged");
+                LogStartupCheckpoint("MW 09: subscribed to FullscreenStateChanged");
                 UpdatePaneHeader(true);
             }
             catch (Exception ex)
             {
-                Debug.WriteLine("MW FATAL: exception in MainWindow constructor");
-                Debug.WriteLine(ex.ToString());
+                LogStartupCheckpoint("MW FATAL: exception in MainWindow constructor");
+                LogStartupException("MAINWINDOW CONSTRUCTOR EXCEPTION", ex);
                 throw;
             }
         }
@@ -70,7 +61,7 @@ namespace Kroira.App
         {
             try
             {
-                Debug.WriteLine($"MW FS: fullscreen changed, isFullscreen={_windowManager.IsFullscreen}");
+                LogStartupCheckpoint($"MW FS: fullscreen changed, isFullscreen={_windowManager.IsFullscreen}");
 
                 if (_windowManager.IsFullscreen)
                 {
@@ -86,18 +77,19 @@ namespace Kroira.App
             }
             catch (Exception ex)
             {
-                Debug.WriteLine("MW FS ERROR:");
-                Debug.WriteLine(ex.ToString());
+                LogStartupCheckpoint("MW FS ERROR");
+                LogStartupException("MAINWINDOW FULLSCREEN ERROR", ex);
                 throw;
             }
         }
 
         private void ContentFrame_NavigationFailed(object sender, NavigationFailedEventArgs e)
         {
-            Debug.WriteLine("MW NAV FAILED:");
-            Debug.WriteLine($"SourcePageType: {e.SourcePageType?.FullName}");
-            Debug.WriteLine(e.Exception?.ToString());
-
+            LogStartupCheckpoint($"MW NAV FAILED: {e.SourcePageType?.FullName}");
+            if (e.Exception != null)
+            {
+                LogStartupException("MAINWINDOW NAVIGATION FAILED", e.Exception);
+            }
             throw new InvalidOperationException(
                 $"Navigation to {e.SourcePageType?.FullName} failed.",
                 e.Exception);
@@ -131,7 +123,7 @@ namespace Kroira.App
                 }
 
                 var tag = args.InvokedItemContainer?.Tag?.ToString();
-                Debug.WriteLine($"MW NAV: item invoked, tag={tag}");
+                LogStartupCheckpoint($"MW NAV: item invoked, tag={tag}");
 
                 switch (tag)
                 {
@@ -169,17 +161,17 @@ namespace Kroira.App
             }
             catch (Exception ex)
             {
-                Debug.WriteLine("MW NAV ERROR:");
-                Debug.WriteLine(ex.ToString());
+                LogStartupCheckpoint("MW NAV ERROR");
+                LogStartupException("MAINWINDOW NAVIGATION COMMAND ERROR", ex);
                 throw;
             }
         }
 
         private void NavigateTo(Type pageType)
         {
-            Debug.WriteLine($"MW NAV 01: before navigate to {pageType.FullName}");
+            LogStartupCheckpoint($"MW NAV 01: before navigate to {pageType.FullName}");
             var navigated = ContentFrame.Navigate(pageType);
-            Debug.WriteLine($"MW NAV 02: after navigate to {pageType.FullName}, result={navigated}");
+            LogStartupCheckpoint($"MW NAV 02: after navigate to {pageType.FullName}, result={navigated}");
 
             if (!navigated)
             {
@@ -192,6 +184,69 @@ namespace Kroira.App
             if (!ContentFrame.Navigate(typeof(EmbeddedPlaybackPage), context))
             {
                 throw new InvalidOperationException("Navigation to EmbeddedPlaybackPage returned false.");
+            }
+        }
+
+        public void QueueInitialNavigation()
+        {
+            LogStartupCheckpoint("MW INIT 01: queueing initial navigation");
+            var dispatcherQueue = Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread();
+            if (dispatcherQueue == null)
+            {
+                throw new InvalidOperationException("UI dispatcher queue is unavailable for initial navigation.");
+            }
+
+            var enqueued = dispatcherQueue.TryEnqueue(() =>
+            {
+                LogStartupCheckpoint("MW INIT 02: starting initial navigation");
+                var navigated = ContentFrame.Navigate(typeof(HomePage));
+                LogStartupCheckpoint($"MW INIT 03: initial navigation result={navigated}");
+
+                if (!navigated)
+                {
+                    throw new InvalidOperationException("Initial navigation to HomePage returned false.");
+                }
+
+                if (RootNavView.MenuItems.Count > 0)
+                {
+                    RootNavView.SelectedItem = RootNavView.MenuItems[0];
+                    LogStartupCheckpoint("MW INIT 04: selected first nav item");
+                }
+            });
+
+            if (!enqueued)
+            {
+                throw new InvalidOperationException("Failed to enqueue initial navigation.");
+            }
+        }
+
+        private void LogStartupCheckpoint(string message)
+        {
+            try
+            {
+                var line = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] {message}";
+                Debug.WriteLine(line);
+                File.AppendAllText(StartupLogPath, line + Environment.NewLine);
+            }
+            catch
+            {
+            }
+        }
+
+        private void LogStartupException(string title, Exception ex)
+        {
+            try
+            {
+                var text =
+                    $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] {title}{Environment.NewLine}" +
+                    ex + Environment.NewLine +
+                    new string('-', 80) + Environment.NewLine;
+                Debug.WriteLine(text);
+                File.AppendAllText(StartupErrorPath, text);
+                File.AppendAllText(StartupLogPath, text);
+            }
+            catch
+            {
             }
         }
     }
