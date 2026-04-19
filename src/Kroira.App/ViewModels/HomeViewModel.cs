@@ -130,8 +130,16 @@ namespace Kroira.App.ViewModels
 
         private static readonly string StartupLogPath =
             Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Kroira", "startup-log.txt");
-        private static readonly string LoadSectionsOverridePath =
-            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Kroira", "home-load-sections.txt");
+        private static readonly HashSet<HomeLoadSection> DefaultEnabledLoadSections = new()
+        {
+            HomeLoadSection.ResolveAccess,
+            HomeLoadSection.LoadSummary,
+            HomeLoadSection.ApplySummary,
+            HomeLoadSection.LoadLastSync,
+            HomeLoadSection.BuildRecommendations,
+            HomeLoadSection.ApplyRecommendations,
+            HomeLoadSection.LoadContinue
+        };
 
         private readonly IServiceProvider _serviceProvider;
         private readonly IEntitlementService _entitlementService;
@@ -214,7 +222,6 @@ namespace Kroira.App.ViewModels
             };
 
             var enabledSections = GetEnabledLoadSections();
-            LogLoadCheckpoint($"HOMEVM 02: enabled sections = {(enabledSections.Count == 0 ? "<none>" : string.Join(", ", enabledSections.OrderBy(section => section.ToString())))}");
 
             await RunLoadSectionAsync(HomeLoadSection.ResolveAccess, enabledSections, async () =>
             {
@@ -346,17 +353,23 @@ namespace Kroira.App.ViewModels
         {
             if (!enabledSections.Contains(section))
             {
-                LogLoadCheckpoint($"HOMEVM STEP {section}: skipped");
                 return;
             }
 
             var stopwatch = Stopwatch.StartNew();
-            LogLoadCheckpoint($"HOMEVM STEP {section}: start");
+            if (ShouldLogSection(section))
+            {
+                LogLoadCheckpoint($"HOMEVM STEP {section}: start");
+            }
+
             try
             {
                 await action();
                 stopwatch.Stop();
-                LogLoadCheckpoint($"HOMEVM STEP {section}: end ({stopwatch.ElapsedMilliseconds} ms)");
+                if (ShouldLogSection(section))
+                {
+                    LogLoadCheckpoint($"HOMEVM STEP {section}: end ({stopwatch.ElapsedMilliseconds} ms)");
+                }
             }
             catch (Exception ex)
             {
@@ -369,18 +382,13 @@ namespace Kroira.App.ViewModels
         private static HashSet<HomeLoadSection> GetEnabledLoadSections()
         {
             var raw = Environment.GetEnvironmentVariable("KROIRA_HOME_LOAD_SECTIONS");
-            if (string.IsNullOrWhiteSpace(raw) && File.Exists(LoadSectionsOverridePath))
-            {
-                raw = File.ReadAllText(LoadSectionsOverridePath);
-            }
-
-            var enabled = new HashSet<HomeLoadSection>();
 
             if (string.IsNullOrWhiteSpace(raw))
             {
-                return enabled;
+                return new HashSet<HomeLoadSection>(DefaultEnabledLoadSections);
             }
 
+            var enabled = new HashSet<HomeLoadSection>();
             foreach (var token in raw.Split(new[] { ',', ';', '|', ' ' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
             {
                 if (string.Equals(token, "all", StringComparison.OrdinalIgnoreCase))
@@ -395,6 +403,11 @@ namespace Kroira.App.ViewModels
             }
 
             return enabled;
+        }
+
+        private static bool ShouldLogSection(HomeLoadSection section)
+        {
+            return section == HomeLoadSection.BuildRecommendations;
         }
 
         private static void LogLoadCheckpoint(string message)

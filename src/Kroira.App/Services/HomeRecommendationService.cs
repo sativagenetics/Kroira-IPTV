@@ -1,6 +1,8 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Kroira.App.Data;
@@ -42,6 +44,49 @@ namespace Kroira.App.Services
 
     public sealed class HomeRecommendationService : IHomeRecommendationService
     {
+        private enum RecommendationBuildStep
+        {
+            LoadMovieGroups,
+            FilterMovieGroups,
+            LoadSeriesGroups,
+            FilterSeriesGroups,
+            LoadFavoriteMovieIds,
+            LoadFavoriteSeriesIds,
+            LoadMovieSnapshots,
+            LoadEpisodeSnapshots,
+            BuildMovieStates,
+            BuildSeriesStates,
+            BuildAffinity,
+            BuildFeatured,
+            BuildRecommended,
+            BuildRecentlyAdded,
+            BuildTopRated
+        }
+
+        private sealed class RecommendationBuildContext
+        {
+            public required AppDbContext Db { get; init; }
+            public required ProfileAccessSnapshot Access { get; init; }
+            public IReadOnlyList<CatalogMovieGroup> MovieGroups { get; set; } = Array.Empty<CatalogMovieGroup>();
+            public IReadOnlyList<CatalogSeriesGroup> SeriesGroups { get; set; } = Array.Empty<CatalogSeriesGroup>();
+            public HashSet<int> FavoriteMovieIds { get; set; } = new();
+            public HashSet<int> FavoriteSeriesIds { get; set; } = new();
+            public Dictionary<int, WatchProgressSnapshot> MovieSnapshotMap { get; set; } = new();
+            public Dictionary<int, WatchProgressSnapshot> EpisodeSnapshotMap { get; set; } = new();
+            public List<MovieState> MovieStates { get; set; } = new();
+            public List<SeriesState> SeriesStates { get; set; } = new();
+            public Dictionary<string, double> Affinity { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+            public HomeRecommendationItem? Featured { get; set; }
+            public IReadOnlyList<HomeRecommendationItem> Recommended { get; set; } = Array.Empty<HomeRecommendationItem>();
+            public IReadOnlyList<HomeRecommendationItem> RecentlyAdded { get; set; } = Array.Empty<HomeRecommendationItem>();
+            public IReadOnlyList<HomeRecommendationItem> TopRated { get; set; } = Array.Empty<HomeRecommendationItem>();
+        }
+
+        private sealed record ScoredRecommendationItem(HomeRecommendationItem Item, double Score);
+
+        private static readonly string StartupLogPath =
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Kroira", "startup-log.txt");
+
         private readonly ICatalogDeduplicationService _catalogDeduplicationService;
         private readonly ILibraryWatchStateService _watchStateService;
         private static readonly int _sessionRotationIndex = Math.Abs(Environment.TickCount % 3);
@@ -56,61 +101,212 @@ namespace Kroira.App.Services
 
         public async Task<HomeRecommendationSnapshot> BuildAsync(AppDbContext db, ProfileAccessSnapshot access)
         {
-            var movieGroups = (await _catalogDeduplicationService.LoadMovieGroupsAsync(db))
-                .Where(group => access.IsMovieAllowed(group.PreferredMovie))
-                .Where(group => IsBrowsableMovie(group.PreferredMovie))
-                .ToList();
+            LogCheckpoint("HOMEREC 01: BuildAsync entered");
+            var enabledSteps = GetEnabledBuildSteps();
 
-            var seriesGroups = (await _catalogDeduplicationService.LoadSeriesGroupsAsync(db))
-                .Where(group => access.IsSeriesAllowed(group.PreferredSeries))
-                .Where(group => IsBrowsableSeries(group.PreferredSeries))
-                .ToList();
+            var context = new RecommendationBuildContext
+            {
+                Db = db,
+                Access = access
+            };
 
-            var favoriteMovieIds = (await db.Favorites
-                .Where(favorite => favorite.ProfileId == access.ProfileId && favorite.ContentType == FavoriteType.Movie)
-                .Select(favorite => favorite.ContentId)
-                .ToListAsync())
-                .ToHashSet();
+            await RunBuildStepAsync(RecommendationBuildStep.LoadMovieGroups, enabledSteps, async () =>
+            {
+                context.MovieGroups = await _catalogDeduplicationService.LoadMovieGroupsAsync(db);
+            });
 
-            var favoriteSeriesIds = (await db.Favorites
-                .Where(favorite => favorite.ProfileId == access.ProfileId && favorite.ContentType == FavoriteType.Series)
-                .Select(favorite => favorite.ContentId)
-                .ToListAsync())
-                .ToHashSet();
+            await RunBuildStepAsync(RecommendationBuildStep.FilterMovieGroups, enabledSteps, () =>
+            {
+                context.MovieGroups = context.MovieGroups
+                    .Where(group => access.IsMovieAllowed(group.PreferredMovie))
+                    .Where(group => IsBrowsableMovie(group.PreferredMovie))
+                    .ToList();
+                return Task.CompletedTask;
+            });
 
-            var movieSnapshotMap = await _watchStateService.LoadSnapshotsAsync(
-                db,
-                access.ProfileId,
-                PlaybackContentType.Movie,
-                movieGroups.SelectMany(group => group.Variants).Select(variant => variant.Movie.Id));
+            await RunBuildStepAsync(RecommendationBuildStep.LoadSeriesGroups, enabledSteps, async () =>
+            {
+                context.SeriesGroups = await _catalogDeduplicationService.LoadSeriesGroupsAsync(db);
+            });
 
-            var episodeSnapshotMap = await _watchStateService.LoadSnapshotsAsync(
-                db,
-                access.ProfileId,
-                PlaybackContentType.Episode,
-                seriesGroups.SelectMany(group => group.Variants)
-                    .SelectMany(variant => variant.Series.Seasons ?? Array.Empty<Season>())
-                    .SelectMany(season => season.Episodes ?? Array.Empty<Episode>())
-                    .Select(episode => episode.Id));
+            await RunBuildStepAsync(RecommendationBuildStep.FilterSeriesGroups, enabledSteps, () =>
+            {
+                context.SeriesGroups = context.SeriesGroups
+                    .Where(group => access.IsSeriesAllowed(group.PreferredSeries))
+                    .Where(group => IsBrowsableSeries(group.PreferredSeries))
+                    .ToList();
+                return Task.CompletedTask;
+            });
 
-            var movieStates = movieGroups
-                .Select(group => BuildMovieState(group, favoriteMovieIds, movieSnapshotMap))
-                .ToList();
+            await RunBuildStepAsync(RecommendationBuildStep.LoadFavoriteMovieIds, enabledSteps, async () =>
+            {
+                context.FavoriteMovieIds = (await db.Favorites
+                    .Where(favorite => favorite.ProfileId == access.ProfileId && favorite.ContentType == FavoriteType.Movie)
+                    .Select(favorite => favorite.ContentId)
+                    .ToListAsync())
+                    .ToHashSet();
+            });
 
-            var seriesStates = seriesGroups
-                .Select(group => BuildSeriesState(group, favoriteSeriesIds, episodeSnapshotMap))
-                .ToList();
+            await RunBuildStepAsync(RecommendationBuildStep.LoadFavoriteSeriesIds, enabledSteps, async () =>
+            {
+                context.FavoriteSeriesIds = (await db.Favorites
+                    .Where(favorite => favorite.ProfileId == access.ProfileId && favorite.ContentType == FavoriteType.Series)
+                    .Select(favorite => favorite.ContentId)
+                    .ToListAsync())
+                    .ToHashSet();
+            });
 
-            var affinity = BuildAffinity(movieStates, seriesStates);
-            var featured = BuildFeaturedItem(movieStates, seriesStates, affinity);
+            await RunBuildStepAsync(RecommendationBuildStep.LoadMovieSnapshots, enabledSteps, async () =>
+            {
+                context.MovieSnapshotMap = await _watchStateService.LoadSnapshotsAsync(
+                    db,
+                    access.ProfileId,
+                    PlaybackContentType.Movie,
+                    context.MovieGroups.SelectMany(group => group.Variants).Select(variant => variant.Movie.Id));
+            });
 
+            await RunBuildStepAsync(RecommendationBuildStep.LoadEpisodeSnapshots, enabledSteps, async () =>
+            {
+                context.EpisodeSnapshotMap = await _watchStateService.LoadSnapshotsAsync(
+                    db,
+                    access.ProfileId,
+                    PlaybackContentType.Episode,
+                    context.SeriesGroups.SelectMany(group => group.Variants)
+                        .SelectMany(variant => variant.Series.Seasons ?? Array.Empty<Season>())
+                        .SelectMany(season => season.Episodes ?? Array.Empty<Episode>())
+                        .Select(episode => episode.Id));
+            });
+
+            await RunBuildStepAsync(RecommendationBuildStep.BuildMovieStates, enabledSteps, () =>
+            {
+                context.MovieStates = context.MovieGroups
+                    .Select(group => BuildMovieState(group, context.FavoriteMovieIds, context.MovieSnapshotMap))
+                    .ToList();
+                return Task.CompletedTask;
+            });
+
+            await RunBuildStepAsync(RecommendationBuildStep.BuildSeriesStates, enabledSteps, () =>
+            {
+                context.SeriesStates = context.SeriesGroups
+                    .Select(group => BuildSeriesState(group, context.FavoriteSeriesIds, context.EpisodeSnapshotMap))
+                    .ToList();
+                return Task.CompletedTask;
+            });
+
+            await RunBuildStepAsync(RecommendationBuildStep.BuildAffinity, enabledSteps, () =>
+            {
+                context.Affinity = BuildAffinity(context.MovieStates, context.SeriesStates);
+                return Task.CompletedTask;
+            });
+
+            await RunBuildStepAsync(RecommendationBuildStep.BuildFeatured, enabledSteps, () =>
+            {
+                context.Featured = BuildFeaturedItem(context.MovieStates, context.SeriesStates, context.Affinity);
+                return Task.CompletedTask;
+            });
+
+            await RunBuildStepAsync(RecommendationBuildStep.BuildRecommended, enabledSteps, () =>
+            {
+                context.Recommended = BuildRecommendedItems(context.MovieStates, context.SeriesStates, context.Affinity);
+                return Task.CompletedTask;
+            });
+
+            await RunBuildStepAsync(RecommendationBuildStep.BuildRecentlyAdded, enabledSteps, () =>
+            {
+                context.RecentlyAdded = BuildRecentlyAddedItems(context.MovieStates, context.SeriesStates);
+                return Task.CompletedTask;
+            });
+
+            await RunBuildStepAsync(RecommendationBuildStep.BuildTopRated, enabledSteps, () =>
+            {
+                context.TopRated = BuildTopRatedItems(context.MovieStates, context.SeriesStates);
+                return Task.CompletedTask;
+            });
+
+            LogCheckpoint("HOMEREC 99: BuildAsync completed");
             return new HomeRecommendationSnapshot
             {
-                Featured = featured,
-                Recommended = BuildRecommendedItems(movieStates, seriesStates, affinity),
-                RecentlyAdded = BuildRecentlyAddedItems(movieStates, seriesStates),
-                TopRated = BuildTopRatedItems(movieStates, seriesStates)
+                Featured = context.Featured,
+                Recommended = context.Recommended,
+                RecentlyAdded = context.RecentlyAdded,
+                TopRated = context.TopRated
             };
+        }
+
+        private static async Task RunBuildStepAsync(
+            RecommendationBuildStep step,
+            ISet<RecommendationBuildStep> enabledSteps,
+            Func<Task> action)
+        {
+            if (!enabledSteps.Contains(step))
+            {
+                return;
+            }
+
+            var stopwatch = Stopwatch.StartNew();
+            if (ShouldLogStep(step))
+            {
+                LogCheckpoint($"HOMEREC STEP {step}: start");
+            }
+
+            try
+            {
+                await action();
+                stopwatch.Stop();
+                if (ShouldLogStep(step))
+                {
+                    LogCheckpoint($"HOMEREC STEP {step}: end ({stopwatch.ElapsedMilliseconds} ms)");
+                }
+            }
+            catch (Exception ex)
+            {
+                stopwatch.Stop();
+                LogCheckpoint($"HOMEREC STEP {step}: error after {stopwatch.ElapsedMilliseconds} ms - {ex.GetType().Name}: {ex.Message}");
+                throw;
+            }
+        }
+
+        private static HashSet<RecommendationBuildStep> GetEnabledBuildSteps()
+        {
+            var raw = Environment.GetEnvironmentVariable("KROIRA_HOME_RECOMMENDATION_STEPS");
+            if (string.IsNullOrWhiteSpace(raw))
+            {
+                return Enum.GetValues<RecommendationBuildStep>().ToHashSet();
+            }
+
+            var enabled = new HashSet<RecommendationBuildStep>();
+            foreach (var token in raw.Split(new[] { ',', ';', '|', ' ' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+            {
+                if (string.Equals(token, "all", StringComparison.OrdinalIgnoreCase))
+                {
+                    return Enum.GetValues<RecommendationBuildStep>().ToHashSet();
+                }
+
+                if (Enum.TryParse<RecommendationBuildStep>(token, true, out var step))
+                {
+                    enabled.Add(step);
+                }
+            }
+
+            return enabled;
+        }
+
+        private static bool ShouldLogStep(RecommendationBuildStep step)
+        {
+            return step == RecommendationBuildStep.BuildRecommended;
+        }
+
+        private static void LogCheckpoint(string message)
+        {
+            try
+            {
+                var line = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] {message}";
+                Debug.WriteLine(line);
+                File.AppendAllText(StartupLogPath, line + Environment.NewLine);
+            }
+            catch
+            {
+            }
         }
 
         private HomeRecommendationItem? BuildFeaturedItem(
@@ -160,11 +356,9 @@ namespace Kroira.App.Services
                 .Select(state =>
                 {
                     var score = ScoreRecommendedMovie(state, affinity);
-                    return new
-                    {
-                        Item = BuildMovieItem(state, BuildRecommendationReason(state.Preferred, state.HasResume, state.IsFavorite, state.LastAffinityTag), "Movies", "Open"),
-                        Score = score
-                    };
+                    return new ScoredRecommendationItem(
+                        BuildMovieItem(state, BuildRecommendationReason(state.Preferred, state.HasResume, state.IsFavorite, state.LastAffinityTag), "Movies", "Open"),
+                        score);
                 })
                 .OrderByDescending(item => item.Score)
                 .Take(8)
@@ -174,54 +368,95 @@ namespace Kroira.App.Services
                 .Select(state =>
                 {
                     var score = ScoreRecommendedSeries(state, affinity);
-                    return new
-                    {
-                        Item = BuildSeriesItem(state, BuildRecommendationReason(state.Preferred, state.HasResume, state.IsFavorite, state.LastAffinityTag), "Series", "Open"),
-                        Score = score
-                    };
+                    return new ScoredRecommendationItem(
+                        BuildSeriesItem(state, BuildRecommendationReason(state.Preferred, state.HasResume, state.IsFavorite, state.LastAffinityTag), "Series", "Open"),
+                        score);
                 })
                 .OrderByDescending(item => item.Score)
                 .Take(8)
                 .ToList();
 
-            var results = new List<HomeRecommendationItem>();
-            var movieIndex = 0;
-            var seriesIndex = 0;
-            var startWithMovie = movieItems.FirstOrDefault()?.Score >= seriesItems.FirstOrDefault()?.Score;
-            while (results.Count < 10 && (movieIndex < movieItems.Count || seriesIndex < seriesItems.Count))
-            {
-                if (startWithMovie && movieIndex < movieItems.Count)
-                {
-                    results.Add(movieItems[movieIndex++].Item);
-                }
-                else if (!startWithMovie && seriesIndex < seriesItems.Count)
-                {
-                    results.Add(seriesItems[seriesIndex++].Item);
-                }
+            var interleaved = InterleaveRecommendedItems(movieItems, seriesItems, limit: 10);
 
-                startWithMovie = !startWithMovie;
-
-                if (results.Count >= 10)
-                {
-                    break;
-                }
-
-                if (!startWithMovie && movieIndex < movieItems.Count)
-                {
-                    results.Add(movieItems[movieIndex++].Item);
-                }
-                else if (startWithMovie && seriesIndex < seriesItems.Count)
-                {
-                    results.Add(seriesItems[seriesIndex++].Item);
-                }
-
-                startWithMovie = !startWithMovie;
-            }
-
-            return results
+            return interleaved
                 .DistinctBy(item => $"{item.ContentType}:{item.ContentId}")
                 .Take(10)
                 .ToList();
+        }
+
+        private static List<HomeRecommendationItem> InterleaveRecommendedItems(
+            IReadOnlyList<ScoredRecommendationItem> movieItems,
+            IReadOnlyList<ScoredRecommendationItem> seriesItems,
+            int limit)
+        {
+            var results = new List<HomeRecommendationItem>();
+            var movieIndex = 0;
+            var seriesIndex = 0;
+            var preferMovie = ShouldStartWithMovie(movieItems, seriesItems);
+
+            while (results.Count < limit && (movieIndex < movieItems.Count || seriesIndex < seriesItems.Count))
+            {
+                var added = TryAddRecommendedItem(results, movieItems, ref movieIndex, seriesItems, ref seriesIndex, preferMovie);
+                if (!added)
+                {
+                    added = TryAddRecommendedItem(results, movieItems, ref movieIndex, seriesItems, ref seriesIndex, !preferMovie);
+                }
+
+                if (!added)
+                {
+                    LogCheckpoint("HOMEREC BUILDRECOMMENDED: interleave stopped without progress");
+                    break;
+                }
+
+                preferMovie = !preferMovie;
+            }
+
+            return results;
+        }
+
+        private static bool ShouldStartWithMovie(
+            IReadOnlyList<ScoredRecommendationItem> movieItems,
+            IReadOnlyList<ScoredRecommendationItem> seriesItems)
+        {
+            if (movieItems.Count == 0)
+            {
+                return false;
+            }
+
+            if (seriesItems.Count == 0)
+            {
+                return true;
+            }
+
+            return movieItems[0].Score >= seriesItems[0].Score;
+        }
+
+        private static bool TryAddRecommendedItem(
+            ICollection<HomeRecommendationItem> results,
+            IReadOnlyList<ScoredRecommendationItem> movieItems,
+            ref int movieIndex,
+            IReadOnlyList<ScoredRecommendationItem> seriesItems,
+            ref int seriesIndex,
+            bool preferMovie)
+        {
+            if (preferMovie)
+            {
+                if (movieIndex >= movieItems.Count)
+                {
+                    return false;
+                }
+
+                results.Add(movieItems[movieIndex++].Item);
+                return true;
+            }
+
+            if (seriesIndex >= seriesItems.Count)
+            {
+                return false;
+            }
+
+            results.Add(seriesItems[seriesIndex++].Item);
+            return true;
         }
 
         private static IReadOnlyList<HomeRecommendationItem> BuildRecentlyAddedItems(
