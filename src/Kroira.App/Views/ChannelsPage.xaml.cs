@@ -172,6 +172,38 @@ namespace Kroira.App.Views
             }
         }
 
+        private async void ClearRecentHistory_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button button)
+            {
+                button.IsEnabled = false;
+                try
+                {
+                    await ViewModel.ClearRecentHistoryCommand.ExecuteAsync(null);
+                }
+                finally
+                {
+                    button.IsEnabled = true;
+                }
+            }
+        }
+
+        private async void RemoveRecentChannel_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button button && button.Tag is int channelId)
+            {
+                button.IsEnabled = false;
+                try
+                {
+                    await ViewModel.RemoveRecentHistoryItemCommand.ExecuteAsync(channelId);
+                }
+                finally
+                {
+                    button.IsEnabled = true;
+                }
+            }
+        }
+
         private async Task ScheduleRecordingAsync(BrowserChannelViewModel channel)
         {
             if (string.IsNullOrWhiteSpace(channel.StreamUrl))

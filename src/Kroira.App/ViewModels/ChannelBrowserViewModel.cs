@@ -60,6 +60,7 @@ namespace Kroira.App.ViewModels
         public Visibility CategoryVisibility { get; set; } = Visibility.Collapsed;
         public Visibility LastTunedVisibility { get; set; } = Visibility.Collapsed;
         public Visibility QuickAccessBadgeVisibility { get; set; } = Visibility.Collapsed;
+        public Visibility RemoveFromRecentVisibility { get; set; } = Visibility.Collapsed;
         public bool HasGuideData { get; set; }
         public bool HasMatchedGuide { get; set; }
         public bool IsLastTuned { get; set; }
@@ -83,7 +84,11 @@ namespace Kroira.App.ViewModels
             Key = key;
             Title = title;
             Subtitle = subtitle;
-            Channels.CollectionChanged += (_, _) => OnPropertyChanged(nameof(Visibility));
+            Channels.CollectionChanged += (_, _) =>
+            {
+                OnPropertyChanged(nameof(Visibility));
+                OnPropertyChanged(nameof(ClearRecentActionVisibility));
+            };
         }
 
         public string Key { get; }
@@ -91,6 +96,10 @@ namespace Kroira.App.ViewModels
         public string Subtitle { get; }
         public ObservableCollection<BrowserChannelViewModel> Channels { get; } = new();
         public Visibility Visibility => Channels.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+        public Visibility ClearRecentActionVisibility =>
+            string.Equals(Key, "recent", StringComparison.OrdinalIgnoreCase) && Channels.Count > 0
+                ? Visibility.Visible
+                : Visibility.Collapsed;
     }
 
     public static class EpgProgramDisplay

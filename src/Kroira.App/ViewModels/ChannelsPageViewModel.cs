@@ -95,9 +95,23 @@ namespace Kroira.App.ViewModels
         private bool _hasAdvancedFilters;
 
         public bool HasManageCategorySelection => SelectedManageCategory != null;
+        public string BrowseResultTitle => SelectedCategory?.Name ?? "All channels";
+        public string BrowseResultSubtitle => ResolveBrowseResultSubtitle();
+        public string BrowseResultCountText => FilteredChannels.Count == 1
+            ? "1 channel"
+            : $"{FilteredChannels.Count:N0} channels";
+        public Microsoft.UI.Xaml.Visibility ClearRecentHistoryVisibility => HasRecentHistory
+            ? Microsoft.UI.Xaml.Visibility.Visible
+            : Microsoft.UI.Xaml.Visibility.Collapsed;
+        public Microsoft.UI.Xaml.Visibility BrowseClearRecentVisibility =>
+            HasRecentHistory &&
+            string.Equals(SelectedCategory?.FilterKey, SmartRecentCategoryKey, StringComparison.OrdinalIgnoreCase)
+                ? Microsoft.UI.Xaml.Visibility.Visible
+                : Microsoft.UI.Xaml.Visibility.Collapsed;
         public Microsoft.UI.Xaml.Visibility SpotlightVisibility => SpotlightSections.Any(section => section.Channels.Count > 0)
             ? Microsoft.UI.Xaml.Visibility.Visible
             : Microsoft.UI.Xaml.Visibility.Collapsed;
+        private bool HasRecentHistory => _preferences.LastChannelId > 0 || _preferences.RecentChannelIds.Count > 0;
 
         partial void OnSearchQueryChanged(string value)
         {
@@ -112,6 +126,7 @@ namespace Kroira.App.ViewModels
             }
 
             _preferences.SelectedCategoryKey = value?.FilterKey ?? string.Empty;
+            NotifyBrowseResultChanged();
             _ = SavePreferencesAndRefreshAsync(rebuildCollections: false);
         }
 
@@ -382,6 +397,42 @@ namespace Kroira.App.ViewModels
             await SavePreferencesAndRefreshAsync(rebuildCollections: true);
         }
 
+        [RelayCommand]
+        public async Task ClearRecentHistoryAsync()
+        {
+            if (!HasRecentHistory)
+            {
+                return;
+            }
+
+            _preferences.LastChannelId = 0;
+            _preferences.RecentChannelIds.Clear();
+            await SavePreferencesAndRefreshAsync(rebuildCollections: true);
+        }
+
+        [RelayCommand]
+        public async Task RemoveRecentHistoryItemAsync(int channelId)
+        {
+            if (channelId <= 0)
+            {
+                return;
+            }
+
+            var removed = _preferences.RecentChannelIds.RemoveAll(id => id == channelId) > 0;
+            if (_preferences.LastChannelId == channelId)
+            {
+                _preferences.LastChannelId = _preferences.RecentChannelIds.FirstOrDefault();
+                removed = true;
+            }
+
+            if (!removed)
+            {
+                return;
+            }
+
+            await SavePreferencesAndRefreshAsync(rebuildCollections: true);
+        }
+
         private void QueueApplyFilter()
         {
             _ = ApplyFilterAsync(System.Threading.Interlocked.Increment(ref _filterRequestVersion));
@@ -475,6 +526,7 @@ namespace Kroira.App.ViewModels
                                  (SelectedSourceOption?.Id ?? 0) != 0 ||
                                  !string.Equals(SelectedSortOption?.Key ?? DefaultPrioritySortKey, DefaultPrioritySortKey, StringComparison.OrdinalIgnoreCase);
             IsEmpty = FilteredChannels.Count == 0;
+            NotifyBrowseResultChanged();
             Log($"11: ApplyFilterAsync completed with {FilteredChannels.Count} visible channels");
         }
 
@@ -584,6 +636,15 @@ namespace Kroira.App.ViewModels
             return string.IsNullOrWhiteSpace(_preferences.SortKey)
                 ? DefaultPrioritySortKey
                 : _preferences.SortKey;
+        }
+
+        private void NotifyBrowseResultChanged()
+        {
+            OnPropertyChanged(nameof(BrowseResultTitle));
+            OnPropertyChanged(nameof(BrowseResultSubtitle));
+            OnPropertyChanged(nameof(BrowseResultCountText));
+            OnPropertyChanged(nameof(ClearRecentHistoryVisibility));
+            OnPropertyChanged(nameof(BrowseClearRecentVisibility));
         }
 
         private void RegisterSpotlightSection(string key, string title, string subtitle)
@@ -712,6 +773,11 @@ namespace Kroira.App.ViewModels
                 .ToDictionary(group => group.Key, group => group.First());
             var usedIds = new HashSet<int>();
 
+            foreach (var channel in candidateChannels)
+            {
+                channel.RemoveFromRecentVisibility = Microsoft.UI.Xaml.Visibility.Collapsed;
+            }
+
             List<BrowserChannelViewModel> BuildOrdered(Func<BrowserChannelViewModel, bool> predicate, int take)
             {
                 return candidateChannels
@@ -742,6 +808,10 @@ namespace Kroira.App.ViewModels
                 .Where(channel => usedIds.Add(channel.Id))
                 .Take(6)
                 .ToList();
+            foreach (var channel in sections["recent"])
+            {
+                channel.RemoveFromRecentVisibility = Microsoft.UI.Xaml.Visibility.Visible;
+            }
 
             sections["priority"] = BuildOrdered(IsPriorityCandidate, 8);
             foreach (var channel in sections["priority"])
@@ -864,6 +934,21 @@ namespace Kroira.App.ViewModels
             }
 
             return score;
+        }
+
+        private string ResolveBrowseResultSubtitle()
+        {
+            var filterKey = SelectedCategory?.FilterKey ?? string.Empty;
+            return filterKey switch
+            {
+                SmartPriorityCategoryKey => "High-value sports, favorites, and repeat channels ordered for fast match watching.",
+                SmartSportsCategoryKey => "Sports-led channels across the visible providers, still ordered by priority first.",
+                SmartTurkishSportsCategoryKey => "Turkish sports coverage grouped for fast kickoff and match-day access.",
+                SmartRecentCategoryKey => "Your recent live history, with the newest tune-ins closest to the top.",
+                _ when string.IsNullOrWhiteSpace(filterKey) => "Every visible live channel, ordered priority-first with A-Z still available as a fallback.",
+                _ when !string.IsNullOrWhiteSpace(SelectedCategory?.Description) => SelectedCategory!.Description,
+                _ => $"Channels in {SelectedCategory?.Name ?? "this category"}, ordered to surface the best watch options first."
+            };
         }
 
         private void BuildSourceOptions()
