@@ -11,11 +11,31 @@ using Kroira.App.Models;
 using Kroira.App.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using System.IO;
 
 namespace Kroira.App.ViewModels
 {
     public partial class ChannelsPageViewModel : ObservableObject
     {
+        private static string LogPath => Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "Kroira",
+            "startup-log.txt");
+
+        private static void Log(string message)
+        {
+            try
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(LogPath)!);
+                File.AppendAllText(
+                    LogPath,
+                    $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] CHANNELSVM {message}{Environment.NewLine}");
+            }
+            catch
+            {
+            }
+        }
+
         private const string Domain = ProfileDomains.Live;
         private readonly IServiceProvider _serviceProvider;
         private readonly List<BrowserChannelViewModel> _allChannels = new();
@@ -28,6 +48,7 @@ namespace Kroira.App.ViewModels
         private bool _isInitializing;
 
         public ObservableCollection<BrowserChannelViewModel> FilteredChannels { get; } = new();
+        public ObservableCollection<BrowserChannelViewModel> RecentChannels { get; } = new();
         public ObservableCollection<BrowserCategoryViewModel> Categories { get; } = new();
         public ObservableCollection<BrowseSortOptionViewModel> SortOptions { get; } = new();
         public ObservableCollection<BrowseSourceFilterOptionViewModel> SourceOptions { get; } = new();
@@ -68,6 +89,9 @@ namespace Kroira.App.ViewModels
         private bool _hasAdvancedFilters;
 
         public bool HasManageCategorySelection => SelectedManageCategory != null;
+        public Microsoft.UI.Xaml.Visibility QuickAccessVisibility => RecentChannels.Count > 0
+            ? Microsoft.UI.Xaml.Visibility.Visible
+            : Microsoft.UI.Xaml.Visibility.Collapsed;
 
         partial void OnSearchQueryChanged(string value)
         {
@@ -81,7 +105,8 @@ namespace Kroira.App.ViewModels
                 return;
             }
 
-            QueueApplyFilter();
+            _preferences.SelectedCategoryKey = value?.FilterKey ?? string.Empty;
+            _ = SavePreferencesAndRefreshAsync(rebuildCollections: false);
         }
 
         partial void OnSelectedSortOptionChanged(BrowseSortOptionViewModel? value)
@@ -103,7 +128,7 @@ namespace Kroira.App.ViewModels
             }
 
             _preferences.SelectedSourceId = value?.Id ?? 0;
-            _ = SavePreferencesAndRefreshAsync(rebuildCollections: false);
+            _ = SavePreferencesAndRefreshAsync(rebuildCollections: true);
         }
 
         partial void OnFavoritesOnlyChanged(bool value)
@@ -157,6 +182,7 @@ namespace Kroira.App.ViewModels
         public ChannelsPageViewModel(IServiceProvider serviceProvider)
         {
             _serviceProvider = serviceProvider;
+            RecentChannels.CollectionChanged += (_, _) => OnPropertyChanged(nameof(QuickAccessVisibility));
             SortOptions.Add(new BrowseSortOptionViewModel("name_asc", "Name A-Z"));
             SortOptions.Add(new BrowseSortOptionViewModel("name_desc", "Name Z-A"));
             SortOptions.Add(new BrowseSortOptionViewModel("favorites_first", "Favorites first"));
@@ -166,11 +192,13 @@ namespace Kroira.App.ViewModels
         [RelayCommand]
         public async Task LoadChannelsAsync()
         {
+            Log("01: LoadChannelsAsync entered");
             _allChannels.Clear();
             _allRawCategories.Clear();
             _sourceNames.Clear();
             _categoryNames.Clear();
             Categories.Clear();
+            RecentChannels.Clear();
             SourceOptions.Clear();
             SourceVisibilityOptions.Clear();
             ManageCategoryOptions.Clear();
@@ -182,6 +210,7 @@ namespace Kroira.App.ViewModels
             var access = await profileService.GetAccessSnapshotAsync(db);
             _activeProfileId = access.ProfileId;
             _preferences = await browsePreferencesService.GetAsync(db, Domain, _activeProfileId);
+            Log("02: resolved services and preferences");
 
             var categories = await db.ChannelCategories
                 .AsNoTracking()
@@ -211,6 +240,7 @@ namespace Kroira.App.ViewModels
                                   ContentClassifier.IsPlayableStoredLiveChannel(channel.Name, channel.StreamUrl, sourceType, categoryLabels) &&
                                   access.IsLiveChannelAllowed(channel, category))
                 .ToList();
+            Log($"03: loaded {channels.Count} candidate channels");
 
             foreach (var channel in channels)
             {
@@ -245,6 +275,7 @@ namespace Kroira.App.ViewModels
             BuildSourceOptions();
             BuildCategoryManagerOptions();
             BuildVisibleCategories();
+            Log("04: built source/category collections");
 
             _isInitializing = true;
             try
@@ -255,14 +286,17 @@ namespace Kroira.App.ViewModels
                     ?? SortOptions.First();
                 SelectedSourceOption = SourceOptions.FirstOrDefault(option => option.Id == _preferences.SelectedSourceId)
                     ?? SourceOptions.FirstOrDefault();
-                SelectedCategory = Categories.FirstOrDefault();
+                SelectedCategory = Categories.FirstOrDefault(category => string.Equals(category.FilterKey, _preferences.SelectedCategoryKey, StringComparison.OrdinalIgnoreCase))
+                    ?? Categories.FirstOrDefault();
             }
             finally
             {
                 _isInitializing = false;
             }
 
+            Log("05: initialized selected filters");
             QueueApplyFilter();
+            Log("06: queued ApplyFilter");
         }
 
         [RelayCommand]
@@ -332,6 +366,7 @@ namespace Kroira.App.ViewModels
 
         private async Task ApplyFilterAsync(int requestVersion)
         {
+            Log($"07: ApplyFilterAsync start request={requestVersion}");
             var browsePreferencesService = _serviceProvider.GetRequiredService<IBrowsePreferencesService>();
             var visibleSourceIds = SourceVisibilityOptions
                 .Where(option => option.IsVisible)
@@ -342,7 +377,7 @@ namespace Kroira.App.ViewModels
                 visibleSourceIds = _allChannels.Select(channel => channel.SourceProfileId).Distinct().ToHashSet();
             }
 
-            var filtered = _allChannels
+            var baseVisibleChannels = _allChannels
                 .Where(channel => visibleSourceIds.Contains(channel.SourceProfileId))
                 .Where(channel => !browsePreferencesService.IsCategoryHidden(_preferences, channel.CategoryName))
                 .Select(channel =>
@@ -350,12 +385,16 @@ namespace Kroira.App.ViewModels
                     channel.DisplayCategoryName = browsePreferencesService.GetEffectiveCategoryName(_preferences, channel.CategoryName);
                     return channel;
                 })
-                .AsEnumerable();
+                .ToList();
 
             if (SelectedSourceOption != null && SelectedSourceOption.Id != 0)
             {
-                filtered = filtered.Where(channel => channel.SourceProfileId == SelectedSourceOption.Id);
+                baseVisibleChannels = baseVisibleChannels
+                    .Where(channel => channel.SourceProfileId == SelectedSourceOption.Id)
+                    .ToList();
             }
+
+            var filtered = baseVisibleChannels.AsEnumerable();
 
             if (SelectedCategory != null && !string.IsNullOrWhiteSpace(SelectedCategory.FilterKey))
             {
@@ -381,6 +420,7 @@ namespace Kroira.App.ViewModels
 
             var filteredList = filtered.ToList();
             var nowUtc = DateTime.UtcNow;
+            Log($"08: filtered down to {filteredList.Count} channels before guide load");
 
             try
             {
@@ -397,6 +437,9 @@ namespace Kroira.App.ViewModels
                     summaries.TryGetValue(channel.Id, out var summary);
                     channel.ApplyGuideSummary(summary, nowUtc);
                 }
+
+                await RefreshQuickAccessAsync(db, guideService, baseVisibleChannels, nowUtc);
+                Log("09: guide summaries and quick access refreshed");
             }
             catch
             {
@@ -404,6 +447,9 @@ namespace Kroira.App.ViewModels
                 {
                     channel.ApplyGuideSummary(null, nowUtc);
                 }
+
+                ResetQuickAccess(baseVisibleChannels);
+                Log("10: guide load failed; quick access reset");
             }
 
             if (GuideMatchedOnly)
@@ -418,9 +464,7 @@ namespace Kroira.App.ViewModels
                 return;
             }
 
-            BuildVisibleCategories();
             EnsureSelectedSourceOption();
-            EnsureSelectedCategory();
 
             FilteredChannels.Clear();
             foreach (var channel in filteredList)
@@ -436,6 +480,7 @@ namespace Kroira.App.ViewModels
                                  (SelectedSourceOption?.Id ?? 0) != 0 ||
                                  !string.Equals(SelectedSortOption?.Key ?? "name_asc", "name_asc", StringComparison.OrdinalIgnoreCase);
             IsEmpty = FilteredChannels.Count == 0;
+            Log($"11: ApplyFilterAsync completed with {FilteredChannels.Count} visible channels");
         }
 
         [RelayCommand]
@@ -482,6 +527,27 @@ namespace Kroira.App.ViewModels
             QueueApplyFilter();
         }
 
+        public async Task RecordChannelLaunchAsync(int channelId)
+        {
+            if (channelId <= 0 || _activeProfileId <= 0)
+            {
+                return;
+            }
+
+            _preferences.LastChannelId = channelId;
+            _preferences.RecentChannelIds.RemoveAll(id => id == channelId);
+            _preferences.RecentChannelIds.Insert(0, channelId);
+            if (_preferences.RecentChannelIds.Count > 6)
+            {
+                _preferences.RecentChannelIds = _preferences.RecentChannelIds.Take(6).ToList();
+            }
+
+            using var scope = _serviceProvider.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var browsePreferencesService = scope.ServiceProvider.GetRequiredService<IBrowsePreferencesService>();
+            await browsePreferencesService.SaveAsync(db, Domain, _activeProfileId, _preferences);
+        }
+
         private async Task SavePreferencesAndRefreshAsync(bool rebuildCollections)
         {
             using var scope = _serviceProvider.CreateScope();
@@ -497,6 +563,92 @@ namespace Kroira.App.ViewModels
             }
 
             QueueApplyFilter();
+        }
+
+        private async Task RefreshQuickAccessAsync(
+            AppDbContext db,
+            ILiveGuideService guideService,
+            IReadOnlyCollection<BrowserChannelViewModel> candidateChannels,
+            DateTime nowUtc)
+        {
+            Log($"12: RefreshQuickAccessAsync start with {candidateChannels.Count} candidates");
+            ApplyLastTunedState(_allChannels);
+            RecentChannels.Clear();
+
+            if (_preferences.RecentChannelIds.Count == 0 || candidateChannels.Count == 0)
+            {
+                return;
+            }
+
+            var channelById = candidateChannels
+                .GroupBy(channel => channel.Id)
+                .ToDictionary(group => group.Key, group => group.First());
+
+            var recentIds = _preferences.RecentChannelIds
+                .Where(channelById.ContainsKey)
+                .Distinct()
+                .Take(6)
+                .ToList();
+
+            if (recentIds.Count == 0)
+            {
+                Log("13: RefreshQuickAccessAsync no recent ids to render");
+                return;
+            }
+
+            var summaries = await guideService.GetGuideSummariesAsync(db, recentIds, nowUtc);
+            for (var index = 0; index < recentIds.Count; index++)
+            {
+                var channel = channelById[recentIds[index]];
+                summaries.TryGetValue(channel.Id, out var summary);
+                channel.ApplyGuideSummary(summary, nowUtc);
+                channel.QuickAccessBadgeText = index == 0 ? "LAST TUNED" : "RECENT";
+                channel.QuickAccessBadgeVisibility = Microsoft.UI.Xaml.Visibility.Visible;
+                RecentChannels.Add(channel);
+            }
+            Log($"14: RefreshQuickAccessAsync rendered {RecentChannels.Count} recent channels");
+        }
+
+        private void ResetQuickAccess(IReadOnlyCollection<BrowserChannelViewModel> candidateChannels)
+        {
+            ApplyLastTunedState(_allChannels);
+            RecentChannels.Clear();
+
+            if (_preferences.RecentChannelIds.Count == 0 || candidateChannels.Count == 0)
+            {
+                return;
+            }
+
+            var channelById = candidateChannels
+                .GroupBy(channel => channel.Id)
+                .ToDictionary(group => group.Key, group => group.First());
+
+            var recentIds = _preferences.RecentChannelIds
+                .Where(channelById.ContainsKey)
+                .Distinct()
+                .Take(6)
+                .ToList();
+
+            for (var index = 0; index < recentIds.Count; index++)
+            {
+                var channel = channelById[recentIds[index]];
+                channel.QuickAccessBadgeText = index == 0 ? "LAST TUNED" : "RECENT";
+                channel.QuickAccessBadgeVisibility = Microsoft.UI.Xaml.Visibility.Visible;
+                RecentChannels.Add(channel);
+            }
+        }
+
+        private void ApplyLastTunedState(IEnumerable<BrowserChannelViewModel> channels)
+        {
+            foreach (var channel in channels)
+            {
+                channel.IsLastTuned = channel.Id == _preferences.LastChannelId;
+                channel.LastTunedVisibility = channel.IsLastTuned
+                    ? Microsoft.UI.Xaml.Visibility.Visible
+                    : Microsoft.UI.Xaml.Visibility.Collapsed;
+                channel.QuickAccessBadgeText = string.Empty;
+                channel.QuickAccessBadgeVisibility = Microsoft.UI.Xaml.Visibility.Collapsed;
+            }
         }
 
         private void BuildSourceOptions()
@@ -527,21 +679,25 @@ namespace Kroira.App.ViewModels
                     OnSourceVisibilityChanged));
             }
 
-            SelectedSourceOption = SourceOptions.FirstOrDefault(option => option.Id == existingSelection) ?? SourceOptions.FirstOrDefault();
+            var targetSelection = SourceOptions.FirstOrDefault(option => option.Id == existingSelection) ?? SourceOptions.FirstOrDefault();
+            if (!ReferenceEquals(SelectedSourceOption, targetSelection))
+            {
+                var wasInitializing = _isInitializing;
+                _isInitializing = true;
+                try
+                {
+                    SelectedSourceOption = targetSelection;
+                }
+                finally
+                {
+                    _isInitializing = wasInitializing;
+                }
+            }
         }
 
         private void BuildVisibleCategories()
         {
             var browsePreferencesService = _serviceProvider.GetRequiredService<IBrowsePreferencesService>();
-            Categories.Clear();
-            Categories.Add(new BrowserCategoryViewModel
-            {
-                Id = 0,
-                FilterKey = string.Empty,
-                Name = "All Categories",
-                OrderIndex = -1
-            });
-
             var visibleSourceIds = SourceVisibilityOptions
                 .Where(option => option.IsVisible)
                 .Select(option => option.Id)
@@ -550,6 +706,25 @@ namespace Kroira.App.ViewModels
             {
                 visibleSourceIds = _allChannels.Select(channel => channel.SourceProfileId).Distinct().ToHashSet();
             }
+
+            if (SelectedSourceOption != null && SelectedSourceOption.Id != 0)
+            {
+                visibleSourceIds = new HashSet<int>(new[] { SelectedSourceOption.Id });
+            }
+
+            var visibleChannelCount = _allChannels.Count(channel =>
+                visibleSourceIds.Contains(channel.SourceProfileId) &&
+                !browsePreferencesService.IsCategoryHidden(_preferences, channel.CategoryName));
+
+            Categories.Clear();
+            Categories.Add(new BrowserCategoryViewModel
+            {
+                Id = 0,
+                FilterKey = string.Empty,
+                Name = "All Categories",
+                ItemCount = visibleChannelCount,
+                OrderIndex = -1
+            });
 
             var categories = _allChannels
                 .Where(channel => visibleSourceIds.Contains(channel.SourceProfileId))
@@ -561,6 +736,7 @@ namespace Kroira.App.ViewModels
                     Id = index + 1,
                     FilterKey = browsePreferencesService.NormalizeCategoryKey(group.Key),
                     Name = group.Key,
+                    ItemCount = group.Count(),
                     OrderIndex = index
                 })
                 .ToList();

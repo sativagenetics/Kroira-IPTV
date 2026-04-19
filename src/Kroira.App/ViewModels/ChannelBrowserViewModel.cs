@@ -20,7 +20,9 @@ namespace Kroira.App.ViewModels
         public int Id { get; set; }
         public string FilterKey { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
+        public int ItemCount { get; set; }
         public int OrderIndex { get; set; }
+        public string DisplayName => ItemCount > 0 ? $"{Name} ({ItemCount:N0})" : Name;
     }
 
     public partial class BrowserChannelViewModel : ObservableObject
@@ -39,17 +41,24 @@ namespace Kroira.App.ViewModels
         public string CurrentProgramTimeText { get; set; } = string.Empty;
         public string CurrentProgramDescription { get; set; } = string.Empty;
         public string CurrentProgramCategory { get; set; } = string.Empty;
+        public string GuideMetaText { get; set; } = string.Empty;
         public string NextProgramTitle { get; set; } = string.Empty;
         public string NextProgramTimeText { get; set; } = string.Empty;
+        public string NextProgramCompactText { get; set; } = string.Empty;
         public double LiveProgressValue { get; set; }
         public string LiveProgressText { get; set; } = string.Empty;
         public Visibility EpgVisibility { get; set; } = Visibility.Collapsed;
+        public Visibility GuideMetaVisibility { get; set; } = Visibility.Collapsed;
         public Visibility NextProgramVisibility { get; set; } = Visibility.Collapsed;
         public Visibility DescriptionVisibility { get; set; } = Visibility.Collapsed;
         public Visibility SubtitleVisibility { get; set; } = Visibility.Collapsed;
         public Visibility CategoryVisibility { get; set; } = Visibility.Collapsed;
+        public Visibility LastTunedVisibility { get; set; } = Visibility.Collapsed;
+        public Visibility QuickAccessBadgeVisibility { get; set; } = Visibility.Collapsed;
         public bool HasGuideData { get; set; }
         public bool HasMatchedGuide { get; set; }
+        public bool IsLastTuned { get; set; }
+        public string QuickAccessBadgeText { get; set; } = string.Empty;
 
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(FavoriteIcon))]
@@ -87,17 +96,22 @@ namespace Kroira.App.ViewModels
                 channel.CurrentProgramTimeText = next == null
                     ? string.Empty
                     : $"Starts {FormatTimeRange(next.StartTimeUtc, next.EndTimeUtc)}";
+                channel.GuideMetaText = channel.CurrentProgramTimeText;
                 channel.CurrentProgramDescription = string.Empty;
                 channel.CurrentProgramCategory = string.Empty;
                 channel.LiveProgressValue = 0;
                 channel.LiveProgressText = string.Empty;
                 channel.EpgVisibility = Visibility.Collapsed;
+                channel.GuideMetaVisibility = string.IsNullOrWhiteSpace(channel.GuideMetaText)
+                    ? Visibility.Collapsed
+                    : Visibility.Visible;
                 channel.DescriptionVisibility = Visibility.Collapsed;
                 channel.SubtitleVisibility = Visibility.Collapsed;
                 channel.CategoryVisibility = Visibility.Collapsed;
 
                 channel.NextProgramTitle = string.Empty;
                 channel.NextProgramTimeText = string.Empty;
+                channel.NextProgramCompactText = string.Empty;
                 channel.NextProgramVisibility = Visibility.Collapsed;
 
                 return;
@@ -108,11 +122,13 @@ namespace Kroira.App.ViewModels
             channel.HasMatchedGuide = true;
             channel.CurrentProgramSubtitle = current.Subtitle ?? string.Empty;
             channel.CurrentProgramTimeText = FormatTimeRange(current.StartTimeUtc, current.EndTimeUtc);
+            channel.GuideMetaText = channel.CurrentProgramTimeText;
             channel.CurrentProgramDescription = current.Description;
             channel.CurrentProgramCategory = current.Category ?? string.Empty;
             channel.LiveProgressValue = CalculateProgress(current.StartTimeUtc, current.EndTimeUtc, normalizedNowUtc);
             channel.LiveProgressText = $"{Math.Round(channel.LiveProgressValue):0}% live";
             channel.EpgVisibility = Visibility.Visible;
+            channel.GuideMetaVisibility = Visibility.Visible;
             channel.DescriptionVisibility = string.IsNullOrWhiteSpace(current.Description)
                 ? Visibility.Collapsed
                 : Visibility.Visible;
@@ -127,12 +143,14 @@ namespace Kroira.App.ViewModels
             {
                 channel.NextProgramTitle = $"Next: {next.Title}";
                 channel.NextProgramTimeText = FormatTimeRange(next.StartTimeUtc, next.EndTimeUtc);
+                channel.NextProgramCompactText = $"{NormalizeUtc(next.StartTimeUtc).ToLocalTime():HH:mm} {next.Title}";
                 channel.NextProgramVisibility = Visibility.Visible;
             }
             else
             {
                 channel.NextProgramTitle = string.Empty;
                 channel.NextProgramTimeText = string.Empty;
+                channel.NextProgramCompactText = string.Empty;
                 channel.NextProgramVisibility = Visibility.Collapsed;
             }
         }
@@ -146,11 +164,14 @@ namespace Kroira.App.ViewModels
             channel.CurrentProgramTimeText = string.Empty;
             channel.CurrentProgramDescription = string.Empty;
             channel.CurrentProgramCategory = string.Empty;
+            channel.GuideMetaText = string.Empty;
             channel.NextProgramTitle = string.Empty;
             channel.NextProgramTimeText = string.Empty;
+            channel.NextProgramCompactText = string.Empty;
             channel.LiveProgressValue = 0;
             channel.LiveProgressText = string.Empty;
             channel.EpgVisibility = Visibility.Collapsed;
+            channel.GuideMetaVisibility = Visibility.Collapsed;
             channel.NextProgramVisibility = Visibility.Collapsed;
             channel.DescriptionVisibility = Visibility.Collapsed;
             channel.SubtitleVisibility = Visibility.Collapsed;
@@ -166,11 +187,14 @@ namespace Kroira.App.ViewModels
             channel.CurrentProgramTimeText = string.Empty;
             channel.CurrentProgramDescription = string.Empty;
             channel.CurrentProgramCategory = string.Empty;
+            channel.GuideMetaText = string.Empty;
             channel.NextProgramTitle = string.Empty;
             channel.NextProgramTimeText = string.Empty;
+            channel.NextProgramCompactText = string.Empty;
             channel.LiveProgressValue = 0;
             channel.LiveProgressText = string.Empty;
             channel.EpgVisibility = Visibility.Collapsed;
+            channel.GuideMetaVisibility = Visibility.Collapsed;
             channel.NextProgramVisibility = Visibility.Collapsed;
             channel.DescriptionVisibility = Visibility.Collapsed;
             channel.SubtitleVisibility = Visibility.Collapsed;

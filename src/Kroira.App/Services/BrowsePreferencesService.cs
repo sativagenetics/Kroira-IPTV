@@ -13,11 +13,14 @@ namespace Kroira.App.Services
     public sealed class BrowsePreferences
     {
         public string SortKey { get; set; } = string.Empty;
+        public string SelectedCategoryKey { get; set; } = string.Empty;
         public int SelectedSourceId { get; set; }
+        public int LastChannelId { get; set; }
         public bool FavoritesOnly { get; set; }
         public bool HideSecondaryContent { get; set; }
         public bool GuideMatchedOnly { get; set; }
         public List<int> HiddenSourceIds { get; set; } = new();
+        public List<int> RecentChannelIds { get; set; } = new();
         public List<string> HiddenCategoryKeys { get; set; } = new();
         public Dictionary<string, string> CategoryRemaps { get; set; } = new(StringComparer.OrdinalIgnoreCase);
     }
@@ -56,10 +59,17 @@ namespace Kroira.App.Services
             try
             {
                 var preferences = JsonSerializer.Deserialize<BrowsePreferences>(json, JsonOptions) ?? new BrowsePreferences();
+                preferences.SelectedCategoryKey = NormalizeCategoryKey(preferences.SelectedCategoryKey);
                 preferences.HiddenSourceIds = preferences.HiddenSourceIds
                     .Where(id => id > 0)
                     .Distinct()
                     .OrderBy(id => id)
+                    .ToList();
+                preferences.LastChannelId = Math.Max(0, preferences.LastChannelId);
+                preferences.RecentChannelIds = preferences.RecentChannelIds
+                    .Where(id => id > 0)
+                    .Distinct()
+                    .Take(8)
                     .ToList();
                 preferences.HiddenCategoryKeys = preferences.HiddenCategoryKeys
                     .Select(NormalizeCategoryKey)
@@ -134,7 +144,11 @@ namespace Kroira.App.Services
             var normalized = new BrowsePreferences
             {
                 SortKey = preferences.SortKey?.Trim() ?? string.Empty,
+                SelectedCategoryKey = string.IsNullOrWhiteSpace(preferences.SelectedCategoryKey)
+                    ? string.Empty
+                    : ContentClassifier.NormalizeLabel(preferences.SelectedCategoryKey).Trim().ToLowerInvariant(),
                 SelectedSourceId = Math.Max(0, preferences.SelectedSourceId),
+                LastChannelId = Math.Max(0, preferences.LastChannelId),
                 FavoritesOnly = preferences.FavoritesOnly,
                 HideSecondaryContent = preferences.HideSecondaryContent,
                 GuideMatchedOnly = preferences.GuideMatchedOnly
@@ -144,6 +158,12 @@ namespace Kroira.App.Services
                 .Where(id => id > 0)
                 .Distinct()
                 .OrderBy(id => id)
+                .ToList();
+
+            normalized.RecentChannelIds = preferences.RecentChannelIds
+                .Where(id => id > 0)
+                .Distinct()
+                .Take(8)
                 .ToList();
 
             normalized.HiddenCategoryKeys = preferences.HiddenCategoryKeys

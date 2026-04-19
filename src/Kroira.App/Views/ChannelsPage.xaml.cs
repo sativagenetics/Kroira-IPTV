@@ -16,6 +16,25 @@ namespace Kroira.App.Views
 {
     public sealed partial class ChannelsPage : Page
     {
+        private static string LogPath => System.IO.Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "Kroira",
+            "startup-log.txt");
+
+        private static void Log(string message)
+        {
+            try
+            {
+                System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(LogPath)!);
+                System.IO.File.AppendAllText(
+                    LogPath,
+                    $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] CHANNELS {message}{Environment.NewLine}");
+            }
+            catch
+            {
+            }
+        }
+
         private sealed class RecordingDurationOption
         {
             public RecordingDurationOption(string label, TimeSpan duration)
@@ -32,14 +51,19 @@ namespace Kroira.App.Views
 
         public ChannelsPage()
         {
+            Log("01: constructor entered");
             this.InitializeComponent();
+            Log("02: after InitializeComponent");
             ViewModel = ((App)Application.Current).Services.GetRequiredService<ChannelsPageViewModel>();
+            Log("03: after resolving ChannelsPageViewModel");
         }
 
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
+            Log($"04: OnNavigatedTo entered, parameterType={e.Parameter?.GetType().FullName ?? "null"}");
             base.OnNavigatedTo(e);
             _ = ViewModel.LoadChannelsCommand.ExecuteAsync(null);
+            Log("05: queued LoadChannelsCommand");
         }
 
         private void SearchBox_KeyDown(object sender, KeyRoutedEventArgs e)
@@ -74,7 +98,7 @@ namespace Kroira.App.Views
         {
             if (e.ClickedItem is BrowserChannelViewModel channel)
             {
-                LaunchChannel(channel);
+                _ = LaunchChannelAsync(channel);
             }
         }
 
@@ -103,12 +127,14 @@ namespace Kroira.App.Views
             }
         }
 
-        private void LaunchChannel(BrowserChannelViewModel channel)
+        private async Task LaunchChannelAsync(BrowserChannelViewModel channel)
         {
             if (string.IsNullOrWhiteSpace(channel.StreamUrl))
             {
                 return;
             }
+
+            await ViewModel.RecordChannelLaunchAsync(channel.Id);
 
             Frame.Navigate(typeof(EmbeddedPlaybackPage), new PlaybackLaunchContext
             {
@@ -133,8 +159,16 @@ namespace Kroira.App.Views
 
             if (TryGetChannelFromSource(e.OriginalSource, out var channel))
             {
-                LaunchChannel(channel);
+                _ = LaunchChannelAsync(channel);
                 e.Handled = true;
+            }
+        }
+
+        private void RecentChannelButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is FrameworkElement { DataContext: BrowserChannelViewModel channel })
+            {
+                _ = LaunchChannelAsync(channel);
             }
         }
 
