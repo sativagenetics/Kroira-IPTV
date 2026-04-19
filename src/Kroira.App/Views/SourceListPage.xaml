@@ -106,7 +106,7 @@
                     ItemContainerStyle="{StaticResource KroiraMediaRowContainerStyle}">
                     <ListView.ItemTemplate>
                         <DataTemplate>
-                            <Border Style="{StaticResource KroiraRowStyle}" MinHeight="104">
+                            <Border Style="{StaticResource KroiraRowStyle}" MinHeight="136">
                                 <Grid ColumnSpacing="16">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="74" />
@@ -140,6 +140,7 @@
                                         <StackPanel Orientation="Horizontal" Spacing="8">
                                             <Grid Width="8" Height="8" VerticalAlignment="Center">
                                                 <Ellipse Fill="{StaticResource KroiraAccentBrush}" Visibility="{Binding HealthyVisibility}" />
+                                                <Ellipse Fill="{StaticResource KroiraGoldBrush}" Visibility="{Binding DegradedVisibility}" />
                                                 <Ellipse Fill="{StaticResource KroiraGoldBrush}" Visibility="{Binding IdleVisibility}" />
                                                 <Ellipse Fill="{StaticResource KroiraLiveDotBrush}" Visibility="{Binding AttentionVisibility}" />
                                                 <Ellipse Fill="{StaticResource KroiraAccentStrongBrush}" Visibility="{Binding WorkingVisibility}" />
@@ -195,51 +196,93 @@
                                         </StackPanel>
                                     </StackPanel>
 
-                                    <Grid Grid.Column="2" ColumnSpacing="12" VerticalAlignment="Center">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="58" />
-                                            <ColumnDefinition Width="68" />
-                                            <ColumnDefinition Width="68" />
-                                            <ColumnDefinition Width="*" />
-                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="2" Spacing="8" VerticalAlignment="Center">
+                                            <Grid ColumnSpacing="12">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="58" />
+                                                    <ColumnDefinition Width="68" />
+                                                    <ColumnDefinition Width="68" />
+                                                    <ColumnDefinition Width="*" />
+                                                </Grid.ColumnDefinitions>
 
-                                        <StackPanel Spacing="2">
-                                            <TextBlock Text="LIVE" Style="{StaticResource KroiraLabelStyle}" />
-                                            <TextBlock
-                                                Text="{Binding ChannelCount, Converter={StaticResource NumberFormatConverter}}"
-                                                FontSize="15"
-                                                FontWeight="SemiBold"
-                                                Foreground="{StaticResource KroiraTextPrimaryBrush}" />
-                                        </StackPanel>
+                                                <StackPanel Spacing="2">
+                                                    <TextBlock Text="LIVE" Style="{StaticResource KroiraLabelStyle}" />
+                                                    <TextBlock
+                                                        Text="{Binding ChannelCount, Converter={StaticResource NumberFormatConverter}}"
+                                                        FontSize="15"
+                                                        FontWeight="SemiBold"
+                                                        Foreground="{StaticResource KroiraTextPrimaryBrush}" />
+                                                </StackPanel>
 
-                                        <StackPanel Grid.Column="1" Spacing="2">
-                                            <TextBlock Text="MOVIES" Style="{StaticResource KroiraLabelStyle}" />
-                                            <TextBlock
-                                                Text="{Binding MovieCount, Converter={StaticResource NumberFormatConverter}}"
-                                                FontSize="15"
-                                                FontWeight="SemiBold"
-                                                Foreground="{StaticResource KroiraTextPrimaryBrush}" />
-                                        </StackPanel>
+                                                <StackPanel Grid.Column="1" Spacing="2">
+                                                    <TextBlock Text="MOVIES" Style="{StaticResource KroiraLabelStyle}" />
+                                                    <TextBlock
+                                                        Text="{Binding MovieCount, Converter={StaticResource NumberFormatConverter}}"
+                                                        FontSize="15"
+                                                        FontWeight="SemiBold"
+                                                        Foreground="{StaticResource KroiraTextPrimaryBrush}" />
+                                                </StackPanel>
 
-                                        <StackPanel Grid.Column="2" Spacing="2">
-                                            <TextBlock Text="SERIES" Style="{StaticResource KroiraLabelStyle}" />
-                                            <TextBlock
-                                                Text="{Binding SeriesCount, Converter={StaticResource NumberFormatConverter}}"
-                                                FontSize="15"
-                                                FontWeight="SemiBold"
-                                                Foreground="{StaticResource KroiraTextPrimaryBrush}" />
-                                        </StackPanel>
+                                                <StackPanel Grid.Column="2" Spacing="2">
+                                                    <TextBlock Text="SERIES" Style="{StaticResource KroiraLabelStyle}" />
+                                                    <TextBlock
+                                                        Text="{Binding SeriesCount, Converter={StaticResource NumberFormatConverter}}"
+                                                        FontSize="15"
+                                                        FontWeight="SemiBold"
+                                                        Foreground="{StaticResource KroiraTextPrimaryBrush}" />
+                                                </StackPanel>
 
-                                        <StackPanel Grid.Column="3" Spacing="2">
-                                            <TextBlock Text="LAST SYNC" Style="{StaticResource KroiraLabelStyle}" />
-                                            <TextBlock
-                                                Text="{Binding LastSyncText}"
-                                                FontSize="13"
-                                                Foreground="{StaticResource KroiraTextSecondaryBrush}"
-                                                MaxLines="1"
-                                                TextTrimming="CharacterEllipsis" />
+                                                <StackPanel Grid.Column="3" Spacing="2">
+                                                    <TextBlock Text="LAST IMPORT" Style="{StaticResource KroiraLabelStyle}" />
+                                                    <TextBlock
+                                                        Text="{Binding LastSyncText}"
+                                                        FontSize="13"
+                                                        Foreground="{StaticResource KroiraTextSecondaryBrush}"
+                                                        MaxLines="1"
+                                                        TextTrimming="CharacterEllipsis" />
+                                                </StackPanel>
+                                            </Grid>
+
+                                            <StackPanel Spacing="4">
+                                                <TextBlock FontSize="11"
+                                                           Foreground="{StaticResource KroiraTextTertiaryBrush}"
+                                                           MaxLines="1"
+                                                           TextTrimming="CharacterEllipsis">
+                                                    <Run Text="Import: " />
+                                                    <Run Text="{Binding ImportResultText}" />
+                                                </TextBlock>
+                                                <TextBlock FontSize="11"
+                                                           Foreground="{StaticResource KroiraTextTertiaryBrush}"
+                                                           MaxLines="1"
+                                                           TextTrimming="CharacterEllipsis">
+                                                    <Run Text="Guide: " />
+                                                    <Run Text="{Binding EpgCoverageText}" />
+                                                </TextBlock>
+                                                <TextBlock FontSize="11"
+                                                           Foreground="{StaticResource KroiraTextTertiaryBrush}"
+                                                           MaxLines="1"
+                                                           TextTrimming="CharacterEllipsis">
+                                                    <Run Text="Success: " />
+                                                    <Run Text="{Binding LastSuccessfulSyncText}" />
+                                                </TextBlock>
+                                                <TextBlock Visibility="{Binding ParseWarningsVisibility}"
+                                                           FontSize="11"
+                                                           Foreground="{StaticResource KroiraGoldBrush}"
+                                                           MaxLines="1"
+                                                           TextTrimming="CharacterEllipsis">
+                                                    <Run Text="Warnings: " />
+                                                    <Run Text="{Binding ParseWarningsText}" />
+                                                </TextBlock>
+                                                <TextBlock Visibility="{Binding NetworkFailureVisibility}"
+                                                           FontSize="11"
+                                                           Foreground="{StaticResource KroiraLiveDotBrush}"
+                                                           MaxLines="1"
+                                                           TextTrimming="CharacterEllipsis">
+                                                    <Run Text="Failure: " />
+                                                    <Run Text="{Binding NetworkFailureText}" />
+                                                </TextBlock>
+                                            </StackPanel>
                                         </StackPanel>
-                                    </Grid>
 
                                     <StackPanel Grid.Column="3"
                                                 Orientation="Horizontal"

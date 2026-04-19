@@ -186,6 +186,7 @@ namespace Kroira.App
             services.AddSingleton<IInputInterceptorService, InputInterceptorService>();
             services.AddSingleton<ITmdbMetadataService, TmdbMetadataService>();
             services.AddSingleton<ILiveGuideService, LiveGuideService>();
+            services.AddSingleton<ISourceDiagnosticsService, SourceDiagnosticsService>();
             services.AddSingleton<Kroira.App.Services.Parsing.IM3uParserService, Kroira.App.Services.Parsing.M3uParserService>();
             services.AddSingleton<Kroira.App.Services.Parsing.IEpgSourceDiscoveryService, Kroira.App.Services.Parsing.M3uEpgDiscoveryService>();
             services.AddSingleton<Kroira.App.Services.Parsing.IEpgSourceDiscoveryService, Kroira.App.Services.Parsing.XtreamEpgDiscoveryService>();
