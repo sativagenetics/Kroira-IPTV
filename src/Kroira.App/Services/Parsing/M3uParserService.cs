@@ -505,6 +505,11 @@ namespace Kroira.App.Services.Parsing
                     representativeRawTitle,
                     categoryName);
 
+                var normalizedDisplay = catalogNormalizationService.NormalizeSeries(
+                    SourceType.M3U,
+                    displayTitle,
+                    categoryName);
+
                 // Poster: first non-empty logo from any episode entry.
                 var logo = items
                     .Select(i => i.LogoUrl)
@@ -514,8 +519,8 @@ namespace Kroira.App.Services.Parsing
                 {
                     SourceProfileId = sourceProfileId,
                     ExternalId = string.Empty,
-                    Title = displayTitle,
-                    RawSourceTitle = normalized.RawTitle,
+                    Title = string.IsNullOrWhiteSpace(normalizedDisplay.Title) ? displayTitle : normalizedDisplay.Title,
+                    RawSourceTitle = representativeRawTitle,
                     CategoryName = normalized.CategoryName,
                     RawSourceCategoryName = normalized.RawCategoryName,
                     ContentKind = normalized.ContentKind,

@@ -876,6 +876,8 @@ namespace Kroira.App.Services
             return string.Equals(movie.ContentKind, "Primary", StringComparison.OrdinalIgnoreCase) &&
                    !ContentClassifier.IsGarbageTitle(movie.Title) &&
                    !ContentClassifier.IsGarbageCategoryName(movie.CategoryName) &&
+                   !ContentClassifier.IsPromotionalCatalogLabel(movie.Title) &&
+                   !ContentClassifier.IsPromotionalCatalogLabel(movie.CategoryName) &&
                    !ContentClassifier.IsM3uBucketOrAdultLabel(movie.Title);
         }
 
@@ -884,6 +886,8 @@ namespace Kroira.App.Services
             return string.Equals(series.ContentKind, "Primary", StringComparison.OrdinalIgnoreCase) &&
                    !ContentClassifier.IsGarbageTitle(series.Title) &&
                    !ContentClassifier.IsGarbageCategoryName(series.CategoryName) &&
+                   !ContentClassifier.IsPromotionalCatalogLabel(series.Title) &&
+                   !ContentClassifier.IsPromotionalCatalogLabel(series.CategoryName) &&
                    !ContentClassifier.IsM3uBucketOrAdultLabel(series.Title);
         }
 

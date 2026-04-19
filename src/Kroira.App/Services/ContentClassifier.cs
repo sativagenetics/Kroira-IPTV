@@ -289,6 +289,7 @@ namespace Kroira.App.Services
         {
             if (IsGarbageTitle(title)) return false;
             if (string.IsNullOrWhiteSpace(streamUrl)) return false;
+            if (IsPromotionalCatalogLabel(title) || IsPromotionalCatalogLabel(categoryName)) return false;
             if (IsM3uBucketOrAdultLabel(title)) return false;
             if (IsM3uFeaturedUnsafeCategory(categoryName)) return false;
             return true;
@@ -309,6 +310,7 @@ namespace Kroira.App.Services
             // Universal minimum: must be playable and not obviously garbage.
             if (string.IsNullOrWhiteSpace(streamUrl)) return false;
             if (IsGarbageTitle(title)) return false;
+            if (IsPromotionalCatalogLabel(title) || IsPromotionalCatalogLabel(categoryName)) return false;
 
             // Xtream data is already clean — do not apply M3U bucket rules.
             if (sourceType == SourceType.Xtream) return true;
@@ -323,6 +325,7 @@ namespace Kroira.App.Services
         public static bool IsM3uSeriesFeaturedSafe(string title, string categoryName)
         {
             if (IsGarbageTitle(title)) return false;
+            if (IsPromotionalCatalogLabel(title) || IsPromotionalCatalogLabel(categoryName)) return false;
             if (IsM3uBucketOrAdultLabel(title)) return false;
             if (IsM3uFeaturedUnsafeCategory(categoryName)) return false;
             return true;
@@ -335,6 +338,7 @@ namespace Kroira.App.Services
         public static bool IsFeaturedSafeSeries(SourceType sourceType, string title, string categoryName)
         {
             if (IsGarbageTitle(title)) return false;
+            if (IsPromotionalCatalogLabel(title) || IsPromotionalCatalogLabel(categoryName)) return false;
 
             if (sourceType == SourceType.Xtream) return true;
 
@@ -440,6 +444,16 @@ namespace Kroira.App.Services
                    lower.Contains("[demo]") ||
                    lower.StartsWith("test channel") ||
                    lower.StartsWith("test stream");
+        }
+
+        public static bool IsPromotionalCatalogLabel(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value)) return false;
+
+            var normalized = NormalizeLabel(value).ToLowerInvariant();
+            if (normalized.Length <= 2) return false;
+
+            return _promotionalBoundaryRegex.IsMatch(normalized);
         }
 
         public static bool IsGarbageMovieExtension(string extension)
@@ -744,6 +758,10 @@ namespace Kroira.App.Services
 
         private static readonly Regex _multiSpace =
             new(@"\s{2,}", RegexOptions.Compiled);
+
+        private static readonly Regex _promotionalBoundaryRegex =
+            new(@"(?:^|[\s\[\(\{\|:\-~])(?:(?:official|final|exclusive|extended)\s+)?(?:trailer|teaser|preview|clip|sample)s?(?:$|[\s\]\)\}\|:\-~])",
+                RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
         /// <summary>
         /// Cleans an extracted series base title. Strips leading language tags

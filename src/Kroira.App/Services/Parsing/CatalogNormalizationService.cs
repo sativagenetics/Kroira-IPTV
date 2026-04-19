@@ -24,7 +24,7 @@ namespace Kroira.App.Services.Parsing
     public sealed class CatalogNormalizationService : ICatalogNormalizationService
     {
         private static readonly Regex SegmentSplitRegex =
-            new(@"\s+(?:\||-|–|—)\s+", RegexOptions.Compiled);
+            new(@"\s+(?:\||-|–|—|~)\s+", RegexOptions.Compiled);
 
         private static readonly Regex MultiWhitespaceRegex =
             new(@"\s{2,}", RegexOptions.Compiled);
@@ -35,22 +35,27 @@ namespace Kroira.App.Services.Parsing
         private static readonly Regex LeadingTagRegex =
             new(@"^\s*[\[\(\{](?<tag>[^\]\)\}]+)[\]\)\}]\s*", RegexOptions.Compiled);
 
+        private static readonly Regex InlineWrappedTagRegex =
+            new(@"\s*[\[\(\{](?<tag>[^\]\)\}]+)[\]\)\}]\s*", RegexOptions.Compiled);
+
         private static readonly Regex LeadingCodePrefixRegex =
             new(@"^(?<tag>[A-Za-z]{2,4})\s*[:|]\s*", RegexOptions.Compiled);
 
         private static readonly Regex TrailingBoundaryTokenRegex =
-            new(@"\s+(?<tag>(?:official|final|extended|exclusive)\s+)?(?:trailer|teaser|preview|clip)s?\s*$",
+            new(@"\s+(?<tag>(?:official|final|extended|exclusive)\s+)?(?:trailer|teaser|preview|clip|sample)s?\s*$",
                 RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
         private static readonly Regex TrailingNoiseRegex =
-            new(@"\s+(?:2160p|1080p|720p|480p|4k|uhd|fhd|hd|sd|hdr10|hdr|hevc|x264|x265|h264|h265|web(?:-|\s)?dl|webrip|bluray|bdrip|dvdrip|hdtv|multi(?:\s+audio)?|dual\s+audio|subbed|dubbed)\b\s*$",
+            new(@"\s+(?:2160p|1080p|720p|480p|4k|uhd|fhd|hd|sd|hdr10|hdr|dv|dovi|10bit|8bit|hevc|x264|x265|h264|h265|aac|ac3|eac3|dts|atmos|web(?:-|\s)?dl|webrip|bluray|bdrip|dvdrip|hdtv|cam|camrip|hdcam|telesync|ts|tc|remux|proper|repack|multi(?:\s+audio)?|multi(?:\s+sub(?:s|titles)?)?|dual|dual\s+audio|subbed|dubbed|sample)\b\s*$",
                 RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
         private static readonly HashSet<string> QualityTokens = new(StringComparer.OrdinalIgnoreCase)
         {
             "4k", "2160p", "1080p", "720p", "480p", "uhd", "fhd", "hd", "sd",
-            "hdr", "hdr10", "hevc", "x264", "x265", "h264", "h265",
-            "webdl", "web-dl", "webrip", "bluray", "bdrip", "dvdrip", "hdtv"
+            "hdr", "hdr10", "dv", "dovi", "10bit", "8bit", "hevc", "x264", "x265", "h264", "h265",
+            "aac", "ac3", "eac3", "dts", "atmos", "cam", "camrip", "hdcam", "telesync", "ts", "tc",
+            "remux", "proper", "repack", "webdl", "web-dl", "webrip", "bluray", "bdrip", "dvdrip", "hdtv",
+            "hdrip", "brrip", "nf", "amzn", "dsnp", "imax"
         };
 
         private static readonly HashSet<string> LanguageTokens = new(StringComparer.OrdinalIgnoreCase)
@@ -58,13 +63,21 @@ namespace Kroira.App.Services.Parsing
             "tr", "tur", "turkish", "en", "eng", "english", "de", "ger", "german",
             "fr", "fre", "french", "es", "spa", "spanish", "it", "ita", "italian",
             "pt", "por", "portuguese", "ar", "ara", "arabic", "ru", "rus", "russian",
-            "multi", "multi audio", "multiaudio", "dual audio", "dualaudio", "subbed", "dubbed"
+            "multi", "multi audio", "multiaudio", "multi sub", "multi subs", "multisub", "multisubs",
+            "subtitle", "subtitles", "sub", "subs", "dual", "dual audio", "dualaudio", "subbed", "dubbed",
+            "dub", "vostfr", "vo", "vf", "nlsub", "nl subs", "turkce", "türkçe", "altyazi", "altyazı"
+        };
+
+        private static readonly HashSet<string> PromotionalTokens = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "trailer", "trailers", "teaser", "teasers", "preview", "previews", "clip", "clips", "sample", "samples"
         };
 
         private static readonly HashSet<string> ProviderTokens = new(StringComparer.OrdinalIgnoreCase)
         {
             "provider", "provider vod", "vod", "vod library", "vod movies", "vod series",
-            "playlist", "package", "reseller", "trial", "server", "backup", "new source"
+            "playlist", "package", "reseller", "trial", "server", "backup", "new source",
+            "catalog", "library", "provider movies", "provider series"
         };
 
         private static readonly HashSet<string> MovieCategoryTokens = new(StringComparer.OrdinalIgnoreCase)
@@ -97,7 +110,7 @@ namespace Kroira.App.Services.Parsing
             var trimmedRawTitle = rawTitle?.Trim() ?? string.Empty;
             var trimmedRawCategory = rawCategoryName?.Trim() ?? string.Empty;
 
-            var contentKind = DetectContentKind(trimmedRawTitle);
+            var contentKind = DetectContentKind(trimmedRawTitle, trimmedRawCategory);
             var normalizedTitle = NormalizeTitle(trimmedRawTitle, contentKind, sourceType);
             var normalizedCategory = NormalizeCategory(trimmedRawCategory, defaultCategory, typeCategoryTokens);
 
@@ -118,9 +131,16 @@ namespace Kroira.App.Services.Parsing
                 return string.Empty;
             }
 
+            var normalizedTitle = NormalizeTitleShared(rawTitle, contentKind);
+            return ApplySourceSpecificTitleRefinement(sourceType, normalizedTitle, rawTitle);
+        }
+
+        private static string NormalizeTitleShared(string rawTitle, string contentKind)
+        {
             var working = rawTitle.Trim();
             working = StripLeadingWrappedTags(working, tag => IsIgnorableTitleTag(tag, contentKind));
             working = StripTrailingWrappedTags(working, tag => IsIgnorableTitleTag(tag, contentKind));
+            working = StripInlineWrappedTags(working, tag => IsIgnorableTitleTag(tag, contentKind));
             working = StripLeadingCodePrefix(working);
 
             var segments = SplitSegments(working);
@@ -129,14 +149,20 @@ namespace Kroira.App.Services.Parsing
             working = segments.Count > 0 ? string.Join(" - ", segments) : working;
             working = TrailingBoundaryTokenRegex.Replace(working, string.Empty);
             working = StripTrailingNoise(working);
-            working = CleanupText(working);
+            working = StripTrailingWrappedTags(working, tag => IsIgnorableTitleTag(tag, contentKind));
+            return CleanupText(working);
+        }
 
-            if (sourceType == SourceType.Xtream && working.Length < 2)
+        private static string ApplySourceSpecificTitleRefinement(SourceType sourceType, string normalizedTitle, string rawTitle)
+        {
+            // Shared normalization is the primary path. Source-specific fallback is limited
+            // to preserving data when the shared cleanup collapses a noisy provider title.
+            if (sourceType == SourceType.Xtream && normalizedTitle.Length < 2)
             {
                 return CleanupText(rawTitle);
             }
 
-            return working;
+            return normalizedTitle;
         }
 
         private static string NormalizeCategory(string rawCategory, string defaultCategory, HashSet<string> typeCategoryTokens)
@@ -149,6 +175,7 @@ namespace Kroira.App.Services.Parsing
             var working = rawCategory.Trim();
             working = StripLeadingWrappedTags(working, IsIgnorableCategoryTag);
             working = StripTrailingWrappedTags(working, IsIgnorableCategoryTag);
+            working = StripInlineWrappedTags(working, IsIgnorableCategoryTag);
             working = StripLeadingCodePrefix(working);
 
             var segments = SplitSegments(working);
@@ -156,6 +183,7 @@ namespace Kroira.App.Services.Parsing
             working = segments.Count > 0 ? string.Join(" / ", segments) : working;
             working = StripBoundaryCategoryWords(working, typeCategoryTokens);
             working = StripTrailingNoise(working);
+            working = StripTrailingWrappedTags(working, IsIgnorableCategoryTag);
             working = CleanupText(working);
 
             if (string.IsNullOrWhiteSpace(working))
@@ -189,7 +217,7 @@ namespace Kroira.App.Services.Parsing
             {
                 if (value.StartsWith(token + " ", StringComparison.OrdinalIgnoreCase))
                 {
-                    return value.Substring(token.Length).TrimStart(' ', '/', '-', '|');
+                    return value.Substring(token.Length).TrimStart(' ', '/', '-', '|', '~');
                 }
             }
 
@@ -202,7 +230,7 @@ namespace Kroira.App.Services.Parsing
             {
                 if (value.EndsWith(" " + token, StringComparison.OrdinalIgnoreCase))
                 {
-                    return value[..^token.Length].TrimEnd(' ', '/', '-', '|');
+                    return value[..^token.Length].TrimEnd(' ', '/', '-', '|', '~');
                 }
             }
 
@@ -222,6 +250,7 @@ namespace Kroira.App.Services.Parsing
                          .Concat(ProviderTokens)
                          .Concat(QualityTokens)
                          .Concat(LanguageTokens)
+                         .Concat(PromotionalTokens)
                          .Distinct(StringComparer.OrdinalIgnoreCase))
             {
                 stripped = Regex.Replace(
@@ -234,30 +263,50 @@ namespace Kroira.App.Services.Parsing
             return string.IsNullOrWhiteSpace(CleanupText(stripped));
         }
 
-        private static string DetectContentKind(string rawTitle)
+        private static string DetectContentKind(string rawTitle, string rawCategory)
         {
-            if (string.IsNullOrWhiteSpace(rawTitle))
+            foreach (var candidate in EnumerateContentKindCandidates(rawTitle, rawCategory))
             {
-                return "Primary";
-            }
-
-            var segments = SplitSegments(rawTitle);
-            foreach (var segment in segments)
-            {
-                var kind = DetectKindFromToken(segment);
+                var kind = DetectKindFromToken(candidate);
                 if (!string.Equals(kind, "Primary", StringComparison.Ordinal))
                 {
                     return kind;
                 }
             }
 
-            var trailingMatch = TrailingBoundaryTokenRegex.Match(rawTitle);
-            if (trailingMatch.Success)
+            if (!string.IsNullOrWhiteSpace(rawTitle))
             {
-                return DetectKindFromToken(trailingMatch.Groups["tag"].Value);
+                var trailingMatch = TrailingBoundaryTokenRegex.Match(rawTitle);
+                if (trailingMatch.Success)
+                {
+                    return DetectKindFromToken(trailingMatch.Groups["tag"].Value);
+                }
             }
 
             return "Primary";
+        }
+
+        private static IEnumerable<string> EnumerateContentKindCandidates(string rawTitle, string rawCategory)
+        {
+            if (!string.IsNullOrWhiteSpace(rawTitle))
+            {
+                yield return rawTitle;
+
+                foreach (var segment in SplitSegments(rawTitle))
+                {
+                    yield return segment;
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(rawCategory))
+            {
+                yield return rawCategory;
+
+                foreach (var segment in SplitSegments(rawCategory))
+                {
+                    yield return segment;
+                }
+            }
         }
 
         private static string DetectKindFromToken(string value)
@@ -286,6 +335,11 @@ namespace Kroira.App.Services.Parsing
             if (token.EndsWith("clip", StringComparison.OrdinalIgnoreCase) || token == "clips")
             {
                 return "Clip";
+            }
+
+            if (token.EndsWith("sample", StringComparison.OrdinalIgnoreCase) || token == "samples")
+            {
+                return "Sample";
             }
 
             return "Primary";
@@ -336,6 +390,29 @@ namespace Kroira.App.Services.Parsing
             }
         }
 
+        private static string StripInlineWrappedTags(string value, Func<string, bool> shouldStrip)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return string.Empty;
+            }
+
+            var working = value;
+            while (true)
+            {
+                var replaced = InlineWrappedTagRegex.Replace(
+                    working,
+                    match => shouldStrip(match.Groups["tag"].Value) ? " " : match.Value);
+
+                if (string.Equals(replaced, working, StringComparison.Ordinal))
+                {
+                    return CleanupText(working);
+                }
+
+                working = CleanupText(replaced);
+            }
+        }
+
         private static List<string> SplitSegments(string value)
         {
             return SegmentSplitRegex
@@ -383,7 +460,8 @@ namespace Kroira.App.Services.Parsing
 
             return QualityTokens.Contains(token)
                 || LanguageTokens.Contains(token)
-                || ProviderTokens.Contains(token);
+                || ProviderTokens.Contains(token)
+                || PromotionalTokens.Contains(token);
         }
 
         private static bool IsContentKindTag(string segment, string contentKind)
@@ -404,6 +482,7 @@ namespace Kroira.App.Services.Parsing
             return QualityTokens.Contains(token)
                 || LanguageTokens.Contains(token)
                 || ProviderTokens.Contains(token)
+                || PromotionalTokens.Contains(token)
                 || MovieCategoryTokens.Contains(token)
                 || SeriesCategoryTokens.Contains(token);
         }
@@ -415,7 +494,7 @@ namespace Kroira.App.Services.Parsing
                 return string.Empty;
             }
 
-            var cleaned = value.Trim(' ', '-', '|', '/', ':', '_', '.', ',', ';');
+            var cleaned = value.Trim(' ', '-', '|', '/', ':', '_', '.', ',', ';', '~');
             cleaned = MultiWhitespaceRegex.Replace(cleaned, " ");
             return cleaned.Trim();
         }
