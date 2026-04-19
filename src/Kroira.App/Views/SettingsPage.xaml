@@ -95,6 +95,71 @@
                         </StackPanel>
                     </Border>
 
+                    <Border Style="{StaticResource KroiraSettingsGroupStyle}">
+                        <StackPanel Spacing="16">
+                            <StackPanel Spacing="3">
+                                <TextBlock Text="Appearance" Style="{StaticResource KroiraSectionTitleStyle}" />
+                                <TextBlock Text="Runtime theme presets and accent packs that can be gated centrally later without changing page layouts."
+                                           Style="{StaticResource KroiraBodyStyle}"
+                                           TextWrapping="Wrap" />
+                            </StackPanel>
+
+                            <Border Height="1" Background="{StaticResource KroiraBorderBrush}" Opacity="0.45" />
+
+                            <Grid ColumnSpacing="18">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="220" />
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="Theme preset" Style="{StaticResource KroiraTitleStyle}" />
+                                    <TextBlock Text="Adjust the page atmosphere and surface gradient family."
+                                               Style="{StaticResource KroiraBodyStyle}" />
+                                </StackPanel>
+
+                                <ComboBox Grid.Column="1"
+                                          Style="{StaticResource KroiraComboBoxStyle}"
+                                          ItemsSource="{x:Bind ViewModel.ThemeOptions, Mode=OneWay}"
+                                          SelectedItem="{x:Bind ViewModel.SelectedThemeOption, Mode=TwoWay}"
+                                          DisplayMemberPath="DisplayName"
+                                          IsEnabled="{x:Bind ViewModel.CanUseThemePresets, Mode=OneWay}"
+                                          MinWidth="180"
+                                          MaxWidth="220"
+                                          HorizontalAlignment="Stretch"
+                                          VerticalAlignment="Center" />
+                            </Grid>
+
+                            <Grid ColumnSpacing="18">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="220" />
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="Accent pack" Style="{StaticResource KroiraTitleStyle}" />
+                                    <TextBlock Text="Retune action chrome, focus color, and highlight accents across the app."
+                                               Style="{StaticResource KroiraBodyStyle}" />
+                                </StackPanel>
+
+                                <ComboBox Grid.Column="1"
+                                          Style="{StaticResource KroiraComboBoxStyle}"
+                                          ItemsSource="{x:Bind ViewModel.AccentOptions, Mode=OneWay}"
+                                          SelectedItem="{x:Bind ViewModel.SelectedAccentOption, Mode=TwoWay}"
+                                          DisplayMemberPath="DisplayName"
+                                          IsEnabled="{x:Bind ViewModel.CanUseAccentPacks, Mode=OneWay}"
+                                          MinWidth="180"
+                                          MaxWidth="220"
+                                          HorizontalAlignment="Stretch"
+                                          VerticalAlignment="Center" />
+                            </Grid>
+
+                            <TextBlock Text="{x:Bind ViewModel.AppearanceStatusText, Mode=OneWay}"
+                                       Style="{StaticResource KroiraBodyStyle}"
+                                       TextWrapping="Wrap" />
+                        </StackPanel>
+                    </Border>
+
                     <Grid ColumnSpacing="18">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />

@@ -77,6 +77,35 @@ namespace Kroira.App.Data
             EnsureColumn(conn, "ParentalControlSettings", "LockedSourceIdsJson", "TEXT NOT NULL DEFAULT ''");
             EnsureColumn(conn, "ParentalControlSettings", "IsKidsSafeMode", "INTEGER NOT NULL DEFAULT 0");
             EnsureColumn(conn, "ParentalControlSettings", "HideLockedContent", "INTEGER NOT NULL DEFAULT 1");
+            EnsureColumn(conn, "RecordingJobs", "ProfileId", "INTEGER NOT NULL DEFAULT 1");
+            EnsureColumn(conn, "RecordingJobs", "ChannelName", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "RecordingJobs", "StreamUrl", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "RecordingJobs", "RequestedAtUtc", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "RecordingJobs", "StartedAtUtc", "TEXT");
+            EnsureColumn(conn, "RecordingJobs", "CompletedAtUtc", "TEXT");
+            EnsureColumn(conn, "RecordingJobs", "NextRetryAtUtc", "TEXT");
+            EnsureColumn(conn, "RecordingJobs", "UpdatedAtUtc", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "RecordingJobs", "TempOutputPath", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "RecordingJobs", "FileName", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "RecordingJobs", "FileSizeBytes", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "RecordingJobs", "RetryCount", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "RecordingJobs", "MaxRetryCount", "INTEGER NOT NULL DEFAULT 2");
+            EnsureColumn(conn, "RecordingJobs", "LastError", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "DownloadJobs", "ProfileId", "INTEGER NOT NULL DEFAULT 1");
+            EnsureColumn(conn, "DownloadJobs", "Title", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "DownloadJobs", "Subtitle", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "DownloadJobs", "StreamUrl", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "DownloadJobs", "RequestedAtUtc", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "DownloadJobs", "StartedAtUtc", "TEXT");
+            EnsureColumn(conn, "DownloadJobs", "CompletedAtUtc", "TEXT");
+            EnsureColumn(conn, "DownloadJobs", "NextRetryAtUtc", "TEXT");
+            EnsureColumn(conn, "DownloadJobs", "UpdatedAtUtc", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "DownloadJobs", "TempOutputPath", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "DownloadJobs", "FileName", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "DownloadJobs", "FileSizeBytes", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "DownloadJobs", "RetryCount", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "DownloadJobs", "MaxRetryCount", "INTEGER NOT NULL DEFAULT 2");
+            EnsureColumn(conn, "DownloadJobs", "LastError", "TEXT NOT NULL DEFAULT ''");
 
             EnsureColumn(conn, "Movies", "BackdropUrl", "TEXT");
             EnsureColumn(conn, "Movies", "Genres", "TEXT");
@@ -144,6 +173,8 @@ namespace Kroira.App.Data
             EnsureIndex(conn, "IX_ParentalControlSettings_ProfileId", "ParentalControlSettings", "ProfileId", unique: true);
             EnsureTripleCompositeIndex(conn, "IX_Favorites_ProfileId_ContentType_ContentId", "Favorites", "ProfileId", "ContentType", "ContentId");
             EnsureTripleCompositeIndex(conn, "IX_PlaybackProgresses_ProfileId_ContentType_ContentId", "PlaybackProgresses", "ProfileId", "ContentType", "ContentId");
+            EnsureTripleCompositeIndex(conn, "IX_RecordingJobs_ProfileId_Status_StartTimeUtc", "RecordingJobs", "ProfileId", "Status", "StartTimeUtc");
+            EnsureTripleCompositeIndex(conn, "IX_DownloadJobs_ProfileId_Status_RequestedAtUtc", "DownloadJobs", "ProfileId", "Status", "RequestedAtUtc");
             EnsureCompositeIndex(conn, "IX_EpgPrograms_ChannelId_StartTimeUtc", "EpgPrograms", "ChannelId", "StartTimeUtc");
 
             BackfillLegacyProfileState(conn);

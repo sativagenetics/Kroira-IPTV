@@ -144,6 +144,13 @@
                         </Button.Flyout>
                         <TextBlock Text="Aspect" FontSize="12" FontWeight="SemiBold" />
                     </Button>
+                    <Button x:Name="PictureInPictureButton" Click="PictureInPicture_Click"
+                            Background="Transparent" BorderThickness="0"
+                            Foreground="{StaticResource KroiraTextPrimaryBrush}"
+                            ToolTipService.ToolTip="Picture in Picture"
+                            Padding="10,6">
+                        <TextBlock x:Name="PictureInPictureButtonText" Text="PIP" FontSize="12" FontWeight="SemiBold" />
+                    </Button>
                     <Button x:Name="FullscreenButton" Click="Fullscreen_Click"
                             Background="Transparent" BorderThickness="0"
                             Foreground="{StaticResource KroiraTextPrimaryBrush}"

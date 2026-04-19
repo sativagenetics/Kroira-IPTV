@@ -382,13 +382,22 @@
                                                      VerticalAlignment="Center"
                                                      Visibility="{Binding EpgVisibility}" />
 
-                                        <Button Grid.Column="1"
-                                                Content="{Binding FavoriteIcon}"
-                                                Tag="{Binding Id}"
-                                                Click="FavoriteToggle_Click"
-                                                Style="{StaticResource ChannelFavoriteButtonStyle}"
-                                                AutomationProperties.Name="Toggle favorite"
-                                                ToolTipService.ToolTip="Toggle favorite" />
+                                        <StackPanel Grid.Column="1"
+                                                    Orientation="Horizontal"
+                                                    Spacing="6">
+                                            <Button Content="●"
+                                                    Click="RecordChannel_Click"
+                                                    Style="{StaticResource ChannelFavoriteButtonStyle}"
+                                                    Foreground="#FF7B6A"
+                                                    AutomationProperties.Name="Schedule recording"
+                                                    ToolTipService.ToolTip="Schedule recording" />
+                                            <Button Content="{Binding FavoriteIcon}"
+                                                    Tag="{Binding Id}"
+                                                    Click="FavoriteToggle_Click"
+                                                    Style="{StaticResource ChannelFavoriteButtonStyle}"
+                                                    AutomationProperties.Name="Toggle favorite"
+                                                    ToolTipService.ToolTip="Toggle favorite" />
+                                        </StackPanel>
                                     </Grid>
                                 </Grid>
                             </Border>

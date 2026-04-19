@@ -590,13 +590,20 @@
                                                       OffContent=""
                                                       HorizontalAlignment="Left" />
                                     </StackPanel>
-                                    <Button Grid.Column="1"
-                                            Content="Play"
-                                            Visibility="{x:Bind ViewModel.SelectedEpisodePlayVisibility, Mode=OneWay}"
-                                            Click="PlaySelectedEpisode_Click"
-                                            Style="{StaticResource KroiraPrimaryButtonStyle}"
-                                            Padding="18,11"
-                                            VerticalAlignment="Bottom" />
+                                    <StackPanel Grid.Column="1"
+                                                Orientation="Horizontal"
+                                                Spacing="8"
+                                                VerticalAlignment="Bottom"
+                                                Visibility="{x:Bind ViewModel.SelectedEpisodePlayVisibility, Mode=OneWay}">
+                                        <Button Content="Play"
+                                                Click="PlaySelectedEpisode_Click"
+                                                Style="{StaticResource KroiraPrimaryButtonStyle}"
+                                                Padding="18,11" />
+                                        <Button Content="Download"
+                                                Click="DownloadSelectedEpisode_Click"
+                                                Style="{StaticResource KroiraGhostButtonStyle}"
+                                                Padding="18,11" />
+                                    </StackPanel>
                                 </Grid>
                             </Border>
 
@@ -694,6 +701,10 @@
                                                     </StackPanel>
 
                                                     <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                                        <Button Content="Download"
+                                                                Click="DownloadEpisode_Click"
+                                                                Style="{StaticResource KroiraGhostButtonStyle}"
+                                                                FontSize="11" />
                                                         <Button Content="Watched"
                                                                 Click="MarkEpisodeWatched_Click"
                                                                 Style="{StaticResource KroiraGhostButtonStyle}"

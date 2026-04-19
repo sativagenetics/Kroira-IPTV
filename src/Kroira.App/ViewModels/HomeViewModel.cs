@@ -158,6 +158,7 @@ namespace Kroira.App.ViewModels
             QuickActions.Add(new HomeActionItem { Title = "Movies", Detail = "Browse VOD with fast playback resume", Glyph = "\uE8B2", Target = "Movies" });
             QuickActions.Add(new HomeActionItem { Title = "Series", Detail = "Pick up seasons and episodes", Glyph = "\uE8A9", Target = "Series" });
             QuickActions.Add(new HomeActionItem { Title = "Favorites", Detail = "Jump to saved channels and picks", Glyph = "\uE734", Target = "Favorites" });
+            QuickActions.Add(new HomeActionItem { Title = "Library", Detail = "Monitor recordings and downloads", Glyph = "\uE7C3", Target = "MediaLibrary" });
             QuickActions.Add(new HomeActionItem { Title = "Sources", Detail = "Manage M3U, Xtream, and provider setup", Glyph = "\uE8F1", Target = "Sources" });
             QuickActions.Add(new HomeActionItem { Title = "Settings", Detail = "Playback, profiles, and family controls", Glyph = "\uE713", Target = "Settings" });
         }
@@ -168,6 +169,7 @@ namespace Kroira.App.ViewModels
             using var scope = _serviceProvider.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             var profileService = scope.ServiceProvider.GetRequiredService<IProfileStateService>();
+            var recommendationService = scope.ServiceProvider.GetRequiredService<IHomeRecommendationService>();
             var access = await profileService.GetAccessSnapshotAsync(db);
 
             var channelCategories = await db.ChannelCategories.AsNoTracking().ToListAsync();
@@ -180,7 +182,7 @@ namespace Kroira.App.ViewModels
             var favoritesCount = await db.Favorites.CountAsync(favorite => favorite.ProfileId == access.ProfileId);
             var sourcesCount = await db.SourceProfiles.CountAsync();
             var sourceIssuesCount = await db.SourceSyncStates.CountAsync(s => s.ErrorLog != string.Empty || s.HttpStatusCode >= 400);
-            await PrepareFeaturedMetadataAsync(db, access);
+            var recommendationSnapshot = await recommendationService.BuildAsync(db, access);
 
             SummaryItems.Clear();
             SummaryItems.Add(new HomeSummaryItem { Label = "Channels", Value = channelsCount.ToString("N0"), Detail = "Live entries", Glyph = "\uE714" });
@@ -214,7 +216,74 @@ namespace Kroira.App.ViewModels
 
             await LoadContinueItemsAsync(db, access);
             await LoadLiveItemsAsync(db, access);
-            await LoadMediaRailsAsync(db, access);
+            ApplyRecommendationSnapshot(recommendationSnapshot);
+            StartHomeMetadataEnrichment();
+        }
+
+        private void ApplyRecommendationSnapshot(HomeRecommendationSnapshot snapshot)
+        {
+            FeaturedItem = snapshot.Featured == null
+                ? BuildFallbackFeaturedItem()
+                : new HomeFeaturedItem
+                {
+                    ContentId = snapshot.Featured.ContentId,
+                    ContentType = snapshot.Featured.ContentType,
+                    Title = snapshot.Featured.Title,
+                    Detail = snapshot.Featured.Detail,
+                    StreamUrl = snapshot.Featured.StreamUrl,
+                    PosterUrl = snapshot.Featured.PosterUrl,
+                    BackdropUrl = snapshot.Featured.BackdropUrl,
+                    HeroArtworkUrl = ResolveHeroArtworkUrl(snapshot.Featured.BackdropUrl, snapshot.Featured.PosterUrl),
+                    HeroPosterUrl = snapshot.Featured.PosterUrl,
+                    Overview = snapshot.Featured.Overview,
+                    Genres = snapshot.Featured.Genres,
+                    VoteAverage = snapshot.Featured.VoteAverage,
+                    Popularity = snapshot.Featured.Popularity,
+                    ArtworkScore = snapshot.Featured.ArtworkScore,
+                    PrimaryActionLabel = snapshot.Featured.PrimaryActionLabel,
+                    Target = snapshot.Featured.Target
+                };
+
+            PopularItems.Clear();
+            foreach (var item in snapshot.Recommended.Select(MapRecommendationItem))
+            {
+                PopularItems.Add(item);
+            }
+
+            RecentlyAddedItems.Clear();
+            foreach (var item in snapshot.RecentlyAdded.Select(MapRecommendationItem))
+            {
+                RecentlyAddedItems.Add(item);
+            }
+
+            TopRatedItems.Clear();
+            foreach (var item in snapshot.TopRated.Select(MapRecommendationItem))
+            {
+                TopRatedItems.Add(item);
+            }
+
+            PopularItemsVisibility = PopularItems.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+            RecentlyAddedItemsVisibility = RecentlyAddedItems.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+            TopRatedItemsVisibility = TopRatedItems.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        private static HomeMediaItem MapRecommendationItem(HomeRecommendationItem item)
+        {
+            return new HomeMediaItem
+            {
+                ContentId = item.ContentId,
+                ContentType = item.ContentType,
+                Title = item.Title,
+                Detail = item.Detail,
+                StreamUrl = item.StreamUrl,
+                PosterUrl = item.PosterUrl,
+                BackdropUrl = item.BackdropUrl,
+                Overview = item.Overview,
+                Target = item.Target,
+                VoteAverage = item.VoteAverage,
+                Popularity = item.Popularity,
+                ArtworkScore = item.ArtworkScore
+            };
         }
 
         private async Task PrepareFeaturedMetadataAsync(AppDbContext db, ProfileAccessSnapshot access)

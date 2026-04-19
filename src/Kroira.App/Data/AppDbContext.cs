@@ -107,6 +107,12 @@ namespace Kroira.App.Data
             modelBuilder.Entity<PlaybackProgress>()
                 .HasIndex(p => new { p.ContentType, p.ContentId });
 
+            modelBuilder.Entity<RecordingJob>()
+                .HasIndex(job => new { job.ProfileId, job.Status, job.StartTimeUtc });
+
+            modelBuilder.Entity<DownloadJob>()
+                .HasIndex(job => new { job.ProfileId, job.Status, job.RequestedAtUtc });
+
             modelBuilder.Entity<Movie>()
                 .HasIndex(m => m.TmdbId);
 

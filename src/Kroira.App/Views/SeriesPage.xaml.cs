@@ -1,5 +1,7 @@
 using System;
+using System.Threading.Tasks;
 using Kroira.App.Models;
+using Kroira.App.Services;
 using Kroira.App.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
@@ -80,6 +82,14 @@ namespace Kroira.App.Views
             }
         }
 
+        private async void DownloadSelectedEpisode_Click(object sender, RoutedEventArgs e)
+        {
+            if (ViewModel.SelectedEpisode != null)
+            {
+                await QueueEpisodeDownloadAsync(ViewModel.SelectedEpisode);
+            }
+        }
+
         private async void FavoriteToggle_Click(object sender, RoutedEventArgs e)
         {
             if (sender is FrameworkElement { Tag: int id })
@@ -104,6 +114,14 @@ namespace Kroira.App.Views
             }
         }
 
+        private async void DownloadEpisode_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is FrameworkElement { DataContext: SeriesEpisodeItemViewModel item })
+            {
+                await QueueEpisodeDownloadAsync(item);
+            }
+        }
+
         private void PlayEpisode(SeriesEpisodeItemViewModel item)
         {
             if (!string.IsNullOrWhiteSpace(item.StreamUrl))
@@ -115,6 +133,36 @@ namespace Kroira.App.Views
                     StreamUrl = item.StreamUrl,
                     StartPositionMs = item.ResumePositionMs
                 });
+            }
+        }
+
+        private async Task QueueEpisodeDownloadAsync(SeriesEpisodeItemViewModel item)
+        {
+            if (string.IsNullOrWhiteSpace(item.StreamUrl))
+            {
+                return;
+            }
+
+            try
+            {
+                var mediaJobService = ((App)Application.Current).Services.GetRequiredService<IMediaJobService>();
+                await mediaJobService.QueueDownloadAsync(
+                    PlaybackContentType.Episode,
+                    item.Id,
+                    item.Title,
+                    $"Season {item.SeasonNumber} Episode {item.EpisodeNumber}",
+                    item.StreamUrl);
+            }
+            catch (Exception ex)
+            {
+                var dialog = new ContentDialog
+                {
+                    Title = "Download failed",
+                    CloseButtonText = "Close",
+                    XamlRoot = this.XamlRoot,
+                    Content = ex.Message
+                };
+                await dialog.ShowAsync();
             }
         }
     }

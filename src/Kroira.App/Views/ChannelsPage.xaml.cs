@@ -1,4 +1,7 @@
+using System;
+using System.Threading.Tasks;
 using Kroira.App.Models;
+using Kroira.App.Services;
 using Kroira.App.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
@@ -6,12 +9,25 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Navigation;
+using Windows.Foundation;
 using Windows.System;
 
 namespace Kroira.App.Views
 {
     public sealed partial class ChannelsPage : Page
     {
+        private sealed class RecordingDurationOption
+        {
+            public RecordingDurationOption(string label, TimeSpan duration)
+            {
+                Label = label;
+                Duration = duration;
+            }
+
+            public string Label { get; }
+            public TimeSpan Duration { get; }
+        }
+
         public ChannelsPageViewModel ViewModel { get; }
 
         public ChannelsPage()
@@ -79,6 +95,14 @@ namespace Kroira.App.Views
             }
         }
 
+        private async void RecordChannel_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is FrameworkElement { DataContext: BrowserChannelViewModel channel })
+            {
+                await ScheduleRecordingAsync(channel);
+            }
+        }
+
         private void LaunchChannel(BrowserChannelViewModel channel)
         {
             if (string.IsNullOrWhiteSpace(channel.StreamUrl))
@@ -111,6 +135,100 @@ namespace Kroira.App.Views
             {
                 LaunchChannel(channel);
                 e.Handled = true;
+            }
+        }
+
+        private async Task ScheduleRecordingAsync(BrowserChannelViewModel channel)
+        {
+            if (string.IsNullOrWhiteSpace(channel.StreamUrl))
+            {
+                return;
+            }
+
+            var now = DateTime.Now.AddMinutes(2);
+            var startDatePicker = new DatePicker
+            {
+                Date = new DateTimeOffset(now)
+            };
+            var startTimePicker = new TimePicker
+            {
+                Time = new TimeSpan(now.Hour, now.Minute, 0)
+            };
+            var durationOptions = new[]
+            {
+                new RecordingDurationOption("30 minutes", TimeSpan.FromMinutes(30)),
+                new RecordingDurationOption("60 minutes", TimeSpan.FromMinutes(60)),
+                new RecordingDurationOption("120 minutes", TimeSpan.FromMinutes(120))
+            };
+            var durationComboBox = new ComboBox
+            {
+                ItemsSource = durationOptions,
+                DisplayMemberPath = nameof(RecordingDurationOption.Label),
+                SelectedIndex = 1
+            };
+
+            var dialog = new ContentDialog
+            {
+                Title = $"Schedule recording",
+                PrimaryButtonText = "Save",
+                CloseButtonText = "Cancel",
+                DefaultButton = ContentDialogButton.Primary,
+                XamlRoot = XamlRoot,
+                Content = new StackPanel
+                {
+                    Spacing = 12,
+                    Children =
+                    {
+                        new TextBlock
+                        {
+                            Text = channel.Name,
+                            FontWeight = Microsoft.UI.Text.FontWeights.SemiBold
+                        },
+                        new TextBlock
+                        {
+                            Text = "Choose a local start time and duration.",
+                            TextWrapping = TextWrapping.Wrap
+                        },
+                        startDatePicker,
+                        startTimePicker,
+                        durationComboBox
+                    }
+                }
+            };
+
+            if (await ShowContentDialogAsync(dialog) != ContentDialogResult.Primary)
+            {
+                return;
+            }
+
+            var selectedDate = startDatePicker.Date.Date;
+            var selectedLocal = DateTime.SpecifyKind(selectedDate.Date + startTimePicker.Time, DateTimeKind.Local);
+            var duration = (durationComboBox.SelectedItem as RecordingDurationOption)?.Duration ?? TimeSpan.FromMinutes(60);
+
+            try
+            {
+                var mediaJobService = ((App)Application.Current).Services.GetRequiredService<IMediaJobService>();
+                await mediaJobService.ScheduleRecordingAsync(channel.Id, channel.Name, channel.StreamUrl, selectedLocal, duration);
+            }
+            catch (Exception ex)
+            {
+                await ShowMessageAsync("Recording failed", ex.Message);
+                return;
+            }
+
+            var successDialog = new ContentDialog
+            {
+                Title = "Recording scheduled",
+                PrimaryButtonText = "Open library",
+                CloseButtonText = "Close",
+                DefaultButton = ContentDialogButton.Close,
+                XamlRoot = XamlRoot,
+                Content = $"{channel.Name} is scheduled for {selectedLocal:g}."
+            };
+
+            if (await ShowContentDialogAsync(successDialog) == ContentDialogResult.Primary)
+            {
+                Frame.Navigate(typeof(MediaLibraryPage));
             }
         }
 
@@ -164,6 +282,42 @@ namespace Kroira.App.Views
             }
 
             return false;
+        }
+
+        private async Task ShowMessageAsync(string title, string message)
+        {
+            var dialog = new ContentDialog
+            {
+                Title = title,
+                CloseButtonText = "Close",
+                XamlRoot = XamlRoot,
+                Content = message
+            };
+
+            await ShowContentDialogAsync(dialog);
+        }
+
+        private static Task<ContentDialogResult> ShowContentDialogAsync(ContentDialog dialog)
+        {
+            var completion = new TaskCompletionSource<ContentDialogResult>();
+            var operation = dialog.ShowAsync();
+            operation.Completed = (info, status) =>
+            {
+                switch (status)
+                {
+                    case AsyncStatus.Completed:
+                        completion.TrySetResult(info.GetResults());
+                        break;
+                    case AsyncStatus.Canceled:
+                        completion.TrySetCanceled();
+                        break;
+                    case AsyncStatus.Error:
+                        completion.TrySetException(info.ErrorCode);
+                        break;
+                }
+            };
+
+            return completion.Task;
         }
     }
 }

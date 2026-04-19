@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -18,11 +19,15 @@ namespace Kroira.App.ViewModels
         private readonly IEntitlementService _entitlementService;
         private readonly IServiceProvider _serviceProvider;
         private bool _isLoadingLanguage;
+        private bool _isLoadingAppearance;
 
         public ObservableCollection<LanguageOptionViewModel> Languages { get; } = new()
         {
             new LanguageOptionViewModel(AppLanguageService.DefaultLanguageCode, "English")
         };
+
+        public ObservableCollection<AppAppearanceOptionViewModel> ThemeOptions { get; } = new();
+        public ObservableCollection<AppAppearanceOptionViewModel> AccentOptions { get; } = new();
 
         [ObservableProperty]
         private Visibility _freeTierVisibility;
@@ -34,10 +39,19 @@ namespace Kroira.App.ViewModels
         private string _licenseStatusDescription = string.Empty;
 
         [ObservableProperty]
-        private LanguageOptionViewModel _selectedLanguage;
+        private LanguageOptionViewModel _selectedLanguage = new LanguageOptionViewModel(AppLanguageService.DefaultLanguageCode, "English");
 
         [ObservableProperty]
         private string _languageStatusText = "English is selected. This stable option uses the working catalog language pipeline.";
+
+        [ObservableProperty]
+        private AppAppearanceOptionViewModel? _selectedThemeOption;
+
+        [ObservableProperty]
+        private AppAppearanceOptionViewModel? _selectedAccentOption;
+
+        [ObservableProperty]
+        private string _appearanceStatusText = "Choose an appearance preset and accent pack. Entitlement gating can be added centrally later.";
 
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(IsBackupIdle))]
@@ -50,6 +64,8 @@ namespace Kroira.App.ViewModels
 
         public bool IsBackupIdle => !IsBackupBusy;
         public bool CanUseBackupRestore => _entitlementService.IsFeatureEnabled(EntitlementFeatureKeys.LibraryBackupRestore);
+        public bool CanUseThemePresets => _entitlementService.IsFeatureEnabled(EntitlementFeatureKeys.AppearanceThemes);
+        public bool CanUseAccentPacks => _entitlementService.IsFeatureEnabled(EntitlementFeatureKeys.AppearanceAccentPacks);
         public bool CanStartBackupAction => CanUseBackupRestore && !IsBackupBusy;
         public bool HasBackupStatus => !string.IsNullOrWhiteSpace(BackupStatusText);
 
@@ -61,10 +77,37 @@ namespace Kroira.App.ViewModels
             }
         }
 
+        partial void OnSelectedThemeOptionChanged(AppAppearanceOptionViewModel? value)
+        {
+            if (!_isLoadingAppearance && value != null)
+            {
+                _ = SaveAppearanceAsync();
+            }
+        }
+
+        partial void OnSelectedAccentOptionChanged(AppAppearanceOptionViewModel? value)
+        {
+            if (!_isLoadingAppearance && value != null)
+            {
+                _ = SaveAppearanceAsync();
+            }
+        }
+
         public SettingsViewModel(IEntitlementService entitlementService, IServiceProvider serviceProvider)
         {
             _entitlementService = entitlementService;
             _serviceProvider = serviceProvider;
+            var appearanceService = _serviceProvider.GetRequiredService<IAppAppearanceService>();
+            foreach (var option in appearanceService.ThemeOptions)
+            {
+                ThemeOptions.Add(new AppAppearanceOptionViewModel(option.Key, option.DisplayName, option.Description));
+            }
+
+            foreach (var option in appearanceService.AccentOptions)
+            {
+                AccentOptions.Add(new AppAppearanceOptionViewModel(option.Key, option.DisplayName, option.Description));
+            }
+
             UpdateState();
         }
 
@@ -74,15 +117,23 @@ namespace Kroira.App.ViewModels
             using var scope = _serviceProvider.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             var profileService = scope.ServiceProvider.GetRequiredService<IProfileStateService>();
+            var appearanceService = scope.ServiceProvider.GetRequiredService<IAppAppearanceService>();
             var activeProfile = await profileService.GetActiveProfileAsync(db);
             var languageCode = await AppLanguageService.GetLanguageAsync(db, activeProfile.Id);
             await AppLanguageService.SetLanguageAsync(db, languageCode, activeProfile.Id);
+            var appearance = await appearanceService.LoadAsync(db);
 
             _isLoadingLanguage = true;
             SelectedLanguage = Languages.FirstOrDefault(language => language.Code == languageCode)
                 ?? Languages.First(language => language.Code == AppLanguageService.DefaultLanguageCode);
             _isLoadingLanguage = false;
             LanguageStatusText = $"{activeProfile.Name} uses the current language preference.";
+
+            _isLoadingAppearance = true;
+            SelectedThemeOption = ThemeOptions.FirstOrDefault(option => option.Key == appearance.ThemePresetKey) ?? ThemeOptions.FirstOrDefault();
+            SelectedAccentOption = AccentOptions.FirstOrDefault(option => option.Key == appearance.AccentPresetKey) ?? AccentOptions.FirstOrDefault();
+            _isLoadingAppearance = false;
+            AppearanceStatusText = $"{SelectedThemeOption?.DisplayName ?? "Cinema Gold"} with {SelectedAccentOption?.DisplayName ?? "House Gold"} is active.";
         }
 
         private async Task SaveLanguageAsync(string languageCode)
@@ -93,6 +144,25 @@ namespace Kroira.App.ViewModels
             var activeProfile = await profileService.GetActiveProfileAsync(db);
             await AppLanguageService.SetLanguageAsync(db, languageCode, activeProfile.Id);
             LanguageStatusText = $"{activeProfile.Name} now uses the selected language preference.";
+        }
+
+        private async Task SaveAppearanceAsync()
+        {
+            if ((SelectedThemeOption == null && SelectedAccentOption == null) ||
+                (!CanUseThemePresets && !CanUseAccentPacks))
+            {
+                return;
+            }
+
+            using var scope = _serviceProvider.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var appearanceService = scope.ServiceProvider.GetRequiredService<IAppAppearanceService>();
+            var current = await appearanceService.LoadAsync(db);
+            current.ThemePresetKey = CanUseThemePresets ? SelectedThemeOption?.Key ?? current.ThemePresetKey : current.ThemePresetKey;
+            current.AccentPresetKey = CanUseAccentPacks ? SelectedAccentOption?.Key ?? current.AccentPresetKey : current.AccentPresetKey;
+            await appearanceService.SaveAsync(db, current);
+
+            AppearanceStatusText = $"{SelectedThemeOption?.DisplayName ?? "Cinema Gold"} with {SelectedAccentOption?.DisplayName ?? "House Gold"} is active.";
         }
 
         [RelayCommand]
@@ -112,7 +182,8 @@ namespace Kroira.App.ViewModels
             FreeTierVisibility = !isPro ? Visibility.Visible : Visibility.Collapsed;
 
             var backupRestoreState = CanUseBackupRestore ? "enabled" : "disabled";
-            LicenseStatusDescription = $"{_entitlementService.CurrentTierDisplayName} tier is active. Central entitlement routing is ready; backup/restore is currently {backupRestoreState}.";
+            var appearanceState = CanUseThemePresets || CanUseAccentPacks ? "ready" : "disabled";
+            LicenseStatusDescription = $"{_entitlementService.CurrentTierDisplayName} tier is active. Central entitlement routing is ready; backup/restore is currently {backupRestoreState} and appearance presets are {appearanceState}.";
         }
 
         public async Task ExportBackupAsync(string filePath)
@@ -241,5 +312,19 @@ namespace Kroira.App.ViewModels
 
         public string Code { get; }
         public string DisplayName { get; }
+    }
+
+    public sealed class AppAppearanceOptionViewModel
+    {
+        public AppAppearanceOptionViewModel(string key, string displayName, string description)
+        {
+            Key = key;
+            DisplayName = displayName;
+            Description = description;
+        }
+
+        public string Key { get; }
+        public string DisplayName { get; }
+        public string Description { get; }
     }
 }

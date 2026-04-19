@@ -1,3 +1,5 @@
+using System;
+using System.Linq;
 using Kroira.App.Models;
 using Kroira.App.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
@@ -154,6 +156,18 @@ namespace Kroira.App.Views
             Frame.Navigate(typeof(MoviesPage));
         }
 
+        private void BrowseCatalog_Click(object sender, RoutedEventArgs e)
+        {
+            var preferredTarget = ViewModel.PopularItems.FirstOrDefault()?.Target;
+            if (string.Equals(preferredTarget, "Series", StringComparison.OrdinalIgnoreCase))
+            {
+                Frame.Navigate(typeof(SeriesPage));
+                return;
+            }
+
+            Frame.Navigate(typeof(MoviesPage));
+        }
+
         private void NavigateToTarget(string target)
         {
             switch (target)
@@ -169,6 +183,9 @@ namespace Kroira.App.Views
                     break;
                 case "Favorites":
                     Frame.Navigate(typeof(FavoritesPage));
+                    break;
+                case "MediaLibrary":
+                    Frame.Navigate(typeof(MediaLibraryPage));
                     break;
                 case "Sources":
                     Frame.Navigate(typeof(SourceListPage));

@@ -177,6 +177,16 @@
                                     <TextBlock Text="{x:Bind ViewModel.FeaturedMovie.FavoriteLabel, Mode=OneWay}" />
                                 </StackPanel>
                             </Button>
+                            <Button Click="FeaturedDownload_Click"
+                                    IsEnabled="{x:Bind ViewModel.FeaturedMovieCanPlay, Mode=OneWay}"
+                                    Style="{StaticResource FavoritePillButtonStyle}">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <FontIcon Glyph="&#xE896;"
+                                              FontSize="13"
+                                              Foreground="{StaticResource KroiraAccentBrush}" />
+                                    <TextBlock Text="Download" />
+                                </StackPanel>
+                            </Button>
                         </StackPanel>
                     </StackPanel>
 
@@ -426,8 +436,9 @@
                 </StackPanel>
 
                 <GridView ItemsSource="{x:Bind ViewModel.DisplayMovieSlots, Mode=OneWay}"
-                          SelectionMode="Single"
-                          SelectionChanged="GridView_SelectionChanged"
+                          SelectionMode="None"
+                          IsItemClickEnabled="True"
+                          ItemClick="GridView_ItemClick"
                           ItemContainerStyle="{StaticResource MovieTileContainerStyle}"
                           HorizontalAlignment="Left"
                           Width="1030"
@@ -544,23 +555,32 @@
                                                        TextTrimming="CharacterEllipsis" />
                                         </StackPanel>
 
-                                        <Border Grid.Row="2"
-                                                HorizontalAlignment="Left"
-                                                Background="#26231A10"
-                                                BorderBrush="{StaticResource KroiraChromeLineBrush}"
-                                                BorderThickness="1"
-                                                CornerRadius="8"
-                                                Padding="9,4">
-                                            <StackPanel Orientation="Horizontal" Spacing="6">
-                                                <FontIcon Glyph="&#xE768;"
-                                                          FontSize="11"
-                                                          Foreground="{StaticResource KroiraAccentBrush}" />
-                                                <TextBlock Text="Play"
-                                                           FontSize="11"
-                                                           FontWeight="SemiBold"
-                                                           Foreground="{StaticResource KroiraAccentBrush}" />
-                                            </StackPanel>
-                                        </Border>
+                                        <StackPanel Grid.Row="2"
+                                                    Orientation="Horizontal"
+                                                    Spacing="8">
+                                            <Border HorizontalAlignment="Left"
+                                                    Background="#26231A10"
+                                                    BorderBrush="{StaticResource KroiraChromeLineBrush}"
+                                                    BorderThickness="1"
+                                                    CornerRadius="8"
+                                                    Padding="9,4">
+                                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                                    <FontIcon Glyph="&#xE768;"
+                                                              FontSize="11"
+                                                              Foreground="{StaticResource KroiraAccentBrush}" />
+                                                    <TextBlock Text="Play"
+                                                               FontSize="11"
+                                                               FontWeight="SemiBold"
+                                                               Foreground="{StaticResource KroiraAccentBrush}" />
+                                                </StackPanel>
+                                            </Border>
+                                            <Button Content="Download"
+                                                    Click="MovieDownload_Click"
+                                                    HorizontalAlignment="Left"
+                                                    Padding="10,4"
+                                                    FontSize="11"
+                                                    Style="{StaticResource KroiraGhostButtonStyle}" />
+                                        </StackPanel>
                                     </Grid>
                                 </Border>
 

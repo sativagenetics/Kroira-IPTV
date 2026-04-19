@@ -530,13 +530,13 @@
 
             <StackPanel Spacing="16" Visibility="{x:Bind ViewModel.PopularItemsVisibility, Mode=OneWay}">
                 <Grid>
-                    <TextBlock Text="Popular Now"
+                    <TextBlock Text="Recommended For You"
                                Style="{StaticResource KroiraSectionTitleStyle}"
                                VerticalAlignment="Center" />
-                    <Button Content="All movies"
+                    <Button Content="Browse catalog"
                             HorizontalAlignment="Right"
                             VerticalAlignment="Center"
-                            Click="Movies_Click"
+                            Click="BrowseCatalog_Click"
                             Style="{StaticResource KroiraGhostButtonStyle}" />
                 </Grid>
                 <controls:Rail ItemsSource="{x:Bind ViewModel.PopularItems, Mode=OneWay}"

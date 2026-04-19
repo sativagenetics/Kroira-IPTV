@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using Kroira.App.Models;
 using Kroira.App.Services;
 using Kroira.App.ViewModels;
 using Kroira.App.Views;
@@ -149,6 +150,9 @@ namespace Kroira.App
                     case "ContinueWatching":
                         NavigateTo(typeof(ContinueWatchingPage));
                         break;
+                    case "MediaLibrary":
+                        NavigateTo(typeof(MediaLibraryPage));
+                        break;
                     case "Movies":
                         NavigateTo(typeof(MoviesPage));
                         break;
@@ -180,6 +184,14 @@ namespace Kroira.App
             if (!navigated)
             {
                 throw new InvalidOperationException($"Navigation to {pageType.FullName} returned false.");
+            }
+        }
+
+        public void NavigateToPlayback(PlaybackLaunchContext context)
+        {
+            if (!ContentFrame.Navigate(typeof(EmbeddedPlaybackPage), context))
+            {
+                throw new InvalidOperationException("Navigation to EmbeddedPlaybackPage returned false.");
             }
         }
     }

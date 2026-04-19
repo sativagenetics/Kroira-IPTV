@@ -35,6 +35,7 @@ namespace Kroira.App.Views
         private readonly PlaybackSessionStateMachine _stateMachine = new();
         private readonly PlaybackProgressCoordinator _progressCoordinator;
         private readonly IEntitlementService _entitlementService;
+        private readonly IPictureInPictureService _pictureInPictureService;
 
         private PlaybackLaunchContext _context;
         private MpvPlayer _player;
@@ -58,6 +59,7 @@ namespace Kroira.App.Views
         private bool _isVolumeSliderUpdating;
         private bool _recoveryInProgress;
         private bool _fullscreenSubscribed;
+        private bool _launchOverridesApplied;
         private double _lastNonZeroVolume = 100;
         private DateTime _ignorePointerUntilUtc = DateTime.MinValue;
         private DateTime _lastPointerTimerRestartUtc = DateTime.MinValue;
@@ -76,6 +78,7 @@ namespace Kroira.App.Views
             var services = ((App)Application.Current).Services;
             _progressCoordinator = new PlaybackProgressCoordinator(services);
             _entitlementService = services.GetRequiredService<IEntitlementService>();
+            _pictureInPictureService = services.GetRequiredService<IPictureInPictureService>();
             _stateMachine.StateChanged += OnPlaybackStateChanged;
 
             TimelineSlider.AddHandler(UIElement.PointerPressedEvent, new PointerEventHandler(TimelineSlider_PointerPressed), true);
@@ -114,10 +117,17 @@ namespace Kroira.App.Views
 
             TitleText.Text = TitleForContext(_context);
             _windowManager = ((App)Application.Current).Services.GetRequiredService<IWindowManagerService>();
-            _wasFullscreenOnEnter = _windowManager.IsFullscreen;
-            _windowManager.FullscreenStateChanged += WindowManager_FullscreenStateChanged;
-            _fullscreenSubscribed = true;
+            ApplyLaunchOptions();
+
+            if (!IsPictureInPictureMode())
+            {
+                _wasFullscreenOnEnter = _windowManager.IsFullscreen;
+                _windowManager.FullscreenStateChanged += WindowManager_FullscreenStateChanged;
+                _fullscreenSubscribed = true;
+            }
+
             UpdateFullscreenUi();
+            UpdatePictureInPictureUi();
             UpdateAspectUi();
         }
 
@@ -126,7 +136,7 @@ namespace Kroira.App.Views
             TeardownPlayback();
             base.OnNavigatedFrom(e);
 
-            if (_windowManager != null && _windowManager.IsFullscreen && !_wasFullscreenOnEnter)
+            if (!IsPictureInPictureMode() && _windowManager != null && _windowManager.IsFullscreen && !_wasFullscreenOnEnter)
             {
                 _windowManager.ExitFullscreen();
             }
@@ -162,7 +172,7 @@ namespace Kroira.App.Views
 
             try
             {
-                var parentHwnd = WindowNative.GetWindowHandle(((App)Application.Current).MainWindow);
+                var parentHwnd = ResolveHostWindowHandle();
                 _surface = new VideoSurface(parentHwnd, VideoHost,
                     onClick: OnVideoClick,
                     onDoubleClick: OnVideoDoubleClick,
@@ -188,7 +198,9 @@ namespace Kroira.App.Views
                 ClearError();
                 HideStatusOverlay();
 
-                _lastPositionMs = await _progressCoordinator.ResolveResumePositionAsync(_context);
+                _lastPositionMs = _context.StartPositionMs > 0
+                    ? _context.StartPositionMs
+                    : await _progressCoordinator.ResolveResumePositionAsync(_context);
                 if (_teardownStarted || _player == null || _context == null)
                 {
                     return;
@@ -334,6 +346,7 @@ namespace Kroira.App.Views
             _activeAttemptId++;
             _lastPlayerWarning = string.Empty;
             _lastPositionMs = Math.Max(startPositionMs, 0);
+            _launchOverridesApplied = false;
 
             ResetTrackMenus();
             ClearError();
@@ -607,6 +620,7 @@ namespace Kroira.App.Views
 
             _surface?.UpdatePlacement(force: true);
             _ = RefreshTrackMenusAsync();
+            ApplyLaunchOverridesIfNeeded();
             if (_player != null && !_player.IsPaused && !_player.IsBuffering)
             {
                 MarkPlaybackActive();
@@ -689,8 +703,29 @@ namespace Kroira.App.Views
 
         private void Fullscreen_Click(object sender, RoutedEventArgs e)
         {
-            if (_teardownStarted || !CanUseFeature(EntitlementFeatureKeys.PlaybackFullscreen)) return;
+            if (_teardownStarted || IsPictureInPictureMode() || !CanUseFeature(EntitlementFeatureKeys.PlaybackFullscreen)) return;
             _windowManager?.ToggleFullscreen();
+            RestartControlsHideTimer();
+        }
+
+        private async void PictureInPicture_Click(object sender, RoutedEventArgs e)
+        {
+            if (_teardownStarted ||
+                _context == null ||
+                !CanUseFeature(EntitlementFeatureKeys.PlaybackPictureInPicture))
+            {
+                return;
+            }
+
+            if (IsPictureInPictureMode())
+            {
+                await RestoreFromPictureInPictureAsync();
+            }
+            else
+            {
+                await EnterPictureInPictureAsync();
+            }
+
             RestartControlsHideTimer();
         }
 
@@ -715,7 +750,7 @@ namespace Kroira.App.Views
         {
             DispatcherQueue.TryEnqueue(() =>
             {
-                if (_teardownStarted || !CanUseFeature(EntitlementFeatureKeys.PlaybackFullscreen)) return;
+                if (_teardownStarted || IsPictureInPictureMode() || !CanUseFeature(EntitlementFeatureKeys.PlaybackFullscreen)) return;
                 _windowManager?.ToggleFullscreen();
                 RestartControlsHideTimer();
             });
@@ -822,6 +857,11 @@ namespace Kroira.App.Views
             }
 
             _player.SelectAudioTrack(trackId);
+            if (_context != null)
+            {
+                _context.RestoreAudioTrackSelection = true;
+                _context.PreferredAudioTrackId = trackId;
+            }
             _ = RefreshTrackMenusAsync();
             RestartControlsHideTimer();
         }
@@ -837,6 +877,11 @@ namespace Kroira.App.Views
 
             var trackId = item.Tag as string;
             _player.SelectSubtitleTrack(trackId);
+            if (_context != null)
+            {
+                _context.RestoreSubtitleTrackSelection = true;
+                _context.PreferredSubtitleTrackId = trackId ?? string.Empty;
+            }
             _ = RefreshTrackMenusAsync();
             RestartControlsHideTimer();
         }
@@ -951,14 +996,18 @@ namespace Kroira.App.Views
                                      _stateMachine.State != PlaybackSessionState.Loading &&
                                      _stateMachine.State != PlaybackSessionState.Reconnecting;
             var canUseFullscreen = CanUseFeature(EntitlementFeatureKeys.PlaybackFullscreen);
+            var canUsePictureInPicture = CanUseFeature(EntitlementFeatureKeys.PlaybackPictureInPicture);
             var canUseAudioTracks = CanUseFeature(EntitlementFeatureKeys.PlaybackAudioTrackSelection);
             var canUseSubtitles = CanUseFeature(EntitlementFeatureKeys.PlaybackSubtitleTrackSelection);
             var canUseAspectControls = CanUseFeature(EntitlementFeatureKeys.PlaybackAspectControls);
+            var isPictureInPicture = IsPictureInPictureMode();
 
             PlayPauseButton.IsEnabled = isReady && _stateMachine.State != PlaybackSessionState.Reconnecting;
             StopButton.IsEnabled = isReady;
-            FullscreenButton.IsEnabled = isReady && canUseFullscreen;
-            FullscreenButton.Visibility = canUseFullscreen ? Visibility.Visible : Visibility.Collapsed;
+            PictureInPictureButton.IsEnabled = isReady && canUsePictureInPicture;
+            PictureInPictureButton.Visibility = canUsePictureInPicture ? Visibility.Visible : Visibility.Collapsed;
+            FullscreenButton.IsEnabled = isReady && canUseFullscreen && !isPictureInPicture;
+            FullscreenButton.Visibility = canUseFullscreen && !isPictureInPicture ? Visibility.Visible : Visibility.Collapsed;
             MuteButton.IsEnabled = isReady;
             VolumeSlider.IsEnabled = isReady;
             AudioTrackButton.IsEnabled = trackSwitchEnabled && canUseAudioTracks;
@@ -970,9 +1019,23 @@ namespace Kroira.App.Views
 
         private void UpdateFullscreenUi()
         {
+            if (IsPictureInPictureMode())
+            {
+                FullscreenIcon.Glyph = "\uE740";
+                ToolTipService.SetToolTip(FullscreenButton, "Fullscreen");
+                return;
+            }
+
             var isFullscreen = _windowManager?.IsFullscreen == true;
             FullscreenIcon.Glyph = isFullscreen ? "\uE73F" : "\uE740";
             ToolTipService.SetToolTip(FullscreenButton, isFullscreen ? "Exit fullscreen" : "Fullscreen");
+        }
+
+        private void UpdatePictureInPictureUi()
+        {
+            var inPictureInPicture = IsPictureInPictureMode();
+            PictureInPictureButtonText.Text = inPictureInPicture ? "Return" : "PIP";
+            ToolTipService.SetToolTip(PictureInPictureButton, inPictureInPicture ? "Return to player" : "Picture in Picture");
         }
 
         private void BuildAspectMenu()
@@ -1111,6 +1174,160 @@ namespace Kroira.App.Views
         private bool CanUseFeature(string featureKey)
         {
             return _entitlementService.IsFeatureEnabled(featureKey);
+        }
+
+        private bool IsPictureInPictureMode()
+        {
+            return _context?.OpenInPictureInPicture == true;
+        }
+
+        private void ApplyLaunchOptions()
+        {
+            if (_context == null)
+            {
+                return;
+            }
+
+            _selectedAspectMode = _context.InitialAspectMode;
+            SetVolumeSliderValue(Math.Clamp(_context.InitialVolume, 0, 100));
+            if (VolumeSlider.Value > 0)
+            {
+                _lastNonZeroVolume = VolumeSlider.Value;
+            }
+            _isMuted = _context.IsMuted || VolumeSlider.Value <= 0;
+            SetMutedUi(_isMuted);
+        }
+
+        private void ApplyLaunchOverridesIfNeeded()
+        {
+            if (_launchOverridesApplied || _player == null || _context == null)
+            {
+                return;
+            }
+
+            _player.SetAspectMode(_selectedAspectMode);
+            _player.SetVolume(VolumeSlider.Value);
+            _player.SetMuted(_isMuted);
+
+            if (_context.RestoreAudioTrackSelection && !string.IsNullOrWhiteSpace(_context.PreferredAudioTrackId))
+            {
+                _player.SelectAudioTrack(_context.PreferredAudioTrackId);
+            }
+
+            if (_context.RestoreSubtitleTrackSelection)
+            {
+                _player.SelectSubtitleTrack(_context.PreferredSubtitleTrackId);
+            }
+
+            if (_context.StartPaused)
+            {
+                _player.Pause();
+            }
+
+            _launchOverridesApplied = true;
+            _ = RefreshTrackMenusAsync();
+        }
+
+        private async Task EnterPictureInPictureAsync()
+        {
+            if (_context == null || _player == null)
+            {
+                return;
+            }
+
+            if (_windowManager?.IsFullscreen == true)
+            {
+                _windowManager.ExitFullscreen();
+            }
+
+            var shouldResume = !_player.IsPaused;
+            if (shouldResume)
+            {
+                _player.Pause();
+            }
+
+            await PersistProgressAsync(force: true);
+            var launchContext = CreateTransferContext(openInPictureInPicture: true, startPaused: !shouldResume);
+            if (_pictureInPictureService.Enter(launchContext))
+            {
+                NavigateBack();
+                return;
+            }
+
+            if (shouldResume && _player != null && !_teardownStarted)
+            {
+                _player.Resume();
+            }
+        }
+
+        private async Task RestoreFromPictureInPictureAsync()
+        {
+            if (_context == null || _player == null)
+            {
+                return;
+            }
+
+            var shouldResume = !_player.IsPaused;
+            if (shouldResume)
+            {
+                _player.Pause();
+            }
+
+            await PersistProgressAsync(force: true);
+            var launchContext = CreateTransferContext(openInPictureInPicture: false, startPaused: !shouldResume);
+            if (_pictureInPictureService.RestoreToMainWindow(launchContext))
+            {
+                return;
+            }
+
+            if (shouldResume && _player != null && !_teardownStarted)
+            {
+                _player.Resume();
+            }
+        }
+
+        private PlaybackLaunchContext CreateTransferContext(bool openInPictureInPicture, bool startPaused)
+        {
+            return new PlaybackLaunchContext
+            {
+                ProfileId = _context?.ProfileId ?? 0,
+                ContentId = _context?.ContentId ?? 0,
+                ContentType = _context?.ContentType ?? PlaybackContentType.Channel,
+                StreamUrl = _context?.StreamUrl ?? string.Empty,
+                StartPositionMs = Math.Max(_lastPositionMs, 0),
+                OpenInPictureInPicture = openInPictureInPicture,
+                StartPaused = startPaused,
+                InitialVolume = VolumeSlider.Value,
+                IsMuted = _isMuted,
+                InitialAspectMode = _selectedAspectMode,
+                RestoreAudioTrackSelection = true,
+                PreferredAudioTrackId = GetSelectedTrackId(_player?.GetAudioTracks() ?? Array.Empty<MpvTrackInfo>()),
+                RestoreSubtitleTrackSelection = true,
+                PreferredSubtitleTrackId = GetSelectedTrackId(_player?.GetSubtitleTracks() ?? Array.Empty<MpvTrackInfo>())
+            };
+        }
+
+        private IntPtr ResolveHostWindowHandle()
+        {
+            if (_context != null && _context.HostWindowHandle != 0)
+            {
+                return new IntPtr(_context.HostWindowHandle);
+            }
+
+            return WindowNative.GetWindowHandle(((App)Application.Current).MainWindow);
+        }
+
+        private static string GetSelectedTrackId(IReadOnlyList<MpvTrackInfo> tracks)
+        {
+            foreach (var track in tracks)
+            {
+                if (track.IsSelected)
+                {
+                    return track.Id;
+                }
+            }
+
+            return string.Empty;
         }
 
         // --- Controls auto-hide ---
@@ -1282,6 +1499,12 @@ namespace Kroira.App.Views
             _isNavigatingBack = true;
 
             TeardownPlayback();
+            if (IsPictureInPictureMode())
+            {
+                _pictureInPictureService.Close();
+                return;
+            }
+
             if (Frame != null && Frame.CanGoBack) Frame.GoBack();
         }
 

@@ -7,9 +7,12 @@ namespace Kroira.App.Services
         public const string ProfilesMultiple = "profiles.multiple";
         public const string ProfilesParentalControls = "profiles.parental_controls";
         public const string PlaybackFullscreen = "playback.fullscreen";
+        public const string PlaybackPictureInPicture = "playback.picture_in_picture";
         public const string PlaybackAudioTrackSelection = "playback.audio_track_selection";
         public const string PlaybackSubtitleTrackSelection = "playback.subtitle_track_selection";
         public const string PlaybackAspectControls = "playback.aspect_controls";
+        public const string AppearanceThemes = "appearance.themes";
+        public const string AppearanceAccentPacks = "appearance.accent_packs";
     }
 
     public static class EntitlementLimitKeys

@@ -66,7 +66,9 @@ namespace Kroira.App
                     DatabaseBootstrapper.Initialize(dbContext);
                 }
                 SafeAppendLog("APP 08: after database bootstrap");
+                Services.GetRequiredService<IAppAppearanceService>().InitializeAsync().GetAwaiter().GetResult();
                 StartMetadataBackfill();
+                Services.GetRequiredService<IMediaJobService>().Start();
 
                 SafeAppendLog("APP 09: before MainWindow ctor");
                 _window = new MainWindow();
@@ -173,6 +175,7 @@ namespace Kroira.App
             services.AddTransient<HomeViewModel>();
             services.AddTransient<ProfileViewModel>();
             services.AddTransient<SettingsViewModel>();
+            services.AddTransient<MediaLibraryViewModel>();
             services.AddTransient<SourceOnboardingViewModel>();
             services.AddTransient<SourceListViewModel>();
             services.AddTransient<ChannelBrowserViewModel>();
@@ -186,13 +189,17 @@ namespace Kroira.App
             services.AddSingleton<ILibraryWatchStateService, LibraryWatchStateService>();
             services.AddSingleton<IProfileStateService, ProfileStateService>();
             services.AddSingleton<IBrowsePreferencesService, BrowsePreferencesService>();
+            services.AddSingleton<IAppAppearanceService, AppAppearanceService>();
             services.AddSingleton<IWindowManagerService, WindowManagerService>();
+            services.AddSingleton<IPictureInPictureService, PictureInPictureService>();
             services.AddSingleton<IInputInterceptorService, InputInterceptorService>();
             services.AddSingleton<ITmdbMetadataService, TmdbMetadataService>();
             services.AddSingleton<ICatalogDeduplicationService, CatalogDeduplicationService>();
+            services.AddSingleton<IHomeRecommendationService, HomeRecommendationService>();
             services.AddSingleton<ILiveGuideService, LiveGuideService>();
             services.AddSingleton<ISourceDiagnosticsService, SourceDiagnosticsService>();
             services.AddSingleton<IBackupPackageService, BackupPackageService>();
+            services.AddSingleton<IMediaJobService, MediaJobService>();
             services.AddSingleton<Kroira.App.Services.Parsing.ICatalogNormalizationService, Kroira.App.Services.Parsing.CatalogNormalizationService>();
             services.AddSingleton<Kroira.App.Services.Parsing.IM3uParserService, Kroira.App.Services.Parsing.M3uParserService>();
             services.AddSingleton<Kroira.App.Services.Parsing.IEpgSourceDiscoveryService, Kroira.App.Services.Parsing.M3uEpgDiscoveryService>();
