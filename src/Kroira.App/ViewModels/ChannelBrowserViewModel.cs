@@ -117,13 +117,37 @@ namespace Kroira.App.ViewModels
             var normalizedNowUtc = NormalizeUtc(nowUtc);
             if (summary == null)
             {
-                ApplyUnavailable(channel);
+                ApplyGuideState(channel, "Guide unavailable", "Guide status could not be loaded.");
+                return;
+            }
+
+            if (summary.SourceMode == EpgActiveMode.None)
+            {
+                ApplyGuideState(channel, "Guide disabled", summary.SourceStatusSummary);
+                return;
+            }
+
+            if (summary.SourceStatus == EpgStatus.UnavailableNoXmltv)
+            {
+                ApplyGuideState(channel, "Guide unavailable from provider", summary.SourceStatusSummary);
+                return;
+            }
+
+            if (summary.SourceStatus == EpgStatus.FailedFetchOrParse)
+            {
+                ApplyGuideState(channel, "Guide sync failed", summary.SourceStatusSummary);
                 return;
             }
 
             if (!summary.HasGuideData)
             {
-                ApplyUnmatched(channel);
+                var title = summary.SourceResultCode switch
+                {
+                    EpgSyncResultCode.PartialMatch => "No listing for this channel",
+                    EpgSyncResultCode.ZeroCoverage => "No guide matches yet",
+                    _ => "No guide data"
+                };
+                ApplyGuideState(channel, title, summary.SourceStatusSummary);
                 return;
             }
 
@@ -136,19 +160,24 @@ namespace Kroira.App.ViewModels
                 channel.HasMatchedGuide = true;
                 channel.CurrentProgramTitle = next == null ? "No current listing" : $"Upcoming: {next.Title}";
                 channel.CurrentProgramSubtitle = string.Empty;
-                channel.CurrentProgramTimeText = next == null
-                    ? string.Empty
+                channel.CurrentProgramTimeText = string.Empty;
+                var meta = next == null
+                    ? "Matched channel, but there is no current or next listing in the next 24 hours."
                     : $"Starts {FormatTimeRange(next.StartTimeUtc, next.EndTimeUtc)}";
-                channel.GuideMetaText = channel.CurrentProgramTimeText;
-                channel.CurrentProgramDescription = string.Empty;
+                channel.GuideMetaText = summary.SourceStatus == EpgStatus.Stale
+                    ? $"{meta} · Stale guide"
+                    : meta;
+                channel.CurrentProgramDescription = summary.SourceStatus == EpgStatus.Stale
+                    ? summary.SourceStatusSummary
+                    : string.Empty;
                 channel.CurrentProgramCategory = string.Empty;
                 channel.LiveProgressValue = 0;
                 channel.LiveProgressText = string.Empty;
                 channel.EpgVisibility = Visibility.Collapsed;
-                channel.GuideMetaVisibility = string.IsNullOrWhiteSpace(channel.GuideMetaText)
+                channel.GuideMetaVisibility = Visibility.Visible;
+                channel.DescriptionVisibility = string.IsNullOrWhiteSpace(channel.CurrentProgramDescription)
                     ? Visibility.Collapsed
                     : Visibility.Visible;
-                channel.DescriptionVisibility = Visibility.Collapsed;
                 channel.SubtitleVisibility = Visibility.Collapsed;
                 channel.CategoryVisibility = Visibility.Collapsed;
 
@@ -165,8 +194,12 @@ namespace Kroira.App.ViewModels
             channel.HasMatchedGuide = true;
             channel.CurrentProgramSubtitle = current.Subtitle ?? string.Empty;
             channel.CurrentProgramTimeText = FormatTimeRange(current.StartTimeUtc, current.EndTimeUtc);
-            channel.GuideMetaText = channel.CurrentProgramTimeText;
-            channel.CurrentProgramDescription = current.Description;
+            channel.GuideMetaText = summary.SourceStatus == EpgStatus.Stale
+                ? $"{channel.CurrentProgramTimeText} · Stale guide"
+                : channel.CurrentProgramTimeText;
+            channel.CurrentProgramDescription = summary.SourceStatus == EpgStatus.Stale
+                ? summary.SourceStatusSummary
+                : current.Description;
             channel.CurrentProgramCategory = current.Category ?? string.Empty;
             channel.LiveProgressValue = CalculateProgress(current.StartTimeUtc, current.EndTimeUtc, normalizedNowUtc);
             channel.LiveProgressText = $"{Math.Round(channel.LiveProgressValue):0}% live";
@@ -198,48 +231,25 @@ namespace Kroira.App.ViewModels
             }
         }
 
-        private static void ApplyUnmatched(BrowserChannelViewModel channel)
+        private static void ApplyGuideState(BrowserChannelViewModel channel, string title, string detail)
         {
             channel.HasGuideData = false;
             channel.HasMatchedGuide = false;
-            channel.CurrentProgramTitle = "No guide data";
+            channel.CurrentProgramTitle = title;
             channel.CurrentProgramSubtitle = string.Empty;
             channel.CurrentProgramTimeText = string.Empty;
-            channel.CurrentProgramDescription = string.Empty;
+            channel.CurrentProgramDescription = detail;
             channel.CurrentProgramCategory = string.Empty;
-            channel.GuideMetaText = string.Empty;
+            channel.GuideMetaText = detail;
             channel.NextProgramTitle = string.Empty;
             channel.NextProgramTimeText = string.Empty;
             channel.NextProgramCompactText = string.Empty;
             channel.LiveProgressValue = 0;
             channel.LiveProgressText = string.Empty;
             channel.EpgVisibility = Visibility.Collapsed;
-            channel.GuideMetaVisibility = Visibility.Collapsed;
+            channel.GuideMetaVisibility = string.IsNullOrWhiteSpace(detail) ? Visibility.Collapsed : Visibility.Visible;
             channel.NextProgramVisibility = Visibility.Collapsed;
-            channel.DescriptionVisibility = Visibility.Collapsed;
-            channel.SubtitleVisibility = Visibility.Collapsed;
-            channel.CategoryVisibility = Visibility.Collapsed;
-        }
-
-        private static void ApplyUnavailable(BrowserChannelViewModel channel)
-        {
-            channel.HasGuideData = false;
-            channel.HasMatchedGuide = false;
-            channel.CurrentProgramTitle = "Guide unavailable";
-            channel.CurrentProgramSubtitle = string.Empty;
-            channel.CurrentProgramTimeText = string.Empty;
-            channel.CurrentProgramDescription = string.Empty;
-            channel.CurrentProgramCategory = string.Empty;
-            channel.GuideMetaText = string.Empty;
-            channel.NextProgramTitle = string.Empty;
-            channel.NextProgramTimeText = string.Empty;
-            channel.NextProgramCompactText = string.Empty;
-            channel.LiveProgressValue = 0;
-            channel.LiveProgressText = string.Empty;
-            channel.EpgVisibility = Visibility.Collapsed;
-            channel.GuideMetaVisibility = Visibility.Collapsed;
-            channel.NextProgramVisibility = Visibility.Collapsed;
-            channel.DescriptionVisibility = Visibility.Collapsed;
+            channel.DescriptionVisibility = string.IsNullOrWhiteSpace(detail) ? Visibility.Collapsed : Visibility.Visible;
             channel.SubtitleVisibility = Visibility.Collapsed;
             channel.CategoryVisibility = Visibility.Collapsed;
         }

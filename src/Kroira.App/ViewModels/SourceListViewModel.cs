@@ -26,6 +26,11 @@ namespace Kroira.App.ViewModels
         public string ParseWarningsText { get; set; } = string.Empty;
         public string NetworkFailureText { get; set; } = string.Empty;
         public string LastSuccessfulSyncText { get; set; } = string.Empty;
+        public string GuideStatusText { get; set; } = string.Empty;
+        public string GuideStatusSummaryText { get; set; } = string.Empty;
+        public string GuideModeText { get; set; } = string.Empty;
+        public string GuideUrlText { get; set; } = string.Empty;
+        public string GuideMatchText { get; set; } = string.Empty;
         public int ImportWarningCount { get; set; }
         public int GuideWarningCount { get; set; }
 
@@ -88,13 +93,25 @@ namespace Kroira.App.ViewModels
             ? Microsoft.UI.Xaml.Visibility.Visible
             : Microsoft.UI.Xaml.Visibility.Collapsed;
 
-        public Microsoft.UI.Xaml.Visibility EpgHealthVisibility => HasEpgData
+        public Microsoft.UI.Xaml.Visibility EpgHealthVisibility => CanSyncEpg
             ? Microsoft.UI.Xaml.Visibility.Visible
             : Microsoft.UI.Xaml.Visibility.Collapsed;
 
         public Microsoft.UI.Xaml.Visibility EpgConfiguredVisibility => HasEpgUrl && !HasEpgData
             ? Microsoft.UI.Xaml.Visibility.Visible
             : Microsoft.UI.Xaml.Visibility.Collapsed;
+
+        public Microsoft.UI.Xaml.Visibility GuideUrlVisibility => string.IsNullOrWhiteSpace(GuideUrlText)
+            ? Microsoft.UI.Xaml.Visibility.Collapsed
+            : Microsoft.UI.Xaml.Visibility.Visible;
+
+        public Microsoft.UI.Xaml.Visibility GuideMatchVisibility => string.IsNullOrWhiteSpace(GuideMatchText)
+            ? Microsoft.UI.Xaml.Visibility.Collapsed
+            : Microsoft.UI.Xaml.Visibility.Visible;
+
+        public Microsoft.UI.Xaml.Visibility GuideStatusSummaryVisibility => string.IsNullOrWhiteSpace(GuideStatusSummaryText)
+            ? Microsoft.UI.Xaml.Visibility.Collapsed
+            : Microsoft.UI.Xaml.Visibility.Visible;
 
         public Microsoft.UI.Xaml.Visibility ParseWarningsVisibility => string.IsNullOrWhiteSpace(ParseWarningsText)
             ? Microsoft.UI.Xaml.Visibility.Collapsed
@@ -112,6 +129,16 @@ namespace Kroira.App.ViewModels
             OnPropertyChanged(nameof(WorkingVisibility));
             OnPropertyChanged(nameof(IdleVisibility));
         }
+    }
+
+    public sealed class SourceGuideSettingsDraft
+    {
+        public int SourceId { get; set; }
+        public string SourceName { get; set; } = string.Empty;
+        public SourceType SourceType { get; set; }
+        public EpgActiveMode ActiveMode { get; set; } = EpgActiveMode.Detected;
+        public string ManualEpgUrl { get; set; } = string.Empty;
+        public string DetectedEpgUrl { get; set; } = string.Empty;
     }
 
     public partial class SourceListViewModel : ObservableObject
@@ -137,6 +164,141 @@ namespace Kroira.App.ViewModels
             _serviceProvider = serviceProvider;
         }
 
+        public async Task<SourceGuideSettingsDraft?> GetGuideSettingsAsync(int sourceId)
+        {
+            using var scope = _serviceProvider.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var source = await db.SourceProfiles
+                .AsNoTracking()
+                .Where(profile => profile.Id == sourceId)
+                .Select(profile => new
+                {
+                    profile.Id,
+                    profile.Name,
+                    profile.Type
+                })
+                .FirstOrDefaultAsync();
+            if (source == null)
+            {
+                return null;
+            }
+
+            var credential = await db.SourceCredentials
+                .AsNoTracking()
+                .FirstOrDefaultAsync(item => item.SourceProfileId == sourceId);
+            if (credential == null)
+            {
+                return null;
+            }
+
+            return new SourceGuideSettingsDraft
+            {
+                SourceId = source.Id,
+                SourceName = source.Name,
+                SourceType = source.Type,
+                ActiveMode = credential.EpgMode,
+                ManualEpgUrl = credential.ManualEpgUrl,
+                DetectedEpgUrl = credential.DetectedEpgUrl
+            };
+        }
+
+        public async Task SaveGuideSettingsAsync(SourceGuideSettingsDraft draft, bool syncNow)
+        {
+            using var scope = _serviceProvider.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var credential = await db.SourceCredentials.FirstOrDefaultAsync(item => item.SourceProfileId == draft.SourceId);
+            if (credential == null)
+            {
+                throw new Exception("Source credentials were not found.");
+            }
+
+            if (draft.ActiveMode == EpgActiveMode.Manual && string.IsNullOrWhiteSpace(draft.ManualEpgUrl))
+            {
+                throw new Exception("Manual XMLTV mode requires a manual XMLTV URL.");
+            }
+
+            var previousMode = credential.EpgMode;
+            var previousManualUrl = credential.ManualEpgUrl ?? string.Empty;
+            credential.EpgMode = draft.ActiveMode;
+            credential.ManualEpgUrl = draft.ManualEpgUrl?.Trim() ?? string.Empty;
+            await db.SaveChangesAsync();
+
+            var settingsChanged = previousMode != draft.ActiveMode ||
+                                  !string.Equals(previousManualUrl, credential.ManualEpgUrl, StringComparison.OrdinalIgnoreCase);
+
+            if (syncNow || draft.ActiveMode == EpgActiveMode.None)
+            {
+                var parser = scope.ServiceProvider.GetRequiredService<Kroira.App.Services.Parsing.IXmltvParserService>();
+                await parser.ParseAndImportEpgAsync(db, draft.SourceId);
+            }
+            else if (settingsChanged)
+            {
+                var channelIds = await db.ChannelCategories
+                    .Where(category => category.SourceProfileId == draft.SourceId)
+                    .Join(
+                        db.Channels,
+                        category => category.Id,
+                        channel => channel.ChannelCategoryId,
+                        (category, channel) => channel.Id)
+                    .ToListAsync();
+
+                if (channelIds.Count > 0)
+                {
+                    var existingPrograms = await db.EpgPrograms
+                        .Where(program => channelIds.Contains(program.ChannelId))
+                        .ToListAsync();
+                    if (existingPrograms.Count > 0)
+                    {
+                        db.EpgPrograms.RemoveRange(existingPrograms);
+                    }
+                }
+
+                var log = await db.EpgSyncLogs.FirstOrDefaultAsync(item => item.SourceProfileId == draft.SourceId);
+                if (log == null)
+                {
+                    log = new EpgSyncLog { SourceProfileId = draft.SourceId };
+                    db.EpgSyncLogs.Add(log);
+                }
+
+                log.SyncedAtUtc = DateTime.UtcNow;
+                log.LastSuccessAtUtc = null;
+                log.IsSuccess = false;
+                log.Status = EpgStatus.Unknown;
+                log.ResultCode = EpgSyncResultCode.None;
+                log.FailureStage = EpgFailureStage.None;
+                log.ActiveMode = draft.ActiveMode;
+                log.ActiveXmltvUrl = string.Empty;
+                log.MatchedChannelCount = 0;
+                log.UnmatchedChannelCount = channelIds.Count;
+                log.CurrentCoverageCount = 0;
+                log.NextCoverageCount = 0;
+                log.TotalLiveChannelCount = channelIds.Count;
+                log.ProgrammeCount = 0;
+                log.MatchBreakdown = string.Empty;
+                log.FailureReason = "Guide settings updated. Sync pending.";
+
+                await db.SaveChangesAsync();
+            }
+
+            await LoadSourcesAsync();
+        }
+
+        private async Task<string?> TryRefreshGuideAsync(int sourceId)
+        {
+            try
+            {
+                using var scope = _serviceProvider.CreateScope();
+                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                var parser = scope.ServiceProvider.GetRequiredService<Kroira.App.Services.Parsing.IXmltvParserService>();
+                await parser.ParseAndImportEpgAsync(db, sourceId);
+                return null;
+            }
+            catch (Exception ex)
+            {
+                return ex.Message;
+            }
+        }
+
         [RelayCommand]
         public async Task LoadSourcesAsync()
         {
@@ -157,33 +319,25 @@ namespace Kroira.App.ViewModels
             foreach (var profile in profiles)
             {
                 diagnostics.TryGetValue(profile.Id, out var snapshot);
-                snapshot ??= new SourceDiagnosticsSnapshot(
-                    profile.Id,
-                    profile.Type,
-                    0,
-                    0,
-                    0,
-                    false,
-                    false,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    profile.LastSync.HasValue ? "Ready" : "Not synced",
-                    profile.LastSync.HasValue
+                snapshot ??= new SourceDiagnosticsSnapshot
+                {
+                    SourceProfileId = profile.Id,
+                    SourceType = profile.Type,
+                    HealthLabel = profile.LastSync.HasValue ? "Healthy" : "Not synced",
+                    StatusSummary = profile.LastSync.HasValue
                         ? $"Last import completed {profile.LastSync.Value.ToLocalTime():g}."
                         : "Saved source. No successful import recorded yet.",
-                    profile.LastSync.HasValue
+                    ImportResultText = profile.LastSync.HasValue
                         ? $"Imported at {profile.LastSync.Value.ToLocalTime():g}"
-                        : "No successful import recorded",
-                    "No EPG configured",
-                    string.Empty,
-                    string.Empty,
-                    $"Import {(profile.LastSync.HasValue ? profile.LastSync.Value.ToLocalTime().ToString("g") : "Never")}",
-                    profile.LastSync?.ToLocalTime().ToString("g") ?? "Never",
-                    string.Empty,
-                    false);
+                        : "No successful import recorded.",
+                    EpgCoverageText = "Guide not synced.",
+                    EpgStatusText = "Guide not synced",
+                    EpgStatusSummary = "Guide has not synced yet.",
+                    LastSuccessfulSyncText = $"Import {(profile.LastSync.HasValue ? profile.LastSync.Value.ToLocalTime().ToString("g") : "Never")} - Guide Never",
+                    LastImportSuccessText = profile.LastSync?.ToLocalTime().ToString("g") ?? "Never",
+                    LastEpgSuccessText = "Never",
+                    ActiveEpgModeText = "Detected from provider"
+                };
 
                 Sources.Add(new SourceItemViewModel
                 {
@@ -202,15 +356,18 @@ namespace Kroira.App.ViewModels
                     EpgLastSyncText = snapshot.LastEpgSuccessText,
                     EpgMatchedChannels = snapshot.MatchedLiveChannelCount,
                     EpgProgramCount = snapshot.EpgProgramCount,
-                    EpgSummaryText = snapshot.EpgSyncSuccess
-                        ? $"{snapshot.EpgProgramCount:N0} programs - {snapshot.MatchedLiveChannelCount} ch matched"
-                        : snapshot.HasEpgUrl ? snapshot.EpgCoverageText : string.Empty,
+                    EpgSummaryText = snapshot.EpgStatusText,
                     EpgSyncSuccess = snapshot.EpgSyncSuccess,
                     ImportResultText = snapshot.ImportResultText,
                     EpgCoverageText = snapshot.EpgCoverageText,
                     ParseWarningsText = snapshot.WarningSummaryText,
                     NetworkFailureText = snapshot.FailureSummaryText,
                     LastSuccessfulSyncText = snapshot.LastSuccessfulSyncText,
+                    GuideStatusText = snapshot.EpgStatusText,
+                    GuideStatusSummaryText = snapshot.EpgStatusSummary,
+                    GuideModeText = snapshot.ActiveEpgModeText,
+                    GuideUrlText = snapshot.EpgUrlSummaryText,
+                    GuideMatchText = snapshot.MatchBreakdownText,
                     ImportWarningCount = snapshot.ImportWarningCount,
                     GuideWarningCount = snapshot.GuideWarningCount
                 });
@@ -239,7 +396,16 @@ namespace Kroira.App.ViewModels
                 var parser = scope.ServiceProvider.GetRequiredService<Kroira.App.Services.Parsing.IM3uParserService>();
 
                 await parser.ParseAndImportM3uAsync(db, id);
+                var guideError = await TryRefreshGuideAsync(id);
                 await LoadSourcesAsync();
+                if (!string.IsNullOrWhiteSpace(guideError))
+                {
+                    item = Sources.FirstOrDefault(source => source.Id == id);
+                    if (item != null)
+                    {
+                        item.Status = $"Import completed, but guide sync failed: {(guideError.Length > 120 ? guideError.Substring(0, 120) + "..." : guideError)}";
+                    }
+                }
             }
             catch (Exception ex)
             {
@@ -296,7 +462,16 @@ namespace Kroira.App.ViewModels
 
                 await parser.ParseAndImportXtreamAsync(db, id);
                 await parser.ParseAndImportXtreamVodAsync(db, id);
+                var guideError = await TryRefreshGuideAsync(id);
                 await LoadSourcesAsync();
+                if (!string.IsNullOrWhiteSpace(guideError))
+                {
+                    item = Sources.FirstOrDefault(source => source.Id == id);
+                    if (item != null)
+                    {
+                        item.Status = $"Xtream sync completed, but guide sync failed: {(guideError.Length > 120 ? guideError.Substring(0, 120) + "..." : guideError)}";
+                    }
+                }
             }
             catch (Exception ex)
             {

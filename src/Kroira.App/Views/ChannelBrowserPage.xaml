@@ -61,6 +61,7 @@
                         <StackPanel Grid.Column="1" VerticalAlignment="Top" Spacing="5">
                             <TextBlock Text="{Binding Name}" TextWrapping="Wrap" MaxLines="1" FontWeight="SemiBold" FontSize="14" Foreground="{StaticResource KroiraTextPrimaryBrush}" />
                             <TextBlock Text="{Binding CurrentProgramTitle}" Foreground="{StaticResource KroiraTextSecondaryBrush}" FontSize="12" MaxLines="1" TextTrimming="CharacterEllipsis" />
+                            <TextBlock Text="{Binding GuideMetaText}" Visibility="{Binding GuideMetaVisibility}" Foreground="{StaticResource KroiraTextTertiaryBrush}" FontSize="11" MaxLines="2" TextTrimming="CharacterEllipsis" />
                             <TextBlock Text="{Binding CurrentProgramSubtitle}" Visibility="{Binding SubtitleVisibility}" Foreground="{StaticResource KroiraTextTertiaryBrush}" FontSize="11" MaxLines="1" TextTrimming="CharacterEllipsis" />
                             <TextBlock Text="{Binding CurrentProgramDescription}" Visibility="{Binding DescriptionVisibility}" Foreground="{StaticResource KroiraTextTertiaryBrush}" FontSize="11" MaxLines="1" TextTrimming="CharacterEllipsis" />
                             <Grid Visibility="{Binding EpgVisibility}" ColumnSpacing="8">

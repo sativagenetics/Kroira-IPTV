@@ -36,6 +36,7 @@ namespace Kroira.App.Services.Parsing
             var importMode = cred.M3uImportMode;
             var content = await ReadPlaylistAsync(cred.Url);
             var headerMetadata = M3uMetadataParser.ParseHeaderMetadata(content, cred.Url);
+            cred.DetectedEpgUrl = headerMetadata.XmltvUrls.FirstOrDefault() ?? string.Empty;
             var diagnostics = new M3uImportDiagnostics
             {
                 XmltvUrlFound = headerMetadata.XmltvUrls.Count > 0,

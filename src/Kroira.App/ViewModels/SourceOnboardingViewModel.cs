@@ -22,6 +22,7 @@ namespace Kroira.App.ViewModels
         [NotifyPropertyChangedFor(nameof(IsM3U))]
         [NotifyPropertyChangedFor(nameof(M3UVisibility))]
         [NotifyPropertyChangedFor(nameof(XtreamVisibility))]
+        [NotifyPropertyChangedFor(nameof(GuideModeSummaryText))]
         private int _selectedFormatIndex = 0;
 
         public bool IsM3U => SelectedFormatIndex == 0;
@@ -41,7 +42,12 @@ namespace Kroira.App.ViewModels
         private string _xtreamPassword = string.Empty;
 
         [ObservableProperty]
-        private string _epgUrl = string.Empty;
+        private string _manualEpgUrl = string.Empty;
+
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(ManualEpgVisibility))]
+        [NotifyPropertyChangedFor(nameof(GuideModeSummaryText))]
+        private int _selectedEpgModeIndex = 0;
 
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(HasStatus))]
@@ -51,6 +57,17 @@ namespace Kroira.App.ViewModels
         public bool HasStatus => !string.IsNullOrEmpty(StatusMessage);
         public Microsoft.UI.Xaml.Visibility StatusVisibility => HasStatus ? Microsoft.UI.Xaml.Visibility.Visible : Microsoft.UI.Xaml.Visibility.Collapsed;
         public bool CanSaveSource => _entitlementService.IsFeatureEnabled(EntitlementFeatureKeys.SourcesAdd);
+        public Microsoft.UI.Xaml.Visibility ManualEpgVisibility => SelectedEpgModeIndex == 1
+            ? Microsoft.UI.Xaml.Visibility.Visible
+            : Microsoft.UI.Xaml.Visibility.Collapsed;
+        public string GuideModeSummaryText => SelectedEpgModeIndex switch
+        {
+            1 => "Manual override uses your XMLTV URL and keeps any detected provider URL on file.",
+            2 => "No guide disables XMLTV syncing for this source.",
+            _ => IsM3U
+                ? "Detected mode uses the XMLTV URL advertised by the playlist when one exists."
+                : "Detected mode uses the XMLTV URL derived from your Xtream provider credentials."
+        };
 
         public SourceOnboardingViewModel(IServiceProvider serviceProvider, IEntitlementService entitlementService)
         {
@@ -82,6 +99,12 @@ namespace Kroira.App.ViewModels
             if (!IsM3U && (string.IsNullOrWhiteSpace(XtreamUrl) || string.IsNullOrWhiteSpace(XtreamUsername) || string.IsNullOrWhiteSpace(XtreamPassword)))
             {
                 StatusMessage = "Server URL, Username, and Password are required for Xtream.";
+                return;
+            }
+
+            if (SelectedGuideMode == EpgActiveMode.Manual && string.IsNullOrWhiteSpace(ManualEpgUrl))
+            {
+                StatusMessage = "Manual guide mode requires a manual XMLTV URL.";
                 return;
             }
 
@@ -120,7 +143,8 @@ namespace Kroira.App.ViewModels
                         Url = IsM3U ? M3uUrlOrPath : XtreamUrl,
                         Username = IsM3U ? string.Empty : XtreamUsername,
                         Password = IsM3U ? string.Empty : XtreamPassword,
-                        EpgUrl = EpgUrl
+                        EpgUrl = ManualEpgUrl,
+                        EpgMode = SelectedGuideMode
                     };
                     db.SourceCredentials.Add(creds);
 
@@ -146,6 +170,7 @@ namespace Kroira.App.ViewModels
                     {
                         using var importScope = _serviceProvider.CreateScope();
                         var importDb = importScope.ServiceProvider.GetRequiredService<AppDbContext>();
+                        string? guideError = null;
 
                         if (isM3u)
                         {
@@ -158,7 +183,19 @@ namespace Kroira.App.ViewModels
                             await xtreamParser.ParseAndImportXtreamAsync(importDb, savedId);
                         }
 
-                        StatusMessage = "Source saved and imported successfully!";
+                        try
+                        {
+                            var xmltvParser = importScope.ServiceProvider.GetRequiredService<Kroira.App.Services.Parsing.IXmltvParserService>();
+                            await xmltvParser.ParseAndImportEpgAsync(importDb, savedId);
+                        }
+                        catch (Exception guideEx)
+                        {
+                            guideError = guideEx.Message;
+                        }
+
+                        StatusMessage = string.IsNullOrWhiteSpace(guideError)
+                            ? "Source saved, imported, and guide sync completed."
+                            : $"Source saved and imported, but guide sync failed: {guideError}";
                     }
                     catch (Exception importEx)
                     {
@@ -167,7 +204,8 @@ namespace Kroira.App.ViewModels
 
                     SourceName = string.Empty;
                     M3uUrlOrPath = string.Empty;
-                    EpgUrl = string.Empty;
+                    ManualEpgUrl = string.Empty;
+                    SelectedEpgModeIndex = 0;
                     XtreamUrl = string.Empty;
                     XtreamUsername = string.Empty;
                     XtreamPassword = string.Empty;
@@ -183,6 +221,13 @@ namespace Kroira.App.ViewModels
                 StatusMessage = $"Error saving: {ex.Message}";
             }
         }
+
+        private EpgActiveMode SelectedGuideMode => SelectedEpgModeIndex switch
+        {
+            1 => EpgActiveMode.Manual,
+            2 => EpgActiveMode.None,
+            _ => EpgActiveMode.Detected
+        };
 
         [RelayCommand]
         public async Task BrowseLocalFileAsync()

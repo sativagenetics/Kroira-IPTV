@@ -1,4 +1,4 @@
-<Page
+﻿<Page
     x:Class="Kroira.App.Views.SourceListPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -162,12 +162,16 @@
                                             <Border Width="5" Height="5" CornerRadius="3"
                                                     Background="{StaticResource KroiraAccentBrush}"
                                                     VerticalAlignment="Center" />
-                                            <TextBlock Text="EPG"
+                                            <TextBlock Text="{Binding GuideStatusText}"
                                                        FontSize="11"
                                                        FontWeight="SemiBold"
                                                        Foreground="{StaticResource KroiraAccentBrush}"
                                                        VerticalAlignment="Center" />
-                                            <TextBlock Text="{Binding EpgSummaryText}"
+                                            <TextBlock Text="·"
+                                                       FontSize="11"
+                                                       Foreground="{StaticResource KroiraTextTertiaryBrush}"
+                                                       VerticalAlignment="Center" />
+                                            <TextBlock Text="{Binding GuideModeText}"
                                                        FontSize="11"
                                                        Foreground="{StaticResource KroiraTextTertiaryBrush}"
                                                        MaxLines="1"
@@ -185,7 +189,7 @@
                                         </StackPanel>
 
                                         <!-- EPG URL configured but never synced -->
-                                        <StackPanel Visibility="{Binding EpgConfiguredVisibility}" Orientation="Horizontal" Spacing="7">
+                                        <StackPanel Visibility="Collapsed" Orientation="Horizontal" Spacing="7">
                                             <Border Width="5" Height="5" CornerRadius="3"
                                                     Background="{StaticResource KroiraGoldBrush}"
                                                     VerticalAlignment="Center" />
@@ -255,8 +259,31 @@
                                                            Foreground="{StaticResource KroiraTextTertiaryBrush}"
                                                            MaxLines="1"
                                                            TextTrimming="CharacterEllipsis">
-                                                    <Run Text="Guide: " />
+                                                    <Run Text="Guide coverage: " />
                                                     <Run Text="{Binding EpgCoverageText}" />
+                                                </TextBlock>
+                                                <TextBlock FontSize="11"
+                                                           Foreground="{StaticResource KroiraTextTertiaryBrush}"
+                                                           MaxLines="1"
+                                                           TextTrimming="CharacterEllipsis">
+                                                    <Run Text="Guide mode: " />
+                                                    <Run Text="{Binding GuideModeText}" />
+                                                </TextBlock>
+                                                <TextBlock Visibility="{Binding GuideUrlVisibility}"
+                                                           FontSize="11"
+                                                           Foreground="{StaticResource KroiraTextTertiaryBrush}"
+                                                           MaxLines="2"
+                                                           TextTrimming="CharacterEllipsis">
+                                                    <Run Text="XMLTV: " />
+                                                    <Run Text="{Binding GuideUrlText}" />
+                                                </TextBlock>
+                                                <TextBlock Visibility="{Binding GuideMatchVisibility}"
+                                                           FontSize="11"
+                                                           Foreground="{StaticResource KroiraTextTertiaryBrush}"
+                                                           MaxLines="1"
+                                                           TextTrimming="CharacterEllipsis">
+                                                    <Run Text="Matching: " />
+                                                    <Run Text="{Binding GuideMatchText}" />
                                                 </TextBlock>
                                                 <TextBlock FontSize="11"
                                                            Foreground="{StaticResource KroiraTextTertiaryBrush}"
@@ -265,6 +292,13 @@
                                                     <Run Text="Last success: " />
                                                     <Run Text="{Binding LastSuccessfulSyncText}" />
                                                 </TextBlock>
+                                                <Button Content="Guide settings"
+                                                        Tag="{Binding Id}"
+                                                        Click="EditGuideSettings_Click"
+                                                        Visibility="{Binding SyncEpgVisibility}"
+                                                        Style="{StaticResource KroiraButtonStyle}"
+                                                        HorizontalAlignment="Left"
+                                                        Padding="10,5" />
                                                 <TextBlock Visibility="{Binding ParseWarningsVisibility}"
                                                            FontSize="11"
                                                            Foreground="{StaticResource KroiraGoldBrush}"
@@ -283,6 +317,14 @@
                                                 </TextBlock>
                                             </StackPanel>
                                         </StackPanel>
+                                        <TextBlock Visibility="{Binding GuideStatusSummaryVisibility}"
+                                                   Text="{Binding GuideStatusSummaryText}"
+                                                   FontSize="11"
+                                                   Foreground="{StaticResource KroiraTextTertiaryBrush}"
+                                                   MaxLines="2"
+                                                   TextWrapping="WrapWholeWords"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   MaxWidth="380" />
 
                                     <StackPanel Grid.Column="3"
                                                 Orientation="Horizontal"
@@ -323,3 +365,4 @@
         </Grid>
     </Grid>
 </Page>
+

@@ -145,6 +145,8 @@ namespace Kroira.App.Data
             EnsureColumn(conn, "Channels", "EpgChannelId", "TEXT NOT NULL DEFAULT ''");
             EnsureColumn(conn, "EpgPrograms", "Subtitle", "TEXT");
             EnsureColumn(conn, "EpgPrograms", "Category", "TEXT");
+            EnsureColumn(conn, "SourceCredentials", "DetectedEpgUrl", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "SourceCredentials", "EpgMode", "INTEGER NOT NULL DEFAULT 1");
 
             // M3U import mode for SourceCredentials.
             //  • New-column default = 2 (LiveMoviesAndSeries) — matches the
@@ -156,9 +158,22 @@ namespace Kroira.App.Data
             //    is preserved because it represents an explicit user choice.
             EnsureColumn(conn, "SourceCredentials", "M3uImportMode", "INTEGER NOT NULL DEFAULT 2");
             BumpLegacyM3uImportMode(conn);
+            BackfillLegacyEpgMode(conn);
 
             // EPG pass: per-source sync health log (CREATE TABLE IF NOT EXISTS is safe to repeat)
             EnsureEpgSyncLogsTable(conn);
+            EnsureColumn(conn, "EpgSyncLogs", "LastSuccessAtUtc", "TEXT");
+            EnsureColumn(conn, "EpgSyncLogs", "Status", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "EpgSyncLogs", "ResultCode", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "EpgSyncLogs", "FailureStage", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "EpgSyncLogs", "ActiveMode", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "EpgSyncLogs", "ActiveXmltvUrl", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "EpgSyncLogs", "UnmatchedChannelCount", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "EpgSyncLogs", "CurrentCoverageCount", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "EpgSyncLogs", "NextCoverageCount", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "EpgSyncLogs", "TotalLiveChannelCount", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "EpgSyncLogs", "MatchBreakdown", "TEXT NOT NULL DEFAULT ''");
+            BackfillLegacyEpgSyncLogColumns(conn);
 
             EnsureIndex(conn, "IX_Movies_MetadataUpdatedAt", "Movies", "MetadataUpdatedAt");
             EnsureIndex(conn, "IX_Movies_CanonicalTitleKey", "Movies", "CanonicalTitleKey");
@@ -187,6 +202,59 @@ namespace Kroira.App.Data
 
             using var cmd = conn.CreateCommand();
             cmd.CommandText = "UPDATE \"SourceCredentials\" SET \"M3uImportMode\" = 2 WHERE \"M3uImportMode\" = 1;";
+            cmd.ExecuteNonQuery();
+        }
+
+        private static void BackfillLegacyEpgMode(SqliteConnection conn)
+        {
+            if (!TableExists(conn, "SourceCredentials")) return;
+            if (!ColumnExists(conn, "SourceCredentials", "EpgMode")) return;
+
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = @"
+                UPDATE ""SourceCredentials""
+                SET ""EpgMode"" = CASE
+                    WHEN TRIM(COALESCE(""EpgUrl"", '')) <> '' THEN 2
+                    WHEN ""EpgMode"" IS NULL OR ""EpgMode"" = 0 THEN 1
+                    ELSE ""EpgMode""
+                END;";
+            cmd.ExecuteNonQuery();
+        }
+
+        private static void BackfillLegacyEpgSyncLogColumns(SqliteConnection conn)
+        {
+            if (!TableExists(conn, "EpgSyncLogs"))
+            {
+                return;
+            }
+
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = @"
+                UPDATE ""EpgSyncLogs""
+                SET ""LastSuccessAtUtc"" = COALESCE(""LastSuccessAtUtc"", CASE WHEN ""IsSuccess"" = 1 THEN ""SyncedAtUtc"" ELSE NULL END),
+                    ""Status"" = CASE
+                        WHEN ""Status"" <> 0 THEN ""Status""
+                        WHEN ""IsSuccess"" = 1 THEN 2
+                        WHEN COALESCE(""FailureReason"", '') LIKE '%does not advertise an XMLTV guide URL%' THEN 3
+                        ELSE 4
+                    END,
+                    ""ResultCode"" = CASE
+                        WHEN ""ResultCode"" <> 0 THEN ""ResultCode""
+                        WHEN ""IsSuccess"" = 1 THEN 1
+                        WHEN COALESCE(""FailureReason"", '') LIKE '%does not advertise an XMLTV guide URL%' THEN 4
+                        ELSE 5
+                    END,
+                    ""FailureStage"" = CASE
+                        WHEN ""FailureStage"" <> 0 THEN ""FailureStage""
+                        WHEN ""IsSuccess"" = 1 THEN 0
+                        WHEN COALESCE(""FailureReason"", '') LIKE '%XMLTV%' THEN 2
+                        ELSE 2
+                    END,
+                    ""ActiveMode"" = CASE
+                        WHEN ""ActiveMode"" <> 0 THEN ""ActiveMode""
+                        ELSE 1
+                    END
+                WHERE 1 = 1;";
             cmd.ExecuteNonQuery();
         }
 
@@ -295,9 +363,20 @@ namespace Kroira.App.Data
                     ""Id""                  INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
                     ""SourceProfileId""     INTEGER NOT NULL,
                     ""SyncedAtUtc""         TEXT    NOT NULL,
+                    ""LastSuccessAtUtc""    TEXT,
                     ""IsSuccess""           INTEGER NOT NULL DEFAULT 0,
+                    ""Status""              INTEGER NOT NULL DEFAULT 0,
+                    ""ResultCode""          INTEGER NOT NULL DEFAULT 0,
+                    ""FailureStage""        INTEGER NOT NULL DEFAULT 0,
+                    ""ActiveMode""          INTEGER NOT NULL DEFAULT 0,
+                    ""ActiveXmltvUrl""      TEXT    NOT NULL DEFAULT '',
                     ""MatchedChannelCount"" INTEGER NOT NULL DEFAULT 0,
+                    ""UnmatchedChannelCount"" INTEGER NOT NULL DEFAULT 0,
+                    ""CurrentCoverageCount"" INTEGER NOT NULL DEFAULT 0,
+                    ""NextCoverageCount""    INTEGER NOT NULL DEFAULT 0,
+                    ""TotalLiveChannelCount"" INTEGER NOT NULL DEFAULT 0,
                     ""ProgrammeCount""      INTEGER NOT NULL DEFAULT 0,
+                    ""MatchBreakdown""      TEXT    NOT NULL DEFAULT '',
                     ""FailureReason""       TEXT    NOT NULL DEFAULT '',
                     CONSTRAINT ""FK_EpgSyncLogs_SourceProfiles_SourceProfileId""
                         FOREIGN KEY (""SourceProfileId"")

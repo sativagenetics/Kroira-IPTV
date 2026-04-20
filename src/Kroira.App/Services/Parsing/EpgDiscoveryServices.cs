@@ -17,16 +17,40 @@ namespace Kroira.App.Services.Parsing
         }
     }
 
+    public sealed class EpgFetchException : Exception
+    {
+        public EpgFetchException(string message, string xmltvUrl, EpgActiveMode activeMode)
+            : base(message)
+        {
+            XmltvUrl = xmltvUrl ?? string.Empty;
+            ActiveMode = activeMode;
+        }
+
+        public string XmltvUrl { get; }
+        public EpgActiveMode ActiveMode { get; }
+    }
+
     public sealed class EpgDiscoveryResult
     {
-        public EpgDiscoveryResult(string xmlContent, string description)
+        public EpgDiscoveryResult(
+            string xmlContent,
+            string description,
+            string detectedXmltvUrl,
+            string activeXmltvUrl,
+            EpgActiveMode activeMode)
         {
             XmlContent = xmlContent;
             Description = description;
+            DetectedXmltvUrl = detectedXmltvUrl ?? string.Empty;
+            ActiveXmltvUrl = activeXmltvUrl ?? string.Empty;
+            ActiveMode = activeMode;
         }
 
         public string XmlContent { get; }
         public string Description { get; }
+        public string DetectedXmltvUrl { get; }
+        public string ActiveXmltvUrl { get; }
+        public EpgActiveMode ActiveMode { get; }
     }
 
     public interface IEpgSourceDiscoveryService
@@ -47,56 +71,71 @@ namespace Kroira.App.Services.Parsing
                 throw new Exception("M3U source URL or path is empty.");
             }
 
-            if (!string.IsNullOrWhiteSpace(cred.EpgUrl))
-            {
-                var explicitXml = await ReadTextAsync(cred.EpgUrl);
-                return new EpgDiscoveryResult(explicitXml, "M3U configured XMLTV URL");
-            }
-
-            var playlistContent = await ReadTextAsync(cred.Url);
+            var playlistContent = await EpgDiscoveryHelpers.ReadTextAsync(cred.Url);
             var headerMetadata = M3uMetadataParser.ParseHeaderMetadata(playlistContent, cred.Url);
+            cred.DetectedEpgUrl = headerMetadata.XmltvUrls.FirstOrDefault() ?? string.Empty;
             LogHeaderDiscovery(sourceProfileId, headerMetadata);
+
+            var activeMode = EpgDiscoveryHelpers.ResolveActiveMode(cred);
+            if (activeMode == EpgActiveMode.Manual)
+            {
+                var manualUrl = cred.ManualEpgUrl;
+                if (string.IsNullOrWhiteSpace(manualUrl))
+                {
+                    throw new EpgUnavailableException("Manual XMLTV URL is not configured.");
+                }
+
+                var xmlContent = await EpgDiscoveryHelpers.ReadXmltvAsync(manualUrl, activeMode);
+                return new EpgDiscoveryResult(
+                    xmlContent,
+                    "Manual XMLTV override",
+                    cred.DetectedEpgUrl,
+                    manualUrl,
+                    activeMode);
+            }
 
             if (headerMetadata.XmltvUrls.Count == 0)
             {
                 throw new EpgUnavailableException("Playlist does not advertise an XMLTV guide URL");
             }
 
-            Exception lastFailure = null;
+            Exception? lastFailure = null;
             foreach (var candidateUrl in headerMetadata.XmltvUrls)
             {
                 try
                 {
-                    var xmlContent = await ReadTextAsync(candidateUrl);
-                    if (!LooksLikeXmltv(xmlContent))
-                    {
-                        throw new Exception("Discovered XMLTV URL did not return XMLTV content.");
-                    }
-
+                    var xmlContent = await EpgDiscoveryHelpers.ReadXmltvAsync(candidateUrl, EpgActiveMode.Detected);
                     ImportRuntimeLogger.Log(
-                        "M3U EPG",
-                        $"source_profile_id={sourceProfileId}; xmltv_candidate={FormatDiagnosticValue(candidateUrl)}; xmltv_candidate_status=success");
+                        "EPG DISCOVERY",
+                        $"source_profile_id={sourceProfileId}; source_type=M3U; mode=detected; xmltv_candidate={FormatDiagnosticValue(candidateUrl)}; fetch_status=success");
 
-                    return new EpgDiscoveryResult(xmlContent, $"M3U embedded XMLTV metadata ({candidateUrl})");
+                    return new EpgDiscoveryResult(
+                        xmlContent,
+                        $"M3U embedded XMLTV metadata ({candidateUrl})",
+                        cred.DetectedEpgUrl,
+                        candidateUrl,
+                        EpgActiveMode.Detected);
                 }
                 catch (Exception ex)
                 {
                     lastFailure = ex;
                     ImportRuntimeLogger.Log(
-                        "M3U EPG",
-                        $"source_profile_id={sourceProfileId}; xmltv_candidate={FormatDiagnosticValue(candidateUrl)}; xmltv_candidate_status=failed; failure_reason={FormatDiagnosticValue(ex.Message)}");
+                        "EPG DISCOVERY",
+                        $"source_profile_id={sourceProfileId}; source_type=M3U; mode=detected; xmltv_candidate={FormatDiagnosticValue(candidateUrl)}; fetch_status=failed; failure_reason={FormatDiagnosticValue(ex.Message)}");
                 }
             }
 
-            throw new Exception(
-                $"Discovered {headerMetadata.XmltvUrls.Count} XMLTV URL(s) in the M3U header, but none returned usable XMLTV. last_error={lastFailure?.Message ?? "unknown"}");
+            throw new EpgFetchException(
+                $"Discovered {headerMetadata.XmltvUrls.Count} XMLTV URL(s) in the M3U header, but none returned usable XMLTV. last_error={lastFailure?.Message ?? "unknown"}",
+                cred.DetectedEpgUrl,
+                EpgActiveMode.Detected);
         }
 
         private static void LogHeaderDiscovery(int sourceProfileId, M3uHeaderMetadata headerMetadata)
         {
             ImportRuntimeLogger.Log(
-                "M3U EPG",
-                $"source_profile_id={sourceProfileId}; xmltv_url_found={(headerMetadata.XmltvUrls.Count > 0 ? "true" : "false")}; xmltv_url_value={FormatDiagnosticValue(string.Join(" | ", headerMetadata.XmltvUrls))}; header_preview={FormatDiagnosticValue(headerMetadata.RawHeaderPreview)}; header_attributes={FormatDiagnosticValue(DescribeHeaderAttributes(headerMetadata))}");
+                "EPG DISCOVERY",
+                $"source_profile_id={sourceProfileId}; source_type=M3U; xmltv_url_found={(headerMetadata.XmltvUrls.Count > 0 ? "true" : "false")}; xmltv_url_value={FormatDiagnosticValue(string.Join(" | ", headerMetadata.XmltvUrls))}; header_preview={FormatDiagnosticValue(headerMetadata.RawHeaderPreview)}; header_attributes={FormatDiagnosticValue(DescribeHeaderAttributes(headerMetadata))}");
         }
 
         private static string DescribeHeaderAttributes(M3uHeaderMetadata headerMetadata)
@@ -122,28 +161,6 @@ namespace Kroira.App.Services.Parsing
 
             return $"\"{value.Replace("\"", "'")}\"";
         }
-
-        private static bool LooksLikeXmltv(string content)
-        {
-            return !string.IsNullOrWhiteSpace(content) &&
-                   content.IndexOf("<tv", StringComparison.OrdinalIgnoreCase) >= 0;
-        }
-
-        private static async Task<string> ReadTextAsync(string location)
-        {
-            if (location.StartsWith("http", StringComparison.OrdinalIgnoreCase))
-            {
-                using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(60) };
-                return await client.GetStringAsync(location);
-            }
-
-            if (!File.Exists(location))
-            {
-                throw new FileNotFoundException("EPG or playlist file was not found.", location);
-            }
-
-            return await File.ReadAllTextAsync(location);
-        }
     }
 
     public sealed class XtreamEpgDiscoveryService : IEpgSourceDiscoveryService
@@ -161,26 +178,115 @@ namespace Kroira.App.Services.Parsing
             var baseUrl = cred.Url.TrimEnd('/');
             var authQuery = $"?username={Uri.EscapeDataString(cred.Username)}&password={Uri.EscapeDataString(cred.Password)}";
             var providerGuideUrl = $"{baseUrl}/xmltv.php{authQuery}";
+            cred.DetectedEpgUrl = providerGuideUrl;
 
-            using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(60) };
-            try
+            var activeMode = EpgDiscoveryHelpers.ResolveActiveMode(cred);
+            if (activeMode == EpgActiveMode.Manual)
             {
-                var xml = await client.GetStringAsync(providerGuideUrl);
-                if (!LooksLikeXmltv(xml))
+                var manualUrl = cred.ManualEpgUrl;
+                if (string.IsNullOrWhiteSpace(manualUrl))
                 {
-                    throw new Exception("Xtream provider guide did not return XMLTV content.");
+                    throw new EpgUnavailableException("Manual XMLTV URL is not configured.");
                 }
 
-                return new EpgDiscoveryResult(xml, "Xtream provider XMLTV guide");
+                var xml = await EpgDiscoveryHelpers.ReadXmltvAsync(manualUrl, activeMode);
+                return new EpgDiscoveryResult(
+                    xml,
+                    "Manual XMLTV override",
+                    providerGuideUrl,
+                    manualUrl,
+                    activeMode);
             }
-            catch when (!string.IsNullOrWhiteSpace(cred.EpgUrl))
+
+            try
             {
-                var fallbackXml = await client.GetStringAsync(cred.EpgUrl);
-                return new EpgDiscoveryResult(fallbackXml, "Xtream configured XMLTV fallback");
+                var xml = await EpgDiscoveryHelpers.ReadXmltvAsync(providerGuideUrl, EpgActiveMode.Detected);
+                ImportRuntimeLogger.Log(
+                    "EPG DISCOVERY",
+                    $"source_profile_id={sourceProfileId}; source_type=Xtream; mode=detected; xmltv_candidate={FormatDiagnosticValue(providerGuideUrl)}; fetch_status=success");
+
+                return new EpgDiscoveryResult(
+                    xml,
+                    "Xtream provider XMLTV guide",
+                    providerGuideUrl,
+                    providerGuideUrl,
+                    EpgActiveMode.Detected);
+            }
+            catch (Exception ex)
+            {
+                ImportRuntimeLogger.Log(
+                    "EPG DISCOVERY",
+                    $"source_profile_id={sourceProfileId}; source_type=Xtream; mode=detected; xmltv_candidate={FormatDiagnosticValue(providerGuideUrl)}; fetch_status=failed; failure_reason={FormatDiagnosticValue(ex.Message)}");
+
+                throw new EpgFetchException(
+                    $"Xtream provider XMLTV fetch failed: {ex.Message}",
+                    providerGuideUrl,
+                    EpgActiveMode.Detected);
             }
         }
 
-        private static bool LooksLikeXmltv(string content)
+        private static string FormatDiagnosticValue(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return "\"\"";
+            }
+
+            return $"\"{value.Replace("\"", "'")}\"";
+        }
+    }
+
+    internal static class EpgDiscoveryHelpers
+    {
+        internal static EpgActiveMode ResolveActiveMode(SourceCredential credential)
+        {
+            return credential.EpgMode switch
+            {
+                EpgActiveMode.Manual => EpgActiveMode.Manual,
+                EpgActiveMode.None => EpgActiveMode.None,
+                _ => EpgActiveMode.Detected
+            };
+        }
+
+        internal static async Task<string> ReadXmltvAsync(string location, EpgActiveMode activeMode)
+        {
+            try
+            {
+                var content = await ReadTextAsync(location);
+                if (!LooksLikeXmltv(content))
+                {
+                    throw new EpgFetchException("XMLTV URL did not return XMLTV content.", location, activeMode);
+                }
+
+                return content;
+            }
+            catch (EpgFetchException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new EpgFetchException(ex.Message, location, activeMode);
+            }
+        }
+
+        internal static async Task<string> ReadTextAsync(string location)
+        {
+            if (location.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+            {
+                using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(60) };
+                return await client.GetStringAsync(location);
+            }
+
+            if (!File.Exists(location))
+            {
+                throw new FileNotFoundException("EPG or playlist file was not found.", location);
+            }
+
+            return await File.ReadAllTextAsync(location);
+        }
+
+        internal static bool LooksLikeXmltv(string content)
         {
             return !string.IsNullOrWhiteSpace(content) &&
                    content.IndexOf("<tv", StringComparison.OrdinalIgnoreCase) >= 0;

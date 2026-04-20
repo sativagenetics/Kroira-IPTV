@@ -104,6 +104,8 @@ namespace Kroira.App.Services
             public string Username { get; set; } = string.Empty;
             public string Password { get; set; } = string.Empty;
             public string EpgUrl { get; set; } = string.Empty;
+            public string DetectedEpgUrl { get; set; } = string.Empty;
+            public EpgActiveMode EpgMode { get; set; } = EpgActiveMode.Detected;
             public M3uImportMode M3uImportMode { get; set; }
         }
 

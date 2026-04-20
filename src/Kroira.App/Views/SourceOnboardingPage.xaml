@@ -38,8 +38,6 @@
                             <Button Grid.Column="1" Content="Browse File..." Command="{x:Bind ViewModel.BrowseLocalFileCommand}" Style="{StaticResource KroiraButtonStyle}" />
                         </Grid>
 
-                        <TextBlock Text="XMLTV EPG URL (Optional)" Foreground="{StaticResource KroiraTextSecondaryBrush}" Margin="0,8,0,0"/>
-                        <TextBox Style="{StaticResource KroiraTextBoxStyle}" Text="{x:Bind ViewModel.EpgUrl, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="http://.../epg.xml" />
                     </StackPanel>
 
                     <StackPanel Visibility="{x:Bind ViewModel.XtreamVisibility, Mode=OneWay}" Spacing="8">
@@ -47,6 +45,23 @@
                         <TextBox Header="Server URL" Style="{StaticResource KroiraTextBoxStyle}" Text="{x:Bind ViewModel.XtreamUrl, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="http://domain.com:8080" />
                         <TextBox Header="Username" Style="{StaticResource KroiraTextBoxStyle}" Text="{x:Bind ViewModel.XtreamUsername, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                         <PasswordBox Header="Password" Password="{x:Bind ViewModel.XtreamPassword, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                    </StackPanel>
+
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="Guide Behavior" Style="{StaticResource KroiraSectionTitleStyle}" />
+                        <RadioButtons SelectedIndex="{x:Bind ViewModel.SelectedEpgModeIndex, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                            <RadioButton Content="Detected from provider" />
+                            <RadioButton Content="Manual XMLTV override" />
+                            <RadioButton Content="No guide" />
+                        </RadioButtons>
+                        <TextBlock Text="{x:Bind ViewModel.GuideModeSummaryText, Mode=OneWay}"
+                                   Foreground="{StaticResource KroiraTextSecondaryBrush}"
+                                   TextWrapping="WrapWholeWords" />
+                        <TextBox Visibility="{x:Bind ViewModel.ManualEpgVisibility, Mode=OneWay}"
+                                 Header="Manual XMLTV URL"
+                                 Style="{StaticResource KroiraTextBoxStyle}"
+                                 Text="{x:Bind ViewModel.ManualEpgUrl, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                 PlaceholderText="http://.../epg.xml or C:\guide.xml" />
                     </StackPanel>
 
                     <Button Content="Save Source"

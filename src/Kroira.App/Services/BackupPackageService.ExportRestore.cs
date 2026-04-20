@@ -242,6 +242,8 @@ namespace Kroira.App.Services
                             Username = credential.Username,
                             Password = credential.Password,
                             EpgUrl = credential.EpgUrl,
+                            DetectedEpgUrl = credential.DetectedEpgUrl,
+                            EpgMode = credential.EpgMode,
                             M3uImportMode = credential.M3uImportMode
                         },
                     SyncState = syncState == null
@@ -516,6 +518,8 @@ namespace Kroira.App.Services
                 Username = source.Credential?.Username ?? string.Empty,
                 Password = source.Credential?.Password ?? string.Empty,
                 EpgUrl = source.Credential?.EpgUrl ?? string.Empty,
+                DetectedEpgUrl = source.Credential?.DetectedEpgUrl ?? string.Empty,
+                EpgMode = source.Credential?.EpgMode ?? (string.IsNullOrWhiteSpace(source.Credential?.EpgUrl) ? EpgActiveMode.Detected : EpgActiveMode.Manual),
                 M3uImportMode = source.Credential?.M3uImportMode ?? M3uImportMode.LiveMoviesAndSeries
             }));
 

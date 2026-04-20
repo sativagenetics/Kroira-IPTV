@@ -37,6 +37,7 @@ namespace Kroira.App.Services.Parsing
 
             string baseUrl = cred.Url.TrimEnd('/');
             string authQuery = $"?username={Uri.EscapeDataString(cred.Username)}&password={Uri.EscapeDataString(cred.Password)}";
+            cred.DetectedEpgUrl = $"{baseUrl}/xmltv.php{authQuery}";
             string catsUrl = $"{baseUrl}/player_api.php{authQuery}&action=get_live_categories";
             string streamsUrl = $"{baseUrl}/player_api.php{authQuery}&action=get_live_streams";
 

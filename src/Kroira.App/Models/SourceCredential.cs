@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations.Schema;
+
 namespace Kroira.App.Models
 {
     /// <summary>
@@ -51,7 +53,10 @@ namespace Kroira.App.Models
         public string Url { get; set; } = string.Empty;
         public string Username { get; set; } = string.Empty;
         public string Password { get; set; } = string.Empty;
+        // Legacy column name retained for compatibility; this now stores the manual XMLTV override URL.
         public string EpgUrl { get; set; } = string.Empty;
+        public string DetectedEpgUrl { get; set; } = string.Empty;
+        public EpgActiveMode EpgMode { get; set; } = EpgActiveMode.Detected;
 
         /// <summary>
         /// Controls which M3U content layers are imported.
@@ -59,5 +64,12 @@ namespace Kroira.App.Models
         /// Defaults to <see cref="M3uImportMode.LiveMoviesAndSeries"/>.
         /// </summary>
         public M3uImportMode M3uImportMode { get; set; } = M3uImportMode.LiveMoviesAndSeries;
+
+        [NotMapped]
+        public string ManualEpgUrl
+        {
+            get => EpgUrl;
+            set => EpgUrl = value ?? string.Empty;
+        }
     }
 }
