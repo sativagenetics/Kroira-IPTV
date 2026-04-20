@@ -111,7 +111,7 @@ namespace Kroira.App.ViewModels
                     : $"{ActiveSeries.MetadataLine} / {Group.SourceSummary}"
                 : ActiveSeries.MetadataLine;
         public string Overview => string.IsNullOrWhiteSpace(ActiveSeries.Overview) ? PreferredSeries.Overview : ActiveSeries.Overview;
-        public string CategoryName => PreferredSeries.CategoryName;
+        public string CategoryName => DisplayCategoryName;
         public string DisplayCategoryName { get; }
         public ICollection<Season>? Seasons => ActiveSeries.Seasons;
         public bool HasAlternateSources => SourceOptions.Count > 1;
@@ -452,7 +452,7 @@ namespace Kroira.App.ViewModels
 
                 _allSeriesGroups.Clear();
                 _allSeriesGroups.AddRange(CatalogOrderingService
-                    .OrderCatalog(seriesGroups, languageCode, g => g.PreferredSeries.CategoryName, g => g.PreferredSeries.Title));
+                    .OrderCatalog(seriesGroups, languageCode, g => GetSurfacedCategoryName(g.PreferredSeries), g => g.PreferredSeries.Title));
 
                 foreach (var item in _allSeriesGroups)
                 {
@@ -476,7 +476,7 @@ namespace Kroira.App.ViewModels
 
                 _allCategories.Clear();
                 _allCategories.AddRange(_allSeriesGroups
-                    .GroupBy(group => GetRawCategory(group.PreferredSeries.CategoryName))
+                    .GroupBy(group => GetRawCategory(GetSurfacedCategoryName(group.PreferredSeries)))
                     .Select(group => (group.Key, group.Count()))
                     .OrderBy(group => group.Key, StringComparer.CurrentCultureIgnoreCase));
 
@@ -749,12 +749,13 @@ namespace Kroira.App.ViewModels
                 }
 
                 var preferredSeries = variants.FirstOrDefault(variant => variant.Series.Id == group.PreferredSeries.Id)?.Series ?? variants[0].Series;
-                if (IsCategoryHidden(preferredSeries.CategoryName))
+                var surfacedCategoryName = GetSurfacedCategoryName(preferredSeries);
+                if (IsCategoryHidden(surfacedCategoryName))
                 {
                     continue;
                 }
 
-                var displayCategory = GetEffectiveCategoryName(preferredSeries.CategoryName);
+                var displayCategory = GetEffectiveCategoryName(surfacedCategoryName);
                 if (!string.IsNullOrWhiteSpace(selectedCategoryKey) &&
                     !string.Equals(NormalizeCategoryKey(displayCategory), selectedCategoryKey, StringComparison.OrdinalIgnoreCase))
                 {
@@ -822,7 +823,7 @@ namespace Kroira.App.ViewModels
             var categoryNames = _allSeriesGroups
                 .Where(group => group.Variants.Any(variant => visibleSourceIds.Contains(variant.SourceProfile.Id)))
                 .Where(group => group.Variants.Any(variant => !HideSecondaryContent || string.Equals(variant.Series.ContentKind, "Primary", StringComparison.OrdinalIgnoreCase)))
-                .Select(group => group.PreferredSeries.CategoryName)
+                .Select(group => GetSurfacedCategoryName(group.PreferredSeries))
                 .Where(category => !IsCategoryHidden(category))
                 .Select(GetEffectiveCategoryName)
                 .Distinct(StringComparer.OrdinalIgnoreCase);
@@ -979,6 +980,14 @@ namespace Kroira.App.ViewModels
         private static string GetRawCategory(string categoryName)
         {
             return string.IsNullOrWhiteSpace(categoryName) ? "Uncategorized" : categoryName.Trim();
+        }
+
+        private static string GetSurfacedCategoryName(Series series)
+        {
+            return ContentClassifier.ResolveSurfacedSeriesCategory(
+                series.CategoryName,
+                series.RawSourceCategoryName,
+                series.Title);
         }
 
         private void StartMetadataEnrichment()

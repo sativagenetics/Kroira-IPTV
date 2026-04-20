@@ -63,12 +63,30 @@ namespace Kroira.App.ViewModels
         [NotifyPropertyChangedFor(nameof(HasBackupStatus))]
         private string _backupStatusText = "Export or restore a versioned local package for sources, profiles, favorites, watch state, and local preferences.";
 
+        [ObservableProperty]
+        private string _resourceStatusText = "External links open in your default browser or mail app when configured.";
+
         public bool IsBackupIdle => !IsBackupBusy;
         public bool CanUseBackupRestore => _entitlementService.IsFeatureEnabled(EntitlementFeatureKeys.LibraryBackupRestore);
         public bool CanUseThemePresets => _entitlementService.IsFeatureEnabled(EntitlementFeatureKeys.AppearanceThemes);
         public bool CanUseAccentPacks => _entitlementService.IsFeatureEnabled(EntitlementFeatureKeys.AppearanceAccentPacks);
         public bool CanStartBackupAction => CanUseBackupRestore && !IsBackupBusy;
         public bool HasBackupStatus => !string.IsNullOrWhiteSpace(BackupStatusText);
+        public string AppName => AppSubmissionInfo.AppName;
+        public string ProductDescription => AppSubmissionInfo.ProductDescription;
+        public string HelpStepOne => AppSubmissionInfo.HelpStepOne;
+        public string HelpStepTwo => AppSubmissionInfo.HelpStepTwo;
+        public string HelpStepThree => AppSubmissionInfo.HelpStepThree;
+        public string HelpStepFour => AppSubmissionInfo.HelpStepFour;
+        public string PrivacySummaryText => AppSubmissionInfo.PrivacySummary;
+        public string PrivacyPolicyDisplayText => AppSubmissionInfo.PrivacyPolicyDisplayText;
+        public bool CanOpenPrivacyPolicy => AppSubmissionInfo.HasPrivacyPolicyUrl;
+        public string SupportPageDisplayText => AppSubmissionInfo.SupportPageDisplayText;
+        public bool CanOpenSupportPage => AppSubmissionInfo.HasSupportPageUrl;
+        public string SupportEmailText => AppSubmissionInfo.SupportEmailDisplayText;
+        public bool CanEmailSupport => AppSubmissionInfo.HasSupportEmail;
+        public string SupportSummaryText => AppSubmissionInfo.SupportSummary;
+        public string LegalDisclaimerText => AppSubmissionInfo.LegalDisclaimer;
 
         partial void OnSelectedLanguageChanged(LanguageOptionViewModel value)
         {
@@ -288,19 +306,21 @@ namespace Kroira.App.ViewModels
             }
         }
 
-        public string AppVersion
+        public string AppVersionBuildText
         {
             get
             {
                 try
                 {
                     var version = Package.Current.Id.Version;
-                    return $"{version.Major}.{version.Minor}.{version.Build}.{version.Revision}";
+                    return $"{version.Major}.{version.Minor}.{version.Build} (Build {version.Revision})";
                 }
                 catch
                 {
                     var ver = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
-                    return ver != null ? $"{ver.Major}.{ver.Minor}.{ver.Build}.{ver.Revision} (Unpackaged)" : "1.0.0.0";
+                    return ver != null
+                        ? $"{ver.Major}.{ver.Minor}.{ver.Build} (Build {ver.Revision}, unpackaged)"
+                        : "1.0.0 (Build 0)";
                 }
             }
         }
@@ -308,18 +328,54 @@ namespace Kroira.App.ViewModels
         [RelayCommand]
         public async Task OpenPrivacyPolicyAsync()
         {
-            await Windows.System.Launcher.LaunchUriAsync(new Uri("https://sativagenetics.github.io/KroiraIPTV/privacy.html"));
+            await OpenExternalUriAsync(
+                AppSubmissionInfo.TryCreatePrivacyPolicyUri(out var uri) ? uri : null,
+                "Privacy policy URL is not configured.",
+                "Unable to open the privacy policy link on this device.");
         }
 
         [RelayCommand]
         public async Task OpenSupportAsync()
         {
-            await Windows.System.Launcher.LaunchUriAsync(new Uri("https://sativagenetics.github.io/KroiraIPTV/support.html"));
+            await OpenExternalUriAsync(
+                AppSubmissionInfo.TryCreateSupportPageUri(out var uri) ? uri : null,
+                "Support page URL is not configured.",
+                "Unable to open the support link on this device.");
+        }
+
+        [RelayCommand]
+        public async Task OpenSupportEmailAsync()
+        {
+            await OpenExternalUriAsync(
+                AppSubmissionInfo.TryCreateSupportEmailUri(out var uri) ? uri : null,
+                "Support email is not configured.",
+                "Unable to open the support email action on this device.");
         }
 
         private void LogBackup(string message)
         {
             BackupRuntimeLogger.Log("SETTINGS EXPORT", message);
+        }
+
+        private async Task OpenExternalUriAsync(Uri? uri, string missingMessage, string failureMessage)
+        {
+            if (uri == null)
+            {
+                ResourceStatusText = missingMessage;
+                return;
+            }
+
+            try
+            {
+                var launched = await Windows.System.Launcher.LaunchUriAsync(uri);
+                ResourceStatusText = launched
+                    ? "External links open in your default browser or mail app when configured."
+                    : failureMessage;
+            }
+            catch
+            {
+                ResourceStatusText = failureMessage;
+            }
         }
 
         private void TryDeleteEmptyBackupFile(string filePath)

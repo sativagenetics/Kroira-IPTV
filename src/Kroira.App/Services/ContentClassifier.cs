@@ -457,6 +457,50 @@ namespace Kroira.App.Services
             return !IsProviderCategoryRow(title, categoryLabels);
         }
 
+        public static string ResolveSurfacedSeriesCategory(string categoryName, string rawSourceCategoryName, string title)
+        {
+            var normalizedCategory = string.IsNullOrWhiteSpace(categoryName)
+                ? "Series"
+                : categoryName.Trim();
+
+            return ShouldUseGenericSeriesCategory(rawSourceCategoryName, title)
+                ? "Series"
+                : normalizedCategory;
+        }
+
+        public static bool ShouldUseGenericSeriesCategory(string rawSourceCategoryName, string title)
+        {
+            if (string.IsNullOrWhiteSpace(rawSourceCategoryName))
+            {
+                return false;
+            }
+
+            return IsM3uBucketOrAdultLabel(rawSourceCategoryName) &&
+                   !ContainsUnsafeKidsMarker(title);
+        }
+
+        public static bool ContainsUnsafeKidsMarker(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return false;
+            }
+
+            var lower = value.Trim().ToLowerInvariant();
+            return lower.Contains("adult", StringComparison.Ordinal) ||
+                   lower.Contains("xxx", StringComparison.Ordinal) ||
+                   lower.Contains("18+", StringComparison.Ordinal) ||
+                   lower.Contains("18 plus", StringComparison.Ordinal) ||
+                   lower.Contains("18plus", StringComparison.Ordinal) ||
+                   lower.Contains("erotic", StringComparison.Ordinal) ||
+                   lower.Contains("porn", StringComparison.Ordinal) ||
+                   lower.Contains("softcore", StringComparison.Ordinal) ||
+                   lower.Contains("hardcore", StringComparison.Ordinal) ||
+                   lower.Contains("teaser", StringComparison.Ordinal) ||
+                   lower.Contains("preview", StringComparison.Ordinal) ||
+                   lower.Contains("clip", StringComparison.Ordinal);
+        }
+
         public static bool IsGarbageCategoryName(string categoryName)
         {
             if (string.IsNullOrWhiteSpace(categoryName)) return false;

@@ -9,6 +9,14 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Kroira.App.Services.Parsing
 {
+    public sealed class EpgUnavailableException : Exception
+    {
+        public EpgUnavailableException(string message)
+            : base(message)
+        {
+        }
+    }
+
     public sealed class EpgDiscoveryResult
     {
         public EpgDiscoveryResult(string xmlContent, string description)
@@ -51,8 +59,7 @@ namespace Kroira.App.Services.Parsing
 
             if (headerMetadata.XmltvUrls.Count == 0)
             {
-                throw new Exception(
-                    $"No XMLTV EPG URL was configured or found in the M3U playlist metadata. header_preview={headerMetadata.RawHeaderPreview}; header_attributes={DescribeHeaderAttributes(headerMetadata)}");
+                throw new EpgUnavailableException("Playlist does not advertise an XMLTV guide URL");
             }
 
             Exception lastFailure = null;

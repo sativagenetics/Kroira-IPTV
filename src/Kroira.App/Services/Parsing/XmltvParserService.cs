@@ -41,6 +41,10 @@ namespace Kroira.App.Services.Parsing
                 var discovered = await discoveryService.DiscoverAsync(db, sourceProfileId);
                 await ParseAndPersistXmltvAsync(db, sourceProfileId, discovered);
             }
+            catch (EpgUnavailableException ex)
+            {
+                await MarkEpgUnavailableAsync(db, sourceProfileId, ex.Message);
+            }
             catch (Exception ex)
             {
                 await MarkEpgFailureAsync(db, sourceProfileId, ex);
@@ -199,6 +203,50 @@ namespace Kroira.App.Services.Parsing
             }
 
             try { await db.SaveChangesAsync(); } catch { }
+        }
+
+        private static async Task MarkEpgUnavailableAsync(AppDbContext db, int sourceProfileId, string reason)
+        {
+            var unavailableAt = DateTime.UtcNow;
+            var shortReason = reason.Length > 200 ? reason.Substring(0, 200) : reason;
+
+            var epgLog = await db.EpgSyncLogs.FirstOrDefaultAsync(e => e.SourceProfileId == sourceProfileId);
+            if (epgLog == null)
+            {
+                epgLog = new EpgSyncLog { SourceProfileId = sourceProfileId };
+                db.EpgSyncLogs.Add(epgLog);
+            }
+            epgLog.SyncedAtUtc = unavailableAt;
+            epgLog.IsSuccess = false;
+            epgLog.MatchedChannelCount = 0;
+            epgLog.ProgrammeCount = 0;
+            epgLog.FailureReason = shortReason;
+
+            var syncState = await db.SourceSyncStates.FirstOrDefaultAsync(s => s.SourceProfileId == sourceProfileId);
+            if (syncState != null)
+            {
+                syncState.LastAttempt = unavailableAt;
+                syncState.HttpStatusCode = 200;
+                syncState.ErrorLog = MergeGuideUnavailableSummary(syncState.ErrorLog, shortReason);
+            }
+
+            try { await db.SaveChangesAsync(); } catch { }
+        }
+
+        private static string MergeGuideUnavailableSummary(string existingSummary, string reason)
+        {
+            var unavailableSummary = $"EPG unavailable: {reason}";
+            if (string.IsNullOrWhiteSpace(existingSummary))
+            {
+                return unavailableSummary;
+            }
+
+            if (existingSummary.Contains("Parsed ", StringComparison.OrdinalIgnoreCase))
+            {
+                return $"{existingSummary} | {unavailableSummary}";
+            }
+
+            return unavailableSummary;
         }
 
         private static DateTime? ParseXmltvDate(string dateStr)

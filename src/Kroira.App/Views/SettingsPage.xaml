@@ -200,8 +200,8 @@
                     <Border Style="{StaticResource KroiraSettingsGroupStyle}">
                         <StackPanel Spacing="16">
                             <StackPanel Spacing="3">
-                                <TextBlock Text="Product" Style="{StaticResource KroiraSectionTitleStyle}" />
-                                <TextBlock Text="Installed build and official resources."
+                                <TextBlock Text="About" Style="{StaticResource KroiraSectionTitleStyle}" />
+                                <TextBlock Text="Installed build and product summary."
                                            Style="{StaticResource KroiraBodyStyle}" />
                             </StackPanel>
 
@@ -213,16 +213,37 @@
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
                                 <StackPanel Spacing="4">
-                                    <TextBlock Text="Version" Style="{StaticResource KroiraTitleStyle}" />
-                                    <TextBlock Text="Installed package" Style="{StaticResource KroiraBodyStyle}" />
+                                    <TextBlock Text="App" Style="{StaticResource KroiraTitleStyle}" />
+                                    <TextBlock Text="Name" Style="{StaticResource KroiraBodyStyle}" />
                                 </StackPanel>
                                 <TextBlock Grid.Column="1"
-                                           Text="{x:Bind ViewModel.AppVersion, Mode=OneTime}"
+                                           Text="{x:Bind ViewModel.AppName, Mode=OneWay}"
                                            Foreground="{StaticResource KroiraTextPrimaryBrush}"
                                            FontSize="13"
                                            FontWeight="SemiBold"
                                            VerticalAlignment="Center" />
                             </Grid>
+
+                            <Grid ColumnSpacing="14">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="Version / build" Style="{StaticResource KroiraTitleStyle}" />
+                                    <TextBlock Text="Installed package" Style="{StaticResource KroiraBodyStyle}" />
+                                </StackPanel>
+                                <TextBlock Grid.Column="1"
+                                           Text="{x:Bind ViewModel.AppVersionBuildText, Mode=OneTime}"
+                                           Foreground="{StaticResource KroiraTextPrimaryBrush}"
+                                           FontSize="13"
+                                           FontWeight="SemiBold"
+                                           VerticalAlignment="Center" />
+                            </Grid>
+
+                            <TextBlock Text="{x:Bind ViewModel.ProductDescription, Mode=OneWay}"
+                                       Style="{StaticResource KroiraBodyStyle}"
+                                       TextWrapping="Wrap" />
                         </StackPanel>
                     </Border>
 
@@ -276,8 +297,38 @@
                     <Border Style="{StaticResource KroiraSettingsGroupStyle}">
                         <StackPanel Spacing="14">
                             <StackPanel Spacing="3">
-                                <TextBlock Text="Links" Style="{StaticResource KroiraSectionTitleStyle}" />
-                                <TextBlock Text="Open policy and support resources." Style="{StaticResource KroiraBodyStyle}" />
+                                <TextBlock Text="Help" Style="{StaticResource KroiraSectionTitleStyle}" />
+                                <TextBlock Text="Quick start for first-time use."
+                                           Style="{StaticResource KroiraBodyStyle}"
+                                           TextWrapping="Wrap" />
+                            </StackPanel>
+
+                            <Border Height="1" Background="{StaticResource KroiraBorderBrush}" Opacity="0.45" />
+
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="{x:Bind ViewModel.HelpStepOne, Mode=OneWay}"
+                                           Style="{StaticResource KroiraBodyStyle}"
+                                           TextWrapping="Wrap" />
+                                <TextBlock Text="{x:Bind ViewModel.HelpStepTwo, Mode=OneWay}"
+                                           Style="{StaticResource KroiraBodyStyle}"
+                                           TextWrapping="Wrap" />
+                                <TextBlock Text="{x:Bind ViewModel.HelpStepThree, Mode=OneWay}"
+                                           Style="{StaticResource KroiraBodyStyle}"
+                                           TextWrapping="Wrap" />
+                                <TextBlock Text="{x:Bind ViewModel.HelpStepFour, Mode=OneWay}"
+                                           Style="{StaticResource KroiraBodyStyle}"
+                                           TextWrapping="Wrap" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Style="{StaticResource KroiraSettingsGroupStyle}">
+                        <StackPanel Spacing="14">
+                            <StackPanel Spacing="3">
+                                <TextBlock Text="Privacy &amp; Support" Style="{StaticResource KroiraSectionTitleStyle}" />
+                                <TextBlock Text="Store-readiness information and external resources."
+                                           Style="{StaticResource KroiraBodyStyle}"
+                                           TextWrapping="Wrap" />
                             </StackPanel>
 
                             <Border Height="1" Background="{StaticResource KroiraBorderBrush}" Opacity="0.45" />
@@ -289,11 +340,38 @@
                                 </Grid.ColumnDefinitions>
                                 <StackPanel Spacing="4">
                                     <TextBlock Text="Privacy policy" Style="{StaticResource KroiraTitleStyle}" />
-                                    <TextBlock Text="View data and privacy information." Style="{StaticResource KroiraBodyStyle}" />
+                                    <TextBlock Text="{x:Bind ViewModel.PrivacyPolicyDisplayText, Mode=OneWay}"
+                                               Style="{StaticResource KroiraBodyStyle}"
+                                               TextWrapping="Wrap" />
                                 </StackPanel>
                                 <HyperlinkButton Grid.Column="1"
                                                  Content="Open"
                                                  Command="{x:Bind ViewModel.OpenPrivacyPolicyCommand}"
+                                                 IsEnabled="{x:Bind ViewModel.CanOpenPrivacyPolicy, Mode=OneWay}"
+                                                 Foreground="{StaticResource KroiraAccentBrush}"
+                                                 Padding="0"
+                                                 VerticalAlignment="Center" />
+                            </Grid>
+
+                            <TextBlock Text="{x:Bind ViewModel.PrivacySummaryText, Mode=OneWay}"
+                                       Style="{StaticResource KroiraBodyStyle}"
+                                       TextWrapping="Wrap" />
+
+                            <Grid ColumnSpacing="14">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="Support page" Style="{StaticResource KroiraTitleStyle}" />
+                                    <TextBlock Text="{x:Bind ViewModel.SupportPageDisplayText, Mode=OneWay}"
+                                               Style="{StaticResource KroiraBodyStyle}"
+                                               TextWrapping="Wrap" />
+                                </StackPanel>
+                                <HyperlinkButton Grid.Column="1"
+                                                 Content="Open"
+                                                 Command="{x:Bind ViewModel.OpenSupportCommand}"
+                                                 IsEnabled="{x:Bind ViewModel.CanOpenSupportPage, Mode=OneWay}"
                                                  Foreground="{StaticResource KroiraAccentBrush}"
                                                  Padding="0"
                                                  VerticalAlignment="Center" />
@@ -305,16 +383,43 @@
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
                                 <StackPanel Spacing="4">
-                                    <TextBlock Text="Support" Style="{StaticResource KroiraTitleStyle}" />
-                                    <TextBlock Text="Open help and feedback resources." Style="{StaticResource KroiraBodyStyle}" />
+                                    <TextBlock Text="Support email" Style="{StaticResource KroiraTitleStyle}" />
+                                    <TextBlock Text="{x:Bind ViewModel.SupportEmailText, Mode=OneWay}"
+                                               Style="{StaticResource KroiraBodyStyle}"
+                                               TextWrapping="Wrap" />
                                 </StackPanel>
                                 <HyperlinkButton Grid.Column="1"
-                                                 Content="Open"
-                                                 Command="{x:Bind ViewModel.OpenSupportCommand}"
+                                                 Content="Email"
+                                                 Command="{x:Bind ViewModel.OpenSupportEmailCommand}"
+                                                 IsEnabled="{x:Bind ViewModel.CanEmailSupport, Mode=OneWay}"
                                                  Foreground="{StaticResource KroiraAccentBrush}"
                                                  Padding="0"
                                                  VerticalAlignment="Center" />
                             </Grid>
+
+                            <TextBlock Text="{x:Bind ViewModel.SupportSummaryText, Mode=OneWay}"
+                                       Style="{StaticResource KroiraBodyStyle}"
+                                       TextWrapping="Wrap" />
+
+                            <TextBlock Text="{x:Bind ViewModel.ResourceStatusText, Mode=OneWay}"
+                                       Style="{StaticResource KroiraBodyStyle}"
+                                       TextWrapping="Wrap" />
+                        </StackPanel>
+                    </Border>
+
+                    <Border Style="{StaticResource KroiraSettingsGroupStyle}">
+                        <StackPanel Spacing="12">
+                            <StackPanel Spacing="3">
+                                <TextBlock Text="Disclaimer" Style="{StaticResource KroiraSectionTitleStyle}" />
+                                <TextBlock Text="Content and source responsibility."
+                                           Style="{StaticResource KroiraBodyStyle}" />
+                            </StackPanel>
+
+                            <Border Height="1" Background="{StaticResource KroiraBorderBrush}" Opacity="0.45" />
+
+                            <TextBlock Text="{x:Bind ViewModel.LegalDisclaimerText, Mode=OneWay}"
+                                       Style="{StaticResource KroiraBodyStyle}"
+                                       TextWrapping="Wrap" />
                         </StackPanel>
                     </Border>
 

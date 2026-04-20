@@ -848,6 +848,11 @@ namespace Kroira.App.Services
 
         private static string BuildMetadataLine(Series series)
         {
+            var surfacedCategoryName = ContentClassifier.ResolveSurfacedSeriesCategory(
+                series.CategoryName,
+                series.RawSourceCategoryName,
+                series.Title);
+
             var parts = new List<string>();
             if (series.FirstAirDate.HasValue)
             {
@@ -858,9 +863,9 @@ namespace Kroira.App.Services
             {
                 parts.Add(series.Genres);
             }
-            else if (!string.IsNullOrWhiteSpace(series.CategoryName))
+            else if (!string.IsNullOrWhiteSpace(surfacedCategoryName))
             {
-                parts.Add(series.CategoryName);
+                parts.Add(surfacedCategoryName);
             }
 
             if (!string.IsNullOrWhiteSpace(series.OriginalLanguage))
@@ -901,7 +906,12 @@ namespace Kroira.App.Services
         private static bool IsFeaturedSafe(CatalogSeriesGroup group)
         {
             var preferred = group.PreferredSeries;
-            return ContentClassifier.IsFeaturedSafeSeries(group.Variants[0].SourceProfile.Type, preferred.Title, preferred.CategoryName) &&
+            var surfacedCategoryName = ContentClassifier.ResolveSurfacedSeriesCategory(
+                preferred.CategoryName,
+                preferred.RawSourceCategoryName,
+                preferred.Title);
+
+            return ContentClassifier.IsFeaturedSafeSeries(group.Variants[0].SourceProfile.Type, preferred.Title, surfacedCategoryName) &&
                    GetArtworkScore(preferred) >= 2;
         }
 

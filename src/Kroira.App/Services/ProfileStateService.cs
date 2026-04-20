@@ -26,11 +26,6 @@ namespace Kroira.App.Services
 
     public sealed class ProfileAccessSnapshot
     {
-        private static readonly string[] UnsafeKidsMarkers =
-        {
-            "adult", "xxx", "18+", "18 plus", "18plus", "erotic", "porn", "teaser", "preview", "clip"
-        };
-
         public int ProfileId { get; init; }
         public string ProfileName { get; init; } = string.Empty;
         public bool IsKidsSafeMode { get; init; }
@@ -69,12 +64,17 @@ namespace Kroira.App.Services
 
         public bool IsSeriesAllowed(Series series)
         {
-            if (!IsSourceAllowed(series.SourceProfileId) || !IsCategoryAllowed(ProfileDomains.Series, series.CategoryName))
+            var effectiveCategoryName = ContentClassifier.ResolveSurfacedSeriesCategory(
+                series.CategoryName,
+                series.RawSourceCategoryName,
+                series.Title);
+
+            if (!IsSourceAllowed(series.SourceProfileId) || !IsCategoryAllowed(ProfileDomains.Series, effectiveCategoryName))
             {
                 return false;
             }
 
-            return !IsKidsSafeMode || IsKidsSafeMedia(series.Title, series.CategoryName, series.ContentKind);
+            return !IsKidsSafeMode || IsKidsSafeMedia(series.Title, effectiveCategoryName, series.ContentKind);
         }
 
         public bool IsLiveChannelAllowed(Channel channel, ChannelCategory category)
@@ -104,13 +104,7 @@ namespace Kroira.App.Services
 
         private static bool ContainsUnsafeKidsMarker(string value)
         {
-            if (string.IsNullOrWhiteSpace(value))
-            {
-                return false;
-            }
-
-            var lower = value.Trim().ToLowerInvariant();
-            return UnsafeKidsMarkers.Any(marker => lower.Contains(marker, StringComparison.Ordinal));
+            return ContentClassifier.ContainsUnsafeKidsMarker(value);
         }
     }
 

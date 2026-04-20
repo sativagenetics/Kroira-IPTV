@@ -144,6 +144,7 @@ namespace Kroira.App.ViewModels
         private readonly IServiceProvider _serviceProvider;
         private readonly IEntitlementService _entitlementService;
         private static readonly int _sessionRotationIndex = Math.Abs(Environment.TickCount % 5);
+        private HomeSummarySnapshot? _latestSummary;
 
         public ObservableCollection<HomeSummaryItem> SummaryItems { get; } = new();
         public ObservableCollection<HomeActionItem> QuickActions { get; } = new();
@@ -305,6 +306,7 @@ namespace Kroira.App.ViewModels
             RecentlyAddedItems.Clear();
             TopRatedItems.Clear();
 
+            _latestSummary = null;
             FeaturedItem = BuildFallbackFeaturedItem();
             ContinueItemsVisibility = Visibility.Collapsed;
             ContinueEmptyVisibility = Visibility.Visible;
@@ -322,22 +324,19 @@ namespace Kroira.App.ViewModels
 
         private async Task<HomeSummarySnapshot> LoadSummaryAsync(AppDbContext db, ProfileAccessSnapshot access)
         {
-            var channelCategories = await db.ChannelCategories.AsNoTracking().ToListAsync();
-            var categoryById = channelCategories.ToDictionary(category => category.Id);
-            var channelsCount = (await db.Channels.AsNoTracking().ToListAsync())
-                .Count(channel => categoryById.TryGetValue(channel.ChannelCategoryId, out var category) &&
-                                  access.IsLiveChannelAllowed(channel, category));
-            var moviesCount = (await db.Movies.AsNoTracking().ToListAsync()).Count(access.IsMovieAllowed);
-            var seriesCount = (await db.Series.AsNoTracking().ToListAsync()).Count(access.IsSeriesAllowed);
+            var catalogSurfaceCountService = _serviceProvider.GetRequiredService<ICatalogSurfaceCountService>();
+            var catalogCounts = await catalogSurfaceCountService.BuildAsync(db, access);
             var favoritesCount = await db.Favorites.CountAsync(favorite => favorite.ProfileId == access.ProfileId);
             var sourcesCount = await db.SourceProfiles.CountAsync();
             var sourceIssuesCount = await db.SourceSyncStates.CountAsync(s => s.ErrorLog != string.Empty || s.HttpStatusCode >= 400);
 
+            LogCatalogCounts(catalogCounts, access);
+
             return new HomeSummarySnapshot
             {
-                ChannelsCount = channelsCount,
-                MoviesCount = moviesCount,
-                SeriesCount = seriesCount,
+                ChannelsCount = catalogCounts.Live.SurfacedCount,
+                MoviesCount = catalogCounts.Movies.SurfacedCount,
+                SeriesCount = catalogCounts.Series.SurfacedCount,
                 FavoritesCount = favoritesCount,
                 SourcesCount = sourcesCount,
                 SourceIssuesCount = sourceIssuesCount
@@ -346,10 +345,11 @@ namespace Kroira.App.ViewModels
 
         private void ApplySummary(HomeSummarySnapshot summary)
         {
+            _latestSummary = summary;
             SummaryItems.Clear();
             SummaryItems.Add(new HomeSummaryItem { Label = "Channels", Value = summary.ChannelsCount.ToString("N0"), Detail = "Live entries", Glyph = "\uE714" });
-            SummaryItems.Add(new HomeSummaryItem { Label = "Movies", Value = summary.MoviesCount.ToString("N0"), Detail = "VOD titles", Glyph = "\uE8B2" });
-            SummaryItems.Add(new HomeSummaryItem { Label = "Series", Value = summary.SeriesCount.ToString("N0"), Detail = "Shows imported", Glyph = "\uE8A9" });
+            SummaryItems.Add(new HomeSummaryItem { Label = "Movies", Value = summary.MoviesCount.ToString("N0"), Detail = "Browsable titles", Glyph = "\uE8B2" });
+            SummaryItems.Add(new HomeSummaryItem { Label = "Series", Value = summary.SeriesCount.ToString("N0"), Detail = "Browsable shows", Glyph = "\uE8A9" });
             SummaryItems.Add(new HomeSummaryItem { Label = "Favorites", Value = summary.FavoritesCount.ToString("N0"), Detail = "Saved items", Glyph = "\uE734" });
 
             var totalItems = summary.ChannelsCount + summary.MoviesCount + summary.SeriesCount;
@@ -475,7 +475,7 @@ namespace Kroira.App.ViewModels
         private void ApplyRecommendationSnapshot(HomeRecommendationSnapshot snapshot)
         {
             FeaturedItem = snapshot.Featured == null
-                ? BuildFallbackFeaturedItem()
+                ? BuildFallbackFeaturedItem(_latestSummary)
                 : new HomeFeaturedItem
                 {
                     ContentId = snapshot.Featured.ContentId,
@@ -675,8 +675,33 @@ namespace Kroira.App.ViewModels
             }
         }
 
-        private static HomeFeaturedItem BuildFallbackFeaturedItem()
+        private static HomeFeaturedItem BuildFallbackFeaturedItem(HomeSummarySnapshot? summary = null)
         {
+            var hasLibraryContent = summary != null && GetLibraryItemCount(summary) > 0;
+            if (hasLibraryContent)
+            {
+                var target = summary!.MoviesCount > 0
+                    ? "Movies"
+                    : summary.SeriesCount > 0
+                        ? "Series"
+                        : "Channels";
+                var actionLabel = target switch
+                {
+                    "Movies" => "Browse movies",
+                    "Series" => "Browse series",
+                    _ => "Open live TV"
+                };
+
+                return new HomeFeaturedItem
+                {
+                    Title = "Kroira",
+                    Detail = "Library ready",
+                    Overview = "Your library is imported and ready to browse, even when featured artwork is limited.",
+                    PrimaryActionLabel = actionLabel,
+                    Target = target
+                };
+            }
+
             return new HomeFeaturedItem
             {
                 Title = "Kroira",
@@ -685,6 +710,68 @@ namespace Kroira.App.ViewModels
                 PrimaryActionLabel = "Add source",
                 Target = "Sources"
             };
+        }
+
+        private void LogCatalogCounts(CatalogSurfaceCountSummary summary, ProfileAccessSnapshot access)
+        {
+            CatalogCountDiagnosticsLogger.Log(
+                "home_summary",
+                "live",
+                "all",
+                summary.Live.ParserCount,
+                summary.Live.PersistedCount,
+                summary.Live.QueriedCount,
+                summary.Live.SurfacedCount,
+                $"profile_id={access.ProfileId}; kids_safe={access.IsKidsSafeMode}");
+            CatalogCountDiagnosticsLogger.Log(
+                "home_summary",
+                "movie",
+                "all",
+                summary.Movies.ParserCount,
+                summary.Movies.PersistedCount,
+                summary.Movies.QueriedCount,
+                summary.Movies.SurfacedCount,
+                $"profile_id={access.ProfileId}; kids_safe={access.IsKidsSafeMode}");
+            CatalogCountDiagnosticsLogger.Log(
+                "home_summary",
+                "series",
+                "all",
+                summary.Series.ParserCount,
+                summary.Series.PersistedCount,
+                summary.Series.QueriedCount,
+                summary.Series.SurfacedCount,
+                $"profile_id={access.ProfileId}; kids_safe={access.IsKidsSafeMode}");
+
+            foreach (var source in summary.Sources.Values.OrderBy(item => item.SourceProfileId))
+            {
+                CatalogCountDiagnosticsLogger.Log(
+                    "home_summary",
+                    "live",
+                    source.SourceProfileId.ToString(),
+                    source.Live.ParserCount,
+                    source.Live.PersistedCount,
+                    source.Live.QueriedCount,
+                    source.Live.SurfacedCount,
+                    $"profile_id={access.ProfileId}; kids_safe={access.IsKidsSafeMode}");
+                CatalogCountDiagnosticsLogger.Log(
+                    "home_summary",
+                    "movie",
+                    source.SourceProfileId.ToString(),
+                    source.Movies.ParserCount,
+                    source.Movies.PersistedCount,
+                    source.Movies.QueriedCount,
+                    source.Movies.SurfacedCount,
+                    $"profile_id={access.ProfileId}; kids_safe={access.IsKidsSafeMode}");
+                CatalogCountDiagnosticsLogger.Log(
+                    "home_summary",
+                    "series",
+                    source.SourceProfileId.ToString(),
+                    source.Series.ParserCount,
+                    source.Series.PersistedCount,
+                    source.Series.QueriedCount,
+                    source.Series.SurfacedCount,
+                    $"profile_id={access.ProfileId}; kids_safe={access.IsKidsSafeMode}");
+            }
         }
 
         private async Task LoadContinueItemsAsync(AppDbContext db, ProfileAccessSnapshot access)

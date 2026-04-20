@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Kroira.App.Services;
 
 namespace Kroira.App.Models
 {
@@ -54,10 +55,15 @@ namespace Kroira.App.Models
         {
             get
             {
+                var surfacedCategoryName = ContentClassifier.ResolveSurfacedSeriesCategory(
+                    CategoryName,
+                    RawSourceCategoryName,
+                    Title);
+
                 var parts = new[]
                 {
                     DisplayYear,
-                    string.IsNullOrWhiteSpace(Genres) ? CategoryName : Genres,
+                    string.IsNullOrWhiteSpace(Genres) ? surfacedCategoryName : Genres,
                     string.IsNullOrWhiteSpace(OriginalLanguage) ? string.Empty : OriginalLanguage.ToUpperInvariant()
                 };
 

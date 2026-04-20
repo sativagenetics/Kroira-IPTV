@@ -164,8 +164,9 @@ namespace Kroira.App.Services
                 var hasPersistedGuideData = matchedCount > 0 || (epgLog?.ProgrammeCount ?? 0) > 0;
                 var hasAnyCatalog = liveCount + movieCount + seriesCount > 0;
 
-                var importFailure = DetectImportFailure(syncState);
-                var epgFailure = epgLog is { IsSuccess: false };
+                var guideUnavailable = IsGuideUnavailable(syncState, epgLog);
+                var importFailure = DetectImportFailure(syncState, guideUnavailable);
+                var epgFailure = epgLog is { IsSuccess: false } && !guideUnavailable;
 
                 var importWarnings = BuildImportWarnings(
                     type,
@@ -180,6 +181,7 @@ namespace Kroira.App.Services
                     unmatchedCount,
                     hasEpgUrl,
                     hasPersistedGuideData,
+                    guideUnavailable,
                     epgLog);
 
                 var warnings = importWarnings
@@ -200,6 +202,7 @@ namespace Kroira.App.Services
                 var primaryReason = BuildPrimaryReason(
                     healthLabel,
                     importFailure,
+                    guideUnavailable,
                     epgFailure,
                     warnings,
                     syncState,
@@ -230,11 +233,11 @@ namespace Kroira.App.Services
                     guideWarnings.Count,
                     healthLabel,
                     status,
-                    BuildImportResultText(syncState, profile?.LastSync, liveCount, movieCount, seriesCount, hasAnyCatalog),
-                    BuildEpgCoverageText(hasEpgUrl, liveCount, matchedCount, unmatchedCount, epgLog),
+                    BuildImportResultText(syncState, profile?.LastSync, liveCount, movieCount, seriesCount, hasAnyCatalog, guideUnavailable),
+                    BuildEpgCoverageText(hasEpgUrl, liveCount, matchedCount, unmatchedCount, guideUnavailable, epgLog),
                     BuildWarningSummary(importWarnings.Count, guideWarnings.Count, warnings),
-                    BuildFailureSummary(syncState, epgLog),
-                    BuildLastSuccessfulSyncText(profile?.LastSync, epgLog, hasEpgUrl),
+                    BuildFailureSummary(syncState, epgLog, guideUnavailable),
+                    BuildLastSuccessfulSyncText(profile?.LastSync, epgLog, hasEpgUrl, guideUnavailable),
                     FormatTimestamp(profile?.LastSync),
                     epgLog != null && epgLog.IsSuccess ? FormatTimestamp(epgLog.SyncedAtUtc) : string.Empty,
                     epgLog?.IsSuccess ?? false);
@@ -243,9 +246,9 @@ namespace Kroira.App.Services
             return snapshots;
         }
 
-        private static bool DetectImportFailure(SourceSyncState? syncState)
+        private static bool DetectImportFailure(SourceSyncState? syncState, bool guideUnavailable)
         {
-            if (syncState == null || syncState.HttpStatusCode < 400)
+            if (syncState == null || syncState.HttpStatusCode < 400 || guideUnavailable)
             {
                 return false;
             }
@@ -298,9 +301,15 @@ namespace Kroira.App.Services
             int unmatchedCount,
             bool hasEpgUrl,
             bool hasPersistedGuideData,
+            bool guideUnavailable,
             EpgSyncLog? epgLog)
         {
             var warnings = new List<string>();
+
+            if (guideUnavailable && liveCount > 0)
+            {
+                warnings.Add("Playlist does not advertise an XMLTV guide URL");
+            }
 
             if (hasEpgUrl && liveCount > 0)
             {
@@ -390,8 +399,14 @@ namespace Kroira.App.Services
             int liveCount,
             int movieCount,
             int seriesCount,
-            bool hasAnyCatalog)
+            bool hasAnyCatalog,
+            bool guideUnavailable)
         {
+            if (guideUnavailable && lastImportSuccessUtc.HasValue && hasAnyCatalog)
+            {
+                return $"Success - {liveCount} live, {movieCount} movies, {seriesCount} series";
+            }
+
             if (syncState != null)
             {
                 if (syncState.HttpStatusCode >= 400)
@@ -427,6 +442,7 @@ namespace Kroira.App.Services
             int liveCount,
             int matchedCount,
             int unmatchedCount,
+            bool guideUnavailable,
             EpgSyncLog? epgLog)
         {
             if (liveCount == 0)
@@ -434,9 +450,14 @@ namespace Kroira.App.Services
                 return "No live channels available";
             }
 
+            if (guideUnavailable)
+            {
+                return "Playlist does not advertise an XMLTV guide URL";
+            }
+
             if (!hasEpgUrl && epgLog == null)
             {
-                return "No EPG configured";
+                return "Guide unavailable unless your provider supplies an XMLTV URL";
             }
 
             var coverage = liveCount == 0
@@ -476,6 +497,7 @@ namespace Kroira.App.Services
         private static string BuildPrimaryReason(
             string healthLabel,
             bool importFailure,
+            bool guideUnavailable,
             bool epgFailure,
             IReadOnlyList<string> warnings,
             SourceSyncState? syncState,
@@ -492,6 +514,11 @@ namespace Kroira.App.Services
                     ? $"Import failed with HTTP {syncState.HttpStatusCode}"
                     : "Latest import attempt failed";
                 return $"{httpSummary}: {TrimSummary(syncState?.ErrorLog ?? string.Empty, 72)}";
+            }
+
+            if (guideUnavailable)
+            {
+                return "Guide unavailable unless your provider supplies an XMLTV URL";
             }
 
             if (!hasAnyCatalog)
@@ -526,11 +553,11 @@ namespace Kroira.App.Services
             };
         }
 
-        private static string BuildFailureSummary(SourceSyncState? syncState, EpgSyncLog? epgLog)
+        private static string BuildFailureSummary(SourceSyncState? syncState, EpgSyncLog? epgLog, bool guideUnavailable)
         {
             var failures = new List<(DateTime TimestampUtc, string Summary)>();
 
-            if (syncState != null && syncState.HttpStatusCode >= 400)
+            if (!guideUnavailable && syncState != null && syncState.HttpStatusCode >= 400)
             {
                 var httpSummary = syncState.HttpStatusCode > 0
                     ? $"HTTP {syncState.HttpStatusCode}"
@@ -540,7 +567,9 @@ namespace Kroira.App.Services
                     $"{httpSummary} - {TrimSummary(syncState.ErrorLog, 84)}"));
             }
 
-            if (epgLog is { IsSuccess: false } && !string.IsNullOrWhiteSpace(epgLog.FailureReason))
+            if (!guideUnavailable &&
+                epgLog is { IsSuccess: false } &&
+                !string.IsNullOrWhiteSpace(epgLog.FailureReason))
             {
                 failures.Add((
                     epgLog.SyncedAtUtc,
@@ -558,9 +587,15 @@ namespace Kroira.App.Services
         private static string BuildLastSuccessfulSyncText(
             DateTime? lastImportSuccessUtc,
             EpgSyncLog? epgLog,
-            bool hasEpgUrl)
+            bool hasEpgUrl,
+            bool guideUnavailable)
         {
             var importText = $"Import {FormatTimestamp(lastImportSuccessUtc)}";
+            if (guideUnavailable)
+            {
+                return $"{importText} - Guide unavailable";
+            }
+
             if (!hasEpgUrl && epgLog == null)
             {
                 return importText;
@@ -598,6 +633,23 @@ namespace Kroira.App.Services
             return trimmed.Length <= maxLength
                 ? trimmed
                 : trimmed.Substring(0, maxLength) + "...";
+        }
+
+        private static bool IsGuideUnavailable(SourceSyncState? syncState, EpgSyncLog? epgLog)
+        {
+            return ContainsGuideUnavailableText(syncState?.ErrorLog) ||
+                   ContainsGuideUnavailableText(epgLog?.FailureReason);
+        }
+
+        private static bool ContainsGuideUnavailableText(string? value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return false;
+            }
+
+            return value.Contains("does not advertise an XMLTV guide URL", StringComparison.OrdinalIgnoreCase) ||
+                   value.Contains("No XMLTV EPG URL was configured or found", StringComparison.OrdinalIgnoreCase);
         }
     }
 

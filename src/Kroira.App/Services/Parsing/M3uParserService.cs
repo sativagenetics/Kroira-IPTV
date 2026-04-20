@@ -263,7 +263,8 @@ namespace Kroira.App.Services.Parsing
                             SeasonNumber = seasonNum > 0 ? seasonNum : 1,
                             EpisodeNumber = episodeNum,
                             EpisodeTitle = epTitle,
-                            HasStrongMarker = ContentClassifier.HasStrongEpisodeMarker(entry.Name)
+                            HasStrongMarker = ContentClassifier.HasStrongEpisodeMarker(entry.Name),
+                            HadExplicitGroupTitle = entry.HadExplicitGroupTitle
                         });
                         break;
                 }
@@ -340,6 +341,8 @@ namespace Kroira.App.Services.Parsing
 
                 await db.SaveChangesAsync();
                 await transaction.CommitAsync();
+
+                await LogPersistedDiagnosticsAsync(sourceProfileId, db, totalChannels, totalMovies, totalSeries);
             }
             catch
             {
@@ -486,11 +489,21 @@ namespace Kroira.App.Services.Parsing
                     .First()
                     .Key;
 
-                var categoryName = items
+                var rawCategoryName = items
+                    .Where(item => item.HadExplicitGroupTitle)
                     .GroupBy(item => item.GroupName, StringComparer.OrdinalIgnoreCase)
                     .OrderByDescending(bucket => bucket.Count())
-                    .First()
-                    .Key;
+                    .Select(bucket => bucket.Key)
+                    .FirstOrDefault();
+
+                if (string.IsNullOrWhiteSpace(rawCategoryName))
+                {
+                    rawCategoryName = items
+                        .GroupBy(item => item.GroupName, StringComparer.OrdinalIgnoreCase)
+                        .OrderByDescending(bucket => bucket.Count())
+                        .First()
+                        .Key;
+                }
 
                 var representativeRawTitle = items
                     .GroupBy(item => item.Name, StringComparer.OrdinalIgnoreCase)
@@ -499,15 +512,20 @@ namespace Kroira.App.Services.Parsing
                     .First()
                     .Key;
 
+                var effectiveCategoryName = ContentClassifier.ResolveSurfacedSeriesCategory(
+                    rawCategoryName,
+                    rawCategoryName,
+                    displayTitle);
+
                 var normalized = catalogNormalizationService.NormalizeSeries(
                     SourceType.M3U,
                     representativeRawTitle,
-                    categoryName);
+                    effectiveCategoryName);
 
                 var normalizedDisplay = catalogNormalizationService.NormalizeSeries(
                     SourceType.M3U,
                     displayTitle,
-                    categoryName);
+                    effectiveCategoryName);
 
                 var logo = items
                     .Select(item => item.LogoUrl)
@@ -519,8 +537,11 @@ namespace Kroira.App.Services.Parsing
                     ExternalId = string.Empty,
                     Title = string.IsNullOrWhiteSpace(normalizedDisplay.Title) ? displayTitle : normalizedDisplay.Title,
                     RawSourceTitle = representativeRawTitle,
-                    CategoryName = normalized.CategoryName,
-                    RawSourceCategoryName = normalized.RawCategoryName,
+                    CategoryName = ContentClassifier.ResolveSurfacedSeriesCategory(
+                        normalized.CategoryName,
+                        rawCategoryName,
+                        string.IsNullOrWhiteSpace(normalizedDisplay.Title) ? displayTitle : normalizedDisplay.Title),
+                    RawSourceCategoryName = rawCategoryName,
                     ContentKind = normalized.ContentKind,
                     PosterUrl = logo,
                     Seasons = new List<Season>()
@@ -677,6 +698,51 @@ namespace Kroira.App.Services.Parsing
                 $"source_profile_id={sourceProfileId}; live_count={diagnostics.LiveCount}; movie_count={diagnostics.MovieCount}; series_count={diagnostics.SeriesCount}; with_group_title_count={diagnostics.WithGroupTitleCount}; with_tvg_logo_count={diagnostics.WithTvgLogoCount}; with_tvg_id_count={diagnostics.WithTvgIdCount}; uncategorized_count={diagnostics.UncategorizedCount}; pseudo_item_rejected_count={diagnostics.PseudoItemRejectedCount}; xmltv_url_found={(diagnostics.XmltvUrlFound ? "true" : "false")}; xmltv_url_value={FormatDiagnosticValue(diagnostics.XmltvUrlValue)}");
         }
 
+        private static async Task LogPersistedDiagnosticsAsync(
+            int sourceProfileId,
+            AppDbContext db,
+            int parserLiveCount,
+            int parserMovieCount,
+            int parserSeriesCount)
+        {
+            var persistedLiveCount = await db.ChannelCategories
+                .Where(category => category.SourceProfileId == sourceProfileId)
+                .Join(
+                    db.Channels,
+                    category => category.Id,
+                    channel => channel.ChannelCategoryId,
+                    (category, channel) => channel.Id)
+                .CountAsync();
+
+            var persistedMovieCount = await db.Movies.CountAsync(movie => movie.SourceProfileId == sourceProfileId);
+            var persistedSeriesCount = await db.Series.CountAsync(series => series.SourceProfileId == sourceProfileId);
+
+            CatalogCountDiagnosticsLogger.Log(
+                "m3u_import",
+                "live",
+                sourceProfileId.ToString(),
+                parserLiveCount,
+                persistedLiveCount,
+                persistedLiveCount,
+                persistedLiveCount);
+            CatalogCountDiagnosticsLogger.Log(
+                "m3u_import",
+                "movie",
+                sourceProfileId.ToString(),
+                parserMovieCount,
+                persistedMovieCount,
+                persistedMovieCount,
+                persistedMovieCount);
+            CatalogCountDiagnosticsLogger.Log(
+                "m3u_import",
+                "series",
+                sourceProfileId.ToString(),
+                parserSeriesCount,
+                persistedSeriesCount,
+                persistedSeriesCount,
+                persistedSeriesCount);
+        }
+
         private static string FormatDiagnosticValue(string value)
         {
             if (string.IsNullOrWhiteSpace(value))
@@ -712,6 +778,7 @@ namespace Kroira.App.Services.Parsing
             public int EpisodeNumber { get; set; }
             public string EpisodeTitle { get; set; } = string.Empty;
             public bool HasStrongMarker { get; set; }
+            public bool HadExplicitGroupTitle { get; set; }
         }
 
         private sealed class PendingExtinf
