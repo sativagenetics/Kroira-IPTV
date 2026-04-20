@@ -239,6 +239,7 @@ namespace Kroira.App
             services.AddSingleton<IHomeRecommendationService, HomeRecommendationService>();
             services.AddSingleton<ILiveGuideService, LiveGuideService>();
             services.AddSingleton<ISourceDiagnosticsService, SourceDiagnosticsService>();
+            services.AddSingleton<ISurfaceStateService, SurfaceStateService>();
             services.AddSingleton<IBackupPackageService, BackupPackageService>();
             services.AddSingleton<IMediaJobService, MediaJobService>();
             services.AddSingleton<Kroira.App.Services.Parsing.ICatalogNormalizationService, Kroira.App.Services.Parsing.CatalogNormalizationService>();

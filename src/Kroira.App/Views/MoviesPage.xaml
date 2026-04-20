@@ -30,10 +30,12 @@
         </Style>
     </Page.Resources>
 
-    <Grid Padding="42,32,42,40"
-          MaxWidth="1480"
-          HorizontalAlignment="Center"
-          RowSpacing="18">
+    <Grid>
+        <Grid Padding="42,32,42,40"
+              MaxWidth="1480"
+              HorizontalAlignment="Center"
+              RowSpacing="18"
+              Visibility="{x:Bind ViewModel.SurfaceState.ContentVisibility, Mode=OneWay}">
         <Grid.RowDefinitions>
             <RowDefinition Height="326" />
             <RowDefinition Height="*" />
@@ -621,5 +623,40 @@
                 </GridView>
             </Grid>
         </Grid>
+        </Grid>
+
+        <Border Visibility="{x:Bind ViewModel.SurfaceState.StateVisibility, Mode=OneWay}"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                MaxWidth="560"
+                Margin="32"
+                Background="#D00B0E13"
+                BorderBrush="{StaticResource KroiraGlassBorderBrush}"
+                BorderThickness="1"
+                CornerRadius="16"
+                Padding="28,24">
+            <StackPanel Spacing="12">
+                <Grid Width="32" Height="32">
+                    <ProgressRing IsActive="True"
+                                  Width="28"
+                                  Height="28"
+                                  Visibility="{x:Bind ViewModel.SurfaceState.ProgressVisibility, Mode=OneWay}" />
+                    <FontIcon Glyph="{x:Bind ViewModel.SurfaceState.Glyph, Mode=OneWay}"
+                              FontSize="28"
+                              Foreground="{StaticResource KroiraTextTertiaryBrush}"
+                              Visibility="{x:Bind ViewModel.SurfaceState.IconVisibility, Mode=OneWay}" />
+                </Grid>
+                <TextBlock Text="{x:Bind ViewModel.SurfaceState.Title, Mode=OneWay}"
+                           Style="{StaticResource KroiraSectionTitleStyle}" />
+                <TextBlock Text="{x:Bind ViewModel.SurfaceState.Message, Mode=OneWay}"
+                           Style="{StaticResource KroiraBodyStyle}"
+                           TextWrapping="Wrap" />
+                <Button Content="{x:Bind ViewModel.SurfaceState.ActionLabel, Mode=OneWay}"
+                        Click="OpenSources_Click"
+                        Visibility="{x:Bind ViewModel.SurfaceState.ActionVisibility, Mode=OneWay}"
+                        Style="{StaticResource KroiraPrimaryButtonStyle}"
+                        HorizontalAlignment="Left" />
+            </StackPanel>
+        </Border>
     </Grid>
 </Page>

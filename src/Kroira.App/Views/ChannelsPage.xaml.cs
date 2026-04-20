@@ -67,6 +67,11 @@ namespace Kroira.App.Views
             Log("05: queued LoadChannelsCommand");
         }
 
+        private void OpenSources_Click(object sender, RoutedEventArgs e)
+        {
+            Frame.Navigate(typeof(SourceListPage));
+        }
+
         private void SearchBox_KeyDown(object sender, KeyRoutedEventArgs e)
         {
             if (e.Key == VirtualKey.Down || e.Key == VirtualKey.Enter)

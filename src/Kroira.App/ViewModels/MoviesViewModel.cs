@@ -125,6 +125,7 @@ namespace Kroira.App.ViewModels
         [ObservableProperty] private bool _hideSecondaryContent;
         [ObservableProperty] private bool _hasAdvancedFilters;
         [ObservableProperty] private bool _isEmpty;
+        [ObservableProperty] private SurfaceStatePresentation _surfaceState = SurfaceStateCopies.Movies.Create(SurfaceViewState.Loading);
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(FeaturedMovieCanPlay))]
         private MovieBrowseItemViewModel _featuredMovie = CreatePlaceholderFeaturedMovie();
@@ -197,70 +198,88 @@ namespace Kroira.App.ViewModels
         [RelayCommand]
         public async Task LoadMoviesAsync()
         {
-            using var scope = _serviceProvider.CreateScope();
-            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            var deduplicationService = scope.ServiceProvider.GetRequiredService<ICatalogDeduplicationService>();
-            var profileService = scope.ServiceProvider.GetRequiredService<IProfileStateService>();
-            var browsePreferencesService = scope.ServiceProvider.GetRequiredService<IBrowsePreferencesService>();
-            var access = await profileService.GetAccessSnapshotAsync(db);
-            _activeProfileId = access.ProfileId;
-            _languageCode = await AppLanguageService.GetLanguageAsync(db, access.ProfileId);
-            _preferences = await browsePreferencesService.GetAsync(db, Domain, _activeProfileId);
-
-            var movieGroups = (await deduplicationService.LoadMovieGroupsAsync(db))
-                .Select(group => FilterGroup(group, access))
-                .OfType<CatalogMovieGroup>()
-                .ToList();
-            _favoriteMovieIds = (await db.Favorites
-                .Where(favorite => favorite.ProfileId == access.ProfileId && favorite.ContentType == FavoriteType.Movie)
-                .Select(favorite => favorite.ContentId)
-                .ToListAsync())
-                .ToHashSet();
-
-            _allMovieGroups.Clear();
-            _allMovieGroups.AddRange(CatalogOrderingService.OrderCatalog(
-                movieGroups,
-                _languageCode,
-                group => group.PreferredMovie.CategoryName,
-                group => group.PreferredMovie.Title));
-
-            _sourceTypeById.Clear();
-            foreach (var group in _allMovieGroups)
-            {
-                foreach (var variant in group.Variants)
-                {
-                    _sourceTypeById[variant.SourceProfile.Id] = variant.SourceProfile.Type;
-                }
-            }
-
-            _allCategories.Clear();
-            _allCategories.AddRange(_allMovieGroups
-                .GroupBy(group => GetRawCategory(group.PreferredMovie.CategoryName))
-                .Select(group => (group.Key, group.Count()))
-                .OrderBy(group => group.Key, StringComparer.CurrentCultureIgnoreCase));
-
-            BuildSourceOptions();
-            BuildCategoryManagerOptions();
-
-            _isInitializing = true;
+            SurfaceState = SurfaceStateCopies.Movies.Create(SurfaceViewState.Loading);
             try
             {
-                FavoritesOnly = _preferences.FavoritesOnly;
-                HideSecondaryContent = _preferences.HideSecondaryContent;
-                SelectedSortOption = SortOptions.FirstOrDefault(option => string.Equals(option.Key, _preferences.SortKey, StringComparison.OrdinalIgnoreCase))
-                    ?? SortOptions.First();
-                SelectedSourceOption = SourceOptions.FirstOrDefault(option => option.Id == _preferences.SelectedSourceId)
-                    ?? SourceOptions.FirstOrDefault();
-                var selectedCategory = BuildVisibleCategories(SelectedCategory?.FilterKey ?? string.Empty);
-                ReassignSelectedCategory(selectedCategory, "load-initial");
-            }
-            finally
-            {
-                _isInitializing = false;
-            }
+                using var scope = _serviceProvider.CreateScope();
+                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                var deduplicationService = scope.ServiceProvider.GetRequiredService<ICatalogDeduplicationService>();
+                var profileService = scope.ServiceProvider.GetRequiredService<IProfileStateService>();
+                var browsePreferencesService = scope.ServiceProvider.GetRequiredService<IBrowsePreferencesService>();
+                var surfaceStateService = scope.ServiceProvider.GetRequiredService<ISurfaceStateService>();
+                var sourceAvailability = await surfaceStateService.GetSourceAvailabilityAsync(db);
+                if (sourceAvailability.SourceCount == 0)
+                {
+                    SurfaceState = surfaceStateService.ResolveSourceBackedState(sourceAvailability, 0, SurfaceStateCopies.Movies);
+                    return;
+                }
 
-            ApplyFilter("load-movies");
-            StartMetadataEnrichment();
+                var access = await profileService.GetAccessSnapshotAsync(db);
+                _activeProfileId = access.ProfileId;
+                _languageCode = await AppLanguageService.GetLanguageAsync(db, access.ProfileId);
+                _preferences = await browsePreferencesService.GetAsync(db, Domain, _activeProfileId);
+
+                var movieGroups = (await deduplicationService.LoadMovieGroupsAsync(db))
+                    .Select(group => FilterGroup(group, access))
+                    .OfType<CatalogMovieGroup>()
+                    .ToList();
+                _favoriteMovieIds = (await db.Favorites
+                    .Where(favorite => favorite.ProfileId == access.ProfileId && favorite.ContentType == FavoriteType.Movie)
+                    .Select(favorite => favorite.ContentId)
+                    .ToListAsync())
+                    .ToHashSet();
+
+                _allMovieGroups.Clear();
+                _allMovieGroups.AddRange(CatalogOrderingService.OrderCatalog(
+                    movieGroups,
+                    _languageCode,
+                    group => group.PreferredMovie.CategoryName,
+                    group => group.PreferredMovie.Title));
+
+                _sourceTypeById.Clear();
+                foreach (var group in _allMovieGroups)
+                {
+                    foreach (var variant in group.Variants)
+                    {
+                        _sourceTypeById[variant.SourceProfile.Id] = variant.SourceProfile.Type;
+                    }
+                }
+
+                _allCategories.Clear();
+                _allCategories.AddRange(_allMovieGroups
+                    .GroupBy(group => GetRawCategory(group.PreferredMovie.CategoryName))
+                    .Select(group => (group.Key, group.Count()))
+                    .OrderBy(group => group.Key, StringComparer.CurrentCultureIgnoreCase));
+
+                BuildSourceOptions();
+                BuildCategoryManagerOptions();
+
+                _isInitializing = true;
+                try
+                {
+                    FavoritesOnly = _preferences.FavoritesOnly;
+                    HideSecondaryContent = _preferences.HideSecondaryContent;
+                    SelectedSortOption = SortOptions.FirstOrDefault(option => string.Equals(option.Key, _preferences.SortKey, StringComparison.OrdinalIgnoreCase))
+                        ?? SortOptions.First();
+                    SelectedSourceOption = SourceOptions.FirstOrDefault(option => option.Id == _preferences.SelectedSourceId)
+                        ?? SourceOptions.FirstOrDefault();
+                    var selectedCategory = BuildVisibleCategories(SelectedCategory?.FilterKey ?? string.Empty);
+                    ReassignSelectedCategory(selectedCategory, "load-initial");
+                }
+                finally
+                {
+                    _isInitializing = false;
+                }
+
+                ApplyFilter("load-movies");
+                SurfaceState = surfaceStateService.ResolveSourceBackedState(sourceAvailability, _allMovieGroups.Count, SurfaceStateCopies.Movies);
+                StartMetadataEnrichment();
+            }
+            catch (Exception ex)
+            {
+                BrowseRuntimeLogger.Log("MOVIES", $"load failed {ex}");
+                SurfaceState = _serviceProvider.GetRequiredService<ISurfaceStateService>().CreateFailureState(SurfaceStateCopies.Movies, ex);
+            }
         }
 
         [RelayCommand]

@@ -85,27 +85,6 @@ namespace Kroira.App.Services.Playback
             }
         }
 
-        public void PersistBlocking(PlaybackLaunchContext context, long positionMs, long durationMs, bool force)
-        {
-            if (!ShouldPersist(context, positionMs, durationMs, force, out var normalizedPositionMs, out var normalizedDurationMs, out var isCompleted))
-            {
-                return;
-            }
-
-            _saveLock.Wait();
-            try
-            {
-                PersistCoreBlocking(context, normalizedPositionMs, normalizedDurationMs, isCompleted);
-            }
-            catch
-            {
-            }
-            finally
-            {
-                _saveLock.Release();
-            }
-        }
-
         private bool ShouldPersist(
             PlaybackLaunchContext context,
             long positionMs,
@@ -157,21 +136,6 @@ namespace Kroira.App.Services.Playback
 
             ApplyProgress(db, existing, profileId, context, positionMs, durationMs, isCompleted);
             await db.SaveChangesAsync();
-            UpdateLastSaved(positionMs, durationMs, isCompleted);
-        }
-
-        private void PersistCoreBlocking(PlaybackLaunchContext context, long positionMs, long durationMs, bool isCompleted)
-        {
-            using var scope = _services.CreateScope();
-            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            var profileId = ResolveProfileId(scope.ServiceProvider, db, context);
-            var existing = db.PlaybackProgresses.FirstOrDefault(
-                progress => progress.ProfileId == profileId &&
-                            progress.ContentType == context.ContentType &&
-                            progress.ContentId == context.ContentId);
-
-            ApplyProgress(db, existing, profileId, context, positionMs, durationMs, isCompleted);
-            db.SaveChanges();
             UpdateLastSaved(positionMs, durationMs, isCompleted);
         }
 
@@ -228,16 +192,5 @@ namespace Kroira.App.Services.Playback
             return context.ProfileId;
         }
 
-        private static int ResolveProfileId(IServiceProvider services, AppDbContext db, PlaybackLaunchContext context)
-        {
-            if (context.ProfileId > 0)
-            {
-                return context.ProfileId;
-            }
-
-            var profileService = services.GetRequiredService<IProfileStateService>();
-            context.ProfileId = profileService.GetActiveProfileIdAsync(db).GetAwaiter().GetResult();
-            return context.ProfileId;
-        }
     }
 }

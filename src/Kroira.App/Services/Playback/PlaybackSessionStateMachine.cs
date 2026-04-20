@@ -5,11 +5,10 @@ namespace Kroira.App.Services.Playback
     public enum PlaybackSessionState
     {
         Idle,
-        Loading,
+        Opening,
         Buffering,
         Playing,
         Paused,
-        Reconnecting,
         Error,
         Ended
     }
@@ -36,7 +35,7 @@ namespace Kroira.App.Services.Playback
 
         public void BeginLoad()
         {
-            TransitionTo(PlaybackSessionState.Loading, "Loading stream...", 0);
+            TransitionTo(PlaybackSessionState.Opening, "Loading stream...", 0);
         }
 
         public void SetBuffering()
@@ -58,7 +57,7 @@ namespace Kroira.App.Services.Playback
         {
             var details = string.IsNullOrWhiteSpace(reason) ? "Trying to recover stream." : reason.Trim();
             TransitionTo(
-                PlaybackSessionState.Reconnecting,
+                PlaybackSessionState.Opening,
                 $"Reconnecting ({retryAttempt}/{maxRetries})... {details}",
                 retryAttempt);
         }

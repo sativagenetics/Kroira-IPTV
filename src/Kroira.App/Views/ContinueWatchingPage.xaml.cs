@@ -23,6 +23,11 @@ namespace Kroira.App.Views
             await ViewModel.LoadProgressCommand.ExecuteAsync(null);
         }
 
+        private void OpenSources_Click(object sender, RoutedEventArgs e)
+        {
+            Frame.Navigate(typeof(SourceListPage));
+        }
+
         private void ItemList_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (e.AddedItems.Count > 0 && e.AddedItems[0] is ProgressItemViewModel item)

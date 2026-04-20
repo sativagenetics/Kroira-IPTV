@@ -259,6 +259,9 @@ namespace Kroira.App.ViewModels
         [ObservableProperty]
         private bool _isEmpty;
 
+        [ObservableProperty]
+        private SurfaceStatePresentation _surfaceState = SurfaceStateCopies.Series.Create(SurfaceViewState.Loading);
+
         partial void OnSearchQueryChanged(string value)
         {
             LogBrowse($"search changed query='{value}'");
@@ -406,88 +409,106 @@ namespace Kroira.App.ViewModels
         [RelayCommand]
         public async Task LoadSeriesAsync()
         {
-            using var scope = _serviceProvider.CreateScope();
-            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            var deduplicationService = scope.ServiceProvider.GetRequiredService<ICatalogDeduplicationService>();
-            var profileService = scope.ServiceProvider.GetRequiredService<IProfileStateService>();
-            var watchStateService = scope.ServiceProvider.GetRequiredService<ILibraryWatchStateService>();
-            var browsePreferencesService = scope.ServiceProvider.GetRequiredService<IBrowsePreferencesService>();
-            var access = await profileService.GetAccessSnapshotAsync(db);
-            _activeProfileId = access.ProfileId;
-            _isLoadingWatchPreferences = true;
+            SurfaceState = SurfaceStateCopies.Series.Create(SurfaceViewState.Loading);
             try
             {
-                HideWatchedEpisodes = await watchStateService.GetHideWatchedEpisodesAsync(db, _activeProfileId);
-            }
-            finally
-            {
-                _isLoadingWatchPreferences = false;
-            }
-            _browsePreferences = await browsePreferencesService.GetAsync(db, Domain, _activeProfileId);
-            var languageCode = await AppLanguageService.GetLanguageAsync(db, access.ProfileId);
-            _browseLanguageCode = languageCode;
-            var seriesGroups = (await deduplicationService.LoadSeriesGroupsAsync(db))
-                .Select(group => FilterGroup(group, access))
-                .OfType<CatalogSeriesGroup>()
-                .ToList();
-            _favoriteSeriesIds = (await db.Favorites
-                .Where(f => f.ProfileId == access.ProfileId && f.ContentType == FavoriteType.Series)
-                .Select(f => f.ContentId)
-                .ToListAsync())
-                .ToHashSet();
-
-            _allSeriesGroups.Clear();
-            _allSeriesGroups.AddRange(CatalogOrderingService
-                .OrderCatalog(seriesGroups, languageCode, g => g.PreferredSeries.CategoryName, g => g.PreferredSeries.Title));
-
-            foreach (var item in _allSeriesGroups)
-            {
-                foreach (var variant in item.Variants.Select(groupVariant => groupVariant.Series))
+                using var scope = _serviceProvider.CreateScope();
+                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                var deduplicationService = scope.ServiceProvider.GetRequiredService<ICatalogDeduplicationService>();
+                var profileService = scope.ServiceProvider.GetRequiredService<IProfileStateService>();
+                var watchStateService = scope.ServiceProvider.GetRequiredService<ILibraryWatchStateService>();
+                var browsePreferencesService = scope.ServiceProvider.GetRequiredService<IBrowsePreferencesService>();
+                var surfaceStateService = scope.ServiceProvider.GetRequiredService<ISurfaceStateService>();
+                var sourceAvailability = await surfaceStateService.GetSourceAvailabilityAsync(db);
+                if (sourceAvailability.SourceCount == 0)
                 {
-                    if (variant.Seasons == null)
-                    {
-                        continue;
-                    }
+                    SurfaceState = surfaceStateService.ResolveSourceBackedState(sourceAvailability, 0, SurfaceStateCopies.Series);
+                    return;
+                }
 
-                    variant.Seasons = variant.Seasons.OrderBy(sn => sn.SeasonNumber).ToList();
-                    foreach (var season in variant.Seasons)
+                var access = await profileService.GetAccessSnapshotAsync(db);
+                _activeProfileId = access.ProfileId;
+                _isLoadingWatchPreferences = true;
+                try
+                {
+                    HideWatchedEpisodes = await watchStateService.GetHideWatchedEpisodesAsync(db, _activeProfileId);
+                }
+                finally
+                {
+                    _isLoadingWatchPreferences = false;
+                }
+                _browsePreferences = await browsePreferencesService.GetAsync(db, Domain, _activeProfileId);
+                var languageCode = await AppLanguageService.GetLanguageAsync(db, access.ProfileId);
+                _browseLanguageCode = languageCode;
+                var seriesGroups = (await deduplicationService.LoadSeriesGroupsAsync(db))
+                    .Select(group => FilterGroup(group, access))
+                    .OfType<CatalogSeriesGroup>()
+                    .ToList();
+                _favoriteSeriesIds = (await db.Favorites
+                    .Where(f => f.ProfileId == access.ProfileId && f.ContentType == FavoriteType.Series)
+                    .Select(f => f.ContentId)
+                    .ToListAsync())
+                    .ToHashSet();
+
+                _allSeriesGroups.Clear();
+                _allSeriesGroups.AddRange(CatalogOrderingService
+                    .OrderCatalog(seriesGroups, languageCode, g => g.PreferredSeries.CategoryName, g => g.PreferredSeries.Title));
+
+                foreach (var item in _allSeriesGroups)
+                {
+                    foreach (var variant in item.Variants.Select(groupVariant => groupVariant.Series))
                     {
-                        if (season.Episodes != null)
+                        if (variant.Seasons == null)
                         {
-                            season.Episodes = season.Episodes.OrderBy(e => e.EpisodeNumber).ToList();
+                            continue;
+                        }
+
+                        variant.Seasons = variant.Seasons.OrderBy(sn => sn.SeasonNumber).ToList();
+                        foreach (var season in variant.Seasons)
+                        {
+                            if (season.Episodes != null)
+                            {
+                                season.Episodes = season.Episodes.OrderBy(e => e.EpisodeNumber).ToList();
+                            }
                         }
                     }
                 }
+
+                _allCategories.Clear();
+                _allCategories.AddRange(_allSeriesGroups
+                    .GroupBy(group => GetRawCategory(group.PreferredSeries.CategoryName))
+                    .Select(group => (group.Key, group.Count()))
+                    .OrderBy(group => group.Key, StringComparer.CurrentCultureIgnoreCase));
+
+                BuildSourceOptions();
+                BuildCategoryManagerOptions();
+
+                _isInitializingBrowsePreferences = true;
+                try
+                {
+                    FavoritesOnly = _browsePreferences.FavoritesOnly;
+                    HideSecondaryContent = _browsePreferences.HideSecondaryContent;
+                    SelectedSortOption = SortOptions.FirstOrDefault(option => string.Equals(option.Key, _browsePreferences.SortKey, StringComparison.OrdinalIgnoreCase))
+                        ?? SortOptions.First();
+                    SelectedSourceOption = SourceOptions.FirstOrDefault(option => option.Id == _browsePreferences.SelectedSourceId)
+                        ?? SourceOptions.FirstOrDefault();
+                    var selectedCategory = BuildVisibleCategories(languageCode, SelectedCategory?.FilterKey ?? string.Empty);
+                    ReassignSelectedCategory(selectedCategory, "load-initial");
+                }
+                finally
+                {
+                    _isInitializingBrowsePreferences = false;
+                }
+
+                ApplyFilter("load-series");
+                SurfaceState = surfaceStateService.ResolveSourceBackedState(sourceAvailability, _allSeriesGroups.Count, SurfaceStateCopies.Series);
+                StartMetadataEnrichment();
             }
-
-            _allCategories.Clear();
-            _allCategories.AddRange(_allSeriesGroups
-                .GroupBy(group => GetRawCategory(group.PreferredSeries.CategoryName))
-                .Select(group => (group.Key, group.Count()))
-                .OrderBy(group => group.Key, StringComparer.CurrentCultureIgnoreCase));
-
-            BuildSourceOptions();
-            BuildCategoryManagerOptions();
-
-            _isInitializingBrowsePreferences = true;
-            try
+            catch (Exception ex)
             {
-                FavoritesOnly = _browsePreferences.FavoritesOnly;
-                HideSecondaryContent = _browsePreferences.HideSecondaryContent;
-                SelectedSortOption = SortOptions.FirstOrDefault(option => string.Equals(option.Key, _browsePreferences.SortKey, StringComparison.OrdinalIgnoreCase))
-                    ?? SortOptions.First();
-                SelectedSourceOption = SourceOptions.FirstOrDefault(option => option.Id == _browsePreferences.SelectedSourceId)
-                    ?? SourceOptions.FirstOrDefault();
-                var selectedCategory = BuildVisibleCategories(languageCode, SelectedCategory?.FilterKey ?? string.Empty);
-                ReassignSelectedCategory(selectedCategory, "load-initial");
+                BrowseRuntimeLogger.Log("SERIES", $"load failed {ex}");
+                SurfaceState = _serviceProvider.GetRequiredService<ISurfaceStateService>().CreateFailureState(SurfaceStateCopies.Series, ex);
             }
-            finally
-            {
-                _isInitializingBrowsePreferences = false;
-            }
-
-            ApplyFilter("load-series");
-            StartMetadataEnrichment();
         }
 
         private void ApplyFilter(string reason = "direct")

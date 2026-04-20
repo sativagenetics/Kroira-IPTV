@@ -64,6 +64,11 @@ namespace Kroira.App.Views
             _ = ViewModel.LoadSeriesCommand.ExecuteAsync(null);
         }
 
+        private void OpenSources_Click(object sender, RoutedEventArgs e)
+        {
+            Frame.Navigate(typeof(SourceListPage));
+        }
+
         private void SeriesPage_Loaded(object sender, RoutedEventArgs e)
         {
             QueueRestoreCategorySelection("page-loaded");

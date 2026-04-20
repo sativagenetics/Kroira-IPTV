@@ -36,6 +36,11 @@ namespace Kroira.App.Views
             _ = ViewModel.LoadMoviesCommand.ExecuteAsync(null);
         }
 
+        private void OpenSources_Click(object sender, RoutedEventArgs e)
+        {
+            Frame.Navigate(typeof(SourceListPage));
+        }
+
         private void MoviesPage_Loaded(object sender, RoutedEventArgs e)
         {
             QueueRestoreCategorySelection("page-loaded");

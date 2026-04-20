@@ -56,6 +56,9 @@ namespace Kroira.App.ViewModels
         private bool _isEmpty;
 
         [ObservableProperty]
+        private SurfaceStatePresentation _surfaceState = SurfaceStateCopies.Favorites.Create(SurfaceViewState.Loading);
+
+        [ObservableProperty]
         private BrowserChannelViewModel? _featuredChannel;
 
         [ObservableProperty]
@@ -98,88 +101,101 @@ namespace Kroira.App.ViewModels
         [RelayCommand]
         public async Task LoadFavoritesAsync()
         {
+            SurfaceState = SurfaceStateCopies.Favorites.Create(SurfaceViewState.Loading);
             FavoriteChannels.Clear();
             FavoriteMovies.Clear();
             FavoriteSeries.Clear();
-            using var scope = _serviceProvider.CreateScope();
-            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            var profileService = scope.ServiceProvider.GetRequiredService<IProfileStateService>();
-            var access = await profileService.GetAccessSnapshotAsync(db);
+            ClearSelectedSeries();
 
-            var channelIds = await db.Favorites
-                .Where(f => f.ProfileId == access.ProfileId && f.ContentType == FavoriteType.Channel)
-                .Select(f => f.ContentId)
-                .ToListAsync();
-
-            if (channelIds.Count > 0)
+            try
             {
-                var channels = await db.Channels.Where(c => channelIds.Contains(c.Id)).ToListAsync();
-                var categoryIds = channels.Select(channel => channel.ChannelCategoryId).Distinct().ToList();
-                var categories = await db.ChannelCategories
-                    .Where(category => categoryIds.Contains(category.Id))
-                    .ToDictionaryAsync(category => category.Id);
-                foreach (var ch in channels)
-                {
-                    if (!categories.TryGetValue(ch.ChannelCategoryId, out var category) || !access.IsLiveChannelAllowed(ch, category))
-                    {
-                        continue;
-                    }
+                using var scope = _serviceProvider.CreateScope();
+                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                var profileService = scope.ServiceProvider.GetRequiredService<IProfileStateService>();
+                var surfaceStateService = scope.ServiceProvider.GetRequiredService<ISurfaceStateService>();
+                var access = await profileService.GetAccessSnapshotAsync(db);
 
-                    FavoriteChannels.Add(new BrowserChannelViewModel
-                    {
-                        Id = ch.Id,
-                        CategoryId = ch.ChannelCategoryId,
-                        Name = ch.Name,
-                        StreamUrl = ch.StreamUrl,
-                        LogoUrl = ch.LogoUrl ?? string.Empty,
-                        IsFavorite = true
-                    });
-                }
-            }
-
-            var movieIds = await db.Favorites
-                .Where(f => f.ProfileId == access.ProfileId && f.ContentType == FavoriteType.Movie)
-                .Select(f => f.ContentId)
-                .ToListAsync();
-
-            if (movieIds.Count > 0)
-            {
-                var movies = await db.Movies.Where(m => movieIds.Contains(m.Id)).ToListAsync();
-                foreach (var movie in movies.Where(access.IsMovieAllowed).OrderBy(m => m.Title))
-                {
-                    FavoriteMovies.Add(new FavoriteMovieViewModel
-                    {
-                        Id = movie.Id,
-                        Title = movie.Title,
-                        PosterUrl = movie.DisplayPosterUrl,
-                        StreamUrl = movie.StreamUrl,
-                        MetadataLine = movie.MetadataLine
-                    });
-                }
-            }
-
-            var seriesIds = await db.Favorites
-                .Where(f => f.ProfileId == access.ProfileId && f.ContentType == FavoriteType.Series)
-                .Select(f => f.ContentId)
-                .ToListAsync();
-
-            if (seriesIds.Count > 0)
-            {
-                var series = await db.Series
-                    .AsNoTracking()
-                    .Include(s => s.Seasons!)
-                    .ThenInclude(season => season.Episodes)
-                    .Where(s => seriesIds.Contains(s.Id))
+                var channelIds = await db.Favorites
+                    .Where(f => f.ProfileId == access.ProfileId && f.ContentType == FavoriteType.Channel)
+                    .Select(f => f.ContentId)
                     .ToListAsync();
-                foreach (var show in series.Where(access.IsSeriesAllowed).OrderBy(s => s.Title))
-                {
-                    FavoriteSeries.Add(BuildFavoriteSeriesViewModel(show));
-                }
-            }
 
-            IsEmpty = TotalFavorites == 0;
-            FeaturedChannel = FavoriteChannels.FirstOrDefault();
-            NotifyCountsChanged();
+                if (channelIds.Count > 0)
+                {
+                    var channels = await db.Channels.Where(c => channelIds.Contains(c.Id)).ToListAsync();
+                    var categoryIds = channels.Select(channel => channel.ChannelCategoryId).Distinct().ToList();
+                    var categories = await db.ChannelCategories
+                        .Where(category => categoryIds.Contains(category.Id))
+                        .ToDictionaryAsync(category => category.Id);
+                    foreach (var ch in channels)
+                    {
+                        if (!categories.TryGetValue(ch.ChannelCategoryId, out var category) || !access.IsLiveChannelAllowed(ch, category))
+                        {
+                            continue;
+                        }
+
+                        FavoriteChannels.Add(new BrowserChannelViewModel
+                        {
+                            Id = ch.Id,
+                            CategoryId = ch.ChannelCategoryId,
+                            Name = ch.Name,
+                            StreamUrl = ch.StreamUrl,
+                            LogoUrl = ch.LogoUrl ?? string.Empty,
+                            IsFavorite = true
+                        });
+                    }
+                }
+
+                var movieIds = await db.Favorites
+                    .Where(f => f.ProfileId == access.ProfileId && f.ContentType == FavoriteType.Movie)
+                    .Select(f => f.ContentId)
+                    .ToListAsync();
+
+                if (movieIds.Count > 0)
+                {
+                    var movies = await db.Movies.Where(m => movieIds.Contains(m.Id)).ToListAsync();
+                    foreach (var movie in movies.Where(access.IsMovieAllowed).OrderBy(m => m.Title))
+                    {
+                        FavoriteMovies.Add(new FavoriteMovieViewModel
+                        {
+                            Id = movie.Id,
+                            Title = movie.Title,
+                            PosterUrl = movie.DisplayPosterUrl,
+                            StreamUrl = movie.StreamUrl,
+                            MetadataLine = movie.MetadataLine
+                        });
+                    }
+                }
+
+                var seriesIds = await db.Favorites
+                    .Where(f => f.ProfileId == access.ProfileId && f.ContentType == FavoriteType.Series)
+                    .Select(f => f.ContentId)
+                    .ToListAsync();
+
+                if (seriesIds.Count > 0)
+                {
+                    var series = await db.Series
+                        .AsNoTracking()
+                        .Include(s => s.Seasons!)
+                        .ThenInclude(season => season.Episodes)
+                        .Where(s => seriesIds.Contains(s.Id))
+                        .ToListAsync();
+                    foreach (var show in series.Where(access.IsSeriesAllowed).OrderBy(s => s.Title))
+                    {
+                        FavoriteSeries.Add(BuildFavoriteSeriesViewModel(show));
+                    }
+                }
+
+                IsEmpty = TotalFavorites == 0;
+                FeaturedChannel = FavoriteChannels.FirstOrDefault();
+                NotifyCountsChanged();
+                RefreshSurfaceState();
+            }
+            catch (Exception ex)
+            {
+                BrowseRuntimeLogger.Log("FAVORITES", $"load failed {ex}");
+                SurfaceState = _serviceProvider.GetRequiredService<ISurfaceStateService>().CreateFailureState(SurfaceStateCopies.Favorites, ex);
+            }
         }
 
         partial void OnSelectedSeriesChanged(FavoriteSeriesViewModel? value)
@@ -262,6 +278,7 @@ namespace Kroira.App.ViewModels
                 IsEmpty = TotalFavorites == 0;
                 FeaturedChannel = FavoriteChannels.FirstOrDefault();
                 NotifyCountsChanged();
+                RefreshSurfaceState();
             }
         }
 
@@ -287,6 +304,7 @@ namespace Kroira.App.ViewModels
 
             IsEmpty = TotalFavorites == 0;
             NotifyCountsChanged();
+            RefreshSurfaceState();
         }
 
         [RelayCommand]
@@ -316,6 +334,7 @@ namespace Kroira.App.ViewModels
 
             IsEmpty = TotalFavorites == 0;
             NotifyCountsChanged();
+            RefreshSurfaceState();
         }
 
         private void NotifyCountsChanged()
@@ -328,6 +347,12 @@ namespace Kroira.App.ViewModels
             OnPropertyChanged(nameof(ChannelsEmptyVisibility));
             OnPropertyChanged(nameof(MoviesEmptyVisibility));
             OnPropertyChanged(nameof(SeriesEmptyVisibility));
+        }
+
+        private void RefreshSurfaceState()
+        {
+            SurfaceState = _serviceProvider.GetRequiredService<ISurfaceStateService>()
+                .ResolveLocalState(TotalFavorites, SurfaceStateCopies.Favorites);
         }
 
         private static FavoriteSeriesViewModel BuildFavoriteSeriesViewModel(Series show)

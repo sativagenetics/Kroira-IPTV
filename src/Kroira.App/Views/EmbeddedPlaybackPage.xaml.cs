@@ -23,7 +23,8 @@ namespace Kroira.App.Views
 {
     // Self-contained, page-scoped playback host. Each navigation constructs a fresh
     // page; OnNavigatedTo creates the mpv handle + child HWND, OnNavigatedFrom
-    // synchronously tears them down. There is no app-lifetime playback singleton.
+    // cancels the old session and releases native playback resources without blocking
+    // the UI thread. There is no app-lifetime playback singleton.
     public sealed partial class EmbeddedPlaybackPage : Page
     {
         private static readonly TimeSpan ControlsHideDelay = TimeSpan.FromMilliseconds(2250);
@@ -34,7 +35,9 @@ namespace Kroira.App.Views
         private static readonly TimeSpan StreamRetryDelay = TimeSpan.FromSeconds(2);
         private static readonly TimeSpan ProgressPersistInterval = TimeSpan.FromSeconds(15);
         private const int MaxRetryAttempts = 3;
-        private const double PointerMoveResetDistance = 4.0;
+        private const double PointerMoveResetDistance = 3.0;
+        private static long s_nextPlaybackSessionId;
+        private static int s_nextSwitchGeneration;
 
         private readonly PlaybackSessionStateMachine _stateMachine = new();
         private readonly PlaybackProgressCoordinator _progressCoordinator;
@@ -52,8 +55,10 @@ namespace Kroira.App.Views
         private bool _isUserSeeking;
         private bool _isUserAdjustingVolume;
         private bool _isOverlayPointerInteractionActive;
+        private bool _isPointerOverControls;
         private bool _suppressSliderUpdates;
         private bool _isOverlayVisible = true;
+        private bool _overlayHiddenByInactivity;
         private bool _wasFullscreenOnEnter;
         private long _lastPositionMs;
         private long _lastDurationMs;
@@ -65,8 +70,10 @@ namespace Kroira.App.Views
         private bool _isVolumeSliderUpdating;
         private bool _recoveryInProgress;
         private bool _fullscreenSubscribed;
+        private bool _windowActivationSubscribed;
         private bool _launchOverridesApplied;
         private bool _isCursorHidden;
+        private bool _isWindowActive = true;
         private double _lastNonZeroVolume = 100;
         private DateTime _ignorePointerUntilUtc = DateTime.MinValue;
         private DateTime _lastPointerTimerRestartUtc = DateTime.MinValue;
@@ -75,16 +82,19 @@ namespace Kroira.App.Views
         private int _activeAttemptId;
         private int _openOverlayFlyoutCount;
         private int _retryAttempt;
+        private int _switchGeneration;
         private int _loadTimeoutAttemptId;
         private int _bufferTimeoutAttemptId;
-        private int _controlsHideScheduleId;
+        private int _lastOpenSucceededAttemptId = -1;
+        private int _lastOpenFailedAttemptId = -1;
         private string _lastPlayerWarning = string.Empty;
-        private string _lastOverlayRestartSource = string.Empty;
+        private string _lastStateMessage = string.Empty;
         private PlaybackAspectMode _selectedAspectMode = PlaybackAspectMode.Automatic;
+        private PlaybackSessionState _currentState = PlaybackSessionState.Idle;
         private bool _isLiveTimeshiftActive;
         private DateTime _ignoreLivePlaybackEndedUntilUtc = DateTime.MinValue;
-        private DateTime _controlsHideDeadlineUtc = DateTime.MinValue;
-        private CancellationTokenSource _controlsHideCancellation;
+        private long _playbackSessionId;
+        private CancellationTokenSource _playbackSessionCancellation = new();
 
         private static string LogPath => System.IO.Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
@@ -123,6 +133,10 @@ namespace Kroira.App.Views
             AddHandler(UIElement.PointerReleasedEvent, new PointerEventHandler(Page_PointerReleased), true);
             AddHandler(UIElement.PointerCaptureLostEvent, new PointerEventHandler(Page_PointerCaptureLost), true);
             AddHandler(UIElement.KeyDownEvent, new KeyEventHandler(Page_KeyDown), true);
+            TopBar.PointerEntered += OverlayChrome_PointerEntered;
+            TopBar.PointerExited += OverlayChrome_PointerExited;
+            BottomBar.PointerEntered += OverlayChrome_PointerEntered;
+            BottomBar.PointerExited += OverlayChrome_PointerExited;
 
             BuildAspectMenu();
             WireOverlayFlyout(AudioTrackFlyout);
@@ -143,35 +157,25 @@ namespace Kroira.App.Views
                 return;
             }
 
-            if (_context.ProfileId <= 0)
-            {
-                try
-                {
-                    using var scope = ((App)Application.Current).Services.CreateScope();
-                    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-                    var profileService = scope.ServiceProvider.GetRequiredService<IProfileStateService>();
-                    _context.ProfileId = profileService.GetActiveProfileIdAsync(db).GetAwaiter().GetResult();
-                }
-                catch
-                {
-                    _context.ProfileId = 1;
-                }
-            }
-
             TitleText.Text = TitleForContext(_context);
+            StartNewPlaybackSession();
             _windowManager = ((App)Application.Current).Services.GetRequiredService<IWindowManagerService>();
+            _isWindowActive = _windowManager?.IsWindowActive ?? true;
             ApplyLaunchOptions();
 
             if (!IsPictureInPictureMode())
             {
                 _wasFullscreenOnEnter = _windowManager.IsFullscreen;
                 _windowManager.FullscreenStateChanged += WindowManager_FullscreenStateChanged;
+                _windowManager.WindowActivationChanged += WindowManager_WindowActivationChanged;
                 _fullscreenSubscribed = true;
+                _windowActivationSubscribed = true;
             }
 
             UpdateFullscreenUi();
             UpdatePictureInPictureUi();
             UpdateAspectUi();
+            UpdateOverlayVisibility("navigated_to");
         }
 
         protected override void OnNavigatedFrom(NavigationEventArgs e)
@@ -182,6 +186,75 @@ namespace Kroira.App.Views
             if (!IsPictureInPictureMode() && _windowManager != null && _windowManager.IsFullscreen && !_wasFullscreenOnEnter)
             {
                 _windowManager.ExitFullscreen();
+            }
+        }
+
+        private void StartNewPlaybackSession()
+        {
+            CancelPlaybackSession();
+            _playbackSessionCancellation.Dispose();
+            _playbackSessionCancellation = new CancellationTokenSource();
+            _playbackSessionId = Interlocked.Increment(ref s_nextPlaybackSessionId);
+            _switchGeneration = Interlocked.Increment(ref s_nextSwitchGeneration);
+            _activeAttemptId = 0;
+            _lastOpenSucceededAttemptId = -1;
+            _lastOpenFailedAttemptId = -1;
+            _currentState = _stateMachine.State;
+            _lastStateMessage = _stateMachine.Message;
+            _overlayHiddenByInactivity = false;
+        }
+
+        private CancellationToken CurrentPlaybackSessionToken =>
+            _playbackSessionCancellation?.Token ?? CancellationToken.None;
+
+        private void CancelPlaybackSession()
+        {
+            try
+            {
+                _playbackSessionCancellation?.Cancel();
+            }
+            catch
+            {
+            }
+        }
+
+        private bool IsPlaybackSessionActive(long playbackSessionId, CancellationToken cancellationToken)
+        {
+            return !_teardownStarted &&
+                   !cancellationToken.IsCancellationRequested &&
+                   playbackSessionId == _playbackSessionId;
+        }
+
+        private bool IsCurrentAttempt(int attemptId, long playbackSessionId, CancellationToken cancellationToken)
+        {
+            return attemptId == _activeAttemptId &&
+                   IsPlaybackSessionActive(playbackSessionId, cancellationToken);
+        }
+
+        private async Task EnsureProfileIdAsync(CancellationToken cancellationToken)
+        {
+            if (_context == null || _context.ProfileId > 0)
+            {
+                return;
+            }
+
+            try
+            {
+                using var scope = ((App)Application.Current).Services.CreateScope();
+                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                var profileService = scope.ServiceProvider.GetRequiredService<IProfileStateService>();
+                var profileId = await profileService.GetActiveProfileIdAsync(db);
+                if (!cancellationToken.IsCancellationRequested && _context != null && _context.ProfileId <= 0)
+                {
+                    _context.ProfileId = profileId;
+                }
+            }
+            catch
+            {
+                if (!cancellationToken.IsCancellationRequested && _context != null && _context.ProfileId <= 0)
+                {
+                    _context.ProfileId = 1;
+                }
             }
         }
 
@@ -203,6 +276,9 @@ namespace Kroira.App.Views
                 return;
             }
 
+            var playbackSessionId = _playbackSessionId;
+            var cancellationToken = CurrentPlaybackSessionToken;
+
             if (VideoHost.XamlRoot == null || VideoHost.ActualWidth <= 0 || VideoHost.ActualHeight <= 0)
             {
                 VideoHost.SizeChanged -= VideoHost_StartSizeChanged;
@@ -215,6 +291,12 @@ namespace Kroira.App.Views
 
             try
             {
+                await EnsureProfileIdAsync(cancellationToken);
+                if (!IsPlaybackSessionActive(playbackSessionId, cancellationToken) || _context == null)
+                {
+                    return;
+                }
+
                 var parentHwnd = ResolveHostWindowHandle();
                 _surface = new VideoSurface(parentHwnd, VideoHost,
                     onClick: OnVideoClick,
@@ -234,14 +316,14 @@ namespace Kroira.App.Views
                 _lastPositionMs = _context.StartPositionMs > 0
                     ? _context.StartPositionMs
                     : await _progressCoordinator.ResolveResumePositionAsync(_context);
-                if (_teardownStarted || _player == null || _context == null)
+                if (!IsPlaybackSessionActive(playbackSessionId, cancellationToken) || _player == null || _context == null)
                 {
                     return;
                 }
 
                 _playbackStarted = true;
                 BeginPlaybackAttempt(isRetry: false, retryReason: null, startPositionMs: _lastPositionMs);
-                RestartControlsHideTimer();
+                StopInactivityTimer("channel_switch");
             }
             catch (Exception ex)
             {
@@ -268,6 +350,7 @@ namespace Kroira.App.Views
 
             _teardownStarted = true;
             _recoveryInProgress = false;
+            CancelPlaybackSession();
             VideoHost.SizeChanged -= VideoHost_StartSizeChanged;
 
             if (_fullscreenSubscribed && _windowManager != null)
@@ -276,16 +359,22 @@ namespace Kroira.App.Views
                 _fullscreenSubscribed = false;
             }
 
+            if (_windowActivationSubscribed && _windowManager != null)
+            {
+                _windowManager.WindowActivationChanged -= WindowManager_WindowActivationChanged;
+                _windowActivationSubscribed = false;
+            }
+
             _controlsHideTimer?.Stop();
             StopTimer(ref _loadTimeoutTimer);
             StopTimer(ref _bufferTimeoutTimer);
             StopTimer(ref _progressPersistTimer);
-            CancelControlsHideSchedule();
+            _overlayHiddenByInactivity = false;
             EnsureCursorVisible();
 
             if (_context != null)
             {
-                _progressCoordinator.PersistBlocking(_context, _lastPositionMs, _lastDurationMs, force: true);
+                _ = PersistProgressOnTeardownAsync(_context, _lastPositionMs, _lastDurationMs);
             }
 
             DetachAndDisposePlayer();
@@ -299,6 +388,17 @@ namespace Kroira.App.Views
 
             ResetTrackMenus();
             _stateMachine.Reset();
+        }
+
+        private async Task PersistProgressOnTeardownAsync(PlaybackLaunchContext context, long positionMs, long durationMs)
+        {
+            try
+            {
+                await _progressCoordinator.PersistAsync(context, positionMs, durationMs, force: true);
+            }
+            catch
+            {
+            }
         }
 
         private void EnsureTimers()
@@ -330,8 +430,23 @@ namespace Kroira.App.Views
 
         private void ControlsHideTimer_Tick(object sender, object e)
         {
-            LogPlaybackState("OVERLAY: hide timer tick");
-            HideControls();
+            var allowHide = EvaluateAutoHideEligibility("timer_elapsed", out var denyReason);
+            _controlsHideTimer?.Stop();
+            LogStructuredPlayback(
+                "inactivity_timer_disarmed",
+                $"cause=timer_elapsed; timer_armed={BoolToLog(_controlsHideTimer?.IsEnabled == true)}; deny_reason={denyReason}");
+
+            if (allowHide)
+            {
+                _overlayHiddenByInactivity = true;
+                LogPlaybackState("OVERLAY: hide timer tick");
+                HideControls();
+                return;
+            }
+
+            _overlayHiddenByInactivity = false;
+            LogPlaybackState($"OVERLAY: hide timer denied reason={denyReason}");
+            UpdateOverlayVisibility("timer_elapsed_denied");
         }
 
         private void LoadTimeoutTimer_Tick(object sender, object e)
@@ -340,7 +455,8 @@ namespace Kroira.App.Views
             if (_teardownStarted || _player == null) return;
             if (_loadTimeoutAttemptId != _activeAttemptId) return;
 
-            _ = AttemptRecoveryAsync("Stream timed out while starting.");
+            LogStructuredPlayback("timeout_reason", "reason=open_timeout");
+            _ = AttemptRecoveryAsync("Stream timed out while starting.", _activeAttemptId);
         }
 
         private void BufferTimeoutTimer_Tick(object sender, object e)
@@ -349,7 +465,8 @@ namespace Kroira.App.Views
             if (_teardownStarted || _player == null) return;
             if (_bufferTimeoutAttemptId != _activeAttemptId) return;
 
-            _ = AttemptRecoveryAsync("Stream stalled while buffering.");
+            LogStructuredPlayback("timeout_reason", "reason=buffer_timeout");
+            _ = AttemptRecoveryAsync("Stream stalled while buffering.", _activeAttemptId);
         }
 
         private async void ProgressPersistTimer_Tick(object sender, object e)
@@ -379,6 +496,7 @@ namespace Kroira.App.Views
             ResetTrackMenus();
             ClearError();
             StopBufferTimeout();
+            _overlayHiddenByInactivity = false;
 
             if (isRetry)
             {
@@ -398,6 +516,10 @@ namespace Kroira.App.Views
             StartLoadTimeout();
             UpdateLiveAndSeekUi();
             UpdateInteractionState();
+            UpdateOverlayVisibility(isRetry ? "retry_open_started" : "open_started");
+            LogStructuredPlayback(
+                "open_started",
+                $"attempt_id={_activeAttemptId}; retry={(isRetry ? "true" : "false")}; reason={SanitizeForLog(retryReason ?? "direct")}; start_position_ms={startPositionMs}");
             LogPlaybackState($"ATTEMPT: begin {(isRetry ? "retry" : "start")} reason={retryReason ?? "direct"} startMs={startPositionMs}");
         }
 
@@ -462,7 +584,11 @@ namespace Kroira.App.Views
             player.OutputReady -= OnOutputReady;
             player.TrackListChanged -= OnTrackListChanged;
             player.WarningMessage -= OnWarningMessage;
-            try { player.Dispose(); } catch { }
+            try { player.Stop(); } catch { }
+            _ = Task.Run(() =>
+            {
+                try { player.Dispose(); } catch { }
+            });
         }
 
         private void ResetLiveEdgePlayerSession(string reason)
@@ -477,13 +603,14 @@ namespace Kroira.App.Views
             StopLoadTimeout();
             StopBufferTimeout();
             _progressPersistTimer?.Stop();
-            CancelControlsHideSchedule();
+            _overlayHiddenByInactivity = false;
             DetachAndDisposePlayer();
             _player = CreatePlayer(_surface.Handle);
             ResetTrackMenus();
             ClearError();
             HideStatusOverlay();
             BeginPlaybackAttempt(isRetry: false, retryReason: $"go-live:{reason}", startPositionMs: 0);
+            StopInactivityTimer("click");
         }
 
         private void MarkPlaybackActive()
@@ -500,16 +627,44 @@ namespace Kroira.App.Views
                 _retryAttempt = 0;
             }
 
-            if (_stateMachine.State != PlaybackSessionState.Playing)
+            var previousState = _stateMachine.State;
+            var openSucceeded = false;
+            if (_lastOpenSucceededAttemptId != _activeAttemptId)
+            {
+                _lastOpenSucceededAttemptId = _activeAttemptId;
+                openSucceeded = true;
+                LogStructuredPlayback("open_succeeded", $"attempt_id={_activeAttemptId}");
+            }
+
+            if (previousState != PlaybackSessionState.Playing)
             {
                 _stateMachine.SetPlaying();
             }
+
+            if (openSucceeded)
+            {
+                ResetInactivityTimer("open_succeeded");
+            }
+            else if (previousState == PlaybackSessionState.Paused)
+            {
+                ResetInactivityTimer("resumed");
+            }
+            else if (previousState != PlaybackSessionState.Playing)
+            {
+                ResetInactivityTimer("entered_playing");
+            }
+
             UpdateInteractionState();
         }
 
-        private async Task AttemptRecoveryAsync(string reason)
+        private async Task AttemptRecoveryAsync(string reason, int attemptId)
         {
-            if (_teardownStarted || _player == null || _context == null || _recoveryInProgress)
+            var playbackSessionId = _playbackSessionId;
+            var cancellationToken = CurrentPlaybackSessionToken;
+            if (!IsCurrentAttempt(attemptId, playbackSessionId, cancellationToken) ||
+                _player == null ||
+                _context == null ||
+                _recoveryInProgress)
             {
                 return;
             }
@@ -532,11 +687,25 @@ namespace Kroira.App.Views
             UpdateInteractionState();
 
             await PersistProgressAsync(force: true);
+            if (!IsCurrentAttempt(attemptId, playbackSessionId, cancellationToken))
+            {
+                return;
+            }
 
             try
             {
-                await Task.Delay(StreamRetryDelay);
-                if (_teardownStarted || _player == null || _context == null)
+                try
+                {
+                    await Task.Delay(StreamRetryDelay, cancellationToken);
+                }
+                catch (TaskCanceledException)
+                {
+                    return;
+                }
+
+                if (!IsCurrentAttempt(attemptId, playbackSessionId, cancellationToken) ||
+                    _player == null ||
+                    _context == null)
                 {
                     return;
                 }
@@ -577,40 +746,42 @@ namespace Kroira.App.Views
                 return;
             }
 
+            if (_currentState != snapshot.State || !string.Equals(_lastStateMessage, snapshot.Message, StringComparison.Ordinal))
+            {
+                LogStructuredPlayback(
+                    "state_transition",
+                    $"from={_currentState}; to={snapshot.State}; retry_attempt={snapshot.RetryAttempt}; message={SanitizeForLog(snapshot.Message)}");
+                _currentState = snapshot.State;
+                _lastStateMessage = snapshot.Message ?? string.Empty;
+            }
+
             switch (snapshot.State)
             {
-                case PlaybackSessionState.Loading:
-                    ShowStatusOverlay("Loading", snapshot.Message);
+                case PlaybackSessionState.Opening:
+                    ShowStatusOverlay(snapshot.RetryAttempt > 0 ? "Reconnecting" : "Loading", snapshot.Message);
                     ShowControls(persist: true);
                     break;
                 case PlaybackSessionState.Buffering:
                     ShowStatusOverlay("Buffering", snapshot.Message);
-                    ShowControls(persist: true);
-                    break;
-                case PlaybackSessionState.Reconnecting:
-                    ShowStatusOverlay("Reconnecting", snapshot.Message);
-                    ShowControls(persist: true);
+                    ShowControls(persist: true, cause: "buffering");
                     break;
                 case PlaybackSessionState.Paused:
                     HideStatusOverlay();
-                    ShowControls(persist: true);
+                    ShowControls(persist: true, cause: "paused");
                     break;
                 case PlaybackSessionState.Error:
                     HideStatusOverlay();
                     ShowError(snapshot.Message);
-                    ShowControls(persist: true);
+                    ShowControls(persist: true, cause: "error");
                     break;
                 default:
                     HideStatusOverlay();
                     ClearError();
-                    if (snapshot.State == PlaybackSessionState.Playing)
-                    {
-                        RestartControlsHideTimer();
-                    }
                     break;
             }
 
             UpdateInteractionState();
+            UpdateOverlayVisibility($"state_{snapshot.State.ToString().ToLowerInvariant()}");
         }
 
         // --- Player event handlers (already on UI thread via MpvPlayer dispatcher) ---
@@ -636,8 +807,6 @@ namespace Kroira.App.Views
             {
                 MarkPlaybackActive();
             }
-
-            MaybeHideControlsFromPlaybackPulse();
         }
 
         private void OnDurationChanged(TimeSpan duration)
@@ -651,6 +820,8 @@ namespace Kroira.App.Views
         private async void OnPauseChanged(bool isPaused)
         {
             if (_teardownStarted) return;
+            var playbackSessionId = _playbackSessionId;
+            var cancellationToken = CurrentPlaybackSessionToken;
 
             PlayPauseIcon.Glyph = isPaused ? "\uE768" : "\uE769";
             if (isPaused && IsLivePlayback())
@@ -664,6 +835,10 @@ namespace Kroira.App.Views
             {
                 _stateMachine.SetPaused();
                 await PersistProgressAsync(force: true);
+                if (!IsPlaybackSessionActive(playbackSessionId, cancellationToken))
+                {
+                    return;
+                }
             }
             else if (!isPaused && _player?.IsBuffering != true)
             {
@@ -671,8 +846,6 @@ namespace Kroira.App.Views
             }
 
             LogPlaybackState($"LIVECTL: pause changed paused={isPaused}");
-            if (isPaused) ShowControls(persist: true);
-            else RestartControlsHideTimer();
         }
 
         private void OnSeekableChanged(bool seekable)
@@ -699,10 +872,7 @@ namespace Kroira.App.Views
             {
                 StopLoadTimeout();
                 StartBufferTimeout();
-                if (_stateMachine.State != PlaybackSessionState.Reconnecting)
-                {
-                    _stateMachine.SetBuffering();
-                }
+                _stateMachine.SetBuffering();
             }
             else
             {
@@ -765,14 +935,15 @@ namespace Kroira.App.Views
         private async void OnPlaybackEnded(MpvPlaybackEndedInfo endInfo)
         {
             if (_teardownStarted) return;
+            var playbackSessionId = _playbackSessionId;
+            var cancellationToken = CurrentPlaybackSessionToken;
 
             LogPlaybackState($"LIVECTL: playback ended signaled reason={endInfo?.Reason} error={endInfo?.ErrorCode ?? 0}");
 
             if (IsLivePlayback())
             {
                 var nowUtc = DateTime.UtcNow;
-                if (_stateMachine.State == PlaybackSessionState.Loading ||
-                    _stateMachine.State == PlaybackSessionState.Reconnecting ||
+                if (_stateMachine.State == PlaybackSessionState.Opening ||
                     nowUtc < _ignoreLivePlaybackEndedUntilUtc)
                 {
                     LogPlaybackState(
@@ -781,14 +952,14 @@ namespace Kroira.App.Views
                 }
             }
 
-            if (_stateMachine.State == PlaybackSessionState.Reconnecting)
+            if (_stateMachine.State == PlaybackSessionState.Opening)
             {
                 return;
             }
 
             if (!IsPlaybackComplete())
             {
-                await AttemptRecoveryAsync("Stream ended unexpectedly.");
+                await AttemptRecoveryAsync("Stream ended unexpectedly.", _activeAttemptId);
                 return;
             }
 
@@ -803,6 +974,11 @@ namespace Kroira.App.Views
             }
 
             await PersistProgressAsync(force: true);
+            if (!IsPlaybackSessionActive(playbackSessionId, cancellationToken))
+            {
+                return;
+            }
+
             NavigateBack();
         }
 
@@ -817,15 +993,15 @@ namespace Kroira.App.Views
         {
             if (_teardownStarted) return;
             TogglePlayPauseOrLive();
-            RestartControlsHideTimer();
+            ResetInactivityTimer("click");
         }
 
         private void GoLive_Click(object sender, RoutedEventArgs e)
         {
             if (_teardownStarted) return;
             GoToLiveEdge("button");
-            ShowControls();
-            RestartControlsHideTimer();
+            ShowControls(cause: "click");
+            ResetInactivityTimer("click");
         }
 
         private void Stop_Click(object sender, RoutedEventArgs e)
@@ -839,7 +1015,7 @@ namespace Kroira.App.Views
         {
             if (_teardownStarted || IsPictureInPictureMode() || !CanUseFeature(EntitlementFeatureKeys.PlaybackFullscreen)) return;
             _windowManager?.ToggleFullscreen();
-            RestartControlsHideTimer();
+            ResetInactivityTimer("click");
         }
 
         private async void PictureInPicture_Click(object sender, RoutedEventArgs e)
@@ -851,6 +1027,9 @@ namespace Kroira.App.Views
                 return;
             }
 
+            var playbackSessionId = _playbackSessionId;
+            var cancellationToken = CurrentPlaybackSessionToken;
+
             if (IsPictureInPictureMode())
             {
                 await RestoreFromPictureInPictureAsync();
@@ -860,7 +1039,12 @@ namespace Kroira.App.Views
                 await EnterPictureInPictureAsync();
             }
 
-            RestartControlsHideTimer();
+            if (!IsPlaybackSessionActive(playbackSessionId, cancellationToken))
+            {
+                return;
+            }
+
+            ResetInactivityTimer("click");
         }
 
         private void Page_PointerMoved(object sender, PointerRoutedEventArgs e)
@@ -876,12 +1060,12 @@ namespace Kroira.App.Views
             if (IsOverlayControlSource(e.OriginalSource))
             {
                 _isOverlayPointerInteractionActive = true;
-                ShowControls(persist: true);
+                ShowControls(persist: true, cause: "click");
                 return;
             }
 
-            ShowControls();
-            RestartControlsHideTimer();
+            ShowControls(cause: "click");
+            ResetInactivityTimer("click");
         }
 
         private void Page_PointerReleased(object sender, PointerRoutedEventArgs e)
@@ -899,8 +1083,8 @@ namespace Kroira.App.Views
         private void Page_KeyDown(object sender, KeyRoutedEventArgs e)
         {
             if (_teardownStarted) return;
-            ShowControls();
-            RestartControlsHideTimer();
+            ShowControls(cause: "key_input");
+            ResetInactivityTimer("key_input");
         }
 
         private void OnVideoClick()
@@ -909,8 +1093,8 @@ namespace Kroira.App.Views
             {
                 if (_teardownStarted) return;
                 TogglePlayPauseOrLive();
-                ShowControls();
-                RestartControlsHideTimer();
+                ShowControls(cause: "click");
+                ResetInactivityTimer("click");
             });
         }
 
@@ -920,7 +1104,7 @@ namespace Kroira.App.Views
             {
                 if (_teardownStarted || IsPictureInPictureMode() || !CanUseFeature(EntitlementFeatureKeys.PlaybackFullscreen)) return;
                 _windowManager?.ToggleFullscreen();
-                RestartControlsHideTimer();
+                ResetInactivityTimer("click");
             });
         }
 
@@ -937,7 +1121,7 @@ namespace Kroira.App.Views
         {
             if (_teardownStarted) return;
             _isUserSeeking = true;
-            ShowControls(persist: true);
+            ShowControls(persist: true, cause: "click");
         }
 
         private void TimelineSlider_PointerCaptureLost(object sender, PointerRoutedEventArgs e)
@@ -963,6 +1147,8 @@ namespace Kroira.App.Views
         private async void CommitTimelineSeek(bool force = false)
         {
             if (_teardownStarted) return;
+            var playbackSessionId = _playbackSessionId;
+            var cancellationToken = CurrentPlaybackSessionToken;
             if (!_isUserSeeking && !force) return;
             _isUserSeeking = false;
             ResumeOverlayAutoHide();
@@ -984,14 +1170,19 @@ namespace Kroira.App.Views
             LogPlaybackState($"LIVECTL: timeline seek commit targetSeconds={targetSeconds:F3}");
             _player.SeekAbsoluteSeconds(targetSeconds);
             await PersistProgressAsync(force: true);
-            RestartControlsHideTimer();
+            if (!IsPlaybackSessionActive(playbackSessionId, cancellationToken))
+            {
+                return;
+            }
+
+            ResetInactivityTimer("click");
         }
 
         private void VolumeSlider_PointerPressed(object sender, PointerRoutedEventArgs e)
         {
             if (_teardownStarted) return;
             _isUserAdjustingVolume = true;
-            ShowControls(persist: true);
+            ShowControls(persist: true, cause: "click");
         }
 
         private void VolumeSlider_PointerReleased(object sender, PointerRoutedEventArgs e)
@@ -1019,7 +1210,7 @@ namespace Kroira.App.Views
 
             _player.SetMuted(muted);
             SetMutedUi(muted);
-            RestartControlsHideTimer();
+            ResetInactivityTimer("click");
         }
 
         private void VolumeSlider_ValueChanged(object sender, RangeBaseValueChangedEventArgs e)
@@ -1034,11 +1225,11 @@ namespace Kroira.App.Views
             SetMutedUi(volume <= 0);
             if (_isUserAdjustingVolume)
             {
-                ShowControls(persist: true);
+                ShowControls(persist: true, cause: "click");
             }
             else
             {
-                RestartControlsHideTimer();
+                ResetInactivityTimer("click");
             }
         }
 
@@ -1046,6 +1237,46 @@ namespace Kroira.App.Views
         {
             if (_teardownStarted) return;
             UpdateFullscreenUi();
+        }
+
+        private void WindowManager_WindowActivationChanged(object sender, EventArgs e)
+        {
+            if (_teardownStarted || _windowManager == null)
+            {
+                return;
+            }
+
+            _isWindowActive = _windowManager.IsWindowActive;
+            if (_isWindowActive)
+            {
+                ResetInactivityTimer("focus_gained");
+            }
+            else
+            {
+                StopInactivityTimer("focus_lost");
+            }
+        }
+
+        private void OverlayChrome_PointerEntered(object sender, PointerRoutedEventArgs e)
+        {
+            if (_teardownStarted)
+            {
+                return;
+            }
+
+            _isPointerOverControls = true;
+            ShowControls(persist: true, cause: "pointer_move");
+        }
+
+        private void OverlayChrome_PointerExited(object sender, PointerRoutedEventArgs e)
+        {
+            if (_teardownStarted)
+            {
+                return;
+            }
+
+            _isPointerOverControls = false;
+            ResumeOverlayAutoHide("pointer_move");
         }
 
         private void AudioTrackItem_Click(object sender, RoutedEventArgs e)
@@ -1065,7 +1296,7 @@ namespace Kroira.App.Views
                 _context.PreferredAudioTrackId = trackId;
             }
             _ = RefreshTrackMenusAsync();
-            RestartControlsHideTimer();
+            ResetInactivityTimer("click");
         }
 
         private void SubtitleTrackItem_Click(object sender, RoutedEventArgs e)
@@ -1085,7 +1316,7 @@ namespace Kroira.App.Views
                 _context.PreferredSubtitleTrackId = trackId ?? string.Empty;
             }
             _ = RefreshTrackMenusAsync();
-            RestartControlsHideTimer();
+            ResetInactivityTimer("click");
         }
 
         private void AspectItem_Click(object sender, RoutedEventArgs e)
@@ -1101,7 +1332,7 @@ namespace Kroira.App.Views
             _selectedAspectMode = aspectMode;
             _player.SetAspectMode(aspectMode);
             UpdateAspectUi();
-            RestartControlsHideTimer();
+            ResetInactivityTimer("click");
         }
 
         private void SetMutedUi(bool muted)
@@ -1121,8 +1352,7 @@ namespace Kroira.App.Views
         private void TogglePlayPauseOrLive()
         {
             if (_player == null) return;
-            if (_stateMachine.State == PlaybackSessionState.Loading ||
-                _stateMachine.State == PlaybackSessionState.Reconnecting)
+            if (_stateMachine.State == PlaybackSessionState.Opening)
             {
                 return;
             }
@@ -1148,8 +1378,7 @@ namespace Kroira.App.Views
         private void GoToLiveEdge(string reason)
         {
             if (!IsLivePlayback() || _player == null || _context == null) return;
-            if (_stateMachine.State == PlaybackSessionState.Loading ||
-                _stateMachine.State == PlaybackSessionState.Reconnecting)
+            if (_stateMachine.State == PlaybackSessionState.Opening)
             {
                 LogPlaybackState($"LIVECTL: go-live ignored while state={_stateMachine.State} reason={reason}");
                 return;
@@ -1179,8 +1408,7 @@ namespace Kroira.App.Views
 
             var isLive = IsLivePlayback();
             var canSeek = IsTimelineSeekAllowed() &&
-                          _stateMachine.State != PlaybackSessionState.Loading &&
-                          _stateMachine.State != PlaybackSessionState.Reconnecting;
+                          _stateMachine.State != PlaybackSessionState.Opening;
 
             TimelineSlider.IsEnabled = canSeek;
             LivePill.Visibility = isLive ? Visibility.Visible : Visibility.Collapsed;
@@ -1198,8 +1426,7 @@ namespace Kroira.App.Views
         {
             var isReady = _player != null && !_teardownStarted;
             var trackSwitchEnabled = isReady &&
-                                     _stateMachine.State != PlaybackSessionState.Loading &&
-                                     _stateMachine.State != PlaybackSessionState.Reconnecting;
+                                     _stateMachine.State != PlaybackSessionState.Opening;
             var canUseFullscreen = CanUseFeature(EntitlementFeatureKeys.PlaybackFullscreen);
             var canUsePictureInPicture = CanUseFeature(EntitlementFeatureKeys.PlaybackPictureInPicture);
             var canUseAudioTracks = CanUseFeature(EntitlementFeatureKeys.PlaybackAudioTrackSelection);
@@ -1207,7 +1434,7 @@ namespace Kroira.App.Views
             var canUseAspectControls = CanUseFeature(EntitlementFeatureKeys.PlaybackAspectControls);
             var isPictureInPicture = IsPictureInPictureMode();
 
-            PlayPauseButton.IsEnabled = isReady && _stateMachine.State != PlaybackSessionState.Reconnecting;
+            PlayPauseButton.IsEnabled = isReady && _stateMachine.State != PlaybackSessionState.Opening;
             StopButton.IsEnabled = isReady;
             PictureInPictureButton.IsEnabled = isReady && canUsePictureInPicture;
             PictureInPictureButton.Visibility = canUsePictureInPicture ? Visibility.Visible : Visibility.Collapsed;
@@ -1440,6 +1667,9 @@ namespace Kroira.App.Views
                 return;
             }
 
+            var playbackSessionId = _playbackSessionId;
+            var cancellationToken = CurrentPlaybackSessionToken;
+
             if (_windowManager?.IsFullscreen == true)
             {
                 _windowManager.ExitFullscreen();
@@ -1452,6 +1682,11 @@ namespace Kroira.App.Views
             }
 
             await PersistProgressAsync(force: true);
+            if (!IsPlaybackSessionActive(playbackSessionId, cancellationToken))
+            {
+                return;
+            }
+
             var launchContext = CreateTransferContext(openInPictureInPicture: true, startPaused: !shouldResume);
             if (_pictureInPictureService.Enter(launchContext))
             {
@@ -1472,6 +1707,9 @@ namespace Kroira.App.Views
                 return;
             }
 
+            var playbackSessionId = _playbackSessionId;
+            var cancellationToken = CurrentPlaybackSessionToken;
+
             var shouldResume = !_player.IsPaused;
             if (shouldResume)
             {
@@ -1479,6 +1717,11 @@ namespace Kroira.App.Views
             }
 
             await PersistProgressAsync(force: true);
+            if (!IsPlaybackSessionActive(playbackSessionId, cancellationToken))
+            {
+                return;
+            }
+
             var launchContext = CreateTransferContext(openInPictureInPicture: false, startPaused: !shouldResume);
             if (_pictureInPictureService.RestoreToMainWindow(launchContext))
             {
@@ -1543,7 +1786,7 @@ namespace Kroira.App.Views
 
             if (IsUserInteractingWithControls)
             {
-                ShowControls(persist: true);
+                ShowControls(persist: true, cause: "pointer_move");
                 return;
             }
 
@@ -1581,149 +1824,221 @@ namespace Kroira.App.Views
                 return;
             }
 
-            ShowControls();
+            if (position.HasValue && !movedEnough)
+            {
+                LogPlaybackState($"OVERLAY: ignored sub-threshold pointer source={source}");
+                return;
+            }
 
+            if (!position.HasValue && now - _lastPointerTimerRestartUtc < PointerTimerResetThrottle)
+            {
+                return;
+            }
+
+            ShowControls(cause: "pointer_move");
             if (wasHidden)
             {
                 LogPlaybackState($"OVERLAY: pointer woke controls source={source} changed={positionChanged}");
             }
 
-            if ((wasHidden && (!position.HasValue || positionChanged)) ||
-                movedEnough ||
-                (!position.HasValue && now - _lastPointerTimerRestartUtc >= PointerTimerResetThrottle))
-            {
-                RestartControlsHideTimer(now, $"HandlePointerActivity:{source}");
-            }
+            ResetInactivityTimer("pointer_move", now);
         }
 
-        private void ShowControls(bool persist = false)
+        private void ShowControls(bool persist = false, string cause = "show_controls")
         {
-            EnsureCursorVisible();
-
-            if (!_isOverlayVisible)
+            _overlayHiddenByInactivity = false;
+            if (persist || ShouldForceOverlayVisible())
             {
-                TopRow.Height = GridLength.Auto;
-                BottomRow.Height = GridLength.Auto;
-                TopBar.Visibility = Visibility.Visible;
-                BottomBar.Visibility = Visibility.Visible;
-                _isOverlayVisible = true;
-                LogPlaybackState($"OVERLAY: shown persist={persist}");
-                QueueSurfacePlacementUpdate();
+                StopInactivityTimer(cause);
+                return;
             }
 
-            if (persist || IsUserInteractingWithControls)
-            {
-                _controlsHideTimer?.Stop();
-                CancelControlsHideSchedule();
-                LogPlaybackState($"OVERLAY: timer stopped persist={persist} interacting={IsUserInteractingWithControls}");
-            }
+            UpdateOverlayVisibility(cause);
         }
 
         private void HideControls()
         {
-            if (_player != null && _player.IsPaused)
+            if (!CanAutoHideOverlay())
             {
-                LogPlaybackState("OVERLAY: hide skipped because player is paused");
-                return;
+                _overlayHiddenByInactivity = false;
             }
 
-            if (ErrorOverlay.Visibility == Visibility.Visible)
-            {
-                LogPlaybackState("OVERLAY: hide skipped because error overlay is visible");
-                return;
-            }
-
-            if (StatusOverlay.Visibility == Visibility.Visible)
-            {
-                LogPlaybackState("OVERLAY: hide skipped because status overlay is visible");
-                return;
-            }
-
-            if (IsUserInteractingWithControls)
-            {
-                LogPlaybackState("OVERLAY: hide skipped because user is interacting");
-                return;
-            }
-
-            if (!_isOverlayVisible) return;
-
-            TopRow.Height = new GridLength(0);
-            BottomRow.Height = new GridLength(0);
-            TopBar.Visibility = Visibility.Collapsed;
-            BottomBar.Visibility = Visibility.Collapsed;
-            _isOverlayVisible = false;
-            _ignorePointerUntilUtc = DateTime.UtcNow + PointerHideSuppressDelay;
-            _controlsHideDeadlineUtc = DateTime.MinValue;
-            _controlsHideTimer?.Stop();
-            CancelControlsHideSchedule();
-            EnsureCursorHidden();
-            LogPlaybackState("OVERLAY: hidden by idle timer");
-            QueueSurfacePlacementUpdate();
+            UpdateOverlayVisibility("idle_timeout");
         }
 
         private void RestartControlsHideTimer([CallerMemberName] string source = "")
         {
-            RestartControlsHideTimer(DateTime.UtcNow, source);
+            ResetInactivityTimer(source, DateTime.UtcNow);
         }
 
         private void RestartControlsHideTimer(DateTime now, string source)
         {
-            if (_controlsHideTimer == null) return;
-            var wasRunning = _controlsHideTimer.IsEnabled;
-            _controlsHideTimer.Stop();
-            CancelControlsHideSchedule();
-            _lastOverlayRestartSource = source ?? string.Empty;
-            if (_player != null && _player.IsPaused)
-            {
-                LogPlaybackState("OVERLAY: timer restart skipped because player is paused");
-                return;
-            }
-
-            if (ErrorOverlay.Visibility == Visibility.Visible)
-            {
-                LogPlaybackState("OVERLAY: timer restart skipped because error overlay is visible");
-                return;
-            }
-
-            if (StatusOverlay.Visibility == Visibility.Visible)
-            {
-                LogPlaybackState("OVERLAY: timer restart skipped because status overlay is visible");
-                return;
-            }
-
-            if (IsUserInteractingWithControls)
-            {
-                LogPlaybackState("OVERLAY: timer restart skipped because user is interacting");
-                return;
-            }
-
-            _lastPointerTimerRestartUtc = now;
-            _controlsHideTimer.Start();
-            ScheduleControlsHideFallback();
-            _controlsHideDeadlineUtc = now + ControlsHideDelay;
-            LogPlaybackState($"OVERLAY: timer restart source={_lastOverlayRestartSource}");
-            if (!wasRunning)
-            {
-                LogPlaybackState($"OVERLAY: hide timer started delayMs={ControlsHideDelay.TotalMilliseconds:0}");
-            }
+            ResetInactivityTimer(source, now);
         }
+
+        private void ResetInactivityTimer(string source)
+        {
+            ResetInactivityTimer(source, DateTime.UtcNow);
+        }
+
+        private void ResetInactivityTimer(string source, DateTime now)
+        {
+            if (_controlsHideTimer == null)
+            {
+                return;
+            }
+
+            _overlayHiddenByInactivity = false;
+            var wasArmed = _controlsHideTimer.IsEnabled;
+            _controlsHideTimer.Stop();
+            if (CanAutoHideOverlay())
+            {
+                _lastPointerTimerRestartUtc = now;
+                _controlsHideTimer.Start();
+                LogStructuredPlayback(
+                    wasArmed ? "inactivity_timer_reset" : "inactivity_timer_armed",
+                    $"cause={SanitizeForLog(source)}; timer_armed={BoolToLog(_controlsHideTimer.IsEnabled)}; deny_reason=none");
+            }
+            else
+            {
+                var denyReason = GetAutoHideDenyReason(timerArmed: false);
+                LogStructuredPlayback(
+                    "inactivity_timer_disarmed",
+                    $"cause={SanitizeForLog(source)}; timer_armed={BoolToLog(_controlsHideTimer.IsEnabled)}; deny_reason={denyReason}");
+            }
+
+            EvaluateAutoHideEligibility($"timer_{source}");
+            UpdateOverlayVisibility(source);
+        }
+
+        private void StopInactivityTimer(string source)
+        {
+            _controlsHideTimer?.Stop();
+            _overlayHiddenByInactivity = false;
+            LogStructuredPlayback(
+                "inactivity_timer_disarmed",
+                $"cause={SanitizeForLog(source)}; timer_armed={BoolToLog(_controlsHideTimer?.IsEnabled == true)}; deny_reason={GetAutoHideDenyReason(timerArmed: false)}");
+            EvaluateAutoHideEligibility($"timer_{source}");
+            UpdateOverlayVisibility(source);
+        }
+
+        private bool CanAutoHideOverlay()
+        {
+            return string.Equals(GetAutoHideDenyReason(timerArmed: true), "none", StringComparison.Ordinal);
+        }
+
+        private bool ShouldForceOverlayVisible()
+        {
+            return _stateMachine.State != PlaybackSessionState.Playing ||
+                   _isPointerOverControls ||
+                   IsMenuOpen ||
+                   IsUserInteractingWithControls ||
+                   !_isWindowActive;
+        }
+
+        private void UpdateOverlayVisibility(string reason)
+        {
+            if (_teardownStarted)
+            {
+                return;
+            }
+
+            if (ShouldForceOverlayVisible())
+            {
+                _overlayHiddenByInactivity = false;
+                _controlsHideTimer?.Stop();
+            }
+
+            ApplyOverlayVisibility(ShouldForceOverlayVisible() || !_overlayHiddenByInactivity, reason);
+        }
+
+        private void ApplyOverlayVisibility(bool isVisible, string reason)
+        {
+            if (isVisible)
+            {
+                EnsureCursorVisible();
+            }
+            else
+            {
+                EnsureCursorHidden();
+            }
+
+            if (_isOverlayVisible == isVisible)
+            {
+                return;
+            }
+
+            TopRow.Height = isVisible ? GridLength.Auto : new GridLength(0);
+            BottomRow.Height = isVisible ? GridLength.Auto : new GridLength(0);
+            TopBar.Visibility = isVisible ? Visibility.Visible : Visibility.Collapsed;
+            BottomBar.Visibility = isVisible ? Visibility.Visible : Visibility.Collapsed;
+            _isOverlayVisible = isVisible;
+            if (!isVisible)
+            {
+                _ignorePointerUntilUtc = DateTime.UtcNow + PointerHideSuppressDelay;
+            }
+
+            LogStructuredPlayback(
+                isVisible ? "overlay_shown" : "overlay_hidden",
+                $"reason={SanitizeForLog(reason)}");
+            QueueSurfacePlacementUpdate();
+        }
+
+        private bool IsMenuOpen => _openOverlayFlyoutCount > 0;
 
         private bool IsUserInteractingWithControls =>
             _isOverlayPointerInteractionActive ||
             _isUserSeeking ||
-            _isUserAdjustingVolume ||
-            _openOverlayFlyoutCount > 0;
+            _isUserAdjustingVolume;
 
-        private void ResumeOverlayAutoHide()
+        private bool EvaluateAutoHideEligibility(string reason)
+        {
+            return EvaluateAutoHideEligibility(reason, out _);
+        }
+
+        private bool EvaluateAutoHideEligibility(string reason, out string denyReason)
+        {
+            var timerArmed = _controlsHideTimer?.IsEnabled == true;
+            denyReason = GetAutoHideDenyReason(timerArmed);
+            var allowHide = string.Equals(denyReason, "none", StringComparison.Ordinal);
+            LogStructuredPlayback(
+                "autohide_evaluated",
+                $"reason={SanitizeForLog(reason)}; state={_stateMachine.State}; window_active={BoolToLog(_isWindowActive)}; menu_open={BoolToLog(IsMenuOpen)}; pointer_over_controls={BoolToLog(_isPointerOverControls)}; overlay_visible={BoolToLog(_isOverlayVisible)}; cursor_visible={BoolToLog(!_isCursorHidden)}; timer_armed={BoolToLog(timerArmed)}; allow_hide={BoolToLog(allowHide)}; deny_reason={denyReason}");
+            return allowHide;
+        }
+
+        private string GetAutoHideDenyReason(bool timerArmed)
+        {
+            return _stateMachine.State switch
+            {
+                PlaybackSessionState.Playing when !_isWindowActive => "window_inactive",
+                PlaybackSessionState.Playing when IsMenuOpen => "menu_open",
+                PlaybackSessionState.Playing when _isPointerOverControls => "pointer_over_controls",
+                PlaybackSessionState.Playing when IsUserInteractingWithControls => "recent_user_activity",
+                PlaybackSessionState.Playing when !timerArmed => "timer_not_armed",
+                PlaybackSessionState.Playing => "none",
+                PlaybackSessionState.Paused => "paused",
+                PlaybackSessionState.Buffering => "buffering",
+                PlaybackSessionState.Error => "error",
+                _ => "not_playing"
+            };
+        }
+
+        private static string BoolToLog(bool value)
+        {
+            return value ? "true" : "false";
+        }
+
+        private void ResumeOverlayAutoHide(string cause = "click")
         {
             if (IsUserInteractingWithControls)
             {
-                ShowControls(persist: true);
+                ShowControls(persist: true, cause: cause);
                 return;
             }
 
-            ShowControls();
-            RestartControlsHideTimer();
+            ShowControls(cause: cause);
+            ResetInactivityTimer(cause);
         }
 
         private void EndVolumeInteraction()
@@ -1758,14 +2073,14 @@ namespace Kroira.App.Views
         {
             _openOverlayFlyoutCount++;
             LogPlaybackState("OVERLAY: flyout opened");
-            ShowControls(persist: true);
+            ShowControls(persist: true, cause: "menu_opened");
         }
 
         private void OverlayFlyout_Closed(object sender, object e)
         {
             _openOverlayFlyoutCount = Math.Max(0, _openOverlayFlyoutCount - 1);
             LogPlaybackState("OVERLAY: flyout closed");
-            ResumeOverlayAutoHide();
+            ResumeOverlayAutoHide("menu_closed");
         }
 
         private bool IsOverlayControlSource(object originalSource)
@@ -1864,105 +2179,30 @@ namespace Kroira.App.Views
                 : point;
         }
 
-        private void ScheduleControlsHideFallback()
-        {
-            CancelControlsHideSchedule();
-            var scheduleId = Interlocked.Increment(ref _controlsHideScheduleId);
-            var cancellation = new CancellationTokenSource();
-            _controlsHideCancellation = cancellation;
-            LogPlaybackState($"OVERLAY: fallback scheduled scheduleId={scheduleId}");
-
-            _ = AwaitControlsHideAsync(scheduleId, cancellation.Token);
-        }
-
-        private async Task AwaitControlsHideAsync(int scheduleId, CancellationToken cancellationToken)
-        {
-            try
-            {
-                await Task.Delay(ControlsHideDelay, cancellationToken).ConfigureAwait(false);
-            }
-            catch (TaskCanceledException)
-            {
-                return;
-            }
-
-            if (cancellationToken.IsCancellationRequested || scheduleId != _controlsHideScheduleId)
-            {
-                return;
-            }
-
-            var enqueued = DispatcherQueue.TryEnqueue(() =>
-            {
-                if (cancellationToken.IsCancellationRequested || scheduleId != _controlsHideScheduleId)
-                {
-                    return;
-                }
-
-                LogPlaybackState($"OVERLAY: hide delay elapsed scheduleId={scheduleId}");
-                HideControls();
-            });
-
-            if (!enqueued)
-            {
-                Log($"OVERLAY: fallback enqueue failed scheduleId={scheduleId}");
-            }
-        }
-
-        private void CancelControlsHideSchedule()
-        {
-            var cancellation = _controlsHideCancellation;
-            _controlsHideCancellation = null;
-            _controlsHideDeadlineUtc = DateTime.MinValue;
-            if (cancellation == null)
-            {
-                return;
-            }
-
-            LogPlaybackState("OVERLAY: fallback cancelled");
-
-            try
-            {
-                cancellation.Cancel();
-            }
-            catch
-            {
-            }
-            finally
-            {
-                cancellation.Dispose();
-            }
-        }
-
-        private void MaybeHideControlsFromPlaybackPulse()
-        {
-            if (!_isOverlayVisible ||
-                _player == null ||
-                _player.IsPaused ||
-                IsUserInteractingWithControls ||
-                ErrorOverlay.Visibility == Visibility.Visible ||
-                StatusOverlay.Visibility == Visibility.Visible ||
-                _controlsHideDeadlineUtc == DateTime.MinValue)
-            {
-                return;
-            }
-
-            if (DateTime.UtcNow < _controlsHideDeadlineUtc)
-            {
-                return;
-            }
-
-            LogPlaybackState("OVERLAY: hide deadline reached on playback pulse");
-            HideControls();
-        }
-
         private void LogPlaybackState(string message)
         {
             var player = _player;
-            var hideDeadlineMs = _controlsHideDeadlineUtc == DateTime.MinValue
-                ? "none"
-                : Math.Max(0, (_controlsHideDeadlineUtc - DateTime.UtcNow).TotalMilliseconds).ToString("0");
             Log(
-                $"{message}; mode={(IsLivePlayback() ? "live" : "vod")}; state={_stateMachine.State}; paused={(player?.IsPaused.ToString() ?? "null")}; buffering={(player?.IsBuffering.ToString() ?? "null")}; seekable={(player?.IsSeekable.ToString() ?? "null")}; posMs={_lastPositionMs}; durMs={_lastDurationMs}; timeshift={_isLiveTimeshiftActive}; overlayVisible={_isOverlayVisible}; cursorVisible={!_isCursorHidden}; hideDeadlineMs={hideDeadlineMs}; hideTimerRunning={(_controlsHideTimer?.IsEnabled == true)}; hideScheduleId={_controlsHideScheduleId}; interacting={IsUserInteractingWithControls}");
+                $"playback_session_id={_playbackSessionId}; channel_id={_context?.ContentId ?? 0}; switch_generation={_switchGeneration}; {message}; mode={(IsLivePlayback() ? "live" : "vod")}; state={_stateMachine.State}; paused={(player?.IsPaused.ToString() ?? "null")}; buffering={(player?.IsBuffering.ToString() ?? "null")}; seekable={(player?.IsSeekable.ToString() ?? "null")}; pos_ms={_lastPositionMs}; dur_ms={_lastDurationMs}; timeshift={_isLiveTimeshiftActive}; overlay_visible={_isOverlayVisible}; cursor_visible={!_isCursorHidden}; hide_timer_running={(_controlsHideTimer?.IsEnabled == true)}; pointer_over_controls={_isPointerOverControls}; menu_open={IsMenuOpen}; window_active={_isWindowActive}; interacting={IsUserInteractingWithControls}");
+        }
+
+        private void LogStructuredPlayback(string eventName, string details)
+        {
+            LogPlaybackState($"event={eventName}; {details}");
+        }
+
+        private static string SanitizeForLog(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return "none";
+            }
+
+            return value
+                .Replace(";", ",", StringComparison.Ordinal)
+                .Replace("\r", " ", StringComparison.Ordinal)
+                .Replace("\n", " ", StringComparison.Ordinal)
+                .Trim();
         }
 
         // --- Helpers ---
@@ -1974,27 +2214,37 @@ namespace Kroira.App.Views
             StatusRing.IsActive = true;
             StatusOverlay.Visibility = Visibility.Visible;
             ClearError();
+            UpdateOverlayVisibility($"status_{title.ToLowerInvariant()}");
         }
 
         private void HideStatusOverlay()
         {
             StatusRing.IsActive = false;
             StatusOverlay.Visibility = Visibility.Collapsed;
+            UpdateOverlayVisibility("status_hidden");
         }
 
         private void ShowError(string message)
         {
             ErrorMessage.Text = string.IsNullOrWhiteSpace(message) ? "Unable to start playback." : message;
             ErrorOverlay.Visibility = Visibility.Visible;
+            UpdateOverlayVisibility("error_visible");
         }
 
         private void ClearError()
         {
             ErrorOverlay.Visibility = Visibility.Collapsed;
+            UpdateOverlayVisibility("error_cleared");
         }
 
         private void ShowFatalError(string message)
         {
+            if (_lastOpenFailedAttemptId != _activeAttemptId)
+            {
+                _lastOpenFailedAttemptId = _activeAttemptId;
+                LogStructuredPlayback("open_failed", $"attempt_id={_activeAttemptId}; reason={SanitizeForLog(message)}");
+            }
+
             _stateMachine.SetError(BuildFailureMessage(message));
         }
 

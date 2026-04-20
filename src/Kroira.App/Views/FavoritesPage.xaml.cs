@@ -22,6 +22,11 @@ namespace Kroira.App.Views
             ViewModel.LoadFavoritesCommand.Execute(null);
         }
 
+        private void OpenSources_Click(object sender, RoutedEventArgs e)
+        {
+            Frame.Navigate(typeof(SourceListPage));
+        }
+
         private void ChannelList_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (e.AddedItems.Count > 0 && e.AddedItems[0] is BrowserChannelViewModel channel)

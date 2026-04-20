@@ -89,6 +89,11 @@ namespace Kroira.App.Views
             Frame.Navigate(typeof(ContinueWatchingPage));
         }
 
+        private void OpenSources_Click(object sender, RoutedEventArgs e)
+        {
+            NavigateToTarget("Sources");
+        }
+
         private void FeaturedPrimary_Click(object sender, RoutedEventArgs e)
         {
             var item = ViewModel.FeaturedItem;

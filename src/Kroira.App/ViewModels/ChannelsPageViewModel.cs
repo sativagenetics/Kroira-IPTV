@@ -69,6 +69,9 @@ namespace Kroira.App.ViewModels
         private bool _isEmpty;
 
         [ObservableProperty]
+        private SurfaceStatePresentation _surfaceState = SurfaceStateCopies.LiveTv.Create(SurfaceViewState.Loading);
+
+        [ObservableProperty]
         private BrowserCategoryViewModel? _selectedCategory;
 
         [ObservableProperty]
@@ -227,6 +230,7 @@ namespace Kroira.App.ViewModels
         public async Task LoadChannelsAsync()
         {
             Log("01: LoadChannelsAsync entered");
+            SurfaceState = SurfaceStateCopies.LiveTv.Create(SurfaceViewState.Loading);
             _allChannels.Clear();
             _allRawCategories.Clear();
             _sourceNames.Clear();
@@ -237,111 +241,128 @@ namespace Kroira.App.ViewModels
             SourceVisibilityOptions.Clear();
             ManageCategoryOptions.Clear();
 
-            using var scope = _serviceProvider.CreateScope();
-            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            var profileService = scope.ServiceProvider.GetRequiredService<IProfileStateService>();
-            var browsePreferencesService = scope.ServiceProvider.GetRequiredService<IBrowsePreferencesService>();
-            var access = await profileService.GetAccessSnapshotAsync(db);
-            _activeProfileId = access.ProfileId;
-            _preferences = await browsePreferencesService.GetAsync(db, Domain, _activeProfileId);
-            Log("02: resolved services and preferences");
-
-            var categories = await db.ChannelCategories
-                .AsNoTracking()
-                .OrderBy(category => category.Name)
-                .ToListAsync();
-            var categoryMap = categories.ToDictionary(category => category.Id);
-            var categoryLabels = ContentClassifier.BuildCategoryLabelSet(categories.Select(category => category.Name));
-            var sources = await db.SourceProfiles
-                .AsNoTracking()
-                .OrderBy(source => source.Name)
-                .ToListAsync();
-            var sourceTypeById = sources.ToDictionary(source => source.Id, source => source.Type);
-            foreach (var source in sources)
-            {
-                _sourceNames[source.Id] = source.Name;
-            }
-
-            var favoriteIds = (await db.Favorites
-                .Where(favorite => favorite.ProfileId == _activeProfileId && favorite.ContentType == FavoriteType.Channel)
-                .Select(favorite => favorite.ContentId)
-                .ToListAsync())
-                .ToHashSet();
-            var channelProgressRows = await db.PlaybackProgresses
-                .Where(progress => progress.ProfileId == _activeProfileId && progress.ContentType == PlaybackContentType.Channel)
-                .OrderByDescending(progress => progress.LastWatched)
-                .ToListAsync();
-            var progressByChannelId = channelProgressRows
-                .GroupBy(progress => progress.ContentId)
-                .ToDictionary(group => group.Key, group => group.First());
-
-            var channels = (await db.Channels.AsNoTracking().ToListAsync())
-                .Where(channel => categoryMap.TryGetValue(channel.ChannelCategoryId, out var category) &&
-                                  sourceTypeById.TryGetValue(category.SourceProfileId, out var sourceType) &&
-                                  ContentClassifier.IsPlayableStoredLiveChannel(channel.Name, channel.StreamUrl, sourceType, categoryLabels) &&
-                                  access.IsLiveChannelAllowed(channel, category))
-                .ToList();
-            Log($"03: loaded {channels.Count} candidate channels");
-
-            foreach (var channel in channels)
-            {
-                var category = categoryMap[channel.ChannelCategoryId];
-                var displayCategory = browsePreferencesService.GetEffectiveCategoryName(_preferences, category.Name);
-                _allChannels.Add(new BrowserChannelViewModel
-                {
-                    Id = channel.Id,
-                    CategoryId = channel.ChannelCategoryId,
-                    SourceProfileId = category.SourceProfileId,
-                    SourceName = _sourceNames.TryGetValue(category.SourceProfileId, out var sourceName) ? sourceName : "Unknown Source",
-                    Name = channel.Name,
-                    CategoryName = category.Name,
-                    DisplayCategoryName = displayCategory,
-                    StreamUrl = channel.StreamUrl,
-                    LogoUrl = channel.LogoUrl ?? string.Empty,
-                    IsFavorite = favoriteIds.Contains(channel.Id),
-                    IsSportsChannel = ContentClassifier.IsSportsLikeChannel(channel.Name, displayCategory),
-                    IsTurkishSportsChannel = ContentClassifier.IsTurkishSportsLikeChannel(channel.Name, displayCategory),
-                    WatchCount = _preferences.LiveChannelWatchCounts.TryGetValue(channel.Id, out var watchCount) ? watchCount : 0,
-                    LastWatchedAtUtc = progressByChannelId.TryGetValue(channel.Id, out var progress) ? progress.LastWatched : null
-                });
-            }
-
-            foreach (var group in _allChannels.GroupBy(channel => channel.CategoryId))
-            {
-                if (!categoryMap.TryGetValue(group.Key, out var category))
-                {
-                    continue;
-                }
-
-                _categoryNames[group.Key] = category.Name;
-                _allRawCategories.Add((group.Key, category.Name, group.Count()));
-            }
-
-            BuildSourceOptions();
-            BuildCategoryManagerOptions();
-            BuildVisibleCategories();
-            Log("04: built source/category collections");
-
-            _isInitializing = true;
             try
             {
-                FavoritesOnly = _preferences.FavoritesOnly;
-                GuideMatchedOnly = _preferences.GuideMatchedOnly;
-                SelectedSortOption = SortOptions.FirstOrDefault(option => string.Equals(option.Key, ResolveInitialSortKey(), StringComparison.OrdinalIgnoreCase))
-                    ?? SortOptions.First();
-                SelectedSourceOption = SourceOptions.FirstOrDefault(option => option.Id == _preferences.SelectedSourceId)
-                    ?? SourceOptions.FirstOrDefault();
-                SelectedCategory = Categories.FirstOrDefault(category => string.Equals(category.FilterKey, _preferences.SelectedCategoryKey, StringComparison.OrdinalIgnoreCase))
-                    ?? Categories.FirstOrDefault();
-            }
-            finally
-            {
-                _isInitializing = false;
-            }
+                using var scope = _serviceProvider.CreateScope();
+                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                var profileService = scope.ServiceProvider.GetRequiredService<IProfileStateService>();
+                var browsePreferencesService = scope.ServiceProvider.GetRequiredService<IBrowsePreferencesService>();
+                var surfaceStateService = scope.ServiceProvider.GetRequiredService<ISurfaceStateService>();
+                var sourceAvailability = await surfaceStateService.GetSourceAvailabilityAsync(db);
+                if (sourceAvailability.SourceCount == 0)
+                {
+                    SurfaceState = surfaceStateService.ResolveSourceBackedState(sourceAvailability, 0, SurfaceStateCopies.LiveTv);
+                    return;
+                }
 
-            Log("05: initialized selected filters");
-            QueueApplyFilter();
-            Log("06: queued ApplyFilter");
+                var access = await profileService.GetAccessSnapshotAsync(db);
+                _activeProfileId = access.ProfileId;
+                _preferences = await browsePreferencesService.GetAsync(db, Domain, _activeProfileId);
+                Log("02: resolved services and preferences");
+
+                var categories = await db.ChannelCategories
+                    .AsNoTracking()
+                    .OrderBy(category => category.Name)
+                    .ToListAsync();
+                var categoryMap = categories.ToDictionary(category => category.Id);
+                var categoryLabels = ContentClassifier.BuildCategoryLabelSet(categories.Select(category => category.Name));
+                var sources = await db.SourceProfiles
+                    .AsNoTracking()
+                    .OrderBy(source => source.Name)
+                    .ToListAsync();
+                var sourceTypeById = sources.ToDictionary(source => source.Id, source => source.Type);
+                foreach (var source in sources)
+                {
+                    _sourceNames[source.Id] = source.Name;
+                }
+
+                var favoriteIds = (await db.Favorites
+                    .Where(favorite => favorite.ProfileId == _activeProfileId && favorite.ContentType == FavoriteType.Channel)
+                    .Select(favorite => favorite.ContentId)
+                    .ToListAsync())
+                    .ToHashSet();
+                var channelProgressRows = await db.PlaybackProgresses
+                    .Where(progress => progress.ProfileId == _activeProfileId && progress.ContentType == PlaybackContentType.Channel)
+                    .OrderByDescending(progress => progress.LastWatched)
+                    .ToListAsync();
+                var progressByChannelId = channelProgressRows
+                    .GroupBy(progress => progress.ContentId)
+                    .ToDictionary(group => group.Key, group => group.First());
+
+                var channels = (await db.Channels.AsNoTracking().ToListAsync())
+                    .Where(channel => categoryMap.TryGetValue(channel.ChannelCategoryId, out var category) &&
+                                      sourceTypeById.TryGetValue(category.SourceProfileId, out var sourceType) &&
+                                      ContentClassifier.IsPlayableStoredLiveChannel(channel.Name, channel.StreamUrl, sourceType, categoryLabels) &&
+                                      access.IsLiveChannelAllowed(channel, category))
+                    .ToList();
+                Log($"03: loaded {channels.Count} candidate channels");
+
+                foreach (var channel in channels)
+                {
+                    var category = categoryMap[channel.ChannelCategoryId];
+                    var displayCategory = browsePreferencesService.GetEffectiveCategoryName(_preferences, category.Name);
+                    _allChannels.Add(new BrowserChannelViewModel
+                    {
+                        Id = channel.Id,
+                        CategoryId = channel.ChannelCategoryId,
+                        SourceProfileId = category.SourceProfileId,
+                        SourceName = _sourceNames.TryGetValue(category.SourceProfileId, out var sourceName) ? sourceName : "Unknown Source",
+                        Name = channel.Name,
+                        CategoryName = category.Name,
+                        DisplayCategoryName = displayCategory,
+                        StreamUrl = channel.StreamUrl,
+                        LogoUrl = channel.LogoUrl ?? string.Empty,
+                        IsFavorite = favoriteIds.Contains(channel.Id),
+                        IsSportsChannel = ContentClassifier.IsSportsLikeChannel(channel.Name, displayCategory),
+                        IsTurkishSportsChannel = ContentClassifier.IsTurkishSportsLikeChannel(channel.Name, displayCategory),
+                        WatchCount = _preferences.LiveChannelWatchCounts.TryGetValue(channel.Id, out var watchCount) ? watchCount : 0,
+                        LastWatchedAtUtc = progressByChannelId.TryGetValue(channel.Id, out var progress) ? progress.LastWatched : null
+                    });
+                }
+
+                foreach (var group in _allChannels.GroupBy(channel => channel.CategoryId))
+                {
+                    if (!categoryMap.TryGetValue(group.Key, out var category))
+                    {
+                        continue;
+                    }
+
+                    _categoryNames[group.Key] = category.Name;
+                    _allRawCategories.Add((group.Key, category.Name, group.Count()));
+                }
+
+                BuildSourceOptions();
+                BuildCategoryManagerOptions();
+                BuildVisibleCategories();
+                Log("04: built source/category collections");
+
+                _isInitializing = true;
+                try
+                {
+                    FavoritesOnly = _preferences.FavoritesOnly;
+                    GuideMatchedOnly = _preferences.GuideMatchedOnly;
+                    SelectedSortOption = SortOptions.FirstOrDefault(option => string.Equals(option.Key, ResolveInitialSortKey(), StringComparison.OrdinalIgnoreCase))
+                        ?? SortOptions.First();
+                    SelectedSourceOption = SourceOptions.FirstOrDefault(option => option.Id == _preferences.SelectedSourceId)
+                        ?? SourceOptions.FirstOrDefault();
+                    SelectedCategory = Categories.FirstOrDefault(category => string.Equals(category.FilterKey, _preferences.SelectedCategoryKey, StringComparison.OrdinalIgnoreCase))
+                        ?? Categories.FirstOrDefault();
+                }
+                finally
+                {
+                    _isInitializing = false;
+                }
+
+                Log("05: initialized selected filters");
+                QueueApplyFilter();
+                SurfaceState = surfaceStateService.ResolveSourceBackedState(sourceAvailability, _allChannels.Count, SurfaceStateCopies.LiveTv);
+                Log("06: queued ApplyFilter");
+            }
+            catch (Exception ex)
+            {
+                Log($"LOAD FAILED: {ex}");
+                SurfaceState = _serviceProvider.GetRequiredService<ISurfaceStateService>().CreateFailureState(SurfaceStateCopies.LiveTv, ex);
+            }
         }
 
         [RelayCommand]

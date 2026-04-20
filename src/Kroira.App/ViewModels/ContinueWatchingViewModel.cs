@@ -62,6 +62,9 @@ namespace Kroira.App.ViewModels
         [ObservableProperty]
         private bool _hideWatchedItems = true;
 
+        [ObservableProperty]
+        private SurfaceStatePresentation _surfaceState = SurfaceStateCopies.ContinueWatching.Create(SurfaceViewState.Loading);
+
         public Visibility EmptyVisibility => IsEmpty ? Visibility.Visible : Visibility.Collapsed;
         public Visibility ContentVisibility => IsEmpty ? Visibility.Collapsed : Visibility.Visible;
         public string LiveCountText => LiveProgressItems.Count == 1 ? "1 live item" : $"{LiveProgressItems.Count} live items";
@@ -89,52 +92,63 @@ namespace Kroira.App.ViewModels
         [RelayCommand]
         public async Task LoadProgressAsync()
         {
+            SurfaceState = SurfaceStateCopies.ContinueWatching.Create(SurfaceViewState.Loading);
             ProgressItems.Clear();
             LiveProgressItems.Clear();
             MovieProgressItems.Clear();
             SeriesProgressItems.Clear();
-
-            using var scope = _serviceProvider.CreateScope();
-            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            var profileService = scope.ServiceProvider.GetRequiredService<IProfileStateService>();
-            var watchStateService = scope.ServiceProvider.GetRequiredService<ILibraryWatchStateService>();
-            var access = await profileService.GetAccessSnapshotAsync(db);
-
-            _isLoadingPreferences = true;
             try
             {
-                HideWatchedItems = await watchStateService.GetHideWatchedInContinueAsync(db, access.ProfileId);
+                using var scope = _serviceProvider.CreateScope();
+                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                var profileService = scope.ServiceProvider.GetRequiredService<IProfileStateService>();
+                var watchStateService = scope.ServiceProvider.GetRequiredService<ILibraryWatchStateService>();
+                var surfaceStateService = scope.ServiceProvider.GetRequiredService<ISurfaceStateService>();
+                var access = await profileService.GetAccessSnapshotAsync(db);
+
+                _isLoadingPreferences = true;
+                try
+                {
+                    HideWatchedItems = await watchStateService.GetHideWatchedInContinueAsync(db, access.ProfileId);
+                }
+                finally
+                {
+                    _isLoadingPreferences = false;
+                }
+
+                var liveProgressRows = await db.PlaybackProgresses
+                    .Where(progress => progress.ProfileId == access.ProfileId &&
+                                       progress.ContentType == PlaybackContentType.Channel &&
+                                       !progress.IsCompleted)
+                    .OrderByDescending(progress => progress.LastWatched)
+                    .ToListAsync();
+
+                var movieProgressRows = await db.PlaybackProgresses
+                    .Where(progress => progress.ProfileId == access.ProfileId &&
+                                       progress.ContentType == PlaybackContentType.Movie)
+                    .OrderByDescending(progress => progress.LastWatched)
+                    .ToListAsync();
+
+                var episodeProgressRows = await db.PlaybackProgresses
+                    .Where(progress => progress.ProfileId == access.ProfileId &&
+                                       progress.ContentType == PlaybackContentType.Episode)
+                    .OrderByDescending(progress => progress.LastWatched)
+                    .ToListAsync();
+
+                await LoadLiveProgressItemsAsync(db, access, liveProgressRows);
+                await LoadMovieProgressItemsAsync(db, access, watchStateService, movieProgressRows);
+                await LoadSeriesProgressItemsAsync(db, access, watchStateService, episodeProgressRows);
+
+                IsEmpty = ProgressItems.Count == 0;
+                NotifyCountsChanged();
+                SurfaceState = surfaceStateService.ResolveLocalState(ProgressItems.Count, SurfaceStateCopies.ContinueWatching);
             }
-            finally
+            catch (Exception ex)
             {
                 _isLoadingPreferences = false;
+                BrowseRuntimeLogger.Log("CONTINUE", $"load failed {ex}");
+                SurfaceState = _serviceProvider.GetRequiredService<ISurfaceStateService>().CreateFailureState(SurfaceStateCopies.ContinueWatching, ex);
             }
-
-            var liveProgressRows = await db.PlaybackProgresses
-                .Where(progress => progress.ProfileId == access.ProfileId &&
-                                   progress.ContentType == PlaybackContentType.Channel &&
-                                   !progress.IsCompleted)
-                .OrderByDescending(progress => progress.LastWatched)
-                .ToListAsync();
-
-            var movieProgressRows = await db.PlaybackProgresses
-                .Where(progress => progress.ProfileId == access.ProfileId &&
-                                   progress.ContentType == PlaybackContentType.Movie)
-                .OrderByDescending(progress => progress.LastWatched)
-                .ToListAsync();
-
-            var episodeProgressRows = await db.PlaybackProgresses
-                .Where(progress => progress.ProfileId == access.ProfileId &&
-                                   progress.ContentType == PlaybackContentType.Episode)
-                .OrderByDescending(progress => progress.LastWatched)
-                .ToListAsync();
-
-            await LoadLiveProgressItemsAsync(db, access, liveProgressRows);
-            await LoadMovieProgressItemsAsync(db, access, watchStateService, movieProgressRows);
-            await LoadSeriesProgressItemsAsync(db, access, watchStateService, episodeProgressRows);
-
-            IsEmpty = ProgressItems.Count == 0;
-            NotifyCountsChanged();
         }
 
         [RelayCommand]

@@ -172,6 +172,9 @@ namespace Kroira.App.ViewModels
         private HomeFeaturedItem _featuredItem;
 
         [ObservableProperty]
+        private SurfaceStatePresentation _surfaceState = SurfaceStateCopies.Home.Create(SurfaceViewState.Loading);
+
+        [ObservableProperty]
         private Visibility _continueItemsVisibility = Visibility.Collapsed;
 
         [ObservableProperty]
@@ -213,6 +216,8 @@ namespace Kroira.App.ViewModels
         public async Task LoadAsync()
         {
             LogLoadCheckpoint("HOMEVM 01: LoadAsync entered");
+            SurfaceState = SurfaceStateCopies.Home.Create(SurfaceViewState.Loading);
+            ResetHomeContent();
             using var scope = _serviceProvider.CreateScope();
             var context = new HomeLoadContext
             {
@@ -220,51 +225,95 @@ namespace Kroira.App.ViewModels
                 ProfileService = scope.ServiceProvider.GetRequiredService<IProfileStateService>(),
                 RecommendationService = scope.ServiceProvider.GetRequiredService<IHomeRecommendationService>()
             };
+            var surfaceStateService = scope.ServiceProvider.GetRequiredService<ISurfaceStateService>();
 
             var enabledSections = GetEnabledLoadSections();
-
-            await RunLoadSectionAsync(HomeLoadSection.ResolveAccess, enabledSections, async () =>
+            try
             {
-                context.Access = await ResolveAccessAsync(context);
-            });
+                await RunLoadSectionAsync(HomeLoadSection.ResolveAccess, enabledSections, async () =>
+                {
+                    context.Access = await ResolveAccessAsync(context);
+                });
 
-            await RunLoadSectionAsync(HomeLoadSection.LoadSummary, enabledSections, async () =>
+                await RunLoadSectionAsync(HomeLoadSection.LoadSummary, enabledSections, async () =>
+                {
+                    context.Summary = await LoadSummaryAsync(context.Db, RequireAccess(context.Access));
+                });
+
+                await RunLoadSectionAsync(HomeLoadSection.ApplySummary, enabledSections, () =>
+                {
+                    ApplySummary(RequireSummary(context.Summary));
+                    return Task.CompletedTask;
+                });
+
+                await RunLoadSectionAsync(HomeLoadSection.LoadLastSync, enabledSections, async () =>
+                {
+                    LastSyncMessage = await LoadLastSyncMessageAsync(context.Db);
+                });
+
+                var summary = RequireSummary(context.Summary);
+                var sourceAvailability = await surfaceStateService.GetSourceAvailabilityAsync(context.Db);
+                var libraryItemCount = GetLibraryItemCount(summary);
+                var resolvedState = surfaceStateService.ResolveSourceBackedState(sourceAvailability, libraryItemCount, SurfaceStateCopies.Home);
+                if (resolvedState.State != SurfaceViewState.Ready)
+                {
+                    SurfaceState = resolvedState;
+                    LogLoadCheckpoint($"HOMEVM 98: LoadAsync resolved state={resolvedState.State}");
+                    return;
+                }
+
+                await RunLoadSectionAsync(HomeLoadSection.BuildRecommendations, enabledSections, async () =>
+                {
+                    context.Recommendations = await BuildRecommendationsAsync(context);
+                });
+
+                await RunLoadSectionAsync(HomeLoadSection.ApplyRecommendations, enabledSections, () =>
+                {
+                    ApplyRecommendationSnapshot(context.Recommendations ?? EmptyRecommendationSnapshot);
+                    return Task.CompletedTask;
+                });
+
+                await RunLoadSectionAsync(HomeLoadSection.LoadContinue, enabledSections, () =>
+                    LoadContinueItemsAsync(context.Db, RequireAccess(context.Access)));
+
+                await RunLoadSectionAsync(HomeLoadSection.LoadLive, enabledSections, () =>
+                    LoadLiveItemsAsync(context.Db, RequireAccess(context.Access)));
+
+                SurfaceState = resolvedState;
+                LogLoadCheckpoint("HOMEVM 99: LoadAsync completed");
+            }
+            catch (Exception ex)
             {
-                context.Summary = await LoadSummaryAsync(context.Db, RequireAccess(context.Access));
-            });
-
-            await RunLoadSectionAsync(HomeLoadSection.ApplySummary, enabledSections, () =>
-            {
-                ApplySummary(RequireSummary(context.Summary));
-                return Task.CompletedTask;
-            });
-
-            await RunLoadSectionAsync(HomeLoadSection.LoadLastSync, enabledSections, async () =>
-            {
-                LastSyncMessage = await LoadLastSyncMessageAsync(context.Db);
-            });
-
-            await RunLoadSectionAsync(HomeLoadSection.BuildRecommendations, enabledSections, async () =>
-            {
-                context.Recommendations = await BuildRecommendationsAsync(context);
-            });
-
-            await RunLoadSectionAsync(HomeLoadSection.ApplyRecommendations, enabledSections, () =>
-            {
-                ApplyRecommendationSnapshot(context.Recommendations ?? EmptyRecommendationSnapshot);
-                return Task.CompletedTask;
-            });
-
-            await RunLoadSectionAsync(HomeLoadSection.LoadContinue, enabledSections, () =>
-                LoadContinueItemsAsync(context.Db, RequireAccess(context.Access)));
-
-            await RunLoadSectionAsync(HomeLoadSection.LoadLive, enabledSections, () =>
-                LoadLiveItemsAsync(context.Db, RequireAccess(context.Access)));
-
-            LogLoadCheckpoint("HOMEVM 99: LoadAsync completed");
+                LogLoadCheckpoint($"HOMEVM FAIL: {ex}");
+                SurfaceState = surfaceStateService.CreateFailureState(SurfaceStateCopies.Home, ex);
+            }
         }
 
         private static readonly HomeRecommendationSnapshot EmptyRecommendationSnapshot = new();
+
+        private static int GetLibraryItemCount(HomeSummarySnapshot summary)
+        {
+            return summary.ChannelsCount + summary.MoviesCount + summary.SeriesCount;
+        }
+
+        private void ResetHomeContent()
+        {
+            SummaryItems.Clear();
+            ContinueItems.Clear();
+            LiveItems.Clear();
+            PopularItems.Clear();
+            RecentlyAddedItems.Clear();
+            TopRatedItems.Clear();
+
+            FeaturedItem = BuildFallbackFeaturedItem();
+            ContinueItemsVisibility = Visibility.Collapsed;
+            ContinueEmptyVisibility = Visibility.Visible;
+            SourceIssueVisibility = Visibility.Collapsed;
+            LiveItemsVisibility = Visibility.Collapsed;
+            PopularItemsVisibility = Visibility.Collapsed;
+            RecentlyAddedItemsVisibility = Visibility.Collapsed;
+            TopRatedItemsVisibility = Visibility.Collapsed;
+        }
 
         private async Task<ProfileAccessSnapshot> ResolveAccessAsync(HomeLoadContext context)
         {
