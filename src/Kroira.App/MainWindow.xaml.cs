@@ -22,6 +22,8 @@ namespace Kroira.App
         private static readonly string StartupErrorPath =
             Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Kroira", "startup-error.txt");
 
+        public Visibility MediaLibraryNavigationVisibility => StoreReleaseFeatures.ShowMediaLibrary ? Visibility.Visible : Visibility.Collapsed;
+
         public MainWindow()
         {
             LogStartupCheckpoint("MW 01: constructor entered");
@@ -143,7 +145,7 @@ namespace Kroira.App
                         NavigateTo(typeof(ContinueWatchingPage));
                         break;
                     case "MediaLibrary":
-                        NavigateTo(typeof(MediaLibraryPage));
+                        NavigateTo(StoreReleaseFeatures.ShowMediaLibrary ? typeof(MediaLibraryPage) : typeof(ContinueWatchingPage));
                         break;
                     case "Movies":
                         NavigateTo(typeof(MoviesPage));

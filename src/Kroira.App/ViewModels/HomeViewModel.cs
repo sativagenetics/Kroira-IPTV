@@ -208,7 +208,10 @@ namespace Kroira.App.ViewModels
             QuickActions.Add(new HomeActionItem { Title = "Movies", Detail = "Browse VOD with fast playback resume", Glyph = "\uE8B2", Target = "Movies" });
             QuickActions.Add(new HomeActionItem { Title = "Series", Detail = "Pick up seasons and episodes", Glyph = "\uE8A9", Target = "Series" });
             QuickActions.Add(new HomeActionItem { Title = "Favorites", Detail = "Jump to saved channels and picks", Glyph = "\uE734", Target = "Favorites" });
-            QuickActions.Add(new HomeActionItem { Title = "Library", Detail = "Monitor recordings and downloads", Glyph = "\uE7C3", Target = "MediaLibrary" });
+            if (StoreReleaseFeatures.ShowMediaLibrary)
+            {
+                QuickActions.Add(new HomeActionItem { Title = "Library", Detail = "Monitor recordings and downloads", Glyph = "\uE7C3", Target = "MediaLibrary" });
+            }
             QuickActions.Add(new HomeActionItem { Title = "Sources", Detail = "Manage M3U, Xtream, and provider setup", Glyph = "\uE8F1", Target = "Sources" });
             QuickActions.Add(new HomeActionItem { Title = "Settings", Detail = "Playback, profiles, and family controls", Glyph = "\uE713", Target = "Settings" });
         }

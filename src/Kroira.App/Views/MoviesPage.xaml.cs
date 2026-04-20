@@ -21,6 +21,8 @@ namespace Kroira.App.Views
 
         public MoviesViewModel ViewModel { get; }
 
+        public Visibility DownloadActionsVisibility => StoreReleaseFeatures.ShowDownloadActions ? Visibility.Visible : Visibility.Collapsed;
+
         public MoviesPage()
         {
             this.InitializeComponent();

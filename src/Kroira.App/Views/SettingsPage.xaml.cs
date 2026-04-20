@@ -15,6 +15,14 @@ namespace Kroira.App.Views
 
         public SettingsViewModel ViewModel { get; }
 
+        public string BackupSectionTitle => StoreReleaseFeatures.ShowRestore ? "Backup & Restore" : "Backup & Export";
+
+        public string BackupSectionDescription => StoreReleaseFeatures.ShowRestore
+            ? "Versioned local export for sources, profiles, favorites, watch state, and local preferences."
+            : "Versioned local export for sources, profiles, favorites, watch state, and local preferences on this device.";
+
+        public Visibility RestoreBackupVisibility => StoreReleaseFeatures.ShowRestore ? Visibility.Visible : Visibility.Collapsed;
+
         public SettingsPage()
         {
             this.InitializeComponent();

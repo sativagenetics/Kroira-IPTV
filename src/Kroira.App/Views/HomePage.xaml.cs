@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using Kroira.App.Models;
+using Kroira.App.Services;
 using Kroira.App.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
@@ -244,7 +245,7 @@ namespace Kroira.App.Views
                     Frame.Navigate(typeof(FavoritesPage));
                     break;
                 case "MediaLibrary":
-                    Frame.Navigate(typeof(MediaLibraryPage));
+                    Frame.Navigate(StoreReleaseFeatures.ShowMediaLibrary ? typeof(MediaLibraryPage) : typeof(ContinueWatchingPage));
                     break;
                 case "Sources":
                     Frame.Navigate(typeof(SourceListPage));

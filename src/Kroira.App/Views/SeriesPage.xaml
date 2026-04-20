@@ -4,6 +4,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:local="using:Kroira.App.Views"
     xmlns:viewModels="using:Kroira.App.ViewModels"
+    x:Name="SeriesPageRoot"
     Background="{StaticResource KroiraPageBackgroundBrush}">
 
     <Page.Resources>
@@ -616,6 +617,7 @@
                                                 Padding="18,11" />
                                         <Button Content="Download"
                                                 Click="DownloadSelectedEpisode_Click"
+                                                Visibility="{x:Bind DownloadActionsVisibility, Mode=OneWay}"
                                                 Style="{StaticResource KroiraGhostButtonStyle}"
                                                 Padding="18,11" />
                                     </StackPanel>
@@ -718,6 +720,7 @@
                                                     <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
                                                         <Button Content="Download"
                                                                 Click="DownloadEpisode_Click"
+                                                                Visibility="{Binding ElementName=SeriesPageRoot, Path=DownloadActionsVisibility}"
                                                                 Style="{StaticResource KroiraGhostButtonStyle}"
                                                                 FontSize="11" />
                                                         <Button Content="Watched"

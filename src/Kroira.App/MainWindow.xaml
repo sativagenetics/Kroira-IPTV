@@ -76,7 +76,11 @@
                         <FontIcon Glyph="&#xE916;" FontSize="16" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
-                <NavigationViewItem Content="Library" Tag="MediaLibrary" Margin="0,2" Height="42">
+                <NavigationViewItem Content="Library"
+                                    Tag="MediaLibrary"
+                                    Margin="0,2"
+                                    Height="42"
+                                    Visibility="{x:Bind MediaLibraryNavigationVisibility, Mode=OneWay}">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE7C3;" FontSize="16" />
                     </NavigationViewItem.Icon>

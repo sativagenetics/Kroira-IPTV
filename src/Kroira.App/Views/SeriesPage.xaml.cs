@@ -49,6 +49,8 @@ namespace Kroira.App.Views
 
         public SeriesViewModel ViewModel { get; }
 
+        public Visibility DownloadActionsVisibility => StoreReleaseFeatures.ShowDownloadActions ? Visibility.Visible : Visibility.Collapsed;
+
         public SeriesPage()
         {
             this.InitializeComponent();

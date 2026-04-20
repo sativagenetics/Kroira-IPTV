@@ -560,6 +560,7 @@
                                                     Spacing="6">
                                             <Button Content="●"
                                                     Click="RecordChannel_Click"
+                                                    Visibility="{Binding ElementName=LiveTvPage, Path=RecordingActionsVisibility}"
                                                     Style="{StaticResource ChannelFavoriteButtonStyle}"
                                                     Foreground="#FF7B6A"
                                                     AutomationProperties.Name="Schedule recording"

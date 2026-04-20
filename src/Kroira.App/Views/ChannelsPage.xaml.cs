@@ -49,6 +49,8 @@ namespace Kroira.App.Views
 
         public ChannelsPageViewModel ViewModel { get; }
 
+        public Visibility RecordingActionsVisibility => StoreReleaseFeatures.ShowRecordingActions ? Visibility.Visible : Visibility.Collapsed;
+
         public ChannelsPage()
         {
             Log("01: constructor entered");

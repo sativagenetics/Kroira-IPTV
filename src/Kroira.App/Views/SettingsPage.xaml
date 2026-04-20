@@ -250,8 +250,8 @@
                     <Border Style="{StaticResource KroiraSettingsGroupStyle}">
                         <StackPanel Spacing="14">
                             <StackPanel Spacing="3">
-                                <TextBlock Text="Backup &amp; Restore" Style="{StaticResource KroiraSectionTitleStyle}" />
-                                <TextBlock Text="Versioned local export for sources, profiles, favorites, watch state, and local preferences."
+                                <TextBlock Text="{x:Bind BackupSectionTitle, Mode=OneWay}" Style="{StaticResource KroiraSectionTitleStyle}" />
+                                <TextBlock Text="{x:Bind BackupSectionDescription, Mode=OneWay}"
                                            Style="{StaticResource KroiraBodyStyle}"
                                            TextWrapping="Wrap" />
                             </StackPanel>
@@ -259,34 +259,27 @@
                             <Border Height="1" Background="{StaticResource KroiraBorderBrush}" Opacity="0.45" />
 
                             <TextBlock Text="Restore replaces current local setup, then re-imports restored sources to rebuild the library on this install."
+                                       Visibility="{x:Bind RestoreBackupVisibility, Mode=OneWay}"
                                        Style="{StaticResource KroiraBodyStyle}"
                                        TextWrapping="Wrap" />
 
-                            <Grid ColumnSpacing="12">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
-
-                                <Button Grid.Column="0"
-                                        Content="Export"
+                            <StackPanel Orientation="Horizontal" Spacing="12">
+                                <Button Content="Export"
                                         Click="OnExportBackupClick"
                                         IsEnabled="{x:Bind ViewModel.CanStartBackupAction, Mode=OneWay}" />
 
-                                <Button Grid.Column="1"
-                                        Content="Restore"
+                                <Button Content="Restore"
                                         Click="OnRestoreBackupClick"
+                                        Visibility="{x:Bind RestoreBackupVisibility, Mode=OneWay}"
                                         IsEnabled="{x:Bind ViewModel.CanStartBackupAction, Mode=OneWay}" />
 
-                                <ProgressRing Grid.Column="2"
-                                              Width="18"
+                                <ProgressRing Width="18"
                                               Height="18"
                                               Margin="8,0,0,0"
                                               IsActive="{x:Bind ViewModel.IsBackupBusy, Mode=OneWay}"
                                               HorizontalAlignment="Left"
                                               VerticalAlignment="Center" />
-                            </Grid>
+                            </StackPanel>
 
                             <TextBlock Text="{x:Bind ViewModel.BackupStatusText, Mode=OneWay}"
                                        Style="{StaticResource KroiraBodyStyle}"
