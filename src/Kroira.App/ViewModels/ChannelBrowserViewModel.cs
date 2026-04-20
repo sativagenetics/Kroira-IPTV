@@ -44,6 +44,7 @@ namespace Kroira.App.ViewModels
         public int CategoryId { get; set; }
         public int SourceProfileId { get; set; }
         public string SourceName { get; set; } = string.Empty;
+        public string RawName { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
         public string CategoryName { get; set; } = string.Empty;
         public string DisplayCategoryName { get; set; } = string.Empty;
@@ -281,6 +282,7 @@ namespace Kroira.App.ViewModels
     public partial class ChannelBrowserViewModel : ObservableObject
     {
         private readonly IServiceProvider _serviceProvider;
+        private readonly ICatalogTaxonomyService _taxonomyService;
         private List<BrowserChannelViewModel> _allChannelsCache = new();
         private int _filterRequestVersion;
 
@@ -296,6 +298,7 @@ namespace Kroira.App.ViewModels
         public ChannelBrowserViewModel(IServiceProvider serviceProvider)
         {
             _serviceProvider = serviceProvider;
+            _taxonomyService = serviceProvider.GetRequiredService<ICatalogTaxonomyService>();
         }
 
         public async Task LoadSourceAsync(int sourceProfileId)
@@ -336,27 +339,43 @@ namespace Kroira.App.ViewModels
                 .ToListAsync();
 
             // Populate category list
-            Categories.Add(new BrowserCategoryViewModel { Id = 0, Name = "All Categories", OrderIndex = -1 });
-            foreach (var c in cats.Where(c => chans.Any(ch => ch.ChannelCategoryId == c.Id)))
+            Categories.Add(new BrowserCategoryViewModel { Id = 0, FilterKey = string.Empty, Name = "All Categories", OrderIndex = -1 });
+            // Build channel view models first — always succeeds regardless of EPG state
+            var channelVMs = chans.Select(ch =>
+            {
+                var category = categoryById[ch.ChannelCategoryId];
+                var presentation = _taxonomyService.ResolveLiveChannelPresentation(ch.Name);
+                var taxonomy = _taxonomyService.ResolveLiveCategory(category.Name, presentation.DisplayName);
+
+                return new BrowserChannelViewModel
+                {
+                    Id = ch.Id,
+                    CategoryId = ch.ChannelCategoryId,
+                    RawName = ch.Name,
+                    Name = string.IsNullOrWhiteSpace(presentation.DisplayName) ? ch.Name : presentation.DisplayName,
+                    CategoryName = category.Name,
+                    DisplayCategoryName = taxonomy.DisplayCategoryName,
+                    StreamUrl = ch.StreamUrl,
+                    LogoUrl = ch.LogoUrl ?? string.Empty,
+                    IsFavorite = favIds.Contains(ch.Id)
+                };
+            }).ToList();
+
+            var categoryIndex = 1;
+            foreach (var category in channelVMs
+                         .GroupBy(channel => channel.DisplayCategoryName)
+                         .OrderBy(group => group.Key, StringComparer.CurrentCultureIgnoreCase))
             {
                 Categories.Add(new BrowserCategoryViewModel
                 {
-                    Id = c.Id,
-                    Name = c.Name,
-                    OrderIndex = c.OrderIndex
+                    Id = categoryIndex,
+                    FilterKey = NormalizeCategoryKey(category.Key),
+                    Name = category.Key,
+                    ItemCount = category.Count(),
+                    OrderIndex = categoryIndex
                 });
+                categoryIndex++;
             }
-
-            // Build channel view models first — always succeeds regardless of EPG state
-            var channelVMs = chans.Select(ch => new BrowserChannelViewModel
-            {
-                Id = ch.Id,
-                CategoryId = ch.ChannelCategoryId,
-                Name = ch.Name,
-                StreamUrl = ch.StreamUrl,
-                LogoUrl = ch.LogoUrl ?? string.Empty,
-                IsFavorite = favIds.Contains(ch.Id)
-            }).ToList();
 
             foreach (var item in channelVMs)
                 _allChannelsCache.Add(item);
@@ -383,14 +402,20 @@ namespace Kroira.App.ViewModels
         {
             var query = _allChannelsCache.AsEnumerable();
 
-            if (SelectedCategory != null && SelectedCategory.Id != 0)
+            if (SelectedCategory != null && !string.IsNullOrWhiteSpace(SelectedCategory.FilterKey))
             {
-                query = query.Where(c => c.CategoryId == SelectedCategory.Id);
+                query = query.Where(c => string.Equals(
+                    NormalizeCategoryKey(c.DisplayCategoryName),
+                    SelectedCategory.FilterKey,
+                    StringComparison.OrdinalIgnoreCase));
             }
 
             if (!string.IsNullOrWhiteSpace(SearchQuery))
             {
-                query = query.Where(c => c.Name.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase));
+                query = query.Where(c =>
+                    c.Name.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase) ||
+                    c.RawName.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase) ||
+                    c.DisplayCategoryName.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase));
             }
 
             var filtered = query.ToList();
@@ -461,6 +486,13 @@ namespace Kroira.App.ViewModels
                     target.IsFavorite = true;
                 }
             }
+        }
+
+        private static string NormalizeCategoryKey(string categoryName)
+        {
+            return string.IsNullOrWhiteSpace(categoryName)
+                ? string.Empty
+                : ContentClassifier.NormalizeLabel(categoryName).Trim().ToLowerInvariant();
         }
     }
 }

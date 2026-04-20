@@ -44,6 +44,8 @@ namespace Kroira.App.ViewModels
 
         private const string Domain = ProfileDomains.Live;
         private readonly IServiceProvider _serviceProvider;
+        private readonly IBrowsePreferencesService _browsePreferencesService;
+        private readonly ICatalogTaxonomyService _taxonomyService;
         private readonly List<BrowserChannelViewModel> _allChannels = new();
         private readonly List<(int Id, string Name, int Count)> _allRawCategories = new();
         private readonly Dictionary<int, string> _sourceNames = new();
@@ -198,9 +200,7 @@ namespace Kroira.App.ViewModels
             _isInitializing = true;
             try
             {
-                ManageCategoryAliasDraft = string.Equals(value.RawName, value.EffectiveName, StringComparison.OrdinalIgnoreCase)
-                    ? string.Empty
-                    : value.EffectiveName;
+                ManageCategoryAliasDraft = value.HasManualAlias ? value.EffectiveName : string.Empty;
                 IsManageCategoryHidden = value.IsHidden;
             }
             finally
@@ -214,6 +214,8 @@ namespace Kroira.App.ViewModels
         public ChannelsPageViewModel(IServiceProvider serviceProvider)
         {
             _serviceProvider = serviceProvider;
+            _browsePreferencesService = serviceProvider.GetRequiredService<IBrowsePreferencesService>();
+            _taxonomyService = serviceProvider.GetRequiredService<ICatalogTaxonomyService>();
             RegisterSpotlightSection("last_tuned", "Last tuned", "Jump straight back into the last live channel you opened.");
             RegisterSpotlightSection("recent", "Recent", "Fast return to recently watched live channels.");
             RegisterSpotlightSection("priority", "Priority channels", "Favorites, sports, guide-ready channels, and channels you revisit often.");
@@ -246,7 +248,6 @@ namespace Kroira.App.ViewModels
                 using var scope = _serviceProvider.CreateScope();
                 var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
                 var profileService = scope.ServiceProvider.GetRequiredService<IProfileStateService>();
-                var browsePreferencesService = scope.ServiceProvider.GetRequiredService<IBrowsePreferencesService>();
                 var surfaceStateService = scope.ServiceProvider.GetRequiredService<ISurfaceStateService>();
                 var sourceAvailability = await surfaceStateService.GetSourceAvailabilityAsync(db);
                 if (sourceAvailability.SourceCount == 0)
@@ -257,7 +258,7 @@ namespace Kroira.App.ViewModels
 
                 var access = await profileService.GetAccessSnapshotAsync(db);
                 _activeProfileId = access.ProfileId;
-                _preferences = await browsePreferencesService.GetAsync(db, Domain, _activeProfileId);
+                _preferences = await _browsePreferencesService.GetAsync(db, Domain, _activeProfileId);
                 Log("02: resolved services and preferences");
 
                 var categories = await db.ChannelCategories
@@ -300,21 +301,26 @@ namespace Kroira.App.ViewModels
                 foreach (var channel in channels)
                 {
                     var category = categoryMap[channel.ChannelCategoryId];
-                    var displayCategory = browsePreferencesService.GetEffectiveCategoryName(_preferences, category.Name);
+                    var presentation = _taxonomyService.ResolveLiveChannelPresentation(channel.Name);
+                    var cleanedChannelName = string.IsNullOrWhiteSpace(presentation.DisplayName)
+                        ? channel.Name
+                        : presentation.DisplayName;
+                    var displayCategory = ResolveEffectiveLiveDisplayCategoryName(category.Name, cleanedChannelName);
                     _allChannels.Add(new BrowserChannelViewModel
                     {
                         Id = channel.Id,
                         CategoryId = channel.ChannelCategoryId,
                         SourceProfileId = category.SourceProfileId,
                         SourceName = _sourceNames.TryGetValue(category.SourceProfileId, out var sourceName) ? sourceName : "Unknown Source",
-                        Name = channel.Name,
+                        RawName = channel.Name,
+                        Name = cleanedChannelName,
                         CategoryName = category.Name,
                         DisplayCategoryName = displayCategory,
                         StreamUrl = channel.StreamUrl,
                         LogoUrl = channel.LogoUrl ?? string.Empty,
                         IsFavorite = favoriteIds.Contains(channel.Id),
-                        IsSportsChannel = ContentClassifier.IsSportsLikeChannel(channel.Name, displayCategory),
-                        IsTurkishSportsChannel = ContentClassifier.IsTurkishSportsLikeChannel(channel.Name, displayCategory),
+                        IsSportsChannel = ContentClassifier.IsSportsLikeChannel(cleanedChannelName, displayCategory),
+                        IsTurkishSportsChannel = ContentClassifier.IsTurkishSportsLikeChannel(cleanedChannelName, displayCategory),
                         WatchCount = _preferences.LiveChannelWatchCounts.TryGetValue(channel.Id, out var watchCount) ? watchCount : 0,
                         LastWatchedAtUtc = progressByChannelId.TryGetValue(channel.Id, out var progress) ? progress.LastWatched : null
                     });
@@ -388,7 +394,8 @@ namespace Kroira.App.ViewModels
 
             var alias = ManageCategoryAliasDraft.Trim();
             if (string.IsNullOrWhiteSpace(alias) ||
-                string.Equals(alias, SelectedManageCategory.RawName, StringComparison.OrdinalIgnoreCase))
+                string.Equals(alias, SelectedManageCategory.RawName, StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(alias, SelectedManageCategory.AutoDisplayName, StringComparison.OrdinalIgnoreCase))
             {
                 _preferences.CategoryRemaps.Remove(normalizedKey);
             }
@@ -469,14 +476,13 @@ namespace Kroira.App.ViewModels
         private async Task ApplyFilterAsync(int requestVersion)
         {
             Log($"07: ApplyFilterAsync start request={requestVersion}");
-            var browsePreferencesService = _serviceProvider.GetRequiredService<IBrowsePreferencesService>();
-            var baseVisibleChannels = BuildSourceScopedChannels(browsePreferencesService);
+            var baseVisibleChannels = BuildSourceScopedChannels();
 
             var filtered = baseVisibleChannels.AsEnumerable();
 
             if (SelectedCategory != null && !string.IsNullOrWhiteSpace(SelectedCategory.FilterKey))
             {
-                filtered = filtered.Where(channel => MatchesCategorySelection(channel, SelectedCategory.FilterKey, browsePreferencesService));
+                filtered = filtered.Where(channel => MatchesCategorySelection(channel, SelectedCategory.FilterKey));
             }
 
             if (FavoritesOnly)
@@ -488,6 +494,7 @@ namespace Kroira.App.ViewModels
             {
                 filtered = filtered.Where(channel =>
                     channel.Name.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase) ||
+                    channel.RawName.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase) ||
                     channel.DisplayCategoryName.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase) ||
                     channel.SourceName.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase));
             }
@@ -603,8 +610,7 @@ namespace Kroira.App.ViewModels
             Log($"REFRESH: SavePreferencesAndRefreshAsync rebuildCollections={rebuildCollections}");
             using var scope = _serviceProvider.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            var browsePreferencesService = scope.ServiceProvider.GetRequiredService<IBrowsePreferencesService>();
-            await browsePreferencesService.SaveAsync(db, Domain, _activeProfileId, _preferences);
+            await _browsePreferencesService.SaveAsync(db, Domain, _activeProfileId, _preferences);
 
             if (rebuildCollections)
             {
@@ -658,7 +664,7 @@ namespace Kroira.App.ViewModels
             OnPropertyChanged(nameof(SpotlightVisibility));
         }
 
-        private List<BrowserChannelViewModel> BuildSourceScopedChannels(IBrowsePreferencesService browsePreferencesService)
+        private List<BrowserChannelViewModel> BuildSourceScopedChannels()
         {
             var visibleSourceIds = SourceVisibilityOptions
                 .Where(option => option.IsVisible)
@@ -671,10 +677,10 @@ namespace Kroira.App.ViewModels
 
             var baseVisibleChannels = _allChannels
                 .Where(channel => visibleSourceIds.Contains(channel.SourceProfileId))
-                .Where(channel => !browsePreferencesService.IsCategoryHidden(_preferences, channel.CategoryName))
+                .Where(channel => !_browsePreferencesService.IsCategoryHidden(_preferences, channel.CategoryName))
                 .Select(channel =>
                 {
-                    channel.DisplayCategoryName = browsePreferencesService.GetEffectiveCategoryName(_preferences, channel.CategoryName);
+                    channel.DisplayCategoryName = ResolveEffectiveLiveDisplayCategoryName(channel.CategoryName, channel.Name);
                     channel.IsSportsChannel = ContentClassifier.IsSportsLikeChannel(channel.Name, channel.DisplayCategoryName);
                     channel.IsTurkishSportsChannel = ContentClassifier.IsTurkishSportsLikeChannel(channel.Name, channel.DisplayCategoryName);
                     return channel;
@@ -691,7 +697,7 @@ namespace Kroira.App.ViewModels
             return baseVisibleChannels;
         }
 
-        private bool MatchesCategorySelection(BrowserChannelViewModel channel, string filterKey, IBrowsePreferencesService browsePreferencesService)
+        private bool MatchesCategorySelection(BrowserChannelViewModel channel, string filterKey)
         {
             return filterKey switch
             {
@@ -700,7 +706,7 @@ namespace Kroira.App.ViewModels
                 SmartTurkishSportsCategoryKey => channel.IsTurkishSportsChannel,
                 SmartRecentCategoryKey => _preferences.RecentChannelIds.Contains(channel.Id),
                 _ => string.Equals(
-                    browsePreferencesService.NormalizeCategoryKey(channel.DisplayCategoryName),
+                    _browsePreferencesService.NormalizeCategoryKey(channel.DisplayCategoryName),
                     filterKey,
                     StringComparison.OrdinalIgnoreCase)
             };
@@ -990,8 +996,7 @@ namespace Kroira.App.ViewModels
 
         private void BuildVisibleCategories()
         {
-            var browsePreferencesService = _serviceProvider.GetRequiredService<IBrowsePreferencesService>();
-            var visibleChannels = BuildSourceScopedChannels(browsePreferencesService);
+            var visibleChannels = BuildSourceScopedChannels();
 
             Categories.Clear();
             Categories.Add(new BrowserCategoryViewModel
@@ -1029,12 +1034,12 @@ namespace Kroira.App.ViewModels
             AddSmartCategory(-4, SmartRecentCategoryKey, "Recent", "Channels you've watched recently", visibleChannels.Count(channel => _preferences.RecentChannelIds.Contains(channel.Id)), 3);
 
             var categories = visibleChannels
-                .GroupBy(channel => browsePreferencesService.GetEffectiveCategoryName(_preferences, channel.CategoryName))
+                .GroupBy(channel => channel.DisplayCategoryName)
                 .OrderBy(group => group.Key, StringComparer.CurrentCultureIgnoreCase)
                 .Select((group, index) => new BrowserCategoryViewModel
                 {
                     Id = index + 10,
-                    FilterKey = browsePreferencesService.NormalizeCategoryKey(group.Key),
+                    FilterKey = _browsePreferencesService.NormalizeCategoryKey(group.Key),
                     Name = group.Key,
                     ItemCount = group.Count(),
                     OrderIndex = index + 10
@@ -1051,23 +1056,32 @@ namespace Kroira.App.ViewModels
 
         private void BuildCategoryManagerOptions()
         {
-            var browsePreferencesService = _serviceProvider.GetRequiredService<IBrowsePreferencesService>();
             var currentSelectionKey = SelectedManageCategory?.Key ?? string.Empty;
             ManageCategoryOptions.Clear();
 
             foreach (var category in _allRawCategories
                          .OrderBy(category => category.Name, StringComparer.CurrentCultureIgnoreCase))
             {
-                var normalizedKey = browsePreferencesService.NormalizeCategoryKey(category.Name);
+                var normalizedKey = _browsePreferencesService.NormalizeCategoryKey(category.Name);
+                var autoDisplayName = _taxonomyService.ResolveLiveCategory(category.Name, string.Empty).DisplayCategoryName;
+                var hasManualAlias = _preferences.CategoryRemaps.ContainsKey(normalizedKey);
                 ManageCategoryOptions.Add(new BrowseCategoryManagerOptionViewModel(
                     normalizedKey,
                     category.Name,
-                    browsePreferencesService.GetEffectiveCategoryName(_preferences, category.Name),
+                    ResolveEffectiveLiveDisplayCategoryName(category.Name, string.Empty),
+                    autoDisplayName,
                     category.Count,
-                    _preferences.HiddenCategoryKeys.Contains(normalizedKey, StringComparer.OrdinalIgnoreCase)));
+                    _preferences.HiddenCategoryKeys.Contains(normalizedKey, StringComparer.OrdinalIgnoreCase),
+                    hasManualAlias));
             }
 
             SelectedManageCategory = ManageCategoryOptions.FirstOrDefault(option => string.Equals(option.Key, currentSelectionKey, StringComparison.OrdinalIgnoreCase));
+        }
+
+        private string ResolveEffectiveLiveDisplayCategoryName(string? rawCategoryName, string? channelName)
+        {
+            var autoDisplayCategory = _taxonomyService.ResolveLiveCategory(rawCategoryName, channelName).DisplayCategoryName;
+            return _browsePreferencesService.GetEffectiveCategoryName(_preferences, rawCategoryName, autoDisplayCategory);
         }
 
         private void EnsureSelectedSourceOption()

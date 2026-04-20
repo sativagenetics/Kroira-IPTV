@@ -50,6 +50,19 @@ namespace Kroira.App.Services.Playback
         }
     }
 
+    public sealed class MpvPlaybackInfoSnapshot
+    {
+        public int Width { get; init; }
+        public int Height { get; init; }
+        public double FramesPerSecond { get; init; }
+        public string VideoCodec { get; init; } = string.Empty;
+        public string AudioCodec { get; init; } = string.Empty;
+        public string ContainerFormat { get; init; } = string.Empty;
+        public string PixelFormat { get; init; } = string.Empty;
+        public bool IsHardwareDecodingActive { get; init; }
+        public bool HasVideo => Width > 0 && Height > 0;
+    }
+
     internal sealed class MpvPlaybackEndedInfo
     {
         public NativeMpv.MpvEndFileReason Reason { get; init; } = NativeMpv.MpvEndFileReason.Unknown;
@@ -99,6 +112,14 @@ namespace Kroira.App.Services.Playback
         public bool IsBuffering { get; private set; }
         public double Volume { get; private set; } = 100;
         public bool IsMuted { get; private set; }
+        public double PlaybackSpeed { get; private set; } = 1.0;
+        public double AudioDelaySeconds { get; private set; }
+        public double SubtitleDelaySeconds { get; private set; }
+        public double SubtitleScale { get; private set; } = 1.0;
+        public int SubtitlePosition { get; private set; } = 100;
+        public bool IsDeinterlaceEnabled { get; private set; }
+        public double VideoZoom { get; private set; }
+        public int VideoRotation { get; private set; }
 
         public MpvPlayer(DispatcherQueue dispatcher, IntPtr videoHwnd)
         {
@@ -226,6 +247,20 @@ namespace Kroira.App.Services.Playback
             UseCtx(ctx => NativeMpv.Command(ctx, "seek", value, "absolute-percent"));
         }
 
+        public void SeekRelativeSeconds(double seconds)
+        {
+            if (!IsSeekable || double.IsNaN(seconds) || Math.Abs(seconds) < 0.001)
+            {
+                return;
+            }
+
+            UseCtx(ctx => NativeMpv.Command(
+                ctx,
+                "seek",
+                seconds.ToString(CultureInfo.InvariantCulture),
+                "relative"));
+        }
+
         public void SetVolume(double volume)
         {
             Volume = Math.Clamp(volume, 0, 100);
@@ -242,6 +277,102 @@ namespace Kroira.App.Services.Playback
         public void ToggleMute()
         {
             SetMuted(!IsMuted);
+        }
+
+        public void SetPlaybackSpeed(double speed)
+        {
+            PlaybackSpeed = Math.Clamp(speed, 0.25, 3.0);
+            UseCtx(ctx => NativeMpv.mpv_set_property_string(
+                ctx,
+                "speed",
+                PlaybackSpeed.ToString(CultureInfo.InvariantCulture)));
+        }
+
+        public void SetAudioDelaySeconds(double seconds)
+        {
+            AudioDelaySeconds = Math.Clamp(seconds, -3.0, 3.0);
+            UseCtx(ctx => NativeMpv.mpv_set_property_string(
+                ctx,
+                "audio-delay",
+                AudioDelaySeconds.ToString(CultureInfo.InvariantCulture)));
+        }
+
+        public void SetSubtitleDelaySeconds(double seconds)
+        {
+            SubtitleDelaySeconds = Math.Clamp(seconds, -10.0, 10.0);
+            UseCtx(ctx => NativeMpv.mpv_set_property_string(
+                ctx,
+                "sub-delay",
+                SubtitleDelaySeconds.ToString(CultureInfo.InvariantCulture)));
+        }
+
+        public void SetSubtitleScale(double scale)
+        {
+            SubtitleScale = Math.Clamp(scale, 0.5, 2.5);
+            UseCtx(ctx => NativeMpv.mpv_set_property_string(
+                ctx,
+                "sub-scale",
+                SubtitleScale.ToString(CultureInfo.InvariantCulture)));
+        }
+
+        public void SetSubtitlePosition(int position)
+        {
+            SubtitlePosition = Math.Clamp(position, 0, 100);
+            UseCtx(ctx => NativeMpv.mpv_set_property_string(
+                ctx,
+                "sub-pos",
+                SubtitlePosition.ToString(CultureInfo.InvariantCulture)));
+        }
+
+        public void SetDeinterlace(bool enabled)
+        {
+            IsDeinterlaceEnabled = enabled;
+            UseCtx(ctx => NativeMpv.mpv_set_property_string(ctx, "deinterlace", enabled ? "yes" : "no"));
+        }
+
+        public void SetVideoZoom(double zoom)
+        {
+            VideoZoom = Math.Clamp(zoom, -2.0, 4.0);
+            UseCtx(ctx => NativeMpv.mpv_set_property_string(
+                ctx,
+                "video-zoom",
+                VideoZoom.ToString(CultureInfo.InvariantCulture)));
+        }
+
+        public void SetVideoRotation(int rotation)
+        {
+            var normalized = rotation % 360;
+            if (normalized < 0)
+            {
+                normalized += 360;
+            }
+
+            VideoRotation = normalized;
+            UseCtx(ctx => NativeMpv.mpv_set_property_string(
+                ctx,
+                "video-rotate",
+                VideoRotation.ToString(CultureInfo.InvariantCulture)));
+        }
+
+        public void CaptureScreenshot(string filePath)
+        {
+            if (string.IsNullOrWhiteSpace(filePath))
+            {
+                return;
+            }
+
+            UseCtx(ctx => NativeMpv.Command(ctx, "screenshot-to-file", filePath, "video"));
+        }
+
+        public void LoadExternalSubtitle(string filePath)
+        {
+            if (string.IsNullOrWhiteSpace(filePath))
+            {
+                return;
+            }
+
+            UseCtx(ctx => NativeMpv.Command(ctx, "sub-add", filePath, "select"));
+            EnqueueCallback(() => TrackListChanged?.Invoke());
         }
 
         public IReadOnlyList<MpvTrackInfo> GetAudioTracks()
@@ -292,6 +423,34 @@ namespace Kroira.App.Services.Playback
                         break;
                 }
             });
+        }
+
+        public MpvPlaybackInfoSnapshot GetPlaybackInfoSnapshot()
+        {
+            return UseCtx(ctx =>
+            {
+                var width = ReadIntPropertyWithFallback(ctx, "video-params/w", "width");
+                var height = ReadIntPropertyWithFallback(ctx, "video-params/h", "height");
+                var fps = ReadDoublePropertyWithFallback(ctx, "estimated-vf-fps", "container-fps");
+                var videoCodec = ReadStringPropertyWithFallback(ctx, "video-codec", "current-tracks/video/title");
+                var audioCodec = ReadStringPropertyWithFallback(ctx, "audio-codec-name", "audio-codec");
+                var containerFormat = ReadStringPropertyWithFallback(ctx, "file-format", "demuxer-via-network");
+                var pixelFormat = ReadStringPropertyWithFallback(ctx, "video-params/pixelformat", "video-format");
+                var hwdecCurrent = ReadStringPropertyWithFallback(ctx, "hwdec-current", "hwdec");
+
+                return new MpvPlaybackInfoSnapshot
+                {
+                    Width = width,
+                    Height = height,
+                    FramesPerSecond = fps,
+                    VideoCodec = videoCodec,
+                    AudioCodec = audioCodec,
+                    ContainerFormat = containerFormat,
+                    PixelFormat = pixelFormat,
+                    IsHardwareDecodingActive = !string.IsNullOrWhiteSpace(hwdecCurrent) &&
+                                               !string.Equals(hwdecCurrent, "no", StringComparison.OrdinalIgnoreCase)
+                };
+            }, new MpvPlaybackInfoSnapshot());
         }
 
         private void SetOption(string name, string value)
@@ -601,6 +760,54 @@ namespace Kroira.App.Services.Playback
             var raw = NativeMpv.GetPropertyString(ctx, propertyName);
             return !string.IsNullOrWhiteSpace(raw) &&
                    int.TryParse(raw.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out value);
+        }
+
+        private static bool TryReadDoubleProperty(IntPtr ctx, string propertyName, out double value)
+        {
+            value = 0;
+            var raw = NativeMpv.GetPropertyString(ctx, propertyName);
+            return !string.IsNullOrWhiteSpace(raw) &&
+                   double.TryParse(raw.Trim(), NumberStyles.Float | NumberStyles.AllowThousands, CultureInfo.InvariantCulture, out value);
+        }
+
+        private static int ReadIntPropertyWithFallback(IntPtr ctx, params string[] propertyNames)
+        {
+            foreach (var propertyName in propertyNames)
+            {
+                if (TryReadIntProperty(ctx, propertyName, out var value) && value > 0)
+                {
+                    return value;
+                }
+            }
+
+            return 0;
+        }
+
+        private static double ReadDoublePropertyWithFallback(IntPtr ctx, params string[] propertyNames)
+        {
+            foreach (var propertyName in propertyNames)
+            {
+                if (TryReadDoubleProperty(ctx, propertyName, out var value) && value > 0)
+                {
+                    return value;
+                }
+            }
+
+            return 0;
+        }
+
+        private static string ReadStringPropertyWithFallback(IntPtr ctx, params string[] propertyNames)
+        {
+            foreach (var propertyName in propertyNames)
+            {
+                var value = NativeMpv.GetPropertyString(ctx, propertyName);
+                if (!string.IsNullOrWhiteSpace(value))
+                {
+                    return value.Trim();
+                }
+            }
+
+            return string.Empty;
         }
 
         public void Dispose()

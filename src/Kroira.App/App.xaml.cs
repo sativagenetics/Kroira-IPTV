@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Kroira.App.Data;
 using Kroira.App.Services;
 using Kroira.App.Services.Metadata;
+using Kroira.App.Services.Playback;
 using Kroira.App.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
@@ -234,8 +235,10 @@ namespace Kroira.App
             services.AddSingleton<IWindowManagerService, WindowManagerService>();
             services.AddSingleton<IPictureInPictureService, PictureInPictureService>();
             services.AddSingleton<IInputInterceptorService, InputInterceptorService>();
+            services.AddSingleton<IPlayerPreferencesService, PlayerPreferencesService>();
             services.AddSingleton<ITmdbMetadataService, TmdbMetadataService>();
             services.AddSingleton<ICatalogDeduplicationService, CatalogDeduplicationService>();
+            services.AddSingleton<ICatalogTaxonomyService, CatalogTaxonomyService>();
             services.AddSingleton<ICatalogSurfaceCountService, CatalogSurfaceCountService>();
             services.AddSingleton<IHomeRecommendationService, HomeRecommendationService>();
             services.AddSingleton<ILiveGuideService, LiveGuideService>();

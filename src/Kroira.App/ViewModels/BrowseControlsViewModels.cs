@@ -59,20 +59,31 @@ namespace Kroira.App.ViewModels
 
     public sealed class BrowseCategoryManagerOptionViewModel
     {
-        public BrowseCategoryManagerOptionViewModel(string key, string rawName, string effectiveName, int itemCount, bool isHidden)
+        public BrowseCategoryManagerOptionViewModel(
+            string key,
+            string rawName,
+            string effectiveName,
+            string autoDisplayName,
+            int itemCount,
+            bool isHidden,
+            bool hasManualAlias)
         {
             Key = key;
             RawName = rawName;
             EffectiveName = effectiveName;
+            AutoDisplayName = autoDisplayName;
             ItemCount = itemCount;
             IsHidden = isHidden;
+            HasManualAlias = hasManualAlias;
         }
 
         public string Key { get; }
         public string RawName { get; }
         public string EffectiveName { get; }
+        public string AutoDisplayName { get; }
         public int ItemCount { get; }
         public bool IsHidden { get; }
+        public bool HasManualAlias { get; }
 
         public string DisplayName
         {

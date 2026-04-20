@@ -33,6 +33,7 @@ namespace Kroira.App.Services
         Task SaveAsync(AppDbContext db, string domain, int profileId, BrowsePreferences preferences);
         string NormalizeCategoryKey(string? categoryName);
         string GetEffectiveCategoryName(BrowsePreferences preferences, string? categoryName);
+        string GetEffectiveCategoryName(BrowsePreferences preferences, string? categoryName, string? defaultDisplayCategoryName);
         bool IsCategoryHidden(BrowsePreferences preferences, string? categoryName);
     }
 
@@ -129,11 +130,21 @@ namespace Kroira.App.Services
 
         public string GetEffectiveCategoryName(BrowsePreferences preferences, string? categoryName)
         {
+            return GetEffectiveCategoryName(preferences, categoryName, categoryName);
+        }
+
+        public string GetEffectiveCategoryName(BrowsePreferences preferences, string? categoryName, string? defaultDisplayCategoryName)
+        {
             var normalizedKey = NormalizeCategoryKey(categoryName);
             if (preferences.CategoryRemaps.TryGetValue(normalizedKey, out var remapped) &&
                 !string.IsNullOrWhiteSpace(remapped))
             {
                 return remapped.Trim();
+            }
+
+            if (!string.IsNullOrWhiteSpace(defaultDisplayCategoryName))
+            {
+                return defaultDisplayCategoryName.Trim();
             }
 
             return string.IsNullOrWhiteSpace(categoryName) ? "Uncategorized" : categoryName.Trim();

@@ -4,7 +4,8 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     Background="Black"
     NavigationCacheMode="Disabled"
-    PointerMoved="Page_PointerMoved">
+    PointerMoved="Page_PointerMoved"
+    PointerWheelChanged="Page_PointerWheelChanged">
 
     <Grid x:Name="RootGrid" Background="Black">
         <Grid.RowDefinitions>
@@ -13,203 +14,239 @@
             <RowDefinition x:Name="BottomRow" Height="Auto" />
         </Grid.RowDefinitions>
 
-        <!-- Top control bar -->
-        <Border x:Name="TopBar" Grid.Row="0"
-                Background="#CC000000"
-                BorderBrush="#2F344E" BorderThickness="0,0,0,1"
-                Padding="16,10">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
-                <Button Grid.Column="0" Click="Back_Click"
-                        Background="Transparent" BorderThickness="0"
-                        Foreground="{StaticResource KroiraTextPrimaryBrush}"
-                        ToolTipService.ToolTip="Back"
-                        Padding="8">
-                    <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE72B;" />
-                </Button>
-                <TextBlock Grid.Column="1" x:Name="TitleText"
-                           VerticalAlignment="Center" Margin="12,0,0,0"
-                           FontSize="15" FontWeight="SemiBold"
-                           Foreground="{StaticResource KroiraTextPrimaryBrush}"
-                           TextTrimming="CharacterEllipsis" />
-                <Border Grid.Column="2" x:Name="LivePill"
-                        Visibility="Collapsed"
-                        Background="#B7B2FF" CornerRadius="4"
-                        Padding="8,2" VerticalAlignment="Center">
-                    <TextBlock Text="LIVE" FontSize="11" FontWeight="Bold" Foreground="#090B13" />
-                </Border>
-            </Grid>
-        </Border>
-
-        <!-- Video surface host. The Win32 child HWND is sized to match this element. -->
-        <Grid x:Name="VideoHost" Grid.Row="1" Background="Black" />
-
-        <!-- Bottom control bar -->
-        <Border x:Name="BottomBar" Grid.Row="2"
-                Background="#CC000000"
-                BorderBrush="#2F344E" BorderThickness="0,1,0,0"
-                Padding="16,8,16,12">
-            <Grid RowSpacing="6">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
-                </Grid.RowDefinitions>
-
-                <Grid Grid.Row="0">
+        <Border x:Name="TopBar" Grid.Row="0" Background="#CC000000" BorderBrush="#2F344E" BorderThickness="0,0,0,1" Padding="16,10">
+            <StackPanel Spacing="12">
+                <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
-                    <TextBlock Grid.Column="0" x:Name="PositionText" Text="0:00"
-                               VerticalAlignment="Center"
-                               Foreground="{StaticResource KroiraTextSecondaryBrush}"
-                               FontSize="12" />
-                    <Slider Grid.Column="1" x:Name="TimelineSlider"
-                            Minimum="0" Maximum="1000" StepFrequency="1"
-                            Margin="12,0"
-                            IsThumbToolTipEnabled="False"
-                            VerticalAlignment="Center"
-                            PointerPressed="TimelineSlider_PointerPressed"
-                            PointerReleased="TimelineSlider_PointerReleased"
-                            PointerCaptureLost="TimelineSlider_PointerCaptureLost"
-                            LostFocus="TimelineSlider_LostFocus"
-                            KeyUp="TimelineSlider_KeyUp" />
-                    <TextBlock Grid.Column="2" x:Name="DurationText" Text="0:00"
-                               VerticalAlignment="Center"
-                               Foreground="{StaticResource KroiraTextSecondaryBrush}"
-                               FontSize="12" />
+
+                    <Button Grid.Column="0" Click="Back_Click" Background="Transparent" BorderThickness="0" Foreground="{StaticResource KroiraTextPrimaryBrush}" ToolTipService.ToolTip="Back" Padding="8">
+                        <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE72B;" />
+                    </Button>
+
+                    <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center" Spacing="2">
+                        <TextBlock x:Name="TitleText" FontSize="16" FontWeight="SemiBold" Foreground="{StaticResource KroiraTextPrimaryBrush}" TextTrimming="CharacterEllipsis" />
+                        <TextBlock x:Name="ContextText" FontSize="12" Foreground="{StaticResource KroiraTextSecondaryBrush}" TextTrimming="CharacterEllipsis" Visibility="Collapsed" />
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Spacing="8">
+                        <Button x:Name="FavoriteButton" Click="FavoriteButton_Click" Background="Transparent" BorderThickness="0" Foreground="{StaticResource KroiraGoldBrush}" ToolTipService.ToolTip="Save" Padding="8">
+                            <FontIcon x:Name="FavoriteIcon" FontFamily="Segoe MDL2 Assets" Glyph="&#xE734;" />
+                        </Button>
+                        <Button x:Name="GuidePanelButton" Click="GuidePanelToggle_Click" Background="Transparent" BorderThickness="0" Foreground="{StaticResource KroiraTextPrimaryBrush}" Padding="8,6" Visibility="Collapsed">
+                            <TextBlock Text="Guide" FontSize="12" FontWeight="SemiBold" />
+                        </Button>
+                        <Button x:Name="ChannelPanelButton" Click="ChannelPanelToggle_Click" Background="Transparent" BorderThickness="0" Foreground="{StaticResource KroiraTextPrimaryBrush}" Padding="8,6" Visibility="Collapsed">
+                            <TextBlock Text="Channels" FontSize="12" FontWeight="SemiBold" />
+                        </Button>
+                        <Button x:Name="EpisodePanelButton" Click="EpisodePanelToggle_Click" Background="Transparent" BorderThickness="0" Foreground="{StaticResource KroiraTextPrimaryBrush}" Padding="8,6" Visibility="Collapsed">
+                            <TextBlock Text="Episodes" FontSize="12" FontWeight="SemiBold" />
+                        </Button>
+                        <Button x:Name="InfoPanelButton" Click="InfoPanelToggle_Click" Background="Transparent" BorderThickness="0" Foreground="{StaticResource KroiraTextPrimaryBrush}" Padding="8,6">
+                            <TextBlock Text="Info" FontSize="12" FontWeight="SemiBold" />
+                        </Button>
+                        <Border Grid.Column="2" x:Name="LivePill" Visibility="Collapsed" Background="#B7B2FF" CornerRadius="4" Padding="8,2" VerticalAlignment="Center">
+                            <TextBlock Text="LIVE" FontSize="11" FontWeight="Bold" Foreground="#090B13" />
+                        </Border>
+                    </StackPanel>
                 </Grid>
 
-                <StackPanel Grid.Row="1" Orientation="Horizontal"
-                            HorizontalAlignment="Center" Spacing="8">
-                    <Button x:Name="GoLiveButton" Click="GoLive_Click"
-                            Visibility="Collapsed"
-                            Background="Transparent" BorderThickness="0"
-                            Foreground="{StaticResource KroiraTextPrimaryBrush}"
-                            ToolTipService.ToolTip="Go to live"
-                            Padding="10,6">
-                        <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                            <Ellipse Width="7" Height="7" Fill="#FF4D5F" VerticalAlignment="Center" />
-                            <TextBlock Text="LIVE" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center" />
-                        </StackPanel>
-                    </Button>
-                    <Button x:Name="PlayPauseButton" Click="PlayPause_Click"
-                            Background="Transparent" BorderThickness="0"
-                            Foreground="{StaticResource KroiraTextPrimaryBrush}"
-                            ToolTipService.ToolTip="Play / Pause"
-                            Padding="10">
-                        <FontIcon x:Name="PlayPauseIcon" FontFamily="Segoe MDL2 Assets" Glyph="&#xE769;" />
-                    </Button>
-                    <Button x:Name="StopButton" Click="Stop_Click"
-                            Background="Transparent" BorderThickness="0"
-                            Foreground="{StaticResource KroiraTextPrimaryBrush}"
-                            ToolTipService.ToolTip="Stop"
-                            Padding="10">
-                        <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE71A;" />
-                    </Button>
-                    <Button x:Name="AudioTrackButton"
-                            Visibility="Collapsed"
-                            Background="Transparent" BorderThickness="0"
-                            Foreground="{StaticResource KroiraTextPrimaryBrush}"
-                            Padding="10,6"
-                            ToolTipService.ToolTip="Audio track">
-                        <Button.Flyout>
-                            <MenuFlyout x:Name="AudioTrackFlyout" />
-                        </Button.Flyout>
-                        <TextBlock Text="Audio" FontSize="12" FontWeight="SemiBold" />
-                    </Button>
-                    <Button x:Name="SubtitleTrackButton"
-                            Visibility="Collapsed"
-                            Background="Transparent" BorderThickness="0"
-                            Foreground="{StaticResource KroiraTextPrimaryBrush}"
-                            Padding="10,6"
-                            ToolTipService.ToolTip="Subtitles">
-                        <Button.Flyout>
-                            <MenuFlyout x:Name="SubtitleTrackFlyout" />
-                        </Button.Flyout>
-                        <TextBlock Text="Subs" FontSize="12" FontWeight="SemiBold" />
-                    </Button>
-                    <Button x:Name="AspectButton"
-                            Background="Transparent" BorderThickness="0"
-                            Foreground="{StaticResource KroiraTextPrimaryBrush}"
-                            Padding="10,6"
-                            ToolTipService.ToolTip="Aspect">
-                        <Button.Flyout>
-                            <MenuFlyout x:Name="AspectFlyout" />
-                        </Button.Flyout>
-                        <TextBlock Text="Aspect" FontSize="12" FontWeight="SemiBold" />
-                    </Button>
-                    <Button x:Name="PictureInPictureButton" Click="PictureInPicture_Click"
-                            Background="Transparent" BorderThickness="0"
-                            Foreground="{StaticResource KroiraTextPrimaryBrush}"
-                            ToolTipService.ToolTip="Picture in Picture"
-                            Padding="10,6">
-                        <TextBlock x:Name="PictureInPictureButtonText" Text="PIP" FontSize="12" FontWeight="SemiBold" />
-                    </Button>
-                    <Button x:Name="FullscreenButton" Click="Fullscreen_Click"
-                            Background="Transparent" BorderThickness="0"
-                            Foreground="{StaticResource KroiraTextPrimaryBrush}"
-                            ToolTipService.ToolTip="Fullscreen"
-                            Padding="10">
-                        <FontIcon x:Name="FullscreenIcon" FontFamily="Segoe MDL2 Assets" Glyph="&#xE740;" />
-                    </Button>
-                    <StackPanel Orientation="Horizontal"
-                                VerticalAlignment="Center"
-                                Spacing="6"
-                                Margin="16,0,0,0">
-                        <Button x:Name="MuteButton" Click="Mute_Click"
-                                Background="Transparent" BorderThickness="0"
-                                Foreground="{StaticResource KroiraTextPrimaryBrush}"
-                                ToolTipService.ToolTip="Mute"
-                                Padding="8">
-                            <FontIcon x:Name="MuteIcon" FontFamily="Segoe MDL2 Assets" Glyph="&#xE767;" />
-                        </Button>
-                        <Slider x:Name="VolumeSlider"
-                                Minimum="0" Maximum="100" Value="100"
-                                Width="120"
-                                StepFrequency="1"
-                                IsThumbToolTipEnabled="False"
-                                VerticalAlignment="Center"
-                                ValueChanged="VolumeSlider_ValueChanged" />
+                <Border x:Name="ZapBanner" Visibility="Collapsed" Background="#161D2C" BorderBrush="#2F344E" BorderThickness="1" CornerRadius="10" Padding="12,10">
+                    <StackPanel Spacing="4">
+                        <TextBlock x:Name="ZapBannerTitleText" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource KroiraTextPrimaryBrush}" />
+                        <TextBlock x:Name="ZapBannerMessageText" FontSize="12" Foreground="{StaticResource KroiraTextSecondaryBrush}" TextWrapping="Wrap" />
                     </StackPanel>
-                </StackPanel>
-            </Grid>
-        </Border>
+                </Border>
 
-        <Border x:Name="StatusOverlay" Grid.RowSpan="3"
-                Background="#96090B13"
-                Visibility="Collapsed"
-                IsHitTestVisible="False">
-            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="12" MaxWidth="420" Padding="24">
-                <ProgressRing x:Name="StatusRing" Width="34" Height="34" IsActive="False" HorizontalAlignment="Center" />
-                <TextBlock x:Name="StatusTitle"
-                           FontSize="20" FontWeight="SemiBold"
-                           Foreground="{StaticResource KroiraTextPrimaryBrush}"
-                           HorizontalAlignment="Center" />
-                <TextBlock x:Name="StatusMessage"
-                           Foreground="{StaticResource KroiraTextSecondaryBrush}"
-                           TextWrapping="Wrap" HorizontalAlignment="Center"
-                           TextAlignment="Center" />
+                <Border x:Name="MiniGuidePanel" Visibility="Collapsed" Background="#141A29" BorderBrush="#2F344E" BorderThickness="1" CornerRadius="12" Padding="14,12">
+                    <StackPanel Spacing="6">
+                        <TextBlock Text="Now / Next" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource KroiraTextSecondaryBrush}" />
+                        <TextBlock x:Name="GuideCurrentTitleText" FontSize="16" FontWeight="SemiBold" Foreground="{StaticResource KroiraTextPrimaryBrush}" TextWrapping="Wrap" />
+                        <TextBlock x:Name="GuideCurrentTimeText" FontSize="12" Foreground="{StaticResource KroiraTextSecondaryBrush}" />
+                        <TextBlock x:Name="GuideNextTitleText" FontSize="13" Foreground="{StaticResource KroiraTextPrimaryBrush}" TextWrapping="Wrap" />
+                        <TextBlock x:Name="GuideNextTimeText" FontSize="12" Foreground="{StaticResource KroiraTextSecondaryBrush}" />
+                        <TextBlock x:Name="GuideConfidenceText" FontSize="12" Foreground="{StaticResource KroiraTextSecondaryBrush}" TextWrapping="Wrap" />
+                    </StackPanel>
+                </Border>
+
+                <Border x:Name="ChannelSwitchPanel" Visibility="Collapsed" Background="#141A29" BorderBrush="#2F344E" BorderThickness="1" CornerRadius="12" Padding="14,12">
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="Channel surf" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource KroiraTextSecondaryBrush}" />
+                        <TextBox x:Name="ChannelSearchBox" PlaceholderText="Search channels" TextChanged="ChannelSearchBox_TextChanged" />
+                        <TextBlock x:Name="ChannelSearchStatusText" FontSize="12" Foreground="{StaticResource KroiraTextSecondaryBrush}" />
+                        <ListView x:Name="ChannelSwitchList" MaxHeight="240" IsItemClickEnabled="True" SelectionMode="None" ItemClick="ChannelSwitchList_ItemClick">
+                            <ListView.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Padding="0,6">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0" Spacing="2">
+                                            <TextBlock Text="{Binding Name}" Foreground="{StaticResource KroiraTextPrimaryBrush}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                                            <TextBlock Text="{Binding MetaText}" Foreground="{StaticResource KroiraTextSecondaryBrush}" FontSize="12" TextWrapping="Wrap" />
+                                        </StackPanel>
+                                        <TextBlock Grid.Column="1" Text="{Binding SourceName}" Foreground="{StaticResource KroiraTextSecondaryBrush}" FontSize="11" Margin="12,0,0,0" VerticalAlignment="Top" />
+                                    </Grid>
+                                </DataTemplate>
+                            </ListView.ItemTemplate>
+                        </ListView>
+                    </StackPanel>
+                </Border>
+
+                <Border x:Name="EpisodePanel" Visibility="Collapsed" Background="#141A29" BorderBrush="#2F344E" BorderThickness="1" CornerRadius="12" Padding="14,12">
+                    <StackPanel Spacing="8">
+                        <TextBlock x:Name="EpisodePanelHeaderText" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource KroiraTextSecondaryBrush}" />
+                        <TextBlock x:Name="EpisodePanelStatusText" FontSize="12" Foreground="{StaticResource KroiraTextSecondaryBrush}" TextWrapping="Wrap" />
+                        <ListView x:Name="EpisodeSwitchList" MaxHeight="240" IsItemClickEnabled="True" SelectionMode="None" ItemClick="EpisodeSwitchList_ItemClick">
+                            <ListView.ItemTemplate>
+                                <DataTemplate>
+                                    <StackPanel Padding="0,6" Spacing="2">
+                                        <TextBlock Text="{Binding EpisodeLabel}" Foreground="{StaticResource KroiraTextPrimaryBrush}" FontWeight="SemiBold" />
+                                        <TextBlock Text="{Binding Title}" Foreground="{StaticResource KroiraTextSecondaryBrush}" FontSize="12" TextWrapping="Wrap" />
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ListView.ItemTemplate>
+                        </ListView>
+                    </StackPanel>
+                </Border>
+
+                <Border x:Name="InfoPanel" Visibility="Collapsed" Background="#141A29" BorderBrush="#2F344E" BorderThickness="1" CornerRadius="12" Padding="14,12">
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="Playback diagnostics" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource KroiraTextSecondaryBrush}" />
+                        <TextBlock x:Name="InfoSummaryText" FontSize="12" Foreground="{StaticResource KroiraTextSecondaryBrush}" TextWrapping="Wrap" />
+                        <Grid ColumnSpacing="18" RowSpacing="6">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="Resolution" Foreground="{StaticResource KroiraTextSecondaryBrush}" />
+                            <TextBlock x:Name="InfoResolutionText" Grid.Row="0" Grid.Column="1" Foreground="{StaticResource KroiraTextPrimaryBrush}" />
+                            <TextBlock Grid.Row="0" Grid.Column="2" Text="FPS" Foreground="{StaticResource KroiraTextSecondaryBrush}" />
+                            <TextBlock x:Name="InfoFpsText" Grid.Row="0" Grid.Column="3" Foreground="{StaticResource KroiraTextPrimaryBrush}" />
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="Video" Foreground="{StaticResource KroiraTextSecondaryBrush}" />
+                            <TextBlock x:Name="InfoVideoCodecText" Grid.Row="1" Grid.Column="1" Foreground="{StaticResource KroiraTextPrimaryBrush}" />
+                            <TextBlock Grid.Row="1" Grid.Column="2" Text="Audio" Foreground="{StaticResource KroiraTextSecondaryBrush}" />
+                            <TextBlock x:Name="InfoAudioCodecText" Grid.Row="1" Grid.Column="3" Foreground="{StaticResource KroiraTextPrimaryBrush}" />
+                            <TextBlock Grid.Row="2" Grid.Column="0" Text="Source" Foreground="{StaticResource KroiraTextSecondaryBrush}" />
+                            <TextBlock x:Name="InfoSourceText" Grid.Row="2" Grid.Column="1" Foreground="{StaticResource KroiraTextPrimaryBrush}" TextWrapping="Wrap" />
+                            <TextBlock Grid.Row="2" Grid.Column="2" Text="Speed" Foreground="{StaticResource KroiraTextSecondaryBrush}" />
+                            <TextBlock x:Name="InfoSpeedText" Grid.Row="2" Grid.Column="3" Foreground="{StaticResource KroiraTextPrimaryBrush}" />
+                            <TextBlock Grid.Row="3" Grid.Column="0" Text="Seek" Foreground="{StaticResource KroiraTextSecondaryBrush}" />
+                            <TextBlock x:Name="InfoSeekText" Grid.Row="3" Grid.Column="1" Foreground="{StaticResource KroiraTextPrimaryBrush}" />
+                            <TextBlock Grid.Row="3" Grid.Column="2" Text="Guide" Foreground="{StaticResource KroiraTextSecondaryBrush}" />
+                            <TextBlock x:Name="InfoGuideText" Grid.Row="3" Grid.Column="3" Foreground="{StaticResource KroiraTextPrimaryBrush}" TextWrapping="Wrap" />
+                        </Grid>
+                    </StackPanel>
+                </Border>
             </StackPanel>
         </Border>
 
-        <!-- Error overlay -->
-        <Border x:Name="ErrorOverlay" Grid.RowSpan="3"
-                Background="#E6090B13"
-                Visibility="Collapsed">
+        <Grid x:Name="VideoHost" Grid.Row="1" Background="Black" />
+
+        <Border x:Name="BottomBar" Grid.Row="2" Background="#CC000000" BorderBrush="#2F344E" BorderThickness="0,1,0,0" Padding="16,8,16,12">
+            <Grid RowSpacing="8">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <TextBlock x:Name="PlaybackHintText" Grid.Row="0" Foreground="{StaticResource KroiraTextSecondaryBrush}" FontSize="12" TextWrapping="Wrap" Visibility="Collapsed" />
+
+                <Grid Grid.Row="1">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0" x:Name="PositionText" Text="0:00" VerticalAlignment="Center" Foreground="{StaticResource KroiraTextSecondaryBrush}" FontSize="12" />
+                    <Slider Grid.Column="1" x:Name="TimelineSlider" Minimum="0" Maximum="1000" StepFrequency="1" Margin="12,0" IsThumbToolTipEnabled="False" VerticalAlignment="Center" PointerPressed="TimelineSlider_PointerPressed" PointerReleased="TimelineSlider_PointerReleased" PointerCaptureLost="TimelineSlider_PointerCaptureLost" LostFocus="TimelineSlider_LostFocus" KeyUp="TimelineSlider_KeyUp" />
+                    <TextBlock Grid.Column="2" x:Name="DurationText" Text="0:00" VerticalAlignment="Center" Foreground="{StaticResource KroiraTextSecondaryBrush}" FontSize="12" />
+                </Grid>
+
+                <ScrollViewer Grid.Row="2" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" ZoomMode="Disabled">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="6">
+                        <Button x:Name="PreviousChannelButton" Click="PreviousChannel_Click" Visibility="Collapsed" Background="Transparent" BorderThickness="0" Foreground="{StaticResource KroiraTextPrimaryBrush}" Padding="10"><FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE892;" /></Button>
+                        <Button x:Name="LastChannelButton" Click="LastChannel_Click" Visibility="Collapsed" Background="Transparent" BorderThickness="0" Foreground="{StaticResource KroiraTextPrimaryBrush}" Padding="10"><FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE1D3;" /></Button>
+                        <Button x:Name="Back30Button" Click="Back30_Click" Visibility="Collapsed" Background="Transparent" BorderThickness="0" Foreground="{StaticResource KroiraTextPrimaryBrush}" Padding="10,6"><TextBlock Text="-30s" FontSize="12" FontWeight="SemiBold" /></Button>
+                        <Button x:Name="Back10Button" Click="Back10_Click" Visibility="Collapsed" Background="Transparent" BorderThickness="0" Foreground="{StaticResource KroiraTextPrimaryBrush}" Padding="10,6"><TextBlock Text="-10s" FontSize="12" FontWeight="SemiBold" /></Button>
+                        <Button x:Name="RestartButton" Click="Restart_Click" Visibility="Collapsed" Background="Transparent" BorderThickness="0" Foreground="{StaticResource KroiraTextPrimaryBrush}" Padding="10"><FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE72C;" /></Button>
+                        <Button x:Name="PlayPauseButton" Click="PlayPause_Click" Background="Transparent" BorderThickness="0" Foreground="{StaticResource KroiraTextPrimaryBrush}" Padding="10"><FontIcon x:Name="PlayPauseIcon" FontFamily="Segoe MDL2 Assets" Glyph="&#xE769;" /></Button>
+                        <Button x:Name="StopButton" Click="Stop_Click" Background="Transparent" BorderThickness="0" Foreground="{StaticResource KroiraTextPrimaryBrush}" Padding="10"><FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE71A;" /></Button>
+                        <Button x:Name="Forward10Button" Click="Forward10_Click" Visibility="Collapsed" Background="Transparent" BorderThickness="0" Foreground="{StaticResource KroiraTextPrimaryBrush}" Padding="10,6"><TextBlock Text="+10s" FontSize="12" FontWeight="SemiBold" /></Button>
+                        <Button x:Name="Forward30Button" Click="Forward30_Click" Visibility="Collapsed" Background="Transparent" BorderThickness="0" Foreground="{StaticResource KroiraTextPrimaryBrush}" Padding="10,6"><TextBlock Text="+30s" FontSize="12" FontWeight="SemiBold" /></Button>
+                        <Button x:Name="NextChannelButton" Click="NextChannel_Click" Visibility="Collapsed" Background="Transparent" BorderThickness="0" Foreground="{StaticResource KroiraTextPrimaryBrush}" Padding="10"><FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE893;" /></Button>
+                        <Button x:Name="GoLiveButton" Click="GoLive_Click" Visibility="Collapsed" Background="Transparent" BorderThickness="0" Foreground="{StaticResource KroiraTextPrimaryBrush}" Padding="10,6">
+                            <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                <Ellipse Width="7" Height="7" Fill="#FF4D5F" VerticalAlignment="Center" />
+                                <TextBlock Text="LIVE" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+                        <Button x:Name="SpeedButton" Visibility="Collapsed" Background="Transparent" BorderThickness="0" Foreground="{StaticResource KroiraTextPrimaryBrush}" Padding="10,6">
+                            <Button.Flyout><MenuFlyout x:Name="SpeedFlyout" /></Button.Flyout>
+                            <TextBlock x:Name="SpeedButtonText" Text="1.0x" FontSize="12" FontWeight="SemiBold" />
+                        </Button>
+                        <Button x:Name="AudioTrackButton" Visibility="Collapsed" Background="Transparent" BorderThickness="0" Foreground="{StaticResource KroiraTextPrimaryBrush}" Padding="10,6">
+                            <Button.Flyout><MenuFlyout x:Name="AudioTrackFlyout" /></Button.Flyout>
+                            <TextBlock Text="Audio" FontSize="12" FontWeight="SemiBold" />
+                        </Button>
+                        <Button x:Name="SubtitleTrackButton" Visibility="Collapsed" Background="Transparent" BorderThickness="0" Foreground="{StaticResource KroiraTextPrimaryBrush}" Padding="10,6">
+                            <Button.Flyout><MenuFlyout x:Name="SubtitleTrackFlyout" /></Button.Flyout>
+                            <TextBlock Text="Subs" FontSize="12" FontWeight="SemiBold" />
+                        </Button>
+                        <Button x:Name="AspectButton" Background="Transparent" BorderThickness="0" Foreground="{StaticResource KroiraTextPrimaryBrush}" Padding="10,6">
+                            <Button.Flyout><MenuFlyout x:Name="AspectFlyout" /></Button.Flyout>
+                            <TextBlock Text="Display" FontSize="12" FontWeight="SemiBold" />
+                        </Button>
+                        <Button x:Name="ToolsButton" Background="Transparent" BorderThickness="0" Foreground="{StaticResource KroiraTextPrimaryBrush}" Padding="10,6">
+                            <Button.Flyout><MenuFlyout x:Name="ToolsFlyout" /></Button.Flyout>
+                            <TextBlock Text="Tools" FontSize="12" FontWeight="SemiBold" />
+                        </Button>
+                        <Button x:Name="PictureInPictureButton" Click="PictureInPicture_Click" Background="Transparent" BorderThickness="0" Foreground="{StaticResource KroiraTextPrimaryBrush}" Padding="10,6">
+                            <TextBlock x:Name="PictureInPictureButtonText" Text="PIP" FontSize="12" FontWeight="SemiBold" />
+                        </Button>
+                        <Button x:Name="FullscreenButton" Click="Fullscreen_Click" Background="Transparent" BorderThickness="0" Foreground="{StaticResource KroiraTextPrimaryBrush}" Padding="10">
+                            <FontIcon x:Name="FullscreenIcon" FontFamily="Segoe MDL2 Assets" Glyph="&#xE740;" />
+                        </Button>
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Spacing="6" Margin="10,0,0,0">
+                            <Button x:Name="MuteButton" Click="Mute_Click" Background="Transparent" BorderThickness="0" Foreground="{StaticResource KroiraTextPrimaryBrush}" Padding="8">
+                                <FontIcon x:Name="MuteIcon" FontFamily="Segoe MDL2 Assets" Glyph="&#xE767;" />
+                            </Button>
+                            <Slider x:Name="VolumeSlider" Minimum="0" Maximum="100" Value="100" Width="120" StepFrequency="1" IsThumbToolTipEnabled="False" VerticalAlignment="Center" ValueChanged="VolumeSlider_ValueChanged" />
+                        </StackPanel>
+                    </StackPanel>
+                </ScrollViewer>
+            </Grid>
+        </Border>
+
+        <Border x:Name="StatusOverlay" Grid.RowSpan="3" Background="#96090B13" Visibility="Collapsed" IsHitTestVisible="False">
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="12" MaxWidth="420" Padding="24">
+                <ProgressRing x:Name="StatusRing" Width="34" Height="34" IsActive="False" HorizontalAlignment="Center" />
+                <TextBlock x:Name="StatusTitle" FontSize="20" FontWeight="SemiBold" Foreground="{StaticResource KroiraTextPrimaryBrush}" HorizontalAlignment="Center" />
+                <TextBlock x:Name="StatusMessage" Foreground="{StaticResource KroiraTextSecondaryBrush}" TextWrapping="Wrap" HorizontalAlignment="Center" TextAlignment="Center" />
+            </StackPanel>
+        </Border>
+
+        <Border x:Name="ErrorOverlay" Grid.RowSpan="3" Background="#E6090B13" Visibility="Collapsed">
             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="10" MaxWidth="520" Padding="24">
-                <TextBlock Text="Playback error" FontSize="20" FontWeight="SemiBold"
-                           Foreground="{StaticResource KroiraTextPrimaryBrush}" HorizontalAlignment="Center" />
-                <TextBlock x:Name="ErrorMessage"
-                           Foreground="{StaticResource KroiraTextSecondaryBrush}"
-                           TextWrapping="Wrap" HorizontalAlignment="Center" />
-                <Button Click="Back_Click" Style="{StaticResource KroiraPrimaryButtonStyle}"
-                        HorizontalAlignment="Center" Margin="0,12,0,0" Content="Go back" />
+                <TextBlock Text="Playback error" FontSize="20" FontWeight="SemiBold" Foreground="{StaticResource KroiraTextPrimaryBrush}" HorizontalAlignment="Center" />
+                <TextBlock x:Name="ErrorMessage" Foreground="{StaticResource KroiraTextSecondaryBrush}" TextWrapping="Wrap" HorizontalAlignment="Center" TextAlignment="Center" />
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="10" Margin="0,12,0,0">
+                    <Button Click="RetryPlayback_Click" Style="{StaticResource KroiraPrimaryButtonStyle}" Content="Retry" />
+                    <Button Click="Back_Click" Content="Go back" />
+                </StackPanel>
             </StackPanel>
         </Border>
     </Grid>

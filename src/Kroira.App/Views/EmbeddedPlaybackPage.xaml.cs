@@ -142,6 +142,9 @@ namespace Kroira.App.Views
             WireOverlayFlyout(AudioTrackFlyout);
             WireOverlayFlyout(SubtitleTrackFlyout);
             WireOverlayFlyout(AspectFlyout);
+            WireOverlayFlyout(SpeedFlyout);
+            WireOverlayFlyout(ToolsFlyout);
+            InitializeEnhancedPlayerUi(services);
 
             Loaded += OnPageLoaded;
             Unloaded += OnPageUnloaded;
@@ -297,6 +300,12 @@ namespace Kroira.App.Views
                     return;
                 }
 
+                await LoadEnhancedPlayerStateAsync(cancellationToken);
+                if (!IsPlaybackSessionActive(playbackSessionId, cancellationToken) || _context == null)
+                {
+                    return;
+                }
+
                 var parentHwnd = ResolveHostWindowHandle();
                 _surface = new VideoSurface(parentHwnd, VideoHost,
                     onClick: OnVideoClick,
@@ -369,6 +378,12 @@ namespace Kroira.App.Views
             StopTimer(ref _loadTimeoutTimer);
             StopTimer(ref _bufferTimeoutTimer);
             StopTimer(ref _progressPersistTimer);
+            _sleepTimer?.Stop();
+            _sleepDeadline = null;
+            if (_zapBannerTimer != null)
+            {
+                _zapBannerTimer.Stop();
+            }
             _overlayHiddenByInactivity = false;
             EnsureCursorVisible();
 
@@ -781,6 +796,8 @@ namespace Kroira.App.Views
             }
 
             UpdateInteractionState();
+            RefreshInfoPanel();
+            UpdatePlaybackHint();
             UpdateOverlayVisibility($"state_{snapshot.State.ToString().ToLowerInvariant()}");
         }
 
@@ -807,6 +824,9 @@ namespace Kroira.App.Views
             {
                 MarkPlaybackActive();
             }
+
+            RefreshInfoPanel();
+            UpdatePlaybackHint();
         }
 
         private void OnDurationChanged(TimeSpan duration)
@@ -815,6 +835,8 @@ namespace Kroira.App.Views
             _lastDurationMs = (long)duration.TotalMilliseconds;
             DurationText.Text = FormatTime(duration);
             UpdateLiveAndSeekUi();
+            RefreshInfoPanel();
+            UpdatePlaybackHint();
         }
 
         private async void OnPauseChanged(bool isPaused)
@@ -898,6 +920,7 @@ namespace Kroira.App.Views
 
             _surface?.UpdatePlacement(force: true);
             _ = RefreshTrackMenusAsync();
+            RefreshInfoPanel();
             LogPlaybackState("LIVECTL: file loaded");
         }
 
@@ -920,6 +943,7 @@ namespace Kroira.App.Views
         {
             if (_teardownStarted) return;
             _ = RefreshTrackMenusAsync();
+            RefreshInfoPanel();
         }
 
         private void OnWarningMessage(string message)
@@ -1083,6 +1107,7 @@ namespace Kroira.App.Views
         private void Page_KeyDown(object sender, KeyRoutedEventArgs e)
         {
             if (_teardownStarted) return;
+            if (HandleEnhancedKeyDown(e)) return;
             ShowControls(cause: "key_input");
             ResetInactivityTimer("key_input");
         }
@@ -1210,6 +1235,8 @@ namespace Kroira.App.Views
 
             _player.SetMuted(muted);
             SetMutedUi(muted);
+            _ = SavePlayerPreferencesAsync();
+            RefreshInfoPanel();
             ResetInactivityTimer("click");
         }
 
@@ -1231,6 +1258,8 @@ namespace Kroira.App.Views
             {
                 ResetInactivityTimer("click");
             }
+
+            RefreshInfoPanel();
         }
 
         private void WindowManager_FullscreenStateChanged(object sender, EventArgs e)
@@ -1296,6 +1325,7 @@ namespace Kroira.App.Views
                 _context.PreferredAudioTrackId = trackId;
             }
             _ = RefreshTrackMenusAsync();
+            _ = SavePlayerPreferencesAsync();
             ResetInactivityTimer("click");
         }
 
@@ -1316,6 +1346,7 @@ namespace Kroira.App.Views
                 _context.PreferredSubtitleTrackId = trackId ?? string.Empty;
             }
             _ = RefreshTrackMenusAsync();
+            _ = SavePlayerPreferencesAsync();
             ResetInactivityTimer("click");
         }
 
@@ -1332,6 +1363,8 @@ namespace Kroira.App.Views
             _selectedAspectMode = aspectMode;
             _player.SetAspectMode(aspectMode);
             UpdateAspectUi();
+            _ = SavePlayerPreferencesAsync();
+            RefreshInfoPanel();
             ResetInactivityTimer("click");
         }
 
@@ -1447,6 +1480,7 @@ namespace Kroira.App.Views
             AspectButton.IsEnabled = isReady && canUseAspectControls;
             AspectButton.Visibility = canUseAspectControls ? Visibility.Visible : Visibility.Collapsed;
             UpdateLiveAndSeekUi();
+            UpdateEnhancedControlState();
         }
 
         private void UpdateFullscreenUi()
@@ -1628,6 +1662,7 @@ namespace Kroira.App.Views
             }
             _isMuted = _context.IsMuted || VolumeSlider.Value <= 0;
             SetMutedUi(_isMuted);
+            RefreshSpeedUi();
         }
 
         private void ApplyLaunchOverridesIfNeeded()
@@ -1640,6 +1675,12 @@ namespace Kroira.App.Views
             _player.SetAspectMode(_selectedAspectMode);
             _player.SetVolume(VolumeSlider.Value);
             _player.SetMuted(_isMuted);
+            _player.SetPlaybackSpeed(_context.InitialPlaybackSpeed);
+            _player.SetAudioDelaySeconds(_context.AudioDelaySeconds);
+            _player.SetSubtitleDelaySeconds(_context.SubtitleDelaySeconds);
+            _player.SetSubtitleScale(_context.SubtitleScale);
+            _player.SetSubtitlePosition(_context.SubtitlePosition);
+            _player.SetDeinterlace(_context.Deinterlace);
 
             if (_context.RestoreAudioTrackSelection && !string.IsNullOrWhiteSpace(_context.PreferredAudioTrackId))
             {
@@ -1650,12 +1691,19 @@ namespace Kroira.App.Views
             {
                 _player.SelectSubtitleTrack(_context.PreferredSubtitleTrackId);
             }
+            else if (!_context.SubtitlesEnabled)
+            {
+                _player.SelectSubtitleTrack(string.Empty);
+            }
 
             if (_context.StartPaused)
             {
                 _player.Pause();
             }
 
+            RefreshSpeedUi();
+            RefreshToolToggleStates();
+            RefreshInfoPanel();
             _launchOverridesApplied = true;
             _ = RefreshTrackMenusAsync();
         }
@@ -1748,6 +1796,13 @@ namespace Kroira.App.Views
                 InitialVolume = VolumeSlider.Value,
                 IsMuted = _isMuted,
                 InitialAspectMode = _selectedAspectMode,
+                InitialPlaybackSpeed = _player?.PlaybackSpeed ?? _playerPreferences.PlaybackSpeed,
+                AudioDelaySeconds = _player?.AudioDelaySeconds ?? _playerPreferences.AudioDelaySeconds,
+                SubtitleDelaySeconds = _player?.SubtitleDelaySeconds ?? _playerPreferences.SubtitleDelaySeconds,
+                SubtitleScale = _player?.SubtitleScale ?? _playerPreferences.SubtitleScale,
+                SubtitlePosition = _player?.SubtitlePosition ?? _playerPreferences.SubtitlePosition,
+                SubtitlesEnabled = !string.IsNullOrWhiteSpace(GetSelectedTrackId(_player?.GetSubtitleTracks() ?? Array.Empty<MpvTrackInfo>())),
+                Deinterlace = _player?.IsDeinterlaceEnabled ?? _playerPreferences.Deinterlace,
                 RestoreAudioTrackSelection = true,
                 PreferredAudioTrackId = GetSelectedTrackId(_player?.GetAudioTracks() ?? Array.Empty<MpvTrackInfo>()),
                 RestoreSubtitleTrackSelection = true,
@@ -2045,6 +2100,7 @@ namespace Kroira.App.Views
         {
             _isUserAdjustingVolume = false;
             ResumeOverlayAutoHide();
+            _ = SavePlayerPreferencesAsync();
         }
 
         private void ReleaseOverlayPointerInteraction()

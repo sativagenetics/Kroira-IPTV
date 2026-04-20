@@ -38,6 +38,7 @@ namespace Kroira.App.ViewModels
     public partial class FavoritesViewModel : ObservableObject
     {
         private readonly IServiceProvider _serviceProvider;
+        private readonly ICatalogTaxonomyService _taxonomyService;
 
         public ObservableCollection<BrowserChannelViewModel> FavoriteChannels { get; } = new();
         public ObservableCollection<FavoriteMovieViewModel> FavoriteMovies { get; } = new();
@@ -96,6 +97,7 @@ namespace Kroira.App.ViewModels
         public FavoritesViewModel(IServiceProvider serviceProvider)
         {
             _serviceProvider = serviceProvider;
+            _taxonomyService = serviceProvider.GetRequiredService<ICatalogTaxonomyService>();
         }
 
         [RelayCommand]
@@ -134,11 +136,20 @@ namespace Kroira.App.ViewModels
                             continue;
                         }
 
+                        var presentation = _taxonomyService.ResolveLiveChannelPresentation(ch.Name);
+                        var cleanedChannelName = string.IsNullOrWhiteSpace(presentation.DisplayName)
+                            ? ch.Name
+                            : presentation.DisplayName;
+                        var displayCategory = _taxonomyService.ResolveLiveCategory(category.Name, cleanedChannelName).DisplayCategoryName;
+
                         FavoriteChannels.Add(new BrowserChannelViewModel
                         {
                             Id = ch.Id,
                             CategoryId = ch.ChannelCategoryId,
-                            Name = ch.Name,
+                            RawName = ch.Name,
+                            Name = cleanedChannelName,
+                            CategoryName = category.Name,
+                            DisplayCategoryName = displayCategory,
                             StreamUrl = ch.StreamUrl,
                             LogoUrl = ch.LogoUrl ?? string.Empty,
                             IsFavorite = true

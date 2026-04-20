@@ -104,12 +104,25 @@ namespace Kroira.App.ViewModels
         public string DisplayPosterUrl => ActiveSeries.DisplayPosterUrl;
         public string DisplayHeroArtworkUrl => ActiveSeries.DisplayHeroArtworkUrl;
         public string RatingText => ActiveSeries.RatingText;
-        public string MetadataLine =>
-            Group.Variants.Count > 1 && !string.IsNullOrWhiteSpace(Group.SourceSummary)
-                ? string.IsNullOrWhiteSpace(ActiveSeries.MetadataLine)
-                    ? Group.SourceSummary
-                    : $"{ActiveSeries.MetadataLine} / {Group.SourceSummary}"
-                : ActiveSeries.MetadataLine;
+        public string MetadataLine
+        {
+            get
+            {
+                var parts = new[]
+                {
+                    ActiveSeries.DisplayYear,
+                    string.IsNullOrWhiteSpace(ActiveSeries.Genres) ? DisplayCategoryName : ActiveSeries.Genres,
+                    string.IsNullOrWhiteSpace(ActiveSeries.OriginalLanguage) ? string.Empty : ActiveSeries.OriginalLanguage.ToUpperInvariant()
+                };
+
+                var metadata = string.Join(" / ", parts.Where(part => !string.IsNullOrWhiteSpace(part)));
+                return Group.Variants.Count > 1 && !string.IsNullOrWhiteSpace(Group.SourceSummary)
+                    ? string.IsNullOrWhiteSpace(metadata)
+                        ? Group.SourceSummary
+                        : $"{metadata} / {Group.SourceSummary}"
+                    : metadata;
+            }
+        }
         public string Overview => string.IsNullOrWhiteSpace(ActiveSeries.Overview) ? PreferredSeries.Overview : ActiveSeries.Overview;
         public string CategoryName => DisplayCategoryName;
         public string DisplayCategoryName { get; }
@@ -171,6 +184,8 @@ namespace Kroira.App.ViewModels
         private const string Domain = ProfileDomains.Series;
         private const int BrowseGridColumns = 3;
         private readonly IServiceProvider _serviceProvider;
+        private readonly IBrowsePreferencesService _browsePreferencesService;
+        private readonly ICatalogTaxonomyService _taxonomyService;
         private readonly List<CatalogSeriesGroup> _allSeriesGroups = new();
         private List<SeriesBrowseItemViewModel> _allSeries = new List<SeriesBrowseItemViewModel>();
         private readonly List<(string CategoryName, int Count)> _allCategories = new();
@@ -320,9 +335,9 @@ namespace Kroira.App.ViewModels
             _isInitializingBrowsePreferences = true;
             try
             {
-                ManageCategoryAliasDraft = string.Equals(value.RawName, value.EffectiveName, StringComparison.OrdinalIgnoreCase)
-                    ? string.Empty
-                    : value.EffectiveName;
+                ManageCategoryAliasDraft = value.HasManualAlias
+                    ? value.EffectiveName
+                    : string.Empty;
                 IsManageCategoryHidden = value.IsHidden;
             }
             finally
@@ -398,6 +413,8 @@ namespace Kroira.App.ViewModels
         public SeriesViewModel(IServiceProvider serviceProvider)
         {
             _serviceProvider = serviceProvider;
+            _browsePreferencesService = serviceProvider.GetRequiredService<IBrowsePreferencesService>();
+            _taxonomyService = serviceProvider.GetRequiredService<ICatalogTaxonomyService>();
             SortOptions.Add(new BrowseSortOptionViewModel("recommended", "Recommended"));
             SortOptions.Add(new BrowseSortOptionViewModel("title_asc", "Title A-Z"));
             SortOptions.Add(new BrowseSortOptionViewModel("rating_desc", "Highest rated"));
@@ -452,7 +469,7 @@ namespace Kroira.App.ViewModels
 
                 _allSeriesGroups.Clear();
                 _allSeriesGroups.AddRange(CatalogOrderingService
-                    .OrderCatalog(seriesGroups, languageCode, g => GetSurfacedCategoryName(g.PreferredSeries), g => g.PreferredSeries.Title));
+                    .OrderCatalog(seriesGroups, languageCode, g => ResolveDisplayCategoryName(g.PreferredSeries), g => g.PreferredSeries.Title));
 
                 foreach (var item in _allSeriesGroups)
                 {
@@ -476,7 +493,7 @@ namespace Kroira.App.ViewModels
 
                 _allCategories.Clear();
                 _allCategories.AddRange(_allSeriesGroups
-                    .GroupBy(group => GetRawCategory(GetSurfacedCategoryName(group.PreferredSeries)))
+                    .GroupBy(group => GetRawCategory(group.PreferredSeries))
                     .Select(group => (group.Key, group.Count()))
                     .OrderBy(group => group.Key, StringComparer.CurrentCultureIgnoreCase));
 
@@ -569,7 +586,7 @@ namespace Kroira.App.ViewModels
                 .Select(group => new SeriesBrowseItemViewModel(
                     group,
                     group.Variants.Any(variant => _favoriteSeriesIds.Contains(variant.Series.Id)),
-                    GetEffectiveCategoryName(group.PreferredSeries.CategoryName)))
+                    GetEffectiveCategoryName(group.PreferredSeries)))
                 .ToList();
 
             FilteredSeries.Clear();
@@ -649,7 +666,9 @@ namespace Kroira.App.ViewModels
             }
 
             var alias = ManageCategoryAliasDraft.Trim();
-            if (string.IsNullOrWhiteSpace(alias) || string.Equals(alias, SelectedManageCategory.RawName, StringComparison.OrdinalIgnoreCase))
+            if (string.IsNullOrWhiteSpace(alias) ||
+                string.Equals(alias, SelectedManageCategory.RawName, StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(alias, SelectedManageCategory.AutoDisplayName, StringComparison.OrdinalIgnoreCase))
             {
                 _browsePreferences.CategoryRemaps.Remove(SelectedManageCategory.Key);
             }
@@ -749,13 +768,13 @@ namespace Kroira.App.ViewModels
                 }
 
                 var preferredSeries = variants.FirstOrDefault(variant => variant.Series.Id == group.PreferredSeries.Id)?.Series ?? variants[0].Series;
-                var surfacedCategoryName = GetSurfacedCategoryName(preferredSeries);
-                if (IsCategoryHidden(surfacedCategoryName))
+                var rawCategory = GetRawCategory(preferredSeries);
+                if (IsCategoryHidden(rawCategory))
                 {
                     continue;
                 }
 
-                var displayCategory = GetEffectiveCategoryName(surfacedCategoryName);
+                var displayCategory = GetEffectiveCategoryName(preferredSeries);
                 if (!string.IsNullOrWhiteSpace(selectedCategoryKey) &&
                     !string.Equals(NormalizeCategoryKey(displayCategory), selectedCategoryKey, StringComparison.OrdinalIgnoreCase))
                 {
@@ -823,8 +842,8 @@ namespace Kroira.App.ViewModels
             var categoryNames = _allSeriesGroups
                 .Where(group => group.Variants.Any(variant => visibleSourceIds.Contains(variant.SourceProfile.Id)))
                 .Where(group => group.Variants.Any(variant => !HideSecondaryContent || string.Equals(variant.Series.ContentKind, "Primary", StringComparison.OrdinalIgnoreCase)))
-                .Select(group => GetSurfacedCategoryName(group.PreferredSeries))
-                .Where(category => !IsCategoryHidden(category))
+                .Select(group => group.PreferredSeries)
+                .Where(series => !IsCategoryHidden(GetRawCategory(series)))
                 .Select(GetEffectiveCategoryName)
                 .Distinct(StringComparer.OrdinalIgnoreCase);
 
@@ -890,12 +909,16 @@ namespace Kroira.App.ViewModels
             foreach (var category in _allCategories.OrderBy(item => item.CategoryName, StringComparer.CurrentCultureIgnoreCase))
             {
                 var key = NormalizeCategoryKey(category.CategoryName);
+                var autoDisplayName = ResolveDisplayCategoryName(category.CategoryName);
+                var hasManualAlias = _browsePreferences.CategoryRemaps.ContainsKey(key);
                 ManageCategoryOptions.Add(new BrowseCategoryManagerOptionViewModel(
                     key,
                     category.CategoryName,
-                    GetEffectiveCategoryName(category.CategoryName),
+                    GetEffectiveCategoryName(category.CategoryName, autoDisplayName),
+                    autoDisplayName,
                     category.Count,
-                    _browsePreferences.HiddenCategoryKeys.Contains(key, StringComparer.OrdinalIgnoreCase)));
+                    _browsePreferences.HiddenCategoryKeys.Contains(key, StringComparer.OrdinalIgnoreCase),
+                    hasManualAlias));
             }
 
             SelectedManageCategory = ManageCategoryOptions.FirstOrDefault(option => string.Equals(option.Key, currentKey, StringComparison.OrdinalIgnoreCase));
@@ -964,30 +987,53 @@ namespace Kroira.App.ViewModels
 
         private string NormalizeCategoryKey(string categoryName)
         {
-            return _serviceProvider.GetRequiredService<IBrowsePreferencesService>().NormalizeCategoryKey(categoryName);
+            return _browsePreferencesService.NormalizeCategoryKey(categoryName);
         }
 
-        private string GetEffectiveCategoryName(string categoryName)
+        private string GetEffectiveCategoryName(Series series)
         {
-            return _serviceProvider.GetRequiredService<IBrowsePreferencesService>().GetEffectiveCategoryName(_browsePreferences, GetRawCategory(categoryName));
+            var rawCategory = GetRawCategory(series);
+            return GetEffectiveCategoryName(rawCategory, ResolveDisplayCategoryName(series));
         }
 
-        private bool IsCategoryHidden(string categoryName)
+        private string GetEffectiveCategoryName(string rawCategoryName, string defaultDisplayCategory)
         {
-            return _serviceProvider.GetRequiredService<IBrowsePreferencesService>().IsCategoryHidden(_browsePreferences, GetRawCategory(categoryName));
+            return _browsePreferencesService.GetEffectiveCategoryName(_browsePreferences, rawCategoryName, defaultDisplayCategory);
+        }
+
+        private bool IsCategoryHidden(string rawCategoryName)
+        {
+            return _browsePreferencesService.IsCategoryHidden(_browsePreferences, rawCategoryName);
+        }
+
+        private string ResolveDisplayCategoryName(Series series)
+        {
+            return _taxonomyService.ResolveSeriesCategory(
+                series.CategoryName,
+                series.RawSourceCategoryName,
+                series.Title,
+                series.OriginalLanguage).DisplayCategoryName;
+        }
+
+        private string ResolveDisplayCategoryName(string rawCategoryName)
+        {
+            return _taxonomyService.ResolveSeriesCategory(
+                rawCategoryName,
+                rawCategoryName,
+                string.Empty,
+                string.Empty).DisplayCategoryName;
+        }
+
+        private static string GetRawCategory(Series series)
+        {
+            return string.IsNullOrWhiteSpace(series.RawSourceCategoryName)
+                ? GetRawCategory(series.CategoryName)
+                : GetRawCategory(series.RawSourceCategoryName);
         }
 
         private static string GetRawCategory(string categoryName)
         {
             return string.IsNullOrWhiteSpace(categoryName) ? "Uncategorized" : categoryName.Trim();
-        }
-
-        private static string GetSurfacedCategoryName(Series series)
-        {
-            return ContentClassifier.ResolveSurfacedSeriesCategory(
-                series.CategoryName,
-                series.RawSourceCategoryName,
-                series.Title);
         }
 
         private void StartMetadataEnrichment()

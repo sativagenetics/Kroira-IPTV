@@ -36,10 +36,23 @@ namespace Kroira.App.ViewModels
         public string DisplayPosterUrl => Movie.DisplayPosterUrl;
         public string DisplayHeroArtworkUrl => Movie.DisplayHeroArtworkUrl;
         public string RatingText => Movie.RatingText;
-        public string MetadataLine =>
-            Group.Variants.Count > 1 && !string.IsNullOrWhiteSpace(Group.SourceSummary)
-                ? string.IsNullOrWhiteSpace(Movie.MetadataLine) ? Group.SourceSummary : $"{Movie.MetadataLine} / {Group.SourceSummary}"
-                : Movie.MetadataLine;
+        public string MetadataLine
+        {
+            get
+            {
+                var parts = new[]
+                {
+                    Movie.DisplayYear,
+                    string.IsNullOrWhiteSpace(Movie.Genres) ? DisplayCategoryName : Movie.Genres,
+                    string.IsNullOrWhiteSpace(Movie.OriginalLanguage) ? string.Empty : Movie.OriginalLanguage.ToUpperInvariant()
+                };
+
+                var metadata = string.Join(" / ", parts.Where(part => !string.IsNullOrWhiteSpace(part)));
+                return Group.Variants.Count > 1 && !string.IsNullOrWhiteSpace(Group.SourceSummary)
+                    ? string.IsNullOrWhiteSpace(metadata) ? Group.SourceSummary : $"{metadata} / {Group.SourceSummary}"
+                    : metadata;
+            }
+        }
         public string Overview => Movie.Overview;
         public string CategoryName => Movie.CategoryName;
         public string DisplayCategoryName { get; }
@@ -93,6 +106,8 @@ namespace Kroira.App.ViewModels
         private const string FixedFeaturedMovieTitle = "Kurtlar Vadisi Gladio";
         private const int BrowseGridColumns = 5;
         private readonly IServiceProvider _serviceProvider;
+        private readonly IBrowsePreferencesService _browsePreferencesService;
+        private readonly ICatalogTaxonomyService _taxonomyService;
         private readonly List<CatalogMovieGroup> _allMovieGroups = new();
         private readonly Dictionary<int, SourceType> _sourceTypeById = new();
         private readonly List<(string CategoryName, int Count)> _allCategories = new();
@@ -136,6 +151,8 @@ namespace Kroira.App.ViewModels
         public MoviesViewModel(IServiceProvider serviceProvider)
         {
             _serviceProvider = serviceProvider;
+            _browsePreferencesService = serviceProvider.GetRequiredService<IBrowsePreferencesService>();
+            _taxonomyService = serviceProvider.GetRequiredService<ICatalogTaxonomyService>();
             SortOptions.Add(new BrowseSortOptionViewModel("recommended", "Recommended"));
             SortOptions.Add(new BrowseSortOptionViewModel("title_asc", "Title A-Z"));
             SortOptions.Add(new BrowseSortOptionViewModel("rating_desc", "Highest rated"));
@@ -184,7 +201,7 @@ namespace Kroira.App.ViewModels
             _isInitializing = true;
             try
             {
-                ManageCategoryAliasDraft = string.Equals(value.RawName, value.EffectiveName, StringComparison.OrdinalIgnoreCase) ? string.Empty : value.EffectiveName;
+                ManageCategoryAliasDraft = value.HasManualAlias ? value.EffectiveName : string.Empty;
                 IsManageCategoryHidden = value.IsHidden;
             }
             finally
@@ -233,7 +250,7 @@ namespace Kroira.App.ViewModels
                 _allMovieGroups.AddRange(CatalogOrderingService.OrderCatalog(
                     movieGroups,
                     _languageCode,
-                    group => group.PreferredMovie.CategoryName,
+                    group => ResolveDisplayCategoryName(group.PreferredMovie),
                     group => group.PreferredMovie.Title));
 
                 _sourceTypeById.Clear();
@@ -247,7 +264,7 @@ namespace Kroira.App.ViewModels
 
                 _allCategories.Clear();
                 _allCategories.AddRange(_allMovieGroups
-                    .GroupBy(group => GetRawCategory(group.PreferredMovie.CategoryName))
+                    .GroupBy(group => GetRawCategory(group.PreferredMovie))
                     .Select(group => (group.Key, group.Count()))
                     .OrderBy(group => group.Key, StringComparer.CurrentCultureIgnoreCase));
 
@@ -303,7 +320,9 @@ namespace Kroira.App.ViewModels
             }
 
             var alias = ManageCategoryAliasDraft.Trim();
-            if (string.IsNullOrWhiteSpace(alias) || string.Equals(alias, SelectedManageCategory.RawName, StringComparison.OrdinalIgnoreCase))
+            if (string.IsNullOrWhiteSpace(alias) ||
+                string.Equals(alias, SelectedManageCategory.RawName, StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(alias, SelectedManageCategory.AutoDisplayName, StringComparison.OrdinalIgnoreCase))
             {
                 _preferences.CategoryRemaps.Remove(SelectedManageCategory.Key);
             }
@@ -393,7 +412,7 @@ namespace Kroira.App.ViewModels
                 FilteredMovies.Add(new MovieBrowseItemViewModel(
                     group,
                     group.Variants.Any(variant => _favoriteMovieIds.Contains(variant.Movie.Id)),
-                    GetEffectiveCategoryName(group.PreferredMovie.CategoryName)));
+                    GetEffectiveCategoryName(group.PreferredMovie)));
             }
 
             RefreshFeaturedMovie(FilteredMovies);
@@ -475,12 +494,13 @@ namespace Kroira.App.ViewModels
                 }
 
                 var preferredMovie = variants.FirstOrDefault(variant => variant.Movie.Id == group.PreferredMovie.Id)?.Movie ?? variants[0].Movie;
-                if (IsCategoryHidden(preferredMovie.CategoryName))
+                var rawCategory = GetRawCategory(preferredMovie);
+                if (IsCategoryHidden(rawCategory))
                 {
                     continue;
                 }
 
-                var displayCategory = GetEffectiveCategoryName(preferredMovie.CategoryName);
+                var displayCategory = GetEffectiveCategoryName(preferredMovie);
                 if (!string.IsNullOrWhiteSpace(selectedCategoryKey) &&
                     !string.Equals(NormalizeCategoryKey(displayCategory), selectedCategoryKey, StringComparison.OrdinalIgnoreCase))
                 {
@@ -640,8 +660,8 @@ namespace Kroira.App.ViewModels
             var categories = _allMovieGroups
                 .Where(group => group.Variants.Any(variant => visibleSourceIds.Contains(variant.SourceProfile.Id)))
                 .Where(group => group.Variants.Any(variant => !HideSecondaryContent || string.Equals(variant.Movie.ContentKind, "Primary", StringComparison.OrdinalIgnoreCase)))
-                .Select(group => group.PreferredMovie.CategoryName)
-                .Where(category => !IsCategoryHidden(category))
+                .Select(group => group.PreferredMovie)
+                .Where(movie => !IsCategoryHidden(GetRawCategory(movie)))
                 .Select(GetEffectiveCategoryName)
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .OrderBy(category => category, StringComparer.CurrentCultureIgnoreCase)
@@ -706,12 +726,16 @@ namespace Kroira.App.ViewModels
             foreach (var category in _allCategories.OrderBy(item => item.CategoryName, StringComparer.CurrentCultureIgnoreCase))
             {
                 var key = NormalizeCategoryKey(category.CategoryName);
+                var autoDisplayName = ResolveDisplayCategoryName(category.CategoryName);
+                var hasManualAlias = _preferences.CategoryRemaps.ContainsKey(key);
                 ManageCategoryOptions.Add(new BrowseCategoryManagerOptionViewModel(
                     key,
                     category.CategoryName,
-                    GetEffectiveCategoryName(category.CategoryName),
+                    GetEffectiveCategoryName(category.CategoryName, autoDisplayName),
+                    autoDisplayName,
                     category.Count,
-                    _preferences.HiddenCategoryKeys.Contains(key, StringComparer.OrdinalIgnoreCase)));
+                    _preferences.HiddenCategoryKeys.Contains(key, StringComparer.OrdinalIgnoreCase),
+                    hasManualAlias));
             }
 
             SelectedManageCategory = ManageCategoryOptions.FirstOrDefault(option => string.Equals(option.Key, currentKey, StringComparison.OrdinalIgnoreCase));
@@ -780,17 +804,48 @@ namespace Kroira.App.ViewModels
 
         private string NormalizeCategoryKey(string categoryName)
         {
-            return _serviceProvider.GetRequiredService<IBrowsePreferencesService>().NormalizeCategoryKey(categoryName);
+            return _browsePreferencesService.NormalizeCategoryKey(categoryName);
         }
 
-        private string GetEffectiveCategoryName(string categoryName)
+        private string GetEffectiveCategoryName(Movie movie)
         {
-            return _serviceProvider.GetRequiredService<IBrowsePreferencesService>().GetEffectiveCategoryName(_preferences, GetRawCategory(categoryName));
+            var rawCategory = GetRawCategory(movie);
+            return GetEffectiveCategoryName(rawCategory, ResolveDisplayCategoryName(movie));
         }
 
-        private bool IsCategoryHidden(string categoryName)
+        private string GetEffectiveCategoryName(string rawCategoryName, string defaultDisplayCategory)
         {
-            return _serviceProvider.GetRequiredService<IBrowsePreferencesService>().IsCategoryHidden(_preferences, GetRawCategory(categoryName));
+            return _browsePreferencesService.GetEffectiveCategoryName(_preferences, rawCategoryName, defaultDisplayCategory);
+        }
+
+        private bool IsCategoryHidden(string rawCategoryName)
+        {
+            return _browsePreferencesService.IsCategoryHidden(_preferences, rawCategoryName);
+        }
+
+        private string ResolveDisplayCategoryName(Movie movie)
+        {
+            return _taxonomyService.ResolveMovieCategory(
+                movie.CategoryName,
+                movie.RawSourceCategoryName,
+                movie.Title,
+                movie.OriginalLanguage).DisplayCategoryName;
+        }
+
+        private string ResolveDisplayCategoryName(string rawCategoryName)
+        {
+            return _taxonomyService.ResolveMovieCategory(
+                rawCategoryName,
+                rawCategoryName,
+                string.Empty,
+                string.Empty).DisplayCategoryName;
+        }
+
+        private static string GetRawCategory(Movie movie)
+        {
+            return string.IsNullOrWhiteSpace(movie.RawSourceCategoryName)
+                ? GetRawCategory(movie.CategoryName)
+                : GetRawCategory(movie.RawSourceCategoryName);
         }
 
         private static string GetRawCategory(string categoryName)
