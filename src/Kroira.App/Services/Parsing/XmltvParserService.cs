@@ -145,6 +145,11 @@ namespace Kroira.App.Services.Parsing
             }
 
             var programmeNodes = doc.Descendants("programme").ToList();
+            var programmeChannelIds = programmeNodes
+                .Select(programme => programme.Attribute("channel")?.Value?.Trim())
+                .Where(channelId => !string.IsNullOrWhiteSpace(channelId))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
             var xmltvChannels = doc.Descendants("channel")
                 .Where(channel => !string.IsNullOrWhiteSpace(channel.Attribute("id")?.Value))
                 .GroupBy(channel => channel.Attribute("id")!.Value.Trim(), StringComparer.OrdinalIgnoreCase)
@@ -156,6 +161,14 @@ namespace Kroira.App.Services.Parsing
                         .Distinct(StringComparer.OrdinalIgnoreCase)
                         .ToList()))
                 .ToDictionary(channel => channel.Id, StringComparer.OrdinalIgnoreCase);
+
+            foreach (var programmeChannelId in programmeChannelIds)
+            {
+                if (!xmltvChannels.ContainsKey(programmeChannelId!))
+                {
+                    xmltvChannels[programmeChannelId!] = new XmltvChannelInfo(programmeChannelId!, new List<string>());
+                }
+            }
 
             ImportRuntimeLogger.Log(
                 "EPG SYNC",
@@ -170,13 +183,15 @@ namespace Kroira.App.Services.Parsing
                 .ToListAsync();
 
             var matcher = new EpgChannelMatcher(channels);
-            var channelMatches = new Dictionary<string, ChannelMatchOutcome>(StringComparer.OrdinalIgnoreCase);
+            var orderedXmltvChannels = xmltvChannels.Values
+                .OrderByDescending(channel => programmeChannelIds.Contains(channel.Id))
+                .ThenBy(channel => channel.Id, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+            var channelMatches = matcher.MatchAll(orderedXmltvChannels);
 
-            foreach (var xmltvChannel in xmltvChannels.Values)
+            foreach (var xmltvChannel in orderedXmltvChannels)
             {
-                var outcome = matcher.Match(xmltvChannel);
-                channelMatches[xmltvChannel.Id] = outcome;
-                LogMatchOutcome(sourceProfileId, xmltvChannel, outcome);
+                LogMatchOutcome(sourceProfileId, xmltvChannel, channelMatches[xmltvChannel.Id]);
             }
 
             var epgItems = new List<EpgProgram>();
@@ -191,12 +206,10 @@ namespace Kroira.App.Services.Parsing
 
                 if (!channelMatches.TryGetValue(xmltvChannelId, out var outcome))
                 {
-                    outcome = matcher.Match(new XmltvChannelInfo(xmltvChannelId, new List<string>()));
-                    channelMatches[xmltvChannelId] = outcome;
-                    LogMatchOutcome(sourceProfileId, new XmltvChannelInfo(xmltvChannelId, new List<string>()), outcome);
+                    continue;
                 }
 
-                if (outcome.Channel == null)
+                if (outcome.Channels.Count == 0)
                 {
                     continue;
                 }
@@ -220,16 +233,19 @@ namespace Kroira.App.Services.Parsing
                 var subtitle = programme.Element("sub-title")?.Value?.Trim();
                 var category = programme.Element("category")?.Value?.Trim();
 
-                epgItems.Add(new EpgProgram
+                foreach (var matchedChannel in outcome.Channels)
                 {
-                    ChannelId = outcome.Channel.Id,
-                    StartTimeUtc = start.Value,
-                    EndTimeUtc = end.Value,
-                    Title = string.IsNullOrWhiteSpace(title) ? "Unknown Program" : title,
-                    Description = description,
-                    Subtitle = string.IsNullOrWhiteSpace(subtitle) ? null : subtitle,
-                    Category = string.IsNullOrWhiteSpace(category) ? null : category
-                });
+                    epgItems.Add(new EpgProgram
+                    {
+                        ChannelId = matchedChannel.Id,
+                        StartTimeUtc = start.Value,
+                        EndTimeUtc = end.Value,
+                        Title = string.IsNullOrWhiteSpace(title) ? "Unknown Program" : title,
+                        Description = description,
+                        Subtitle = string.IsNullOrWhiteSpace(subtitle) ? null : subtitle,
+                        Category = string.IsNullOrWhiteSpace(category) ? null : category
+                    });
+                }
             }
 
             var metrics = BuildSyncMetrics(channels, epgItems, channelMatches.Values);
@@ -561,9 +577,16 @@ namespace Kroira.App.Services.Parsing
 
         private static void LogMatchOutcome(int sourceProfileId, XmltvChannelInfo xmltvChannel, ChannelMatchOutcome outcome)
         {
+            var matchedChannelIds = outcome.Channels.Count == 0
+                ? string.Empty
+                : string.Join("|", outcome.Channels.Select(channel => channel.Id));
+            var matchedChannelNames = outcome.Channels.Count == 0
+                ? string.Empty
+                : string.Join(" | ", outcome.Channels.Select(channel => channel.Name));
+
             ImportRuntimeLogger.Log(
                 "EPG MATCH",
-                $"source_profile_id={sourceProfileId}; xmltv_channel_id={FormatDiagnosticValue(xmltvChannel.Id)}; display_names={FormatDiagnosticValue(string.Join(" | ", xmltvChannel.DisplayNames))}; match_reason={outcome.Reason}; channel_id={(outcome.Channel?.Id ?? 0)}; channel_name={FormatDiagnosticValue(outcome.Channel?.Name ?? string.Empty)}; diagnostics={FormatDiagnosticValue(outcome.Diagnostic)}");
+                $"source_profile_id={sourceProfileId}; xmltv_channel_id={FormatDiagnosticValue(xmltvChannel.Id)}; display_names={FormatDiagnosticValue(string.Join(" | ", xmltvChannel.DisplayNames))}; match_reason={outcome.Reason}; matched_channel_count={outcome.Channels.Count}; channel_ids={FormatDiagnosticValue(matchedChannelIds)}; channel_names={FormatDiagnosticValue(matchedChannelNames)}; diagnostics={FormatDiagnosticValue(outcome.Diagnostic)}");
         }
 
         private static DateTime? ParseXmltvDate(string dateStr)
@@ -702,7 +725,8 @@ namespace Kroira.App.Services.Parsing
 
         private sealed class ChannelMatchOutcome
         {
-            public Channel? Channel { get; init; }
+            public IReadOnlyList<Channel> Channels { get; init; } = Array.Empty<Channel>();
+            public Channel? Channel => Channels.FirstOrDefault();
             public ChannelMatchReason Reason { get; init; }
             public string Diagnostic { get; init; } = string.Empty;
         }
@@ -754,63 +778,169 @@ namespace Kroira.App.Services.Parsing
                 }
             }
 
-            public ChannelMatchOutcome Match(XmltvChannelInfo xmltvChannel)
+            public Dictionary<string, ChannelMatchOutcome> MatchAll(IEnumerable<XmltvChannelInfo> xmltvChannels)
             {
-                if (_byGuideId.TryGetValue(xmltvChannel.Id, out var guideMatches) && guideMatches.Count == 1)
-                {
-                    return new ChannelMatchOutcome
-                    {
-                        Channel = guideMatches[0],
-                        Reason = ChannelMatchReason.TvgIdExact,
-                        Diagnostic = $"Exact tvg-id match on '{xmltvChannel.Id}'."
-                    };
-                }
+                var orderedChannels = xmltvChannels.ToList();
+                var outcomes = new Dictionary<string, ChannelMatchOutcome>(StringComparer.OrdinalIgnoreCase);
+                var assignedChannelIds = new HashSet<int>();
 
-                foreach (var candidate in BuildSourceCandidates(xmltvChannel))
+                MatchUsingGuideIds(orderedChannels, outcomes, assignedChannelIds);
+                MatchUsingNormalizedNames(orderedChannels, outcomes, assignedChannelIds);
+                MatchUsingAliasKeys(orderedChannels, outcomes, assignedChannelIds);
+                MatchUsingFuzzyFallback(orderedChannels, outcomes, assignedChannelIds);
+
+                foreach (var xmltvChannel in orderedChannels)
                 {
-                    var normalized = NormalizeExactKey(candidate);
-                    if (_byNormalizedName.TryGetValue(normalized, out var nameMatches) && nameMatches.Count == 1)
+                    if (!outcomes.ContainsKey(xmltvChannel.Id))
                     {
-                        return new ChannelMatchOutcome
-                        {
-                            Channel = nameMatches[0],
-                            Reason = ChannelMatchReason.NormalizedNameExact,
-                            Diagnostic = $"Normalized name match on '{candidate}'."
-                        };
+                        outcomes[xmltvChannel.Id] = NoMatch("No exact, alias, or safe fuzzy match was found.");
                     }
                 }
 
-                foreach (var candidate in BuildSourceCandidates(xmltvChannel))
+                return outcomes;
+            }
+
+            public ChannelMatchOutcome Match(XmltvChannelInfo xmltvChannel)
+            {
+                return MatchAll(new[] { xmltvChannel })[xmltvChannel.Id];
+            }
+
+            private void MatchUsingGuideIds(
+                IReadOnlyList<XmltvChannelInfo> xmltvChannels,
+                IDictionary<string, ChannelMatchOutcome> outcomes,
+                ISet<int> assignedChannelIds)
+            {
+                foreach (var xmltvChannel in xmltvChannels)
                 {
-                    foreach (var aliasKey in BuildAliasKeys(candidate))
+                    if (outcomes.ContainsKey(xmltvChannel.Id))
                     {
-                        if (_byAliasKey.TryGetValue(aliasKey, out var aliasMatches) && aliasMatches.Count == 1)
+                        continue;
+                    }
+
+                    if (_byGuideId.TryGetValue(xmltvChannel.Id, out var guideMatches))
+                    {
+                        var availableMatches = GetAvailableMatches(guideMatches, assignedChannelIds);
+                        if (availableMatches.Count > 0)
                         {
-                            return new ChannelMatchOutcome
-                            {
-                                Channel = aliasMatches[0],
-                                Reason = ChannelMatchReason.AliasExact,
-                                Diagnostic = $"Alias key match on '{candidate}' using '{aliasKey}'."
-                            };
+                            AssignOutcome(
+                                outcomes,
+                                assignedChannelIds,
+                                xmltvChannel.Id,
+                                availableMatches,
+                                ChannelMatchReason.TvgIdExact,
+                                $"Exact tvg-id match on '{xmltvChannel.Id}' mapped to {availableMatches.Count} channel(s).");
                         }
                     }
                 }
-
-                var fuzzyOutcome = FindFuzzyMatch(xmltvChannel);
-                if (fuzzyOutcome != null)
-                {
-                    return fuzzyOutcome;
-                }
-
-                return new ChannelMatchOutcome
-                {
-                    Channel = null,
-                    Reason = ChannelMatchReason.None,
-                    Diagnostic = "No exact, alias, or safe fuzzy match was found."
-                };
             }
 
-            private ChannelMatchOutcome? FindFuzzyMatch(XmltvChannelInfo xmltvChannel)
+            private void MatchUsingNormalizedNames(
+                IReadOnlyList<XmltvChannelInfo> xmltvChannels,
+                IDictionary<string, ChannelMatchOutcome> outcomes,
+                ISet<int> assignedChannelIds)
+            {
+                foreach (var xmltvChannel in xmltvChannels)
+                {
+                    if (outcomes.ContainsKey(xmltvChannel.Id))
+                    {
+                        continue;
+                    }
+
+                    foreach (var candidate in BuildSourceCandidates(xmltvChannel))
+                    {
+                        var normalized = NormalizeExactKey(candidate);
+                        if (string.IsNullOrWhiteSpace(normalized))
+                        {
+                            continue;
+                        }
+
+                        if (_byNormalizedName.TryGetValue(normalized, out var nameMatches))
+                        {
+                            var availableMatches = GetAvailableMatches(nameMatches, assignedChannelIds);
+                            if (availableMatches.Count > 0)
+                            {
+                                AssignOutcome(
+                                    outcomes,
+                                    assignedChannelIds,
+                                    xmltvChannel.Id,
+                                    availableMatches,
+                                    ChannelMatchReason.NormalizedNameExact,
+                                    $"Normalized name match on '{candidate}' mapped to {availableMatches.Count} channel(s).");
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+
+            private void MatchUsingAliasKeys(
+                IReadOnlyList<XmltvChannelInfo> xmltvChannels,
+                IDictionary<string, ChannelMatchOutcome> outcomes,
+                ISet<int> assignedChannelIds)
+            {
+                foreach (var xmltvChannel in xmltvChannels)
+                {
+                    if (outcomes.ContainsKey(xmltvChannel.Id))
+                    {
+                        continue;
+                    }
+
+                    foreach (var candidate in BuildSourceCandidates(xmltvChannel))
+                    {
+                        foreach (var aliasKey in BuildAliasKeys(candidate))
+                        {
+                            if (_byAliasKey.TryGetValue(aliasKey, out var aliasMatches))
+                            {
+                                var availableMatches = GetAvailableMatches(aliasMatches, assignedChannelIds);
+                                if (availableMatches.Count > 0)
+                                {
+                                    AssignOutcome(
+                                        outcomes,
+                                        assignedChannelIds,
+                                        xmltvChannel.Id,
+                                        availableMatches,
+                                        ChannelMatchReason.AliasExact,
+                                        $"Alias key match on '{candidate}' using '{aliasKey}' mapped to {availableMatches.Count} channel(s).");
+                                    break;
+                                }
+                            }
+                        }
+
+                        if (outcomes.ContainsKey(xmltvChannel.Id))
+                        {
+                            break;
+                        }
+                    }
+                }
+            }
+
+            private void MatchUsingFuzzyFallback(
+                IReadOnlyList<XmltvChannelInfo> xmltvChannels,
+                IDictionary<string, ChannelMatchOutcome> outcomes,
+                ISet<int> assignedChannelIds)
+            {
+                foreach (var xmltvChannel in xmltvChannels)
+                {
+                    if (outcomes.ContainsKey(xmltvChannel.Id))
+                    {
+                        continue;
+                    }
+
+                    var fuzzyOutcome = FindFuzzyMatch(xmltvChannel, assignedChannelIds);
+                    if (fuzzyOutcome != null)
+                    {
+                        AssignOutcome(
+                            outcomes,
+                            assignedChannelIds,
+                            xmltvChannel.Id,
+                            fuzzyOutcome.Channels,
+                            fuzzyOutcome.Reason,
+                            fuzzyOutcome.Diagnostic);
+                    }
+                }
+            }
+
+            private ChannelMatchOutcome? FindFuzzyMatch(XmltvChannelInfo xmltvChannel, ISet<int> assignedChannelIds)
             {
                 var fuzzyCandidates = BuildSourceCandidates(xmltvChannel)
                     .SelectMany(BuildAliasKeys)
@@ -828,6 +958,11 @@ namespace Kroira.App.Services.Parsing
                 {
                     foreach (var candidate in _candidates)
                     {
+                        if (assignedChannelIds.Contains(candidate.Channel.Id))
+                        {
+                            continue;
+                        }
+
                         foreach (var aliasKey in candidate.AliasKeys)
                         {
                             var score = ComputeDiceCoefficient(sourceValue, aliasKey);
@@ -858,9 +993,49 @@ namespace Kroira.App.Services.Parsing
 
                 return new ChannelMatchOutcome
                 {
-                    Channel = best.Candidate.Channel,
+                    Channels = new[] { best.Candidate.Channel },
                     Reason = ChannelMatchReason.FuzzyFallback,
                     Diagnostic = $"Safe fuzzy fallback matched '{best.SourceValue}' to alias '{best.AliasKey}' with score {best.Score:0.00}."
+                };
+            }
+
+            private static List<Channel> GetAvailableMatches(IEnumerable<Channel> matches, ISet<int> assignedChannelIds)
+            {
+                return matches
+                    .Where(channel => !assignedChannelIds.Contains(channel.Id))
+                    .GroupBy(channel => channel.Id)
+                    .Select(group => group.First())
+                    .ToList();
+            }
+
+            private static void AssignOutcome(
+                IDictionary<string, ChannelMatchOutcome> outcomes,
+                ISet<int> assignedChannelIds,
+                string xmltvChannelId,
+                IReadOnlyList<Channel> matchedChannels,
+                ChannelMatchReason reason,
+                string diagnostic)
+            {
+                outcomes[xmltvChannelId] = new ChannelMatchOutcome
+                {
+                    Channels = matchedChannels,
+                    Reason = reason,
+                    Diagnostic = diagnostic
+                };
+
+                foreach (var matchedChannel in matchedChannels)
+                {
+                    assignedChannelIds.Add(matchedChannel.Id);
+                }
+            }
+
+            private static ChannelMatchOutcome NoMatch(string diagnostic)
+            {
+                return new ChannelMatchOutcome
+                {
+                    Channels = Array.Empty<Channel>(),
+                    Reason = ChannelMatchReason.None,
+                    Diagnostic = diagnostic
                 };
             }
 

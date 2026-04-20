@@ -1,9 +1,11 @@
 using System;
 using System.Collections.ObjectModel;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Kroira.App.Controls;
 using Kroira.App.Data;
 using Kroira.App.Models;
 using Kroira.App.Services;
@@ -17,6 +19,14 @@ namespace Kroira.App.ViewModels
         public int Id { get; set; }
         public string Name { get; set; } = string.Empty;
         public string Type { get; set; } = string.Empty;
+        public string SourceKindText { get; set; } = string.Empty;
+        public string HealthBadgeText { get; set; } = string.Empty;
+        public string GuideBadgeText { get; set; } = string.Empty;
+        public string PrimarySyncText { get; set; } = "Sync Now";
+        public string SourcePanelSummaryText { get; set; } = string.Empty;
+        public string ConnectionLabelText { get; set; } = string.Empty;
+        public StatusPillKind HealthPillKind { get; set; } = StatusPillKind.Neutral;
+        public StatusPillKind GuidePillKind { get; set; } = StatusPillKind.Neutral;
         public string LastSyncText { get; set; } = "Never";
         public int ChannelCount { get; set; }
         public int MovieCount { get; set; }
@@ -70,6 +80,14 @@ namespace Kroira.App.ViewModels
             : Microsoft.UI.Xaml.Visibility.Collapsed;
 
         public Microsoft.UI.Xaml.Visibility BrowseVisibility => (Type == "M3U" || Type == "Xtream")
+            ? Microsoft.UI.Xaml.Visibility.Visible
+            : Microsoft.UI.Xaml.Visibility.Collapsed;
+
+        public Microsoft.UI.Xaml.Visibility PrimarySyncVisibility => (Type == "M3U" || Type == "Xtream")
+            ? Microsoft.UI.Xaml.Visibility.Visible
+            : Microsoft.UI.Xaml.Visibility.Collapsed;
+
+        public Microsoft.UI.Xaml.Visibility XtreamVodOnlyVisibility => Type == "Xtream"
             ? Microsoft.UI.Xaml.Visibility.Visible
             : Microsoft.UI.Xaml.Visibility.Collapsed;
 
@@ -131,6 +149,16 @@ namespace Kroira.App.ViewModels
         }
     }
 
+    public sealed class SourceRecentActivityItemViewModel
+    {
+        public string TimestampText { get; set; } = string.Empty;
+        public string SourceName { get; set; } = string.Empty;
+        public string ActionText { get; set; } = string.Empty;
+        public string StatusText { get; set; } = string.Empty;
+        public string PayloadText { get; set; } = string.Empty;
+        public StatusPillKind StatusKind { get; set; } = StatusPillKind.Neutral;
+    }
+
     public sealed class SourceGuideSettingsDraft
     {
         public int SourceId { get; set; }
@@ -144,11 +172,19 @@ namespace Kroira.App.ViewModels
     public partial class SourceListViewModel : ObservableObject
     {
         private readonly IServiceProvider _serviceProvider;
+        private List<SourceItemViewModel> _allSources = new();
 
         public ObservableCollection<SourceItemViewModel> Sources { get; } = new();
+        public ObservableCollection<SourceRecentActivityItemViewModel> RecentActivities { get; } = new();
 
         [ObservableProperty]
         private bool _isEmpty;
+
+        [ObservableProperty]
+        private string _emptyStateTitle = "No sources configured";
+
+        [ObservableProperty]
+        private string _emptyStateMessage = "Add an M3U playlist or Xtream provider to populate live channels, VOD, and guide data.";
 
         [ObservableProperty]
         private int _sourceCount;
@@ -159,9 +195,38 @@ namespace Kroira.App.ViewModels
         [ObservableProperty]
         private int _xtreamSourceCount;
 
+        [ObservableProperty]
+        private int _totalAssetCount;
+
+        [ObservableProperty]
+        private int _totalMatchedGuideChannelCount;
+
+        [ObservableProperty]
+        private string _healthStatusHeadline = "Idle";
+
+        [ObservableProperty]
+        private string _healthStatusCaption = "No sources loaded yet.";
+
+        [ObservableProperty]
+        private StatusPillKind _healthStatusKind = StatusPillKind.Neutral;
+
+        [ObservableProperty]
+        private string _guideCoverageHeadline = "0%";
+
+        [ObservableProperty]
+        private string _guideCoverageCaption = "No live channels available.";
+
+        [ObservableProperty]
+        private string _searchText = string.Empty;
+
         public SourceListViewModel(IServiceProvider serviceProvider)
         {
             _serviceProvider = serviceProvider;
+        }
+
+        partial void OnSearchTextChanged(string value)
+        {
+            ApplySourceFilter();
         }
 
         public async Task<SourceGuideSettingsDraft?> GetGuideSettingsAsync(int sourceId)
@@ -302,8 +367,6 @@ namespace Kroira.App.ViewModels
         [RelayCommand]
         public async Task LoadSourcesAsync()
         {
-            Sources.Clear();
-
             using var scope = _serviceProvider.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             var diagnosticsService = scope.ServiceProvider.GetRequiredService<ISourceDiagnosticsService>();
@@ -315,6 +378,11 @@ namespace Kroira.App.ViewModels
 
             var sourceIds = profiles.Select(profile => profile.Id).ToList();
             var diagnostics = await diagnosticsService.GetSnapshotsAsync(db, sourceIds);
+            var epgLogs = await db.EpgSyncLogs
+                .AsNoTracking()
+                .Where(log => sourceIds.Contains(log.SourceProfileId))
+                .ToDictionaryAsync(log => log.SourceProfileId);
+            var loadedSources = new List<SourceItemViewModel>(profiles.Count);
 
             foreach (var profile in profiles)
             {
@@ -336,14 +404,24 @@ namespace Kroira.App.ViewModels
                     LastSuccessfulSyncText = $"Import {(profile.LastSync.HasValue ? profile.LastSync.Value.ToLocalTime().ToString("g") : "Never")} - Guide Never",
                     LastImportSuccessText = profile.LastSync?.ToLocalTime().ToString("g") ?? "Never",
                     LastEpgSuccessText = "Never",
-                    ActiveEpgModeText = "Detected from provider"
+                    ActiveEpgModeText = "Detected from provider",
+                    EpgStatus = EpgStatus.Unknown,
+                    EpgResultCode = EpgSyncResultCode.None
                 };
 
-                Sources.Add(new SourceItemViewModel
+                loadedSources.Add(new SourceItemViewModel
                 {
                     Id = profile.Id,
                     Name = profile.Name,
                     Type = profile.Type.ToString(),
+                    SourceKindText = profile.Type == SourceType.Xtream ? "XTREAM API" : "M3U PLAYLIST",
+                    HealthBadgeText = (snapshot.HealthLabel ?? "Saved").ToUpperInvariant(),
+                    GuideBadgeText = BuildGuideBadgeText(snapshot),
+                    PrimarySyncText = profile.Type == SourceType.Xtream ? "Sync Now" : "Import Now",
+                    SourcePanelSummaryText = BuildSourcePanelSummary(snapshot),
+                    ConnectionLabelText = BuildConnectionLabel(snapshot),
+                    HealthPillKind = MapHealthPillKind(snapshot.HealthLabel),
+                    GuidePillKind = MapGuidePillKind(snapshot),
                     LastSyncText = snapshot.LastImportSuccessText,
                     ChannelCount = snapshot.LiveChannelCount,
                     MovieCount = snapshot.MovieCount,
@@ -373,10 +451,231 @@ namespace Kroira.App.ViewModels
                 });
             }
 
-            SourceCount = Sources.Count;
-            M3uSourceCount = Sources.Count(source => source.Type == "M3U");
-            XtreamSourceCount = Sources.Count(source => source.Type == "Xtream");
+            _allSources = loadedSources;
+            ApplySourceFilter();
+
+            SourceCount = loadedSources.Count;
+            M3uSourceCount = loadedSources.Count(source => source.Type == "M3U");
+            XtreamSourceCount = loadedSources.Count(source => source.Type == "Xtream");
+            TotalAssetCount = loadedSources.Sum(source => source.ChannelCount + source.MovieCount + source.SeriesCount);
+            TotalMatchedGuideChannelCount = loadedSources.Sum(source => source.EpgMatchedChannels);
+
+            var totalLiveChannels = loadedSources.Sum(source => source.ChannelCount);
+            var guideCoverage = totalLiveChannels > 0
+                ? (double)TotalMatchedGuideChannelCount / totalLiveChannels
+                : 0d;
+            GuideCoverageHeadline = totalLiveChannels > 0
+                ? $"{guideCoverage:P0}"
+                : "0%";
+            GuideCoverageCaption = totalLiveChannels > 0
+                ? $"{TotalMatchedGuideChannelCount:N0} of {totalLiveChannels:N0} live channels mapped"
+                : "No live channels available yet.";
+
+            var healthySources = loadedSources.Count(source => source.HealthPillKind == StatusPillKind.Healthy);
+            var failingSources = loadedSources.Count(source => source.HealthPillKind == StatusPillKind.Failed);
+            var workingSources = loadedSources.Count(source => source.HealthPillKind == StatusPillKind.Syncing);
+
+            if (workingSources > 0)
+            {
+                HealthStatusHeadline = "Syncing";
+                HealthStatusCaption = $"{workingSources} source syncing right now.";
+                HealthStatusKind = StatusPillKind.Syncing;
+            }
+            else if (failingSources > 0)
+            {
+                HealthStatusHeadline = "Attention";
+                HealthStatusCaption = $"{failingSources} source requires intervention.";
+                HealthStatusKind = StatusPillKind.Failed;
+            }
+            else if (healthySources == loadedSources.Count && loadedSources.Count > 0)
+            {
+                HealthStatusHeadline = "Optimal";
+                HealthStatusCaption = "All configured sources look operational.";
+                HealthStatusKind = StatusPillKind.Healthy;
+            }
+            else if (loadedSources.Count > 0)
+            {
+                HealthStatusHeadline = "Mixed";
+                HealthStatusCaption = $"{healthySources} healthy, {loadedSources.Count - healthySources} need review.";
+                HealthStatusKind = StatusPillKind.Warning;
+            }
+            else
+            {
+                HealthStatusHeadline = "Idle";
+                HealthStatusCaption = "No configured sources yet.";
+                HealthStatusKind = StatusPillKind.Neutral;
+            }
+
+            RecentActivities.Clear();
+            foreach (var activity in BuildRecentActivities(profiles, diagnostics, epgLogs).Take(6))
+            {
+                RecentActivities.Add(activity);
+            }
+        }
+
+        private void ApplySourceFilter()
+        {
+            Sources.Clear();
+
+            IEnumerable<SourceItemViewModel> filtered = _allSources;
+            if (!string.IsNullOrWhiteSpace(SearchText))
+            {
+                var search = SearchText.Trim();
+                filtered = filtered.Where(source =>
+                    ContainsSearch(source.Name, search) ||
+                    ContainsSearch(source.Type, search) ||
+                    ContainsSearch(source.SourceKindText, search) ||
+                    ContainsSearch(source.HealthLabel, search) ||
+                    ContainsSearch(source.GuideStatusText, search) ||
+                    ContainsSearch(source.Status, search) ||
+                    ContainsSearch(source.GuideModeText, search) ||
+                    ContainsSearch(source.GuideUrlText, search));
+            }
+
+            foreach (var source in filtered)
+            {
+                Sources.Add(source);
+            }
+
+            var noConfiguredSources = _allSources.Count == 0;
             IsEmpty = Sources.Count == 0;
+            EmptyStateTitle = noConfiguredSources
+                ? "No sources configured"
+                : "No matching sources";
+            EmptyStateMessage = noConfiguredSources
+                ? "Add an M3U playlist or Xtream provider to populate live channels, VOD, and guide data."
+                : "Try a different provider name, source type, or guide status filter.";
+        }
+
+        private static IEnumerable<SourceRecentActivityItemViewModel> BuildRecentActivities(
+            IReadOnlyCollection<SourceProfile> profiles,
+            IReadOnlyDictionary<int, SourceDiagnosticsSnapshot> diagnostics,
+            IReadOnlyDictionary<int, EpgSyncLog> epgLogs)
+        {
+            var activities = new List<(DateTime TimestampUtc, SourceRecentActivityItemViewModel Item)>();
+
+            foreach (var profile in profiles)
+            {
+                diagnostics.TryGetValue(profile.Id, out var snapshot);
+                snapshot ??= new SourceDiagnosticsSnapshot();
+                epgLogs.TryGetValue(profile.Id, out var epgLog);
+
+                if (profile.LastSync.HasValue)
+                {
+                    var importStatusText = snapshot.HealthLabel is "Failing" or "Attention"
+                        ? "Review"
+                        : "Complete";
+                    var importKind = snapshot.HealthLabel is "Failing" or "Attention"
+                        ? StatusPillKind.Warning
+                        : StatusPillKind.Healthy;
+
+                    activities.Add((profile.LastSync.Value.ToUniversalTime(), new SourceRecentActivityItemViewModel
+                    {
+                        TimestampText = profile.LastSync.Value.ToLocalTime().ToString("MMM d, HH:mm"),
+                        SourceName = profile.Name,
+                        ActionText = profile.Type == SourceType.Xtream ? "Source Sync" : "Playlist Import",
+                        StatusText = importStatusText,
+                        StatusKind = importKind,
+                        PayloadText = $"{snapshot.LiveChannelCount:N0} live · {snapshot.MovieCount + snapshot.SeriesCount:N0} VOD/series"
+                    }));
+                }
+
+                if (epgLog != null && epgLog.SyncedAtUtc > DateTime.MinValue)
+                {
+                    activities.Add((epgLog.SyncedAtUtc, new SourceRecentActivityItemViewModel
+                    {
+                        TimestampText = epgLog.SyncedAtUtc.ToLocalTime().ToString("MMM d, HH:mm"),
+                        SourceName = profile.Name,
+                        ActionText = "Guide Sync",
+                        StatusText = snapshot.EpgStatusText,
+                        StatusKind = MapGuidePillKind(snapshot),
+                        PayloadText = $"{snapshot.MatchedLiveChannelCount:N0} matched · {snapshot.EpgProgramCount:N0} programmes"
+                    }));
+                }
+            }
+
+            return activities
+                .OrderByDescending(activity => activity.TimestampUtc)
+                .Select(activity => activity.Item)
+                .ToList();
+        }
+
+        private static bool ContainsSearch(string value, string search)
+        {
+            return !string.IsNullOrWhiteSpace(value) &&
+                   value.IndexOf(search, StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
+        private static string BuildGuideBadgeText(SourceDiagnosticsSnapshot snapshot)
+        {
+            var text = snapshot.EpgStatusText;
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                return "GUIDE";
+            }
+
+            return text.ToUpperInvariant();
+        }
+
+        private static string BuildSourcePanelSummary(SourceDiagnosticsSnapshot snapshot)
+        {
+            if (!string.IsNullOrWhiteSpace(snapshot.FailureSummaryText))
+            {
+                return snapshot.FailureSummaryText;
+            }
+
+            if (!string.IsNullOrWhiteSpace(snapshot.WarningSummaryText))
+            {
+                return snapshot.WarningSummaryText;
+            }
+
+            if (!string.IsNullOrWhiteSpace(snapshot.EpgCoverageText))
+            {
+                return snapshot.EpgCoverageText;
+            }
+
+            return snapshot.StatusSummary;
+        }
+
+        private static string BuildConnectionLabel(SourceDiagnosticsSnapshot snapshot)
+        {
+            return snapshot.EpgStatus switch
+            {
+                EpgStatus.Syncing => "Connection syncing",
+                EpgStatus.Ready => "Connection active",
+                EpgStatus.ManualOverride => "Manual guide active",
+                EpgStatus.Stale => "Guide is stale",
+                EpgStatus.FailedFetchOrParse => "Connection failed",
+                EpgStatus.UnavailableNoXmltv => "Guide unavailable",
+                _ => "Standby"
+            };
+        }
+
+        private static StatusPillKind MapHealthPillKind(string healthLabel)
+        {
+            return healthLabel switch
+            {
+                "Healthy" or "Ready" => StatusPillKind.Healthy,
+                "Working" => StatusPillKind.Syncing,
+                "Attention" or "Degraded" => StatusPillKind.Warning,
+                "Failing" => StatusPillKind.Failed,
+                _ => StatusPillKind.Standby
+            };
+        }
+
+        private static StatusPillKind MapGuidePillKind(SourceDiagnosticsSnapshot snapshot)
+        {
+            return snapshot.EpgStatus switch
+            {
+                EpgStatus.Ready or EpgStatus.ManualOverride => snapshot.EpgResultCode == EpgSyncResultCode.PartialMatch
+                    ? StatusPillKind.Warning
+                    : StatusPillKind.Healthy,
+                EpgStatus.Syncing => StatusPillKind.Syncing,
+                EpgStatus.Stale => StatusPillKind.Warning,
+                EpgStatus.FailedFetchOrParse => StatusPillKind.Failed,
+                EpgStatus.UnavailableNoXmltv => StatusPillKind.Info,
+                _ => StatusPillKind.Standby
+            };
         }
 
         [RelayCommand]

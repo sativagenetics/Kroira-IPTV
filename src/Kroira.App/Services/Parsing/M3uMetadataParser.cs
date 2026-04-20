@@ -192,6 +192,34 @@ namespace Kroira.App.Services.Parsing
             return value;
         }
 
+        public static string TryBuildXtreamXmltvUrl(string playlistLocation)
+        {
+            if (!Uri.TryCreate(playlistLocation, UriKind.Absolute, out var playlistUri))
+            {
+                return string.Empty;
+            }
+
+            var fileName = Path.GetFileName(playlistUri.AbsolutePath);
+            if (!string.Equals(fileName, "get.php", StringComparison.OrdinalIgnoreCase))
+            {
+                return string.Empty;
+            }
+
+            var query = playlistUri.Query.TrimStart('?');
+            if (!ContainsQueryParameter(query, "username") || !ContainsQueryParameter(query, "password"))
+            {
+                return string.Empty;
+            }
+
+            var builder = new UriBuilder(playlistUri)
+            {
+                Path = ReplaceFileName(playlistUri.AbsolutePath, "xmltv.php"),
+                Query = query
+            };
+
+            return builder.Uri.ToString();
+        }
+
         private static IReadOnlyList<string> SplitPossibleUrls(string value)
         {
             return value
@@ -227,6 +255,42 @@ namespace Kroira.App.Services.Parsing
             }
 
             return -1;
+        }
+
+        private static bool ContainsQueryParameter(string query, string parameterName)
+        {
+            if (string.IsNullOrWhiteSpace(query) || string.IsNullOrWhiteSpace(parameterName))
+            {
+                return false;
+            }
+
+            foreach (var part in query.Split('&', StringSplitOptions.RemoveEmptyEntries))
+            {
+                var separator = part.IndexOf('=');
+                var name = separator >= 0 ? part[..separator] : part;
+                if (string.Equals(name, parameterName, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static string ReplaceFileName(string absolutePath, string newFileName)
+        {
+            if (string.IsNullOrWhiteSpace(absolutePath))
+            {
+                return newFileName;
+            }
+
+            var lastSlashIndex = absolutePath.LastIndexOf('/');
+            if (lastSlashIndex < 0)
+            {
+                return newFileName;
+            }
+
+            return absolutePath[..(lastSlashIndex + 1)] + newFileName;
         }
     }
 }

@@ -47,6 +47,28 @@ namespace Kroira.App.Views
             }
         }
 
+        private void SyncSource_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not Button { Tag: int id })
+            {
+                return;
+            }
+
+            var source = ViewModel.Sources.FirstOrDefault(item => item.Id == id);
+            if (source == null)
+            {
+                return;
+            }
+
+            if (string.Equals(source.Type, SourceType.Xtream.ToString(), StringComparison.OrdinalIgnoreCase))
+            {
+                ViewModel.SyncXtreamCommand.Execute(id);
+                return;
+            }
+
+            ViewModel.ParseSourceCommand.Execute(id);
+        }
+
         private void BrowseSource_Click(object sender, RoutedEventArgs e)
         {
             if (sender is Button btn && btn.Tag is int id)

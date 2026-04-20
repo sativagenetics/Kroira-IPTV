@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -73,8 +74,27 @@ namespace Kroira.App.Services.Parsing
 
             var playlistContent = await EpgDiscoveryHelpers.ReadTextAsync(cred.Url);
             var headerMetadata = M3uMetadataParser.ParseHeaderMetadata(playlistContent, cred.Url);
-            cred.DetectedEpgUrl = headerMetadata.XmltvUrls.FirstOrDefault() ?? string.Empty;
             LogHeaderDiscovery(sourceProfileId, headerMetadata);
+
+            var discoveryCandidates = new List<(string Url, string Description, string Method)>();
+            foreach (var candidateUrl in headerMetadata.XmltvUrls)
+            {
+                discoveryCandidates.Add((candidateUrl, $"M3U embedded XMLTV metadata ({candidateUrl})", "header"));
+            }
+
+            if (discoveryCandidates.Count == 0)
+            {
+                var derivedUrl = M3uMetadataParser.TryBuildXtreamXmltvUrl(cred.Url);
+                if (!string.IsNullOrWhiteSpace(derivedUrl))
+                {
+                    discoveryCandidates.Add((derivedUrl, $"Derived Xtream XMLTV from M3U playlist URL ({derivedUrl})", "xtream_playlist_url"));
+                    ImportRuntimeLogger.Log(
+                        "EPG DISCOVERY",
+                        $"source_profile_id={sourceProfileId}; source_type=M3U; xmltv_url_found=false; fallback_method=xtream_playlist_url; xmltv_candidate={FormatDiagnosticValue(derivedUrl)}");
+                }
+            }
+
+            cred.DetectedEpgUrl = discoveryCandidates.FirstOrDefault().Url ?? string.Empty;
 
             var activeMode = EpgDiscoveryHelpers.ResolveActiveMode(cred);
             if (activeMode == EpgActiveMode.Manual)
@@ -94,26 +114,26 @@ namespace Kroira.App.Services.Parsing
                     activeMode);
             }
 
-            if (headerMetadata.XmltvUrls.Count == 0)
+            if (discoveryCandidates.Count == 0)
             {
                 throw new EpgUnavailableException("Playlist does not advertise an XMLTV guide URL");
             }
 
             Exception? lastFailure = null;
-            foreach (var candidateUrl in headerMetadata.XmltvUrls)
+            foreach (var candidate in discoveryCandidates)
             {
                 try
                 {
-                    var xmlContent = await EpgDiscoveryHelpers.ReadXmltvAsync(candidateUrl, EpgActiveMode.Detected);
+                    var xmlContent = await EpgDiscoveryHelpers.ReadXmltvAsync(candidate.Url, EpgActiveMode.Detected);
                     ImportRuntimeLogger.Log(
                         "EPG DISCOVERY",
-                        $"source_profile_id={sourceProfileId}; source_type=M3U; mode=detected; xmltv_candidate={FormatDiagnosticValue(candidateUrl)}; fetch_status=success");
+                        $"source_profile_id={sourceProfileId}; source_type=M3U; mode=detected; discovery_method={candidate.Method}; xmltv_candidate={FormatDiagnosticValue(candidate.Url)}; fetch_status=success");
 
                     return new EpgDiscoveryResult(
                         xmlContent,
-                        $"M3U embedded XMLTV metadata ({candidateUrl})",
+                        candidate.Description,
                         cred.DetectedEpgUrl,
-                        candidateUrl,
+                        candidate.Url,
                         EpgActiveMode.Detected);
                 }
                 catch (Exception ex)
@@ -121,12 +141,12 @@ namespace Kroira.App.Services.Parsing
                     lastFailure = ex;
                     ImportRuntimeLogger.Log(
                         "EPG DISCOVERY",
-                        $"source_profile_id={sourceProfileId}; source_type=M3U; mode=detected; xmltv_candidate={FormatDiagnosticValue(candidateUrl)}; fetch_status=failed; failure_reason={FormatDiagnosticValue(ex.Message)}");
+                        $"source_profile_id={sourceProfileId}; source_type=M3U; mode=detected; discovery_method={candidate.Method}; xmltv_candidate={FormatDiagnosticValue(candidate.Url)}; fetch_status=failed; failure_reason={FormatDiagnosticValue(ex.Message)}");
                 }
             }
 
             throw new EpgFetchException(
-                $"Discovered {headerMetadata.XmltvUrls.Count} XMLTV URL(s) in the M3U header, but none returned usable XMLTV. last_error={lastFailure?.Message ?? "unknown"}",
+                $"Discovered {discoveryCandidates.Count} XMLTV URL candidate(s) for the M3U source, but none returned usable XMLTV. last_error={lastFailure?.Message ?? "unknown"}",
                 cred.DetectedEpgUrl,
                 EpgActiveMode.Detected);
         }
