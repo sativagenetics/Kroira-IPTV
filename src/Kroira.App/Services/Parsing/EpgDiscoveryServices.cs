@@ -1,9 +1,7 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Kroira.App.Data;
 using Kroira.App.Models;
@@ -31,19 +29,6 @@ namespace Kroira.App.Services.Parsing
 
     public sealed class M3uEpgDiscoveryService : IEpgSourceDiscoveryService
     {
-        private static readonly Regex AttributeRegex = new(
-            @"(?<key>[A-Za-z0-9_-]+)\s*=\s*(?:""(?<quoted>[^""]*)""|(?<bare>\S+))",
-            RegexOptions.Compiled);
-
-        private static readonly string[] EpgAttributeNames =
-        {
-            "x-tvg-url",
-            "url-tvg",
-            "tvg-url",
-            "epg-url",
-            "xmltv"
-        };
-
         public SourceType SourceType => SourceType.M3U;
 
         public async Task<EpgDiscoveryResult> DiscoverAsync(AppDbContext db, int sourceProfileId)
@@ -61,86 +46,80 @@ namespace Kroira.App.Services.Parsing
             }
 
             var playlistContent = await ReadTextAsync(cred.Url);
-            var embeddedEpgUrl = DiscoverEmbeddedEpgUrl(playlistContent, cred.Url);
-            if (string.IsNullOrWhiteSpace(embeddedEpgUrl))
+            var headerMetadata = M3uMetadataParser.ParseHeaderMetadata(playlistContent, cred.Url);
+            LogHeaderDiscovery(sourceProfileId, headerMetadata);
+
+            if (headerMetadata.XmltvUrls.Count == 0)
             {
-                throw new Exception("No XMLTV EPG URL was configured or found in the M3U playlist metadata.");
+                throw new Exception(
+                    $"No XMLTV EPG URL was configured or found in the M3U playlist metadata. header_preview={headerMetadata.RawHeaderPreview}; header_attributes={DescribeHeaderAttributes(headerMetadata)}");
             }
 
-            var embeddedXml = await ReadTextAsync(embeddedEpgUrl);
-            return new EpgDiscoveryResult(embeddedXml, "M3U embedded XMLTV metadata");
-        }
-
-        private static string DiscoverEmbeddedEpgUrl(string playlistContent, string playlistLocation)
-        {
-            var header = playlistContent
-                .Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
-                .Select(line => line.Trim())
-                .FirstOrDefault(line => line.StartsWith("#EXTM3U", StringComparison.OrdinalIgnoreCase));
-
-            if (string.IsNullOrWhiteSpace(header))
+            Exception lastFailure = null;
+            foreach (var candidateUrl in headerMetadata.XmltvUrls)
             {
-                return string.Empty;
-            }
-
-            var attributes = ParseAttributes(header);
-            foreach (var attrName in EpgAttributeNames)
-            {
-                if (attributes.TryGetValue(attrName, out var epgUrl) && !string.IsNullOrWhiteSpace(epgUrl))
+                try
                 {
-                    return ResolveUrl(TakeFirstEpgUrl(epgUrl), playlistLocation);
+                    var xmlContent = await ReadTextAsync(candidateUrl);
+                    if (!LooksLikeXmltv(xmlContent))
+                    {
+                        throw new Exception("Discovered XMLTV URL did not return XMLTV content.");
+                    }
+
+                    ImportRuntimeLogger.Log(
+                        "M3U EPG",
+                        $"source_profile_id={sourceProfileId}; xmltv_candidate={FormatDiagnosticValue(candidateUrl)}; xmltv_candidate_status=success");
+
+                    return new EpgDiscoveryResult(xmlContent, $"M3U embedded XMLTV metadata ({candidateUrl})");
+                }
+                catch (Exception ex)
+                {
+                    lastFailure = ex;
+                    ImportRuntimeLogger.Log(
+                        "M3U EPG",
+                        $"source_profile_id={sourceProfileId}; xmltv_candidate={FormatDiagnosticValue(candidateUrl)}; xmltv_candidate_status=failed; failure_reason={FormatDiagnosticValue(ex.Message)}");
                 }
             }
 
-            return string.Empty;
+            throw new Exception(
+                $"Discovered {headerMetadata.XmltvUrls.Count} XMLTV URL(s) in the M3U header, but none returned usable XMLTV. last_error={lastFailure?.Message ?? "unknown"}");
         }
 
-        private static Dictionary<string, string> ParseAttributes(string line)
+        private static void LogHeaderDiscovery(int sourceProfileId, M3uHeaderMetadata headerMetadata)
         {
-            var attributes = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-            foreach (Match match in AttributeRegex.Matches(line))
-            {
-                var key = match.Groups["key"].Value.Trim();
-                var value = match.Groups["quoted"].Success
-                    ? match.Groups["quoted"].Value
-                    : match.Groups["bare"].Value;
-
-                if (!string.IsNullOrWhiteSpace(key))
-                {
-                    attributes[key] = value.Trim();
-                }
-            }
-
-            return attributes;
+            ImportRuntimeLogger.Log(
+                "M3U EPG",
+                $"source_profile_id={sourceProfileId}; xmltv_url_found={(headerMetadata.XmltvUrls.Count > 0 ? "true" : "false")}; xmltv_url_value={FormatDiagnosticValue(string.Join(" | ", headerMetadata.XmltvUrls))}; header_preview={FormatDiagnosticValue(headerMetadata.RawHeaderPreview)}; header_attributes={FormatDiagnosticValue(DescribeHeaderAttributes(headerMetadata))}");
         }
 
-        private static string ResolveUrl(string epgUrl, string playlistLocation)
+        private static string DescribeHeaderAttributes(M3uHeaderMetadata headerMetadata)
         {
-            if (Uri.TryCreate(epgUrl, UriKind.Absolute, out _))
+            if (headerMetadata.Attributes.Count == 0)
             {
-                return epgUrl;
+                return "none";
             }
 
-            if (Uri.TryCreate(playlistLocation, UriKind.Absolute, out var playlistUri))
-            {
-                return new Uri(playlistUri, epgUrl).ToString();
-            }
-
-            var playlistDirectory = Path.GetDirectoryName(playlistLocation);
-            if (!string.IsNullOrWhiteSpace(playlistDirectory))
-            {
-                return Path.GetFullPath(Path.Combine(playlistDirectory, epgUrl));
-            }
-
-            return epgUrl;
+            return string.Join(
+                ";",
+                headerMetadata.Attributes
+                    .OrderBy(pair => pair.Key, StringComparer.OrdinalIgnoreCase)
+                    .Select(pair => $"{pair.Key}=[{string.Join("|", pair.Value)}]"));
         }
 
-        private static string TakeFirstEpgUrl(string epgUrl)
+        private static string FormatDiagnosticValue(string value)
         {
-            return epgUrl
-                .Split(new[] { ',', ';', '|' }, StringSplitOptions.RemoveEmptyEntries)
-                .Select(url => url.Trim())
-                .FirstOrDefault() ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return "\"\"";
+            }
+
+            return $"\"{value.Replace("\"", "'")}\"";
+        }
+
+        private static bool LooksLikeXmltv(string content)
+        {
+            return !string.IsNullOrWhiteSpace(content) &&
+                   content.IndexOf("<tv", StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
         private static async Task<string> ReadTextAsync(string location)
@@ -172,9 +151,9 @@ namespace Kroira.App.Services.Parsing
                 throw new Exception("Xtream credentials are incomplete.");
             }
 
-            string baseUrl = cred.Url.TrimEnd('/');
-            string authQuery = $"?username={Uri.EscapeDataString(cred.Username)}&password={Uri.EscapeDataString(cred.Password)}";
-            string providerGuideUrl = $"{baseUrl}/xmltv.php{authQuery}";
+            var baseUrl = cred.Url.TrimEnd('/');
+            var authQuery = $"?username={Uri.EscapeDataString(cred.Username)}&password={Uri.EscapeDataString(cred.Password)}";
+            var providerGuideUrl = $"{baseUrl}/xmltv.php{authQuery}";
 
             using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(60) };
             try

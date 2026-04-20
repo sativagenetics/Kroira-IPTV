@@ -1,0 +1,232 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text.RegularExpressions;
+
+namespace Kroira.App.Services.Parsing
+{
+    internal sealed class M3uHeaderMetadata
+    {
+        public IReadOnlyList<string> HeaderLines { get; init; } = Array.Empty<string>();
+        public IReadOnlyDictionary<string, IReadOnlyList<string>> Attributes { get; init; }
+            = new Dictionary<string, IReadOnlyList<string>>(StringComparer.OrdinalIgnoreCase);
+        public IReadOnlyList<string> XmltvUrls { get; init; } = Array.Empty<string>();
+        public string RawHeaderPreview { get; init; } = string.Empty;
+    }
+
+    internal sealed class M3uExtinfMetadata
+    {
+        public string DisplayName { get; init; } = string.Empty;
+        public IReadOnlyDictionary<string, string> Attributes { get; init; }
+            = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+    }
+
+    internal static class M3uMetadataParser
+    {
+        private static readonly Regex AttributeRegex = new(
+            @"(?<key>[A-Za-z0-9_-]+)\s*=\s*(?:(?<quote>['""])(?<quoted>.*?)\k<quote>|(?<bare>[^\s,]+))",
+            RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
+        private static readonly string[] XmltvAttributeNames =
+        {
+            "x-tvg-url",
+            "url-tvg",
+            "tvg-url",
+            "epg-url",
+            "xmltv"
+        };
+
+        public static M3uHeaderMetadata ParseHeaderMetadata(string playlistContent, string playlistLocation)
+        {
+            var headerLines = new List<string>();
+            foreach (var rawLine in playlistContent.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries))
+            {
+                var line = rawLine.Trim();
+                if (string.IsNullOrWhiteSpace(line))
+                {
+                    continue;
+                }
+
+                if (line.StartsWith("#EXTINF:", StringComparison.OrdinalIgnoreCase) || !line.StartsWith("#", StringComparison.Ordinal))
+                {
+                    break;
+                }
+
+                headerLines.Add(line);
+            }
+
+            var attributes = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+            foreach (var headerLine in headerLines)
+            {
+                foreach (Match match in AttributeRegex.Matches(headerLine))
+                {
+                    var key = match.Groups["key"].Value.Trim();
+                    var value = match.Groups["quoted"].Success
+                        ? match.Groups["quoted"].Value
+                        : match.Groups["bare"].Value;
+
+                    if (string.IsNullOrWhiteSpace(key) || string.IsNullOrWhiteSpace(value))
+                    {
+                        continue;
+                    }
+
+                    if (!attributes.TryGetValue(key, out var values))
+                    {
+                        values = new List<string>();
+                        attributes[key] = values;
+                    }
+
+                    values.Add(value.Trim());
+                }
+            }
+
+            var xmltvUrls = new List<string>();
+            foreach (var attrName in XmltvAttributeNames)
+            {
+                if (!attributes.TryGetValue(attrName, out var values))
+                {
+                    continue;
+                }
+
+                foreach (var value in values)
+                {
+                    foreach (var candidate in SplitPossibleUrls(value))
+                    {
+                        var resolved = ResolveUrl(candidate, playlistLocation);
+                        if (!string.IsNullOrWhiteSpace(resolved))
+                        {
+                            xmltvUrls.Add(resolved);
+                        }
+                    }
+                }
+            }
+
+            var distinctUrls = xmltvUrls
+                .Where(url => !string.IsNullOrWhiteSpace(url))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            return new M3uHeaderMetadata
+            {
+                HeaderLines = headerLines,
+                Attributes = attributes.ToDictionary(
+                    pair => pair.Key,
+                    pair => (IReadOnlyList<string>)pair.Value.ToList(),
+                    StringComparer.OrdinalIgnoreCase),
+                XmltvUrls = distinctUrls,
+                RawHeaderPreview = string.Join(" | ", headerLines.Take(4))
+            };
+        }
+
+        public static M3uExtinfMetadata ParseExtinf(string line)
+        {
+            var separatorIndex = FindMetadataSeparator(line);
+            var metadataSegment = separatorIndex >= 0
+                ? line[..separatorIndex]
+                : line;
+            var displayName = separatorIndex >= 0 && separatorIndex < line.Length - 1
+                ? line[(separatorIndex + 1)..].Trim()
+                : string.Empty;
+
+            var attributes = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            foreach (Match match in AttributeRegex.Matches(metadataSegment))
+            {
+                var key = match.Groups["key"].Value.Trim();
+                var value = match.Groups["quoted"].Success
+                    ? match.Groups["quoted"].Value
+                    : match.Groups["bare"].Value;
+
+                if (!string.IsNullOrWhiteSpace(key))
+                {
+                    attributes[key] = value.Trim();
+                }
+            }
+
+            return new M3uExtinfMetadata
+            {
+                DisplayName = displayName,
+                Attributes = attributes
+            };
+        }
+
+        public static string GetFirstAttributeValue(
+            IReadOnlyDictionary<string, string> attributes,
+            params string[] keys)
+        {
+            foreach (var key in keys)
+            {
+                if (attributes.TryGetValue(key, out var value) &&
+                    !string.IsNullOrWhiteSpace(value))
+                {
+                    return value.Trim();
+                }
+            }
+
+            return string.Empty;
+        }
+
+        public static string ResolveUrl(string value, string playlistLocation)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return string.Empty;
+            }
+
+            if (Uri.TryCreate(value, UriKind.Absolute, out _))
+            {
+                return value;
+            }
+
+            if (Uri.TryCreate(playlistLocation, UriKind.Absolute, out var playlistUri))
+            {
+                return new Uri(playlistUri, value).ToString();
+            }
+
+            var playlistDirectory = Path.GetDirectoryName(playlistLocation);
+            if (!string.IsNullOrWhiteSpace(playlistDirectory))
+            {
+                return Path.GetFullPath(Path.Combine(playlistDirectory, value));
+            }
+
+            return value;
+        }
+
+        private static IReadOnlyList<string> SplitPossibleUrls(string value)
+        {
+            return value
+                .Split(new[] { ',', ';', '|'}, StringSplitOptions.RemoveEmptyEntries)
+                .Select(candidate => candidate.Trim())
+                .Where(candidate => !string.IsNullOrWhiteSpace(candidate))
+                .ToList();
+        }
+
+        private static int FindMetadataSeparator(string line)
+        {
+            var quote = '\0';
+            for (var i = 0; i < line.Length; i++)
+            {
+                var ch = line[i];
+                if (quote == '\0')
+                {
+                    if (ch is '"' or '\'')
+                    {
+                        quote = ch;
+                        continue;
+                    }
+
+                    if (ch == ',')
+                    {
+                        return i;
+                    }
+                }
+                else if (ch == quote)
+                {
+                    quote = '\0';
+                }
+            }
+
+            return -1;
+        }
+    }
+}

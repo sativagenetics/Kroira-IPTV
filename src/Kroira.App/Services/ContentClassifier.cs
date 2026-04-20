@@ -361,6 +361,56 @@ namespace Kroira.App.Services
             return categoryLabels.Contains(NormalizeLabel(title));
         }
 
+        public static bool TryExtractM3uPseudoCategoryHeader(string title, out string categoryLabel)
+        {
+            categoryLabel = string.Empty;
+            if (string.IsNullOrWhiteSpace(title))
+            {
+                return false;
+            }
+
+            var normalized = NormalizeLabel(title);
+            if (normalized.Length < 3)
+            {
+                return false;
+            }
+
+            var lower = normalized.ToLowerInvariant();
+            var stripped = StripDividerDecorations(lower);
+            if (string.IsNullOrWhiteSpace(stripped) || stripped.Length < 3)
+            {
+                return false;
+            }
+
+            var hasDecoratedBoundary =
+                Regex.IsMatch(normalized, @"^\s*[*#=\-_|~\.]{3,}", RegexOptions.IgnoreCase) &&
+                Regex.IsMatch(normalized, @"[*#=\-_|~\.]{3,}\s*$", RegexOptions.IgnoreCase);
+
+            if (!hasDecoratedBoundary)
+            {
+                return false;
+            }
+
+            var words = stripped
+                .Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+
+            if (words.Length == 0 || words.Length > 6)
+            {
+                return false;
+            }
+
+            var looksLikeHeading = words.All(word =>
+                word.All(ch => char.IsLetterOrDigit(ch) || ch is '&' or '+' or '/' or '\'' or '(' or ')' or '-'));
+
+            if (!looksLikeHeading)
+            {
+                return false;
+            }
+
+            categoryLabel = NormalizeLabel(stripped.ToUpperInvariant());
+            return categoryLabel.Length >= 3;
+        }
+
         public static bool IsPlayableXtreamLiveChannel(string name, string streamUrl, HashSet<string> categoryLabels)
         {
             if (IsGarbageTitle(name)) return false;
