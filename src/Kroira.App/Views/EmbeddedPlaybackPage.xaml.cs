@@ -80,7 +80,6 @@ namespace Kroira.App.Views
         private Point _lastPointerPosition;
         private bool _hasLastPointerPosition;
         private int _activeAttemptId;
-        private int _openOverlayFlyoutCount;
         private int _retryAttempt;
         private int _switchGeneration;
         private int _loadTimeoutAttemptId;
@@ -95,6 +94,9 @@ namespace Kroira.App.Views
         private DateTime _ignoreLivePlaybackEndedUntilUtc = DateTime.MinValue;
         private long _playbackSessionId;
         private CancellationTokenSource _playbackSessionCancellation = new();
+        private readonly List<FlyoutBase> _openOverlayFlyouts = new();
+        private FlyoutBase _activeUtilityFlyout;
+        private FlyoutBase _pendingUtilityFlyout;
 
         private static string LogPath => System.IO.Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
@@ -145,6 +147,13 @@ namespace Kroira.App.Views
             WireOverlayFlyout(AspectFlyout);
             WireOverlayFlyout(SpeedFlyout);
             WireOverlayFlyout(ToolsFlyout);
+            WireOverlayFlyout(AudioDelayFlyout);
+            WireOverlayFlyout(SubtitleDelayFlyout);
+            WireOverlayFlyout(SubtitleStyleFlyout);
+            WireOverlayFlyout(ZoomFlyout);
+            WireOverlayFlyout(RotationFlyout);
+            WireOverlayFlyout(SleepTimerFlyout);
+            ToolsFlyout.Opening += ToolsFlyout_Opening;
             InitializeEnhancedPlayerUi(services);
 
             Loaded += OnPageLoaded;
@@ -265,7 +274,9 @@ namespace Kroira.App.Views
         private async void OnPageLoaded(object sender, RoutedEventArgs e)
         {
             if (_context == null) return;
+            RestorePlayerKeyboardFocus(force: true);
             await TryStartPlaybackAsync();
+            RestorePlayerKeyboardFocus(force: true);
         }
 
         private async void VideoHost_StartSizeChanged(object sender, SizeChangedEventArgs e)
@@ -1120,6 +1131,7 @@ namespace Kroira.App.Views
             {
                 if (_teardownStarted) return;
                 TogglePlayPauseOrLive();
+                RestorePlayerKeyboardFocus(force: true);
                 ShowControls(cause: "click");
                 ResetInactivityTimer("click");
             });
@@ -2135,7 +2147,7 @@ namespace Kroira.App.Views
             QueueSurfacePlacementUpdate();
         }
 
-        private bool IsMenuOpen => _openOverlayFlyoutCount > 0;
+        private bool IsMenuOpen => _openOverlayFlyouts.Count > 0 || _pendingUtilityFlyout != null;
 
         private bool IsUserInteractingWithControls =>
             _isOverlayPointerInteractionActive ||
@@ -2221,18 +2233,83 @@ namespace Kroira.App.Views
             flyout.Closed += OverlayFlyout_Closed;
         }
 
+        private void ToolsFlyout_Opening(object sender, object e)
+        {
+            if (_activeUtilityFlyout != null && !ReferenceEquals(_activeUtilityFlyout, ToolsFlyout))
+            {
+                _pendingUtilityFlyout = null;
+                _activeUtilityFlyout.Hide();
+            }
+        }
+
         private void OverlayFlyout_Opened(object sender, object e)
         {
-            _openOverlayFlyoutCount++;
+            if (sender is FlyoutBase flyout)
+            {
+                _openOverlayFlyouts.Remove(flyout);
+                _openOverlayFlyouts.Add(flyout);
+                if (IsUtilityChildFlyout(flyout))
+                {
+                    _activeUtilityFlyout = flyout;
+                    _pendingUtilityFlyout = null;
+                }
+            }
+
             LogPlaybackState("OVERLAY: flyout opened");
             ShowControls(persist: true, cause: "menu_opened");
         }
 
         private void OverlayFlyout_Closed(object sender, object e)
         {
-            _openOverlayFlyoutCount = Math.Max(0, _openOverlayFlyoutCount - 1);
+            if (sender is FlyoutBase flyout)
+            {
+                _openOverlayFlyouts.Remove(flyout);
+                if (ReferenceEquals(_activeUtilityFlyout, flyout))
+                {
+                    _activeUtilityFlyout = null;
+                }
+
+                if (ReferenceEquals(_pendingUtilityFlyout, flyout))
+                {
+                    _pendingUtilityFlyout = null;
+                }
+            }
+
             LogPlaybackState("OVERLAY: flyout closed");
+            if (_pendingUtilityFlyout != null)
+            {
+                ShowControls(persist: true, cause: "menu_transition");
+                return;
+            }
+
+            RestorePlayerKeyboardFocus(force: true);
             ResumeOverlayAutoHide("menu_closed");
+        }
+
+        private bool IsUtilityChildFlyout(FlyoutBase flyout)
+        {
+            return ReferenceEquals(flyout, AspectFlyout) ||
+                   ReferenceEquals(flyout, AudioDelayFlyout) ||
+                   ReferenceEquals(flyout, SubtitleDelayFlyout) ||
+                   ReferenceEquals(flyout, SubtitleStyleFlyout) ||
+                   ReferenceEquals(flyout, ZoomFlyout) ||
+                   ReferenceEquals(flyout, RotationFlyout) ||
+                   ReferenceEquals(flyout, SleepTimerFlyout);
+        }
+
+        private void RestorePlayerKeyboardFocus(bool force = false)
+        {
+            if (_teardownStarted || RootGrid.XamlRoot == null || IsMenuOpen)
+            {
+                return;
+            }
+
+            if (!force && IsTextInputFocused())
+            {
+                return;
+            }
+
+            RootGrid.Focus(FocusState.Programmatic);
         }
 
         private bool IsOverlayControlSource(object originalSource)

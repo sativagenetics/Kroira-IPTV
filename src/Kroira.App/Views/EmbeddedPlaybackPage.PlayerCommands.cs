@@ -13,6 +13,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Input;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Windows.System;
@@ -88,55 +89,13 @@ namespace Kroira.App.Views
             AddToggleToolsItem("always_on_top", "Always on top", (_, _) => ToggleAlwaysOnTop());
             AddToggleToolsItem("deinterlace", "Deinterlace", (_, _) => ToggleDeinterlace());
 
-            var displayMenu = new MenuFlyoutSubItem { Text = "Display" };
-            AddAspectSubItem(displayMenu, "Automatic", PlaybackAspectMode.Automatic);
-            AddAspectSubItem(displayMenu, "Fill window", PlaybackAspectMode.FillWindow);
-            AddAspectSubItem(displayMenu, "16:9", PlaybackAspectMode.Ratio16x9);
-            AddAspectSubItem(displayMenu, "4:3", PlaybackAspectMode.Ratio4x3);
-            AddAspectSubItem(displayMenu, "1.85:1", PlaybackAspectMode.Ratio185x1);
-            AddAspectSubItem(displayMenu, "2.35:1", PlaybackAspectMode.Ratio235x1);
-            ToolsFlyout.Items.Add(displayMenu);
-
-            var audioDelayMenu = new MenuFlyoutSubItem { Text = "Audio delay" };
-            AddSubItem(audioDelayMenu, "-0.1s", (_, _) => AdjustAudioDelay(-0.1));
-            AddSubItem(audioDelayMenu, "+0.1s", (_, _) => AdjustAudioDelay(0.1));
-            AddSubItem(audioDelayMenu, "Reset", (_, _) => SetAudioDelay(0));
-            ToolsFlyout.Items.Add(audioDelayMenu);
-
-            var subtitleDelayMenu = new MenuFlyoutSubItem { Text = "Subtitle delay" };
-            AddSubItem(subtitleDelayMenu, "-0.1s", (_, _) => AdjustSubtitleDelay(-0.1));
-            AddSubItem(subtitleDelayMenu, "+0.1s", (_, _) => AdjustSubtitleDelay(0.1));
-            AddSubItem(subtitleDelayMenu, "Reset", (_, _) => SetSubtitleDelay(0));
-            ToolsFlyout.Items.Add(subtitleDelayMenu);
-
-            var subtitleStyleMenu = new MenuFlyoutSubItem { Text = "Subtitle style" };
-            foreach (var preset in _subtitleScalePresets)
-            {
-                AddSubItem(subtitleStyleMenu, preset.Label, (_, _) => SetSubtitleScale(preset.Scale));
-            }
-            AddSubItem(subtitleStyleMenu, "Raise", (_, _) => AdjustSubtitlePosition(-5));
-            AddSubItem(subtitleStyleMenu, "Lower", (_, _) => AdjustSubtitlePosition(5));
-            ToolsFlyout.Items.Add(subtitleStyleMenu);
-
-            var zoomMenu = new MenuFlyoutSubItem { Text = "Zoom" };
-            AddSubItem(zoomMenu, "Zoom in", (_, _) => AdjustVideoZoom(0.15));
-            AddSubItem(zoomMenu, "Zoom out", (_, _) => AdjustVideoZoom(-0.15));
-            AddSubItem(zoomMenu, "Reset zoom", (_, _) => SetVideoZoom(0));
-            ToolsFlyout.Items.Add(zoomMenu);
-
-            var rotationMenu = new MenuFlyoutSubItem { Text = "Rotation" };
-            AddSubItem(rotationMenu, "0°", (_, _) => SetVideoRotation(0));
-            AddSubItem(rotationMenu, "90°", (_, _) => SetVideoRotation(90));
-            AddSubItem(rotationMenu, "180°", (_, _) => SetVideoRotation(180));
-            AddSubItem(rotationMenu, "270°", (_, _) => SetVideoRotation(270));
-            ToolsFlyout.Items.Add(rotationMenu);
-
-            var sleepMenu = new MenuFlyoutSubItem { Text = "Sleep timer" };
-            AddSubItem(sleepMenu, "30 minutes", (_, _) => SetSleepTimer(TimeSpan.FromMinutes(30)));
-            AddSubItem(sleepMenu, "60 minutes", (_, _) => SetSleepTimer(TimeSpan.FromMinutes(60)));
-            AddSubItem(sleepMenu, "90 minutes", (_, _) => SetSleepTimer(TimeSpan.FromMinutes(90)));
-            AddSubItem(sleepMenu, "Cancel", (_, _) => CancelSleepTimer());
-            ToolsFlyout.Items.Add(sleepMenu);
+            AddUtilityToolsItem("Display", AspectFlyout, BuildAspectMenu);
+            AddUtilityToolsItem("Audio delay", AudioDelayFlyout, BuildAudioDelayFlyout);
+            AddUtilityToolsItem("Subtitle delay", SubtitleDelayFlyout, BuildSubtitleDelayFlyout);
+            AddUtilityToolsItem("Subtitle style", SubtitleStyleFlyout, BuildSubtitleStyleFlyout);
+            AddUtilityToolsItem("Zoom", ZoomFlyout, BuildZoomFlyout);
+            AddUtilityToolsItem("Rotation", RotationFlyout, BuildRotationFlyout);
+            AddUtilityToolsItem("Sleep timer", SleepTimerFlyout, BuildSleepTimerFlyout);
 
             ToolsFlyout.Items.Add(new MenuFlyoutSeparator());
             AddToolsItem("Take screenshot", (_, _) => CaptureScreenshot());
@@ -150,11 +109,122 @@ namespace Kroira.App.Views
             ToolsFlyout.Items.Add(item);
         }
 
-        private void AddSubItem(MenuFlyoutSubItem parent, string text, RoutedEventHandler handler)
+        private void AddUtilityToolsItem(string text, MenuFlyout flyout, Action buildFlyout)
+        {
+            var item = new MenuFlyoutItem { Text = text };
+            item.Click += (_, _) =>
+            {
+                buildFlyout();
+                OpenUtilityFlyout(flyout);
+            };
+            ToolsFlyout.Items.Add(item);
+        }
+
+        private void BuildAudioDelayFlyout()
+        {
+            AudioDelayFlyout.Items.Clear();
+            AddFlyoutItem(AudioDelayFlyout, "-0.1s", (_, _) => AdjustAudioDelay(-0.1));
+            AddFlyoutItem(AudioDelayFlyout, "+0.1s", (_, _) => AdjustAudioDelay(0.1));
+            AddFlyoutItem(AudioDelayFlyout, "Reset", (_, _) => SetAudioDelay(0));
+        }
+
+        private void BuildSubtitleDelayFlyout()
+        {
+            SubtitleDelayFlyout.Items.Clear();
+            AddFlyoutItem(SubtitleDelayFlyout, "-0.1s", (_, _) => AdjustSubtitleDelay(-0.1));
+            AddFlyoutItem(SubtitleDelayFlyout, "+0.1s", (_, _) => AdjustSubtitleDelay(0.1));
+            AddFlyoutItem(SubtitleDelayFlyout, "Reset", (_, _) => SetSubtitleDelay(0));
+        }
+
+        private void BuildSubtitleStyleFlyout()
+        {
+            SubtitleStyleFlyout.Items.Clear();
+            foreach (var preset in _subtitleScalePresets)
+            {
+                AddFlyoutItem(SubtitleStyleFlyout, preset.Label, (_, _) => SetSubtitleScale(preset.Scale));
+            }
+
+            AddFlyoutItem(SubtitleStyleFlyout, "Raise", (_, _) => AdjustSubtitlePosition(-5));
+            AddFlyoutItem(SubtitleStyleFlyout, "Lower", (_, _) => AdjustSubtitlePosition(5));
+        }
+
+        private void BuildZoomFlyout()
+        {
+            ZoomFlyout.Items.Clear();
+            AddFlyoutItem(ZoomFlyout, "Zoom in", (_, _) => AdjustVideoZoom(0.15));
+            AddFlyoutItem(ZoomFlyout, "Zoom out", (_, _) => AdjustVideoZoom(-0.15));
+            AddFlyoutItem(ZoomFlyout, "Reset zoom", (_, _) => SetVideoZoom(0));
+        }
+
+        private void BuildRotationFlyout()
+        {
+            RotationFlyout.Items.Clear();
+            AddFlyoutItem(RotationFlyout, "0°", (_, _) => SetVideoRotation(0));
+            AddFlyoutItem(RotationFlyout, "90°", (_, _) => SetVideoRotation(90));
+            AddFlyoutItem(RotationFlyout, "180°", (_, _) => SetVideoRotation(180));
+            AddFlyoutItem(RotationFlyout, "270°", (_, _) => SetVideoRotation(270));
+        }
+
+        private void BuildSleepTimerFlyout()
+        {
+            SleepTimerFlyout.Items.Clear();
+            AddFlyoutItem(SleepTimerFlyout, "30 minutes", (_, _) => SetSleepTimer(TimeSpan.FromMinutes(30)));
+            AddFlyoutItem(SleepTimerFlyout, "60 minutes", (_, _) => SetSleepTimer(TimeSpan.FromMinutes(60)));
+            AddFlyoutItem(SleepTimerFlyout, "90 minutes", (_, _) => SetSleepTimer(TimeSpan.FromMinutes(90)));
+            AddFlyoutItem(SleepTimerFlyout, "Cancel", (_, _) => CancelSleepTimer());
+        }
+
+        private void AddFlyoutItem(MenuFlyout flyout, string text, RoutedEventHandler handler)
         {
             var item = new MenuFlyoutItem { Text = text };
             item.Click += handler;
-            parent.Items.Add(item);
+            flyout.Items.Add(item);
+        }
+
+        private void OpenUtilityFlyout(MenuFlyout flyout)
+        {
+            if (ToolsButton.XamlRoot == null)
+            {
+                _pendingUtilityFlyout = null;
+                return;
+            }
+
+            if (ReferenceEquals(_activeUtilityFlyout, flyout) && _openOverlayFlyouts.Contains(flyout))
+            {
+                flyout.Hide();
+                return;
+            }
+
+            if (_activeUtilityFlyout != null && !ReferenceEquals(_activeUtilityFlyout, flyout))
+            {
+                _activeUtilityFlyout.Hide();
+            }
+
+            _pendingUtilityFlyout = flyout;
+            ShowControls(persist: true, cause: "utility_menu_open");
+            ToolsFlyout.Hide();
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                if (!ReferenceEquals(_pendingUtilityFlyout, flyout))
+                {
+                    return;
+                }
+
+                if (_teardownStarted || ToolsButton.XamlRoot == null)
+                {
+                    if (ReferenceEquals(_pendingUtilityFlyout, flyout))
+                    {
+                        _pendingUtilityFlyout = null;
+                    }
+
+                    return;
+                }
+
+                flyout.ShowAt(ToolsButton, new FlyoutShowOptions
+                {
+                    Placement = FlyoutPlacementMode.TopEdgeAlignedRight
+                });
+            });
         }
 
         private void AddAspectSubItem(MenuFlyoutSubItem parent, string text, PlaybackAspectMode aspectMode)
@@ -460,7 +530,7 @@ namespace Kroira.App.Views
 
         private bool ShouldSuppressGlobalHotkeys(KeyRoutedEventArgs e)
         {
-            if (IsMenuOpen)
+            if (IsMenuOpen && e.Key != VirtualKey.Escape)
             {
                 return true;
             }
@@ -468,8 +538,42 @@ namespace Kroira.App.Views
             return e.Key != VirtualKey.Escape && IsTextInputFocused();
         }
 
+        private bool CloseTopmostOverlayFlyout()
+        {
+            if (_pendingUtilityFlyout != null && _activeUtilityFlyout == null)
+            {
+                _pendingUtilityFlyout = null;
+                if (_openOverlayFlyouts.Count > 0)
+                {
+                    _openOverlayFlyouts[^1].Hide();
+                }
+
+                return true;
+            }
+
+            if (_activeUtilityFlyout != null)
+            {
+                _activeUtilityFlyout.Hide();
+                return true;
+            }
+
+            if (_openOverlayFlyouts.Count == 0)
+            {
+                return false;
+            }
+
+            _openOverlayFlyouts[^1].Hide();
+            return true;
+        }
+
         private bool HandleEscapeHotkey()
         {
+            if (CloseTopmostOverlayFlyout())
+            {
+                ShowControls(persist: true, cause: "menu_closed");
+                return true;
+            }
+
             if (CloseOpenPanels())
             {
                 ShowControls(cause: "panel_closed");
