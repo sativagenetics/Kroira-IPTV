@@ -7,6 +7,58 @@
     PointerMoved="Page_PointerMoved"
     PointerWheelChanged="Page_PointerWheelChanged">
 
+    <Page.Resources>
+        <Style x:Key="PlayerHeaderButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="#18FFFFFF" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Foreground" Value="{StaticResource KroiraTextPrimaryBrush}" />
+            <Setter Property="Padding" Value="10,6" />
+            <Setter Property="CornerRadius" Value="16" />
+            <Setter Property="MinWidth" Value="34" />
+            <Setter Property="Height" Value="34" />
+            <Setter Property="IsTabStop" Value="False" />
+            <Setter Property="UseSystemFocusVisuals" Value="False" />
+        </Style>
+
+        <Style x:Key="PlayerHeaderTextButtonStyle" TargetType="Button" BasedOn="{StaticResource PlayerHeaderButtonStyle}">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Padding" Value="10,5" />
+            <Setter Property="Height" Value="30" />
+        </Style>
+
+        <Style x:Key="PlayerIconButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="#1AFFFFFF" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Foreground" Value="{StaticResource KroiraTextPrimaryBrush}" />
+            <Setter Property="CornerRadius" Value="18" />
+            <Setter Property="MinWidth" Value="36" />
+            <Setter Property="Height" Value="36" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="IsTabStop" Value="False" />
+            <Setter Property="UseSystemFocusVisuals" Value="False" />
+        </Style>
+
+        <Style x:Key="PlayerPillButtonStyle" TargetType="Button" BasedOn="{StaticResource PlayerIconButtonStyle}">
+            <Setter Property="MinWidth" Value="48" />
+            <Setter Property="Padding" Value="12,0" />
+        </Style>
+
+        <Style x:Key="PlayerTransportButtonStyle" TargetType="Button" BasedOn="{StaticResource PlayerIconButtonStyle}">
+            <Setter Property="Background" Value="#14FFFFFF" />
+            <Setter Property="MinWidth" Value="40" />
+            <Setter Property="Height" Value="40" />
+            <Setter Property="CornerRadius" Value="20" />
+        </Style>
+
+        <Style x:Key="PlayerPrimaryTransportButtonStyle" TargetType="Button" BasedOn="{StaticResource PlayerTransportButtonStyle}">
+            <Setter Property="Background" Value="#4B7CFF" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="MinWidth" Value="50" />
+            <Setter Property="Height" Value="50" />
+            <Setter Property="CornerRadius" Value="25" />
+        </Style>
+    </Page.Resources>
+
     <Grid x:Name="RootGrid" Background="Black">
         <Grid.RowDefinitions>
             <RowDefinition x:Name="TopRow" Height="Auto" />
@@ -14,8 +66,8 @@
             <RowDefinition x:Name="BottomRow" Height="Auto" />
         </Grid.RowDefinitions>
 
-        <Border x:Name="TopBar" Grid.Row="0" Background="#CC000000" BorderBrush="#2F344E" BorderThickness="0,0,0,1" Padding="16,10">
-            <StackPanel Spacing="12">
+        <Border x:Name="TopBar" Grid.Row="0" Margin="16,14,16,0" Background="#56090B13" BorderBrush="#18FFFFFF" BorderThickness="1" CornerRadius="20" Padding="14,10">
+            <StackPanel Spacing="10">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" />
@@ -23,7 +75,7 @@
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
 
-                    <Button Grid.Column="0" Click="Back_Click" Background="Transparent" BorderThickness="0" Foreground="{StaticResource KroiraTextPrimaryBrush}" ToolTipService.ToolTip="Back" Padding="8">
+                    <Button Grid.Column="0" Style="{StaticResource PlayerHeaderButtonStyle}" Click="Back_Click" ToolTipService.ToolTip="Back">
                         <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE72B;" />
                     </Button>
 
@@ -33,23 +85,27 @@
                     </StackPanel>
 
                     <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Spacing="8">
-                        <Button x:Name="FavoriteButton" Click="FavoriteButton_Click" Background="Transparent" BorderThickness="0" Foreground="{StaticResource KroiraGoldBrush}" ToolTipService.ToolTip="Save" Padding="8">
+                        <Button x:Name="FavoriteButton" Click="FavoriteButton_Click" Style="{StaticResource PlayerHeaderButtonStyle}" Foreground="{StaticResource KroiraGoldBrush}" ToolTipService.ToolTip="Save">
                             <FontIcon x:Name="FavoriteIcon" FontFamily="Segoe MDL2 Assets" Glyph="&#xE734;" />
                         </Button>
-                        <Button x:Name="GuidePanelButton" Click="GuidePanelToggle_Click" Background="Transparent" BorderThickness="0" Foreground="{StaticResource KroiraTextPrimaryBrush}" Padding="8,6" Visibility="Collapsed">
-                            <TextBlock Text="Guide" FontSize="12" FontWeight="SemiBold" />
-                        </Button>
-                        <Button x:Name="ChannelPanelButton" Click="ChannelPanelToggle_Click" Background="Transparent" BorderThickness="0" Foreground="{StaticResource KroiraTextPrimaryBrush}" Padding="8,6" Visibility="Collapsed">
-                            <TextBlock Text="Channels" FontSize="12" FontWeight="SemiBold" />
-                        </Button>
-                        <Button x:Name="EpisodePanelButton" Click="EpisodePanelToggle_Click" Background="Transparent" BorderThickness="0" Foreground="{StaticResource KroiraTextPrimaryBrush}" Padding="8,6" Visibility="Collapsed">
-                            <TextBlock Text="Episodes" FontSize="12" FontWeight="SemiBold" />
-                        </Button>
-                        <Button x:Name="InfoPanelButton" Click="InfoPanelToggle_Click" Background="Transparent" BorderThickness="0" Foreground="{StaticResource KroiraTextPrimaryBrush}" Padding="8,6">
-                            <TextBlock Text="Info" FontSize="12" FontWeight="SemiBold" />
-                        </Button>
-                        <Border Grid.Column="2" x:Name="LivePill" Visibility="Collapsed" Background="#B7B2FF" CornerRadius="4" Padding="8,2" VerticalAlignment="Center">
-                            <TextBlock Text="LIVE" FontSize="11" FontWeight="Bold" Foreground="#090B13" />
+                        <Border Background="#12FFFFFF" BorderBrush="#14FFFFFF" BorderThickness="1" CornerRadius="18" Padding="4">
+                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                <Button x:Name="GuidePanelButton" Click="GuidePanelToggle_Click" Style="{StaticResource PlayerHeaderTextButtonStyle}" Visibility="Collapsed">
+                                    <TextBlock Text="Guide" FontSize="11" FontWeight="SemiBold" />
+                                </Button>
+                                <Button x:Name="ChannelPanelButton" Click="ChannelPanelToggle_Click" Style="{StaticResource PlayerHeaderTextButtonStyle}" Visibility="Collapsed">
+                                    <TextBlock Text="Channels" FontSize="11" FontWeight="SemiBold" />
+                                </Button>
+                                <Button x:Name="EpisodePanelButton" Click="EpisodePanelToggle_Click" Style="{StaticResource PlayerHeaderTextButtonStyle}" Visibility="Collapsed">
+                                    <TextBlock Text="Episodes" FontSize="11" FontWeight="SemiBold" />
+                                </Button>
+                                <Button x:Name="InfoPanelButton" Click="InfoPanelToggle_Click" Style="{StaticResource PlayerHeaderTextButtonStyle}">
+                                    <TextBlock Text="Info" FontSize="11" FontWeight="SemiBold" />
+                                </Button>
+                            </StackPanel>
+                        </Border>
+                        <Border Grid.Column="2" x:Name="LivePill" Visibility="Collapsed" Background="#D6E1FF" CornerRadius="10" Padding="8,3" VerticalAlignment="Center">
+                            <TextBlock Text="LIVE" FontSize="10" FontWeight="Bold" Foreground="#090B13" />
                         </Border>
                     </StackPanel>
                 </Grid>
@@ -155,7 +211,7 @@
 
         <Grid x:Name="VideoHost" Grid.Row="1" Background="Black" />
 
-        <Border x:Name="BottomBar" Grid.Row="2" Background="#CC000000" BorderBrush="#2F344E" BorderThickness="0,1,0,0" Padding="16,8,16,12">
+        <Border x:Name="BottomBar" Grid.Row="2" Margin="16,0,16,16" Background="#5A090B13" BorderBrush="#18FFFFFF" BorderThickness="1" CornerRadius="24" Padding="16,8,16,10">
             <Grid RowSpacing="8">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
@@ -163,71 +219,130 @@
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
 
-                <TextBlock x:Name="PlaybackHintText" Grid.Row="0" Foreground="{StaticResource KroiraTextSecondaryBrush}" FontSize="12" TextWrapping="Wrap" Visibility="Collapsed" />
+                <TextBlock x:Name="PlaybackHintText" Grid.Row="0" Foreground="{StaticResource KroiraTextSecondaryBrush}" FontSize="11" Opacity="0.82" TextWrapping="Wrap" Visibility="Collapsed" />
 
-                <Grid Grid.Row="1">
+                <Grid x:Name="SeekTimelineContainer" Grid.Row="1" Visibility="Collapsed" ColumnSpacing="10" VerticalAlignment="Center">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
-                    <TextBlock Grid.Column="0" x:Name="PositionText" Text="0:00" VerticalAlignment="Center" Foreground="{StaticResource KroiraTextSecondaryBrush}" FontSize="12" />
-                    <Slider Grid.Column="1" x:Name="TimelineSlider" Minimum="0" Maximum="1000" StepFrequency="1" Margin="12,0" IsThumbToolTipEnabled="False" VerticalAlignment="Center" PointerPressed="TimelineSlider_PointerPressed" PointerReleased="TimelineSlider_PointerReleased" PointerCaptureLost="TimelineSlider_PointerCaptureLost" LostFocus="TimelineSlider_LostFocus" KeyUp="TimelineSlider_KeyUp" />
-                    <TextBlock Grid.Column="2" x:Name="DurationText" Text="0:00" VerticalAlignment="Center" Foreground="{StaticResource KroiraTextSecondaryBrush}" FontSize="12" />
+                    <TextBlock Grid.Column="0" x:Name="PositionText" Text="0:00" VerticalAlignment="Center" Foreground="{StaticResource KroiraTextPrimaryBrush}" FontSize="13" FontWeight="SemiBold" Opacity="0.96" />
+                    <Slider Grid.Column="1" x:Name="TimelineSlider" Minimum="0" Maximum="1000" StepFrequency="1" Height="18" Margin="0" IsTabStop="False" IsThumbToolTipEnabled="False" VerticalAlignment="Center" PointerPressed="TimelineSlider_PointerPressed" PointerReleased="TimelineSlider_PointerReleased" PointerCaptureLost="TimelineSlider_PointerCaptureLost" LostFocus="TimelineSlider_LostFocus" KeyUp="TimelineSlider_KeyUp" Foreground="#83A8FF" Background="#26FFFFFF">
+                        <Slider.RenderTransform>
+                            <ScaleTransform ScaleY="0.72" />
+                        </Slider.RenderTransform>
+                    </Slider>
+                    <TextBlock Grid.Column="2" x:Name="DurationText" Text="0:00" VerticalAlignment="Center" Foreground="{StaticResource KroiraTextSecondaryBrush}" FontSize="13" Opacity="0.88" />
                 </Grid>
 
-                <ScrollViewer Grid.Row="2" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" ZoomMode="Disabled">
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="6">
-                        <Button x:Name="PreviousChannelButton" Click="PreviousChannel_Click" Visibility="Collapsed" Background="Transparent" BorderThickness="0" Foreground="{StaticResource KroiraTextPrimaryBrush}" Padding="10"><FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE892;" /></Button>
-                        <Button x:Name="LastChannelButton" Click="LastChannel_Click" Visibility="Collapsed" Background="Transparent" BorderThickness="0" Foreground="{StaticResource KroiraTextPrimaryBrush}" Padding="10"><FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE1D3;" /></Button>
-                        <Button x:Name="Back30Button" Click="Back30_Click" Visibility="Collapsed" Background="Transparent" BorderThickness="0" Foreground="{StaticResource KroiraTextPrimaryBrush}" Padding="10,6"><TextBlock Text="-30s" FontSize="12" FontWeight="SemiBold" /></Button>
-                        <Button x:Name="Back10Button" Click="Back10_Click" Visibility="Collapsed" Background="Transparent" BorderThickness="0" Foreground="{StaticResource KroiraTextPrimaryBrush}" Padding="10,6"><TextBlock Text="-10s" FontSize="12" FontWeight="SemiBold" /></Button>
-                        <Button x:Name="RestartButton" Click="Restart_Click" Visibility="Collapsed" Background="Transparent" BorderThickness="0" Foreground="{StaticResource KroiraTextPrimaryBrush}" Padding="10"><FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE72C;" /></Button>
-                        <Button x:Name="PlayPauseButton" Click="PlayPause_Click" Background="Transparent" BorderThickness="0" Foreground="{StaticResource KroiraTextPrimaryBrush}" Padding="10"><FontIcon x:Name="PlayPauseIcon" FontFamily="Segoe MDL2 Assets" Glyph="&#xE769;" /></Button>
-                        <Button x:Name="StopButton" Click="Stop_Click" Background="Transparent" BorderThickness="0" Foreground="{StaticResource KroiraTextPrimaryBrush}" Padding="10"><FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE71A;" /></Button>
-                        <Button x:Name="Forward10Button" Click="Forward10_Click" Visibility="Collapsed" Background="Transparent" BorderThickness="0" Foreground="{StaticResource KroiraTextPrimaryBrush}" Padding="10,6"><TextBlock Text="+10s" FontSize="12" FontWeight="SemiBold" /></Button>
-                        <Button x:Name="Forward30Button" Click="Forward30_Click" Visibility="Collapsed" Background="Transparent" BorderThickness="0" Foreground="{StaticResource KroiraTextPrimaryBrush}" Padding="10,6"><TextBlock Text="+30s" FontSize="12" FontWeight="SemiBold" /></Button>
-                        <Button x:Name="NextChannelButton" Click="NextChannel_Click" Visibility="Collapsed" Background="Transparent" BorderThickness="0" Foreground="{StaticResource KroiraTextPrimaryBrush}" Padding="10"><FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE893;" /></Button>
-                        <Button x:Name="GoLiveButton" Click="GoLive_Click" Visibility="Collapsed" Background="Transparent" BorderThickness="0" Foreground="{StaticResource KroiraTextPrimaryBrush}" Padding="10,6">
+                <Grid Grid.Row="2" ColumnSpacing="14" VerticalAlignment="Center">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0" x:Name="LiveSummaryPanel" Spacing="2" Visibility="Collapsed" MaxWidth="320" VerticalAlignment="Center">
+                        <TextBlock Text="Live now" FontSize="10" FontWeight="SemiBold" Foreground="{StaticResource KroiraTextSecondaryBrush}" Opacity="0.8" />
+                        <TextBlock x:Name="BottomLiveTitleText" Foreground="{StaticResource KroiraTextPrimaryBrush}" FontSize="14" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                        <TextBlock x:Name="BottomLiveMetaText" Foreground="{StaticResource KroiraTextSecondaryBrush}" FontSize="11" Opacity="0.86" TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+
+                    <Border Grid.Column="1" Background="#08FFFFFF" BorderThickness="0" CornerRadius="22" Padding="10,6" HorizontalAlignment="Center">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="8">
+                            <Button x:Name="PreviousChannelButton" Style="{StaticResource PlayerTransportButtonStyle}" Click="PreviousChannel_Click" Visibility="Collapsed" ToolTipService.ToolTip="Previous channel">
+                                <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE892;" />
+                            </Button>
+                            <Button x:Name="LastChannelButton" Style="{StaticResource PlayerTransportButtonStyle}" Click="LastChannel_Click" Visibility="Collapsed" ToolTipService.ToolTip="Last channel">
+                                <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE1D3;" />
+                            </Button>
+                            <Button x:Name="Back30Button" Style="{StaticResource PlayerTransportButtonStyle}" Click="Back30_Click" Visibility="Collapsed" ToolTipService.ToolTip="Back 30 seconds">
+                                <TextBlock Text="-30" FontSize="12" FontWeight="SemiBold" />
+                            </Button>
+                            <Button x:Name="Back10Button" Style="{StaticResource PlayerTransportButtonStyle}" Click="Back10_Click" Visibility="Collapsed" ToolTipService.ToolTip="Back 10 seconds">
+                                <TextBlock Text="-10" FontSize="12" FontWeight="SemiBold" />
+                            </Button>
+                            <Button x:Name="RestartButton" Style="{StaticResource PlayerTransportButtonStyle}" Click="Restart_Click" Visibility="Collapsed" ToolTipService.ToolTip="Restart from beginning">
+                                <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE72C;" />
+                            </Button>
+                            <Button x:Name="PlayPauseButton" Style="{StaticResource PlayerPrimaryTransportButtonStyle}" Click="PlayPause_Click" ToolTipService.ToolTip="Play or pause">
+                                <FontIcon x:Name="PlayPauseIcon" FontFamily="Segoe MDL2 Assets" Glyph="&#xE769;" />
+                            </Button>
+                            <Button x:Name="StopButton" Style="{StaticResource PlayerTransportButtonStyle}" Click="Stop_Click" Visibility="Collapsed" ToolTipService.ToolTip="Stop playback">
+                                <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE71A;" />
+                            </Button>
+                            <Button x:Name="Forward10Button" Style="{StaticResource PlayerTransportButtonStyle}" Click="Forward10_Click" Visibility="Collapsed" ToolTipService.ToolTip="Forward 10 seconds">
+                                <TextBlock Text="+10" FontSize="12" FontWeight="SemiBold" />
+                            </Button>
+                            <Button x:Name="Forward30Button" Style="{StaticResource PlayerTransportButtonStyle}" Click="Forward30_Click" Visibility="Collapsed" ToolTipService.ToolTip="Forward 30 seconds">
+                                <TextBlock Text="+30" FontSize="12" FontWeight="SemiBold" />
+                            </Button>
+                            <Button x:Name="NextChannelButton" Style="{StaticResource PlayerTransportButtonStyle}" Click="NextChannel_Click" Visibility="Collapsed" ToolTipService.ToolTip="Next channel">
+                                <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE893;" />
+                            </Button>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Grid.Column="2" Background="Transparent" BorderThickness="0" CornerRadius="20" Padding="4,2">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Spacing="8">
+                        <Button x:Name="BottomGuideButton" Style="{StaticResource PlayerIconButtonStyle}" Click="GuidePanelToggle_Click" Visibility="Collapsed" ToolTipService.ToolTip="Mini guide">
+                            <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE787;" />
+                        </Button>
+                        <Button x:Name="BottomChannelListButton" Style="{StaticResource PlayerIconButtonStyle}" Click="ChannelPanelToggle_Click" Visibility="Collapsed" ToolTipService.ToolTip="Channel list">
+                            <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE8FD;" />
+                        </Button>
+                        <Button x:Name="GoLiveButton" Style="{StaticResource PlayerPillButtonStyle}" Click="GoLive_Click" Visibility="Collapsed" ToolTipService.ToolTip="Jump to live">
                             <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
                                 <Ellipse Width="7" Height="7" Fill="#FF4D5F" VerticalAlignment="Center" />
                                 <TextBlock Text="LIVE" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center" />
                             </StackPanel>
                         </Button>
-                        <Button x:Name="SpeedButton" Visibility="Collapsed" Background="Transparent" BorderThickness="0" Foreground="{StaticResource KroiraTextPrimaryBrush}" Padding="10,6">
+                        <Button x:Name="SpeedButton" Style="{StaticResource PlayerPillButtonStyle}" Visibility="Collapsed" ToolTipService.ToolTip="Playback speed">
                             <Button.Flyout><MenuFlyout x:Name="SpeedFlyout" /></Button.Flyout>
-                            <TextBlock x:Name="SpeedButtonText" Text="1.0x" FontSize="12" FontWeight="SemiBold" />
+                            <TextBlock x:Name="SpeedButtonText" Text="1.0x" FontSize="11" FontWeight="SemiBold" />
                         </Button>
-                        <Button x:Name="AudioTrackButton" Visibility="Collapsed" Background="Transparent" BorderThickness="0" Foreground="{StaticResource KroiraTextPrimaryBrush}" Padding="10,6">
-                            <Button.Flyout><MenuFlyout x:Name="AudioTrackFlyout" /></Button.Flyout>
-                            <TextBlock Text="Audio" FontSize="12" FontWeight="SemiBold" />
+                        <Button x:Name="TracksButton" Style="{StaticResource PlayerIconButtonStyle}" Visibility="Collapsed" ToolTipService.ToolTip="Audio and subtitles">
+                            <Button.Flyout><MenuFlyout x:Name="TracksFlyout" /></Button.Flyout>
+                            <TextBlock Text="A/V" FontSize="11" FontWeight="SemiBold" />
                         </Button>
-                        <Button x:Name="SubtitleTrackButton" Visibility="Collapsed" Background="Transparent" BorderThickness="0" Foreground="{StaticResource KroiraTextPrimaryBrush}" Padding="10,6">
-                            <Button.Flyout><MenuFlyout x:Name="SubtitleTrackFlyout" /></Button.Flyout>
-                            <TextBlock Text="Subs" FontSize="12" FontWeight="SemiBold" />
-                        </Button>
-                        <Button x:Name="AspectButton" Background="Transparent" BorderThickness="0" Foreground="{StaticResource KroiraTextPrimaryBrush}" Padding="10,6">
-                            <Button.Flyout><MenuFlyout x:Name="AspectFlyout" /></Button.Flyout>
-                            <TextBlock Text="Display" FontSize="12" FontWeight="SemiBold" />
-                        </Button>
-                        <Button x:Name="ToolsButton" Background="Transparent" BorderThickness="0" Foreground="{StaticResource KroiraTextPrimaryBrush}" Padding="10,6">
+                        <Button x:Name="ToolsButton" Style="{StaticResource PlayerIconButtonStyle}" ToolTipService.ToolTip="More">
                             <Button.Flyout><MenuFlyout x:Name="ToolsFlyout" /></Button.Flyout>
-                            <TextBlock Text="Tools" FontSize="12" FontWeight="SemiBold" />
+                            <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE712;" />
                         </Button>
-                        <Button x:Name="PictureInPictureButton" Click="PictureInPicture_Click" Background="Transparent" BorderThickness="0" Foreground="{StaticResource KroiraTextPrimaryBrush}" Padding="10,6">
-                            <TextBlock x:Name="PictureInPictureButtonText" Text="PIP" FontSize="12" FontWeight="SemiBold" />
-                        </Button>
-                        <Button x:Name="FullscreenButton" Click="Fullscreen_Click" Background="Transparent" BorderThickness="0" Foreground="{StaticResource KroiraTextPrimaryBrush}" Padding="10">
+                        <Button x:Name="FullscreenButton" Style="{StaticResource PlayerIconButtonStyle}" Click="Fullscreen_Click" ToolTipService.ToolTip="Fullscreen">
                             <FontIcon x:Name="FullscreenIcon" FontFamily="Segoe MDL2 Assets" Glyph="&#xE740;" />
                         </Button>
-                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Spacing="6" Margin="10,0,0,0">
-                            <Button x:Name="MuteButton" Click="Mute_Click" Background="Transparent" BorderThickness="0" Foreground="{StaticResource KroiraTextPrimaryBrush}" Padding="8">
-                                <FontIcon x:Name="MuteIcon" FontFamily="Segoe MDL2 Assets" Glyph="&#xE767;" />
-                            </Button>
-                            <Slider x:Name="VolumeSlider" Minimum="0" Maximum="100" Value="100" Width="120" StepFrequency="1" IsThumbToolTipEnabled="False" VerticalAlignment="Center" ValueChanged="VolumeSlider_ValueChanged" />
+                        <Border Background="#10FFFFFF" BorderThickness="0" CornerRadius="16" Padding="4,2">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Spacing="6">
+                                <Button x:Name="MuteButton" Style="{StaticResource PlayerIconButtonStyle}" Click="Mute_Click" MinWidth="32" Height="32" ToolTipService.ToolTip="Mute">
+                                    <FontIcon x:Name="MuteIcon" FontFamily="Segoe MDL2 Assets" Glyph="&#xE767;" />
+                                </Button>
+                                <Slider x:Name="VolumeSlider" Minimum="0" Maximum="100" Value="100" Width="72" Height="16" StepFrequency="1" IsTabStop="False" IsThumbToolTipEnabled="False" VerticalAlignment="Center" ValueChanged="VolumeSlider_ValueChanged" Foreground="#83A8FF" Background="#26FFFFFF">
+                                    <Slider.RenderTransform>
+                                        <ScaleTransform ScaleY="0.68" />
+                                    </Slider.RenderTransform>
+                                </Slider>
+                            </StackPanel>
+                        </Border>
                         </StackPanel>
-                    </StackPanel>
-                </ScrollViewer>
+                    </Border>
+                </Grid>
+
+                <StackPanel Visibility="Collapsed">
+                    <Button x:Name="AudioTrackButton">
+                        <Button.Flyout><MenuFlyout x:Name="AudioTrackFlyout" /></Button.Flyout>
+                    </Button>
+                    <Button x:Name="SubtitleTrackButton">
+                        <Button.Flyout><MenuFlyout x:Name="SubtitleTrackFlyout" /></Button.Flyout>
+                    </Button>
+                    <Button x:Name="AspectButton">
+                        <Button.Flyout><MenuFlyout x:Name="AspectFlyout" /></Button.Flyout>
+                    </Button>
+                    <Button x:Name="PictureInPictureButton" Click="PictureInPicture_Click">
+                        <TextBlock x:Name="PictureInPictureButtonText" Text="PIP" />
+                    </Button>
+                </StackPanel>
             </Grid>
         </Border>
 

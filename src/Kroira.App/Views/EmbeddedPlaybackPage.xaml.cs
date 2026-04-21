@@ -141,6 +141,7 @@ namespace Kroira.App.Views
             BuildAspectMenu();
             WireOverlayFlyout(AudioTrackFlyout);
             WireOverlayFlyout(SubtitleTrackFlyout);
+            WireOverlayFlyout(TracksFlyout);
             WireOverlayFlyout(AspectFlyout);
             WireOverlayFlyout(SpeedFlyout);
             WireOverlayFlyout(ToolsFlyout);
@@ -846,6 +847,7 @@ namespace Kroira.App.Views
             var cancellationToken = CurrentPlaybackSessionToken;
 
             PlayPauseIcon.Glyph = isPaused ? "\uE768" : "\uE769";
+            ToolTipService.SetToolTip(PlayPauseButton, isPaused ? "Play" : "Pause");
             if (isPaused && IsLivePlayback())
             {
                 _isLiveTimeshiftActive = true;
@@ -1363,6 +1365,7 @@ namespace Kroira.App.Views
             _selectedAspectMode = aspectMode;
             _player.SetAspectMode(aspectMode);
             UpdateAspectUi();
+            BuildToolsFlyout();
             _ = SavePlayerPreferencesAsync();
             RefreshInfoPanel();
             ResetInactivityTimer("click");
@@ -1445,7 +1448,6 @@ namespace Kroira.App.Views
 
             TimelineSlider.IsEnabled = canSeek;
             LivePill.Visibility = isLive ? Visibility.Visible : Visibility.Collapsed;
-            GoLiveButton.Visibility = isLive ? Visibility.Visible : Visibility.Collapsed;
             GoLiveButton.IsEnabled = isLive && _player != null;
 
             ToolTipService.SetToolTip(
@@ -1453,6 +1455,8 @@ namespace Kroira.App.Views
                 isLive
                     ? canSeek ? "Seek within live buffer" : "Live stream has no seekable buffer"
                     : canSeek ? "Seek" : "Seeking unavailable");
+
+            UpdateEnhancedControlState();
         }
 
         private void UpdateInteractionState()
@@ -1477,8 +1481,11 @@ namespace Kroira.App.Views
             VolumeSlider.IsEnabled = isReady;
             AudioTrackButton.IsEnabled = trackSwitchEnabled && canUseAudioTracks;
             SubtitleTrackButton.IsEnabled = trackSwitchEnabled && canUseSubtitles;
+            TracksButton.IsEnabled = trackSwitchEnabled && (canUseAudioTracks || canUseSubtitles);
             AspectButton.IsEnabled = isReady && canUseAspectControls;
             AspectButton.Visibility = canUseAspectControls ? Visibility.Visible : Visibility.Collapsed;
+            BottomGuideButton.IsEnabled = isReady && IsLivePlayback();
+            BottomChannelListButton.IsEnabled = isReady && IsLivePlayback();
             UpdateLiveAndSeekUi();
             UpdateEnhancedControlState();
         }
@@ -1549,8 +1556,11 @@ namespace Kroira.App.Views
                 return Task.CompletedTask;
             }
 
-            PopulateAudioTrackMenu(_player.GetAudioTracks());
-            PopulateSubtitleTrackMenu(_player.GetSubtitleTracks());
+            var audioTracks = _player.GetAudioTracks();
+            var subtitleTracks = _player.GetSubtitleTracks();
+            PopulateAudioTrackMenu(audioTracks);
+            PopulateSubtitleTrackMenu(subtitleTracks);
+            PopulateCombinedTrackMenu(audioTracks, subtitleTracks);
             return Task.CompletedTask;
         }
 
@@ -1616,6 +1626,90 @@ namespace Kroira.App.Views
             ToolTipService.SetToolTip(SubtitleTrackButton, selectedTrack != null ? $"Subtitles: {selectedTrack.DisplayName}" : "Subtitles off");
         }
 
+        private void PopulateCombinedTrackMenu(IReadOnlyList<MpvTrackInfo> audioTracks, IReadOnlyList<MpvTrackInfo> subtitleTracks)
+        {
+            TracksFlyout.Items.Clear();
+
+            var canUseAudioTracks = CanUseFeature(EntitlementFeatureKeys.PlaybackAudioTrackSelection);
+            var canUseSubtitleTracks = CanUseFeature(EntitlementFeatureKeys.PlaybackSubtitleTrackSelection);
+            var hasAudioChoices = canUseAudioTracks && audioTracks.Count > 1;
+            var hasSubtitleChoices = canUseSubtitleTracks && subtitleTracks.Count > 0;
+            if (!hasAudioChoices && !hasSubtitleChoices)
+            {
+                TracksButton.Visibility = Visibility.Collapsed;
+                return;
+            }
+
+            if (hasAudioChoices)
+            {
+                var audioMenu = new MenuFlyoutSubItem { Text = "Audio" };
+                foreach (var track in audioTracks)
+                {
+                    var item = new ToggleMenuFlyoutItem
+                    {
+                        Text = track.DisplayName,
+                        Tag = track.Id,
+                        IsChecked = track.IsSelected
+                    };
+
+                    item.Click += AudioTrackItem_Click;
+                    audioMenu.Items.Add(item);
+                }
+
+                TracksFlyout.Items.Add(audioMenu);
+            }
+
+            if (hasSubtitleChoices)
+            {
+                var subtitleMenu = new MenuFlyoutSubItem { Text = "Subtitles" };
+                var offItem = new ToggleMenuFlyoutItem
+                {
+                    Text = "Off",
+                    Tag = null,
+                    IsChecked = true
+                };
+
+                offItem.Click += SubtitleTrackItem_Click;
+                subtitleMenu.Items.Add(offItem);
+
+                foreach (var track in subtitleTracks)
+                {
+                    var item = new ToggleMenuFlyoutItem
+                    {
+                        Text = track.DisplayName,
+                        Tag = track.Id,
+                        IsChecked = track.IsSelected
+                    };
+
+                    item.Click += SubtitleTrackItem_Click;
+                    subtitleMenu.Items.Add(item);
+                }
+
+                var selectedSubtitleTrack = FindSelectedTrack(subtitleTracks);
+                offItem.IsChecked = selectedSubtitleTrack == null;
+
+                if (TracksFlyout.Items.Count > 0)
+                {
+                    TracksFlyout.Items.Add(new MenuFlyoutSeparator());
+                }
+
+                TracksFlyout.Items.Add(subtitleMenu);
+            }
+
+            var selectedAudioTrack = FindSelectedTrack(audioTracks);
+            var selectedSubtitle = FindSelectedTrack(subtitleTracks);
+            var tooltip = selectedAudioTrack != null && selectedSubtitle != null
+                ? $"Audio: {selectedAudioTrack.DisplayName} | Subs: {selectedSubtitle.DisplayName}"
+                : selectedAudioTrack != null
+                    ? $"Audio: {selectedAudioTrack.DisplayName}"
+                    : selectedSubtitle != null
+                        ? $"Subtitles: {selectedSubtitle.DisplayName}"
+                        : "Audio and subtitles";
+
+            TracksButton.Visibility = Visibility.Visible;
+            ToolTipService.SetToolTip(TracksButton, tooltip);
+        }
+
         private static MpvTrackInfo FindSelectedTrack(IReadOnlyList<MpvTrackInfo> tracks)
         {
             foreach (var track in tracks)
@@ -1633,8 +1727,10 @@ namespace Kroira.App.Views
         {
             AudioTrackFlyout.Items.Clear();
             SubtitleTrackFlyout.Items.Clear();
+            TracksFlyout.Items.Clear();
             AudioTrackButton.Visibility = Visibility.Collapsed;
             SubtitleTrackButton.Visibility = Visibility.Collapsed;
+            TracksButton.Visibility = Visibility.Collapsed;
         }
 
         private bool CanUseFeature(string featureKey)

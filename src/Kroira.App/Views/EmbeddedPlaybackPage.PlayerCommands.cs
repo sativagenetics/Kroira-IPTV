@@ -14,6 +14,7 @@ using Microsoft.UI.Input;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
+using Microsoft.UI.Xaml.Media;
 using Windows.System;
 using Windows.UI.Core;
 
@@ -44,16 +45,57 @@ namespace Kroira.App.Views
         {
             _toggleToolItems.Clear();
             ToolsFlyout.Items.Clear();
-            AddToolsItem("Retry stream", (_, _) => RetryCurrentPlayback());
-            ToolsFlyout.Items.Add(new MenuFlyoutSeparator());
-            AddToolsItem("Mini guide", (_, _) => TogglePanel(nameof(MiniGuidePanel)));
-            AddToolsItem("Channel list", (_, _) => TogglePanel(nameof(ChannelSwitchPanel)));
-            AddToolsItem("Episode panel", (_, _) => TogglePanel(nameof(EpisodePanel)));
+            var isLive = IsLivePlayback();
+            var canSeek = IsTimelineSeekAllowed();
+            var hasEpisodeNavigation = _allEpisodeSwitchItems.Count > 1;
+            var canUsePictureInPicture = CanUseFeature(EntitlementFeatureKeys.PlaybackPictureInPicture);
+
+            if (isLive)
+            {
+                AddToolsItem("Mini guide", (_, _) => TogglePanel(nameof(MiniGuidePanel)));
+                AddToolsItem("Channel list", (_, _) => TogglePanel(nameof(ChannelSwitchPanel)));
+                if (_lastChannelCandidateId > 0)
+                {
+                    AddToolsItem("Last channel", async (_, _) => await SwitchToChannelAsync(_lastChannelCandidateId, "last_menu"));
+                }
+
+                if (canSeek)
+                {
+                    AddToolsItem("Jump to live", (_, _) => GoToLiveEdge("menu"));
+                }
+            }
+
+            if (hasEpisodeNavigation)
+            {
+                AddToolsItem("Episode panel", (_, _) => TogglePanel(nameof(EpisodePanel)));
+            }
+
             AddToolsItem("Info panel", (_, _) => TogglePanel(nameof(InfoPanel)));
+            if (!isLive && canSeek)
+            {
+                AddToolsItem("Restart from beginning", (_, _) => RestartPlayerSession("restart", 0));
+            }
+
+            ToolsFlyout.Items.Add(new MenuFlyoutSeparator());
+            AddToolsItem("Retry stream", (_, _) => RetryCurrentPlayback());
+            AddToolsItem("Stop playback", (_, _) => NavigateBack());
+            if (canUsePictureInPicture)
+            {
+                AddToolsItem(IsPictureInPictureMode() ? "Return from Picture in Picture" : "Picture in Picture", PictureInPicture_Click);
+            }
+
             ToolsFlyout.Items.Add(new MenuFlyoutSeparator());
             AddToggleToolsItem("always_on_top", "Always on top", (_, _) => ToggleAlwaysOnTop());
             AddToggleToolsItem("deinterlace", "Deinterlace", (_, _) => ToggleDeinterlace());
-            ToolsFlyout.Items.Add(new MenuFlyoutSeparator());
+
+            var displayMenu = new MenuFlyoutSubItem { Text = "Display" };
+            AddAspectSubItem(displayMenu, "Automatic", PlaybackAspectMode.Automatic);
+            AddAspectSubItem(displayMenu, "Fill window", PlaybackAspectMode.FillWindow);
+            AddAspectSubItem(displayMenu, "16:9", PlaybackAspectMode.Ratio16x9);
+            AddAspectSubItem(displayMenu, "4:3", PlaybackAspectMode.Ratio4x3);
+            AddAspectSubItem(displayMenu, "1.85:1", PlaybackAspectMode.Ratio185x1);
+            AddAspectSubItem(displayMenu, "2.35:1", PlaybackAspectMode.Ratio235x1);
+            ToolsFlyout.Items.Add(displayMenu);
 
             var audioDelayMenu = new MenuFlyoutSubItem { Text = "Audio delay" };
             AddSubItem(audioDelayMenu, "-0.1s", (_, _) => AdjustAudioDelay(-0.1));
@@ -115,6 +157,19 @@ namespace Kroira.App.Views
             parent.Items.Add(item);
         }
 
+        private void AddAspectSubItem(MenuFlyoutSubItem parent, string text, PlaybackAspectMode aspectMode)
+        {
+            var item = new ToggleMenuFlyoutItem
+            {
+                Text = text,
+                Tag = aspectMode,
+                IsChecked = _selectedAspectMode == aspectMode
+            };
+
+            item.Click += AspectItem_Click;
+            parent.Items.Add(item);
+        }
+
         private void AddToggleToolsItem(string key, string text, RoutedEventHandler handler)
         {
             var item = new ToggleMenuFlyoutItem { Text = text };
@@ -167,7 +222,35 @@ namespace Kroira.App.Views
             _episodePanelOpen = panelName == nameof(EpisodePanel) && !_episodePanelOpen;
             _infoPanelOpen = panelName == nameof(InfoPanel) && !_infoPanelOpen;
             UpdatePanelVisibility();
+            FocusActivePanelTarget();
             ShowControls(persist: _guidePanelOpen || _channelPanelOpen || _episodePanelOpen || _infoPanelOpen, cause: "panel_toggle");
+        }
+
+        private void FocusActivePanelTarget()
+        {
+            if (_channelPanelOpen)
+            {
+                ChannelSearchBox.Focus(FocusState.Programmatic);
+                return;
+            }
+
+            RootGrid.Focus(FocusState.Programmatic);
+        }
+
+        private bool CloseOpenPanels()
+        {
+            if (!_guidePanelOpen && !_channelPanelOpen && !_episodePanelOpen && !_infoPanelOpen)
+            {
+                return false;
+            }
+
+            _guidePanelOpen = false;
+            _channelPanelOpen = false;
+            _episodePanelOpen = false;
+            _infoPanelOpen = false;
+            UpdatePanelVisibility();
+            RootGrid.Focus(FocusState.Programmatic);
+            return true;
         }
 
         private void ApplyChannelSearchFilter()
@@ -205,15 +288,7 @@ namespace Kroira.App.Views
             var hints = new List<string>();
             if (IsLivePlayback() && !IsTimelineSeekAllowed())
             {
-                hints.Add("Live stream: seek and skip are unavailable for this source.");
-            }
-            else if (IsLivePlayback() && IsTimelineSeekAllowed())
-            {
-                hints.Add(_isLiveTimeshiftActive ? "Live buffer active." : "Seekable live buffer available.");
-            }
-            else if (!IsLivePlayback())
-            {
-                hints.Add($"Playback speed {(_player?.PlaybackSpeed > 0 ? _player.PlaybackSpeed : _playerPreferences.PlaybackSpeed):0.##}x.");
+                hints.Add("Seek unavailable on this live stream.");
             }
 
             if (_sleepDeadline.HasValue)
@@ -221,11 +296,11 @@ namespace Kroira.App.Views
                 var remaining = _sleepDeadline.Value - DateTimeOffset.UtcNow;
                 if (remaining > TimeSpan.Zero)
                 {
-                    hints.Add($"Sleep timer in {remaining:hh\\:mm\\:ss}.");
+                    hints.Add($"Sleep timer {remaining:hh\\:mm\\:ss}");
                 }
             }
 
-            PlaybackHintText.Text = string.Join("  ", hints);
+            PlaybackHintText.Text = string.Join("  •  ", hints);
             PlaybackHintText.Visibility = string.IsNullOrWhiteSpace(PlaybackHintText.Text) ? Visibility.Collapsed : Visibility.Visible;
         }
 
@@ -361,8 +436,104 @@ namespace Kroira.App.Views
             ZapBanner.Visibility = Visibility.Collapsed;
         }
 
+        private DependencyObject? GetFocusedElement()
+        {
+            return FocusManager.GetFocusedElement(XamlRoot) as DependencyObject ??
+                   FocusManager.GetFocusedElement() as DependencyObject;
+        }
+
+        private bool IsTextInputFocused()
+        {
+            var current = GetFocusedElement();
+            while (current != null)
+            {
+                if (current is TextBox or PasswordBox or AutoSuggestBox or RichEditBox)
+                {
+                    return true;
+                }
+
+                current = VisualTreeHelper.GetParent(current);
+            }
+
+            return false;
+        }
+
+        private bool ShouldSuppressGlobalHotkeys(KeyRoutedEventArgs e)
+        {
+            if (IsMenuOpen)
+            {
+                return true;
+            }
+
+            return e.Key != VirtualKey.Escape && IsTextInputFocused();
+        }
+
+        private bool HandleEscapeHotkey()
+        {
+            if (CloseOpenPanels())
+            {
+                ShowControls(cause: "panel_closed");
+                return true;
+            }
+
+            if (_isOverlayVisible)
+            {
+                _overlayHiddenByInactivity = true;
+                HideControls();
+                return true;
+            }
+
+            if (_windowManager?.IsFullscreen == true)
+            {
+                _windowManager.ExitFullscreen();
+                ShowControls(cause: "fullscreen_exit");
+                return true;
+            }
+
+            return false;
+        }
+
+        private void OpenTracksFlyout()
+        {
+            if (TracksButton.Visibility == Visibility.Visible)
+            {
+                TracksButton.Flyout?.ShowAt(TracksButton);
+                return;
+            }
+
+            if (AudioTrackButton.Visibility == Visibility.Visible)
+            {
+                AudioTrackButton.Flyout?.ShowAt(AudioTrackButton);
+                return;
+            }
+
+            if (SubtitleTrackButton.Visibility == Visibility.Visible)
+            {
+                SubtitleTrackButton.Flyout?.ShowAt(SubtitleTrackButton);
+            }
+        }
+
+        private void TrySeekRelativeSeconds(int seconds)
+        {
+            if (!IsTimelineSeekAllowed())
+            {
+                return;
+            }
+
+            _player?.SeekRelativeSeconds(seconds);
+            if (IsLivePlayback())
+            {
+                _isLiveTimeshiftActive = true;
+            }
+        }
+
         private bool HandleEnhancedKeyDown(KeyRoutedEventArgs e)
         {
+            if (ShouldSuppressGlobalHotkeys(e))
+            {
+                return false;
+            }
+
             var shiftDown = InputKeyboardSource.GetKeyStateForCurrentThread(VirtualKey.Shift).HasFlag(CoreVirtualKeyStates.Down);
             switch (e.Key)
             {
@@ -370,10 +541,10 @@ namespace Kroira.App.Views
                     TogglePlayPauseOrLive();
                     break;
                 case VirtualKey.Left when IsTimelineSeekAllowed():
-                    _player?.SeekRelativeSeconds(shiftDown ? -30 : -10);
+                    TrySeekRelativeSeconds(shiftDown ? -30 : -10);
                     break;
                 case VirtualKey.Right when IsTimelineSeekAllowed():
-                    _player?.SeekRelativeSeconds(shiftDown ? 30 : 10);
+                    TrySeekRelativeSeconds(shiftDown ? 30 : 10);
                     break;
                 case VirtualKey.Up:
                     AdjustVolume(5);
@@ -403,7 +574,7 @@ namespace Kroira.App.Views
                     ToggleSubtitleSelection();
                     break;
                 case VirtualKey.A:
-                    AudioTrackButton.Flyout?.ShowAt(AudioTrackButton);
+                    OpenTracksFlyout();
                     break;
                 case VirtualKey.I:
                     TogglePanel(nameof(InfoPanel));
@@ -412,18 +583,9 @@ namespace Kroira.App.Views
                     TogglePanel(nameof(MiniGuidePanel));
                     break;
                 case VirtualKey.Escape:
-                    if (_guidePanelOpen || _channelPanelOpen || _episodePanelOpen || _infoPanelOpen)
+                    if (!HandleEscapeHotkey())
                     {
-                        _guidePanelOpen = _channelPanelOpen = _episodePanelOpen = _infoPanelOpen = false;
-                        UpdatePanelVisibility();
-                    }
-                    else if (_windowManager?.IsFullscreen == true)
-                    {
-                        _windowManager.ExitFullscreen();
-                    }
-                    else
-                    {
-                        HideControls();
+                        return false;
                     }
                     break;
                 default:
@@ -694,10 +856,10 @@ namespace Kroira.App.Views
             }
         }
 
-        private void Back10_Click(object sender, RoutedEventArgs e) => _player?.SeekRelativeSeconds(-10);
-        private void Back30_Click(object sender, RoutedEventArgs e) => _player?.SeekRelativeSeconds(-30);
-        private void Forward10_Click(object sender, RoutedEventArgs e) => _player?.SeekRelativeSeconds(10);
-        private void Forward30_Click(object sender, RoutedEventArgs e) => _player?.SeekRelativeSeconds(30);
+        private void Back10_Click(object sender, RoutedEventArgs e) => TrySeekRelativeSeconds(-10);
+        private void Back30_Click(object sender, RoutedEventArgs e) => TrySeekRelativeSeconds(-30);
+        private void Forward10_Click(object sender, RoutedEventArgs e) => TrySeekRelativeSeconds(10);
+        private void Forward30_Click(object sender, RoutedEventArgs e) => TrySeekRelativeSeconds(30);
         private void Restart_Click(object sender, RoutedEventArgs e) => RestartPlayerSession("restart", 0);
         private void RetryPlayback_Click(object sender, RoutedEventArgs e) => RetryCurrentPlayback();
 

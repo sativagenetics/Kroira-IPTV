@@ -63,8 +63,6 @@ namespace Kroira.App.Services
         {
             var series = await db.Series
                 .AsNoTracking()
-                .Include(show => show.Seasons!)
-                .ThenInclude(season => season.Episodes)
                 .ToListAsync();
             var sourceIds = series.Select(show => show.SourceProfileId).Distinct().ToList();
             var sourceProfiles = await db.SourceProfiles

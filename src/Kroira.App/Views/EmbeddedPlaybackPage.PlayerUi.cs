@@ -197,6 +197,8 @@ namespace Kroira.App.Views
                 cancellationToken);
 
             TitleText.Text = currentRow.Channel.Name;
+            BottomLiveTitleText.Text = currentRow.Channel.Name;
+            BottomLiveMetaText.Text = "Guide not available.";
 
             var browsePreferences = await browsePreferencesService.GetAsync(db, ProfileDomains.Live, _context.ProfileId);
             _lastChannelCandidateId = browsePreferences.RecentChannelIds.FirstOrDefault(id => id != currentRow.Channel.Id);
@@ -408,26 +410,36 @@ namespace Kroira.App.Views
             var isLive = IsLivePlayback();
             var canSeek = IsTimelineSeekAllowed() && _stateMachine.State != PlaybackSessionState.Opening;
             var hasEpisodeNavigation = _allEpisodeSwitchItems.Count > 1;
+            var useLiveControlLayout = isLive && !canSeek;
+            var useSeekControlLayout = !useLiveControlLayout;
 
-            PreviousChannelButton.Visibility = isLive ? Visibility.Visible : Visibility.Collapsed;
-            LastChannelButton.Visibility = isLive ? Visibility.Visible : Visibility.Collapsed;
-            NextChannelButton.Visibility = isLive ? Visibility.Visible : Visibility.Collapsed;
+            SeekTimelineContainer.Visibility = useSeekControlLayout ? Visibility.Visible : Visibility.Collapsed;
+            LiveSummaryPanel.Visibility = useLiveControlLayout ? Visibility.Visible : Visibility.Collapsed;
+
+            PreviousChannelButton.Visibility = useLiveControlLayout ? Visibility.Visible : Visibility.Collapsed;
+            LastChannelButton.Visibility = Visibility.Collapsed;
+            NextChannelButton.Visibility = useLiveControlLayout ? Visibility.Visible : Visibility.Collapsed;
             GuidePanelButton.Visibility = isLive ? Visibility.Visible : Visibility.Collapsed;
             ChannelPanelButton.Visibility = isLive ? Visibility.Visible : Visibility.Collapsed;
             EpisodePanelButton.Visibility = hasEpisodeNavigation ? Visibility.Visible : Visibility.Collapsed;
 
-            Back10Button.Visibility = canSeek ? Visibility.Visible : Visibility.Collapsed;
-            Back30Button.Visibility = canSeek ? Visibility.Visible : Visibility.Collapsed;
-            Forward10Button.Visibility = canSeek ? Visibility.Visible : Visibility.Collapsed;
-            Forward30Button.Visibility = canSeek ? Visibility.Visible : Visibility.Collapsed;
-            RestartButton.Visibility = canSeek ? Visibility.Visible : Visibility.Collapsed;
-            SpeedButton.Visibility = canSeek ? Visibility.Visible : Visibility.Collapsed;
+            Back10Button.Visibility = useSeekControlLayout && canSeek ? Visibility.Visible : Visibility.Collapsed;
+            Back30Button.Visibility = useSeekControlLayout && canSeek ? Visibility.Visible : Visibility.Collapsed;
+            Forward10Button.Visibility = useSeekControlLayout && canSeek ? Visibility.Visible : Visibility.Collapsed;
+            Forward30Button.Visibility = useSeekControlLayout && canSeek ? Visibility.Visible : Visibility.Collapsed;
+            RestartButton.Visibility = Visibility.Collapsed;
+            StopButton.Visibility = Visibility.Collapsed;
+            SpeedButton.Visibility = useSeekControlLayout && canSeek ? Visibility.Visible : Visibility.Collapsed;
+            GoLiveButton.Visibility = isLive && canSeek ? Visibility.Visible : Visibility.Collapsed;
+            BottomGuideButton.Visibility = useLiveControlLayout ? Visibility.Visible : Visibility.Collapsed;
+            BottomChannelListButton.Visibility = useLiveControlLayout ? Visibility.Visible : Visibility.Collapsed;
 
-            PreviousChannelButton.IsEnabled = isLive && _allChannelSwitchItems.Count > 1;
-            NextChannelButton.IsEnabled = isLive && _allChannelSwitchItems.Count > 1;
+            PreviousChannelButton.IsEnabled = useLiveControlLayout && _allChannelSwitchItems.Count > 1;
+            NextChannelButton.IsEnabled = useLiveControlLayout && _allChannelSwitchItems.Count > 1;
             LastChannelButton.IsEnabled = isLive && _lastChannelCandidateId > 0;
             EpisodePanelButton.IsEnabled = hasEpisodeNavigation;
             FavoriteButton.Visibility = _favoriteType.HasValue ? Visibility.Visible : Visibility.Collapsed;
+            BuildToolsFlyout();
             UpdatePanelVisibility();
         }
 
@@ -435,6 +447,7 @@ namespace Kroira.App.Views
         {
             if (IsLivePlayback())
             {
+                BottomLiveTitleText.Text = TitleText.Text;
                 ContextText.Text = string.IsNullOrWhiteSpace(_resolvedSourceName)
                     ? _resolvedGuideSummary
                     : string.IsNullOrWhiteSpace(_resolvedGuideSummary)
@@ -457,6 +470,8 @@ namespace Kroira.App.Views
                 : string.Empty;
             GuideConfidenceText.Text = summary.SourceStatusSummary;
             _resolvedGuideSummary = summary.SourceStatusSummary;
+            BottomLiveTitleText.Text = TitleText.Text;
+            BottomLiveMetaText.Text = BuildChannelMeta(summary);
         }
 
         private void ClearGuidePanel()
@@ -467,6 +482,8 @@ namespace Kroira.App.Views
             GuideNextTimeText.Text = string.Empty;
             GuideConfidenceText.Text = string.Empty;
             _resolvedGuideSummary = string.Empty;
+            BottomLiveTitleText.Text = TitleText.Text;
+            BottomLiveMetaText.Text = IsLivePlayback() ? "Guide not available." : string.Empty;
         }
 
         private string BuildChannelMeta(ChannelGuideSummary? summary)

@@ -227,7 +227,7 @@
                             VerticalAlignment="Bottom"
                             MinWidth="128">
                         <StackPanel Spacing="1">
-                            <TextBlock Text="{x:Bind ViewModel.FilteredMovies.Count, Mode=OneWay, Converter={StaticResource NumberFormatConverter}}"
+                            <TextBlock Text="{x:Bind ViewModel.FilteredMovieCount, Mode=OneWay, Converter={StaticResource NumberFormatConverter}}"
                                        Foreground="{StaticResource KroiraTextPrimaryBrush}"
                                        FontSize="28"
                                        FontWeight="SemiBold" />
