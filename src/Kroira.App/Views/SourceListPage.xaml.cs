@@ -33,7 +33,7 @@ namespace Kroira.App.Views
 
         private void DeleteSource_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is Button btn && btn.Tag is int id)
+            if (sender is FrameworkElement { Tag: int id })
             {
                 ViewModel.DeleteSourceCommand.Execute(id);
             }
@@ -71,7 +71,7 @@ namespace Kroira.App.Views
 
         private void BrowseSource_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is Button btn && btn.Tag is int id)
+            if (sender is FrameworkElement { Tag: int id })
             {
                 this.Frame.Navigate(typeof(ChannelBrowserPage), id);
             }
@@ -79,7 +79,7 @@ namespace Kroira.App.Views
 
         private void SyncEpgSource_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is Button btn && btn.Tag is int id)
+            if (sender is FrameworkElement { Tag: int id })
             {
                 ViewModel.SyncEpgCommand.Execute(id);
             }
@@ -95,7 +95,7 @@ namespace Kroira.App.Views
 
         private void SyncXtreamVodSource_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is Button btn && btn.Tag is int id)
+            if (sender is FrameworkElement { Tag: int id })
             {
                 ViewModel.SyncXtreamVodCommand.Execute(id);
             }
@@ -103,7 +103,7 @@ namespace Kroira.App.Views
 
         private async void EditGuideSettings_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is not Button { Tag: int id })
+            if (sender is not FrameworkElement { Tag: int id })
             {
                 return;
             }

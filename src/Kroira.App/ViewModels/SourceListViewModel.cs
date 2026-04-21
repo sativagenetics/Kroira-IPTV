@@ -60,6 +60,7 @@ namespace Kroira.App.ViewModels
 
         public string EpgSyncButtonText => IsEpgSyncing ? "Syncing..." : "EPG";
         public bool IsEpgSyncEnabled => CanSyncEpg && !IsEpgSyncing;
+        public bool CanRunXtreamVodOnly => Type == "Xtream";
 
         [ObservableProperty]
         private string _status = string.Empty;
@@ -139,6 +140,28 @@ namespace Kroira.App.ViewModels
             ? Microsoft.UI.Xaml.Visibility.Collapsed
             : Microsoft.UI.Xaml.Visibility.Visible;
 
+        public int CatalogAssetCount => MovieCount + SeriesCount;
+
+        public double GuideCoveragePercent => ChannelCount > 0
+            ? Math.Min(100d, Math.Round((double)EpgMatchedChannels / ChannelCount * 100d, 1))
+            : 0d;
+
+        public string GuideCoverageRatioText => ChannelCount > 0
+            ? $"{EpgMatchedChannels:N0} / {ChannelCount:N0} mapped"
+            : "No live channels";
+
+        public string GuideCoverageSecondaryText => ChannelCount > 0
+            ? $"{Math.Max(ChannelCount - EpgMatchedChannels, 0):N0} unmatched"
+            : GuideStatusText;
+
+        public string OperationalSummaryText => string.IsNullOrWhiteSpace(SourcePanelSummaryText)
+            ? Status
+            : SourcePanelSummaryText;
+
+        public Microsoft.UI.Xaml.Visibility GuideCoverageVisibility => ChannelCount > 0
+            ? Microsoft.UI.Xaml.Visibility.Visible
+            : Microsoft.UI.Xaml.Visibility.Collapsed;
+
         partial void OnHealthLabelChanged(string value)
         {
             OnPropertyChanged(nameof(HealthyVisibility));
@@ -199,6 +222,12 @@ namespace Kroira.App.ViewModels
         private int _totalAssetCount;
 
         [ObservableProperty]
+        private int _totalLiveChannelCount;
+
+        [ObservableProperty]
+        private int _totalLibraryAssetCount;
+
+        [ObservableProperty]
         private int _totalMatchedGuideChannelCount;
 
         [ObservableProperty]
@@ -217,7 +246,15 @@ namespace Kroira.App.ViewModels
         private string _guideCoverageCaption = "No live channels available.";
 
         [ObservableProperty]
+        private double _guideCoveragePercent;
+
+        [ObservableProperty]
         private string _searchText = string.Empty;
+
+        public string M3uSourceCountLabel => $"{M3uSourceCount:N0} M3U";
+        public string XtreamSourceCountLabel => $"{XtreamSourceCount:N0} Xtream";
+        public string ConfiguredSourceCountText => $"{SourceCount:N0} configured";
+        public string RecentActivityCountText => $"{RecentActivities.Count:N0} events";
 
         public SourceListViewModel(IServiceProvider serviceProvider)
         {
@@ -458,12 +495,18 @@ namespace Kroira.App.ViewModels
             M3uSourceCount = loadedSources.Count(source => source.Type == "M3U");
             XtreamSourceCount = loadedSources.Count(source => source.Type == "Xtream");
             TotalAssetCount = loadedSources.Sum(source => source.ChannelCount + source.MovieCount + source.SeriesCount);
+            TotalLiveChannelCount = loadedSources.Sum(source => source.ChannelCount);
+            TotalLibraryAssetCount = loadedSources.Sum(source => source.MovieCount + source.SeriesCount);
             TotalMatchedGuideChannelCount = loadedSources.Sum(source => source.EpgMatchedChannels);
+            OnPropertyChanged(nameof(M3uSourceCountLabel));
+            OnPropertyChanged(nameof(XtreamSourceCountLabel));
+            OnPropertyChanged(nameof(ConfiguredSourceCountText));
 
-            var totalLiveChannels = loadedSources.Sum(source => source.ChannelCount);
+            var totalLiveChannels = TotalLiveChannelCount;
             var guideCoverage = totalLiveChannels > 0
                 ? (double)TotalMatchedGuideChannelCount / totalLiveChannels
                 : 0d;
+            GuideCoveragePercent = guideCoverage * 100d;
             GuideCoverageHeadline = totalLiveChannels > 0
                 ? $"{guideCoverage:P0}"
                 : "0%";
@@ -511,6 +554,8 @@ namespace Kroira.App.ViewModels
             {
                 RecentActivities.Add(activity);
             }
+
+            OnPropertyChanged(nameof(RecentActivityCountText));
         }
 
         private void ApplySourceFilter()

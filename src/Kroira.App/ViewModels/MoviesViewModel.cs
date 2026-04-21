@@ -118,6 +118,7 @@ namespace Kroira.App.ViewModels
         private HashSet<int> _favoriteMovieIds = new();
         private int _activeProfileId;
         private string _languageCode = AppLanguageService.DefaultLanguageCode;
+        private string _visibleCategorySignature = string.Empty;
         private bool _isInitializing;
         private bool _isApplyingFilter;
         private bool _pendingApplyFilter;
@@ -478,7 +479,13 @@ namespace Kroira.App.ViewModels
             }
 
             await db.SaveChangesAsync();
-            ApplyFilter("toggle-favorite");
+            if (RequiresFullBrowseRefreshForFavoriteToggle())
+            {
+                ApplyFilter("toggle-favorite");
+                return;
+            }
+
+            RefreshMovieFavoriteState(group.GroupKey);
         }
 
         private IEnumerable<FilteredMovieResult> BuildFilteredMovieResults()
@@ -574,6 +581,18 @@ namespace Kroira.App.ViewModels
 
         private void RefreshFeaturedMovie(IEnumerable<MovieBrowseItemViewModel> filteredMovies)
         {
+            var currentFeaturedGroupKey = FeaturedMovie?.GroupKey ?? string.Empty;
+            if (!string.IsNullOrWhiteSpace(currentFeaturedGroupKey))
+            {
+                var persistedFeatured = filteredMovies.FirstOrDefault(movie =>
+                    string.Equals(movie.GroupKey, currentFeaturedGroupKey, StringComparison.OrdinalIgnoreCase));
+                if (persistedFeatured != null && IsSafeForFeatured(persistedFeatured))
+                {
+                    FeaturedMovie = persistedFeatured;
+                    return;
+                }
+            }
+
             var pinned = filteredMovies.FirstOrDefault(movie =>
                 string.Equals(movie.Title.Trim(), FixedFeaturedMovieTitle, StringComparison.OrdinalIgnoreCase));
             if (pinned != null && IsSafeForFeatured(pinned))
@@ -702,7 +721,12 @@ namespace Kroira.App.ViewModels
                          OrderIndex = index + 1
                      }));
 
-            Categories.ReplaceAll(categoryItems);
+            var signature = BuildCategorySignature(categoryItems);
+            if (!string.Equals(_visibleCategorySignature, signature, StringComparison.Ordinal))
+            {
+                Categories.ReplaceAll(categoryItems);
+                _visibleCategorySignature = signature;
+            }
 
             var resolvedCategory = !string.IsNullOrWhiteSpace(currentKey)
                 ? Categories.FirstOrDefault(category => string.Equals(category.FilterKey, currentKey, StringComparison.OrdinalIgnoreCase))
@@ -803,6 +827,47 @@ namespace Kroira.App.ViewModels
             return group.PreferredMovie.Title.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase) ||
                    displayCategory.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase) ||
                    group.SourceSummary.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase);
+        }
+
+        private bool RequiresFullBrowseRefreshForFavoriteToggle()
+        {
+            return FavoritesOnly ||
+                   string.Equals(SelectedSortOption?.Key ?? "recommended", "favorites_first", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private void RefreshMovieFavoriteState(string groupKey)
+        {
+            if (string.IsNullOrWhiteSpace(groupKey))
+            {
+                return;
+            }
+
+            var isFavorite = _favoriteMovieIds.Count > 0 &&
+                             _allMovieGroups
+                                 .FirstOrDefault(group => string.Equals(group.GroupKey, groupKey, StringComparison.OrdinalIgnoreCase))
+                                 ?.Variants.Any(variant => _favoriteMovieIds.Contains(variant.Movie.Id)) == true;
+
+            foreach (var item in _filteredMovies.Where(item => string.Equals(item.GroupKey, groupKey, StringComparison.OrdinalIgnoreCase)))
+            {
+                item.IsFavorite = isFavorite;
+            }
+
+            foreach (var slot in DisplayMovieSlots.Where(slot => slot.HasMovie &&
+                                                                 string.Equals(slot.Movie?.GroupKey, groupKey, StringComparison.OrdinalIgnoreCase)))
+            {
+                slot.RefreshFavoriteState();
+            }
+
+            if (FeaturedMovie != null &&
+                string.Equals(FeaturedMovie.GroupKey, groupKey, StringComparison.OrdinalIgnoreCase))
+            {
+                FeaturedMovie.IsFavorite = isFavorite;
+            }
+        }
+
+        private static string BuildCategorySignature(IEnumerable<BrowserCategoryViewModel> categories)
+        {
+            return string.Join("|", categories.Select(category => $"{category.FilterKey}:{category.Name}:{category.OrderIndex}"));
         }
 
         private void OnSourceVisibilityChanged(BrowseSourceVisibilityViewModel option, bool isVisible)

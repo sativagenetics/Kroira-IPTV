@@ -6,28 +6,45 @@
     Background="{StaticResource KroiraPageBackgroundBrush}">
 
     <Page.Resources>
-        <Style x:Key="SourceConsoleCardStyle" TargetType="Border" BasedOn="{StaticResource KroiraCardStyle}">
-            <Setter Property="Background" Value="#DC11141A" />
+        <Style x:Key="SourceDashboardCardStyle" TargetType="Border" BasedOn="{StaticResource KroiraCardStyle}">
+            <Setter Property="Background" Value="#D911151B" />
+            <Setter Property="BorderBrush" Value="{StaticResource KroiraGlassBorderBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="18" />
+            <Setter Property="Padding" Value="20" />
+        </Style>
+
+        <Style x:Key="SourceSummaryCardStyle" TargetType="Border" BasedOn="{StaticResource SourceDashboardCardStyle}">
             <Setter Property="Padding" Value="18" />
         </Style>
 
-        <Style x:Key="SourceShellCardStyle" TargetType="Border" BasedOn="{StaticResource KroiraRowStyle}">
-            <Setter Property="Background" Value="#DC12161D" />
+        <Style x:Key="SourceShellCardStyle" TargetType="Border" BasedOn="{StaticResource SourceDashboardCardStyle}">
             <Setter Property="Padding" Value="18" />
         </Style>
 
         <Style x:Key="SourceSearchBoxStyle" TargetType="TextBox" BasedOn="{StaticResource KroiraTextBoxStyle}">
-            <Setter Property="MinWidth" Value="280" />
-            <Setter Property="Padding" Value="42,10,14,10" />
+            <Setter Property="MinWidth" Value="320" />
+            <Setter Property="Padding" Value="42,11,14,11" />
+            <Setter Property="CornerRadius" Value="14" />
+        </Style>
+
+        <Style x:Key="SourceActionSecondaryButtonStyle" TargetType="Button" BasedOn="{StaticResource KroiraGhostButtonStyle}">
+            <Setter Property="Padding" Value="14,10" />
+            <Setter Property="CornerRadius" Value="14" />
+        </Style>
+
+        <Style x:Key="SourceActionQuietButtonStyle" TargetType="Button" BasedOn="{StaticResource KroiraButtonStyle}">
+            <Setter Property="Padding" Value="14,10" />
+            <Setter Property="CornerRadius" Value="14" />
         </Style>
 
         <Style x:Key="SourceMetricLabelStyle" TargetType="TextBlock">
             <Setter Property="Style" Value="{StaticResource KroiraLabelStyle}" />
-            <Setter Property="Opacity" Value="0.78" />
+            <Setter Property="Opacity" Value="0.74" />
         </Style>
 
         <Style x:Key="SourceMetricValueStyle" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="27" />
+            <Setter Property="FontSize" Value="30" />
             <Setter Property="FontWeight" Value="SemiBold" />
             <Setter Property="Foreground" Value="{StaticResource KroiraTextPrimaryBrush}" />
         </Style>
@@ -36,7 +53,7 @@
             <Setter Property="FontSize" Value="11" />
             <Setter Property="FontWeight" Value="SemiBold" />
             <Setter Property="Foreground" Value="{StaticResource KroiraTextTertiaryBrush}" />
-            <Setter Property="CharacterSpacing" Value="70" />
+            <Setter Property="CharacterSpacing" Value="65" />
         </Style>
 
         <Style x:Key="SourceMiniValueStyle" TargetType="TextBlock">
@@ -45,310 +62,478 @@
             <Setter Property="Foreground" Value="{StaticResource KroiraTextPrimaryBrush}" />
         </Style>
 
-        <Style x:Key="SourceActivityHeaderStyle" TargetType="TextBlock">
-            <Setter Property="Style" Value="{StaticResource KroiraLabelStyle}" />
-            <Setter Property="Opacity" Value="0.72" />
+        <Style x:Key="SourceMetricChipStyle" TargetType="Border">
+            <Setter Property="Background" Value="#8611161E" />
+            <Setter Property="BorderBrush" Value="{StaticResource KroiraChromeLineBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="14" />
+            <Setter Property="Padding" Value="14,12" />
+        </Style>
+
+        <Style x:Key="SourceDetailPanelStyle" TargetType="Border">
+            <Setter Property="Background" Value="#8C10141B" />
+            <Setter Property="BorderBrush" Value="{StaticResource KroiraChromeLineBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="14" />
+            <Setter Property="Padding" Value="14,12" />
+        </Style>
+
+        <Style x:Key="SourceActivityCardStyle" TargetType="Border">
+            <Setter Property="Background" Value="#9611161E" />
+            <Setter Property="BorderBrush" Value="{StaticResource KroiraGlassBorderBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="14" />
+            <Setter Property="Padding" Value="14,12" />
         </Style>
     </Page.Resources>
 
     <ScrollViewer VerticalScrollBarVisibility="Auto" VerticalScrollMode="Enabled">
-        <Grid Padding="28" RowSpacing="18" Background="{StaticResource KroiraPageAtmosphereBrush}">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-            </Grid.RowDefinitions>
-
-            <Grid Grid.Row="0" ColumnSpacing="20">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="380" />
-                </Grid.ColumnDefinitions>
-
-                <TextBlock
-                    Text="Sources Management"
-                    Style="{StaticResource KroiraLabelStyle}"
-                    VerticalAlignment="Center" />
-
-                <Grid Grid.Column="1" VerticalAlignment="Center">
-                    <TextBox
-                        Text="{x:Bind ViewModel.SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                        PlaceholderText="Search provider or XMLTV URL..."
-                        Style="{StaticResource SourceSearchBoxStyle}" />
-                    <FontIcon
-                        Glyph="&#xE721;"
-                        Foreground="{StaticResource KroiraTextTertiaryBrush}"
-                        Margin="14,0,0,0"
-                        VerticalAlignment="Center"
-                        HorizontalAlignment="Left" />
-                </Grid>
-            </Grid>
-
-            <Grid Grid.Row="1" ColumnSpacing="28">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
-
-                <StackPanel Spacing="8">
-                    <TextBlock
-                        Text="SYSTEM REPOSITORY"
-                        Style="{StaticResource KroiraLabelStyle}" />
-                    <TextBlock
-                        Text="Library Sources"
-                        Style="{StaticResource KroiraPageTitleStyle}" />
-                    <TextBlock
-                        Text="Manage content delivery endpoints, live sync health, guide integrity, and provider diagnostics without changing existing source behavior."
-                        Style="{StaticResource KroiraPageSubtitleStyle}"
-                        MaxWidth="760" />
-                </StackPanel>
-
-                <StackPanel
-                    Grid.Column="1"
-                    Orientation="Horizontal"
-                    Spacing="10"
-                    VerticalAlignment="Center">
-                    <Button
-                        Content="Refresh"
-                        Command="{x:Bind ViewModel.LoadSourcesCommand}"
-                        Style="{StaticResource KroiraGhostButtonStyle}" />
-                    <Button
-                        Content="+ Add Source"
-                        Click="AddNewSource_Click"
-                        Style="{StaticResource KroiraPrimaryButtonStyle}" />
-                </StackPanel>
-            </Grid>
-
-            <Grid Grid.Row="2" ColumnSpacing="14">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="*" />
-                </Grid.ColumnDefinitions>
-
-                <Border Style="{StaticResource SourceConsoleCardStyle}">
-                    <StackPanel Spacing="8">
-                        <TextBlock Text="ACTIVE SOURCES" Style="{StaticResource SourceMetricLabelStyle}" />
-                        <TextBlock Text="{x:Bind ViewModel.SourceCount, Mode=OneWay, Converter={StaticResource NumberFormatConverter}}" Style="{StaticResource SourceMetricValueStyle}" />
-                        <TextBlock Style="{StaticResource KroiraBodyStyle}">
-                            <Run Text="{x:Bind ViewModel.M3uSourceCount, Mode=OneWay, Converter={StaticResource NumberFormatConverter}}" />
-                            <Run Text=" M3U / " />
-                            <Run Text="{x:Bind ViewModel.XtreamSourceCount, Mode=OneWay, Converter={StaticResource NumberFormatConverter}}" />
-                            <Run Text=" Xtream" />
-                        </TextBlock>
-                    </StackPanel>
-                </Border>
-
-                <Border Grid.Column="1" Style="{StaticResource SourceConsoleCardStyle}">
-                    <StackPanel Spacing="8">
-                        <TextBlock Text="HEALTH STATUS" Style="{StaticResource SourceMetricLabelStyle}" />
-                        <controls:StatusPill Label="{x:Bind ViewModel.HealthStatusHeadline, Mode=OneWay}" Kind="{x:Bind ViewModel.HealthStatusKind, Mode=OneWay}" />
-                        <TextBlock
-                            Text="{x:Bind ViewModel.HealthStatusCaption, Mode=OneWay}"
-                            Style="{StaticResource KroiraBodyStyle}"
-                            TextWrapping="WrapWholeWords" />
-                    </StackPanel>
-                </Border>
-
-                <Border Grid.Column="2" Style="{StaticResource SourceConsoleCardStyle}">
-                    <StackPanel Spacing="8">
-                        <TextBlock Text="TOTAL ASSETS" Style="{StaticResource SourceMetricLabelStyle}" />
-                        <TextBlock Text="{x:Bind ViewModel.TotalAssetCount, Mode=OneWay, Converter={StaticResource NumberFormatConverter}}" Style="{StaticResource SourceMetricValueStyle}" />
-                        <TextBlock
-                            Text="Indexed across live, movies, and series"
-                            Style="{StaticResource KroiraBodyStyle}" />
-                    </StackPanel>
-                </Border>
-
-                <Border Grid.Column="3" Style="{StaticResource SourceConsoleCardStyle}">
-                    <StackPanel Spacing="8">
-                        <TextBlock Text="GUIDE COVERAGE" Style="{StaticResource SourceMetricLabelStyle}" />
-                        <TextBlock Text="{x:Bind ViewModel.GuideCoverageHeadline, Mode=OneWay}" Style="{StaticResource SourceMetricValueStyle}" />
-                        <TextBlock
-                            Text="{x:Bind ViewModel.GuideCoverageCaption, Mode=OneWay}"
-                            Style="{StaticResource KroiraBodyStyle}"
-                            TextWrapping="WrapWholeWords" />
-                    </StackPanel>
-                </Border>
-            </Grid>
-
-            <Grid Grid.Row="3" RowSpacing="14">
+        <Grid Background="{StaticResource KroiraPageAtmosphereBrush}">
+            <Grid MaxWidth="1480"
+                  HorizontalAlignment="Center"
+                  Padding="32,28,32,36"
+                  RowSpacing="18">
                 <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
 
-                <TextBlock
-                    Text="Managed Sources"
-                    Style="{StaticResource KroiraSectionTitleStyle}" />
+                <Grid Grid.Row="0" ColumnSpacing="24">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
 
-                <ItemsControl
-                    Grid.Row="1"
-                    ItemsSource="{x:Bind ViewModel.Sources, Mode=OneWay}">
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="CONTENT DELIVERY"
+                                   Style="{StaticResource KroiraLabelStyle}"
+                                   Foreground="{StaticResource KroiraAccentBrush}" />
+                        <TextBlock Text="Sources"
+                                   Style="{StaticResource KroiraPageTitleStyle}" />
+                        <TextBlock Text="Manage providers, watch source health, and keep guide coverage under control without exposing every diagnostic on the first layer."
+                                   Style="{StaticResource KroiraPageSubtitleStyle}"
+                                   MaxWidth="760" />
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="1"
+                                Spacing="12"
+                                VerticalAlignment="Top"
+                                HorizontalAlignment="Right">
+                        <Grid>
+                            <TextBox Text="{x:Bind ViewModel.SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                     PlaceholderText="Search providers or guide mode"
+                                     Style="{StaticResource SourceSearchBoxStyle}" />
+                            <FontIcon Glyph="&#xE721;"
+                                      Foreground="{StaticResource KroiraTextTertiaryBrush}"
+                                      Margin="14,0,0,0"
+                                      VerticalAlignment="Center"
+                                      HorizontalAlignment="Left" />
+                        </Grid>
+
+                        <StackPanel Orientation="Horizontal"
+                                    Spacing="10"
+                                    HorizontalAlignment="Right">
+                            <Button Command="{x:Bind ViewModel.LoadSourcesCommand}"
+                                    Style="{StaticResource SourceActionSecondaryButtonStyle}">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <FontIcon Glyph="&#xE72C;" FontSize="12" />
+                                    <TextBlock Text="Refresh" />
+                                </StackPanel>
+                            </Button>
+                            <Button Click="AddNewSource_Click"
+                                    Style="{StaticResource KroiraPrimaryButtonStyle}"
+                                    Padding="18,10">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <FontIcon Glyph="&#xE710;" FontSize="12" />
+                                    <TextBlock Text="Add Source" />
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+                    </StackPanel>
+                </Grid>
+
+                <Grid Grid.Row="1" ColumnSpacing="14">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <Border Style="{StaticResource SourceSummaryCardStyle}">
+                        <Grid RowSpacing="10">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="ACTIVE SOURCES" Style="{StaticResource SourceMetricLabelStyle}" />
+                            <FontIcon Grid.Column="1" Glyph="&#xE8FD;" Foreground="{StaticResource KroiraAccentBrush}" FontSize="15" />
+                            <TextBlock Grid.Row="1"
+                                       Text="{x:Bind ViewModel.SourceCount, Mode=OneWay, Converter={StaticResource NumberFormatConverter}}"
+                                       Style="{StaticResource SourceMetricValueStyle}" />
+                            <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="8">
+                                <controls:StatusPill Label="{x:Bind ViewModel.M3uSourceCountLabel, Mode=OneWay}" Kind="Neutral" />
+                                <controls:StatusPill Label="{x:Bind ViewModel.XtreamSourceCountLabel, Mode=OneWay}" Kind="Neutral" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <Border Grid.Column="1" Style="{StaticResource SourceSummaryCardStyle}">
+                        <Grid RowSpacing="10">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="SYSTEM HEALTH" Style="{StaticResource SourceMetricLabelStyle}" />
+                            <FontIcon Grid.Column="1" Glyph="&#xE73E;" Foreground="{StaticResource KroiraAccentBrush}" FontSize="15" />
+                            <controls:StatusPill Grid.Row="1"
+                                                 Label="{x:Bind ViewModel.HealthStatusHeadline, Mode=OneWay}"
+                                                 Kind="{x:Bind ViewModel.HealthStatusKind, Mode=OneWay}" />
+                            <TextBlock Grid.Row="2"
+                                       Text="{x:Bind ViewModel.HealthStatusCaption, Mode=OneWay}"
+                                       Style="{StaticResource KroiraBodyStyle}"
+                                       TextWrapping="WrapWholeWords" />
+                        </Grid>
+                    </Border>
+
+                    <Border Grid.Column="2" Style="{StaticResource SourceSummaryCardStyle}">
+                        <Grid RowSpacing="10">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="CATALOG INDEX" Style="{StaticResource SourceMetricLabelStyle}" />
+                            <FontIcon Grid.Column="1" Glyph="&#xE8D2;" Foreground="{StaticResource KroiraAccentBrush}" FontSize="15" />
+                            <TextBlock Grid.Row="1"
+                                       Text="{x:Bind ViewModel.TotalAssetCount, Mode=OneWay, Converter={StaticResource NumberFormatConverter}}"
+                                       Style="{StaticResource SourceMetricValueStyle}" />
+                            <TextBlock Grid.Row="2" Style="{StaticResource KroiraBodyStyle}">
+                                <Run Text="{x:Bind ViewModel.TotalLiveChannelCount, Mode=OneWay, Converter={StaticResource NumberFormatConverter}}" />
+                                <Run Text=" live / " />
+                                <Run Text="{x:Bind ViewModel.TotalLibraryAssetCount, Mode=OneWay, Converter={StaticResource NumberFormatConverter}}" />
+                                <Run Text=" library" />
+                            </TextBlock>
+                        </Grid>
+                    </Border>
+
+                    <Border Grid.Column="3" Style="{StaticResource SourceSummaryCardStyle}">
+                        <Grid RowSpacing="10">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="GUIDE COVERAGE" Style="{StaticResource SourceMetricLabelStyle}" />
+                            <FontIcon Grid.Column="1" Glyph="&#xE787;" Foreground="{StaticResource KroiraAccentBrush}" FontSize="15" />
+                            <TextBlock Grid.Row="1"
+                                       Text="{x:Bind ViewModel.GuideCoverageHeadline, Mode=OneWay}"
+                                       Style="{StaticResource SourceMetricValueStyle}" />
+                            <ProgressBar Grid.Row="2"
+                                         Value="{x:Bind ViewModel.GuideCoveragePercent, Mode=OneWay}"
+                                         Maximum="100"
+                                         Height="6"
+                                         Foreground="{StaticResource KroiraAccentBrush}"
+                                         Background="#18FFFFFF" />
+                            <TextBlock Grid.Row="3"
+                                       Text="{x:Bind ViewModel.GuideCoverageCaption, Mode=OneWay}"
+                                       Style="{StaticResource KroiraBodyStyle}"
+                                       TextWrapping="WrapWholeWords" />
+                        </Grid>
+                    </Border>
+                </Grid>
+
+                <Grid Grid.Row="2" ColumnSpacing="14">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="MANAGED SOURCES"
+                                   Style="{StaticResource KroiraLabelStyle}"
+                                   Foreground="{StaticResource KroiraAccentBrush}" />
+                        <TextBlock Text="Operational Overview"
+                                   Style="{StaticResource KroiraSectionTitleStyle}" />
+                    </StackPanel>
+
+                    <TextBlock Grid.Column="1"
+                               Text="{x:Bind ViewModel.ConfiguredSourceCountText, Mode=OneWay}"
+                               Style="{StaticResource KroiraBodyStyle}"
+                               VerticalAlignment="Center" />
+                </Grid>
+
+                <Grid Grid.Row="3" RowSpacing="14">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <ItemsControl ItemsSource="{x:Bind ViewModel.Sources, Mode=OneWay}">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
                             <Border Style="{StaticResource SourceShellCardStyle}" Margin="0,0,0,14">
-                                <Grid ColumnSpacing="18">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="260" />
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="220" />
-                                    </Grid.ColumnDefinitions>
+                                <Grid RowSpacing="16">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
 
-                                    <Border
-                                        Background="#7A151B22"
-                                        BorderBrush="{StaticResource KroiraGlassBorderBrush}"
-                                        BorderThickness="1"
-                                        CornerRadius="12"
-                                        Padding="16">
-                                        <StackPanel Spacing="14">
-                                            <Grid ColumnSpacing="12">
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="46" />
-                                                    <ColumnDefinition Width="*" />
-                                                </Grid.ColumnDefinitions>
+                                    <Grid ColumnSpacing="18">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
 
-                                                <Border
-                                                    Width="46"
-                                                    Height="46"
-                                                    CornerRadius="10"
-                                                    Background="{StaticResource KroiraSurfaceHighBrush}">
-                                                    <TextBlock
-                                                        Text="{Binding Type}"
-                                                        FontSize="11"
-                                                        FontWeight="SemiBold"
-                                                        Foreground="{StaticResource KroiraAccentBrush}"
-                                                        HorizontalAlignment="Center"
-                                                        VerticalAlignment="Center" />
-                                                </Border>
-
-                                                <StackPanel Grid.Column="1" Spacing="3">
-                                                    <TextBlock
-                                                        Text="{Binding Name}"
-                                                        Style="{StaticResource KroiraTitleStyle}"
-                                                        FontSize="17"
-                                                        TextTrimming="CharacterEllipsis" />
-                                                    <TextBlock
-                                                        Text="{Binding SourceKindText}"
-                                                        Style="{StaticResource KroiraLabelStyle}" />
-                                                </StackPanel>
-                                            </Grid>
-
-                                            <StackPanel Orientation="Horizontal" Spacing="8">
-                                                <controls:StatusPill Label="{Binding HealthBadgeText}" Kind="{Binding HealthPillKind}" />
-                                                <controls:StatusPill Label="{Binding GuideBadgeText}" Kind="{Binding GuidePillKind}" />
-                                            </StackPanel>
-
-                                            <TextBlock
-                                                Text="{Binding SourcePanelSummaryText}"
-                                                Style="{StaticResource KroiraBodyStyle}"
-                                                MaxLines="3"
-                                                TextWrapping="WrapWholeWords"
-                                                TextTrimming="CharacterEllipsis" />
-                                        </StackPanel>
-                                    </Border>
-
-                                    <StackPanel Grid.Column="1" Spacing="16" VerticalAlignment="Center">
-                                        <Grid ColumnSpacing="18">
+                                        <Grid ColumnSpacing="14">
                                             <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="*" />
-                                                <ColumnDefinition Width="*" />
-                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="54" />
                                                 <ColumnDefinition Width="*" />
                                             </Grid.ColumnDefinitions>
 
-                                            <StackPanel Spacing="4">
+                                            <Border Width="54"
+                                                    Height="54"
+                                                    CornerRadius="14"
+                                                    Background="#8C151B22"
+                                                    BorderBrush="{StaticResource KroiraGlassBorderBrush}"
+                                                    BorderThickness="1">
+                                                <Grid>
+                                                    <FontIcon Glyph="&#xE774;"
+                                                              FontSize="16"
+                                                              Foreground="{StaticResource KroiraAccentBrush}"
+                                                              HorizontalAlignment="Center"
+                                                              VerticalAlignment="Center" />
+                                                    <TextBlock Text="{Binding Type}"
+                                                               FontSize="10"
+                                                               FontWeight="SemiBold"
+                                                               Margin="0,0,0,7"
+                                                               HorizontalAlignment="Center"
+                                                               VerticalAlignment="Bottom"
+                                                               Foreground="{StaticResource KroiraTextTertiaryBrush}" />
+                                                </Grid>
+                                            </Border>
+
+                                            <StackPanel Grid.Column="1" Spacing="6" VerticalAlignment="Center">
+                                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                                    <TextBlock Text="{Binding Name}"
+                                                               Style="{StaticResource KroiraTitleStyle}"
+                                                               FontSize="18"
+                                                               TextTrimming="CharacterEllipsis" />
+                                                    <controls:StatusPill Label="{Binding HealthBadgeText}" Kind="{Binding HealthPillKind}" />
+                                                    <controls:StatusPill Label="{Binding GuideBadgeText}" Kind="{Binding GuidePillKind}" />
+                                                </StackPanel>
+                                                <TextBlock Text="{Binding SourceKindText}"
+                                                           Style="{StaticResource KroiraLabelStyle}" />
+                                                <TextBlock Text="{Binding OperationalSummaryText}"
+                                                           Style="{StaticResource KroiraBodyStyle}"
+                                                           MaxLines="2"
+                                                           TextWrapping="WrapWholeWords"
+                                                           TextTrimming="CharacterEllipsis" />
+                                            </StackPanel>
+                                        </Grid>
+
+                                        <StackPanel Grid.Column="1"
+                                                    Spacing="8"
+                                                    VerticalAlignment="Top">
+                                            <StackPanel Orientation="Horizontal"
+                                                        Spacing="8"
+                                                        HorizontalAlignment="Right">
+                                                <Button Tag="{Binding Id}"
+                                                        Click="SyncSource_Click"
+                                                        Visibility="{Binding PrimarySyncVisibility}"
+                                                        Style="{StaticResource KroiraPrimaryButtonStyle}"
+                                                        Padding="18,10">
+                                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                                        <FontIcon Glyph="&#xE895;" FontSize="12" />
+                                                        <TextBlock Text="{Binding PrimarySyncText}" />
+                                                    </StackPanel>
+                                                </Button>
+
+                                                <Button Tag="{Binding Id}"
+                                                        Click="BrowseSource_Click"
+                                                        Visibility="{Binding BrowseVisibility}"
+                                                        Style="{StaticResource SourceActionSecondaryButtonStyle}">
+                                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                                        <FontIcon Glyph="&#xE8B6;" FontSize="12" />
+                                                        <TextBlock Text="Browse" />
+                                                    </StackPanel>
+                                                </Button>
+
+                                                <Button Tag="{Binding Id}"
+                                                        Click="EditGuideSettings_Click"
+                                                        Visibility="{Binding SyncEpgVisibility}"
+                                                        Style="{StaticResource SourceActionQuietButtonStyle}">
+                                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                                        <FontIcon Glyph="&#xE787;" FontSize="12" />
+                                                        <TextBlock Text="Guide" />
+                                                    </StackPanel>
+                                                </Button>
+                                            </StackPanel>
+
+                                            <Button HorizontalAlignment="Right"
+                                                    Style="{StaticResource SourceActionQuietButtonStyle}">
+                                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                                    <FontIcon Glyph="&#xE712;" FontSize="12" />
+                                                    <TextBlock Text="More" />
+                                                </StackPanel>
+                                                <Button.Flyout>
+                                                    <MenuFlyout>
+                                                        <MenuFlyoutItem Text="Guide Sync"
+                                                                        Tag="{Binding Id}"
+                                                                        Click="SyncEpgSource_Click"
+                                                                        Visibility="{Binding SyncEpgVisibility}"
+                                                                        IsEnabled="{Binding IsEpgSyncEnabled}">
+                                                            <MenuFlyoutItem.Icon>
+                                                                <FontIcon Glyph="&#xE787;" />
+                                                            </MenuFlyoutItem.Icon>
+                                                        </MenuFlyoutItem>
+                                                        <MenuFlyoutItem Text="VOD Only"
+                                                                        Tag="{Binding Id}"
+                                                                        Click="SyncXtreamVodSource_Click"
+                                                                        Visibility="{Binding XtreamVodOnlyVisibility}">
+                                                            <MenuFlyoutItem.Icon>
+                                                                <FontIcon Glyph="&#xE7C3;" />
+                                                            </MenuFlyoutItem.Icon>
+                                                        </MenuFlyoutItem>
+                                                        <MenuFlyoutSeparator />
+                                                        <MenuFlyoutItem Text="Delete Source"
+                                                                        Tag="{Binding Id}"
+                                                                        Click="DeleteSource_Click">
+                                                            <MenuFlyoutItem.Icon>
+                                                                <FontIcon Glyph="&#xE74D;" />
+                                                            </MenuFlyoutItem.Icon>
+                                                        </MenuFlyoutItem>
+                                                    </MenuFlyout>
+                                                </Button.Flyout>
+                                            </Button>
+                                        </StackPanel>
+                                    </Grid>
+
+                                    <Grid Grid.Row="1" ColumnSpacing="12">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="1.3*" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <Border Style="{StaticResource SourceMetricChipStyle}">
+                                            <StackPanel Spacing="5">
                                                 <TextBlock Text="LIVE CHANNELS" Style="{StaticResource SourceMiniLabelStyle}" />
                                                 <TextBlock Text="{Binding ChannelCount, Converter={StaticResource NumberFormatConverter}}" Style="{StaticResource SourceMiniValueStyle}" />
+                                                <TextBlock Text="{Binding ConnectionLabelText}" Style="{StaticResource KroiraBodyStyle}" MaxLines="1" TextTrimming="CharacterEllipsis" />
                                             </StackPanel>
+                                        </Border>
 
-                                            <StackPanel Grid.Column="1" Spacing="4">
-                                                <TextBlock Text="VOD / SERIES" Style="{StaticResource SourceMiniLabelStyle}" />
-                                                <TextBlock Style="{StaticResource SourceMiniValueStyle}">
+                                        <Border Grid.Column="1" Style="{StaticResource SourceMetricChipStyle}">
+                                            <StackPanel Spacing="5">
+                                                <TextBlock Text="CATALOG" Style="{StaticResource SourceMiniLabelStyle}" />
+                                                <TextBlock Text="{Binding CatalogAssetCount, Converter={StaticResource NumberFormatConverter}}" Style="{StaticResource SourceMiniValueStyle}" />
+                                                <TextBlock Style="{StaticResource KroiraBodyStyle}">
                                                     <Run Text="{Binding MovieCount, Converter={StaticResource NumberFormatConverter}}" />
-                                                    <Run Text=" / " />
+                                                    <Run Text=" movies / " />
                                                     <Run Text="{Binding SeriesCount, Converter={StaticResource NumberFormatConverter}}" />
+                                                    <Run Text=" series" />
                                                 </TextBlock>
                                             </StackPanel>
+                                        </Border>
 
-                                            <StackPanel Grid.Column="2" Spacing="4">
-                                                <TextBlock Text="LAST SYNC" Style="{StaticResource SourceMiniLabelStyle}" />
+                                        <Border Grid.Column="2" Style="{StaticResource SourceMetricChipStyle}">
+                                            <StackPanel Spacing="5">
+                                                <TextBlock Text="LAST SUCCESS" Style="{StaticResource SourceMiniLabelStyle}" />
                                                 <TextBlock Text="{Binding LastSyncText}" Style="{StaticResource SourceMiniValueStyle}" />
-                                                <TextBlock Text="{Binding LastSuccessfulSyncText}" Style="{StaticResource KroiraBodyStyle}" MaxLines="2" TextWrapping="WrapWholeWords" />
+                                                <TextBlock Text="{Binding LastSuccessfulSyncText}" Style="{StaticResource KroiraBodyStyle}" MaxLines="2" TextTrimming="CharacterEllipsis" TextWrapping="WrapWholeWords" />
                                             </StackPanel>
+                                        </Border>
 
-                                            <StackPanel Grid.Column="3" Spacing="4">
-                                                <TextBlock Text="CONNECTION" Style="{StaticResource SourceMiniLabelStyle}" />
-                                                <controls:StatusPill Label="{Binding ConnectionLabelText}" Kind="{Binding GuidePillKind}" />
+                                        <Border Grid.Column="3" Style="{StaticResource SourceMetricChipStyle}">
+                                            <StackPanel Spacing="6">
+                                                <TextBlock Text="GUIDE MAPPING" Style="{StaticResource SourceMiniLabelStyle}" />
+                                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                                    <TextBlock Text="{Binding GuideCoverageRatioText}" Style="{StaticResource SourceMiniValueStyle}" />
+                                                    <controls:StatusPill Label="{Binding GuideBadgeText}" Kind="{Binding GuidePillKind}" />
+                                                </StackPanel>
+                                                <ProgressBar Value="{Binding GuideCoveragePercent}"
+                                                             Maximum="100"
+                                                             Height="6"
+                                                             Foreground="{StaticResource KroiraAccentBrush}"
+                                                             Background="#18FFFFFF"
+                                                             Visibility="{Binding GuideCoverageVisibility}" />
+                                                <TextBlock Text="{Binding GuideCoverageSecondaryText}" Style="{StaticResource KroiraBodyStyle}" MaxLines="1" TextTrimming="CharacterEllipsis" />
                                             </StackPanel>
-                                        </Grid>
+                                        </Border>
+                                    </Grid>
 
-                                        <Grid ColumnSpacing="18">
+                                    <Grid Grid.Row="2" ColumnSpacing="12">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="1.2*" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <Border Style="{StaticResource SourceDetailPanelStyle}">
+                                            <StackPanel Spacing="6">
+                                                <TextBlock Text="HEALTH SUMMARY" Style="{StaticResource SourceMiniLabelStyle}" />
+                                                <TextBlock Text="{Binding Status}" Style="{StaticResource KroiraBodyStyle}" MaxLines="3" TextWrapping="WrapWholeWords" TextTrimming="CharacterEllipsis" />
+                                            </StackPanel>
+                                        </Border>
+
+                                        <Border Grid.Column="1" Style="{StaticResource SourceDetailPanelStyle}">
+                                            <StackPanel Spacing="6">
+                                                <TextBlock Text="GUIDE SNAPSHOT" Style="{StaticResource SourceMiniLabelStyle}" />
+                                                <TextBlock Text="{Binding GuideStatusText}" Style="{StaticResource KroiraBodyStyle}" FontWeight="SemiBold" MaxLines="1" TextTrimming="CharacterEllipsis" />
+                                                <TextBlock Text="{Binding EpgCoverageText}" Style="{StaticResource KroiraBodyStyle}" MaxLines="2" TextWrapping="WrapWholeWords" TextTrimming="CharacterEllipsis" />
+                                            </StackPanel>
+                                        </Border>
+                                    </Grid>
+
+                                    <Expander Grid.Row="3" Header="Guide and sync details">
+                                        <Grid Margin="0,12,0,0" ColumnSpacing="16">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*" />
                                                 <ColumnDefinition Width="*" />
                                             </Grid.ColumnDefinitions>
 
-                                            <StackPanel Spacing="5">
-                                                <TextBlock Text="{Binding Status}" Style="{StaticResource KroiraBodyStyle}" MaxLines="2" TextWrapping="WrapWholeWords" />
-                                                <TextBlock Text="{Binding ImportResultText}" Style="{StaticResource KroiraBodyStyle}" MaxLines="1" TextTrimming="CharacterEllipsis" />
-                                                <TextBlock Text="{Binding EpgCoverageText}" Style="{StaticResource KroiraBodyStyle}" MaxLines="1" TextTrimming="CharacterEllipsis" />
-                                                <TextBlock Visibility="{Binding ParseWarningsVisibility}" Text="{Binding ParseWarningsText}" Foreground="{StaticResource KroiraGoldBrush}" FontSize="11" MaxLines="2" TextWrapping="WrapWholeWords" />
-                                                <TextBlock Visibility="{Binding NetworkFailureVisibility}" Text="{Binding NetworkFailureText}" Foreground="{StaticResource KroiraLiveDotBrush}" FontSize="11" MaxLines="2" TextWrapping="WrapWholeWords" />
+                                            <StackPanel Spacing="7">
+                                                <TextBlock Text="Operational details" Style="{StaticResource SourceMiniLabelStyle}" />
+                                                <TextBlock Text="{Binding ImportResultText}" Style="{StaticResource KroiraBodyStyle}" MaxLines="2" TextWrapping="WrapWholeWords" TextTrimming="CharacterEllipsis" />
+                                                <TextBlock Text="{Binding LastSuccessfulSyncText}" Style="{StaticResource KroiraBodyStyle}" MaxLines="2" TextWrapping="WrapWholeWords" TextTrimming="CharacterEllipsis" />
+                                                <TextBlock Text="{Binding ParseWarningsText}" Visibility="{Binding ParseWarningsVisibility}" Foreground="{StaticResource KroiraGoldBrush}" FontSize="11" MaxLines="2" TextWrapping="WrapWholeWords" />
+                                                <TextBlock Text="{Binding NetworkFailureText}" Visibility="{Binding NetworkFailureVisibility}" Foreground="{StaticResource KroiraLiveDotBrush}" FontSize="11" MaxLines="2" TextWrapping="WrapWholeWords" />
                                             </StackPanel>
 
-                                            <StackPanel Grid.Column="1" Spacing="5">
-                                                <TextBlock Text="{Binding GuideStatusText}" Style="{StaticResource KroiraBodyStyle}" MaxLines="1" TextTrimming="CharacterEllipsis" />
+                                            <StackPanel Grid.Column="1" Spacing="7">
+                                                <TextBlock Text="Guide diagnostics" Style="{StaticResource SourceMiniLabelStyle}" />
                                                 <TextBlock Text="{Binding GuideModeText}" Style="{StaticResource KroiraBodyStyle}" MaxLines="1" TextTrimming="CharacterEllipsis" />
-                                                <TextBlock Visibility="{Binding GuideUrlVisibility}" Text="{Binding GuideUrlText}" Style="{StaticResource KroiraBodyStyle}" MaxLines="2" TextWrapping="WrapWholeWords" TextTrimming="CharacterEllipsis" />
-                                                <TextBlock Visibility="{Binding GuideMatchVisibility}" Text="{Binding GuideMatchText}" Style="{StaticResource KroiraBodyStyle}" MaxLines="2" TextWrapping="WrapWholeWords" TextTrimming="CharacterEllipsis" />
-                                                <TextBlock Visibility="{Binding GuideStatusSummaryVisibility}" Text="{Binding GuideStatusSummaryText}" Style="{StaticResource KroiraBodyStyle}" MaxLines="2" TextWrapping="WrapWholeWords" TextTrimming="CharacterEllipsis" />
+                                                <TextBlock Text="{Binding GuideStatusSummaryText}" Visibility="{Binding GuideStatusSummaryVisibility}" Style="{StaticResource KroiraBodyStyle}" MaxLines="2" TextWrapping="WrapWholeWords" TextTrimming="CharacterEllipsis" />
+                                                <TextBlock Text="{Binding GuideUrlText}" Visibility="{Binding GuideUrlVisibility}" Style="{StaticResource KroiraBodyStyle}" MaxLines="2" TextWrapping="WrapWholeWords" TextTrimming="CharacterEllipsis" />
+                                                <TextBlock Text="{Binding GuideMatchText}" Visibility="{Binding GuideMatchVisibility}" Style="{StaticResource KroiraBodyStyle}" MaxLines="2" TextWrapping="WrapWholeWords" TextTrimming="CharacterEllipsis" />
                                             </StackPanel>
                                         </Grid>
-                                    </StackPanel>
-
-                                    <StackPanel Grid.Column="2" Spacing="10" VerticalAlignment="Center">
-                                        <Button
-                                            Content="{Binding PrimarySyncText}"
-                                            Tag="{Binding Id}"
-                                            Click="SyncSource_Click"
-                                            Visibility="{Binding PrimarySyncVisibility}"
-                                            Style="{StaticResource KroiraPrimaryButtonStyle}" />
-                                        <Button
-                                            Content="Guide Sync"
-                                            Tag="{Binding Id}"
-                                            Click="SyncEpgSource_Click"
-                                            Visibility="{Binding SyncEpgVisibility}"
-                                            IsEnabled="{Binding IsEpgSyncEnabled}"
-                                            Style="{StaticResource KroiraGhostButtonStyle}" />
-                                        <Button
-                                            Content="Browse"
-                                            Tag="{Binding Id}"
-                                            Click="BrowseSource_Click"
-                                            Visibility="{Binding BrowseVisibility}"
-                                            Style="{StaticResource KroiraButtonStyle}" />
-                                        <Button
-                                            Content="Guide"
-                                            Tag="{Binding Id}"
-                                            Click="EditGuideSettings_Click"
-                                            Visibility="{Binding SyncEpgVisibility}"
-                                            Style="{StaticResource KroiraButtonStyle}" />
-                                        <Button
-                                            Content="VOD Only"
-                                            Tag="{Binding Id}"
-                                            Click="SyncXtreamVodSource_Click"
-                                            Visibility="{Binding XtreamVodOnlyVisibility}"
-                                            Style="{StaticResource KroiraButtonStyle}" />
-                                        <Button
-                                            Content="Delete"
-                                            Tag="{Binding Id}"
-                                            Click="DeleteSource_Click"
-                                            Style="{StaticResource KroiraDangerButtonStyle}" />
-                                    </StackPanel>
+                                    </Expander>
                                 </Grid>
                             </Border>
                         </DataTemplate>
@@ -356,9 +541,9 @@
                 </ItemsControl>
 
                 <Border
-                    Grid.Row="2"
+                    Grid.Row="1"
                     Visibility="{x:Bind ViewModel.IsEmpty, Mode=OneWay}"
-                    Style="{StaticResource SourceConsoleCardStyle}"
+                    Style="{StaticResource SourceDashboardCardStyle}"
                     MaxWidth="620"
                     HorizontalAlignment="Center">
                     <StackPanel Spacing="12">
@@ -383,52 +568,73 @@
                 </Border>
             </Grid>
 
-            <Border Grid.Row="4" Style="{StaticResource SourceConsoleCardStyle}">
+            <Border Grid.Row="4" Style="{StaticResource SourceDashboardCardStyle}">
                 <StackPanel Spacing="18">
-                    <TextBlock
-                        Text="Recent Sync Activity"
-                        Style="{StaticResource KroiraSectionTitleStyle}" />
-
-                    <Grid ColumnSpacing="16" Padding="4,0">
+                    <Grid ColumnSpacing="16">
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="170" />
                             <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="160" />
-                            <ColumnDefinition Width="180" />
-                            <ColumnDefinition Width="190" />
+                            <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
 
-                        <TextBlock Text="Timestamp" Style="{StaticResource SourceActivityHeaderStyle}" />
-                        <TextBlock Grid.Column="1" Text="Source Name" Style="{StaticResource SourceActivityHeaderStyle}" />
-                        <TextBlock Grid.Column="2" Text="Action" Style="{StaticResource SourceActivityHeaderStyle}" />
-                        <TextBlock Grid.Column="3" Text="Status" Style="{StaticResource SourceActivityHeaderStyle}" />
-                        <TextBlock Grid.Column="4" Text="Payload" Style="{StaticResource SourceActivityHeaderStyle}" />
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="RECENT ACTIVITY"
+                                       Style="{StaticResource KroiraLabelStyle}"
+                                       Foreground="{StaticResource KroiraAccentBrush}" />
+                            <TextBlock Text="Recent Sync Activity"
+                                       Style="{StaticResource KroiraSectionTitleStyle}" />
+                            <TextBlock Text="Latest source imports, guide updates, and sync outcomes."
+                                       Style="{StaticResource KroiraBodyStyle}" />
+                        </StackPanel>
+
+                        <TextBlock Grid.Column="1"
+                                   Text="{x:Bind ViewModel.RecentActivityCountText, Mode=OneWay}"
+                                   Style="{StaticResource KroiraBodyStyle}"
+                                   VerticalAlignment="Center" />
                     </Grid>
 
                     <ItemsControl ItemsSource="{x:Bind ViewModel.RecentActivities, Mode=OneWay}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <Border
-                                    Background="#8C11141A"
-                                    BorderBrush="{StaticResource KroiraGlassBorderBrush}"
-                                    BorderThickness="1"
-                                    CornerRadius="10"
-                                    Padding="12,10"
-                                    Margin="0,0,0,10">
-                                    <Grid ColumnSpacing="16">
+                                <Border Style="{StaticResource SourceActivityCardStyle}">
+                                    <Grid ColumnSpacing="14">
                                         <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="170" />
+                                            <ColumnDefinition Width="4" />
                                             <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="160" />
-                                            <ColumnDefinition Width="180" />
-                                            <ColumnDefinition Width="190" />
+                                            <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
 
-                                        <TextBlock Text="{Binding TimestampText}" Style="{StaticResource KroiraBodyStyle}" />
-                                        <TextBlock Grid.Column="1" Text="{Binding SourceName}" Style="{StaticResource KroiraBodyStyle}" TextTrimming="CharacterEllipsis" />
-                                        <TextBlock Grid.Column="2" Text="{Binding ActionText}" Style="{StaticResource KroiraBodyStyle}" TextTrimming="CharacterEllipsis" />
-                                        <controls:StatusPill Grid.Column="3" Label="{Binding StatusText}" Kind="{Binding StatusKind}" />
-                                        <TextBlock Grid.Column="4" Text="{Binding PayloadText}" Style="{StaticResource KroiraBodyStyle}" TextTrimming="CharacterEllipsis" />
+                                        <Border Background="{StaticResource KroiraAccentBrush}"
+                                                CornerRadius="999"
+                                                Opacity="0.7" />
+
+                                        <StackPanel Grid.Column="1" Spacing="4">
+                                            <TextBlock Text="{Binding SourceName}"
+                                                       Style="{StaticResource KroiraTitleStyle}"
+                                                       FontSize="16"
+                                                       TextTrimming="CharacterEllipsis" />
+                                            <TextBlock Text="{Binding ActionText}"
+                                                       Style="{StaticResource KroiraBodyStyle}"
+                                                       FontWeight="SemiBold"
+                                                       TextTrimming="CharacterEllipsis" />
+                                            <TextBlock Text="{Binding PayloadText}"
+                                                       Style="{StaticResource KroiraBodyStyle}"
+                                                       Foreground="{StaticResource KroiraTextSecondaryBrush}"
+                                                       MaxLines="2"
+                                                       TextWrapping="WrapWholeWords"
+                                                       TextTrimming="CharacterEllipsis" />
+                                        </StackPanel>
+
+                                        <StackPanel Grid.Column="2"
+                                                    Spacing="8"
+                                                    HorizontalAlignment="Right">
+                                            <controls:StatusPill Label="{Binding StatusText}"
+                                                                 Kind="{Binding StatusKind}"
+                                                                 HorizontalAlignment="Right" />
+                                            <TextBlock Text="{Binding TimestampText}"
+                                                       Style="{StaticResource KroiraBodyStyle}"
+                                                       Foreground="{StaticResource KroiraTextSecondaryBrush}"
+                                                       HorizontalAlignment="Right" />
+                                        </StackPanel>
                                     </Grid>
                                 </Border>
                             </DataTemplate>
@@ -436,6 +642,7 @@
                     </ItemsControl>
                 </StackPanel>
             </Border>
+        </Grid>
         </Grid>
     </ScrollViewer>
 </Page>

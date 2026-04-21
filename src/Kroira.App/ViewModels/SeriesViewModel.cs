@@ -172,6 +172,16 @@ namespace Kroira.App.ViewModels
         public Visibility SeriesVisibility => HasSeries ? Visibility.Visible : Visibility.Collapsed;
         public Visibility PlaceholderVisibility => HasSeries ? Visibility.Collapsed : Visibility.Visible;
 
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(SelectionBackgroundOpacity))]
+        [NotifyPropertyChangedFor(nameof(SelectionChromeOpacity))]
+        [NotifyPropertyChangedFor(nameof(SelectionAccentOpacity))]
+        private bool _isSelected;
+
+        public double SelectionBackgroundOpacity => IsSelected ? 1 : 0;
+        public double SelectionChromeOpacity => IsSelected ? 0.92 : 0;
+        public double SelectionAccentOpacity => IsSelected ? 1 : 0.22;
+
         public void RefreshFavoriteState()
         {
             OnPropertyChanged(nameof(FavoriteGlyph));
@@ -192,16 +202,21 @@ namespace Kroira.App.ViewModels
         private List<SeriesBrowseItemViewModel> _filteredSeries = new();
         private readonly List<(string CategoryName, int Count)> _allCategories = new();
         private readonly Dictionary<int, WatchProgressSnapshot> _selectedEpisodeSnapshots = new();
+        private string _visibleCategorySignature = string.Empty;
         private bool _isLoadingWatchPreferences;
         private bool _isInitializingBrowsePreferences;
         private int _activeProfileId;
         private int? _pendingEpisodeSelectionId;
+        private int? _preferredSeasonNumber;
+        private int? _preferredEpisodeId;
+        private int? _preferredSeriesVariantId;
         private BrowsePreferences _browsePreferences = new();
         private HashSet<int> _favoriteSeriesIds = new();
         private string _browseLanguageCode = AppLanguageService.DefaultLanguageCode;
         private bool _isApplyingFilter;
         private bool _pendingApplyFilter;
         private string _pendingApplyFilterReason = string.Empty;
+        private bool _preserveSeriesDetailContextOnSelectionChange;
 
         public IReadOnlyList<SeriesBrowseItemViewModel> FilteredSeries => _filteredSeries;
         public int FilteredSeriesCount => _filteredSeries.Count;
@@ -377,12 +392,18 @@ namespace Kroira.App.ViewModels
 
         partial void OnSelectedSeriesChanged(SeriesBrowseItemViewModel? value)
         {
-            SelectedSeason = null;
-            SelectedEpisode = null;
-            SeasonOptions.Clear();
-            EpisodeItems.Clear();
-            SelectedSeriesStatus = string.Empty;
-            SelectedSeriesStatusVisibility = Visibility.Collapsed;
+            var preserveDetailContext = _preserveSeriesDetailContextOnSelectionChange;
+            _preserveSeriesDetailContextOnSelectionChange = false;
+
+            if (!preserveDetailContext)
+            {
+                SelectedSeason = null;
+                SelectedEpisode = null;
+                SeasonOptions.ReplaceAll(Array.Empty<SeriesSeasonOptionViewModel>());
+                EpisodeItems.ReplaceAll(Array.Empty<SeriesEpisodeItemViewModel>());
+                SelectedSeriesStatus = string.Empty;
+                SelectedSeriesStatusVisibility = Visibility.Collapsed;
+            }
 
             foreach (var item in _allSeries)
             {
@@ -396,6 +417,7 @@ namespace Kroira.App.ViewModels
 
             value.ActiveSeriesChanged -= SelectedSeries_ActiveSeriesChanged;
             value.ActiveSeriesChanged += SelectedSeries_ActiveSeriesChanged;
+            UpdateSelectedSeriesSlotState();
             _ = EnsureSeriesDetailsAsync(value);
         }
 
@@ -579,7 +601,11 @@ namespace Kroira.App.ViewModels
             LogBrowse(
                 $"apply start reason={reason} selectedKey={currentCategoryKey} search='{SearchQuery}' source={SelectedSourceOption?.Id ?? 0}");
 
+            var previousSelectedSeries = SelectedSeries;
             var previousSelectedGroupKey = SelectedSeries?.GroupKey ?? string.Empty;
+            var previousSelectedSeasonNumber = SelectedSeason?.SeasonNumber;
+            var previousSelectedEpisodeId = SelectedEpisode?.Id;
+            var previousSelectedVariantId = SelectedSeries?.ActiveSeries.Id;
             foreach (var item in _allSeries)
             {
                 item.ActiveSeriesChanged -= SelectedSeries_ActiveSeriesChanged;
@@ -609,7 +635,17 @@ namespace Kroira.App.ViewModels
             OnPropertyChanged(nameof(FilteredSeries));
             OnPropertyChanged(nameof(FilteredSeriesCount));
 
-            SelectedSeries = _allSeries.FirstOrDefault(item => string.Equals(item.GroupKey, previousSelectedGroupKey, StringComparison.OrdinalIgnoreCase));
+            var nextSelectedSeries = _allSeries.FirstOrDefault(item => string.Equals(item.GroupKey, previousSelectedGroupKey, StringComparison.OrdinalIgnoreCase));
+            if (previousSelectedSeries != null && nextSelectedSeries != null)
+            {
+                PreserveSelectedSeriesContext(previousSelectedSeries, nextSelectedSeries, previousSelectedVariantId, previousSelectedSeasonNumber, previousSelectedEpisodeId);
+            }
+            else
+            {
+                ClearPreferredSeriesDetailContext();
+            }
+
+            SelectedSeries = nextSelectedSeries;
             HasAdvancedFilters = FavoritesOnly ||
                                  HideSecondaryContent ||
                                  SourceVisibilityOptions.Any(option => !option.IsVisible) ||
@@ -656,7 +692,13 @@ namespace Kroira.App.ViewModels
             }
 
             await db.SaveChangesAsync();
-            ApplyFilter("toggle-favorite");
+            if (RequiresFullBrowseRefreshForFavoriteToggle())
+            {
+                ApplyFilter("toggle-favorite");
+                return;
+            }
+
+            RefreshSeriesFavoriteState(targetGroup.GroupKey);
         }
 
         [RelayCommand]
@@ -751,6 +793,7 @@ namespace Kroira.App.ViewModels
             }
 
             DisplaySeriesSlots.ReplaceAll(slots);
+            UpdateSelectedSeriesSlotState();
         }
 
         private IEnumerable<FilteredSeriesResult> BuildFilteredSeriesResults()
@@ -822,6 +865,95 @@ namespace Kroira.App.ViewModels
                     GetCategoryProjection(group.PreferredSeries).DisplayCategoryName));
         }
 
+        private void UpdateSelectedSeriesSlotState()
+        {
+            var selectedGroupKey = SelectedSeries?.GroupKey ?? string.Empty;
+            foreach (var slot in DisplaySeriesSlots)
+            {
+                slot.IsSelected = slot.HasSeries &&
+                                  string.Equals(slot.Series?.GroupKey, selectedGroupKey, StringComparison.OrdinalIgnoreCase);
+            }
+        }
+
+        private void CapturePreferredSeriesDetailContext()
+        {
+            _preferredSeasonNumber = SelectedSeason?.SeasonNumber;
+            _preferredEpisodeId = SelectedEpisode?.Id;
+            _preferredSeriesVariantId = SelectedSeries?.ActiveSeries.Id;
+        }
+
+        private void ClearPreferredSeriesDetailContext()
+        {
+            _preferredSeasonNumber = null;
+            _preferredEpisodeId = null;
+            _preferredSeriesVariantId = null;
+        }
+
+        private void PreserveSelectedSeriesContext(
+            SeriesBrowseItemViewModel previousSelectedSeries,
+            SeriesBrowseItemViewModel nextSelectedSeries,
+            int? previousSelectedVariantId,
+            int? previousSelectedSeasonNumber,
+            int? previousSelectedEpisodeId)
+        {
+            _preserveSeriesDetailContextOnSelectionChange = true;
+            _preferredSeasonNumber = previousSelectedSeasonNumber;
+            _preferredEpisodeId = previousSelectedEpisodeId;
+            _preferredSeriesVariantId = previousSelectedVariantId;
+
+            if (previousSelectedVariantId.HasValue)
+            {
+                var preferredSourceOption = nextSelectedSeries.SourceOptions
+                    .FirstOrDefault(option => option.Id == previousSelectedVariantId.Value);
+                if (preferredSourceOption != null)
+                {
+                    nextSelectedSeries.SelectedSourceOption = preferredSourceOption;
+                }
+            }
+
+            CopySeriesDetails(previousSelectedSeries.ActiveSeries, nextSelectedSeries.ActiveSeries);
+        }
+
+        private static void CopySeriesDetails(Series source, Series target)
+        {
+            if (source.Seasons is not { Count: > 0 } || target.Seasons is { Count: > 0 })
+            {
+                return;
+            }
+
+            target.Seasons = CopySeasons(source.Seasons);
+        }
+
+        private bool RequiresFullBrowseRefreshForFavoriteToggle()
+        {
+            return FavoritesOnly ||
+                   string.Equals(SelectedSortOption?.Key ?? "recommended", "favorites_first", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private void RefreshSeriesFavoriteState(string groupKey)
+        {
+            if (string.IsNullOrWhiteSpace(groupKey))
+            {
+                return;
+            }
+
+            var isFavorite = _favoriteSeriesIds.Count > 0 &&
+                             _allSeriesGroups
+                                 .FirstOrDefault(group => string.Equals(group.GroupKey, groupKey, StringComparison.OrdinalIgnoreCase))
+                                 ?.Variants.Any(variant => _favoriteSeriesIds.Contains(variant.Series.Id)) == true;
+
+            foreach (var item in _allSeries.Where(item => string.Equals(item.GroupKey, groupKey, StringComparison.OrdinalIgnoreCase)))
+            {
+                item.IsFavorite = isFavorite;
+            }
+
+            foreach (var slot in DisplaySeriesSlots.Where(slot => slot.HasSeries &&
+                                                                  string.Equals(slot.Series?.GroupKey, groupKey, StringComparison.OrdinalIgnoreCase)))
+            {
+                slot.RefreshFavoriteState();
+            }
+        }
+
         private void BuildSourceOptions()
         {
             var existingSelection = _browsePreferences.SelectedSourceId;
@@ -885,7 +1017,12 @@ namespace Kroira.App.ViewModels
                 categoryIndex++;
             }
 
-            Categories.ReplaceAll(categoryItems);
+            var signature = BuildCategorySignature(categoryItems);
+            if (!string.Equals(_visibleCategorySignature, signature, StringComparison.Ordinal))
+            {
+                Categories.ReplaceAll(categoryItems);
+                _visibleCategorySignature = signature;
+            }
 
             var resolvedCategory = !string.IsNullOrWhiteSpace(currentKey)
                 ? Categories.FirstOrDefault(category => string.Equals(category.FilterKey, currentKey, StringComparison.OrdinalIgnoreCase))
@@ -1267,10 +1404,8 @@ namespace Kroira.App.ViewModels
         {
             if (sender is SeriesBrowseItemViewModel item && ReferenceEquals(SelectedSeries, item))
             {
-                SelectedSeason = null;
-                SelectedEpisode = null;
-                SeasonOptions.Clear();
-                EpisodeItems.Clear();
+                CapturePreferredSeriesDetailContext();
+                _preserveSeriesDetailContextOnSelectionChange = true;
                 _ = EnsureSeriesDetailsAsync(item);
             }
         }
@@ -1500,11 +1635,22 @@ namespace Kroira.App.ViewModels
 
             BuildSeasonOptions(series);
 
+            SeriesSeasonOptionViewModel? preferredSeason = null;
+            if (_preferredSeasonNumber.HasValue)
+            {
+                preferredSeason = SeasonOptions.FirstOrDefault(option => option.SeasonNumber == _preferredSeasonNumber.Value);
+            }
+
             var queueSelection = watchStateService.BuildSeriesQueueSelection(series, _selectedEpisodeSnapshots, includeWatched: !HideWatchedEpisodes);
-            _pendingEpisodeSelectionId = queueSelection?.Episode.Id;
-            SelectedSeason = queueSelection != null
-                ? SeasonOptions.FirstOrDefault(option => option.Id == queueSelection.Season.Id)
-                : SeasonOptions.FirstOrDefault();
+            _pendingEpisodeSelectionId = preferredSeason != null
+                ? _preferredEpisodeId
+                : queueSelection?.Episode.Id;
+            SelectedSeason = preferredSeason ??
+                             (queueSelection != null
+                                 ? SeasonOptions.FirstOrDefault(option => option.Id == queueSelection.Season.Id)
+                                 : SeasonOptions.FirstOrDefault());
+
+            ClearPreferredSeriesDetailContext();
         }
 
         private void BuildSeasonOptions(Series series)
@@ -1529,7 +1675,7 @@ namespace Kroira.App.ViewModels
                 options.Add(new SeriesSeasonOptionViewModel(season, watchedEpisodeCount, playableEpisodes.Count));
             }
 
-            SeasonOptions.ReplaceAll(options);
+            ReplaceSeasonOptionsIfChanged(options);
             OnPropertyChanged(nameof(SeasonOptions));
         }
 
@@ -1540,7 +1686,7 @@ namespace Kroira.App.ViewModels
             var season = seasonOption?.Season;
             if (season == null)
             {
-                EpisodeItems.ReplaceAll(Array.Empty<SeriesEpisodeItemViewModel>());
+                ReplaceEpisodeItemsIfChanged(Array.Empty<SeriesEpisodeItemViewModel>());
                 OnPropertyChanged(nameof(EpisodesListVisibility));
                 OnPropertyChanged(nameof(EpisodesEmptyVisibility));
                 return;
@@ -1560,13 +1706,48 @@ namespace Kroira.App.ViewModels
                 episodeItems.Add(new SeriesEpisodeItemViewModel(episode, season.SeasonNumber, snapshot));
             }
 
-            EpisodeItems.ReplaceAll(episodeItems);
+            ReplaceEpisodeItemsIfChanged(episodeItems);
             SelectedEpisode = preferredEpisodeId.HasValue
                 ? EpisodeItems.FirstOrDefault(item => item.Id == preferredEpisodeId.Value)
                 : EpisodeItems.FirstOrDefault(item => item.ResumePositionMs > 0) ?? EpisodeItems.FirstOrDefault();
 
             OnPropertyChanged(nameof(EpisodesListVisibility));
             OnPropertyChanged(nameof(EpisodesEmptyVisibility));
+        }
+
+        private void ReplaceSeasonOptionsIfChanged(IReadOnlyList<SeriesSeasonOptionViewModel> options)
+        {
+            if (SeasonOptions.Count == options.Count &&
+                !SeasonOptions.Where((existing, index) =>
+                        existing.Id != options[index].Id ||
+                        existing.WatchedEpisodeCount != options[index].WatchedEpisodeCount ||
+                        existing.TotalEpisodeCount != options[index].TotalEpisodeCount)
+                    .Any())
+            {
+                return;
+            }
+
+            SeasonOptions.ReplaceAll(options);
+        }
+
+        private void ReplaceEpisodeItemsIfChanged(IReadOnlyList<SeriesEpisodeItemViewModel> items)
+        {
+            if (EpisodeItems.Count == items.Count &&
+                !EpisodeItems.Where((existing, index) =>
+                        existing.Id != items[index].Id ||
+                        existing.ResumePositionMs != items[index].ResumePositionMs ||
+                        existing.IsWatched != items[index].IsWatched)
+                    .Any())
+            {
+                return;
+            }
+
+            EpisodeItems.ReplaceAll(items);
+        }
+
+        private static string BuildCategorySignature(IEnumerable<BrowserCategoryViewModel> categories)
+        {
+            return string.Join("|", categories.Select(category => $"{category.FilterKey}:{category.Name}:{category.OrderIndex}"));
         }
 
         private async Task SaveHideWatchedEpisodesAsync(bool value)
