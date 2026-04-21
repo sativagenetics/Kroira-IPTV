@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -48,19 +49,58 @@ namespace Kroira.App.Services
 
     public sealed class CatalogDeduplicationService : ICatalogDeduplicationService
     {
+        private readonly object _cacheLock = new();
+        private CatalogCacheRevision? _movieCacheRevision;
+        private IReadOnlyList<CatalogMovieGroup>? _movieGroupsCache;
+        private CatalogCacheRevision? _seriesCacheRevision;
+        private IReadOnlyList<CatalogSeriesGroup>? _seriesGroupsCache;
+
+        private sealed record CatalogCacheRevision(
+            int ItemCount,
+            int MaxItemId,
+            long ItemMetadataTicks,
+            int SourceCount,
+            int MaxSourceId,
+            long SourceLastSyncTicks);
+
         public async Task<IReadOnlyList<CatalogMovieGroup>> LoadMovieGroupsAsync(AppDbContext db)
         {
+            var revision = await BuildMovieRevisionAsync(db);
+            lock (_cacheLock)
+            {
+                if (_movieGroupsCache != null && Equals(_movieCacheRevision, revision))
+                {
+                    return _movieGroupsCache;
+                }
+            }
+
             var movies = await db.Movies.AsNoTracking().ToListAsync();
             var sourceIds = movies.Select(movie => movie.SourceProfileId).Distinct().ToList();
             var sourceProfiles = await db.SourceProfiles
                 .Where(profile => sourceIds.Contains(profile.Id))
                 .ToDictionaryAsync(profile => profile.Id);
 
-            return BuildMovieGroups(movies, sourceProfiles);
+            var groups = BuildMovieGroups(movies, sourceProfiles);
+            lock (_cacheLock)
+            {
+                _movieCacheRevision = revision;
+                _movieGroupsCache = groups;
+            }
+
+            return groups;
         }
 
         public async Task<IReadOnlyList<CatalogSeriesGroup>> LoadSeriesGroupsAsync(AppDbContext db)
         {
+            var revision = await BuildSeriesRevisionAsync(db);
+            lock (_cacheLock)
+            {
+                if (_seriesGroupsCache != null && Equals(_seriesCacheRevision, revision))
+                {
+                    return _seriesGroupsCache;
+                }
+            }
+
             var series = await db.Series
                 .AsNoTracking()
                 .ToListAsync();
@@ -69,7 +109,80 @@ namespace Kroira.App.Services
                 .Where(profile => sourceIds.Contains(profile.Id))
                 .ToDictionaryAsync(profile => profile.Id);
 
-            return BuildSeriesGroups(series, sourceProfiles);
+            var groups = BuildSeriesGroups(series, sourceProfiles);
+            lock (_cacheLock)
+            {
+                _seriesCacheRevision = revision;
+                _seriesGroupsCache = groups;
+            }
+
+            return groups;
+        }
+
+        private static async Task<CatalogCacheRevision> BuildMovieRevisionAsync(AppDbContext db)
+        {
+            var movieState = await db.Movies
+                .AsNoTracking()
+                .GroupBy(_ => 1)
+                .Select(group => new
+                {
+                    Count = group.Count(),
+                    MaxId = group.Max(movie => (int?)movie.Id) ?? 0,
+                    MetadataUpdatedAt = group.Max(movie => movie.MetadataUpdatedAt)
+                })
+                .SingleOrDefaultAsync();
+
+            var sourceState = await db.SourceProfiles
+                .AsNoTracking()
+                .GroupBy(_ => 1)
+                .Select(group => new
+                {
+                    Count = group.Count(),
+                    MaxId = group.Max(profile => (int?)profile.Id) ?? 0,
+                    LastSync = group.Max(profile => profile.LastSync)
+                })
+                .SingleOrDefaultAsync();
+
+            return new CatalogCacheRevision(
+                movieState?.Count ?? 0,
+                movieState?.MaxId ?? 0,
+                movieState?.MetadataUpdatedAt?.Ticks ?? 0,
+                sourceState?.Count ?? 0,
+                sourceState?.MaxId ?? 0,
+                sourceState?.LastSync?.Ticks ?? 0);
+        }
+
+        private static async Task<CatalogCacheRevision> BuildSeriesRevisionAsync(AppDbContext db)
+        {
+            var seriesState = await db.Series
+                .AsNoTracking()
+                .GroupBy(_ => 1)
+                .Select(group => new
+                {
+                    Count = group.Count(),
+                    MaxId = group.Max(series => (int?)series.Id) ?? 0,
+                    MetadataUpdatedAt = group.Max(series => series.MetadataUpdatedAt)
+                })
+                .SingleOrDefaultAsync();
+
+            var sourceState = await db.SourceProfiles
+                .AsNoTracking()
+                .GroupBy(_ => 1)
+                .Select(group => new
+                {
+                    Count = group.Count(),
+                    MaxId = group.Max(profile => (int?)profile.Id) ?? 0,
+                    LastSync = group.Max(profile => profile.LastSync)
+                })
+                .SingleOrDefaultAsync();
+
+            return new CatalogCacheRevision(
+                seriesState?.Count ?? 0,
+                seriesState?.MaxId ?? 0,
+                seriesState?.MetadataUpdatedAt?.Ticks ?? 0,
+                sourceState?.Count ?? 0,
+                sourceState?.MaxId ?? 0,
+                sourceState?.LastSync?.Ticks ?? 0);
         }
 
         private static IReadOnlyList<CatalogMovieGroup> BuildMovieGroups(

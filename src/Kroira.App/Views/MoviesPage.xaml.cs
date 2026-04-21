@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Specialized;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Kroira.App.Models;
@@ -35,7 +36,27 @@ namespace Kroira.App.Views
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
-            _ = ViewModel.LoadMoviesCommand.ExecuteAsync(null);
+            var navigationStopwatch = Stopwatch.StartNew();
+            if (DispatcherQueue != null)
+            {
+                DispatcherQueue.TryEnqueue(() =>
+                    BrowseRuntimeLogger.Log(
+                        "MOVIES UI",
+                        $"page visible ms={navigationStopwatch.ElapsedMilliseconds} cached={ViewModel.HasLoadedOnce} slots={ViewModel.DisplayMovieSlots.Count}"));
+            }
+
+            var shouldLoad = !ViewModel.HasLoadedOnce ||
+                             (ViewModel.DisplayMovieSlots.Count == 0 && ViewModel.SurfaceState.State != SurfaceViewState.Ready);
+            if (shouldLoad)
+            {
+                BrowseRuntimeLogger.Log("MOVIES UI", "navigation triggered catalog load");
+                _ = ViewModel.LoadMoviesCommand.ExecuteAsync(null);
+                return;
+            }
+
+            BrowseRuntimeLogger.Log(
+                "MOVIES UI",
+                $"navigation reused cached surface slots={ViewModel.DisplayMovieSlots.Count} featured={ViewModel.FeaturedMovie?.Title ?? "<none>"}");
         }
 
         private void OpenSources_Click(object sender, RoutedEventArgs e)

@@ -5,6 +5,7 @@
     xmlns:local="using:Kroira.App.Views"
     xmlns:viewModels="using:Kroira.App.ViewModels"
     x:Name="SeriesPageRoot"
+    NavigationCacheMode="Required"
     Background="{StaticResource KroiraPageBackgroundBrush}">
 
     <Page.Resources>
@@ -45,7 +46,7 @@
               MaxWidth="1360"
               HorizontalAlignment="Center"
               RowSpacing="16"
-              Visibility="{x:Bind ViewModel.SurfaceState.ContentVisibility, Mode=OneWay}">
+              Visibility="{x:Bind ViewModel.ContentShellVisibility, Mode=OneWay}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
@@ -751,7 +752,7 @@
         </Grid>
         </Grid>
 
-        <Border Visibility="{x:Bind ViewModel.SurfaceState.StateVisibility, Mode=OneWay}"
+        <Border Visibility="{x:Bind ViewModel.BlockingSurfaceVisibility, Mode=OneWay}"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Center"
                 MaxWidth="560"

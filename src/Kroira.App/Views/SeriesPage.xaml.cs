@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Specialized;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Kroira.App.Models;
@@ -63,7 +64,27 @@ namespace Kroira.App.Views
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
-            _ = ViewModel.LoadSeriesCommand.ExecuteAsync(null);
+            var navigationStopwatch = Stopwatch.StartNew();
+            if (DispatcherQueue != null)
+            {
+                DispatcherQueue.TryEnqueue(() =>
+                    BrowseRuntimeLogger.Log(
+                        "SERIES UI",
+                        $"page visible ms={navigationStopwatch.ElapsedMilliseconds} cached={ViewModel.HasLoadedOnce} slots={ViewModel.DisplaySeriesSlots.Count}"));
+            }
+
+            var shouldLoad = !ViewModel.HasLoadedOnce ||
+                             (ViewModel.DisplaySeriesSlots.Count == 0 && ViewModel.SurfaceState.State != SurfaceViewState.Ready);
+            if (shouldLoad)
+            {
+                BrowseRuntimeLogger.Log("SERIES UI", "navigation triggered catalog load");
+                _ = ViewModel.LoadSeriesCommand.ExecuteAsync(null);
+                return;
+            }
+
+            BrowseRuntimeLogger.Log(
+                "SERIES UI",
+                $"navigation reused cached surface slots={ViewModel.DisplaySeriesSlots.Count} selected={ViewModel.SelectedSeries?.Title ?? "<none>"}");
         }
 
         private void OpenSources_Click(object sender, RoutedEventArgs e)

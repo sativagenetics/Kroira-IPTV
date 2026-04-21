@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Net.Http;
 using System.Text.Json;
@@ -193,6 +194,7 @@ namespace Kroira.App.ViewModels
     {
         private const string Domain = ProfileDomains.Series;
         private const int BrowseGridColumns = 3;
+        private const int InitialDisplaySeriesSlotBatchSize = BrowseGridColumns * 2;
         private readonly IServiceProvider _serviceProvider;
         private readonly IBrowsePreferencesService _browsePreferencesService;
         private readonly ICatalogTaxonomyService _taxonomyService;
@@ -215,11 +217,19 @@ namespace Kroira.App.ViewModels
         private string _browseLanguageCode = AppLanguageService.DefaultLanguageCode;
         private bool _isApplyingFilter;
         private bool _pendingApplyFilter;
+        private bool _hasLoadedOnce;
+        private bool _preferStagedFirstPaint;
         private string _pendingApplyFilterReason = string.Empty;
         private bool _preserveSeriesDetailContextOnSelectionChange;
+        private int _seriesSlotRefreshVersion;
+        private Stopwatch? _activeLoadStopwatch;
+        private Task _displaySeriesSlotRefreshTask = Task.CompletedTask;
 
         public IReadOnlyList<SeriesBrowseItemViewModel> FilteredSeries => _filteredSeries;
         public int FilteredSeriesCount => _filteredSeries.Count;
+        public bool HasLoadedOnce => _hasLoadedOnce;
+        public Visibility ContentShellVisibility => IsBlockingSurfaceState ? Visibility.Collapsed : Visibility.Visible;
+        public Visibility BlockingSurfaceVisibility => IsBlockingSurfaceState ? Visibility.Visible : Visibility.Collapsed;
         public BulkObservableCollection<SeriesBrowseSlotViewModel> DisplaySeriesSlots { get; } = new BulkObservableCollection<SeriesBrowseSlotViewModel>();
         public BulkObservableCollection<BrowserCategoryViewModel> Categories { get; } = new BulkObservableCollection<BrowserCategoryViewModel>();
         public BulkObservableCollection<SeriesSeasonOptionViewModel> SeasonOptions { get; } = new BulkObservableCollection<SeriesSeasonOptionViewModel>();
@@ -296,6 +306,14 @@ namespace Kroira.App.ViewModels
 
         [ObservableProperty]
         private SurfaceStatePresentation _surfaceState = SurfaceStateCopies.Series.Create(SurfaceViewState.Loading);
+        private bool IsBlockingSurfaceState =>
+            SurfaceState.State is SurfaceViewState.NoSources or SurfaceViewState.Offline or SurfaceViewState.ImportFailed;
+
+        partial void OnSurfaceStateChanged(SurfaceStatePresentation value)
+        {
+            OnPropertyChanged(nameof(ContentShellVisibility));
+            OnPropertyChanged(nameof(BlockingSurfaceVisibility));
+        }
 
         partial void OnSearchQueryChanged(string value)
         {
@@ -453,7 +471,14 @@ namespace Kroira.App.ViewModels
         [RelayCommand]
         public async Task LoadSeriesAsync()
         {
-            SurfaceState = SurfaceStateCopies.Series.Create(SurfaceViewState.Loading);
+            var loadStopwatch = Stopwatch.StartNew();
+            _activeLoadStopwatch = loadStopwatch;
+            _preferStagedFirstPaint = !_hasLoadedOnce || DisplaySeriesSlots.Count == 0;
+            if (!_hasLoadedOnce || DisplaySeriesSlots.Count == 0)
+            {
+                SurfaceState = SurfaceStateCopies.Series.Create(SurfaceViewState.Loading);
+            }
+
             try
             {
                 using var scope = _serviceProvider.CreateScope();
@@ -536,7 +561,6 @@ namespace Kroira.App.ViewModels
                     .OrderBy(group => group.Key, StringComparer.CurrentCultureIgnoreCase));
 
                 BuildSourceOptions();
-                BuildCategoryManagerOptions();
 
                 _isInitializingBrowsePreferences = true;
                 try
@@ -556,13 +580,25 @@ namespace Kroira.App.ViewModels
                 }
 
                 ApplyFilter("load-series");
+                var displayRefreshTask = _displaySeriesSlotRefreshTask;
                 SurfaceState = surfaceStateService.ResolveSourceBackedState(sourceAvailability, _allSeriesGroups.Count, SurfaceStateCopies.Series);
+                _hasLoadedOnce = true;
+                OnPropertyChanged(nameof(HasLoadedOnce));
+                await Task.Yield();
+                BuildCategoryManagerOptions();
+                await displayRefreshTask;
+                LogBrowse(
+                    $"load ready fullMs={loadStopwatch.ElapsedMilliseconds} groups={_allSeriesGroups.Count} results={_filteredSeries.Count} slots={DisplaySeriesSlots.Count}");
                 StartMetadataEnrichment();
             }
             catch (Exception ex)
             {
                 BrowseRuntimeLogger.Log("SERIES", $"load failed {ex}");
                 SurfaceState = _serviceProvider.GetRequiredService<ISurfaceStateService>().CreateFailureState(SurfaceStateCopies.Series, ex);
+            }
+            finally
+            {
+                _activeLoadStopwatch = null;
             }
         }
 
@@ -654,7 +690,9 @@ namespace Kroira.App.ViewModels
                                  (SelectedSourceOption?.Id ?? 0) != 0 ||
                                  !string.Equals(SelectedSortOption?.Key ?? "recommended", "recommended", StringComparison.OrdinalIgnoreCase);
             IsEmpty = _filteredSeries.Count == 0;
-            RefreshDisplaySeriesSlots();
+            var shouldStageFirstPaint = _preferStagedFirstPaint;
+            _preferStagedFirstPaint = false;
+            _displaySeriesSlotRefreshTask = RefreshDisplaySeriesSlotsAsync(shouldStageFirstPaint, reason);
             LogBrowse(
                 $"apply end reason={reason} groups={filteredResults.Count} results={_filteredSeries.Count} slots={DisplaySeriesSlots.Count} selectedKey={SelectedCategory?.FilterKey ?? "<all>"}");
         }
@@ -773,27 +811,68 @@ namespace Kroira.App.ViewModels
             }
         }
 
-        private void RefreshDisplaySeriesSlots()
+        private async Task RefreshDisplaySeriesSlotsAsync(bool prioritizeFirstPaint, string reason)
         {
             if (_filteredSeries.Count == 0)
             {
                 DisplaySeriesSlots.ReplaceAll(Array.Empty<SeriesBrowseSlotViewModel>());
+                UpdateSelectedSeriesSlotState();
                 return;
             }
 
-            var slots = _filteredSeries
+            try
+            {
+                var refreshVersion = ++_seriesSlotRefreshVersion;
+                var slots = BuildSeriesSlots(_filteredSeries);
+                if (!prioritizeFirstPaint || slots.Count <= InitialDisplaySeriesSlotBatchSize)
+                {
+                    DisplaySeriesSlots.ReplaceAll(slots);
+                    UpdateSelectedSeriesSlotState();
+                    if (prioritizeFirstPaint)
+                    {
+                        LogBrowse(
+                            $"first content ready ms={_activeLoadStopwatch?.ElapsedMilliseconds ?? -1} reason={reason} visibleSlots={slots.Count}");
+                    }
+
+                    return;
+                }
+
+                var initialSlots = slots.Take(InitialDisplaySeriesSlotBatchSize).ToList();
+                var deferredSlots = slots.Skip(InitialDisplaySeriesSlotBatchSize).ToList();
+                DisplaySeriesSlots.ReplaceAll(initialSlots);
+                UpdateSelectedSeriesSlotState();
+                LogBrowse(
+                    $"first content ready ms={_activeLoadStopwatch?.ElapsedMilliseconds ?? -1} reason={reason} visibleSlots={initialSlots.Count}");
+
+                await Task.Yield();
+                if (refreshVersion != _seriesSlotRefreshVersion)
+                {
+                    return;
+                }
+
+                DisplaySeriesSlots.AppendRange(deferredSlots);
+                UpdateSelectedSeriesSlotState();
+            }
+            catch (Exception ex)
+            {
+                LogBrowse($"slot refresh failed reason={reason} error={ex.Message}");
+            }
+        }
+
+        private List<SeriesBrowseSlotViewModel> BuildSeriesSlots(IReadOnlyList<SeriesBrowseItemViewModel> filteredSeries)
+        {
+            var slots = filteredSeries
                 .Select(show => new SeriesBrowseSlotViewModel(show))
                 .ToList();
 
-            var remainder = _filteredSeries.Count % BrowseGridColumns;
+            var remainder = filteredSeries.Count % BrowseGridColumns;
             var placeholderCount = remainder == 0 ? 0 : BrowseGridColumns - remainder;
             for (var i = 0; i < placeholderCount; i++)
             {
                 slots.Add(new SeriesBrowseSlotViewModel(null));
             }
 
-            DisplaySeriesSlots.ReplaceAll(slots);
-            UpdateSelectedSeriesSlotState();
+            return slots;
         }
 
         private IEnumerable<FilteredSeriesResult> BuildFilteredSeriesResults()
@@ -976,7 +1055,17 @@ namespace Kroira.App.ViewModels
 
             SourceOptions.ReplaceAll(sourceOptions);
             SourceVisibilityOptions.ReplaceAll(sourceVisibilityOptions);
-            SelectedSourceOption = SourceOptions.FirstOrDefault(option => option.Id == existingSelection) ?? SourceOptions.FirstOrDefault();
+            var selectedSourceOption = SourceOptions.FirstOrDefault(option => option.Id == existingSelection) ?? SourceOptions.FirstOrDefault();
+            var wasInitializingBrowsePreferences = _isInitializingBrowsePreferences;
+            _isInitializingBrowsePreferences = true;
+            try
+            {
+                SelectedSourceOption = selectedSourceOption;
+            }
+            finally
+            {
+                _isInitializingBrowsePreferences = wasInitializingBrowsePreferences;
+            }
         }
 
         private BrowserCategoryViewModel? BuildVisibleCategories(string languageCode, string currentKey)

@@ -4,6 +4,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:viewModels="using:Kroira.App.ViewModels"
     x:Name="MoviesPageRoot"
+    NavigationCacheMode="Required"
     Background="{StaticResource KroiraPageBackgroundBrush}">
 
     <Page.Resources>
@@ -36,7 +37,7 @@
               MaxWidth="1480"
               HorizontalAlignment="Center"
               RowSpacing="18"
-              Visibility="{x:Bind ViewModel.SurfaceState.ContentVisibility, Mode=OneWay}">
+              Visibility="{x:Bind ViewModel.ContentShellVisibility, Mode=OneWay}">
         <Grid.RowDefinitions>
             <RowDefinition Height="326" />
             <RowDefinition Height="*" />
@@ -628,7 +629,7 @@
         </Grid>
         </Grid>
 
-        <Border Visibility="{x:Bind ViewModel.SurfaceState.StateVisibility, Mode=OneWay}"
+        <Border Visibility="{x:Bind ViewModel.BlockingSurfaceVisibility, Mode=OneWay}"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Center"
                 MaxWidth="560"

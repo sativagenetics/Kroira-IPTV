@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -105,6 +106,7 @@ namespace Kroira.App.ViewModels
         private const string Domain = ProfileDomains.Movies;
         private const string FixedFeaturedMovieTitle = "Kurtlar Vadisi Gladio";
         private const int BrowseGridColumns = 5;
+        private const int InitialDisplayMovieSlotBatchSize = BrowseGridColumns * 2;
         private readonly IServiceProvider _serviceProvider;
         private readonly IBrowsePreferencesService _browsePreferencesService;
         private readonly ICatalogTaxonomyService _taxonomyService;
@@ -122,10 +124,18 @@ namespace Kroira.App.ViewModels
         private bool _isInitializing;
         private bool _isApplyingFilter;
         private bool _pendingApplyFilter;
+        private bool _hasLoadedOnce;
+        private bool _preferStagedFirstPaint;
         private string _pendingApplyFilterReason = string.Empty;
+        private int _movieSlotRefreshVersion;
+        private Stopwatch? _activeLoadStopwatch;
+        private Task _displayMovieSlotRefreshTask = Task.CompletedTask;
 
         public IReadOnlyList<MovieBrowseItemViewModel> FilteredMovies => _filteredMovies;
         public int FilteredMovieCount => _filteredMovies.Count;
+        public bool HasLoadedOnce => _hasLoadedOnce;
+        public Visibility ContentShellVisibility => IsBlockingSurfaceState ? Visibility.Collapsed : Visibility.Visible;
+        public Visibility BlockingSurfaceVisibility => IsBlockingSurfaceState ? Visibility.Visible : Visibility.Collapsed;
         public BulkObservableCollection<MovieBrowseSlotViewModel> DisplayMovieSlots { get; } = new();
         public BulkObservableCollection<BrowserCategoryViewModel> Categories { get; } = new();
         public ObservableCollection<BrowseSortOptionViewModel> SortOptions { get; } = new();
@@ -151,8 +161,16 @@ namespace Kroira.App.ViewModels
 
         public bool FeaturedMovieCanPlay => !string.IsNullOrWhiteSpace(FeaturedMovie?.StreamUrl);
         public bool HasManageCategorySelection => SelectedManageCategory != null;
+        private bool IsBlockingSurfaceState =>
+            SurfaceState.State is SurfaceViewState.NoSources or SurfaceViewState.Offline or SurfaceViewState.ImportFailed;
 
         private sealed record FilteredMovieResult(CatalogMovieGroup Group, string DisplayCategoryName);
+
+        partial void OnSurfaceStateChanged(SurfaceStatePresentation value)
+        {
+            OnPropertyChanged(nameof(ContentShellVisibility));
+            OnPropertyChanged(nameof(BlockingSurfaceVisibility));
+        }
 
         public MoviesViewModel(IServiceProvider serviceProvider)
         {
@@ -221,7 +239,14 @@ namespace Kroira.App.ViewModels
         [RelayCommand]
         public async Task LoadMoviesAsync()
         {
-            SurfaceState = SurfaceStateCopies.Movies.Create(SurfaceViewState.Loading);
+            var loadStopwatch = Stopwatch.StartNew();
+            _activeLoadStopwatch = loadStopwatch;
+            _preferStagedFirstPaint = !_hasLoadedOnce || DisplayMovieSlots.Count == 0;
+            if (!_hasLoadedOnce || DisplayMovieSlots.Count == 0)
+            {
+                SurfaceState = SurfaceStateCopies.Movies.Create(SurfaceViewState.Loading);
+            }
+
             try
             {
                 using var scope = _serviceProvider.CreateScope();
@@ -286,7 +311,6 @@ namespace Kroira.App.ViewModels
                     .OrderBy(group => group.Key, StringComparer.CurrentCultureIgnoreCase));
 
                 BuildSourceOptions();
-                BuildCategoryManagerOptions();
 
                 _isInitializing = true;
                 try
@@ -306,13 +330,25 @@ namespace Kroira.App.ViewModels
                 }
 
                 ApplyFilter("load-movies");
+                var displayRefreshTask = _displayMovieSlotRefreshTask;
                 SurfaceState = surfaceStateService.ResolveSourceBackedState(sourceAvailability, _allMovieGroups.Count, SurfaceStateCopies.Movies);
+                _hasLoadedOnce = true;
+                OnPropertyChanged(nameof(HasLoadedOnce));
+                await Task.Yield();
+                BuildCategoryManagerOptions();
+                await displayRefreshTask;
+                LogBrowse(
+                    $"load ready fullMs={loadStopwatch.ElapsedMilliseconds} groups={_allMovieGroups.Count} results={_filteredMovies.Count} slots={DisplayMovieSlots.Count}");
                 StartMetadataEnrichment();
             }
             catch (Exception ex)
             {
                 BrowseRuntimeLogger.Log("MOVIES", $"load failed {ex}");
                 SurfaceState = _serviceProvider.GetRequiredService<ISurfaceStateService>().CreateFailureState(SurfaceStateCopies.Movies, ex);
+            }
+            finally
+            {
+                _activeLoadStopwatch = null;
             }
         }
 
@@ -441,7 +477,9 @@ namespace Kroira.App.ViewModels
                                  _preferences.CategoryRemaps.Count > 0 ||
                                  (SelectedSourceOption?.Id ?? 0) != 0 ||
                                  !string.Equals(SelectedSortOption?.Key ?? "recommended", "recommended", StringComparison.OrdinalIgnoreCase);
-            RefreshDisplayMovieSlots();
+            var shouldStageFirstPaint = _preferStagedFirstPaint;
+            _preferStagedFirstPaint = false;
+            _displayMovieSlotRefreshTask = RefreshDisplayMovieSlotsAsync(shouldStageFirstPaint, reason);
             LogBrowse(
                 $"apply end reason={reason} groups={filteredResults.Count} results={_filteredMovies.Count} slots={DisplayMovieSlots.Count} selectedKey={SelectedCategory?.FilterKey ?? "<all>"}");
         }
@@ -557,7 +595,7 @@ namespace Kroira.App.ViewModels
                     GetCategoryProjection(group.PreferredMovie).DisplayCategoryName));
         }
 
-        private void RefreshDisplayMovieSlots()
+        private async Task RefreshDisplayMovieSlotsAsync(bool prioritizeFirstPaint, string reason)
         {
             if (_filteredMovies.Count == 0)
             {
@@ -565,18 +603,56 @@ namespace Kroira.App.ViewModels
                 return;
             }
 
-            var slots = _filteredMovies
+            try
+            {
+                var refreshVersion = ++_movieSlotRefreshVersion;
+                var slots = BuildMovieSlots(_filteredMovies);
+                if (!prioritizeFirstPaint || slots.Count <= InitialDisplayMovieSlotBatchSize)
+                {
+                    DisplayMovieSlots.ReplaceAll(slots);
+                    if (prioritizeFirstPaint)
+                    {
+                        LogBrowse(
+                            $"first content ready ms={_activeLoadStopwatch?.ElapsedMilliseconds ?? -1} reason={reason} visibleSlots={slots.Count}");
+                    }
+
+                    return;
+                }
+
+                var initialSlots = slots.Take(InitialDisplayMovieSlotBatchSize).ToList();
+                var deferredSlots = slots.Skip(InitialDisplayMovieSlotBatchSize).ToList();
+                DisplayMovieSlots.ReplaceAll(initialSlots);
+                LogBrowse(
+                    $"first content ready ms={_activeLoadStopwatch?.ElapsedMilliseconds ?? -1} reason={reason} visibleSlots={initialSlots.Count}");
+
+                await Task.Yield();
+                if (refreshVersion != _movieSlotRefreshVersion)
+                {
+                    return;
+                }
+
+                DisplayMovieSlots.AppendRange(deferredSlots);
+            }
+            catch (Exception ex)
+            {
+                LogBrowse($"slot refresh failed reason={reason} error={ex.Message}");
+            }
+        }
+
+        private List<MovieBrowseSlotViewModel> BuildMovieSlots(IReadOnlyList<MovieBrowseItemViewModel> filteredMovies)
+        {
+            var slots = filteredMovies
                 .Select(movie => new MovieBrowseSlotViewModel(movie))
                 .ToList();
 
-            var remainder = _filteredMovies.Count % BrowseGridColumns;
+            var remainder = filteredMovies.Count % BrowseGridColumns;
             var placeholderCount = remainder == 0 ? 0 : BrowseGridColumns - remainder;
             for (var index = 0; index < placeholderCount; index++)
             {
                 slots.Add(new MovieBrowseSlotViewModel(null));
             }
 
-            DisplayMovieSlots.ReplaceAll(slots);
+            return slots;
         }
 
         private void RefreshFeaturedMovie(IEnumerable<MovieBrowseItemViewModel> filteredMovies)
@@ -684,7 +760,17 @@ namespace Kroira.App.ViewModels
 
             SourceOptions.ReplaceAll(sourceOptions);
             SourceVisibilityOptions.ReplaceAll(sourceVisibilityOptions);
-            SelectedSourceOption = SourceOptions.FirstOrDefault(option => option.Id == existingSelection) ?? SourceOptions.FirstOrDefault();
+            var selectedSourceOption = SourceOptions.FirstOrDefault(option => option.Id == existingSelection) ?? SourceOptions.FirstOrDefault();
+            var wasInitializing = _isInitializing;
+            _isInitializing = true;
+            try
+            {
+                SelectedSourceOption = selectedSourceOption;
+            }
+            finally
+            {
+                _isInitializing = wasInitializing;
+            }
         }
 
         private BrowserCategoryViewModel? BuildVisibleCategories(string currentKey)
