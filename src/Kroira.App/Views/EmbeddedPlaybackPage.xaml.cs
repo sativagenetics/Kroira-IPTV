@@ -30,6 +30,7 @@ namespace Kroira.App.Views
         private static readonly TimeSpan ControlsHideDelay = TimeSpan.FromMilliseconds(2250);
         private static readonly TimeSpan PointerHideSuppressDelay = TimeSpan.FromMilliseconds(350);
         private static readonly TimeSpan PointerTimerResetThrottle = TimeSpan.FromMilliseconds(250);
+        private static readonly TimeSpan MenuSurfaceClickSuppressDelay = TimeSpan.FromMilliseconds(450);
         private static readonly TimeSpan StreamLoadTimeout = TimeSpan.FromSeconds(15);
         private static readonly TimeSpan StreamBufferTimeout = TimeSpan.FromSeconds(12);
         private static readonly TimeSpan StreamRetryDelay = TimeSpan.FromSeconds(2);
@@ -77,8 +78,12 @@ namespace Kroira.App.Views
         private double _lastNonZeroVolume = 100;
         private DateTime _ignorePointerUntilUtc = DateTime.MinValue;
         private DateTime _lastPointerTimerRestartUtc = DateTime.MinValue;
+        private DateTime _ignoreSurfaceClickUntilUtc = DateTime.MinValue;
         private Point _lastPointerPosition;
         private bool _hasLastPointerPosition;
+        private bool _menuSurfaceInputShieldActive;
+        private bool _fullscreenSurfaceInputShieldActive;
+        private bool _surfaceInputShieldApplied;
         private int _activeAttemptId;
         private int _retryAttempt;
         private int _switchGeneration;
@@ -86,6 +91,7 @@ namespace Kroira.App.Views
         private int _bufferTimeoutAttemptId;
         private int _lastOpenSucceededAttemptId = -1;
         private int _lastOpenFailedAttemptId = -1;
+        private int _fullscreenTransitionGeneration;
         private string _lastPlayerWarning = string.Empty;
         private string _lastStateMessage = string.Empty;
         private PlaybackAspectMode _selectedAspectMode = PlaybackAspectMode.Automatic;
@@ -146,14 +152,12 @@ namespace Kroira.App.Views
             WireOverlayFlyout(TracksFlyout);
             WireOverlayFlyout(AspectFlyout);
             WireOverlayFlyout(SpeedFlyout);
-            WireOverlayFlyout(ToolsFlyout);
             WireOverlayFlyout(AudioDelayFlyout);
             WireOverlayFlyout(SubtitleDelayFlyout);
             WireOverlayFlyout(SubtitleStyleFlyout);
             WireOverlayFlyout(ZoomFlyout);
             WireOverlayFlyout(RotationFlyout);
             WireOverlayFlyout(SleepTimerFlyout);
-            ToolsFlyout.Opening += ToolsFlyout_Opening;
             InitializeEnhancedPlayerUi(services);
 
             Loaded += OnPageLoaded;
@@ -274,6 +278,7 @@ namespace Kroira.App.Views
         private async void OnPageLoaded(object sender, RoutedEventArgs e)
         {
             if (_context == null) return;
+            LogPlaybackState("PAGE: loaded");
             RestorePlayerKeyboardFocus(force: true);
             await TryStartPlaybackAsync();
             RestorePlayerKeyboardFocus(force: true);
@@ -319,13 +324,17 @@ namespace Kroira.App.Views
                 }
 
                 var parentHwnd = ResolveHostWindowHandle();
+                LogPlaybackState($"SURFACE: creating parent_hwnd=0x{parentHwnd.ToInt64():X}");
                 _surface = new VideoSurface(parentHwnd, VideoHost,
                     onClick: OnVideoClick,
                     onDoubleClick: OnVideoDoubleClick,
                     onMouseMoved: OnVideoMouseMoved);
-                _surface.UpdatePlacement(force: true);
+                _surface.Present(force: true, reason: "surface_created");
+                ApplySurfaceInputShield("surface_created");
+                LogPlaybackState($"SURFACE: created hwnd=0x{_surface.Handle.ToInt64():X}");
 
                 _player = CreatePlayer(_surface.Handle);
+                LogPlaybackState($"PLAYER: created surface_hwnd=0x{_surface.Handle.ToInt64():X}");
 
                 EnsureTimers();
                 ResetTrackMenus();
@@ -348,6 +357,7 @@ namespace Kroira.App.Views
             }
             catch (Exception ex)
             {
+                LogStructuredPlayback("startup_failed", $"message={SanitizeForLog(ex.Message)}");
                 ShowFatalError(ex.Message);
                 TeardownPlayback();
             }
@@ -359,6 +369,7 @@ namespace Kroira.App.Views
 
         private void OnPageUnloaded(object sender, RoutedEventArgs e)
         {
+            LogPlaybackState("PAGE: unloaded");
             TeardownPlayback();
         }
 
@@ -369,6 +380,7 @@ namespace Kroira.App.Views
                 return;
             }
 
+            LogPlaybackState("PAGE: teardown begin");
             _teardownStarted = true;
             _recoveryInProgress = false;
             CancelPlaybackSession();
@@ -398,6 +410,9 @@ namespace Kroira.App.Views
             }
             _overlayHiddenByInactivity = false;
             EnsureCursorVisible();
+            DismissOverlayFlyoutsForTeardown();
+            SetMenuSurfaceInputShield(false, "teardown");
+            SetFullscreenSurfaceInputShield(false, "teardown");
 
             if (_context != null)
             {
@@ -410,11 +425,14 @@ namespace Kroira.App.Views
             {
                 var surface = _surface;
                 _surface = null;
+                var hwnd = surface.Handle;
+                LogPlaybackState($"SURFACE: disposing hwnd=0x{hwnd.ToInt64():X}");
                 try { surface.Dispose(); } catch { }
             }
 
             ResetTrackMenus();
             _stateMachine.Reset();
+            LogPlaybackState("PAGE: teardown complete");
         }
 
         private async Task PersistProgressOnTeardownAsync(PlaybackLaunchContext context, long positionMs, long durationMs)
@@ -518,6 +536,7 @@ namespace Kroira.App.Views
                 _ignoreLivePlaybackEndedUntilUtc = DateTime.UtcNow.AddSeconds(5);
                 _lastDurationMs = 0;
                 DurationText.Text = "0:00";
+                LogPlaybackState($"LIVECTL: start begin retry={(isRetry ? "true" : "false")} reason={retryReason ?? "direct"}");
             }
 
             ResetTrackMenus();
@@ -589,6 +608,7 @@ namespace Kroira.App.Views
             player.OutputReady += OnOutputReady;
             player.TrackListChanged += OnTrackListChanged;
             player.WarningMessage += OnWarningMessage;
+            LogStructuredPlayback("player_created", $"surface_hwnd=0x{surfaceHandle.ToInt64():X}");
             return player;
         }
 
@@ -611,11 +631,10 @@ namespace Kroira.App.Views
             player.OutputReady -= OnOutputReady;
             player.TrackListChanged -= OnTrackListChanged;
             player.WarningMessage -= OnWarningMessage;
+            LogPlaybackState("PLAYER: disposing");
             try { player.Stop(); } catch { }
-            _ = Task.Run(() =>
-            {
-                try { player.Dispose(); } catch { }
-            });
+            try { player.Dispose(); } catch { }
+            LogPlaybackState("PLAYER: disposed");
         }
 
         private void ResetLiveEdgePlayerSession(string reason)
@@ -670,6 +689,10 @@ namespace Kroira.App.Views
 
             if (openSucceeded)
             {
+                if (IsLivePlayback())
+                {
+                    LogPlaybackState("LIVECTL: start completed");
+                }
                 ResetInactivityTimer("open_succeeded");
             }
             else if (previousState == PlaybackSessionState.Paused)
@@ -931,7 +954,8 @@ namespace Kroira.App.Views
                 _ignoreLivePlaybackEndedUntilUtc = DateTime.UtcNow.AddSeconds(3);
             }
 
-            _surface?.UpdatePlacement(force: true);
+            LogPlaybackState("SURFACE: file loaded present");
+            _surface?.Present(force: true, reason: "file_loaded");
             _ = RefreshTrackMenusAsync();
             RefreshInfoPanel();
             LogPlaybackState("LIVECTL: file loaded");
@@ -941,7 +965,8 @@ namespace Kroira.App.Views
         {
             if (_teardownStarted) return;
 
-            _surface?.UpdatePlacement(force: true);
+            LogPlaybackState("SURFACE: output ready present");
+            _surface?.Present(force: true, reason: "output_ready");
             _ = RefreshTrackMenusAsync();
             ApplyLaunchOverridesIfNeeded();
             if (_player != null && !_player.IsPaused && !_player.IsBuffering)
@@ -1050,9 +1075,7 @@ namespace Kroira.App.Views
 
         private void Fullscreen_Click(object sender, RoutedEventArgs e)
         {
-            if (_teardownStarted || IsPictureInPictureMode() || !CanUseFeature(EntitlementFeatureKeys.PlaybackFullscreen)) return;
-            _windowManager?.ToggleFullscreen();
-            ResetInactivityTimer("click");
+            RequestFullscreenToggle("button");
         }
 
         private async void PictureInPicture_Click(object sender, RoutedEventArgs e)
@@ -1094,10 +1117,21 @@ namespace Kroira.App.Views
         {
             if (_teardownStarted) return;
 
+            if (_toolsPanelOpen && !IsToolsPanelInteractionSource(e.OriginalSource))
+            {
+                CloseToolsPanel();
+            }
+
             if (IsOverlayControlSource(e.OriginalSource))
             {
                 _isOverlayPointerInteractionActive = true;
                 ShowControls(persist: true, cause: "click");
+                return;
+            }
+
+            if (AreFlyoutMenusOpen)
+            {
+                ShowControls(persist: true, cause: "menu_click");
                 return;
             }
 
@@ -1129,7 +1163,16 @@ namespace Kroira.App.Views
         {
             DispatcherQueue.TryEnqueue(() =>
             {
-                if (_teardownStarted) return;
+                if (_teardownStarted || DateTime.UtcNow < _ignoreSurfaceClickUntilUtc) return;
+                if (_toolsPanelOpen)
+                {
+                    CloseToolsPanel();
+                    ShowControls(cause: "click");
+                    ResetInactivityTimer("click");
+                    return;
+                }
+
+                if (AreFlyoutMenusOpen) return;
                 TogglePlayPauseOrLive();
                 RestorePlayerKeyboardFocus(force: true);
                 ShowControls(cause: "click");
@@ -1141,9 +1184,20 @@ namespace Kroira.App.Views
         {
             DispatcherQueue.TryEnqueue(() =>
             {
-                if (_teardownStarted || IsPictureInPictureMode() || !CanUseFeature(EntitlementFeatureKeys.PlaybackFullscreen)) return;
-                _windowManager?.ToggleFullscreen();
-                ResetInactivityTimer("click");
+                if (_teardownStarted ||
+                    DateTime.UtcNow < _ignoreSurfaceClickUntilUtc ||
+                    IsPictureInPictureMode() ||
+                    !CanUseFeature(EntitlementFeatureKeys.PlaybackFullscreen)) return;
+                if (_toolsPanelOpen)
+                {
+                    CloseToolsPanel();
+                    ShowControls(cause: "click");
+                    ResetInactivityTimer("click");
+                    return;
+                }
+
+                if (AreFlyoutMenusOpen) return;
+                RequestFullscreenToggle("double_click");
             });
         }
 
@@ -1279,6 +1333,10 @@ namespace Kroira.App.Views
         private void WindowManager_FullscreenStateChanged(object sender, EventArgs e)
         {
             if (_teardownStarted) return;
+            Interlocked.Increment(ref _fullscreenTransitionGeneration);
+            SetFullscreenSurfaceInputShield(false, "fullscreen_changed");
+            LogPlaybackState($"WINDOW: fullscreen changed active={BoolToLog(_windowManager?.IsFullscreen == true)}");
+            _surface?.Present(force: true, reason: "fullscreen_changed");
             UpdateFullscreenUi();
         }
 
@@ -1395,6 +1453,47 @@ namespace Kroira.App.Views
             _isVolumeSliderUpdating = true;
             VolumeSlider.Value = Math.Clamp(value, 0, 100);
             _isVolumeSliderUpdating = false;
+        }
+
+        private void RequestFullscreenToggle(string source)
+        {
+            if (_teardownStarted ||
+                IsPictureInPictureMode() ||
+                !CanUseFeature(EntitlementFeatureKeys.PlaybackFullscreen) ||
+                _windowManager == null)
+            {
+                return;
+            }
+
+            LogPlaybackState($"WINDOW: fullscreen toggle requested source={source}");
+            SetFullscreenSurfaceInputShield(true, $"fullscreen_{source}_begin");
+            SuppressSurfaceClicks(TimeSpan.FromMilliseconds(700));
+            var generation = Interlocked.Increment(ref _fullscreenTransitionGeneration);
+            _windowManager.ToggleFullscreen();
+            _ = ReleaseFullscreenShieldFallbackAsync(generation, source);
+            ResetInactivityTimer("click");
+        }
+
+        private async Task ReleaseFullscreenShieldFallbackAsync(int generation, string source)
+        {
+            try
+            {
+                await Task.Delay(900);
+                DispatcherQueue.TryEnqueue(() =>
+                {
+                    if (_teardownStarted || generation != _fullscreenTransitionGeneration)
+                    {
+                        return;
+                    }
+
+                    LogPlaybackState($"WINDOW: fullscreen shield fallback release source={source}");
+                    SetFullscreenSurfaceInputShield(false, $"fullscreen_{source}_fallback");
+                    QueueSurfacePlacementUpdate();
+                });
+            }
+            catch
+            {
+            }
         }
 
         private void TogglePlayPauseOrLive()
@@ -2147,7 +2246,8 @@ namespace Kroira.App.Views
             QueueSurfacePlacementUpdate();
         }
 
-        private bool IsMenuOpen => _openOverlayFlyouts.Count > 0 || _pendingUtilityFlyout != null;
+        private bool AreFlyoutMenusOpen => _openOverlayFlyouts.Count > 0 || _pendingUtilityFlyout != null;
+        private bool IsMenuOpen => AreFlyoutMenusOpen || _toolsPanelOpen;
 
         private bool IsUserInteractingWithControls =>
             _isOverlayPointerInteractionActive ||
@@ -2233,26 +2333,27 @@ namespace Kroira.App.Views
             flyout.Closed += OverlayFlyout_Closed;
         }
 
-        private void ToolsFlyout_Opening(object sender, object e)
-        {
-            if (_activeUtilityFlyout != null && !ReferenceEquals(_activeUtilityFlyout, ToolsFlyout))
-            {
-                _pendingUtilityFlyout = null;
-                _activeUtilityFlyout.Hide();
-            }
-        }
-
         private void OverlayFlyout_Opened(object sender, object e)
         {
-            if (sender is FlyoutBase flyout)
+            if (sender is not FlyoutBase flyout)
             {
-                _openOverlayFlyouts.Remove(flyout);
-                _openOverlayFlyouts.Add(flyout);
-                if (IsUtilityChildFlyout(flyout))
-                {
-                    _activeUtilityFlyout = flyout;
-                    _pendingUtilityFlyout = null;
-                }
+                return;
+            }
+
+            if (_teardownStarted)
+            {
+                try { flyout.Hide(); } catch { }
+                return;
+            }
+
+            SuppressSurfaceClicks();
+            _openOverlayFlyouts.Remove(flyout);
+            _openOverlayFlyouts.Add(flyout);
+            SetMenuSurfaceInputShield(true, "flyout_opened");
+            if (IsUtilityChildFlyout(flyout))
+            {
+                _activeUtilityFlyout = flyout;
+                _pendingUtilityFlyout = null;
             }
 
             LogPlaybackState("OVERLAY: flyout opened");
@@ -2275,6 +2376,13 @@ namespace Kroira.App.Views
                 }
             }
 
+            if (_teardownStarted)
+            {
+                return;
+            }
+
+            SuppressSurfaceClicks();
+            SetMenuSurfaceInputShield(AreFlyoutMenusOpen, _pendingUtilityFlyout != null ? "flyout_transition" : "flyout_closed");
             LogPlaybackState("OVERLAY: flyout closed");
             if (_pendingUtilityFlyout != null)
             {
@@ -2312,6 +2420,118 @@ namespace Kroira.App.Views
             RootGrid.Focus(FocusState.Programmatic);
         }
 
+        private void SuppressSurfaceClicks(TimeSpan? duration = null)
+        {
+            if (_teardownStarted)
+            {
+                return;
+            }
+
+            var next = DateTime.UtcNow + (duration ?? MenuSurfaceClickSuppressDelay);
+            if (next > _ignoreSurfaceClickUntilUtc)
+            {
+                _ignoreSurfaceClickUntilUtc = next;
+                LogStructuredPlayback(
+                    "surface_clicks_suppressed",
+                    $"until_utc={_ignoreSurfaceClickUntilUtc:O}");
+            }
+        }
+
+        private void SetMenuSurfaceInputShield(bool enabled, string reason)
+        {
+            if (_menuSurfaceInputShieldActive == enabled)
+            {
+                return;
+            }
+
+            _menuSurfaceInputShieldActive = enabled;
+            ApplySurfaceInputShield(reason);
+        }
+
+        private void SetFullscreenSurfaceInputShield(bool enabled, string reason)
+        {
+            if (_fullscreenSurfaceInputShieldActive == enabled)
+            {
+                return;
+            }
+
+            _fullscreenSurfaceInputShieldActive = enabled;
+            ApplySurfaceInputShield(reason);
+        }
+
+        private void ApplySurfaceInputShield(string reason)
+        {
+            var shouldShield = _menuSurfaceInputShieldActive || _fullscreenSurfaceInputShieldActive;
+            if (_surfaceInputShieldApplied == shouldShield)
+            {
+                return;
+            }
+
+            _surfaceInputShieldApplied = shouldShield;
+            if (_teardownStarted)
+            {
+                _surface?.SetInputEnabled(false);
+                _surface?.SetVisible(false, $"{reason}_teardown");
+                LogStructuredPlayback(
+                    "surface_input_shield",
+                    $"enabled=true; reason={SanitizeForLog($"{reason}_teardown")}; menu={BoolToLog(_menuSurfaceInputShieldActive)}; fullscreen={BoolToLog(_fullscreenSurfaceInputShieldActive)}");
+                return;
+            }
+
+            if (_fullscreenSurfaceInputShieldActive)
+            {
+                _surface?.SetInputEnabled(false);
+                _surface?.SetVisible(false, reason);
+            }
+            else if (_menuSurfaceInputShieldActive)
+            {
+                _surface?.SetVisible(true, reason);
+                _surface?.SetInputEnabled(false);
+            }
+            else
+            {
+                _surface?.SetVisible(true, reason);
+                _surface?.SetInputEnabled(true);
+            }
+            LogStructuredPlayback(
+                "surface_input_shield",
+                $"enabled={BoolToLog(shouldShield)}; reason={SanitizeForLog(reason)}; menu={BoolToLog(_menuSurfaceInputShieldActive)}; fullscreen={BoolToLog(_fullscreenSurfaceInputShieldActive)}");
+        }
+
+        private void DismissOverlayFlyoutsForTeardown()
+        {
+            if (_openOverlayFlyouts.Count == 0 &&
+                _activeUtilityFlyout == null &&
+                _pendingUtilityFlyout == null)
+            {
+                return;
+            }
+
+            LogPlaybackState("OVERLAY: dismissing flyouts for teardown");
+            var flyoutsToHide = new List<FlyoutBase>(_openOverlayFlyouts);
+            if (_activeUtilityFlyout != null && !flyoutsToHide.Contains(_activeUtilityFlyout))
+            {
+                flyoutsToHide.Add(_activeUtilityFlyout);
+            }
+
+            if (_pendingUtilityFlyout != null && !flyoutsToHide.Contains(_pendingUtilityFlyout))
+            {
+                flyoutsToHide.Add(_pendingUtilityFlyout);
+            }
+
+            _openOverlayFlyouts.Clear();
+            _activeUtilityFlyout = null;
+            _pendingUtilityFlyout = null;
+            _toolsPanelOpen = false;
+            UpdateToolsPanelVisibility();
+            SetMenuSurfaceInputShield(false, "flyouts_teardown");
+
+            foreach (var flyout in flyoutsToHide)
+            {
+                try { flyout.Hide(); } catch { }
+            }
+        }
+
         private bool IsOverlayControlSource(object originalSource)
         {
             if (originalSource is not DependencyObject dependencyObject)
@@ -2320,7 +2540,19 @@ namespace Kroira.App.Views
             }
 
             return IsDescendantOf(dependencyObject, TopBar) ||
-                   IsDescendantOf(dependencyObject, BottomBar);
+                   IsDescendantOf(dependencyObject, BottomBar) ||
+                   IsDescendantOf(dependencyObject, ToolsPanel);
+        }
+
+        private bool IsToolsPanelInteractionSource(object originalSource)
+        {
+            if (originalSource is not DependencyObject dependencyObject)
+            {
+                return false;
+            }
+
+            return IsDescendantOf(dependencyObject, ToolsPanel) ||
+                   IsDescendantOf(dependencyObject, ToolsButton);
         }
 
         private static bool IsDescendantOf(DependencyObject candidate, DependencyObject ancestor)

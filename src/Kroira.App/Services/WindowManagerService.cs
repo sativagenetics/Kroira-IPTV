@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Runtime.InteropServices;
 using Microsoft.UI.Windowing;
 using Windows.Graphics;
@@ -26,12 +27,18 @@ namespace Kroira.App.Services
         private IntPtr _windowHandle;
         private bool _isWindowActive = true;
         private bool _isAlwaysOnTop;
+        private bool _fullscreenTransitionInProgress;
 
         public bool IsFullscreen => _appWindow?.Presenter?.Kind == AppWindowPresenterKind.FullScreen;
         public bool IsWindowActive => _isWindowActive;
         public bool IsAlwaysOnTop => _isAlwaysOnTop;
         public event EventHandler FullscreenStateChanged;
         public event EventHandler WindowActivationChanged;
+
+        private static string LogPath => Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "Kroira",
+            "startup-log.txt");
 
         public void Initialize(Window window)
         {
@@ -46,6 +53,8 @@ namespace Kroira.App.Services
             {
                 if (e.DidPresenterChange)
                 {
+                    _fullscreenTransitionInProgress = false;
+                    Log($"WINDOW: presenter changed kind={_appWindow?.Presenter?.Kind}");
                     FullscreenStateChanged?.Invoke(this, EventArgs.Empty);
                 }
             };
@@ -59,12 +68,45 @@ namespace Kroira.App.Services
 
         public void EnterFullscreen()
         {
-            _appWindow?.SetPresenter(AppWindowPresenterKind.FullScreen);
+            SetPresenter(AppWindowPresenterKind.FullScreen, "enter");
         }
 
         public void ExitFullscreen()
         {
-            _appWindow?.SetPresenter(AppWindowPresenterKind.Default);
+            SetPresenter(AppWindowPresenterKind.Default, "exit");
+        }
+
+        private void SetPresenter(AppWindowPresenterKind presenterKind, string reason)
+        {
+            if (_appWindow == null)
+            {
+                return;
+            }
+
+            if (_fullscreenTransitionInProgress)
+            {
+                Log($"WINDOW: presenter request skipped reason={reason} state=in_progress");
+                return;
+            }
+
+            if (_appWindow.Presenter?.Kind == presenterKind)
+            {
+                Log($"WINDOW: presenter request skipped reason={reason} state=already_{presenterKind}");
+                return;
+            }
+
+            try
+            {
+                _fullscreenTransitionInProgress = true;
+                Log($"WINDOW: presenter request begin reason={reason} target={presenterKind}");
+                _appWindow.SetPresenter(presenterKind);
+            }
+            catch (Exception ex)
+            {
+                _fullscreenTransitionInProgress = false;
+                Log($"WINDOW: presenter request failed reason={reason} message={ex.Message}");
+                throw;
+            }
         }
 
         public void SetAlwaysOnTop(bool enabled)
@@ -92,6 +134,20 @@ namespace Kroira.App.Services
 
             _isWindowActive = isActive;
             WindowActivationChanged?.Invoke(this, EventArgs.Empty);
+        }
+
+        private static void Log(string message)
+        {
+            try
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(LogPath)!);
+                File.AppendAllText(
+                    LogPath,
+                    $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] WM {message}{Environment.NewLine}");
+            }
+            catch
+            {
+            }
         }
 
         private static readonly IntPtr HwndTopMost = new(-1);

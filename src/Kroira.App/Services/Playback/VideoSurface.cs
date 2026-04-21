@@ -70,6 +70,10 @@ namespace Kroira.App.Services.Playback
 
         [DllImport("user32.dll", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool EnableWindow(IntPtr hWnd, [MarshalAs(UnmanagedType.Bool)] bool bEnable);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
         private static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
 
         [DllImport("user32.dll")]
@@ -131,12 +135,19 @@ namespace Kroira.App.Services.Playback
         private Timer _pendingClickTimer;
         private DateTime _suppressClickUntilUtc = DateTime.MinValue;
         private bool _disposed;
+        private bool _inputEnabled = true;
+        private bool _isVisible = true;
         private int _lastX = int.MinValue;
         private int _lastY = int.MinValue;
         private int _lastWidth = int.MinValue;
         private int _lastHeight = int.MinValue;
 
         public IntPtr Handle => _hwnd;
+
+        private static string LogPath => System.IO.Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "Kroira",
+            "startup-log.txt");
 
         public VideoSurface(IntPtr parentHwnd, FrameworkElement host,
             Action onClick, Action onDoubleClick, Action<Point> onMouseMoved)
@@ -153,6 +164,20 @@ namespace Kroira.App.Services.Playback
             _host.SizeChanged += Host_SizeChanged;
             _host.LayoutUpdated += Host_LayoutUpdated;
             _host.Loaded += Host_Loaded;
+        }
+
+        private static void Log(string message)
+        {
+            try
+            {
+                System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(LogPath)!);
+                System.IO.File.AppendAllText(
+                    LogPath,
+                    $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] VIDEO {message}{Environment.NewLine}");
+            }
+            catch
+            {
+            }
         }
 
         private void EnsureClassRegistered()
@@ -225,7 +250,9 @@ namespace Kroira.App.Services.Playback
             if (_host.XamlRoot == null) return;
             if (_host.ActualWidth <= 0 || _host.ActualHeight <= 0)
             {
+                _isVisible = false;
                 SetWindowPos(_hwnd, HWND_TOP, 0, 0, 1, 1, SWP_NOZORDER | SWP_NOACTIVATE | SWP_HIDEWINDOW);
+                Log($"SURFACE: placement hidden hwnd=0x{_hwnd.ToInt64():X} reason=host_zero");
                 return;
             }
 
@@ -253,16 +280,80 @@ namespace Kroira.App.Services.Playback
                 _lastWidth = w;
                 _lastHeight = h;
 
-                BringWindowToTop(_hwnd);
                 SetWindowPos(_hwnd, HWND_TOP, x, y, w, h,
-                    SWP_NOACTIVATE | SWP_SHOWWINDOW);
+                    SWP_NOZORDER | SWP_NOACTIVATE | (_isVisible ? SWP_SHOWWINDOW : SWP_HIDEWINDOW));
                 InvalidateRect(_hwnd, IntPtr.Zero, false);
                 UpdateWindow(_hwnd);
+                Log($"SURFACE: placement hwnd=0x{_hwnd.ToInt64():X} x={x} y={y} w={w} h={h} force={force} visible={_isVisible} input_enabled={_inputEnabled}");
             }
             catch
             {
                 // TransformToVisual can throw during teardown; ignore.
             }
+        }
+
+        public void Present(bool force = false, string reason = "present")
+        {
+            if (_disposed || _hwnd == IntPtr.Zero)
+            {
+                return;
+            }
+
+            _isVisible = true;
+            UpdatePlacement(force);
+            if (_lastWidth < 1 || _lastHeight < 1)
+            {
+                Log($"SURFACE: present deferred hwnd=0x{_hwnd.ToInt64():X} reason={reason} width={_lastWidth} height={_lastHeight}");
+                return;
+            }
+
+            BringWindowToTop(_hwnd);
+            SetWindowPos(_hwnd, HWND_TOP, _lastX, _lastY, _lastWidth, _lastHeight, SWP_NOACTIVATE | SWP_SHOWWINDOW);
+            InvalidateRect(_hwnd, IntPtr.Zero, false);
+            UpdateWindow(_hwnd);
+            Log($"SURFACE: present hwnd=0x{_hwnd.ToInt64():X} reason={reason} x={_lastX} y={_lastY} w={_lastWidth} h={_lastHeight}");
+        }
+
+        public void SetVisible(bool visible, string reason)
+        {
+            if (_disposed || _hwnd == IntPtr.Zero)
+            {
+                return;
+            }
+
+            if (_isVisible == visible && !visible)
+            {
+                return;
+            }
+
+            if (visible)
+            {
+                Present(force: true, reason);
+                return;
+            }
+
+            _isVisible = false;
+            SetWindowPos(_hwnd, HWND_TOP, 0, 0, 1, 1, SWP_NOZORDER | SWP_NOACTIVATE | SWP_HIDEWINDOW);
+            Log($"SURFACE: hidden hwnd=0x{_hwnd.ToInt64():X} reason={reason}");
+        }
+
+        public void SetInputEnabled(bool enabled)
+        {
+            if (_disposed || _hwnd == IntPtr.Zero || _inputEnabled == enabled)
+            {
+                return;
+            }
+
+            lock (_clickLock)
+            {
+                _pendingClickTimer?.Dispose();
+                _pendingClickTimer = null;
+                _suppressClickUntilUtc = DateTime.UtcNow.AddMilliseconds(enabled ? 120 : 700);
+            }
+
+            EnableWindow(_hwnd, enabled);
+            _inputEnabled = enabled;
+            Log($"SURFACE: input enabled={enabled} hwnd=0x{_hwnd.ToInt64():X}");
         }
 
         private static IntPtr StaticWndProc(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam)

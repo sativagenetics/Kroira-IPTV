@@ -71,6 +71,7 @@ namespace Kroira.App.Views
         private bool _channelPanelOpen;
         private bool _episodePanelOpen;
         private bool _infoPanelOpen;
+        private bool _toolsPanelOpen;
 
         private void InitializeEnhancedPlayerUi(IServiceProvider services)
         {

@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -10,6 +11,7 @@ using Kroira.App.Services;
 using Kroira.App.Services.Playback;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.UI;
 using Microsoft.UI.Input;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -24,6 +26,12 @@ namespace Kroira.App.Views
     public sealed partial class EmbeddedPlaybackPage
     {
         private bool _isFavorite;
+        private static readonly Brush ToolsButtonBackgroundBrush = new SolidColorBrush(ColorHelper.FromArgb(0x14, 0xFF, 0xFF, 0xFF));
+        private static readonly Brush ToolsButtonBorderBrush = new SolidColorBrush(ColorHelper.FromArgb(0x18, 0xFF, 0xFF, 0xFF));
+        private static readonly Brush ToolsButtonForegroundBrush = new SolidColorBrush(Colors.White);
+        private static readonly Brush ToolsButtonSelectedBackgroundBrush = new SolidColorBrush(ColorHelper.FromArgb(0xFF, 0x4B, 0x7C, 0xFF));
+        private static readonly Brush ToolsButtonSelectedBorderBrush = new SolidColorBrush(ColorHelper.FromArgb(0x66, 0xA9, 0xC0, 0xFF));
+        private static readonly Brush ToolsButtonSelectedForegroundBrush = new SolidColorBrush(Colors.White);
 
         private void BuildSpeedFlyout()
         {
@@ -44,80 +52,219 @@ namespace Kroira.App.Views
 
         private void BuildToolsFlyout()
         {
-            _toggleToolItems.Clear();
-            ToolsFlyout.Items.Clear();
             var isLive = IsLivePlayback();
             var canSeek = IsTimelineSeekAllowed();
             var hasEpisodeNavigation = _allEpisodeSwitchItems.Count > 1;
             var canUsePictureInPicture = CanUseFeature(EntitlementFeatureKeys.PlaybackPictureInPicture);
+            ToolsGuideButton.Visibility = isLive ? Visibility.Visible : Visibility.Collapsed;
+            ToolsChannelsButton.Visibility = isLive ? Visibility.Visible : Visibility.Collapsed;
+            ToolsEpisodesButton.Visibility = hasEpisodeNavigation ? Visibility.Visible : Visibility.Collapsed;
+            ToolsJumpLiveButton.Visibility = isLive && canSeek ? Visibility.Visible : Visibility.Collapsed;
+            ToolsRestartButton.Visibility = !isLive && canSeek ? Visibility.Visible : Visibility.Collapsed;
+            ToolsPictureInPictureButton.Visibility = canUsePictureInPicture ? Visibility.Visible : Visibility.Collapsed;
+            ToolsPictureInPictureButton.Content = IsPictureInPictureMode() ? "Exit PiP" : "PiP";
+            ToolsAlwaysOnTopButton.Visibility = IsPictureInPictureMode() ? Visibility.Collapsed : Visibility.Visible;
+            ToolsPanelSummaryText.Text = isLive
+                ? "Live tools stay interactive while channel, subtitle, and display controls remain in frame."
+                : "Compact playback tuning for display, subtitles, recovery, and session tools.";
 
-            if (isLive)
-            {
-                AddToolsItem("Mini guide", (_, _) => TogglePanel(nameof(MiniGuidePanel)));
-                AddToolsItem("Channel list", (_, _) => TogglePanel(nameof(ChannelSwitchPanel)));
-                if (_lastChannelCandidateId > 0)
-                {
-                    AddToolsItem("Last channel", async (_, _) => await SwitchToChannelAsync(_lastChannelCandidateId, "last_menu"));
-                }
-
-                if (canSeek)
-                {
-                    AddToolsItem("Jump to live", (_, _) => GoToLiveEdge("menu"));
-                }
-            }
-
-            if (hasEpisodeNavigation)
-            {
-                AddToolsItem("Episode panel", (_, _) => TogglePanel(nameof(EpisodePanel)));
-            }
-
-            AddToolsItem("Info panel", (_, _) => TogglePanel(nameof(InfoPanel)));
-            if (!isLive && canSeek)
-            {
-                AddToolsItem("Restart from beginning", (_, _) => RestartPlayerSession("restart", 0));
-            }
-
-            ToolsFlyout.Items.Add(new MenuFlyoutSeparator());
-            AddToolsItem("Retry stream", (_, _) => RetryCurrentPlayback());
-            AddToolsItem("Stop playback", (_, _) => NavigateBack());
-            if (canUsePictureInPicture)
-            {
-                AddToolsItem(IsPictureInPictureMode() ? "Return from Picture in Picture" : "Picture in Picture", PictureInPicture_Click);
-            }
-
-            ToolsFlyout.Items.Add(new MenuFlyoutSeparator());
-            AddToggleToolsItem("always_on_top", "Always on top", (_, _) => ToggleAlwaysOnTop());
-            AddToggleToolsItem("deinterlace", "Deinterlace", (_, _) => ToggleDeinterlace());
-
-            AddUtilityToolsItem("Display", AspectFlyout, BuildAspectMenu);
-            AddUtilityToolsItem("Audio delay", AudioDelayFlyout, BuildAudioDelayFlyout);
-            AddUtilityToolsItem("Subtitle delay", SubtitleDelayFlyout, BuildSubtitleDelayFlyout);
-            AddUtilityToolsItem("Subtitle style", SubtitleStyleFlyout, BuildSubtitleStyleFlyout);
-            AddUtilityToolsItem("Zoom", ZoomFlyout, BuildZoomFlyout);
-            AddUtilityToolsItem("Rotation", RotationFlyout, BuildRotationFlyout);
-            AddUtilityToolsItem("Sleep timer", SleepTimerFlyout, BuildSleepTimerFlyout);
-
-            ToolsFlyout.Items.Add(new MenuFlyoutSeparator());
-            AddToolsItem("Take screenshot", (_, _) => CaptureScreenshot());
             RefreshToolToggleStates();
+            UpdateToolsPanelVisibility();
         }
 
-        private void AddToolsItem(string text, RoutedEventHandler handler)
+        private void UpdateToolsPanelVisibility()
         {
-            var item = new MenuFlyoutItem { Text = text };
-            item.Click += handler;
-            ToolsFlyout.Items.Add(item);
+            ToolsPanel.Visibility = _toolsPanelOpen ? Visibility.Visible : Visibility.Collapsed;
+            ApplyToolButtonSelection(ToolsButton, _toolsPanelOpen);
         }
 
-        private void AddUtilityToolsItem(string text, MenuFlyout flyout, Action buildFlyout)
+        private bool CloseToolsPanel()
         {
-            var item = new MenuFlyoutItem { Text = text };
-            item.Click += (_, _) =>
+            if (!_toolsPanelOpen)
             {
-                buildFlyout();
-                OpenUtilityFlyout(flyout);
+                return false;
+            }
+
+            SetToolsPanelOpen(false, "close");
+            return true;
+        }
+
+        private void SetToolsPanelOpen(bool isOpen, string reason)
+        {
+            if (_teardownStarted)
+            {
+                return;
+            }
+
+            if (_toolsPanelOpen == isOpen)
+            {
+                if (isOpen)
+                {
+                    BuildToolsFlyout();
+                    ShowControls(persist: true, cause: reason);
+                }
+                else
+                {
+                    RefreshToolToggleStates();
+                }
+                return;
+            }
+
+            _toolsPanelOpen = isOpen;
+            UpdateToolsPanelVisibility();
+            LogPlaybackState($"TOOLS: panel open={BoolToLog(isOpen)} reason={reason}");
+
+            if (isOpen)
+            {
+                BuildToolsFlyout();
+                UpdateToolsPanelVisibility();
+                ShowControls(persist: true, cause: "tools_open");
+                DispatcherQueue.TryEnqueue(() =>
+                {
+                    if (_teardownStarted || !_toolsPanelOpen)
+                    {
+                        return;
+                    }
+
+                    ToolsInfoButton.Focus(FocusState.Programmatic);
+                });
+                return;
+            }
+
+            RefreshToolToggleStates();
+            UpdateToolsPanelVisibility();
+            RestorePlayerKeyboardFocus(force: true);
+            ResumeOverlayAutoHide("tools_closed");
+        }
+
+        private void ApplyToolButtonSelection(Button button, bool selected)
+        {
+            if (button == null)
+            {
+                return;
+            }
+
+            button.Background = selected ? ToolsButtonSelectedBackgroundBrush : ToolsButtonBackgroundBrush;
+            button.BorderBrush = selected ? ToolsButtonSelectedBorderBrush : ToolsButtonBorderBrush;
+            button.Foreground = selected ? ToolsButtonSelectedForegroundBrush : ToolsButtonForegroundBrush;
+        }
+
+        private static bool TryParseInvariantDouble(string rawValue, out double value)
+        {
+            return double.TryParse(rawValue, NumberStyles.Float | NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out value);
+        }
+
+        private static bool TryParseInvariantInt(string rawValue, out int value)
+        {
+            return int.TryParse(rawValue, NumberStyles.Integer, CultureInfo.InvariantCulture, out value);
+        }
+
+        private static bool IsApproximately(double value, double expected, double tolerance = 0.04)
+        {
+            return Math.Abs(value - expected) <= tolerance;
+        }
+
+        private static int NormalizeRotation(int rotation)
+        {
+            var normalized = rotation % 360;
+            if (normalized < 0)
+            {
+                normalized += 360;
+            }
+
+            return normalized;
+        }
+
+        private static string FormatSignedSeconds(double value)
+        {
+            return $"{value:+0.0;-0.0;0.0}s";
+        }
+
+        private static string GetAspectModeLabel(PlaybackAspectMode aspectMode)
+        {
+            return aspectMode switch
+            {
+                PlaybackAspectMode.FillWindow => "Fill window",
+                PlaybackAspectMode.Ratio16x9 => "16:9",
+                PlaybackAspectMode.Ratio4x3 => "4:3",
+                PlaybackAspectMode.Ratio185x1 => "1.85",
+                PlaybackAspectMode.Ratio235x1 => "2.35",
+                _ => "Automatic"
             };
-            ToolsFlyout.Items.Add(item);
+        }
+
+        private string GetSubtitleSizeLabel(double scale)
+        {
+            var closest = _subtitleScalePresets
+                .OrderBy(preset => Math.Abs(preset.Scale - scale))
+                .FirstOrDefault();
+
+            return string.IsNullOrWhiteSpace(closest.Label) ? "Medium" : closest.Label;
+        }
+
+        private static string GetSubtitlePositionLabel(int position)
+        {
+            if (position <= 88)
+            {
+                return "High";
+            }
+
+            if (position >= 98)
+            {
+                return "Low";
+            }
+
+            return "Mid";
+        }
+
+        private void RefreshToolToggleStates()
+        {
+            var zoom = _player?.VideoZoom ?? 0;
+            var rotation = NormalizeRotation(_player?.VideoRotation ?? 0);
+            var audioDelay = _player?.AudioDelaySeconds ?? _playerPreferences.AudioDelaySeconds;
+            var subtitleDelay = _player?.SubtitleDelaySeconds ?? _playerPreferences.SubtitleDelaySeconds;
+            var subtitleScale = _player?.SubtitleScale > 0 ? _player.SubtitleScale : _playerPreferences.SubtitleScale;
+            var subtitlePosition = _player?.SubtitlePosition ?? _playerPreferences.SubtitlePosition;
+            var hasSleepTimer = _sleepDeadline.HasValue && _sleepDeadline.Value > DateTimeOffset.UtcNow;
+            var sleepSummary = hasSleepTimer
+                ? $"Sleep in {(_sleepDeadline!.Value - DateTimeOffset.UtcNow):hh\\:mm\\:ss}"
+                : "Sleep timer off.";
+            var windowSummary = _windowManager?.IsAlwaysOnTop == true ? "Always on top enabled." : "Window follows normal stacking.";
+
+            ApplyToolButtonSelection(ToolsButton, _toolsPanelOpen);
+            ApplyToolButtonSelection(ToolsGuideButton, _guidePanelOpen);
+            ApplyToolButtonSelection(ToolsChannelsButton, _channelPanelOpen);
+            ApplyToolButtonSelection(ToolsEpisodesButton, _episodePanelOpen);
+            ApplyToolButtonSelection(ToolsInfoButton, _infoPanelOpen);
+            ApplyToolButtonSelection(ToolsPictureInPictureButton, IsPictureInPictureMode());
+            ApplyToolButtonSelection(ToolsAlwaysOnTopButton, _windowManager?.IsAlwaysOnTop == true);
+            ApplyToolButtonSelection(ToolsDeinterlaceButton, _player?.IsDeinterlaceEnabled ?? _playerPreferences.Deinterlace);
+            ApplyToolButtonSelection(AspectAutoButton, _selectedAspectMode == PlaybackAspectMode.Automatic);
+            ApplyToolButtonSelection(AspectFillButton, _selectedAspectMode == PlaybackAspectMode.FillWindow);
+            ApplyToolButtonSelection(Aspect169Button, _selectedAspectMode == PlaybackAspectMode.Ratio16x9);
+            ApplyToolButtonSelection(Aspect43Button, _selectedAspectMode == PlaybackAspectMode.Ratio4x3);
+            ApplyToolButtonSelection(Aspect185Button, _selectedAspectMode == PlaybackAspectMode.Ratio185x1);
+            ApplyToolButtonSelection(Aspect235Button, _selectedAspectMode == PlaybackAspectMode.Ratio235x1);
+            ApplyToolButtonSelection(ZoomResetButton, IsApproximately(zoom, 0, 0.01));
+            ApplyToolButtonSelection(Rotation0Button, rotation == 0);
+            ApplyToolButtonSelection(Rotation90Button, rotation == 90);
+            ApplyToolButtonSelection(Rotation180Button, rotation == 180);
+            ApplyToolButtonSelection(Rotation270Button, rotation == 270);
+            ApplyToolButtonSelection(AudioDelayResetButton, IsApproximately(audioDelay, 0, 0.01));
+            ApplyToolButtonSelection(SubtitleDelayResetButton, IsApproximately(subtitleDelay, 0, 0.01));
+            ApplyToolButtonSelection(SubtitleSizeSmallButton, IsApproximately(subtitleScale, 0.85));
+            ApplyToolButtonSelection(SubtitleSizeMediumButton, IsApproximately(subtitleScale, 1.0));
+            ApplyToolButtonSelection(SubtitleSizeLargeButton, IsApproximately(subtitleScale, 1.2));
+            ApplyToolButtonSelection(SubtitlePositionHighButton, subtitlePosition <= 88);
+            ApplyToolButtonSelection(SubtitlePositionCenterButton, subtitlePosition > 88 && subtitlePosition < 98);
+            ApplyToolButtonSelection(SubtitlePositionLowButton, subtitlePosition >= 98);
+            ApplyToolButtonSelection(SleepTimerCancelButton, !hasSleepTimer);
+
+            ToolsDisplaySummaryText.Text = $"{GetAspectModeLabel(_selectedAspectMode)} · Zoom {zoom:0.##} · Rotation {rotation} deg";
+            ToolsAudioDelayValueText.Text = $"Audio delay {FormatSignedSeconds(audioDelay)}";
+            ToolsSubtitleDelayValueText.Text = $"Subtitle delay {FormatSignedSeconds(subtitleDelay)}";
+            ToolsSubtitleSummaryText.Text = $"Subtitle size {GetSubtitleSizeLabel(subtitleScale)} · Position {GetSubtitlePositionLabel(subtitlePosition)}";
+            ToolsSessionSummaryText.Text = $"{sleepSummary} {windowSummary}";
         }
 
         private void BuildAudioDelayFlyout()
@@ -144,8 +291,9 @@ namespace Kroira.App.Views
                 AddFlyoutItem(SubtitleStyleFlyout, preset.Label, (_, _) => SetSubtitleScale(preset.Scale));
             }
 
-            AddFlyoutItem(SubtitleStyleFlyout, "Raise", (_, _) => AdjustSubtitlePosition(-5));
-            AddFlyoutItem(SubtitleStyleFlyout, "Lower", (_, _) => AdjustSubtitlePosition(5));
+            AddFlyoutItem(SubtitleStyleFlyout, "High", (_, _) => SetSubtitlePosition(84));
+            AddFlyoutItem(SubtitleStyleFlyout, "Mid", (_, _) => SetSubtitlePosition(92));
+            AddFlyoutItem(SubtitleStyleFlyout, "Low", (_, _) => SetSubtitlePosition(100));
         }
 
         private void BuildZoomFlyout()
@@ -159,10 +307,10 @@ namespace Kroira.App.Views
         private void BuildRotationFlyout()
         {
             RotationFlyout.Items.Clear();
-            AddFlyoutItem(RotationFlyout, "0°", (_, _) => SetVideoRotation(0));
-            AddFlyoutItem(RotationFlyout, "90°", (_, _) => SetVideoRotation(90));
-            AddFlyoutItem(RotationFlyout, "180°", (_, _) => SetVideoRotation(180));
-            AddFlyoutItem(RotationFlyout, "270°", (_, _) => SetVideoRotation(270));
+            AddFlyoutItem(RotationFlyout, "0 deg", (_, _) => SetVideoRotation(0));
+            AddFlyoutItem(RotationFlyout, "90 deg", (_, _) => SetVideoRotation(90));
+            AddFlyoutItem(RotationFlyout, "180 deg", (_, _) => SetVideoRotation(180));
+            AddFlyoutItem(RotationFlyout, "270 deg", (_, _) => SetVideoRotation(270));
         }
 
         private void BuildSleepTimerFlyout()
@@ -183,11 +331,21 @@ namespace Kroira.App.Views
 
         private void OpenUtilityFlyout(MenuFlyout flyout)
         {
+            if (_teardownStarted || flyout == null)
+            {
+                return;
+            }
+
             if (ToolsButton.XamlRoot == null)
             {
                 _pendingUtilityFlyout = null;
                 return;
             }
+
+            SuppressSurfaceClicks();
+            SetMenuSurfaceInputShield(true, "utility_queue");
+            var flyoutName = GetUtilityFlyoutLogName(flyout);
+            LogPlaybackState($"OVERLAY: queue utility flyout name={flyoutName}");
 
             if (ReferenceEquals(_activeUtilityFlyout, flyout) && _openOverlayFlyouts.Contains(flyout))
             {
@@ -202,16 +360,18 @@ namespace Kroira.App.Views
 
             _pendingUtilityFlyout = flyout;
             ShowControls(persist: true, cause: "utility_menu_open");
-            ToolsFlyout.Hide();
+            CloseToolsPanel();
             DispatcherQueue.TryEnqueue(() =>
             {
                 if (!ReferenceEquals(_pendingUtilityFlyout, flyout))
                 {
+                    LogPlaybackState($"OVERLAY: utility flyout callback skipped name={flyoutName} reason=stale");
                     return;
                 }
 
                 if (_teardownStarted || ToolsButton.XamlRoot == null)
                 {
+                    LogPlaybackState($"OVERLAY: utility flyout callback skipped name={flyoutName} reason=teardown");
                     if (ReferenceEquals(_pendingUtilityFlyout, flyout))
                     {
                         _pendingUtilityFlyout = null;
@@ -220,11 +380,24 @@ namespace Kroira.App.Views
                     return;
                 }
 
+                LogPlaybackState($"OVERLAY: utility flyout showing name={flyoutName}");
                 flyout.ShowAt(ToolsButton, new FlyoutShowOptions
                 {
                     Placement = FlyoutPlacementMode.TopEdgeAlignedRight
                 });
             });
+        }
+
+        private string GetUtilityFlyoutLogName(MenuFlyout flyout)
+        {
+            if (ReferenceEquals(flyout, AspectFlyout)) return "display";
+            if (ReferenceEquals(flyout, AudioDelayFlyout)) return "audio_delay";
+            if (ReferenceEquals(flyout, SubtitleDelayFlyout)) return "subtitle_delay";
+            if (ReferenceEquals(flyout, SubtitleStyleFlyout)) return "subtitle_style";
+            if (ReferenceEquals(flyout, ZoomFlyout)) return "zoom";
+            if (ReferenceEquals(flyout, RotationFlyout)) return "rotation";
+            if (ReferenceEquals(flyout, SleepTimerFlyout)) return "sleep_timer";
+            return "unknown";
         }
 
         private void AddAspectSubItem(MenuFlyoutSubItem parent, string text, PlaybackAspectMode aspectMode)
@@ -238,27 +411,6 @@ namespace Kroira.App.Views
 
             item.Click += AspectItem_Click;
             parent.Items.Add(item);
-        }
-
-        private void AddToggleToolsItem(string key, string text, RoutedEventHandler handler)
-        {
-            var item = new ToggleMenuFlyoutItem { Text = text };
-            item.Click += handler;
-            ToolsFlyout.Items.Add(item);
-            _toggleToolItems.Add((key, item));
-        }
-
-        private void RefreshToolToggleStates()
-        {
-            foreach (var toggle in _toggleToolItems)
-            {
-                toggle.Item.IsChecked = toggle.Key switch
-                {
-                    "always_on_top" => _windowManager?.IsAlwaysOnTop == true,
-                    "deinterlace" => _player?.IsDeinterlaceEnabled ?? _playerPreferences.Deinterlace,
-                    _ => false
-                };
-            }
         }
 
         private void RefreshSpeedUi()
@@ -292,6 +444,7 @@ namespace Kroira.App.Views
             _episodePanelOpen = panelName == nameof(EpisodePanel) && !_episodePanelOpen;
             _infoPanelOpen = panelName == nameof(InfoPanel) && !_infoPanelOpen;
             UpdatePanelVisibility();
+            RefreshToolToggleStates();
             FocusActivePanelTarget();
             ShowControls(persist: _guidePanelOpen || _channelPanelOpen || _episodePanelOpen || _infoPanelOpen, cause: "panel_toggle");
         }
@@ -319,6 +472,7 @@ namespace Kroira.App.Views
             _episodePanelOpen = false;
             _infoPanelOpen = false;
             UpdatePanelVisibility();
+            RefreshToolToggleStates();
             RootGrid.Focus(FocusState.Programmatic);
             return true;
         }
@@ -574,6 +728,12 @@ namespace Kroira.App.Views
                 return true;
             }
 
+            if (CloseToolsPanel())
+            {
+                ShowControls(persist: true, cause: "tools_closed");
+                return true;
+            }
+
             if (CloseOpenPanels())
             {
                 ShowControls(cause: "panel_closed");
@@ -668,7 +828,7 @@ namespace Kroira.App.Views
                 case VirtualKey.F:
                     if (!IsPictureInPictureMode())
                     {
-                        _windowManager?.ToggleFullscreen();
+                        RequestFullscreenToggle("hotkey");
                     }
                     break;
                 case VirtualKey.M:
@@ -785,15 +945,188 @@ namespace Kroira.App.Views
                 return;
             }
 
+            LogPlaybackState($"TOOL: deinterlace toggle next={BoolToLog(!_player.IsDeinterlaceEnabled)}");
             _player.SetDeinterlace(!_player.IsDeinterlaceEnabled);
             RefreshToolToggleStates();
             _ = SavePlayerPreferencesAsync();
         }
 
+        private void ToolsButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (_teardownStarted)
+            {
+                return;
+            }
+
+            foreach (var flyout in _openOverlayFlyouts.ToArray())
+            {
+                try { flyout.Hide(); } catch { }
+            }
+
+            _activeUtilityFlyout = null;
+            _pendingUtilityFlyout = null;
+            SetToolsPanelOpen(!_toolsPanelOpen, "button");
+            ResetInactivityTimer("click");
+        }
+
+        private void ToggleAlwaysOnTop_Click(object sender, RoutedEventArgs e)
+        {
+            ToggleAlwaysOnTop();
+            ResetInactivityTimer("click");
+        }
+
+        private void ToggleDeinterlace_Click(object sender, RoutedEventArgs e)
+        {
+            ToggleDeinterlace();
+            ResetInactivityTimer("click");
+        }
+
+        private void CaptureScreenshot_Click(object sender, RoutedEventArgs e)
+        {
+            CaptureScreenshot();
+            ResetInactivityTimer("click");
+        }
+
+        private void AspectToolButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (!CanUseFeature(EntitlementFeatureKeys.PlaybackAspectControls) ||
+                _player == null ||
+                sender is not Button { Tag: string rawAspect } ||
+                !Enum.TryParse(rawAspect, out PlaybackAspectMode aspectMode))
+            {
+                return;
+            }
+
+            _selectedAspectMode = aspectMode;
+            _player.SetAspectMode(aspectMode);
+            UpdateAspectUi();
+            BuildToolsFlyout();
+            _ = SavePlayerPreferencesAsync();
+            RefreshInfoPanel();
+            ResetInactivityTimer("click");
+        }
+
+        private void AudioDelayTool_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not Button { Tag: string rawValue })
+            {
+                return;
+            }
+
+            if (string.Equals(rawValue, "reset", StringComparison.OrdinalIgnoreCase))
+            {
+                SetAudioDelay(0);
+            }
+            else if (TryParseInvariantDouble(rawValue, out var delta))
+            {
+                AdjustAudioDelay(delta);
+            }
+
+            ResetInactivityTimer("click");
+        }
+
+        private void SubtitleDelayTool_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not Button { Tag: string rawValue })
+            {
+                return;
+            }
+
+            if (string.Equals(rawValue, "reset", StringComparison.OrdinalIgnoreCase))
+            {
+                SetSubtitleDelay(0);
+            }
+            else if (TryParseInvariantDouble(rawValue, out var delta))
+            {
+                AdjustSubtitleDelay(delta);
+            }
+
+            ResetInactivityTimer("click");
+        }
+
+        private void SubtitleStyleTool_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not Button { Tag: string rawValue })
+            {
+                return;
+            }
+
+            if (rawValue.StartsWith("scale:", StringComparison.OrdinalIgnoreCase) &&
+                TryParseInvariantDouble(rawValue["scale:".Length..], out var scale))
+            {
+                SetSubtitleScale(scale);
+            }
+            else if (rawValue.StartsWith("position:", StringComparison.OrdinalIgnoreCase) &&
+                     TryParseInvariantInt(rawValue["position:".Length..], out var position))
+            {
+                SetSubtitlePosition(position);
+            }
+
+            ResetInactivityTimer("click");
+        }
+
+        private void ZoomTool_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not Button { Tag: string rawValue })
+            {
+                return;
+            }
+
+            if (string.Equals(rawValue, "reset", StringComparison.OrdinalIgnoreCase))
+            {
+                SetVideoZoom(0);
+            }
+            else if (TryParseInvariantDouble(rawValue, out var delta))
+            {
+                AdjustVideoZoom(delta);
+            }
+
+            ResetInactivityTimer("click");
+        }
+
+        private void RotationTool_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not Button { Tag: string rawValue } ||
+                !TryParseInvariantInt(rawValue, out var rotation))
+            {
+                return;
+            }
+
+            SetVideoRotation(rotation);
+            ResetInactivityTimer("click");
+        }
+
+        private void SleepTimerTool_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not Button { Tag: string rawValue })
+            {
+                return;
+            }
+
+            if (string.Equals(rawValue, "cancel", StringComparison.OrdinalIgnoreCase))
+            {
+                CancelSleepTimer();
+            }
+            else if (TryParseInvariantInt(rawValue, out var minutes))
+            {
+                SetSleepTimer(TimeSpan.FromMinutes(minutes));
+            }
+
+            ResetInactivityTimer("click");
+        }
+
         private void AdjustAudioDelay(double delta) => SetAudioDelay((_player?.AudioDelaySeconds ?? _playerPreferences.AudioDelaySeconds) + delta);
         private void SetAudioDelay(double value)
         {
+            LogPlaybackState($"TOOL: audio delay value={value:0.###}");
             _player?.SetAudioDelaySeconds(value);
+            if (_context != null)
+            {
+                _context.AudioDelaySeconds = _player?.AudioDelaySeconds ?? value;
+            }
+
+            RefreshToolToggleStates();
+            RefreshInfoPanel();
             _ = SavePlayerPreferencesAsync();
             UpdatePlaybackHint();
         }
@@ -801,42 +1134,87 @@ namespace Kroira.App.Views
         private void AdjustSubtitleDelay(double delta) => SetSubtitleDelay((_player?.SubtitleDelaySeconds ?? _playerPreferences.SubtitleDelaySeconds) + delta);
         private void SetSubtitleDelay(double value)
         {
+            LogPlaybackState($"TOOL: subtitle delay value={value:0.###}");
             _player?.SetSubtitleDelaySeconds(value);
+            if (_context != null)
+            {
+                _context.SubtitleDelaySeconds = _player?.SubtitleDelaySeconds ?? value;
+            }
+
+            RefreshToolToggleStates();
+            RefreshInfoPanel();
             _ = SavePlayerPreferencesAsync();
             UpdatePlaybackHint();
         }
 
         private void SetSubtitleScale(double value)
         {
+            LogPlaybackState($"TOOL: subtitle scale value={value:0.###}");
             _player?.SetSubtitleScale(value);
+            if (_context != null)
+            {
+                _context.SubtitleScale = _player?.SubtitleScale > 0 ? _player.SubtitleScale : value;
+            }
+
+            RefreshToolToggleStates();
+            RefreshInfoPanel();
             _ = SavePlayerPreferencesAsync();
         }
 
         private void AdjustSubtitlePosition(int delta)
         {
-            var position = (_player?.SubtitlePosition ?? _playerPreferences.SubtitlePosition) + delta;
+            SetSubtitlePosition((_player?.SubtitlePosition ?? _playerPreferences.SubtitlePosition) + delta);
+        }
+
+        private void SetSubtitlePosition(int position)
+        {
+            LogPlaybackState($"TOOL: subtitle position value={position}");
             _player?.SetSubtitlePosition(position);
+            if (_context != null)
+            {
+                _context.SubtitlePosition = _player?.SubtitlePosition ?? position;
+            }
+
+            RefreshToolToggleStates();
+            RefreshInfoPanel();
             _ = SavePlayerPreferencesAsync();
         }
 
         private void AdjustVideoZoom(double delta) => SetVideoZoom((_player?.VideoZoom ?? 0) + delta);
-        private void SetVideoZoom(double value) => _player?.SetVideoZoom(value);
-        private void SetVideoRotation(int value) => _player?.SetVideoRotation(value);
+        private void SetVideoZoom(double value)
+        {
+            LogPlaybackState($"TOOL: video zoom value={value:0.###}");
+            _player?.SetVideoZoom(value);
+            RefreshToolToggleStates();
+            RefreshInfoPanel();
+        }
+
+        private void SetVideoRotation(int value)
+        {
+            LogPlaybackState($"TOOL: video rotation value={value}");
+            _player?.SetVideoRotation(value);
+            RefreshToolToggleStates();
+            RefreshInfoPanel();
+        }
 
         private void SetSleepTimer(TimeSpan duration)
         {
+            LogPlaybackState($"TOOL: sleep timer set seconds={duration.TotalSeconds:0}");
             _sleepDeadline = DateTimeOffset.UtcNow.Add(duration);
             _sleepTimer ??= new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
             _sleepTimer.Tick -= SleepTimer_Tick;
             _sleepTimer.Tick += SleepTimer_Tick;
             _sleepTimer.Start();
+            RefreshToolToggleStates();
             UpdatePlaybackHint();
         }
 
         private void CancelSleepTimer()
         {
+            LogPlaybackState("TOOL: sleep timer cancelled");
             _sleepDeadline = null;
             _sleepTimer?.Stop();
+            RefreshToolToggleStates();
             UpdatePlaybackHint();
         }
 
@@ -857,6 +1235,7 @@ namespace Kroira.App.Views
                 return;
             }
 
+            RefreshToolToggleStates();
             UpdatePlaybackHint();
         }
 
