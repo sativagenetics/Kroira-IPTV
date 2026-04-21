@@ -237,7 +237,6 @@
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
 
                 <TextBlock x:Name="PlaybackHintText" Grid.Row="0" Foreground="{StaticResource KroiraTextSecondaryBrush}" FontSize="11" Opacity="0.82" TextWrapping="Wrap" Visibility="Collapsed" />
@@ -253,138 +252,7 @@
                     <TextBlock Grid.Column="2" x:Name="DurationText" Text="0:00" VerticalAlignment="Center" Foreground="{StaticResource KroiraTextSecondaryBrush}" FontSize="13" Opacity="0.88" />
                 </Grid>
 
-                <Border x:Name="ToolsPanel" Grid.Row="2" Visibility="Collapsed" Background="#8A0A0D14" BorderBrush="#18FFFFFF" BorderThickness="1" CornerRadius="18" Padding="12,10" HorizontalAlignment="Right" Margin="0,0,0,4">
-                    <ScrollViewer MaxHeight="236" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-                        <StackPanel Width="336" MaxWidth="336" Spacing="9">
-                            <Grid ColumnSpacing="10">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-
-                                <StackPanel Spacing="1">
-                                    <TextBlock Text="Playback tools" FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource KroiraTextPrimaryBrush}" />
-                                    <TextBlock x:Name="ToolsPanelSummaryText" FontSize="11" Foreground="{StaticResource KroiraTextSecondaryBrush}" Text="Compact live controls for display, subtitles, and session actions." TextWrapping="Wrap" />
-                                </StackPanel>
-
-                                <Button x:Name="ToolsPanelCloseButton" Grid.Column="1" Style="{StaticResource PlayerIconButtonStyle}" Click="ToolsButton_Click" ToolTipService.ToolTip="Close tools" MinWidth="32" Height="32">
-                                    <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE711;" />
-                                </Button>
-                            </Grid>
-
-                            <StackPanel Spacing="8">
-                                <Border Style="{StaticResource PlayerToolsSectionBorderStyle}">
-                                    <StackPanel Spacing="8">
-                                        <StackPanel Spacing="2">
-                                            <TextBlock Text="Quick actions" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource KroiraTextSecondaryBrush}" />
-                                            <TextBlock Text="Panels, recovery, capture, and picture-in-picture." FontSize="10" Foreground="{StaticResource KroiraTextSecondaryBrush}" Opacity="0.82" TextWrapping="Wrap" />
-                                        </StackPanel>
-                                        <StackPanel Orientation="Horizontal" Spacing="6">
-                                            <Button x:Name="ToolsInfoButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="InfoPanelToggle_Click" Content="Info" />
-                                            <Button x:Name="ToolsRetryButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="RetryPlayback_Click" Content="Retry" />
-                                            <Button x:Name="ToolsRestartButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="Restart_Click" Content="Restart" Visibility="Collapsed" />
-                                            <Button x:Name="ToolsJumpLiveButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="GoLive_Click" Content="Live" Visibility="Collapsed" />
-                                        </StackPanel>
-                                        <StackPanel Orientation="Horizontal" Spacing="6">
-                                            <Button x:Name="ToolsPictureInPictureButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="PictureInPicture_Click" Content="PiP" Visibility="Collapsed" />
-                                            <Button x:Name="ToolsScreenshotButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="CaptureScreenshot_Click" Content="Shot" />
-                                            <Button x:Name="ToolsGuideButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="GuidePanelToggle_Click" Content="Guide" Visibility="Collapsed" />
-                                        </StackPanel>
-                                        <StackPanel Orientation="Horizontal" Spacing="6">
-                                            <Button x:Name="ToolsChannelsButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="ChannelPanelToggle_Click" Content="Channels" Visibility="Collapsed" />
-                                            <Button x:Name="ToolsEpisodesButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="EpisodePanelToggle_Click" Content="Episodes" Visibility="Collapsed" />
-                                        </StackPanel>
-                                    </StackPanel>
-                                </Border>
-
-                                <Border Style="{StaticResource PlayerToolsSectionBorderStyle}">
-                                    <StackPanel Spacing="8">
-                                        <StackPanel Spacing="2">
-                                            <TextBlock Text="Session" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource KroiraTextSecondaryBrush}" />
-                                            <TextBlock x:Name="ToolsSessionSummaryText" FontSize="10" Foreground="{StaticResource KroiraTextSecondaryBrush}" Opacity="0.82" TextWrapping="Wrap" Text="Sleep timer off. Window follows normal stacking." />
-                                        </StackPanel>
-                                        <StackPanel Orientation="Horizontal" Spacing="6">
-                                            <Button x:Name="SleepTimer30Button" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="SleepTimerTool_Click" Tag="30" Content="30m" />
-                                            <Button x:Name="SleepTimer60Button" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="SleepTimerTool_Click" Tag="60" Content="60m" />
-                                            <Button x:Name="SleepTimer90Button" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="SleepTimerTool_Click" Tag="90" Content="90m" />
-                                            <Button x:Name="SleepTimerCancelButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="SleepTimerTool_Click" Tag="cancel" Content="Off" />
-                                        </StackPanel>
-                                        <StackPanel Orientation="Horizontal" Spacing="6">
-                                            <Button x:Name="ToolsAlwaysOnTopButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="ToggleAlwaysOnTop_Click" Content="Always on top" />
-                                            <Button x:Name="ToolsStopButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="Stop_Click" Content="Stop" />
-                                        </StackPanel>
-                                    </StackPanel>
-                                </Border>
-
-                                <Border Style="{StaticResource PlayerToolsSectionBorderStyle}">
-                                    <StackPanel Spacing="8">
-                                        <TextBlock Text="Display" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource KroiraTextSecondaryBrush}" />
-                                        <TextBlock x:Name="ToolsDisplaySummaryText" FontSize="10" Foreground="{StaticResource KroiraTextSecondaryBrush}" Opacity="0.82" TextWrapping="Wrap" Text="Auto framing, neutral zoom, and standard rotation." />
-                                        <StackPanel Orientation="Horizontal" Spacing="6">
-                                            <Button x:Name="AspectAutoButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="AspectToolButton_Click" Tag="Automatic" Content="Auto" />
-                                            <Button x:Name="AspectFillButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="AspectToolButton_Click" Tag="FillWindow" Content="Fill" />
-                                            <Button x:Name="Aspect169Button" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="AspectToolButton_Click" Tag="Ratio16x9" Content="16:9" />
-                                        </StackPanel>
-                                        <StackPanel Orientation="Horizontal" Spacing="6">
-                                            <Button x:Name="Aspect43Button" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="AspectToolButton_Click" Tag="Ratio4x3" Content="4:3" />
-                                            <Button x:Name="Aspect185Button" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="AspectToolButton_Click" Tag="Ratio185x1" Content="1.85" />
-                                            <Button x:Name="Aspect235Button" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="AspectToolButton_Click" Tag="Ratio235x1" Content="2.35" />
-                                        </StackPanel>
-                                        <StackPanel Orientation="Horizontal" Spacing="6">
-                                            <Button x:Name="ZoomOutButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="ZoomTool_Click" Tag="-0.15" Content="-" />
-                                            <Button x:Name="ZoomResetButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="ZoomTool_Click" Tag="reset" Content="Reset" />
-                                            <Button x:Name="ZoomInButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="ZoomTool_Click" Tag="0.15" Content="+" />
-                                        </StackPanel>
-                                        <StackPanel Orientation="Horizontal" Spacing="6">
-                                            <Button x:Name="Rotation0Button" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="RotationTool_Click" Tag="0" Content="0 deg" />
-                                            <Button x:Name="Rotation90Button" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="RotationTool_Click" Tag="90" Content="90 deg" />
-                                            <Button x:Name="Rotation180Button" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="RotationTool_Click" Tag="180" Content="180 deg" />
-                                            <Button x:Name="Rotation270Button" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="RotationTool_Click" Tag="270" Content="270 deg" />
-                                        </StackPanel>
-                                        <StackPanel Orientation="Horizontal" Spacing="6">
-                                            <Button x:Name="ToolsDeinterlaceButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="ToggleDeinterlace_Click" Content="Deinterlace" />
-                                        </StackPanel>
-                                    </StackPanel>
-                                </Border>
-
-                                <Border Style="{StaticResource PlayerToolsSectionBorderStyle}">
-                                    <StackPanel Spacing="8">
-                                        <TextBlock Text="Audio &amp; subtitles" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource KroiraTextSecondaryBrush}" />
-                                        <TextBlock x:Name="ToolsSubtitleSummaryText" FontSize="10" Foreground="{StaticResource KroiraTextSecondaryBrush}" Opacity="0.82" TextWrapping="Wrap" Text="Subtitle scale and placement follow the active player state." />
-                                        <StackPanel Spacing="4">
-                                            <TextBlock x:Name="ToolsAudioDelayValueText" FontSize="10" Foreground="{StaticResource KroiraTextSecondaryBrush}" Text="Audio delay 0.0s" />
-                                            <StackPanel Orientation="Horizontal" Spacing="6">
-                                                <Button x:Name="AudioDelayMinusButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="AudioDelayTool_Click" Tag="-0.1" Content="-0.1s" />
-                                                <Button x:Name="AudioDelayResetButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="AudioDelayTool_Click" Tag="reset" Content="Reset" />
-                                                <Button x:Name="AudioDelayPlusButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="AudioDelayTool_Click" Tag="0.1" Content="+0.1s" />
-                                            </StackPanel>
-                                        </StackPanel>
-                                        <StackPanel Spacing="4">
-                                            <TextBlock x:Name="ToolsSubtitleDelayValueText" FontSize="10" Foreground="{StaticResource KroiraTextSecondaryBrush}" Text="Subtitle delay 0.0s" />
-                                            <StackPanel Orientation="Horizontal" Spacing="6">
-                                                <Button x:Name="SubtitleDelayMinusButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="SubtitleDelayTool_Click" Tag="-0.1" Content="-0.1s" />
-                                                <Button x:Name="SubtitleDelayResetButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="SubtitleDelayTool_Click" Tag="reset" Content="Reset" />
-                                                <Button x:Name="SubtitleDelayPlusButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="SubtitleDelayTool_Click" Tag="0.1" Content="+0.1s" />
-                                            </StackPanel>
-                                        </StackPanel>
-                                        <StackPanel Orientation="Horizontal" Spacing="6">
-                                            <Button x:Name="SubtitleSizeSmallButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="SubtitleStyleTool_Click" Tag="scale:0.85" Content="Small" />
-                                            <Button x:Name="SubtitleSizeMediumButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="SubtitleStyleTool_Click" Tag="scale:1.0" Content="Medium" />
-                                            <Button x:Name="SubtitleSizeLargeButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="SubtitleStyleTool_Click" Tag="scale:1.2" Content="Large" />
-                                        </StackPanel>
-                                        <StackPanel Orientation="Horizontal" Spacing="6">
-                                            <Button x:Name="SubtitlePositionHighButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="SubtitleStyleTool_Click" Tag="position:84" Content="High" />
-                                            <Button x:Name="SubtitlePositionCenterButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="SubtitleStyleTool_Click" Tag="position:92" Content="Mid" />
-                                            <Button x:Name="SubtitlePositionLowButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="SubtitleStyleTool_Click" Tag="position:100" Content="Low" />
-                                        </StackPanel>
-                                    </StackPanel>
-                                </Border>
-                            </StackPanel>
-                        </StackPanel>
-                    </ScrollViewer>
-                </Border>
-
-                <Grid Grid.Row="3" ColumnSpacing="14" VerticalAlignment="Center">
+                <Grid Grid.Row="2" ColumnSpacing="14" VerticalAlignment="Center">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="*" />
@@ -505,6 +373,137 @@
                     </Button>
                 </StackPanel>
             </Grid>
+        </Border>
+
+        <Border x:Name="ToolsPanel" Grid.Row="1" Visibility="Collapsed" Background="#8A0A0D14" BorderBrush="#18FFFFFF" BorderThickness="1" CornerRadius="18" Padding="12,10" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,24,8" MaxHeight="360" Canvas.ZIndex="20">
+            <ScrollViewer MaxHeight="340" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                <StackPanel Width="336" MaxWidth="336" Spacing="9">
+                    <Grid ColumnSpacing="10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel Spacing="1">
+                            <TextBlock Text="Playback tools" FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource KroiraTextPrimaryBrush}" />
+                            <TextBlock x:Name="ToolsPanelSummaryText" FontSize="11" Foreground="{StaticResource KroiraTextSecondaryBrush}" Text="Compact live controls for display, subtitles, and session actions." TextWrapping="Wrap" />
+                        </StackPanel>
+
+                        <Button x:Name="ToolsPanelCloseButton" Grid.Column="1" Style="{StaticResource PlayerIconButtonStyle}" Click="ToolsButton_Click" ToolTipService.ToolTip="Close tools" MinWidth="32" Height="32">
+                            <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE711;" />
+                        </Button>
+                    </Grid>
+
+                    <StackPanel Spacing="8">
+                        <Border Style="{StaticResource PlayerToolsSectionBorderStyle}">
+                            <StackPanel Spacing="8">
+                                <StackPanel Spacing="2">
+                                    <TextBlock Text="Quick actions" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource KroiraTextSecondaryBrush}" />
+                                    <TextBlock Text="Panels, recovery, capture, and picture-in-picture." FontSize="10" Foreground="{StaticResource KroiraTextSecondaryBrush}" Opacity="0.82" TextWrapping="Wrap" />
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <Button x:Name="ToolsInfoButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="InfoPanelToggle_Click" Content="Info" />
+                                    <Button x:Name="ToolsRetryButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="RetryPlayback_Click" Content="Retry" />
+                                    <Button x:Name="ToolsRestartButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="Restart_Click" Content="Restart" Visibility="Collapsed" />
+                                    <Button x:Name="ToolsJumpLiveButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="GoLive_Click" Content="Live" Visibility="Collapsed" />
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <Button x:Name="ToolsPictureInPictureButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="PictureInPicture_Click" Content="PiP" Visibility="Collapsed" />
+                                    <Button x:Name="ToolsScreenshotButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="CaptureScreenshot_Click" Content="Shot" />
+                                    <Button x:Name="ToolsGuideButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="GuidePanelToggle_Click" Content="Guide" Visibility="Collapsed" />
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <Button x:Name="ToolsChannelsButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="ChannelPanelToggle_Click" Content="Channels" Visibility="Collapsed" />
+                                    <Button x:Name="ToolsEpisodesButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="EpisodePanelToggle_Click" Content="Episodes" Visibility="Collapsed" />
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource PlayerToolsSectionBorderStyle}">
+                            <StackPanel Spacing="8">
+                                <StackPanel Spacing="2">
+                                    <TextBlock Text="Session" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource KroiraTextSecondaryBrush}" />
+                                    <TextBlock x:Name="ToolsSessionSummaryText" FontSize="10" Foreground="{StaticResource KroiraTextSecondaryBrush}" Opacity="0.82" TextWrapping="Wrap" Text="Sleep timer off. Window follows normal stacking." />
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <Button x:Name="SleepTimer30Button" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="SleepTimerTool_Click" Tag="30" Content="30m" />
+                                    <Button x:Name="SleepTimer60Button" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="SleepTimerTool_Click" Tag="60" Content="60m" />
+                                    <Button x:Name="SleepTimer90Button" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="SleepTimerTool_Click" Tag="90" Content="90m" />
+                                    <Button x:Name="SleepTimerCancelButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="SleepTimerTool_Click" Tag="cancel" Content="Off" />
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <Button x:Name="ToolsAlwaysOnTopButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="ToggleAlwaysOnTop_Click" Content="Always on top" />
+                                    <Button x:Name="ToolsStopButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="Stop_Click" Content="Stop" />
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource PlayerToolsSectionBorderStyle}">
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="Display" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource KroiraTextSecondaryBrush}" />
+                                <TextBlock x:Name="ToolsDisplaySummaryText" FontSize="10" Foreground="{StaticResource KroiraTextSecondaryBrush}" Opacity="0.82" TextWrapping="Wrap" Text="Auto framing, neutral zoom, and standard rotation." />
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <Button x:Name="AspectAutoButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="AspectToolButton_Click" Tag="Automatic" Content="Auto" />
+                                    <Button x:Name="AspectFillButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="AspectToolButton_Click" Tag="FillWindow" Content="Fill" />
+                                    <Button x:Name="Aspect169Button" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="AspectToolButton_Click" Tag="Ratio16x9" Content="16:9" />
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <Button x:Name="Aspect43Button" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="AspectToolButton_Click" Tag="Ratio4x3" Content="4:3" />
+                                    <Button x:Name="Aspect185Button" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="AspectToolButton_Click" Tag="Ratio185x1" Content="1.85" />
+                                    <Button x:Name="Aspect235Button" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="AspectToolButton_Click" Tag="Ratio235x1" Content="2.35" />
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <Button x:Name="ZoomOutButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="ZoomTool_Click" Tag="-0.15" Content="-" />
+                                    <Button x:Name="ZoomResetButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="ZoomTool_Click" Tag="reset" Content="Reset" />
+                                    <Button x:Name="ZoomInButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="ZoomTool_Click" Tag="0.15" Content="+" />
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <Button x:Name="Rotation0Button" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="RotationTool_Click" Tag="0" Content="0 deg" />
+                                    <Button x:Name="Rotation90Button" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="RotationTool_Click" Tag="90" Content="90 deg" />
+                                    <Button x:Name="Rotation180Button" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="RotationTool_Click" Tag="180" Content="180 deg" />
+                                    <Button x:Name="Rotation270Button" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="RotationTool_Click" Tag="270" Content="270 deg" />
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <Button x:Name="ToolsDeinterlaceButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="ToggleDeinterlace_Click" Content="Deinterlace" />
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource PlayerToolsSectionBorderStyle}">
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="Audio &amp; subtitles" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource KroiraTextSecondaryBrush}" />
+                                <TextBlock x:Name="ToolsSubtitleSummaryText" FontSize="10" Foreground="{StaticResource KroiraTextSecondaryBrush}" Opacity="0.82" TextWrapping="Wrap" Text="Subtitle scale and placement follow the active player state." />
+                                <StackPanel Spacing="4">
+                                    <TextBlock x:Name="ToolsAudioDelayValueText" FontSize="10" Foreground="{StaticResource KroiraTextSecondaryBrush}" Text="Audio delay 0.0s" />
+                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                        <Button x:Name="AudioDelayMinusButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="AudioDelayTool_Click" Tag="-0.1" Content="-0.1s" />
+                                        <Button x:Name="AudioDelayResetButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="AudioDelayTool_Click" Tag="reset" Content="Reset" />
+                                        <Button x:Name="AudioDelayPlusButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="AudioDelayTool_Click" Tag="0.1" Content="+0.1s" />
+                                    </StackPanel>
+                                </StackPanel>
+                                <StackPanel Spacing="4">
+                                    <TextBlock x:Name="ToolsSubtitleDelayValueText" FontSize="10" Foreground="{StaticResource KroiraTextSecondaryBrush}" Text="Subtitle delay 0.0s" />
+                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                        <Button x:Name="SubtitleDelayMinusButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="SubtitleDelayTool_Click" Tag="-0.1" Content="-0.1s" />
+                                        <Button x:Name="SubtitleDelayResetButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="SubtitleDelayTool_Click" Tag="reset" Content="Reset" />
+                                        <Button x:Name="SubtitleDelayPlusButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="SubtitleDelayTool_Click" Tag="0.1" Content="+0.1s" />
+                                    </StackPanel>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <Button x:Name="SubtitleSizeSmallButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="SubtitleStyleTool_Click" Tag="scale:0.85" Content="Small" />
+                                    <Button x:Name="SubtitleSizeMediumButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="SubtitleStyleTool_Click" Tag="scale:1.0" Content="Medium" />
+                                    <Button x:Name="SubtitleSizeLargeButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="SubtitleStyleTool_Click" Tag="scale:1.2" Content="Large" />
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <Button x:Name="SubtitlePositionHighButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="SubtitleStyleTool_Click" Tag="position:84" Content="High" />
+                                    <Button x:Name="SubtitlePositionCenterButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="SubtitleStyleTool_Click" Tag="position:92" Content="Mid" />
+                                    <Button x:Name="SubtitlePositionLowButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="SubtitleStyleTool_Click" Tag="position:100" Content="Low" />
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </StackPanel>
+            </ScrollViewer>
         </Border>
 
         <Border x:Name="StatusOverlay" Grid.RowSpan="3" Background="#96090B13" Visibility="Collapsed" IsHitTestVisible="False">
