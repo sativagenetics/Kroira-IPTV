@@ -69,10 +69,16 @@ namespace Kroira.App.Data
             EnsureActiveProfileSetting(conn);
 
             EnsureColumn(conn, "Favorites", "ProfileId", "INTEGER NOT NULL DEFAULT 1");
+            EnsureColumn(conn, "Favorites", "LogicalContentKey", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "Favorites", "PreferredSourceProfileId", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "Favorites", "ResolvedAtUtc", "TEXT");
             EnsureColumn(conn, "PlaybackProgresses", "ProfileId", "INTEGER NOT NULL DEFAULT 1");
+            EnsureColumn(conn, "PlaybackProgresses", "LogicalContentKey", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "PlaybackProgresses", "PreferredSourceProfileId", "INTEGER NOT NULL DEFAULT 0");
             EnsureColumn(conn, "PlaybackProgresses", "DurationMs", "INTEGER NOT NULL DEFAULT 0");
             EnsureColumn(conn, "PlaybackProgresses", "WatchStateOverride", "INTEGER NOT NULL DEFAULT 0");
             EnsureColumn(conn, "PlaybackProgresses", "CompletedAtUtc", "TEXT");
+            EnsureColumn(conn, "PlaybackProgresses", "ResolvedAtUtc", "TEXT");
             EnsureColumn(conn, "ParentalControlSettings", "ProfileId", "INTEGER NOT NULL DEFAULT 1");
             EnsureColumn(conn, "ParentalControlSettings", "LockedSourceIdsJson", "TEXT NOT NULL DEFAULT ''");
             EnsureColumn(conn, "ParentalControlSettings", "IsKidsSafeMode", "INTEGER NOT NULL DEFAULT 0");
@@ -143,10 +149,38 @@ namespace Kroira.App.Data
 
             // EPG pass: nullable programme metadata columns
             EnsureColumn(conn, "Channels", "EpgChannelId", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "Channels", "ProviderLogoUrl", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "Channels", "ProviderEpgChannelId", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "Channels", "NormalizedIdentityKey", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "Channels", "NormalizedName", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "Channels", "AliasKeys", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "Channels", "EpgMatchSource", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "Channels", "EpgMatchConfidence", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "Channels", "EpgMatchSummary", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "Channels", "LogoSource", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "Channels", "LogoConfidence", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "Channels", "LogoSummary", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "Channels", "ProviderCatchupMode", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "Channels", "ProviderCatchupSource", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "Channels", "SupportsCatchup", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "Channels", "CatchupWindowHours", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "Channels", "CatchupSource", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "Channels", "CatchupConfidence", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "Channels", "CatchupSummary", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "Channels", "CatchupDetectedAtUtc", "TEXT");
+            EnsureColumn(conn, "Channels", "EnrichedAtUtc", "TEXT");
             EnsureColumn(conn, "EpgPrograms", "Subtitle", "TEXT");
             EnsureColumn(conn, "EpgPrograms", "Category", "TEXT");
             EnsureColumn(conn, "SourceCredentials", "DetectedEpgUrl", "TEXT NOT NULL DEFAULT ''");
             EnsureColumn(conn, "SourceCredentials", "EpgMode", "INTEGER NOT NULL DEFAULT 1");
+            EnsureColumn(conn, "SourceCredentials", "ProxyScope", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "SourceCredentials", "ProxyUrl", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "SourceSyncStates", "LastAutoRefreshAttemptAtUtc", "TEXT");
+            EnsureColumn(conn, "SourceSyncStates", "LastAutoRefreshSuccessAtUtc", "TEXT");
+            EnsureColumn(conn, "SourceSyncStates", "NextAutoRefreshDueAtUtc", "TEXT");
+            EnsureColumn(conn, "SourceSyncStates", "AutoRefreshState", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "SourceSyncStates", "AutoRefreshSummary", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "SourceSyncStates", "AutoRefreshFailureCount", "INTEGER NOT NULL DEFAULT 0");
 
             // M3U import mode for SourceCredentials.
             //  • New-column default = 2 (LiveMoviesAndSeries) — matches the
@@ -212,6 +246,60 @@ namespace Kroira.App.Data
             EnsureColumn(conn, "SourceHealthProbes", "Summary", "TEXT NOT NULL DEFAULT ''");
             EnsureColumn(conn, "SourceHealthProbes", "SortOrder", "INTEGER NOT NULL DEFAULT 0");
 
+            EnsureSourceEnrichmentTables(conn);
+            EnsureColumn(conn, "SourceChannelEnrichmentRecords", "SourceProfileId", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "SourceChannelEnrichmentRecords", "IdentityKey", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "SourceChannelEnrichmentRecords", "NormalizedName", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "SourceChannelEnrichmentRecords", "AliasKeys", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "SourceChannelEnrichmentRecords", "ProviderName", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "SourceChannelEnrichmentRecords", "ProviderEpgChannelId", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "SourceChannelEnrichmentRecords", "ProviderLogoUrl", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "SourceChannelEnrichmentRecords", "ResolvedLogoUrl", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "SourceChannelEnrichmentRecords", "MatchedXmltvChannelId", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "SourceChannelEnrichmentRecords", "MatchedXmltvDisplayName", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "SourceChannelEnrichmentRecords", "MatchedXmltvIconUrl", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "SourceChannelEnrichmentRecords", "EpgMatchSource", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "SourceChannelEnrichmentRecords", "EpgMatchConfidence", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "SourceChannelEnrichmentRecords", "EpgMatchSummary", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "SourceChannelEnrichmentRecords", "LogoSource", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "SourceChannelEnrichmentRecords", "LogoConfidence", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "SourceChannelEnrichmentRecords", "LogoSummary", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "SourceChannelEnrichmentRecords", "LastAppliedAtUtc", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "SourceChannelEnrichmentRecords", "LastSeenAtUtc", "TEXT NOT NULL DEFAULT ''");
+
+            EnsureOperationalTables(conn);
+            EnsureColumn(conn, "LogicalOperationalStates", "ContentType", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "LogicalOperationalStates", "LogicalContentKey", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "LogicalOperationalStates", "CandidateCount", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "LogicalOperationalStates", "PreferredContentId", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "LogicalOperationalStates", "PreferredSourceProfileId", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "LogicalOperationalStates", "PreferredScore", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "LogicalOperationalStates", "SelectionSummary", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "LogicalOperationalStates", "LastKnownGoodContentId", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "LogicalOperationalStates", "LastKnownGoodSourceProfileId", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "LogicalOperationalStates", "LastKnownGoodScore", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "LogicalOperationalStates", "LastKnownGoodAtUtc", "TEXT");
+            EnsureColumn(conn, "LogicalOperationalStates", "LastPlaybackSuccessAtUtc", "TEXT");
+            EnsureColumn(conn, "LogicalOperationalStates", "LastPlaybackFailureAtUtc", "TEXT");
+            EnsureColumn(conn, "LogicalOperationalStates", "ConsecutivePlaybackFailures", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "LogicalOperationalStates", "RecoveryAction", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "LogicalOperationalStates", "RecoverySummary", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "LogicalOperationalStates", "SnapshotEvaluatedAtUtc", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "LogicalOperationalStates", "PreferredUpdatedAtUtc", "TEXT");
+
+            EnsureColumn(conn, "LogicalOperationalCandidates", "LogicalOperationalStateId", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "LogicalOperationalCandidates", "ContentId", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "LogicalOperationalCandidates", "SourceProfileId", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "LogicalOperationalCandidates", "Rank", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "LogicalOperationalCandidates", "Score", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "LogicalOperationalCandidates", "IsSelected", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "LogicalOperationalCandidates", "IsLastKnownGood", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "LogicalOperationalCandidates", "SupportsProxy", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "LogicalOperationalCandidates", "SourceName", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "LogicalOperationalCandidates", "StreamUrl", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "LogicalOperationalCandidates", "Summary", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "LogicalOperationalCandidates", "LastSeenAtUtc", "TEXT NOT NULL DEFAULT ''");
+
             // EPG pass: per-source sync health log (CREATE TABLE IF NOT EXISTS is safe to repeat)
             EnsureEpgSyncLogsTable(conn);
             EnsureColumn(conn, "EpgSyncLogs", "LastSuccessAtUtc", "TEXT");
@@ -237,18 +325,27 @@ namespace Kroira.App.Data
             EnsureIndex(conn, "IX_Series_DedupFingerprint", "Series", "DedupFingerprint");
             EnsureIndex(conn, "IX_Series_TmdbId", "Series", "TmdbId");
             EnsureIndex(conn, "IX_Channels_EpgChannelId", "Channels", "EpgChannelId");
+            EnsureIndex(conn, "IX_Channels_NormalizedIdentityKey", "Channels", "NormalizedIdentityKey");
             EnsureIndex(conn, "IX_SourceHealthReports_SourceProfileId", "SourceHealthReports", "SourceProfileId", unique: true);
             EnsureIndex(conn, "IX_SourceHealthIssues_SourceHealthReportId", "SourceHealthIssues", "SourceHealthReportId");
             EnsureIndex(conn, "IX_SourceHealthComponents_SourceHealthReportId", "SourceHealthComponents", "SourceHealthReportId");
             EnsureUniqueCompositeIndex(conn, "IX_SourceHealthComponents_SourceHealthReportId_ComponentType", "SourceHealthComponents", "SourceHealthReportId", "ComponentType");
             EnsureIndex(conn, "IX_SourceHealthProbes_SourceHealthReportId", "SourceHealthProbes", "SourceHealthReportId");
             EnsureUniqueCompositeIndex(conn, "IX_SourceHealthProbes_SourceHealthReportId_ProbeType", "SourceHealthProbes", "SourceHealthReportId", "ProbeType");
+            EnsureIndex(conn, "IX_SourceChannelEnrichmentRecords_SourceProfileId", "SourceChannelEnrichmentRecords", "SourceProfileId");
+            EnsureUniqueCompositeIndex(conn, "IX_SourceChannelEnrichmentRecords_SourceProfileId_IdentityKey", "SourceChannelEnrichmentRecords", "SourceProfileId", "IdentityKey");
+            EnsureUniqueCompositeIndex(conn, "IX_LogicalOperationalStates_ContentType_LogicalContentKey", "LogicalOperationalStates", "ContentType", "LogicalContentKey");
+            EnsureCompositeIndex(conn, "IX_LogicalOperationalCandidates_SourceProfileId_IsSelected", "LogicalOperationalCandidates", "SourceProfileId", "IsSelected");
+            EnsureTripleCompositeIndex(conn, "IX_LogicalOperationalCandidates_LogicalOperationalStateId_ContentId_SourceProfileId", "LogicalOperationalCandidates", "LogicalOperationalStateId", "ContentId", "SourceProfileId");
             EnsureIndex(conn, "IX_ParentalControlSettings_ProfileId", "ParentalControlSettings", "ProfileId", unique: true);
             EnsureTripleCompositeIndex(conn, "IX_Favorites_ProfileId_ContentType_ContentId", "Favorites", "ProfileId", "ContentType", "ContentId");
+            EnsureTripleCompositeIndex(conn, "IX_Favorites_ProfileId_ContentType_LogicalContentKey", "Favorites", "ProfileId", "ContentType", "LogicalContentKey");
             EnsureTripleCompositeIndex(conn, "IX_PlaybackProgresses_ProfileId_ContentType_ContentId", "PlaybackProgresses", "ProfileId", "ContentType", "ContentId");
+            EnsureTripleCompositeIndex(conn, "IX_PlaybackProgresses_ProfileId_ContentType_LogicalContentKey", "PlaybackProgresses", "ProfileId", "ContentType", "LogicalContentKey");
             EnsureTripleCompositeIndex(conn, "IX_RecordingJobs_ProfileId_Status_StartTimeUtc", "RecordingJobs", "ProfileId", "Status", "StartTimeUtc");
             EnsureTripleCompositeIndex(conn, "IX_DownloadJobs_ProfileId_Status_RequestedAtUtc", "DownloadJobs", "ProfileId", "Status", "RequestedAtUtc");
             EnsureCompositeIndex(conn, "IX_EpgPrograms_ChannelId_StartTimeUtc", "EpgPrograms", "ChannelId", "StartTimeUtc");
+            EnsureIndex(conn, "IX_SourceSyncStates_NextAutoRefreshDueAtUtc", "SourceSyncStates", "NextAutoRefreshDueAtUtc");
 
             BackfillLegacyProfileState(conn);
         }
@@ -573,6 +670,99 @@ namespace Kroira.App.Data
             cmd.CommandText = @"
                 CREATE UNIQUE INDEX IF NOT EXISTS ""IX_SourceHealthProbes_SourceHealthReportId_ProbeType""
                 ON ""SourceHealthProbes"" (""SourceHealthReportId"", ""ProbeType"");";
+            cmd.ExecuteNonQuery();
+        }
+
+        private static void EnsureSourceEnrichmentTables(SqliteConnection conn)
+        {
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = @"
+                CREATE TABLE IF NOT EXISTS ""SourceChannelEnrichmentRecords"" (
+                    ""Id""                        INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                    ""SourceProfileId""           INTEGER NOT NULL,
+                    ""IdentityKey""               TEXT    NOT NULL DEFAULT '',
+                    ""NormalizedName""            TEXT    NOT NULL DEFAULT '',
+                    ""AliasKeys""                 TEXT    NOT NULL DEFAULT '',
+                    ""ProviderName""              TEXT    NOT NULL DEFAULT '',
+                    ""ProviderEpgChannelId""      TEXT    NOT NULL DEFAULT '',
+                    ""ProviderLogoUrl""           TEXT    NOT NULL DEFAULT '',
+                    ""ResolvedLogoUrl""           TEXT    NOT NULL DEFAULT '',
+                    ""MatchedXmltvChannelId""     TEXT    NOT NULL DEFAULT '',
+                    ""MatchedXmltvDisplayName""   TEXT    NOT NULL DEFAULT '',
+                    ""MatchedXmltvIconUrl""       TEXT    NOT NULL DEFAULT '',
+                    ""EpgMatchSource""            INTEGER NOT NULL DEFAULT 0,
+                    ""EpgMatchConfidence""        INTEGER NOT NULL DEFAULT 0,
+                    ""EpgMatchSummary""           TEXT    NOT NULL DEFAULT '',
+                    ""LogoSource""                INTEGER NOT NULL DEFAULT 0,
+                    ""LogoConfidence""            INTEGER NOT NULL DEFAULT 0,
+                    ""LogoSummary""               TEXT    NOT NULL DEFAULT '',
+                    ""LastAppliedAtUtc""          TEXT    NOT NULL DEFAULT '',
+                    ""LastSeenAtUtc""             TEXT    NOT NULL DEFAULT '',
+                    CONSTRAINT ""FK_SourceChannelEnrichmentRecords_SourceProfiles_SourceProfileId""
+                        FOREIGN KEY (""SourceProfileId"")
+                        REFERENCES ""SourceProfiles"" (""Id"")
+                        ON DELETE CASCADE
+                );";
+            cmd.ExecuteNonQuery();
+
+            cmd.CommandText = @"
+                CREATE INDEX IF NOT EXISTS ""IX_SourceChannelEnrichmentRecords_SourceProfileId""
+                ON ""SourceChannelEnrichmentRecords"" (""SourceProfileId"");";
+            cmd.ExecuteNonQuery();
+
+            cmd.CommandText = @"
+                CREATE UNIQUE INDEX IF NOT EXISTS ""IX_SourceChannelEnrichmentRecords_SourceProfileId_IdentityKey""
+                ON ""SourceChannelEnrichmentRecords"" (""SourceProfileId"", ""IdentityKey"");";
+            cmd.ExecuteNonQuery();
+        }
+
+        private static void EnsureOperationalTables(SqliteConnection conn)
+        {
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = @"
+                CREATE TABLE IF NOT EXISTS ""LogicalOperationalStates"" (
+                    ""Id""                         INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                    ""ContentType""                INTEGER NOT NULL DEFAULT 0,
+                    ""LogicalContentKey""          TEXT    NOT NULL DEFAULT '',
+                    ""CandidateCount""             INTEGER NOT NULL DEFAULT 0,
+                    ""PreferredContentId""         INTEGER NOT NULL DEFAULT 0,
+                    ""PreferredSourceProfileId""   INTEGER NOT NULL DEFAULT 0,
+                    ""PreferredScore""             INTEGER NOT NULL DEFAULT 0,
+                    ""SelectionSummary""           TEXT    NOT NULL DEFAULT '',
+                    ""LastKnownGoodContentId""     INTEGER NOT NULL DEFAULT 0,
+                    ""LastKnownGoodSourceProfileId"" INTEGER NOT NULL DEFAULT 0,
+                    ""LastKnownGoodScore""         INTEGER NOT NULL DEFAULT 0,
+                    ""LastKnownGoodAtUtc""         TEXT,
+                    ""LastPlaybackSuccessAtUtc""   TEXT,
+                    ""LastPlaybackFailureAtUtc""   TEXT,
+                    ""ConsecutivePlaybackFailures"" INTEGER NOT NULL DEFAULT 0,
+                    ""RecoveryAction""             INTEGER NOT NULL DEFAULT 0,
+                    ""RecoverySummary""            TEXT    NOT NULL DEFAULT '',
+                    ""SnapshotEvaluatedAtUtc""     TEXT    NOT NULL DEFAULT '',
+                    ""PreferredUpdatedAtUtc""      TEXT
+                );";
+            cmd.ExecuteNonQuery();
+
+            cmd.CommandText = @"
+                CREATE TABLE IF NOT EXISTS ""LogicalOperationalCandidates"" (
+                    ""Id""                       INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                    ""LogicalOperationalStateId"" INTEGER NOT NULL,
+                    ""ContentId""               INTEGER NOT NULL DEFAULT 0,
+                    ""SourceProfileId""         INTEGER NOT NULL DEFAULT 0,
+                    ""Rank""                    INTEGER NOT NULL DEFAULT 0,
+                    ""Score""                   INTEGER NOT NULL DEFAULT 0,
+                    ""IsSelected""              INTEGER NOT NULL DEFAULT 0,
+                    ""IsLastKnownGood""         INTEGER NOT NULL DEFAULT 0,
+                    ""SupportsProxy""           INTEGER NOT NULL DEFAULT 0,
+                    ""SourceName""              TEXT    NOT NULL DEFAULT '',
+                    ""StreamUrl""               TEXT    NOT NULL DEFAULT '',
+                    ""Summary""                 TEXT    NOT NULL DEFAULT '',
+                    ""LastSeenAtUtc""           TEXT    NOT NULL DEFAULT '',
+                    CONSTRAINT ""FK_LogicalOperationalCandidates_LogicalOperationalStates_LogicalOperationalStateId""
+                        FOREIGN KEY (""LogicalOperationalStateId"")
+                        REFERENCES ""LogicalOperationalStates"" (""Id"")
+                        ON DELETE CASCADE
+                );";
             cmd.ExecuteNonQuery();
         }
 

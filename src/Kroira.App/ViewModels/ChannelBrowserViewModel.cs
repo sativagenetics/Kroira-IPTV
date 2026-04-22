@@ -43,6 +43,8 @@ namespace Kroira.App.ViewModels
         public int Id { get; set; }
         public int CategoryId { get; set; }
         public int SourceProfileId { get; set; }
+        public int PreferredSourceProfileId { get; set; }
+        public string LogicalContentKey { get; set; } = string.Empty;
         public string SourceName { get; set; } = string.Empty;
         public string RawName { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
@@ -50,6 +52,9 @@ namespace Kroira.App.ViewModels
         public string DisplayCategoryName { get; set; } = string.Empty;
         public string StreamUrl { get; set; } = string.Empty;
         public string LogoUrl { get; set; } = string.Empty;
+        public bool SupportsCatchup { get; set; }
+        public int CatchupWindowHours { get; set; }
+        public string CatchupSummary { get; set; } = string.Empty;
         public string CurrentProgramTitle { get; set; } = string.Empty;
         public string CurrentProgramSubtitle { get; set; } = string.Empty;
         public string CurrentProgramTimeText { get; set; } = string.Empty;
@@ -78,6 +83,8 @@ namespace Kroira.App.ViewModels
         public int WatchCount { get; set; }
         public DateTime? LastWatchedAtUtc { get; set; }
         public string QuickAccessBadgeText { get; set; } = string.Empty;
+        public Visibility CatchupVisibility => SupportsCatchup ? Visibility.Visible : Visibility.Collapsed;
+        public string CatchupBadgeText => CatchupWindowHours > 0 ? $"Catchup {CatchupWindowHours}h" : "Catchup";
 
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(FavoriteIcon))]
@@ -283,8 +290,10 @@ namespace Kroira.App.ViewModels
     {
         private readonly IServiceProvider _serviceProvider;
         private readonly ICatalogTaxonomyService _taxonomyService;
+        private readonly ILogicalCatalogStateService _logicalCatalogStateService;
         private List<BrowserChannelViewModel> _allChannelsCache = new();
         private int _filterRequestVersion;
+        private HashSet<string> _favoriteLogicalKeys = new(StringComparer.OrdinalIgnoreCase);
 
         public ObservableCollection<BrowserCategoryViewModel> Categories { get; } = new();
         public ObservableCollection<BrowserChannelViewModel> DisplayedChannels { get; } = new();
@@ -299,6 +308,7 @@ namespace Kroira.App.ViewModels
         {
             _serviceProvider = serviceProvider;
             _taxonomyService = serviceProvider.GetRequiredService<ICatalogTaxonomyService>();
+            _logicalCatalogStateService = serviceProvider.GetRequiredService<ILogicalCatalogStateService>();
         }
 
         public async Task LoadSourceAsync(int sourceProfileId)
@@ -312,6 +322,7 @@ namespace Kroira.App.ViewModels
             var profileService = scope.ServiceProvider.GetRequiredService<IProfileStateService>();
             var access = await profileService.GetAccessSnapshotAsync(db);
             var activeProfileId = access.ProfileId;
+            await _logicalCatalogStateService.ReconcilePersistentStateAsync(db, activeProfileId);
 
             var cats = await db.ChannelCategories
                 .Where(c => c.SourceProfileId == sourceProfileId)
@@ -333,10 +344,7 @@ namespace Kroira.App.ViewModels
                              access.IsLiveChannelAllowed(ch, category))
                 .ToList();
 
-            var favIds = await db.Favorites
-                .Where(f => f.ProfileId == activeProfileId && f.ContentType == FavoriteType.Channel)
-                .Select(f => f.ContentId)
-                .ToListAsync();
+            _favoriteLogicalKeys = await _logicalCatalogStateService.GetFavoriteLogicalKeysAsync(db, activeProfileId, FavoriteType.Channel);
 
             // Populate category list
             Categories.Add(new BrowserCategoryViewModel { Id = 0, FilterKey = string.Empty, Name = "All Categories", OrderIndex = -1 });
@@ -346,18 +354,25 @@ namespace Kroira.App.ViewModels
                 var category = categoryById[ch.ChannelCategoryId];
                 var presentation = _taxonomyService.ResolveLiveChannelPresentation(ch.Name);
                 var taxonomy = _taxonomyService.ResolveLiveCategory(category.Name, presentation.DisplayName);
+                var logicalKey = _logicalCatalogStateService.BuildChannelLogicalKey(ch);
 
                 return new BrowserChannelViewModel
                 {
                     Id = ch.Id,
                     CategoryId = ch.ChannelCategoryId,
+                    SourceProfileId = category.SourceProfileId,
+                    PreferredSourceProfileId = category.SourceProfileId,
+                    LogicalContentKey = logicalKey,
                     RawName = ch.Name,
                     Name = string.IsNullOrWhiteSpace(presentation.DisplayName) ? ch.Name : presentation.DisplayName,
                     CategoryName = category.Name,
                     DisplayCategoryName = taxonomy.DisplayCategoryName,
                     StreamUrl = ch.StreamUrl,
                     LogoUrl = ch.LogoUrl ?? string.Empty,
-                    IsFavorite = favIds.Contains(ch.Id)
+                    IsFavorite = _favoriteLogicalKeys.Contains(logicalKey),
+                    SupportsCatchup = ch.SupportsCatchup,
+                    CatchupWindowHours = ch.CatchupWindowHours,
+                    CatchupSummary = ch.CatchupSummary ?? string.Empty
                 };
             }).ToList();
 
@@ -467,23 +482,20 @@ namespace Kroira.App.ViewModels
                 var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
                 var profileService = scope.ServiceProvider.GetRequiredService<IProfileStateService>();
                 var activeProfileId = await profileService.GetActiveProfileIdAsync(db);
-
-                if (target.IsFavorite)
+                var isFavorite = await _logicalCatalogStateService.ToggleFavoriteAsync(db, activeProfileId, FavoriteType.Channel, channelId);
+                if (isFavorite)
                 {
-                    var fav = await db.Favorites.FirstOrDefaultAsync(f => f.ProfileId == activeProfileId && f.ContentType == FavoriteType.Channel && f.ContentId == channelId);
-                    if (fav != null)
-                    {
-                        db.Favorites.Remove(fav);
-                        await db.SaveChangesAsync();
-                    }
-                    target.IsFavorite = false;
+                    _favoriteLogicalKeys.Add(target.LogicalContentKey);
                 }
                 else
                 {
-                    var fav = new Favorite { ProfileId = activeProfileId, ContentType = FavoriteType.Channel, ContentId = channelId };
-                    db.Favorites.Add(fav);
-                    await db.SaveChangesAsync();
-                    target.IsFavorite = true;
+                    _favoriteLogicalKeys.Remove(target.LogicalContentKey);
+                }
+
+                foreach (var channel in _allChannelsCache.Where(channel =>
+                             string.Equals(channel.LogicalContentKey, target.LogicalContentKey, StringComparison.OrdinalIgnoreCase)))
+                {
+                    channel.IsFavorite = isFavorite;
                 }
             }
         }

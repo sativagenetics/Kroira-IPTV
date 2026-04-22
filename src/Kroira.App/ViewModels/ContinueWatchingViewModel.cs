@@ -103,8 +103,10 @@ namespace Kroira.App.ViewModels
                 var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
                 var profileService = scope.ServiceProvider.GetRequiredService<IProfileStateService>();
                 var watchStateService = scope.ServiceProvider.GetRequiredService<ILibraryWatchStateService>();
+                var logicalCatalogStateService = scope.ServiceProvider.GetRequiredService<ILogicalCatalogStateService>();
                 var surfaceStateService = scope.ServiceProvider.GetRequiredService<ISurfaceStateService>();
                 var access = await profileService.GetAccessSnapshotAsync(db);
+                await logicalCatalogStateService.ReconcilePlaybackProgressAsync(db, access.ProfileId);
 
                 _isLoadingPreferences = true;
                 try

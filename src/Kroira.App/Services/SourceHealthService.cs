@@ -19,6 +19,7 @@ namespace Kroira.App.Services
     public sealed class SourceHealthService : ISourceHealthService
     {
         private readonly ISourceProbeService _sourceProbeService;
+        private readonly ISourceRoutingService _sourceRoutingService;
 
         private static readonly HashSet<string> ValidStreamSchemes = new(StringComparer.OrdinalIgnoreCase)
         {
@@ -43,9 +44,10 @@ namespace Kroira.App.Services
                 [SourceHealthComponentType.Freshness] = 16
             };
 
-        public SourceHealthService(ISourceProbeService sourceProbeService)
+        public SourceHealthService(ISourceProbeService sourceProbeService, ISourceRoutingService sourceRoutingService)
         {
             _sourceProbeService = sourceProbeService;
+            _sourceRoutingService = sourceRoutingService;
         }
 
         public async Task RefreshSourceHealthAsync(AppDbContext db, int sourceProfileId)
@@ -73,7 +75,11 @@ namespace Kroira.App.Services
                         Name = channel.Name,
                         StreamUrl = channel.StreamUrl,
                         LogoUrl = channel.LogoUrl,
+                        ProviderLogoUrl = channel.ProviderLogoUrl,
                         EpgChannelId = channel.EpgChannelId,
+                        ProviderEpgChannelId = channel.ProviderEpgChannelId,
+                        EpgMatchSource = channel.EpgMatchSource,
+                        LogoSource = channel.LogoSource,
                         CategoryName = category.Name
                     })
                 .ToListAsync();
@@ -281,7 +287,7 @@ namespace Kroira.App.Services
                     .ToList();
             }
 
-            var liveProbeTask = BuildLiveProbeAsync(liveChannels);
+            var liveProbeTask = BuildLiveProbeAsync(credential, liveChannels);
             var vodProbeTask = BuildVodProbeAsync(profile, credential, movies, episodes);
             await Task.WhenAll(liveProbeTask, vodProbeTask);
 
@@ -327,6 +333,10 @@ namespace Kroira.App.Services
             var suspiciousVod = AnalyzeSuspiciousVodEntries(profile.Type, movies, series);
             var suspiciousEntryCount = suspiciousLive.Count + suspiciousVod.Count;
             var logoCount = liveChannels.Count(channel => !string.IsNullOrWhiteSpace(channel.LogoUrl));
+            var guideFallbackCount = liveChannels.Count(channel => channel.EpgMatchSource is ChannelEpgMatchSource.Previous or ChannelEpgMatchSource.Normalized or ChannelEpgMatchSource.Alias or ChannelEpgMatchSource.Fuzzy);
+            var guideReuseCount = liveChannels.Count(channel => channel.EpgMatchSource == ChannelEpgMatchSource.Previous);
+            var logoFallbackCount = liveChannels.Count(channel => channel.LogoSource is ChannelLogoSource.Previous or ChannelLogoSource.Xmltv);
+            var providerLogoCount = liveChannels.Count(channel => channel.LogoSource == ChannelLogoSource.Provider);
             var hasGuideConfigured = HasGuideConfigured(credential, epgLog);
             var hasPersistedGuideData = guideMetrics.MatchedChannelCount > 0 || (epgLog?.ProgrammeCount ?? 0) > 0;
             var guideIsStale = epgLog?.Status == EpgStatus.Stale;
@@ -337,8 +347,8 @@ namespace Kroira.App.Services
                 EvaluateCatalogComponent(hasSuccessfulSync, hasLatestImportFailure, totalCatalogItems, totalPlayableItems, duplicateCount, invalidStreams.TotalCount, suspiciousEntryCount),
                 EvaluateLiveComponent(totalChannels, liveDuplicates.Count, invalidStreams.LiveCount, suspiciousLive.Count, GetProbe(probeMap, SourceHealthProbeType.Live)),
                 EvaluateVodComponent(profile.Type, credential, totalVodItems, totalMovies, totalSeries, vodDuplicateCount, invalidStreams.VodCount, suspiciousVod.Count, GetProbe(probeMap, SourceHealthProbeType.Vod)),
-                EvaluateEpgComponent(totalChannels, hasSuccessfulSync, guideMode, hasGuideConfigured, guideMetrics, epgLog, hasPersistedGuideData),
-                EvaluateLogosComponent(totalChannels, logoCount),
+                EvaluateEpgComponent(totalChannels, hasSuccessfulSync, guideMode, hasGuideConfigured, guideMetrics, epgLog, hasPersistedGuideData, guideFallbackCount, guideReuseCount),
+                EvaluateLogosComponent(totalChannels, logoCount, providerLogoCount, logoFallbackCount),
                 EvaluateFreshnessComponent(hasSuccessfulSync, hasLatestImportFailure, lastSuccessfulSyncAtUtc, evaluatedAtUtc, guideIsStale)
             };
 
@@ -572,7 +582,9 @@ namespace Kroira.App.Services
             bool hasGuideConfigured,
             GuideMetrics guideMetrics,
             EpgSyncLog? epgLog,
-            bool hasPersistedGuideData)
+            bool hasPersistedGuideData,
+            int guideFallbackCount,
+            int guideReuseCount)
         {
             if (totalChannels <= 0)
             {
@@ -629,10 +641,10 @@ namespace Kroira.App.Services
 
             var summary = state switch
             {
-                SourceHealthComponentState.Healthy => $"Guide matches {guideMetrics.MatchedChannelCount:N0} of {totalChannels:N0} live channels.",
-                SourceHealthComponentState.Weak => $"Guide covers {guideMetrics.MatchedChannelCount:N0} of {totalChannels:N0} live channels, but coverage is still uneven.",
+                SourceHealthComponentState.Healthy => BuildGuideSummary($"Guide matches {guideMetrics.MatchedChannelCount:N0} of {totalChannels:N0} live channels.", guideFallbackCount, guideReuseCount),
+                SourceHealthComponentState.Weak => BuildGuideSummary($"Guide covers {guideMetrics.MatchedChannelCount:N0} of {totalChannels:N0} live channels, but coverage is still uneven.", guideFallbackCount, guideReuseCount),
                 SourceHealthComponentState.Incomplete when !hasGuideConfigured => "No active guide source is available for live-channel matching.",
-                SourceHealthComponentState.Incomplete => $"Guide coverage is too thin across the {totalChannels:N0} live channels.",
+                SourceHealthComponentState.Incomplete => BuildGuideSummary($"Guide coverage is too thin across the {totalChannels:N0} live channels.", guideFallbackCount, guideReuseCount),
                 SourceHealthComponentState.Outdated => "Guide data is stale after a failed refresh.",
                 _ => "Guide refresh failed before any usable coverage was stored."
             };
@@ -648,7 +660,7 @@ namespace Kroira.App.Services
                 3);
         }
 
-        private static SourceHealthComponentDraft EvaluateLogosComponent(int totalChannels, int logoCount)
+        private static SourceHealthComponentDraft EvaluateLogosComponent(int totalChannels, int logoCount, int providerLogoCount, int logoFallbackCount)
         {
             if (totalChannels <= 0)
             {
@@ -667,9 +679,9 @@ namespace Kroira.App.Services
 
             var summary = state switch
             {
-                SourceHealthComponentState.Healthy => $"Logos cover {logoCount:N0} of {totalChannels:N0} live channels.",
-                SourceHealthComponentState.Weak => $"Logos cover {logoCount:N0} of {totalChannels:N0} live channels, but branding is still thin.",
-                _ => $"Many live channels are still missing logos ({logoCount:N0}/{totalChannels:N0})."
+                SourceHealthComponentState.Healthy => BuildLogoSummary($"Logos cover {logoCount:N0} of {totalChannels:N0} live channels.", providerLogoCount, logoFallbackCount),
+                SourceHealthComponentState.Weak => BuildLogoSummary($"Logos cover {logoCount:N0} of {totalChannels:N0} live channels, but branding is still thin.", providerLogoCount, logoFallbackCount),
+                _ => BuildLogoSummary($"Many live channels are still missing logos ({logoCount:N0}/{totalChannels:N0}).", providerLogoCount, logoFallbackCount)
             };
 
             return CreateComponent(SourceHealthComponentType.Logos, state, AlignComponentScore(state, rawScore), summary, totalChannels, logoCount, Math.Max(0, totalChannels - logoCount), 4);
@@ -987,7 +999,7 @@ namespace Kroira.App.Services
             return !string.IsNullOrWhiteSpace(epgLog?.ActiveXmltvUrl) || !string.IsNullOrWhiteSpace(credential.DetectedEpgUrl);
         }
 
-        private async Task<SourceHealthProbeDraft> BuildLiveProbeAsync(IReadOnlyList<LiveChannelRecord> liveChannels)
+        private async Task<SourceHealthProbeDraft> BuildLiveProbeAsync(SourceCredential? credential, IReadOnlyList<LiveChannelRecord> liveChannels)
         {
             if (liveChannels.Count == 0)
             {
@@ -1000,7 +1012,8 @@ namespace Kroira.App.Services
                 {
                     Name = channel.Name,
                     StreamUrl = channel.StreamUrl
-                }).ToList());
+                }).ToList(),
+                _sourceRoutingService.Resolve(credential, SourceNetworkPurpose.Probe));
 
             return CreateProbeDraft(SourceHealthProbeType.Live, result, 0);
         }
@@ -1033,7 +1046,10 @@ namespace Kroira.App.Services
                 return CreateSkippedProbe(SourceHealthProbeType.Vod, "VOD probing is not applicable because the source has no playable VOD sample.", 1);
             }
 
-            var result = await _sourceProbeService.ProbeAsync(SourceHealthProbeType.Vod, candidates);
+            var result = await _sourceProbeService.ProbeAsync(
+                SourceHealthProbeType.Vod,
+                candidates,
+                _sourceRoutingService.Resolve(credential, SourceNetworkPurpose.Probe));
             return CreateProbeDraft(SourceHealthProbeType.Vod, result, 1);
         }
 
@@ -1337,6 +1353,30 @@ namespace Kroira.App.Services
                 : $"Imported {totalMovies:N0} movies and {totalSeries:N0} series.";
         }
 
+        private static string BuildGuideSummary(string lead, int fallbackCount, int reuseCount)
+        {
+            if (fallbackCount <= 0)
+            {
+                return lead;
+            }
+
+            return reuseCount > 0
+                ? $"{lead} {fallbackCount:N0} channels rely on fallback matching, including {reuseCount:N0} reused prior matches."
+                : $"{lead} {fallbackCount:N0} channels rely on fallback matching.";
+        }
+
+        private static string BuildLogoSummary(string lead, int providerLogoCount, int fallbackLogoCount)
+        {
+            if (fallbackLogoCount <= 0)
+            {
+                return lead;
+            }
+
+            return providerLogoCount > 0
+                ? $"{lead} {fallbackLogoCount:N0} logos come from safe fallback coverage."
+                : $"{lead} Coverage is driven by safe fallback logos.";
+        }
+
         private static string BuildImportResultSummary(SourceProfile profile, SourceSyncState? syncState, int totalChannels, int totalMovies, int totalSeries)
         {
             if (syncState is { HttpStatusCode: >= 400 })
@@ -1607,7 +1647,11 @@ namespace Kroira.App.Services
             public string Name { get; set; } = string.Empty;
             public string StreamUrl { get; set; } = string.Empty;
             public string LogoUrl { get; set; } = string.Empty;
+            public string ProviderLogoUrl { get; set; } = string.Empty;
             public string EpgChannelId { get; set; } = string.Empty;
+            public string ProviderEpgChannelId { get; set; } = string.Empty;
+            public ChannelEpgMatchSource EpgMatchSource { get; set; }
+            public ChannelLogoSource LogoSource { get; set; }
             public string CategoryName { get; set; } = string.Empty;
         }
 

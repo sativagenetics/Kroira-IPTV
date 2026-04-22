@@ -7,7 +7,14 @@ namespace Kroira.App.Models
         public int ProfileId { get; set; }
         public int ContentId { get; set; }
         public PlaybackContentType ContentType { get; set; }
+        public string LogicalContentKey { get; set; } = string.Empty;
+        public int PreferredSourceProfileId { get; set; }
         public string StreamUrl { get; set; } = string.Empty;
+        public SourceProxyScope ProxyScope { get; set; }
+        public string ProxyUrl { get; set; } = string.Empty;
+        public string RoutingSummary { get; set; } = string.Empty;
+        public string OperationalSummary { get; set; } = string.Empty;
+        public int MirrorCandidateCount { get; set; }
         public long StartPositionMs { get; set; }
         public long HostWindowHandle { get; set; }
         public bool OpenInPictureInPicture { get; set; }

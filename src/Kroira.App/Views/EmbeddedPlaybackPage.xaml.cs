@@ -101,6 +101,7 @@ namespace Kroira.App.Views
         private long _playbackSessionId;
         private CancellationTokenSource _playbackSessionCancellation = new();
         private readonly List<FlyoutBase> _openOverlayFlyouts = new();
+        private readonly HashSet<int> _failedMirrorContentIds = new();
         private FlyoutBase _activeUtilityFlyout;
         private FlyoutBase _pendingUtilityFlyout;
 
@@ -219,6 +220,7 @@ namespace Kroira.App.Views
             _currentState = _stateMachine.State;
             _lastStateMessage = _stateMachine.Message;
             _overlayHiddenByInactivity = false;
+            _failedMirrorContentIds.Clear();
         }
 
         private CancellationToken CurrentPlaybackSessionToken =>
@@ -597,7 +599,7 @@ namespace Kroira.App.Views
 
         private MpvPlayer CreatePlayer(IntPtr surfaceHandle)
         {
-            var player = new MpvPlayer(DispatcherQueue.GetForCurrentThread(), surfaceHandle);
+            var player = new MpvPlayer(DispatcherQueue.GetForCurrentThread(), surfaceHandle, _context?.ProxyUrl);
             player.PositionChanged += OnPositionChanged;
             player.DurationChanged += OnDurationChanged;
             player.PauseChanged += OnPauseChanged;
@@ -689,6 +691,8 @@ namespace Kroira.App.Views
 
             if (openSucceeded)
             {
+                _failedMirrorContentIds.Clear();
+                _ = MarkOperationalPlaybackSucceededAsync();
                 if (IsLivePlayback())
                 {
                     LogPlaybackState("LIVECTL: start completed");
@@ -721,8 +725,21 @@ namespace Kroira.App.Views
 
             LogPlaybackState($"RECOVERY: requested reason={reason}");
 
+            if (_context?.ContentId > 0)
+            {
+                _failedMirrorContentIds.Add(_context.ContentId);
+            }
+
+            if (_retryAttempt >= 1 &&
+                await TrySwitchToFallbackMirrorAsync(reason, playbackSessionId, cancellationToken))
+            {
+                _recoveryInProgress = false;
+                return;
+            }
+
             if (_retryAttempt >= MaxRetryAttempts)
             {
+                await MarkOperationalPlaybackFailureAsync(reason, allowFallback: false);
                 ShowFatalError(reason);
                 await PersistProgressAsync(force: true);
                 return;
@@ -769,6 +786,42 @@ namespace Kroira.App.Views
             }
         }
 
+        private async Task<bool> TrySwitchToFallbackMirrorAsync(string reason, long playbackSessionId, CancellationToken cancellationToken)
+        {
+            var fallback = await MarkOperationalPlaybackFailureAsync(reason, allowFallback: true);
+            if (fallback == null ||
+                !IsPlaybackSessionActive(playbackSessionId, cancellationToken))
+            {
+                return false;
+            }
+
+            if (_context == null)
+            {
+                return false;
+            }
+
+            _context.ContentId = fallback.ContentId;
+            _context.LogicalContentKey = fallback.LogicalContentKey;
+            _context.PreferredSourceProfileId = fallback.SourceProfileId;
+            _context.StreamUrl = fallback.StreamUrl;
+            _context.ProxyScope = fallback.Routing.Scope;
+            _context.ProxyUrl = fallback.Routing.UseProxy ? fallback.Routing.ProxyUrl : string.Empty;
+            _context.RoutingSummary = fallback.Routing.Summary;
+            _context.MirrorCandidateCount = fallback.CandidateCount;
+            _context.OperationalSummary = fallback.RecoverySummary;
+            _resolvedRoutingSummary = fallback.Routing.Summary;
+
+            await LoadEnhancedPlayerStateAsync(cancellationToken);
+            if (!IsPlaybackSessionActive(playbackSessionId, cancellationToken))
+            {
+                return true;
+            }
+
+            ShowZapBanner(TitleText.Text, string.IsNullOrWhiteSpace(fallback.RecoverySummary) ? "Recovered via backup mirror." : fallback.RecoverySummary);
+            RestartPlayerSession("mirror_fallback", IsLivePlayback() ? 0 : GetRetryPositionMs());
+            return true;
+        }
+
         private long GetRetryPositionMs()
         {
             if (IsLivePlayback())
@@ -787,6 +840,49 @@ namespace Kroira.App.Views
             }
 
             await _progressCoordinator.PersistAsync(_context, _lastPositionMs, _lastDurationMs, force);
+        }
+
+        private async Task MarkOperationalPlaybackSucceededAsync()
+        {
+            if (_context == null || _teardownStarted)
+            {
+                return;
+            }
+
+            try
+            {
+                using var scope = ((App)Application.Current).Services.CreateScope();
+                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                var contentOperationalService = scope.ServiceProvider.GetRequiredService<IContentOperationalService>();
+                await contentOperationalService.MarkPlaybackSucceededAsync(db, _context);
+            }
+            catch
+            {
+            }
+        }
+
+        private async Task<OperationalPlaybackResolution?> MarkOperationalPlaybackFailureAsync(string reason, bool allowFallback)
+        {
+            if (_context == null || _teardownStarted)
+            {
+                return null;
+            }
+
+            try
+            {
+                using var scope = ((App)Application.Current).Services.CreateScope();
+                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                var contentOperationalService = scope.ServiceProvider.GetRequiredService<IContentOperationalService>();
+                return await contentOperationalService.MarkPlaybackFailedAsync(
+                    db,
+                    _context,
+                    reason,
+                    allowFallback ? _failedMirrorContentIds : Array.Empty<int>());
+            }
+            catch
+            {
+                return null;
+            }
         }
 
         private void OnPlaybackStateChanged(PlaybackSessionStateSnapshot snapshot)
@@ -1996,7 +2092,14 @@ namespace Kroira.App.Views
                 ProfileId = _context?.ProfileId ?? 0,
                 ContentId = _context?.ContentId ?? 0,
                 ContentType = _context?.ContentType ?? PlaybackContentType.Channel,
+                LogicalContentKey = _context?.LogicalContentKey ?? string.Empty,
+                PreferredSourceProfileId = _context?.PreferredSourceProfileId ?? 0,
                 StreamUrl = _context?.StreamUrl ?? string.Empty,
+                ProxyScope = _context?.ProxyScope ?? SourceProxyScope.Disabled,
+                ProxyUrl = _context?.ProxyUrl ?? string.Empty,
+                RoutingSummary = _context?.RoutingSummary ?? string.Empty,
+                OperationalSummary = _context?.OperationalSummary ?? string.Empty,
+                MirrorCandidateCount = _context?.MirrorCandidateCount ?? 0,
                 StartPositionMs = Math.Max(_lastPositionMs, 0),
                 OpenInPictureInPicture = openInPictureInPicture,
                 StartPaused = startPaused,

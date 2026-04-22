@@ -39,6 +39,7 @@ namespace Kroira.App.ViewModels
     {
         private readonly IServiceProvider _serviceProvider;
         private readonly ICatalogTaxonomyService _taxonomyService;
+        private readonly ILogicalCatalogStateService _logicalCatalogStateService;
 
         public ObservableCollection<BrowserChannelViewModel> FavoriteChannels { get; } = new();
         public ObservableCollection<FavoriteMovieViewModel> FavoriteMovies { get; } = new();
@@ -98,6 +99,7 @@ namespace Kroira.App.ViewModels
         {
             _serviceProvider = serviceProvider;
             _taxonomyService = serviceProvider.GetRequiredService<ICatalogTaxonomyService>();
+            _logicalCatalogStateService = serviceProvider.GetRequiredService<ILogicalCatalogStateService>();
         }
 
         [RelayCommand]
@@ -116,6 +118,7 @@ namespace Kroira.App.ViewModels
                 var profileService = scope.ServiceProvider.GetRequiredService<IProfileStateService>();
                 var surfaceStateService = scope.ServiceProvider.GetRequiredService<ISurfaceStateService>();
                 var access = await profileService.GetAccessSnapshotAsync(db);
+                await _logicalCatalogStateService.ReconcileFavoritesAsync(db, access.ProfileId);
 
                 var channelIds = await db.Favorites
                     .Where(f => f.ProfileId == access.ProfileId && f.ContentType == FavoriteType.Channel)
@@ -278,13 +281,7 @@ namespace Kroira.App.ViewModels
                 var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
                 var profileService = scope.ServiceProvider.GetRequiredService<IProfileStateService>();
                 var activeProfileId = await profileService.GetActiveProfileIdAsync(db);
-
-                var fav = await db.Favorites.FirstOrDefaultAsync(f => f.ProfileId == activeProfileId && f.ContentType == FavoriteType.Channel && f.ContentId == channelId);
-                if (fav != null)
-                {
-                    db.Favorites.Remove(fav);
-                    await db.SaveChangesAsync();
-                }
+                await _logicalCatalogStateService.ToggleFavoriteAsync(db, activeProfileId, FavoriteType.Channel, channelId);
                 FavoriteChannels.Remove(target);
                 IsEmpty = TotalFavorites == 0;
                 FeaturedChannel = FavoriteChannels.FirstOrDefault();
@@ -300,12 +297,7 @@ namespace Kroira.App.ViewModels
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             var profileService = scope.ServiceProvider.GetRequiredService<IProfileStateService>();
             var activeProfileId = await profileService.GetActiveProfileIdAsync(db);
-            var fav = await db.Favorites.FirstOrDefaultAsync(f => f.ProfileId == activeProfileId && f.ContentType == FavoriteType.Movie && f.ContentId == movieId);
-            if (fav != null)
-            {
-                db.Favorites.Remove(fav);
-                await db.SaveChangesAsync();
-            }
+            await _logicalCatalogStateService.ToggleFavoriteAsync(db, activeProfileId, FavoriteType.Movie, movieId);
 
             var target = FavoriteMovies.FirstOrDefault(m => m.Id == movieId);
             if (target != null)
@@ -325,12 +317,7 @@ namespace Kroira.App.ViewModels
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             var profileService = scope.ServiceProvider.GetRequiredService<IProfileStateService>();
             var activeProfileId = await profileService.GetActiveProfileIdAsync(db);
-            var fav = await db.Favorites.FirstOrDefaultAsync(f => f.ProfileId == activeProfileId && f.ContentType == FavoriteType.Series && f.ContentId == seriesId);
-            if (fav != null)
-            {
-                db.Favorites.Remove(fav);
-                await db.SaveChangesAsync();
-            }
+            await _logicalCatalogStateService.ToggleFavoriteAsync(db, activeProfileId, FavoriteType.Series, seriesId);
 
             var target = FavoriteSeries.FirstOrDefault(s => s.Id == seriesId);
             if (target != null)

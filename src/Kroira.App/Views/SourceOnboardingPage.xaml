@@ -64,6 +64,24 @@
                                  PlaceholderText="http://.../epg.xml or C:\guide.xml" />
                     </StackPanel>
 
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="Routing Policy" Style="{StaticResource KroiraSectionTitleStyle}" />
+                        <RadioButtons SelectedIndex="{x:Bind ViewModel.SelectedProxyModeIndex, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                            <RadioButton Content="Direct routing" />
+                            <RadioButton Content="Playback only" />
+                            <RadioButton Content="Playback + probes" />
+                            <RadioButton Content="All requests" />
+                        </RadioButtons>
+                        <TextBlock Text="{x:Bind ViewModel.ProxySummaryText, Mode=OneWay}"
+                                   Foreground="{StaticResource KroiraTextSecondaryBrush}"
+                                   TextWrapping="WrapWholeWords" />
+                        <TextBox Visibility="{x:Bind ViewModel.ProxyUrlVisibility, Mode=OneWay}"
+                                 Header="Proxy URL"
+                                 Style="{StaticResource KroiraTextBoxStyle}"
+                                 Text="{x:Bind ViewModel.ProxyUrl, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                 PlaceholderText="http://proxy-host:port or socks5://proxy-host:port" />
+                    </StackPanel>
+
                     <Button Content="Save Source"
                             Command="{x:Bind ViewModel.SaveSourceCommand}"
                             IsEnabled="{x:Bind ViewModel.CanSaveSource, Mode=OneWay}"

@@ -198,6 +198,7 @@ namespace Kroira.App.ViewModels
         private readonly IServiceProvider _serviceProvider;
         private readonly IBrowsePreferencesService _browsePreferencesService;
         private readonly ICatalogTaxonomyService _taxonomyService;
+        private readonly ILogicalCatalogStateService _logicalCatalogStateService;
         private readonly List<CatalogSeriesGroup> _allSeriesGroups = new();
         private readonly Dictionary<int, CatalogCategoryProjection> _seriesCategoryById = new();
         private List<SeriesBrowseItemViewModel> _allSeries = new List<SeriesBrowseItemViewModel>();
@@ -213,7 +214,7 @@ namespace Kroira.App.ViewModels
         private int? _preferredEpisodeId;
         private int? _preferredSeriesVariantId;
         private BrowsePreferences _browsePreferences = new();
-        private HashSet<int> _favoriteSeriesIds = new();
+        private HashSet<string> _favoriteSeriesKeys = new(StringComparer.OrdinalIgnoreCase);
         private string _browseLanguageCode = AppLanguageService.DefaultLanguageCode;
         private bool _isApplyingFilter;
         private bool _pendingApplyFilter;
@@ -460,6 +461,7 @@ namespace Kroira.App.ViewModels
             _serviceProvider = serviceProvider;
             _browsePreferencesService = serviceProvider.GetRequiredService<IBrowsePreferencesService>();
             _taxonomyService = serviceProvider.GetRequiredService<ICatalogTaxonomyService>();
+            _logicalCatalogStateService = serviceProvider.GetRequiredService<ILogicalCatalogStateService>();
             SortOptions.Add(new BrowseSortOptionViewModel("recommended", "Recommended"));
             SortOptions.Add(new BrowseSortOptionViewModel("title_asc", "Title A-Z"));
             SortOptions.Add(new BrowseSortOptionViewModel("rating_desc", "Highest rated"));
@@ -509,15 +511,12 @@ namespace Kroira.App.ViewModels
                 _browsePreferences = await browsePreferencesService.GetAsync(db, Domain, _activeProfileId);
                 var languageCode = await AppLanguageService.GetLanguageAsync(db, access.ProfileId);
                 _browseLanguageCode = languageCode;
+                await _logicalCatalogStateService.ReconcileFavoritesAsync(db, access.ProfileId);
                 var seriesGroups = (await deduplicationService.LoadSeriesGroupsAsync(db))
                     .Select(group => FilterGroup(group, access))
                     .OfType<CatalogSeriesGroup>()
                     .ToList();
-                _favoriteSeriesIds = (await db.Favorites
-                    .Where(f => f.ProfileId == access.ProfileId && f.ContentType == FavoriteType.Series)
-                    .Select(f => f.ContentId)
-                    .ToListAsync())
-                    .ToHashSet();
+                _favoriteSeriesKeys = await _logicalCatalogStateService.GetFavoriteLogicalKeysAsync(db, access.ProfileId, FavoriteType.Series);
 
                 var seriesOrderEntries = seriesGroups
                     .Select(group => new
@@ -663,7 +662,7 @@ namespace Kroira.App.ViewModels
             _allSeries = filteredResults
                 .Select(result => new SeriesBrowseItemViewModel(
                     result.Group,
-                    result.Group.Variants.Any(variant => _favoriteSeriesIds.Contains(variant.Series.Id)),
+                    IsSeriesGroupFavorite(result.Group),
                     result.DisplayCategoryName))
                 .ToList();
 
@@ -710,26 +709,18 @@ namespace Kroira.App.ViewModels
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             var profileService = scope.ServiceProvider.GetRequiredService<IProfileStateService>();
             var activeProfileId = await profileService.GetActiveProfileIdAsync(db);
-            var variantIds = targetGroup.Variants.Select(variant => variant.Series.Id).ToList();
-            var existingFavorites = await db.Favorites
-                .Where(f => f.ProfileId == activeProfileId && f.ContentType == FavoriteType.Series && variantIds.Contains(f.ContentId))
-                .ToListAsync();
-
-            if (existingFavorites.Count == 0)
+            var targetSeries = targetGroup.Variants.First(variant => variant.Series.Id == seriesId).Series;
+            var logicalKey = _logicalCatalogStateService.BuildSeriesLogicalKey(targetSeries);
+            var isFavorite = await _logicalCatalogStateService.ToggleFavoriteAsync(db, activeProfileId, FavoriteType.Series, seriesId);
+            if (isFavorite)
             {
-                db.Favorites.Add(new Favorite { ProfileId = activeProfileId, ContentType = FavoriteType.Series, ContentId = seriesId });
-                _favoriteSeriesIds.Add(seriesId);
+                _favoriteSeriesKeys.Add(logicalKey);
             }
             else
             {
-                db.Favorites.RemoveRange(existingFavorites);
-                foreach (var favorite in existingFavorites)
-                {
-                    _favoriteSeriesIds.Remove(favorite.ContentId);
-                }
+                _favoriteSeriesKeys.Remove(logicalKey);
             }
 
-            await db.SaveChangesAsync();
             if (RequiresFullBrowseRefreshForFavoriteToggle())
             {
                 ApplyFilter("toggle-favorite");
@@ -924,7 +915,7 @@ namespace Kroira.App.ViewModels
                     SourceSummary = BuildSourceSummary(variants.Select(variant => variant.SourceProfile.Name))
                 };
 
-                if (FavoritesOnly && !filteredGroup.Variants.Any(variant => _favoriteSeriesIds.Contains(variant.Series.Id)))
+                if (FavoritesOnly && !IsSeriesGroupFavorite(filteredGroup))
                 {
                     continue;
                 }
@@ -1009,6 +1000,12 @@ namespace Kroira.App.ViewModels
                    string.Equals(SelectedSortOption?.Key ?? "recommended", "favorites_first", StringComparison.OrdinalIgnoreCase);
         }
 
+        private bool IsSeriesGroupFavorite(CatalogSeriesGroup group)
+        {
+            return group.Variants.Any(variant =>
+                _favoriteSeriesKeys.Contains(_logicalCatalogStateService.BuildSeriesLogicalKey(variant.Series)));
+        }
+
         private void RefreshSeriesFavoriteState(string groupKey)
         {
             if (string.IsNullOrWhiteSpace(groupKey))
@@ -1016,10 +1013,9 @@ namespace Kroira.App.ViewModels
                 return;
             }
 
-            var isFavorite = _favoriteSeriesIds.Count > 0 &&
-                             _allSeriesGroups
-                                 .FirstOrDefault(group => string.Equals(group.GroupKey, groupKey, StringComparison.OrdinalIgnoreCase))
-                                 ?.Variants.Any(variant => _favoriteSeriesIds.Contains(variant.Series.Id)) == true;
+            var isFavorite = _allSeriesGroups
+                .FirstOrDefault(group => string.Equals(group.GroupKey, groupKey, StringComparison.OrdinalIgnoreCase)) is { } group &&
+                IsSeriesGroupFavorite(group);
 
             foreach (var item in _allSeries.Where(item => string.Equals(item.GroupKey, groupKey, StringComparison.OrdinalIgnoreCase)))
             {
@@ -1202,7 +1198,7 @@ namespace Kroira.App.ViewModels
                 "rating_desc" => groups.OrderByDescending(group => group.PreferredSeries.VoteAverage).ThenByDescending(group => group.PreferredSeries.Popularity).ThenBy(group => group.PreferredSeries.Title, StringComparer.CurrentCultureIgnoreCase),
                 "popularity_desc" => groups.OrderByDescending(group => group.PreferredSeries.Popularity).ThenByDescending(group => group.PreferredSeries.VoteAverage).ThenBy(group => group.PreferredSeries.Title, StringComparer.CurrentCultureIgnoreCase),
                 "year_desc" => groups.OrderByDescending(group => group.PreferredSeries.FirstAirDate ?? DateTime.MinValue).ThenBy(group => group.PreferredSeries.Title, StringComparer.CurrentCultureIgnoreCase),
-                "favorites_first" => groups.OrderByDescending(group => group.Variants.Any(variant => _favoriteSeriesIds.Contains(variant.Series.Id))).ThenBy(group => group.PreferredSeries.Title, StringComparer.CurrentCultureIgnoreCase),
+                "favorites_first" => groups.OrderByDescending(IsSeriesGroupFavorite).ThenBy(group => group.PreferredSeries.Title, StringComparer.CurrentCultureIgnoreCase),
                 _ => groups
             };
         }

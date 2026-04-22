@@ -45,6 +45,14 @@ namespace Kroira.App.ViewModels
         private string _manualEpgUrl = string.Empty;
 
         [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(ProxyUrlVisibility))]
+        [NotifyPropertyChangedFor(nameof(ProxySummaryText))]
+        private int _selectedProxyModeIndex = 0;
+
+        [ObservableProperty]
+        private string _proxyUrl = string.Empty;
+
+        [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(ManualEpgVisibility))]
         [NotifyPropertyChangedFor(nameof(GuideModeSummaryText))]
         private int _selectedEpgModeIndex = 0;
@@ -60,6 +68,9 @@ namespace Kroira.App.ViewModels
         public Microsoft.UI.Xaml.Visibility ManualEpgVisibility => SelectedEpgModeIndex == 1
             ? Microsoft.UI.Xaml.Visibility.Visible
             : Microsoft.UI.Xaml.Visibility.Collapsed;
+        public Microsoft.UI.Xaml.Visibility ProxyUrlVisibility => SelectedProxyMode != SourceProxyScope.Disabled
+            ? Microsoft.UI.Xaml.Visibility.Visible
+            : Microsoft.UI.Xaml.Visibility.Collapsed;
         public string GuideModeSummaryText => SelectedEpgModeIndex switch
         {
             1 => "Manual override uses your XMLTV URL and keeps any detected provider URL on file.",
@@ -67,6 +78,13 @@ namespace Kroira.App.ViewModels
             _ => IsM3U
                 ? "Detected mode uses the XMLTV URL advertised by the playlist when one exists."
                 : "Detected mode uses the XMLTV URL derived from your Xtream provider credentials."
+        };
+        public string ProxySummaryText => SelectedProxyMode switch
+        {
+            SourceProxyScope.PlaybackOnly => "Playback requests prefer the proxy while imports and guide sync stay direct.",
+            SourceProxyScope.PlaybackAndProbing => "Playback and light probe traffic use the proxy; imports and guide sync stay direct.",
+            SourceProxyScope.AllRequests => "Import, guide, probe, and playback requests all route through the proxy.",
+            _ => "Direct routing keeps this source on its normal provider endpoints."
         };
 
         public SourceOnboardingViewModel(IServiceProvider serviceProvider, IEntitlementService entitlementService)
@@ -108,6 +126,12 @@ namespace Kroira.App.ViewModels
                 return;
             }
 
+            if (SelectedProxyMode != SourceProxyScope.Disabled && string.IsNullOrWhiteSpace(ProxyUrl))
+            {
+                StatusMessage = "Proxy routing requires a proxy URL.";
+                return;
+            }
+
             try
             {
                 using var scope = _serviceProvider.CreateScope();
@@ -144,7 +168,9 @@ namespace Kroira.App.ViewModels
                         Username = IsM3U ? string.Empty : XtreamUsername,
                         Password = IsM3U ? string.Empty : XtreamPassword,
                         EpgUrl = ManualEpgUrl,
-                        EpgMode = SelectedGuideMode
+                        EpgMode = SelectedGuideMode,
+                        ProxyScope = SelectedProxyMode,
+                        ProxyUrl = ProxyUrl?.Trim() ?? string.Empty
                     };
                     db.SourceCredentials.Add(creds);
 
@@ -165,38 +191,13 @@ namespace Kroira.App.ViewModels
 
                     StatusMessage = "Source saved. Importing...";
 
-                    // Auto-import after save so user doesn't need a separate manual step
                     try
                     {
-                        using var importScope = _serviceProvider.CreateScope();
-                        var importDb = importScope.ServiceProvider.GetRequiredService<AppDbContext>();
-                        string? guideError = null;
-
-                        if (isM3u)
-                        {
-                            var m3uParser = importScope.ServiceProvider.GetRequiredService<Kroira.App.Services.Parsing.IM3uParserService>();
-                            await m3uParser.ParseAndImportM3uAsync(importDb, savedId);
-                        }
-                        else
-                        {
-                            var xtreamParser = importScope.ServiceProvider.GetRequiredService<Kroira.App.Services.Parsing.IXtreamParserService>();
-                            await xtreamParser.ParseAndImportXtreamAsync(importDb, savedId);
-                            await xtreamParser.ParseAndImportXtreamVodAsync(importDb, savedId);
-                        }
-
-                        try
-                        {
-                            var xmltvParser = importScope.ServiceProvider.GetRequiredService<Kroira.App.Services.Parsing.IXmltvParserService>();
-                            await xmltvParser.ParseAndImportEpgAsync(importDb, savedId);
-                        }
-                        catch (Exception guideEx)
-                        {
-                            guideError = guideEx.Message;
-                        }
-
-                        StatusMessage = string.IsNullOrWhiteSpace(guideError)
-                            ? "Source saved, imported, and guide sync completed."
-                            : $"Source saved and imported, but guide sync failed: {guideError}";
+                        var refreshService = scope.ServiceProvider.GetRequiredService<ISourceRefreshService>();
+                        var result = await refreshService.RefreshSourceAsync(savedId, SourceRefreshTrigger.InitialImport, SourceRefreshScope.Full);
+                        StatusMessage = result.Success
+                            ? result.Message
+                            : $"Source saved, but import failed: {result.Message}";
                     }
                     catch (Exception importEx)
                     {
@@ -207,6 +208,8 @@ namespace Kroira.App.ViewModels
                     M3uUrlOrPath = string.Empty;
                     ManualEpgUrl = string.Empty;
                     SelectedEpgModeIndex = 0;
+                    SelectedProxyModeIndex = 0;
+                    ProxyUrl = string.Empty;
                     XtreamUrl = string.Empty;
                     XtreamUsername = string.Empty;
                     XtreamPassword = string.Empty;
@@ -228,6 +231,14 @@ namespace Kroira.App.ViewModels
             1 => EpgActiveMode.Manual,
             2 => EpgActiveMode.None,
             _ => EpgActiveMode.Detected
+        };
+
+        private SourceProxyScope SelectedProxyMode => SelectedProxyModeIndex switch
+        {
+            1 => SourceProxyScope.PlaybackOnly,
+            2 => SourceProxyScope.PlaybackAndProbing,
+            3 => SourceProxyScope.AllRequests,
+            _ => SourceProxyScope.Disabled
         };
 
         [RelayCommand]

@@ -48,6 +48,12 @@ namespace Kroira.App.ViewModels
         public string GuideModeText { get; set; } = string.Empty;
         public string GuideUrlText { get; set; } = string.Empty;
         public string GuideMatchText { get; set; } = string.Empty;
+        public string AutoRefreshStatusText { get; set; } = string.Empty;
+        public string AutoRefreshSummaryText { get; set; } = string.Empty;
+        public string NextAutoRefreshText { get; set; } = string.Empty;
+        public string LastAutoRefreshText { get; set; } = string.Empty;
+        public string OperationalStatusText { get; set; } = string.Empty;
+        public string ProxyStatusText { get; set; } = "Direct routing";
         public IReadOnlyList<SourceHealthComponentItemViewModel> HealthComponents { get; set; } = Array.Empty<SourceHealthComponentItemViewModel>();
         public IReadOnlyList<SourceIssueItemViewModel> HealthIssues { get; set; } = Array.Empty<SourceIssueItemViewModel>();
         public int ImportWarningCount { get; set; }
@@ -138,6 +144,18 @@ namespace Kroira.App.ViewModels
             : Microsoft.UI.Xaml.Visibility.Visible;
 
         public Microsoft.UI.Xaml.Visibility GuideStatusSummaryVisibility => string.IsNullOrWhiteSpace(GuideStatusSummaryText)
+            ? Microsoft.UI.Xaml.Visibility.Collapsed
+            : Microsoft.UI.Xaml.Visibility.Visible;
+
+        public Microsoft.UI.Xaml.Visibility AutoRefreshSummaryVisibility => string.IsNullOrWhiteSpace(AutoRefreshSummaryText)
+            ? Microsoft.UI.Xaml.Visibility.Collapsed
+            : Microsoft.UI.Xaml.Visibility.Visible;
+
+        public Microsoft.UI.Xaml.Visibility OperationalStatusVisibility => string.IsNullOrWhiteSpace(OperationalStatusText)
+            ? Microsoft.UI.Xaml.Visibility.Collapsed
+            : Microsoft.UI.Xaml.Visibility.Visible;
+
+        public Microsoft.UI.Xaml.Visibility ProxyStatusVisibility => string.IsNullOrWhiteSpace(ProxyStatusText)
             ? Microsoft.UI.Xaml.Visibility.Collapsed
             : Microsoft.UI.Xaml.Visibility.Visible;
 
@@ -238,6 +256,8 @@ namespace Kroira.App.ViewModels
         public EpgActiveMode ActiveMode { get; set; } = EpgActiveMode.Detected;
         public string ManualEpgUrl { get; set; } = string.Empty;
         public string DetectedEpgUrl { get; set; } = string.Empty;
+        public SourceProxyScope ProxyScope { get; set; } = SourceProxyScope.Disabled;
+        public string ProxyUrl { get; set; } = string.Empty;
     }
 
     public partial class SourceListViewModel : ObservableObject
@@ -348,7 +368,9 @@ namespace Kroira.App.ViewModels
                 SourceType = source.Type,
                 ActiveMode = credential.EpgMode,
                 ManualEpgUrl = credential.ManualEpgUrl,
-                DetectedEpgUrl = credential.DetectedEpgUrl
+                DetectedEpgUrl = credential.DetectedEpgUrl,
+                ProxyScope = credential.ProxyScope,
+                ProxyUrl = credential.ProxyUrl
             };
         }
 
@@ -367,19 +389,30 @@ namespace Kroira.App.ViewModels
                 throw new Exception("Manual XMLTV mode requires a manual XMLTV URL.");
             }
 
+            if (draft.ProxyScope != SourceProxyScope.Disabled && string.IsNullOrWhiteSpace(draft.ProxyUrl))
+            {
+                throw new Exception("Proxy routing requires a proxy URL.");
+            }
+
             var previousMode = credential.EpgMode;
             var previousManualUrl = credential.ManualEpgUrl ?? string.Empty;
+            var previousProxyScope = credential.ProxyScope;
+            var previousProxyUrl = credential.ProxyUrl ?? string.Empty;
             credential.EpgMode = draft.ActiveMode;
             credential.ManualEpgUrl = draft.ManualEpgUrl?.Trim() ?? string.Empty;
+            credential.ProxyScope = draft.ProxyScope;
+            credential.ProxyUrl = draft.ProxyUrl?.Trim() ?? string.Empty;
             await db.SaveChangesAsync();
 
             var settingsChanged = previousMode != draft.ActiveMode ||
-                                  !string.Equals(previousManualUrl, credential.ManualEpgUrl, StringComparison.OrdinalIgnoreCase);
+                                  !string.Equals(previousManualUrl, credential.ManualEpgUrl, StringComparison.OrdinalIgnoreCase) ||
+                                  previousProxyScope != credential.ProxyScope ||
+                                  !string.Equals(previousProxyUrl, credential.ProxyUrl, StringComparison.OrdinalIgnoreCase);
 
             if (syncNow || draft.ActiveMode == EpgActiveMode.None)
             {
-                var parser = scope.ServiceProvider.GetRequiredService<Kroira.App.Services.Parsing.IXmltvParserService>();
-                await parser.ParseAndImportEpgAsync(db, draft.SourceId);
+                var refreshService = scope.ServiceProvider.GetRequiredService<ISourceRefreshService>();
+                await refreshService.RefreshSourceAsync(draft.SourceId, SourceRefreshTrigger.Manual, SourceRefreshScope.EpgOnly);
             }
             else if (settingsChanged)
             {
@@ -438,9 +471,13 @@ namespace Kroira.App.ViewModels
             try
             {
                 using var scope = _serviceProvider.CreateScope();
-                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-                var parser = scope.ServiceProvider.GetRequiredService<Kroira.App.Services.Parsing.IXmltvParserService>();
-                await parser.ParseAndImportEpgAsync(db, sourceId);
+                var refreshService = scope.ServiceProvider.GetRequiredService<ISourceRefreshService>();
+                var result = await refreshService.RefreshSourceAsync(sourceId, SourceRefreshTrigger.Manual, SourceRefreshScope.EpgOnly);
+                if (!result.Success)
+                {
+                    return result.Message;
+                }
+
                 return null;
             }
             catch (Exception ex)
@@ -494,6 +531,10 @@ namespace Kroira.App.ViewModels
                     ActiveEpgModeText = "Detected from provider",
                     EpgStatus = EpgStatus.Unknown,
                     EpgResultCode = EpgSyncResultCode.None,
+                    AutoRefreshStatusText = "Auto standby",
+                    AutoRefreshSummaryText = "Automatic refresh has not run yet.",
+                    NextAutoRefreshText = "Never",
+                    LastAutoRefreshText = "Never",
                     HealthComponents = Array.Empty<SourceDiagnosticsComponentSnapshot>(),
                     HealthProbes = Array.Empty<SourceDiagnosticsProbeSnapshot>()
                 };
@@ -541,10 +582,16 @@ namespace Kroira.App.ViewModels
                     GuideStatusSummaryText = snapshot.EpgStatusSummary,
                     GuideModeText = snapshot.ActiveEpgModeText,
                     GuideUrlText = snapshot.EpgUrlSummaryText,
-                    GuideMatchText = snapshot.MatchBreakdownText,
-                    HealthComponents = snapshot.HealthComponents
-                        .Select(component => new SourceHealthComponentItemViewModel
-                        {
+                      GuideMatchText = snapshot.MatchBreakdownText,
+                      AutoRefreshStatusText = snapshot.AutoRefreshStatusText,
+                      AutoRefreshSummaryText = snapshot.AutoRefreshSummaryText,
+                      NextAutoRefreshText = snapshot.NextAutoRefreshText,
+                      LastAutoRefreshText = snapshot.LastAutoRefreshText,
+                      OperationalStatusText = snapshot.OperationalStatusText,
+                      ProxyStatusText = snapshot.ProxyStatusText,
+                      HealthComponents = snapshot.HealthComponents
+                          .Select(component => new SourceHealthComponentItemViewModel
+                          {
                             Label = SourceHealthDisplay.GetComponentLabel(component.ComponentType),
                             Summary = component.Summary,
                             PillLabel = BuildComponentPillLabel(component, snapshot.HealthProbes),
@@ -651,6 +698,8 @@ namespace Kroira.App.ViewModels
                     ContainsSearch(source.GuideStatusText, search) ||
                     ContainsSearch(source.Status, search) ||
                     ContainsSearch(source.ValidationResultText, search) ||
+                    ContainsSearch(source.OperationalStatusText, search) ||
+                    ContainsSearch(source.ProxyStatusText, search) ||
                     source.HealthComponents.Any(component => ContainsSearch(component.Label, search) || ContainsSearch(component.Summary, search)) ||
                     ContainsSearch(source.GuideModeText, search) ||
                     ContainsSearch(source.GuideUrlText, search));
@@ -866,18 +915,23 @@ namespace Kroira.App.ViewModels
             try
             {
                 using var scope = _serviceProvider.CreateScope();
-                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-                var parser = scope.ServiceProvider.GetRequiredService<Kroira.App.Services.Parsing.IM3uParserService>();
-
-                await parser.ParseAndImportM3uAsync(db, id);
-                var guideError = await TryRefreshGuideAsync(id);
+                var refreshService = scope.ServiceProvider.GetRequiredService<ISourceRefreshService>();
+                var result = await refreshService.RefreshSourceAsync(id, SourceRefreshTrigger.Manual, SourceRefreshScope.LiveOnly);
                 await LoadSourcesAsync();
-                if (!string.IsNullOrWhiteSpace(guideError))
+                if (!result.Success)
                 {
                     item = Sources.FirstOrDefault(source => source.Id == id);
                     if (item != null)
                     {
-                        item.Status = $"Import completed, but guide sync failed: {(guideError.Length > 120 ? guideError.Substring(0, 120) + "..." : guideError)}";
+                        item.Status = $"Import failed: {(result.Message.Length > 120 ? result.Message.Substring(0, 120) + "..." : result.Message)}";
+                    }
+                }
+                else if (!result.GuideSucceeded && result.GuideAttempted && !string.IsNullOrWhiteSpace(result.GuideSummary))
+                {
+                    item = Sources.FirstOrDefault(source => source.Id == id);
+                    if (item != null)
+                    {
+                        item.Status = result.Message;
                     }
                 }
             }
@@ -904,10 +958,8 @@ namespace Kroira.App.ViewModels
             try
             {
                 using var scope = _serviceProvider.CreateScope();
-                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-                var parser = scope.ServiceProvider.GetRequiredService<Kroira.App.Services.Parsing.IXmltvParserService>();
-
-                await parser.ParseAndImportEpgAsync(db, id);
+                var refreshService = scope.ServiceProvider.GetRequiredService<ISourceRefreshService>();
+                await refreshService.RefreshSourceAsync(id, SourceRefreshTrigger.Manual, SourceRefreshScope.EpgOnly);
                 await LoadSourcesAsync();
             }
             catch (Exception ex)
@@ -931,19 +983,23 @@ namespace Kroira.App.ViewModels
             try
             {
                 using var scope = _serviceProvider.CreateScope();
-                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-                var parser = scope.ServiceProvider.GetRequiredService<Kroira.App.Services.Parsing.IXtreamParserService>();
-
-                await parser.ParseAndImportXtreamAsync(db, id);
-                await parser.ParseAndImportXtreamVodAsync(db, id);
-                var guideError = await TryRefreshGuideAsync(id);
+                var refreshService = scope.ServiceProvider.GetRequiredService<ISourceRefreshService>();
+                var result = await refreshService.RefreshSourceAsync(id, SourceRefreshTrigger.Manual, SourceRefreshScope.Full);
                 await LoadSourcesAsync();
-                if (!string.IsNullOrWhiteSpace(guideError))
+                if (!result.Success)
                 {
                     item = Sources.FirstOrDefault(source => source.Id == id);
                     if (item != null)
                     {
-                        item.Status = $"Xtream sync completed, but guide sync failed: {(guideError.Length > 120 ? guideError.Substring(0, 120) + "..." : guideError)}";
+                        item.Status = $"Xtream sync failed: {(result.Message.Length > 120 ? result.Message.Substring(0, 120) + "..." : result.Message)}";
+                    }
+                }
+                else if (!result.GuideSucceeded && result.GuideAttempted && !string.IsNullOrWhiteSpace(result.GuideSummary))
+                {
+                    item = Sources.FirstOrDefault(source => source.Id == id);
+                    if (item != null)
+                    {
+                        item.Status = result.Message;
                     }
                 }
             }
@@ -970,10 +1026,8 @@ namespace Kroira.App.ViewModels
             try
             {
                 using var scope = _serviceProvider.CreateScope();
-                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-                var parser = scope.ServiceProvider.GetRequiredService<Kroira.App.Services.Parsing.IXtreamParserService>();
-
-                await parser.ParseAndImportXtreamVodAsync(db, id);
+                var refreshService = scope.ServiceProvider.GetRequiredService<ISourceRefreshService>();
+                await refreshService.RefreshSourceAsync(id, SourceRefreshTrigger.Manual, SourceRefreshScope.VodOnly);
                 await LoadSourcesAsync();
             }
             catch (Exception ex)
@@ -1032,16 +1086,6 @@ namespace Kroira.App.ViewModels
                             var epgs = await db.EpgPrograms.Where(program => channelIds.Contains(program.ChannelId)).ToListAsync();
                             if (epgs.Count > 0) db.EpgPrograms.RemoveRange(epgs);
 
-                            var favs = await db.Favorites
-                                .Where(favorite => favorite.ContentType == FavoriteType.Channel && channelIds.Contains(favorite.ContentId))
-                                .ToListAsync();
-                            if (favs.Count > 0) db.Favorites.RemoveRange(favs);
-
-                            var progress = await db.PlaybackProgresses
-                                .Where(item => item.ContentType == PlaybackContentType.Channel && channelIds.Contains(item.ContentId))
-                                .ToListAsync();
-                            if (progress.Count > 0) db.PlaybackProgresses.RemoveRange(progress);
-
                             var channels = await db.Channels.Where(channel => channelIds.Contains(channel.Id)).ToListAsync();
                             db.Channels.RemoveRange(channels);
                         }
@@ -1060,41 +1104,15 @@ namespace Kroira.App.ViewModels
                             var episodes = await db.Episodes.Where(episode => seasonIds.Contains(episode.SeasonId)).ToListAsync();
                             if (episodes.Count > 0) db.Episodes.RemoveRange(episodes);
 
-                            if (episodeIds.Count > 0)
-                            {
-                                var episodeProgress = await db.PlaybackProgresses
-                                    .Where(item => item.ContentType == PlaybackContentType.Episode && episodeIds.Contains(item.ContentId))
-                                    .ToListAsync();
-                                if (episodeProgress.Count > 0) db.PlaybackProgresses.RemoveRange(episodeProgress);
-                            }
-
                             var seasons = await db.Seasons.Where(season => seasonIds.Contains(season.Id)).ToListAsync();
                             db.Seasons.RemoveRange(seasons);
                         }
-
-                        var seriesFavorites = await db.Favorites
-                            .Where(favorite => favorite.ContentType == FavoriteType.Series && seriesIds.Contains(favorite.ContentId))
-                            .ToListAsync();
-                        if (seriesFavorites.Count > 0) db.Favorites.RemoveRange(seriesFavorites);
 
                         var series = await db.Series.Where(series => seriesIds.Contains(series.Id)).ToListAsync();
                         db.Series.RemoveRange(series);
                     }
 
                     var movieIds = await db.Movies.Where(movie => movie.SourceProfileId == id).Select(movie => movie.Id).ToListAsync();
-                    if (movieIds.Count > 0)
-                    {
-                        var movieFavorites = await db.Favorites
-                            .Where(favorite => favorite.ContentType == FavoriteType.Movie && movieIds.Contains(favorite.ContentId))
-                            .ToListAsync();
-                        if (movieFavorites.Count > 0) db.Favorites.RemoveRange(movieFavorites);
-
-                        var movieProgress = await db.PlaybackProgresses
-                            .Where(item => item.ContentType == PlaybackContentType.Movie && movieIds.Contains(item.ContentId))
-                            .ToListAsync();
-                        if (movieProgress.Count > 0) db.PlaybackProgresses.RemoveRange(movieProgress);
-                    }
-
                     var movies = await db.Movies.Where(movie => movie.SourceProfileId == id).ToListAsync();
                     if (movies.Count > 0) db.Movies.RemoveRange(movies);
 
@@ -1136,6 +1154,11 @@ namespace Kroira.App.ViewModels
 
                     await db.SaveChangesAsync();
                     await transaction.CommitAsync();
+
+                    var logicalCatalogStateService = scope.ServiceProvider.GetRequiredService<ILogicalCatalogStateService>();
+                    await logicalCatalogStateService.ReconcilePersistentStateAsync(db);
+                    var contentOperationalService = scope.ServiceProvider.GetRequiredService<IContentOperationalService>();
+                    await contentOperationalService.RefreshOperationalStateAsync(db);
 
                     await LoadSourcesAsync();
                 }

@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Kroira.App.Data;
+using Kroira.App.Models;
 using Kroira.App.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
@@ -21,6 +22,7 @@ namespace Kroira.App.ViewModels
         private readonly IServiceProvider _serviceProvider;
         private bool _isLoadingLanguage;
         private bool _isLoadingAppearance;
+        private bool _isLoadingAutoRefresh;
 
         public ObservableCollection<LanguageOptionViewModel> Languages { get; } = new()
         {
@@ -29,6 +31,7 @@ namespace Kroira.App.ViewModels
 
         public ObservableCollection<AppAppearanceOptionViewModel> ThemeOptions { get; } = new();
         public ObservableCollection<AppAppearanceOptionViewModel> AccentOptions { get; } = new();
+        public ObservableCollection<AutoRefreshIntervalOptionViewModel> AutoRefreshIntervalOptions { get; } = new();
 
         [ObservableProperty]
         private Visibility _freeTierVisibility;
@@ -65,6 +68,18 @@ namespace Kroira.App.ViewModels
 
         [ObservableProperty]
         private string _resourceStatusText = "External links open in your default browser or mail app when configured.";
+
+        [ObservableProperty]
+        private bool _autoRefreshEnabled = true;
+
+        [ObservableProperty]
+        private bool _runAutoRefreshAfterLaunch = true;
+
+        [ObservableProperty]
+        private AutoRefreshIntervalOptionViewModel? _selectedAutoRefreshInterval;
+
+        [ObservableProperty]
+        private string _autoRefreshStatusText = "Automatic refresh keeps sources current on a bounded cadence while the app is open.";
 
         public bool IsBackupIdle => !IsBackupBusy;
         public bool CanUseBackupRestore => _entitlementService.IsFeatureEnabled(EntitlementFeatureKeys.LibraryBackupRestore);
@@ -112,6 +127,30 @@ namespace Kroira.App.ViewModels
             }
         }
 
+        partial void OnAutoRefreshEnabledChanged(bool value)
+        {
+            if (!_isLoadingAutoRefresh)
+            {
+                _ = SaveAutoRefreshAsync();
+            }
+        }
+
+        partial void OnRunAutoRefreshAfterLaunchChanged(bool value)
+        {
+            if (!_isLoadingAutoRefresh)
+            {
+                _ = SaveAutoRefreshAsync();
+            }
+        }
+
+        partial void OnSelectedAutoRefreshIntervalChanged(AutoRefreshIntervalOptionViewModel? value)
+        {
+            if (!_isLoadingAutoRefresh && value != null)
+            {
+                _ = SaveAutoRefreshAsync();
+            }
+        }
+
         public SettingsViewModel(IEntitlementService entitlementService, IServiceProvider serviceProvider)
         {
             _entitlementService = entitlementService;
@@ -127,6 +166,11 @@ namespace Kroira.App.ViewModels
                 AccentOptions.Add(new AppAppearanceOptionViewModel(option.Key, option.DisplayName, option.Description));
             }
 
+            foreach (var hours in new[] { 1, 3, 6, 12, 24 })
+            {
+                AutoRefreshIntervalOptions.Add(new AutoRefreshIntervalOptionViewModel(hours));
+            }
+
             UpdateState();
         }
 
@@ -137,10 +181,12 @@ namespace Kroira.App.ViewModels
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             var profileService = scope.ServiceProvider.GetRequiredService<IProfileStateService>();
             var appearanceService = scope.ServiceProvider.GetRequiredService<IAppAppearanceService>();
+            var autoRefreshService = scope.ServiceProvider.GetRequiredService<ISourceAutoRefreshService>();
             var activeProfile = await profileService.GetActiveProfileAsync(db);
             var languageCode = await AppLanguageService.GetLanguageAsync(db, activeProfile.Id);
             await AppLanguageService.SetLanguageAsync(db, languageCode, activeProfile.Id);
             var appearance = await appearanceService.LoadAsync(db);
+            var autoRefresh = await autoRefreshService.LoadSettingsAsync(db);
 
             _isLoadingLanguage = true;
             SelectedLanguage = Languages.FirstOrDefault(language => language.Code == languageCode)
@@ -153,6 +199,16 @@ namespace Kroira.App.ViewModels
             SelectedAccentOption = AccentOptions.FirstOrDefault(option => option.Key == appearance.AccentPresetKey) ?? AccentOptions.FirstOrDefault();
             _isLoadingAppearance = false;
             AppearanceStatusText = $"{SelectedThemeOption?.DisplayName ?? "Cinema Gold"} with {SelectedAccentOption?.DisplayName ?? "House Gold"} is active.";
+
+            _isLoadingAutoRefresh = true;
+            AutoRefreshEnabled = autoRefresh.IsEnabled;
+            RunAutoRefreshAfterLaunch = autoRefresh.RunAfterLaunch;
+            SelectedAutoRefreshInterval = AutoRefreshIntervalOptions.FirstOrDefault(option => option.Hours == autoRefresh.IntervalHours)
+                ?? AutoRefreshIntervalOptions.FirstOrDefault();
+            _isLoadingAutoRefresh = false;
+            AutoRefreshStatusText = autoRefresh.IsEnabled
+                ? $"Automatic refresh runs every {autoRefresh.IntervalHours} hour{(autoRefresh.IntervalHours == 1 ? string.Empty : "s")} while the app is open."
+                : "Automatic refresh is turned off.";
         }
 
         private async Task SaveLanguageAsync(string languageCode)
@@ -182,6 +238,23 @@ namespace Kroira.App.ViewModels
             await appearanceService.SaveAsync(db, current);
 
             AppearanceStatusText = $"{SelectedThemeOption?.DisplayName ?? "Cinema Gold"} with {SelectedAccentOption?.DisplayName ?? "House Gold"} is active.";
+        }
+
+        private async Task SaveAutoRefreshAsync()
+        {
+            using var scope = _serviceProvider.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var autoRefreshService = scope.ServiceProvider.GetRequiredService<ISourceAutoRefreshService>();
+            var settings = new SourceAutoRefreshSettings
+            {
+                IsEnabled = AutoRefreshEnabled,
+                RunAfterLaunch = RunAutoRefreshAfterLaunch,
+                IntervalHours = SelectedAutoRefreshInterval?.Hours ?? 6
+            };
+            await autoRefreshService.SaveSettingsAsync(db, settings);
+            AutoRefreshStatusText = settings.IsEnabled
+                ? $"Automatic refresh runs every {settings.IntervalHours} hour{(settings.IntervalHours == 1 ? string.Empty : "s")} while the app is open."
+                : "Automatic refresh is turned off.";
         }
 
         [RelayCommand]
@@ -423,5 +496,16 @@ namespace Kroira.App.ViewModels
         public string Key { get; }
         public string DisplayName { get; }
         public string Description { get; }
+    }
+
+    public sealed class AutoRefreshIntervalOptionViewModel
+    {
+        public AutoRefreshIntervalOptionViewModel(int hours)
+        {
+            Hours = hours;
+        }
+
+        public int Hours { get; }
+        public string DisplayName => Hours == 1 ? "Every hour" : $"Every {Hours} hours";
     }
 }

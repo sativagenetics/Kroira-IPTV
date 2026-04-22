@@ -35,12 +35,10 @@ namespace Kroira.App.Services.Playback
             {
                 using var scope = _services.CreateScope();
                 var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                var logicalCatalogStateService = scope.ServiceProvider.GetRequiredService<ILogicalCatalogStateService>();
                 var profileId = await ResolveProfileIdAsync(scope.ServiceProvider, db, context);
-                var existing = await db.PlaybackProgresses.FirstOrDefaultAsync(
-                    progress => progress.ProfileId == profileId &&
-                                progress.ContentType == context.ContentType &&
-                                progress.ContentId == context.ContentId &&
-                                !progress.IsCompleted);
+                await logicalCatalogStateService.EnsureLaunchContextLogicalStateAsync(db, context);
+                var existing = await LoadExistingProgressAsync(db, profileId, context, onlyIncomplete: true);
 
                 if (existing != null && existing.PositionMs >= WatchStateRules.MinimumSavedPositionMs)
                 {
@@ -128,11 +126,10 @@ namespace Kroira.App.Services.Playback
         {
             using var scope = _services.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var logicalCatalogStateService = scope.ServiceProvider.GetRequiredService<ILogicalCatalogStateService>();
             var profileId = await ResolveProfileIdAsync(scope.ServiceProvider, db, context);
-            var existing = await db.PlaybackProgresses.FirstOrDefaultAsync(
-                progress => progress.ProfileId == profileId &&
-                            progress.ContentType == context.ContentType &&
-                            progress.ContentId == context.ContentId);
+            await logicalCatalogStateService.EnsureLaunchContextLogicalStateAsync(db, context);
+            var existing = await LoadExistingProgressAsync(db, profileId, context, onlyIncomplete: false);
 
             ApplyProgress(db, existing, profileId, context, positionMs, durationMs, isCompleted);
             await db.SaveChangesAsync();
@@ -155,12 +152,15 @@ namespace Kroira.App.Services.Playback
                     ProfileId = profileId,
                     ContentType = context.ContentType,
                     ContentId = context.ContentId,
+                    LogicalContentKey = context.LogicalContentKey,
+                    PreferredSourceProfileId = context.PreferredSourceProfileId,
                     PositionMs = positionMs,
                     DurationMs = durationMs,
                     IsCompleted = isCompleted,
                     WatchStateOverride = WatchStateOverride.None,
                     LastWatched = DateTime.UtcNow,
                     CompletedAtUtc = isCompleted ? DateTime.UtcNow : null,
+                    ResolvedAtUtc = DateTime.UtcNow
                 });
                 return;
             }
@@ -168,9 +168,38 @@ namespace Kroira.App.Services.Playback
             existing.PositionMs = positionMs;
             existing.DurationMs = durationMs;
             existing.IsCompleted = isCompleted;
+            existing.ContentId = context.ContentId;
+            existing.LogicalContentKey = context.LogicalContentKey;
+            existing.PreferredSourceProfileId = context.PreferredSourceProfileId;
             existing.WatchStateOverride = isCompleted ? WatchStateOverride.None : existing.WatchStateOverride == WatchStateOverride.Watched ? WatchStateOverride.None : existing.WatchStateOverride;
             existing.LastWatched = DateTime.UtcNow;
             existing.CompletedAtUtc = isCompleted ? DateTime.UtcNow : null;
+            existing.ResolvedAtUtc = DateTime.UtcNow;
+        }
+
+        private static Task<PlaybackProgress?> LoadExistingProgressAsync(
+            AppDbContext db,
+            int profileId,
+            PlaybackLaunchContext context,
+            bool onlyIncomplete)
+        {
+            var query = db.PlaybackProgresses.Where(progress =>
+                progress.ProfileId == profileId &&
+                progress.ContentType == context.ContentType);
+
+            if (onlyIncomplete)
+            {
+                query = query.Where(progress => !progress.IsCompleted);
+            }
+
+            if (!string.IsNullOrWhiteSpace(context.LogicalContentKey))
+            {
+                return query.FirstOrDefaultAsync(progress =>
+                    progress.LogicalContentKey == context.LogicalContentKey ||
+                    string.IsNullOrWhiteSpace(progress.LogicalContentKey) && progress.ContentId == context.ContentId);
+            }
+
+            return query.FirstOrDefaultAsync(progress => progress.ContentId == context.ContentId);
         }
 
         private void UpdateLastSaved(long positionMs, long durationMs, bool isCompleted)

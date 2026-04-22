@@ -73,11 +73,22 @@ namespace Kroira.App
                 SafeAppendLog("APP 08: after database bootstrap");
                 Services.GetRequiredService<IAppAppearanceService>().InitializeAsync().GetAwaiter().GetResult();
                 Services.GetRequiredService<IMediaJobService>().Start();
+                Services.GetRequiredService<ISourceAutoRefreshService>().Start();
 
                 SafeAppendLog("APP 09: before MainWindow ctor");
                 _window = new MainWindow();
                 SafeAppendLog("APP 10: after MainWindow ctor");
-                _window.Closed += (_, _) => CancelStartupMetadataBackfill("window closed");
+                _window.Closed += (_, _) =>
+                {
+                    CancelStartupMetadataBackfill("window closed");
+                    try
+                    {
+                        Services.GetRequiredService<ISourceAutoRefreshService>().Stop();
+                    }
+                    catch
+                    {
+                    }
+                };
 
                 SafeAppendLog("APP 11: before IWindowManagerService.Initialize");
                 var winManager = Services.GetRequiredService<IWindowManagerService>();
@@ -242,9 +253,17 @@ namespace Kroira.App
             services.AddSingleton<ICatalogSurfaceCountService, CatalogSurfaceCountService>();
             services.AddSingleton<IHomeRecommendationService, HomeRecommendationService>();
             services.AddSingleton<ILiveGuideService, LiveGuideService>();
+            services.AddSingleton<ILiveChannelIdentityService, LiveChannelIdentityService>();
+            services.AddSingleton<IChannelCatchupService, ChannelCatchupService>();
+            services.AddSingleton<ILogicalCatalogStateService, LogicalCatalogStateService>();
+            services.AddSingleton<ISourceRoutingService, SourceRoutingService>();
+            services.AddSingleton<IContentOperationalService, ContentOperationalService>();
             services.AddSingleton<ISourceDiagnosticsService, SourceDiagnosticsService>();
+            services.AddSingleton<ISourceEnrichmentService, SourceEnrichmentService>();
             services.AddSingleton<ISourceHealthService, SourceHealthService>();
             services.AddSingleton<ISourceProbeService, SourceProbeService>();
+            services.AddSingleton<ISourceRefreshService, SourceRefreshService>();
+            services.AddSingleton<ISourceAutoRefreshService, SourceAutoRefreshService>();
             services.AddSingleton<ISurfaceStateService, SurfaceStateService>();
             services.AddSingleton<IBackupPackageService, BackupPackageService>();
             services.AddSingleton<IMediaJobService, MediaJobService>();

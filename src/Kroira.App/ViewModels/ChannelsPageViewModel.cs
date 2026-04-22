@@ -46,11 +46,13 @@ namespace Kroira.App.ViewModels
         private readonly IServiceProvider _serviceProvider;
         private readonly IBrowsePreferencesService _browsePreferencesService;
         private readonly ICatalogTaxonomyService _taxonomyService;
+        private readonly ILogicalCatalogStateService _logicalCatalogStateService;
         private readonly List<BrowserChannelViewModel> _allChannels = new();
         private readonly List<(int Id, string Name, int Count)> _allRawCategories = new();
         private readonly Dictionary<int, string> _sourceNames = new();
         private readonly Dictionary<int, string> _categoryNames = new();
         private readonly Dictionary<string, LiveChannelSectionViewModel> _spotlightSectionMap = new(StringComparer.OrdinalIgnoreCase);
+        private HashSet<string> _favoriteLogicalKeys = new(StringComparer.OrdinalIgnoreCase);
         private BrowsePreferences _preferences = new();
         private int _activeProfileId;
         private int _filterRequestVersion;
@@ -117,7 +119,11 @@ namespace Kroira.App.ViewModels
         public Microsoft.UI.Xaml.Visibility SpotlightVisibility => SpotlightSections.Any(section => section.Channels.Count > 0)
             ? Microsoft.UI.Xaml.Visibility.Visible
             : Microsoft.UI.Xaml.Visibility.Collapsed;
-        private bool HasRecentHistory => _preferences.LastChannelId > 0 || _preferences.RecentChannelIds.Count > 0;
+        private bool HasRecentHistory =>
+            !string.IsNullOrWhiteSpace(_preferences.LastChannel?.LogicalKey) ||
+            _preferences.RecentChannels.Count > 0 ||
+            _preferences.LastChannelId > 0 ||
+            _preferences.RecentChannelIds.Count > 0;
 
         partial void OnSearchQueryChanged(string value)
         {
@@ -216,6 +222,7 @@ namespace Kroira.App.ViewModels
             _serviceProvider = serviceProvider;
             _browsePreferencesService = serviceProvider.GetRequiredService<IBrowsePreferencesService>();
             _taxonomyService = serviceProvider.GetRequiredService<ICatalogTaxonomyService>();
+            _logicalCatalogStateService = serviceProvider.GetRequiredService<ILogicalCatalogStateService>();
             RegisterSpotlightSection("last_tuned", "Last tuned", "Jump straight back into the last live channel you opened.");
             RegisterSpotlightSection("recent", "Recent", "Fast return to recently watched live channels.");
             RegisterSpotlightSection("priority", "Priority channels", "Favorites, sports, guide-ready channels, and channels you revisit often.");
@@ -258,6 +265,7 @@ namespace Kroira.App.ViewModels
 
                 var access = await profileService.GetAccessSnapshotAsync(db);
                 _activeProfileId = access.ProfileId;
+                await _logicalCatalogStateService.ReconcilePersistentStateAsync(db, _activeProfileId);
                 _preferences = await _browsePreferencesService.GetAsync(db, Domain, _activeProfileId);
                 Log("02: resolved services and preferences");
 
@@ -277,15 +285,15 @@ namespace Kroira.App.ViewModels
                     _sourceNames[source.Id] = source.Name;
                 }
 
-                var favoriteIds = (await db.Favorites
-                    .Where(favorite => favorite.ProfileId == _activeProfileId && favorite.ContentType == FavoriteType.Channel)
-                    .Select(favorite => favorite.ContentId)
-                    .ToListAsync())
-                    .ToHashSet();
+                _favoriteLogicalKeys = await _logicalCatalogStateService.GetFavoriteLogicalKeysAsync(db, _activeProfileId, FavoriteType.Channel);
                 var channelProgressRows = await db.PlaybackProgresses
                     .Where(progress => progress.ProfileId == _activeProfileId && progress.ContentType == PlaybackContentType.Channel)
                     .OrderByDescending(progress => progress.LastWatched)
                     .ToListAsync();
+                var progressByLogicalKey = channelProgressRows
+                    .Where(progress => !string.IsNullOrWhiteSpace(progress.LogicalContentKey))
+                    .GroupBy(progress => progress.LogicalContentKey!, StringComparer.OrdinalIgnoreCase)
+                    .ToDictionary(group => group.Key, group => group.First(), StringComparer.OrdinalIgnoreCase);
                 var progressByChannelId = channelProgressRows
                     .GroupBy(progress => progress.ContentId)
                     .ToDictionary(group => group.Key, group => group.First());
@@ -301,6 +309,9 @@ namespace Kroira.App.ViewModels
                 foreach (var channel in channels)
                 {
                     var category = categoryMap[channel.ChannelCategoryId];
+                    var logicalKey = _logicalCatalogStateService.BuildChannelLogicalKey(channel);
+                    var watchCount = GetChannelWatchCount(logicalKey, channel.Id);
+                    var lastWatchedAtUtc = ResolveLastWatchedAtUtc(progressByLogicalKey, progressByChannelId, logicalKey, channel.Id);
                     var presentation = _taxonomyService.ResolveLiveChannelPresentation(channel.Name);
                     var cleanedChannelName = string.IsNullOrWhiteSpace(presentation.DisplayName)
                         ? channel.Name
@@ -311,6 +322,8 @@ namespace Kroira.App.ViewModels
                         Id = channel.Id,
                         CategoryId = channel.ChannelCategoryId,
                         SourceProfileId = category.SourceProfileId,
+                        PreferredSourceProfileId = category.SourceProfileId,
+                        LogicalContentKey = logicalKey,
                         SourceName = _sourceNames.TryGetValue(category.SourceProfileId, out var sourceName) ? sourceName : "Unknown Source",
                         RawName = channel.Name,
                         Name = cleanedChannelName,
@@ -318,11 +331,14 @@ namespace Kroira.App.ViewModels
                         DisplayCategoryName = displayCategory,
                         StreamUrl = channel.StreamUrl,
                         LogoUrl = channel.LogoUrl ?? string.Empty,
-                        IsFavorite = favoriteIds.Contains(channel.Id),
+                        IsFavorite = _favoriteLogicalKeys.Contains(logicalKey),
                         IsSportsChannel = ContentClassifier.IsSportsLikeChannel(cleanedChannelName, displayCategory),
                         IsTurkishSportsChannel = ContentClassifier.IsTurkishSportsLikeChannel(cleanedChannelName, displayCategory),
-                        WatchCount = _preferences.LiveChannelWatchCounts.TryGetValue(channel.Id, out var watchCount) ? watchCount : 0,
-                        LastWatchedAtUtc = progressByChannelId.TryGetValue(channel.Id, out var progress) ? progress.LastWatched : null
+                        WatchCount = watchCount,
+                        LastWatchedAtUtc = lastWatchedAtUtc,
+                        SupportsCatchup = channel.SupportsCatchup,
+                        CatchupWindowHours = channel.CatchupWindowHours,
+                        CatchupSummary = channel.CatchupSummary ?? string.Empty
                     });
                 }
 
@@ -440,6 +456,8 @@ namespace Kroira.App.ViewModels
                 return;
             }
 
+            _preferences.LastChannel = null;
+            _preferences.RecentChannels.Clear();
             _preferences.LastChannelId = 0;
             _preferences.RecentChannelIds.Clear();
             await SavePreferencesAndRefreshAsync(rebuildCollections: true);
@@ -453,11 +471,25 @@ namespace Kroira.App.ViewModels
                 return;
             }
 
+            var target = _allChannels.FirstOrDefault(channel => channel.Id == channelId);
+            var logicalKey = target?.LogicalContentKey ?? string.Empty;
             var removed = _preferences.RecentChannelIds.RemoveAll(id => id == channelId) > 0;
             if (_preferences.LastChannelId == channelId)
             {
                 _preferences.LastChannelId = _preferences.RecentChannelIds.FirstOrDefault();
                 removed = true;
+            }
+
+            if (!string.IsNullOrWhiteSpace(logicalKey))
+            {
+                removed = _preferences.RecentChannels.RemoveAll(item =>
+                    string.Equals(item.LogicalKey, logicalKey, StringComparison.OrdinalIgnoreCase)) > 0 || removed;
+
+                if (string.Equals(_preferences.LastChannel?.LogicalKey, logicalKey, StringComparison.OrdinalIgnoreCase))
+                {
+                    _preferences.LastChannel = _preferences.RecentChannels.FirstOrDefault();
+                    removed = true;
+                }
             }
 
             if (!removed)
@@ -543,32 +575,8 @@ namespace Kroira.App.ViewModels
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             var profileService = scope.ServiceProvider.GetRequiredService<IProfileStateService>();
             var activeProfileId = await profileService.GetActiveProfileIdAsync(db);
-
-            if (target.IsFavorite)
-            {
-                var favorite = await db.Favorites.FirstOrDefaultAsync(favorite =>
-                    favorite.ProfileId == activeProfileId &&
-                    favorite.ContentType == FavoriteType.Channel &&
-                    favorite.ContentId == channelId);
-                if (favorite != null)
-                {
-                    db.Favorites.Remove(favorite);
-                    await db.SaveChangesAsync();
-                }
-
-                target.IsFavorite = false;
-            }
-            else
-            {
-                db.Favorites.Add(new Favorite
-                {
-                    ProfileId = activeProfileId,
-                    ContentType = FavoriteType.Channel,
-                    ContentId = channelId
-                });
-                await db.SaveChangesAsync();
-                target.IsFavorite = true;
-            }
+            var isFavorite = await _logicalCatalogStateService.ToggleFavoriteAsync(db, activeProfileId, FavoriteType.Channel, channelId);
+            UpdateFavoriteState(target.LogicalContentKey, isFavorite);
 
             QueueApplyFilter();
         }
@@ -580,29 +588,22 @@ namespace Kroira.App.ViewModels
                 return;
             }
 
-            _preferences.LastChannelId = channelId;
-            _preferences.RecentChannelIds.RemoveAll(id => id == channelId);
-            _preferences.RecentChannelIds.Insert(0, channelId);
-            if (_preferences.RecentChannelIds.Count > 10)
-            {
-                _preferences.RecentChannelIds = _preferences.RecentChannelIds.Take(10).ToList();
-            }
-            _preferences.LiveChannelWatchCounts[channelId] =
-                (_preferences.LiveChannelWatchCounts.TryGetValue(channelId, out var currentCount) ? currentCount : 0) + 1;
-
-            if (_preferences.LiveChannelWatchCounts.Count > 512)
-            {
-                _preferences.LiveChannelWatchCounts = _preferences.LiveChannelWatchCounts
-                    .OrderByDescending(pair => pair.Value)
-                    .ThenBy(pair => pair.Key)
-                    .Take(512)
-                    .ToDictionary(pair => pair.Key, pair => pair.Value);
-            }
-
             using var scope = _serviceProvider.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            var browsePreferencesService = scope.ServiceProvider.GetRequiredService<IBrowsePreferencesService>();
-            await browsePreferencesService.SaveAsync(db, Domain, _activeProfileId, _preferences);
+            await _logicalCatalogStateService.RecordLiveChannelLaunchAsync(db, _activeProfileId, channelId);
+            _preferences = await _browsePreferencesService.GetAsync(db, Domain, _activeProfileId);
+            ApplyLastTunedState(_allChannels);
+            var target = _allChannels.FirstOrDefault(channel => channel.Id == channelId);
+            if (target != null)
+            {
+                var watchCount = GetChannelWatchCount(target.LogicalContentKey, target.Id);
+                foreach (var channel in _allChannels.Where(channel =>
+                             string.Equals(channel.LogicalContentKey, target.LogicalContentKey, StringComparison.OrdinalIgnoreCase)))
+                {
+                    channel.WatchCount = watchCount;
+                    channel.LastWatchedAtUtc = DateTime.UtcNow;
+                }
+            }
         }
 
         private async Task SavePreferencesAndRefreshAsync(bool rebuildCollections)
@@ -621,6 +622,107 @@ namespace Kroira.App.ViewModels
             }
 
             QueueApplyFilter();
+        }
+
+        private void UpdateFavoriteState(string logicalKey, bool isFavorite)
+        {
+            if (string.IsNullOrWhiteSpace(logicalKey))
+            {
+                return;
+            }
+
+            if (isFavorite)
+            {
+                _favoriteLogicalKeys.Add(logicalKey);
+            }
+            else
+            {
+                _favoriteLogicalKeys.Remove(logicalKey);
+            }
+
+            foreach (var channel in _allChannels.Where(item =>
+                         string.Equals(item.LogicalContentKey, logicalKey, StringComparison.OrdinalIgnoreCase)))
+            {
+                channel.IsFavorite = isFavorite;
+            }
+        }
+
+        private int GetChannelWatchCount(string logicalKey, int channelId)
+        {
+            if (!string.IsNullOrWhiteSpace(logicalKey) &&
+                _preferences.LiveChannelWatchCountsByKey.TryGetValue(logicalKey, out var logicalCount))
+            {
+                return logicalCount;
+            }
+
+            return _preferences.LiveChannelWatchCounts.TryGetValue(channelId, out var legacyCount)
+                ? legacyCount
+                : 0;
+        }
+
+        private static DateTime? ResolveLastWatchedAtUtc(
+            IReadOnlyDictionary<string, PlaybackProgress> progressByLogicalKey,
+            IReadOnlyDictionary<int, PlaybackProgress> progressByChannelId,
+            string logicalKey,
+            int channelId)
+        {
+            if (!string.IsNullOrWhiteSpace(logicalKey) &&
+                progressByLogicalKey.TryGetValue(logicalKey, out var logicalProgress))
+            {
+                return logicalProgress.LastWatched;
+            }
+
+            return progressByChannelId.TryGetValue(channelId, out var progress)
+                ? progress.LastWatched
+                : null;
+        }
+
+        private bool IsLastChannel(BrowserChannelViewModel channel)
+        {
+            return MatchesChannelReference(_preferences.LastChannel, channel) ||
+                   channel.Id == _preferences.LastChannelId;
+        }
+
+        private bool IsRecentChannel(BrowserChannelViewModel channel)
+        {
+            return FindRecentRank(channel) >= 0;
+        }
+
+        private int FindRecentRank(BrowserChannelViewModel channel)
+        {
+            var logicalRank = _preferences.RecentChannels.FindIndex(reference => MatchesChannelReference(reference, channel));
+            if (logicalRank >= 0)
+            {
+                return logicalRank;
+            }
+
+            return _preferences.RecentChannelIds.FindIndex(id => id == channel.Id);
+        }
+
+        private static bool MatchesChannelReference(BrowseChannelReference? reference, BrowserChannelViewModel channel)
+        {
+            if (reference == null)
+            {
+                return false;
+            }
+
+            return !string.IsNullOrWhiteSpace(reference.LogicalKey) &&
+                   !string.IsNullOrWhiteSpace(channel.LogicalContentKey) &&
+                   string.Equals(reference.LogicalKey, channel.LogicalContentKey, StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static BrowserChannelViewModel? ResolveChannelReference(
+            BrowseChannelReference? reference,
+            IReadOnlyDictionary<string, BrowserChannelViewModel> channelByLogicalKey)
+        {
+            if (reference == null || string.IsNullOrWhiteSpace(reference.LogicalKey))
+            {
+                return null;
+            }
+
+            return channelByLogicalKey.TryGetValue(reference.LogicalKey, out var match)
+                ? match
+                : null;
         }
 
         private string ResolveInitialSortKey()
@@ -704,7 +806,7 @@ namespace Kroira.App.ViewModels
                 SmartPriorityCategoryKey => IsPriorityCandidate(channel),
                 SmartSportsCategoryKey => channel.IsSportsChannel,
                 SmartTurkishSportsCategoryKey => channel.IsTurkishSportsChannel,
-                SmartRecentCategoryKey => _preferences.RecentChannelIds.Contains(channel.Id),
+                SmartRecentCategoryKey => IsRecentChannel(channel),
                 _ => string.Equals(
                     _browsePreferencesService.NormalizeCategoryKey(channel.DisplayCategoryName),
                     filterKey,
@@ -770,6 +872,10 @@ namespace Kroira.App.ViewModels
             var channelById = candidateChannels
                 .GroupBy(channel => channel.Id)
                 .ToDictionary(group => group.Key, group => group.First());
+            var channelByLogicalKey = candidateChannels
+                .Where(channel => !string.IsNullOrWhiteSpace(channel.LogicalContentKey))
+                .GroupBy(channel => channel.LogicalContentKey, StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(group => group.Key, group => group.First(), StringComparer.OrdinalIgnoreCase);
             var usedIds = new HashSet<int>();
 
             foreach (var channel in candidateChannels)
@@ -790,7 +896,11 @@ namespace Kroira.App.ViewModels
 
             var sections = new Dictionary<string, List<BrowserChannelViewModel>>(StringComparer.OrdinalIgnoreCase);
 
-            if (_preferences.LastChannelId > 0 && channelById.TryGetValue(_preferences.LastChannelId, out var lastTuned))
+            var lastTuned = ResolveChannelReference(_preferences.LastChannel, channelByLogicalKey)
+                ?? (_preferences.LastChannelId > 0 && channelById.TryGetValue(_preferences.LastChannelId, out var fallbackLastTuned)
+                    ? fallbackLastTuned
+                    : null);
+            if (lastTuned != null)
             {
                 sections["last_tuned"] = new List<BrowserChannelViewModel> { lastTuned };
                 usedIds.Add(lastTuned.Id);
@@ -800,10 +910,14 @@ namespace Kroira.App.ViewModels
                 sections["last_tuned"] = new List<BrowserChannelViewModel>();
             }
 
-            sections["recent"] = _preferences.RecentChannelIds
-                .Where(id => id != _preferences.LastChannelId)
-                .Where(channelById.ContainsKey)
-                .Select(id => channelById[id])
+            sections["recent"] = _preferences.RecentChannels
+                .Select(reference => ResolveChannelReference(reference, channelByLogicalKey))
+                .Where(channel => channel != null && !IsLastChannel(channel!))
+                .Cast<BrowserChannelViewModel>()
+                .Concat(_preferences.RecentChannelIds
+                    .Where(id => id != _preferences.LastChannelId)
+                    .Where(channelById.ContainsKey)
+                    .Select(id => channelById[id]))
                 .Where(channel => usedIds.Add(channel.Id))
                 .Take(6)
                 .ToList();
@@ -859,7 +973,7 @@ namespace Kroira.App.ViewModels
         {
             foreach (var channel in channels)
             {
-                channel.IsLastTuned = channel.Id == _preferences.LastChannelId;
+                channel.IsLastTuned = IsLastChannel(channel);
                 channel.LastTunedVisibility = channel.IsLastTuned
                     ? Microsoft.UI.Xaml.Visibility.Visible
                     : Microsoft.UI.Xaml.Visibility.Collapsed;
@@ -872,19 +986,19 @@ namespace Kroira.App.ViewModels
                    channel.IsSportsChannel ||
                    channel.IsLastTuned ||
                    channel.WatchCount > 0 ||
-                   _preferences.RecentChannelIds.Contains(channel.Id);
+                   IsRecentChannel(channel);
         }
 
         private int ComputePriorityScore(BrowserChannelViewModel channel)
         {
             var score = 0;
 
-            if (channel.Id == _preferences.LastChannelId)
+            if (IsLastChannel(channel))
             {
                 score += 2600;
             }
 
-            var recentRank = _preferences.RecentChannelIds.FindIndex(id => id == channel.Id);
+            var recentRank = FindRecentRank(channel);
             if (recentRank >= 0)
             {
                 score += Math.Max(0, 1700 - (recentRank * 120));
@@ -1031,7 +1145,7 @@ namespace Kroira.App.ViewModels
             AddSmartCategory(-1, SmartPriorityCategoryKey, "Priority watch", "High-value sports, favorites, and repeat channels", visibleChannels.Count(IsPriorityCandidate), 0);
             AddSmartCategory(-2, SmartSportsCategoryKey, "Sports", "All sports-led channels across providers", visibleChannels.Count(channel => channel.IsSportsChannel), 1);
             AddSmartCategory(-3, SmartTurkishSportsCategoryKey, "Turkish sports", "Fast access to Turkish sports coverage", visibleChannels.Count(channel => channel.IsTurkishSportsChannel), 2);
-            AddSmartCategory(-4, SmartRecentCategoryKey, "Recent", "Channels you've watched recently", visibleChannels.Count(channel => _preferences.RecentChannelIds.Contains(channel.Id)), 3);
+            AddSmartCategory(-4, SmartRecentCategoryKey, "Recent", "Channels you've watched recently", visibleChannels.Count(IsRecentChannel), 3);
 
             var categories = visibleChannels
                 .GroupBy(channel => channel.DisplayCategoryName)

@@ -64,6 +64,8 @@ namespace Kroira.App.Models
         /// Defaults to <see cref="M3uImportMode.LiveMoviesAndSeries"/>.
         /// </summary>
         public M3uImportMode M3uImportMode { get; set; } = M3uImportMode.LiveMoviesAndSeries;
+        public SourceProxyScope ProxyScope { get; set; } = SourceProxyScope.Disabled;
+        public string ProxyUrl { get; set; } = string.Empty;
 
         [NotMapped]
         public string ManualEpgUrl

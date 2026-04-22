@@ -21,12 +21,23 @@ namespace Kroira.App.Services.Parsing
     public class XtreamParserService : IXtreamParserService
     {
         private readonly ICatalogNormalizationService _catalogNormalizationService;
+        private readonly IChannelCatchupService _channelCatchupService;
+        private readonly ISourceEnrichmentService _sourceEnrichmentService;
         private readonly ISourceHealthService _sourceHealthService;
+        private readonly ISourceRoutingService _sourceRoutingService;
 
-        public XtreamParserService(ICatalogNormalizationService catalogNormalizationService, ISourceHealthService sourceHealthService)
+        public XtreamParserService(
+            ICatalogNormalizationService catalogNormalizationService,
+            IChannelCatchupService channelCatchupService,
+            ISourceEnrichmentService sourceEnrichmentService,
+            ISourceHealthService sourceHealthService,
+            ISourceRoutingService sourceRoutingService)
         {
             _catalogNormalizationService = catalogNormalizationService;
+            _channelCatchupService = channelCatchupService;
+            _sourceEnrichmentService = sourceEnrichmentService;
             _sourceHealthService = sourceHealthService;
+            _sourceRoutingService = sourceRoutingService;
         }
 
         public async Task ParseAndImportXtreamAsync(AppDbContext db, int sourceProfileId)
@@ -44,7 +55,7 @@ namespace Kroira.App.Services.Parsing
             string catsUrl = $"{baseUrl}/player_api.php{authQuery}&action=get_live_categories";
             string streamsUrl = $"{baseUrl}/player_api.php{authQuery}&action=get_live_streams";
 
-            using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(30) };
+            using var client = _sourceRoutingService.CreateHttpClient(cred, SourceNetworkPurpose.Import, TimeSpan.FromSeconds(30));
 
             try
             {
@@ -66,9 +77,6 @@ namespace Kroira.App.Services.Parsing
                     var oldCats = await db.ChannelCategories.Where(c => c.SourceProfileId == sourceProfileId).ToListAsync();
                     var oldCatIds = oldCats.Select(c => c.Id).ToList();
                     var oldChans = await db.Channels.Where(c => oldCatIds.Contains(c.ChannelCategoryId)).ToListAsync();
-
-                    var oldFavs = await db.Favorites.Where(f => f.ContentType == FavoriteType.Channel && oldChans.Select(c => c.Id).Contains(f.ContentId)).ToListAsync();
-                    db.Favorites.RemoveRange(oldFavs);
 
                     var oldEpg = await db.EpgPrograms.Where(e => oldChans.Select(c => c.Id).Contains(e.ChannelId)).ToListAsync();
                     db.EpgPrograms.RemoveRange(oldEpg);
@@ -135,19 +143,24 @@ namespace Kroira.App.Services.Parsing
                                 string streamUrl = $"{baseUrl}/live/{cred.Username}/{cred.Password}/{streamId}.ts";
                                 if (!ContentClassifier.IsPlayableXtreamLiveChannel(name ?? string.Empty, streamUrl, liveCategoryLabels)) continue;
 
-                                channelsList.Add(new Channel
+                                var channel = new Channel
                                 {
                                     ChannelCategoryId = mappedCat.Id,
                                     Name = string.IsNullOrWhiteSpace(name) ? "Unknown Channel" : name,
                                     StreamUrl = streamUrl,
                                     LogoUrl = logo ?? string.Empty,
-                                    EpgChannelId = string.IsNullOrWhiteSpace(epgChannelId) ? streamId : epgChannelId
-                                });
+                                    ProviderLogoUrl = logo ?? string.Empty,
+                                    EpgChannelId = string.IsNullOrWhiteSpace(epgChannelId) ? streamId : epgChannelId,
+                                    ProviderEpgChannelId = string.IsNullOrWhiteSpace(epgChannelId) ? streamId : epgChannelId
+                                };
+                                _channelCatchupService.ApplyXtreamCatchup(channel, element);
+                                channelsList.Add(channel);
                             }
                         }
 
                         db.Channels.AddRange(channelsList);
                         await db.SaveChangesAsync();
+                        await _sourceEnrichmentService.PrepareLiveCatalogAsync(db, sourceProfileId);
                     }
 
                     var syncState = await db.SourceSyncStates.FirstOrDefaultAsync(s => s.SourceProfileId == sourceProfileId);
@@ -197,7 +210,7 @@ namespace Kroira.App.Services.Parsing
             string baseUrl = cred.Url.TrimEnd('/');
             string authQuery = $"?username={Uri.EscapeDataString(cred.Username)}&password={Uri.EscapeDataString(cred.Password)}";
 
-            using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(45) };
+            using var client = _sourceRoutingService.CreateHttpClient(cred, SourceNetworkPurpose.Import, TimeSpan.FromSeconds(45));
 
             try
             {
@@ -437,21 +450,12 @@ namespace Kroira.App.Services.Parsing
                         }
                     }
 
-                    // Delete movies no longer in feed (also clean up their favorites/progress)
+                    // Delete movies no longer in feed while preserving logical favorites/progress for later reconciliation.
                     var staleMovies = existingMovies
                         .Where(m => !string.IsNullOrEmpty(m.ExternalId) && !incomingMovieIds.Contains(m.ExternalId))
                         .ToList();
                     if (staleMovies.Count > 0)
                     {
-                        var staleIds = staleMovies.Select(m => m.Id).ToList();
-                        var staleFavs = await db.Favorites
-                            .Where(f => f.ContentType == FavoriteType.Movie && staleIds.Contains(f.ContentId))
-                            .ToListAsync();
-                        db.Favorites.RemoveRange(staleFavs);
-                        var staleProgress = await db.PlaybackProgresses
-                            .Where(p => p.ContentType == PlaybackContentType.Movie && staleIds.Contains(p.ContentId))
-                            .ToListAsync();
-                        db.PlaybackProgresses.RemoveRange(staleProgress);
                         db.Movies.RemoveRange(staleMovies);
                     }
 
@@ -550,11 +554,6 @@ namespace Kroira.App.Services.Parsing
                                         .ToList();
                                     if (staleEps.Count > 0)
                                     {
-                                        var staleEpIds = staleEps.Select(e => e.Id).ToList();
-                                        var staleEpProgress = await db.PlaybackProgresses
-                                            .Where(p => p.ContentType == PlaybackContentType.Episode && staleEpIds.Contains(p.ContentId))
-                                            .ToListAsync();
-                                        db.PlaybackProgresses.RemoveRange(staleEpProgress);
                                         db.Episodes.RemoveRange(staleEps);
                                     }
 
@@ -598,11 +597,6 @@ namespace Kroira.App.Services.Parsing
                         .ToList();
                     if (staleSeries.Count > 0)
                     {
-                        var staleSerIds = staleSeries.Select(s => s.Id).ToList();
-                        var staleSerFavs = await db.Favorites
-                            .Where(f => f.ContentType == FavoriteType.Series && staleSerIds.Contains(f.ContentId))
-                            .ToListAsync();
-                        db.Favorites.RemoveRange(staleSerFavs);
                         foreach (var ser in staleSeries)
                         {
                             if (ser.Seasons != null)

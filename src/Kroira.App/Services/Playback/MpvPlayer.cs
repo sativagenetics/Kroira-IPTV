@@ -121,7 +121,7 @@ namespace Kroira.App.Services.Playback
         public double VideoZoom { get; private set; }
         public int VideoRotation { get; private set; }
 
-        public MpvPlayer(DispatcherQueue dispatcher, IntPtr videoHwnd)
+        public MpvPlayer(DispatcherQueue dispatcher, IntPtr videoHwnd, string? httpProxyUrl = null)
         {
             _dispatcher = dispatcher ?? throw new ArgumentNullException(nameof(dispatcher));
             if (videoHwnd == IntPtr.Zero) throw new ArgumentException("videoHwnd must be non-null", nameof(videoHwnd));
@@ -151,6 +151,10 @@ namespace Kroira.App.Services.Playback
             SetOption("cache", "yes");
             SetOption("demuxer-max-bytes", "50MiB");
             SetOption("demuxer-readahead-secs", "20");
+            if (!string.IsNullOrWhiteSpace(httpProxyUrl))
+            {
+                SetOption("http-proxy", httpProxyUrl.Trim());
+            }
 
             int initResult = NativeMpv.mpv_initialize(_ctx);
             if (initResult < 0)

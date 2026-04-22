@@ -122,11 +122,27 @@ namespace Kroira.App.Views
                 new GuideModeOption(EpgActiveMode.None, "No guide", "Disable guide syncing for this source.")
             };
 
+            var proxyOptions = new[]
+            {
+                new ProxyModeOption(SourceProxyScope.Disabled, "Direct routing", "Use direct provider routing for import, guide, probe, and playback requests."),
+                new ProxyModeOption(SourceProxyScope.PlaybackOnly, "Playback only", "Route playback through the proxy while refresh and guide traffic stay direct."),
+                new ProxyModeOption(SourceProxyScope.PlaybackAndProbing, "Playback + probes", "Route playback and bounded operational probes through the proxy."),
+                new ProxyModeOption(SourceProxyScope.AllRequests, "All requests", "Route import, guide, probe, and playback traffic through the proxy.")
+            };
+
             var modeComboBox = new ComboBox
             {
                 ItemsSource = modeOptions,
                 DisplayMemberPath = nameof(GuideModeOption.Label),
                 SelectedItem = modeOptions.FirstOrDefault(option => option.Mode == draft.ActiveMode) ?? modeOptions[0]
+            };
+
+            var proxyComboBox = new ComboBox
+            {
+                Header = "Routing policy",
+                ItemsSource = proxyOptions,
+                DisplayMemberPath = nameof(ProxyModeOption.Label),
+                SelectedItem = proxyOptions.FirstOrDefault(option => option.Scope == draft.ProxyScope) ?? proxyOptions[0]
             };
 
             var manualUrlBox = new TextBox
@@ -136,7 +152,20 @@ namespace Kroira.App.Views
                 Text = draft.ManualEpgUrl
             };
 
+            var proxyUrlBox = new TextBox
+            {
+                Header = "Proxy URL",
+                PlaceholderText = "http://proxy-host:port or socks5://proxy-host:port",
+                Text = draft.ProxyUrl
+            };
+
             var modeDescription = new TextBlock
+            {
+                TextWrapping = TextWrapping.Wrap,
+                Foreground = (Application.Current.Resources["KroiraTextSecondaryBrush"] as Microsoft.UI.Xaml.Media.Brush)
+            };
+
+            var proxyDescription = new TextBlock
             {
                 TextWrapping = TextWrapping.Wrap,
                 Foreground = (Application.Current.Resources["KroiraTextSecondaryBrush"] as Microsoft.UI.Xaml.Media.Brush)
@@ -151,8 +180,19 @@ namespace Kroira.App.Views
                 }
             }
 
+            void RefreshProxyInputs()
+            {
+                if (proxyComboBox.SelectedItem is ProxyModeOption option)
+                {
+                    proxyUrlBox.IsEnabled = option.Scope != SourceProxyScope.Disabled;
+                    proxyDescription.Text = option.Description;
+                }
+            }
+
             modeComboBox.SelectionChanged += (_, _) => RefreshGuideInputs();
+            proxyComboBox.SelectionChanged += (_, _) => RefreshProxyInputs();
             RefreshGuideInputs();
+            RefreshProxyInputs();
 
             var dialog = new ContentDialog
             {
@@ -170,8 +210,8 @@ namespace Kroira.App.Views
                         new TextBlock
                         {
                             Text = draft.SourceType == SourceType.M3U
-                                ? "Choose how this playlist should resolve XMLTV guide data."
-                                : "Choose whether guide data should come from the provider or a manual XMLTV override.",
+                                ? "Choose how this playlist should resolve XMLTV guide data and how the source should be routed operationally."
+                                : "Choose whether guide data should come from the provider or a manual XMLTV override, then decide how routing should behave.",
                             TextWrapping = TextWrapping.Wrap
                         },
                         new TextBlock
@@ -183,7 +223,16 @@ namespace Kroira.App.Views
                         },
                         modeComboBox,
                         modeDescription,
-                        manualUrlBox
+                        manualUrlBox,
+                        new Border
+                        {
+                            Height = 1,
+                            Margin = new Thickness(0, 4, 0, 4),
+                            Background = Application.Current.Resources["KroiraBorderBrush"] as Microsoft.UI.Xaml.Media.Brush
+                        },
+                        proxyComboBox,
+                        proxyDescription,
+                        proxyUrlBox
                     }
                 }
             };
@@ -196,6 +245,8 @@ namespace Kroira.App.Views
 
             draft.ActiveMode = (modeComboBox.SelectedItem as GuideModeOption)?.Mode ?? EpgActiveMode.Detected;
             draft.ManualEpgUrl = manualUrlBox.Text?.Trim() ?? string.Empty;
+            draft.ProxyScope = (proxyComboBox.SelectedItem as ProxyModeOption)?.Scope ?? SourceProxyScope.Disabled;
+            draft.ProxyUrl = proxyUrlBox.Text?.Trim() ?? string.Empty;
 
             try
             {
@@ -251,6 +302,20 @@ namespace Kroira.App.Views
             }
 
             public EpgActiveMode Mode { get; }
+            public string Label { get; }
+            public string Description { get; }
+        }
+
+        private sealed class ProxyModeOption
+        {
+            public ProxyModeOption(SourceProxyScope scope, string label, string description)
+            {
+                Scope = scope;
+                Label = label;
+                Description = description;
+            }
+
+            public SourceProxyScope Scope { get; }
             public string Label { get; }
             public string Description { get; }
         }

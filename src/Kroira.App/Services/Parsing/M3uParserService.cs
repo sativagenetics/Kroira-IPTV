@@ -21,12 +21,23 @@ namespace Kroira.App.Services.Parsing
     {
         private const string DefaultGroupName = "Uncategorized";
         private readonly ICatalogNormalizationService _catalogNormalizationService;
+        private readonly IChannelCatchupService _channelCatchupService;
+        private readonly ISourceEnrichmentService _sourceEnrichmentService;
         private readonly ISourceHealthService _sourceHealthService;
+        private readonly ISourceRoutingService _sourceRoutingService;
 
-        public M3uParserService(ICatalogNormalizationService catalogNormalizationService, ISourceHealthService sourceHealthService)
+        public M3uParserService(
+            ICatalogNormalizationService catalogNormalizationService,
+            IChannelCatchupService channelCatchupService,
+            ISourceEnrichmentService sourceEnrichmentService,
+            ISourceHealthService sourceHealthService,
+            ISourceRoutingService sourceRoutingService)
         {
             _catalogNormalizationService = catalogNormalizationService;
+            _channelCatchupService = channelCatchupService;
+            _sourceEnrichmentService = sourceEnrichmentService;
             _sourceHealthService = sourceHealthService;
+            _sourceRoutingService = sourceRoutingService;
         }
 
         public async Task ParseAndImportM3uAsync(AppDbContext db, int sourceProfileId)
@@ -40,7 +51,7 @@ namespace Kroira.App.Services.Parsing
             try
             {
                 var importMode = cred.M3uImportMode;
-                var content = await ReadPlaylistAsync(cred.Url);
+                var content = await ReadPlaylistAsync(cred.Url, cred);
                 var headerMetadata = M3uMetadataParser.ParseHeaderMetadata(content, cred.Url);
                 cred.DetectedEpgUrl = headerMetadata.XmltvUrls.FirstOrDefault() ?? string.Empty;
                 var diagnostics = new M3uImportDiagnostics
@@ -89,6 +100,7 @@ namespace Kroira.App.Services.Parsing
                             TvgType = M3uMetadataParser.GetFirstAttributeValue(extinf.Attributes, "tvg-type"),
                             TvgId = M3uMetadataParser.GetFirstAttributeValue(extinf.Attributes, "tvg-id"),
                             TvgName = M3uMetadataParser.GetFirstAttributeValue(extinf.Attributes, "tvg-name"),
+                            Attributes = new Dictionary<string, string>(extinf.Attributes, StringComparer.OrdinalIgnoreCase),
                             HadExplicitGroupTitle = !string.IsNullOrWhiteSpace(explicitGroup) &&
                                                     !string.Equals(explicitGroup, DefaultGroupName, StringComparison.OrdinalIgnoreCase)
                         };
@@ -115,6 +127,7 @@ namespace Kroira.App.Services.Parsing
                             TvgType = pending.TvgType,
                             TvgId = pending.TvgId,
                             TvgName = pending.TvgName,
+                            Attributes = pending.Attributes,
                             HadExplicitGroupTitle = pending.HadExplicitGroupTitle
                         });
 
@@ -194,15 +207,21 @@ namespace Kroira.App.Services.Parsing
                             categoriesDict[entry.GroupName] = category;
                         }
 
-                        category.Channels!.Add(new Channel
+                        var channel = new Channel
                         {
                             Name = entry.Name,
                             StreamUrl = entry.Url,
                             LogoUrl = entry.LogoUrl,
+                            ProviderLogoUrl = entry.LogoUrl,
                             EpgChannelId = !string.IsNullOrWhiteSpace(entry.TvgId)
                                 ? entry.TvgId
+                                : entry.TvgName,
+                            ProviderEpgChannelId = !string.IsNullOrWhiteSpace(entry.TvgId)
+                                ? entry.TvgId
                                 : entry.TvgName
-                        });
+                        };
+                        _channelCatchupService.ApplyM3uCatchup(channel, entry.Attributes);
+                        category.Channels!.Add(channel);
                         totalChannels++;
                         break;
 
@@ -347,6 +366,7 @@ namespace Kroira.App.Services.Parsing
                     }
 
                     await db.SaveChangesAsync();
+                    await _sourceEnrichmentService.PrepareLiveCatalogAsync(db, sourceProfileId);
                     await transaction.CommitAsync();
 
                     await LogPersistedDiagnosticsAsync(sourceProfileId, db, totalChannels, totalMovies, totalSeries);
@@ -638,11 +658,11 @@ namespace Kroira.App.Services.Parsing
             return movie;
         }
 
-        private static async Task<string> ReadPlaylistAsync(string location)
+        private async Task<string> ReadPlaylistAsync(string location, SourceCredential credential)
         {
             if (location.StartsWith("http", StringComparison.OrdinalIgnoreCase))
             {
-                using var client = new HttpClient();
+                using var client = _sourceRoutingService.CreateHttpClient(credential, SourceNetworkPurpose.Import, TimeSpan.FromSeconds(60));
                 return await client.GetStringAsync(location);
             }
 
@@ -798,6 +818,7 @@ namespace Kroira.App.Services.Parsing
             public string TvgType { get; set; } = string.Empty;
             public string TvgId { get; set; } = string.Empty;
             public string TvgName { get; set; } = string.Empty;
+            public IReadOnlyDictionary<string, string> Attributes { get; set; } = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             public bool HadExplicitGroupTitle { get; set; }
         }
 
@@ -825,6 +846,7 @@ namespace Kroira.App.Services.Parsing
             public string TvgType { get; set; } = string.Empty;
             public string TvgId { get; set; } = string.Empty;
             public string TvgName { get; set; } = string.Empty;
+            public IReadOnlyDictionary<string, string> Attributes { get; set; } = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             public bool HadExplicitGroupTitle { get; set; }
         }
 

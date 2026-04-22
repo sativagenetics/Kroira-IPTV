@@ -515,6 +515,15 @@ namespace Kroira.App.Views
                 hints.Add("Seek unavailable on this live stream.");
             }
 
+            if (!string.IsNullOrWhiteSpace(_context?.OperationalSummary))
+            {
+                hints.Add(_context.OperationalSummary);
+            }
+            else if (!string.IsNullOrWhiteSpace(_resolvedRoutingSummary) && !string.Equals(_resolvedRoutingSummary, "Direct routing", StringComparison.OrdinalIgnoreCase))
+            {
+                hints.Add(_resolvedRoutingSummary);
+            }
+
             if (_sleepDeadline.HasValue)
             {
                 var remaining = _sleepDeadline.Value - DateTimeOffset.UtcNow;
@@ -533,12 +542,18 @@ namespace Kroira.App.Views
             var info = _player?.GetPlaybackInfoSnapshot() ?? new Services.Playback.MpvPlaybackInfoSnapshot();
             InfoSummaryText.Text = _stateMachine.State == PlaybackSessionState.Error
                 ? _lastStateMessage
-                : IsLivePlayback() ? "Live playback tools reflect real stream state and guide confidence." : "Seekable playback controls are active for this title.";
+                : !string.IsNullOrWhiteSpace(_context?.OperationalSummary)
+                    ? _context.OperationalSummary
+                    : IsLivePlayback() ? "Live playback tools reflect real stream state and guide confidence." : "Seekable playback controls are active for this title.";
             InfoResolutionText.Text = info.HasVideo ? $"{info.Width}x{info.Height}" : "Unknown";
             InfoFpsText.Text = info.FramesPerSecond > 0 ? $"{info.FramesPerSecond:0.##}" : "Unknown";
             InfoVideoCodecText.Text = string.IsNullOrWhiteSpace(info.VideoCodec) ? "Unknown" : info.VideoCodec;
             InfoAudioCodecText.Text = string.IsNullOrWhiteSpace(info.AudioCodec) ? "Unknown" : info.AudioCodec;
-            InfoSourceText.Text = string.IsNullOrWhiteSpace(_resolvedSourceName) ? "Unknown" : _resolvedSourceName;
+            InfoSourceText.Text = string.IsNullOrWhiteSpace(_resolvedSourceName)
+                ? string.IsNullOrWhiteSpace(_resolvedRoutingSummary) ? "Unknown" : _resolvedRoutingSummary
+                : string.IsNullOrWhiteSpace(_resolvedRoutingSummary) || string.Equals(_resolvedRoutingSummary, "Direct routing", StringComparison.OrdinalIgnoreCase)
+                    ? _resolvedSourceName
+                    : $"{_resolvedSourceName} · {_resolvedRoutingSummary}";
             InfoSpeedText.Text = $"{(_player?.PlaybackSpeed > 0 ? _player.PlaybackSpeed : _playerPreferences.PlaybackSpeed):0.##}x";
             InfoSeekText.Text = IsTimelineSeekAllowed() ? "Seekable" : "Not seekable";
             InfoGuideText.Text = string.IsNullOrWhiteSpace(_resolvedGuideSummary) ? "No guide status" : _resolvedGuideSummary;
@@ -585,20 +600,8 @@ namespace Kroira.App.Views
 
             using var scope = ((App)Application.Current).Services.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            var browsePreferencesService = scope.ServiceProvider.GetRequiredService<IBrowsePreferencesService>();
-            var preferences = await browsePreferencesService.GetAsync(db, ProfileDomains.Live, _context.ProfileId);
-            preferences.LastChannelId = channelId;
-            preferences.RecentChannelIds.RemoveAll(id => id == channelId);
-            preferences.RecentChannelIds.Insert(0, channelId);
-            if (preferences.RecentChannelIds.Count > 10)
-            {
-                preferences.RecentChannelIds = preferences.RecentChannelIds.Take(10).ToList();
-            }
-
-            preferences.LiveChannelWatchCounts[channelId] =
-                (preferences.LiveChannelWatchCounts.TryGetValue(channelId, out var currentCount) ? currentCount : 0) + 1;
-
-            await browsePreferencesService.SaveAsync(db, ProfileDomains.Live, _context.ProfileId, preferences);
+            var logicalCatalogStateService = scope.ServiceProvider.GetRequiredService<ILogicalCatalogStateService>();
+            await logicalCatalogStateService.RecordLiveChannelLaunchAsync(db, _context.ProfileId, channelId);
         }
 
         private async Task SwitchToChannelAsync(int channelId, string reason)
@@ -609,9 +612,12 @@ namespace Kroira.App.Views
                 return;
             }
 
+            _failedMirrorContentIds.Clear();
             await RecordChannelLaunchAsync(channelId);
             _context.ContentId = nextItem.Id;
             _context.ContentType = PlaybackContentType.Channel;
+            _context.LogicalContentKey = nextItem.LogicalContentKey;
+            _context.PreferredSourceProfileId = nextItem.PreferredSourceProfileId;
             _context.StreamUrl = nextItem.StreamUrl;
             _context.StartPositionMs = 0;
             _context.RestoreAudioTrackSelection = false;
@@ -633,8 +639,11 @@ namespace Kroira.App.Views
                 return;
             }
 
+            _failedMirrorContentIds.Clear();
             _context.ContentId = nextItem.Id;
             _context.ContentType = PlaybackContentType.Episode;
+            _context.LogicalContentKey = string.Empty;
+            _context.PreferredSourceProfileId = 0;
             _context.StreamUrl = nextItem.StreamUrl;
             _context.StartPositionMs = nextItem.ResumePositionMs;
             TitleText.Text = nextItem.Title;
@@ -1281,28 +1290,8 @@ namespace Kroira.App.Views
 
             using var scope = ((App)Application.Current).Services.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            var existing = await db.Favorites.FirstOrDefaultAsync(favorite =>
-                favorite.ProfileId == _context.ProfileId &&
-                favorite.ContentType == _favoriteType.Value &&
-                favorite.ContentId == _favoriteContentId);
-
-            if (existing == null)
-            {
-                db.Favorites.Add(new Favorite
-                {
-                    ProfileId = _context.ProfileId,
-                    ContentType = _favoriteType.Value,
-                    ContentId = _favoriteContentId
-                });
-                _isFavorite = true;
-            }
-            else
-            {
-                db.Favorites.Remove(existing);
-                _isFavorite = false;
-            }
-
-            await db.SaveChangesAsync();
+            var logicalCatalogStateService = scope.ServiceProvider.GetRequiredService<ILogicalCatalogStateService>();
+            _isFavorite = await logicalCatalogStateService.ToggleFavoriteAsync(db, _context.ProfileId, _favoriteType.Value, _favoriteContentId);
             UpdateFavoriteUi();
         }
 

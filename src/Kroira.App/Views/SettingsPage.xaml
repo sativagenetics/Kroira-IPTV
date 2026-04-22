@@ -194,6 +194,66 @@
                             </StackPanel>
                         </Border>
                     </Grid>
+
+                    <Border Style="{StaticResource KroiraSettingsGroupStyle}">
+                        <StackPanel Spacing="16">
+                            <StackPanel Spacing="3">
+                                <TextBlock Text="Automatic refresh" Style="{StaticResource KroiraSectionTitleStyle}" />
+                                <TextBlock Text="Keep sources current on a bounded cadence while the app is open. Refreshes reuse the normal sync, health, enrichment, and reconciliation pipeline."
+                                           Style="{StaticResource KroiraBodyStyle}"
+                                           TextWrapping="Wrap" />
+                            </StackPanel>
+
+                            <Border Height="1" Background="{StaticResource KroiraBorderBrush}" Opacity="0.45" />
+
+                            <Grid ColumnSpacing="18">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="220" />
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="Enable automatic refresh" Style="{StaticResource KroiraTitleStyle}" />
+                                    <TextBlock Text="{x:Bind ViewModel.AutoRefreshStatusText, Mode=OneWay}"
+                                               Style="{StaticResource KroiraBodyStyle}"
+                                               TextWrapping="Wrap" />
+                                </StackPanel>
+
+                                <ToggleSwitch Grid.Column="1"
+                                              IsOn="{x:Bind ViewModel.AutoRefreshEnabled, Mode=TwoWay}"
+                                              HorizontalAlignment="Right"
+                                              VerticalAlignment="Center" />
+                            </Grid>
+
+                            <Grid ColumnSpacing="18">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="220" />
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="Refresh cadence" Style="{StaticResource KroiraTitleStyle}" />
+                                    <TextBlock Text="Choose how often sources become due while the app stays open."
+                                               Style="{StaticResource KroiraBodyStyle}" />
+                                </StackPanel>
+
+                                <ComboBox Grid.Column="1"
+                                          Style="{StaticResource KroiraComboBoxStyle}"
+                                          ItemsSource="{x:Bind ViewModel.AutoRefreshIntervalOptions, Mode=OneWay}"
+                                          SelectedItem="{x:Bind ViewModel.SelectedAutoRefreshInterval, Mode=TwoWay}"
+                                          DisplayMemberPath="DisplayName"
+                                          IsEnabled="{x:Bind ViewModel.AutoRefreshEnabled, Mode=OneWay}"
+                                          MinWidth="180"
+                                          MaxWidth="220"
+                                          HorizontalAlignment="Stretch"
+                                          VerticalAlignment="Center" />
+                            </Grid>
+
+                            <ToggleSwitch Header="Run shortly after launch"
+                                          IsOn="{x:Bind ViewModel.RunAutoRefreshAfterLaunch, Mode=TwoWay}"
+                                          IsEnabled="{x:Bind ViewModel.AutoRefreshEnabled, Mode=OneWay}" />
+                        </StackPanel>
+                    </Border>
                 </StackPanel>
 
                 <StackPanel Grid.Column="1" Spacing="18">

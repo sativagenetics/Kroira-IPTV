@@ -100,7 +100,9 @@ namespace Kroira.App.Services
                     SourceProfileId = credential.SourceProfileId,
                     DetectedEpgUrl = credential.DetectedEpgUrl,
                     ManualEpgUrl = credential.EpgUrl,
-                    EpgMode = credential.EpgMode
+                    EpgMode = credential.EpgMode,
+                    ProxyScope = credential.ProxyScope,
+                    ProxyUrl = credential.ProxyUrl
                 })
                 .ToDictionaryAsync(credential => credential.SourceProfileId);
             var healthReports = await db.SourceHealthReports
@@ -203,6 +205,32 @@ namespace Kroira.App.Services
                             SampleItems = item.Issue.SampleItems
                         })
                         .ToList());
+            var operationalCandidateRows = await db.LogicalOperationalCandidates
+                .AsNoTracking()
+                .Join(
+                    db.LogicalOperationalStates.AsNoTracking(),
+                    candidate => candidate.LogicalOperationalStateId,
+                    state => state.Id,
+                    (candidate, state) => new
+                    {
+                        candidate.SourceProfileId,
+                        candidate.IsSelected,
+                        candidate.IsLastKnownGood,
+                        state.RecoveryAction
+                    })
+                .ToListAsync();
+            var operationalLookup = operationalCandidateRows
+                .GroupBy(item => item.SourceProfileId)
+                .ToDictionary(
+                    group => group.Key,
+                    group => new SourceOperationalSnapshotView
+                    {
+                        PreferredCount = group.Count(item => item.IsSelected),
+                        LastKnownGoodCount = group.Count(item => item.IsLastKnownGood),
+                        RecoveryHoldCount = group.Count(item =>
+                            item.IsSelected &&
+                            item.RecoveryAction == OperationalRecoveryAction.PreservedLastKnownGood)
+                    });
 
             var epgLogs = new Dictionary<int, EpgSyncLog>();
             try
@@ -257,6 +285,7 @@ namespace Kroira.App.Services
                 componentLookup.TryGetValue(sourceId, out var sourceComponents);
                 probeLookup.TryGetValue(sourceId, out var sourceProbes);
                 issueLookup.TryGetValue(sourceId, out var sourceIssues);
+                operationalLookup.TryGetValue(sourceId, out var operationalView);
 
                 var sourceType = profile?.Type ?? SourceType.M3U;
                 var liveCount = healthReport?.TotalChannelCount ?? (liveCounts.TryGetValue(sourceId, out var live) ? live : 0);
@@ -277,6 +306,7 @@ namespace Kroira.App.Services
                 var importFailure = syncState != null && syncState.HttpStatusCode >= 400;
                 var hasCatalog = liveCount + movieCount + seriesCount > 0;
                 var hasPersistedGuideData = matchedCount > 0 || (epgLog?.ProgrammeCount ?? 0) > 0;
+                var autoRefreshState = syncState?.AutoRefreshState ?? SourceAutoRefreshState.Idle;
                 var guideWarnings = BuildGuideWarnings(sourceType, liveCount, activeMode, status, resultCode, matchedCount, unmatchedCount, currentCoverageCount, nextCoverageCount, !string.IsNullOrWhiteSpace(detectedEpgUrl), !string.IsNullOrWhiteSpace(manualEpgUrl), hasPersistedGuideData);
                 var importWarnings = BuildImportWarnings(hasCatalog, liveCount, sourceType, syncState);
                 var failureSummary = BuildFailureSummary(syncState, status, resultCode, failureStage, epgLog);
@@ -337,6 +367,15 @@ namespace Kroira.App.Services
                     DetectedEpgUrl = detectedEpgUrl,
                     ManualEpgUrl = manualEpgUrl,
                     ActiveXmltvUrl = activeXmltvUrl,
+                    AutoRefreshState = autoRefreshState,
+                    AutoRefreshStatusText = BuildAutoRefreshStatusLabel(autoRefreshState),
+                    AutoRefreshSummaryText = string.IsNullOrWhiteSpace(syncState?.AutoRefreshSummary)
+                        ? BuildAutoRefreshSummary(autoRefreshState, syncState?.NextAutoRefreshDueAtUtc, syncState?.LastAutoRefreshSuccessAtUtc)
+                        : syncState!.AutoRefreshSummary,
+                    NextAutoRefreshText = FormatTimestamp(syncState?.NextAutoRefreshDueAtUtc),
+                    LastAutoRefreshText = FormatTimestamp(syncState?.LastAutoRefreshSuccessAtUtc),
+                    OperationalStatusText = BuildOperationalStatusText(operationalView),
+                    ProxyStatusText = BuildProxyStatusText(credential),
                     GuideAvailableForLive = liveCount == 0 || status is EpgStatus.Ready or EpgStatus.ManualOverride,
                     IsPartialGuideMatch = resultCode == EpgSyncResultCode.PartialMatch,
                     HealthComponents = sourceComponents ?? Array.Empty<SourceDiagnosticsComponentSnapshot>(),
@@ -751,6 +790,73 @@ namespace Kroira.App.Services
             _ => "Detected from provider"
         };
 
+        private static string BuildAutoRefreshStatusLabel(SourceAutoRefreshState state) => state switch
+        {
+            SourceAutoRefreshState.Running => "Auto running",
+            SourceAutoRefreshState.Succeeded => "Auto ready",
+            SourceAutoRefreshState.Failed => "Auto failed",
+            SourceAutoRefreshState.Disabled => "Auto off",
+            SourceAutoRefreshState.Scheduled => "Auto scheduled",
+            _ => "Auto standby"
+        };
+
+        private static string BuildAutoRefreshSummary(
+            SourceAutoRefreshState state,
+            DateTime? nextDueAtUtc,
+            DateTime? lastSuccessAtUtc)
+        {
+            return state switch
+            {
+                SourceAutoRefreshState.Running => "Automatic refresh is running now.",
+                SourceAutoRefreshState.Disabled => "Automatic refresh is turned off.",
+                SourceAutoRefreshState.Failed when nextDueAtUtc.HasValue => $"Automatic refresh failed. Next attempt {FormatTimestamp(nextDueAtUtc)}.",
+                SourceAutoRefreshState.Succeeded when nextDueAtUtc.HasValue => $"Automatic refresh is scheduled for {FormatTimestamp(nextDueAtUtc)}.",
+                _ when nextDueAtUtc.HasValue => $"Next automatic refresh {FormatTimestamp(nextDueAtUtc)}.",
+                _ when lastSuccessAtUtc.HasValue => $"Last automatic refresh completed {FormatTimestamp(lastSuccessAtUtc)}.",
+                _ => "Automatic refresh has not run yet."
+            };
+        }
+
+        private static string BuildOperationalStatusText(SourceOperationalSnapshotView? view)
+        {
+            if (view == null || (view.PreferredCount == 0 && view.LastKnownGoodCount == 0))
+            {
+                return "Operational mirrors are not currently anchored to this source.";
+            }
+
+            var summary = $"Preferred for {view.PreferredCount:N0} mirrored item{(view.PreferredCount == 1 ? string.Empty : "s")}.";
+            if (view.RecoveryHoldCount > 0)
+            {
+                summary += $" Holding last-known-good on {view.RecoveryHoldCount:N0}.";
+            }
+            else if (view.LastKnownGoodCount > 0)
+            {
+                summary += $" Last-known-good confirmed on {view.LastKnownGoodCount:N0}.";
+            }
+
+            return summary;
+        }
+
+        private static string BuildProxyStatusText(SourceCredentialView? credential)
+        {
+            if (credential == null || credential.ProxyScope == SourceProxyScope.Disabled)
+            {
+                return "Direct routing";
+            }
+
+            var scopeText = credential.ProxyScope switch
+            {
+                SourceProxyScope.PlaybackOnly => "Playback proxy",
+                SourceProxyScope.PlaybackAndProbing => "Playback + probe proxy",
+                SourceProxyScope.AllRequests => "Source-wide proxy",
+                _ => "Proxy"
+            };
+
+            return string.IsNullOrWhiteSpace(credential.ProxyUrl)
+                ? $"{scopeText} configured"
+                : $"{scopeText}: {credential.ProxyUrl}";
+        }
+
         private static string FormatTimestamp(DateTime? timestampUtc)
         {
             if (!timestampUtc.HasValue) return "Never";
@@ -773,6 +879,15 @@ namespace Kroira.App.Services
             public string DetectedEpgUrl { get; set; } = string.Empty;
             public string ManualEpgUrl { get; set; } = string.Empty;
             public EpgActiveMode EpgMode { get; set; } = EpgActiveMode.Detected;
+            public SourceProxyScope ProxyScope { get; set; } = SourceProxyScope.Disabled;
+            public string ProxyUrl { get; set; } = string.Empty;
+        }
+
+        private sealed class SourceOperationalSnapshotView
+        {
+            public int PreferredCount { get; set; }
+            public int LastKnownGoodCount { get; set; }
+            public int RecoveryHoldCount { get; set; }
         }
     }
 
@@ -826,6 +941,13 @@ namespace Kroira.App.Services
         public string DetectedEpgUrl { get; set; } = string.Empty;
         public string ManualEpgUrl { get; set; } = string.Empty;
         public string ActiveXmltvUrl { get; set; } = string.Empty;
+        public SourceAutoRefreshState AutoRefreshState { get; set; }
+        public string AutoRefreshStatusText { get; set; } = "Auto standby";
+        public string AutoRefreshSummaryText { get; set; } = string.Empty;
+        public string NextAutoRefreshText { get; set; } = "Never";
+        public string LastAutoRefreshText { get; set; } = "Never";
+        public string OperationalStatusText { get; set; } = string.Empty;
+        public string ProxyStatusText { get; set; } = "Direct routing";
         public IReadOnlyList<SourceDiagnosticsComponentSnapshot> HealthComponents { get; set; } = Array.Empty<SourceDiagnosticsComponentSnapshot>();
         public IReadOnlyList<SourceDiagnosticsProbeSnapshot> HealthProbes { get; set; } = Array.Empty<SourceDiagnosticsProbeSnapshot>();
         public IReadOnlyList<SourceDiagnosticsIssueSnapshot> Issues { get; set; } = Array.Empty<SourceDiagnosticsIssueSnapshot>();

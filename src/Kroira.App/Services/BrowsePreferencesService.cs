@@ -10,11 +10,20 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Kroira.App.Services
 {
+    public sealed class BrowseChannelReference
+    {
+        public string LogicalKey { get; set; } = string.Empty;
+        public int PreferredSourceProfileId { get; set; }
+    }
+
     public sealed class BrowsePreferences
     {
         public string SortKey { get; set; } = string.Empty;
         public string SelectedCategoryKey { get; set; } = string.Empty;
         public int SelectedSourceId { get; set; }
+        public BrowseChannelReference? LastChannel { get; set; }
+        public List<BrowseChannelReference> RecentChannels { get; set; } = new();
+        public Dictionary<string, int> LiveChannelWatchCountsByKey { get; set; } = new(StringComparer.OrdinalIgnoreCase);
         public int LastChannelId { get; set; }
         public bool HasExplicitLiveSortPreference { get; set; }
         public bool FavoritesOnly { get; set; }
@@ -68,12 +77,25 @@ namespace Kroira.App.Services
                     .Distinct()
                     .OrderBy(id => id)
                     .ToList();
+                preferences.LastChannel = NormalizeChannelReference(preferences.LastChannel);
                 preferences.LastChannelId = Math.Max(0, preferences.LastChannelId);
+                preferences.RecentChannels = preferences.RecentChannels
+                    .Select(NormalizeChannelReference)
+                    .Where(reference => reference != null)
+                    .Cast<BrowseChannelReference>()
+                    .GroupBy(reference => reference.LogicalKey, StringComparer.OrdinalIgnoreCase)
+                    .Select(group => group.First())
+                    .Take(12)
+                    .ToList();
                 preferences.RecentChannelIds = preferences.RecentChannelIds
                     .Where(id => id > 0)
                     .Distinct()
                     .Take(12)
                     .ToList();
+                preferences.LiveChannelWatchCountsByKey = preferences.LiveChannelWatchCountsByKey
+                    .Where(pair => !string.IsNullOrWhiteSpace(pair.Key) && pair.Value > 0)
+                    .GroupBy(pair => pair.Key.Trim(), StringComparer.OrdinalIgnoreCase)
+                    .ToDictionary(group => group.Key, group => group.Max(pair => pair.Value), StringComparer.OrdinalIgnoreCase);
                 preferences.LiveChannelWatchCounts = preferences.LiveChannelWatchCounts
                     .Where(pair => pair.Key > 0 && pair.Value > 0)
                     .GroupBy(pair => pair.Key)
@@ -165,6 +187,7 @@ namespace Kroira.App.Services
                     ? string.Empty
                     : ContentClassifier.NormalizeLabel(preferences.SelectedCategoryKey).Trim().ToLowerInvariant(),
                 SelectedSourceId = Math.Max(0, preferences.SelectedSourceId),
+                LastChannel = NormalizeChannelReference(preferences.LastChannel),
                 LastChannelId = Math.Max(0, preferences.LastChannelId),
                 HasExplicitLiveSortPreference = preferences.HasExplicitLiveSortPreference,
                 FavoritesOnly = preferences.FavoritesOnly,
@@ -178,11 +201,25 @@ namespace Kroira.App.Services
                 .OrderBy(id => id)
                 .ToList();
 
+            normalized.RecentChannels = preferences.RecentChannels
+                .Select(NormalizeChannelReference)
+                .Where(reference => reference != null)
+                .Cast<BrowseChannelReference>()
+                .GroupBy(reference => reference.LogicalKey, StringComparer.OrdinalIgnoreCase)
+                .Select(group => group.First())
+                .Take(12)
+                .ToList();
+
             normalized.RecentChannelIds = preferences.RecentChannelIds
                 .Where(id => id > 0)
                 .Distinct()
                 .Take(12)
                 .ToList();
+
+            normalized.LiveChannelWatchCountsByKey = preferences.LiveChannelWatchCountsByKey
+                .Where(pair => !string.IsNullOrWhiteSpace(pair.Key) && pair.Value > 0)
+                .GroupBy(pair => pair.Key.Trim(), StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(group => group.Key, group => group.Max(pair => pair.Value), StringComparer.OrdinalIgnoreCase);
 
             normalized.LiveChannelWatchCounts = preferences.LiveChannelWatchCounts
                 .Where(pair => pair.Key > 0 && pair.Value > 0)
@@ -212,6 +249,20 @@ namespace Kroira.App.Services
         {
             var normalizedDomain = string.IsNullOrWhiteSpace(domain) ? "General" : domain.Trim();
             return $"{KeyPrefix}{normalizedDomain}.Profile.{Math.Max(0, profileId)}";
+        }
+
+        private static BrowseChannelReference? NormalizeChannelReference(BrowseChannelReference? reference)
+        {
+            if (reference == null || string.IsNullOrWhiteSpace(reference.LogicalKey))
+            {
+                return null;
+            }
+
+            return new BrowseChannelReference
+            {
+                LogicalKey = reference.LogicalKey.Trim(),
+                PreferredSourceProfileId = Math.Max(0, reference.PreferredSourceProfileId)
+            };
         }
     }
 }

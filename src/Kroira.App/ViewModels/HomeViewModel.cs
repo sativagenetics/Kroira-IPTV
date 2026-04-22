@@ -781,6 +781,8 @@ namespace Kroira.App.ViewModels
         {
             ContinueItems.Clear();
             var watchStateService = _serviceProvider.GetRequiredService<ILibraryWatchStateService>();
+            var logicalCatalogStateService = _serviceProvider.GetRequiredService<ILogicalCatalogStateService>();
+            await logicalCatalogStateService.ReconcilePlaybackProgressAsync(db, access.ProfileId);
             var hideWatched = await watchStateService.GetHideWatchedInContinueAsync(db, access.ProfileId);
 
             var continueItems = new List<(HomeContinueItem Item, DateTime SortAtUtc)>();

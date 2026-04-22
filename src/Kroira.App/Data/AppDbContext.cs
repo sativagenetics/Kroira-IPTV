@@ -23,6 +23,9 @@ namespace Kroira.App.Data
         public DbSet<SourceHealthComponent> SourceHealthComponents { get; set; } = null!;
         public DbSet<SourceHealthProbe> SourceHealthProbes { get; set; } = null!;
         public DbSet<SourceHealthIssue> SourceHealthIssues { get; set; } = null!;
+        public DbSet<SourceChannelEnrichmentRecord> SourceChannelEnrichmentRecords { get; set; } = null!;
+        public DbSet<LogicalOperationalState> LogicalOperationalStates { get; set; } = null!;
+        public DbSet<LogicalOperationalCandidate> LogicalOperationalCandidates { get; set; } = null!;
         public DbSet<ChannelCategory> ChannelCategories { get; set; } = null!;
         public DbSet<Channel> Channels { get; set; } = null!;
         public DbSet<EpgProgram> EpgPrograms { get; set; } = null!;
@@ -66,6 +69,11 @@ namespace Kroira.App.Data
                 .WithOne()
                 .HasForeignKey<SourceCredential>(e => e.SourceProfileId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<SourceCredential>()
+                .Property(e => e.ProxyUrl)
+                .IsRequired()
+                .HasMaxLength(600);
 
             modelBuilder.Entity<SourceSyncState>()
                 .HasOne<SourceProfile>()
@@ -159,6 +167,123 @@ namespace Kroira.App.Data
                 .HasForeignKey(issue => issue.SourceHealthReportId)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            modelBuilder.Entity<SourceChannelEnrichmentRecord>()
+                .HasIndex(e => new { e.SourceProfileId, e.IdentityKey })
+                .IsUnique();
+
+            modelBuilder.Entity<SourceChannelEnrichmentRecord>()
+                .Property(e => e.IdentityKey)
+                .IsRequired()
+                .HasMaxLength(180);
+
+            modelBuilder.Entity<SourceChannelEnrichmentRecord>()
+                .Property(e => e.NormalizedName)
+                .IsRequired()
+                .HasMaxLength(180);
+
+            modelBuilder.Entity<SourceChannelEnrichmentRecord>()
+                .Property(e => e.AliasKeys)
+                .IsRequired()
+                .HasMaxLength(2000);
+
+            modelBuilder.Entity<SourceChannelEnrichmentRecord>()
+                .Property(e => e.ProviderName)
+                .IsRequired()
+                .HasMaxLength(220);
+
+            modelBuilder.Entity<SourceChannelEnrichmentRecord>()
+                .Property(e => e.ProviderEpgChannelId)
+                .IsRequired()
+                .HasMaxLength(220);
+
+            modelBuilder.Entity<SourceChannelEnrichmentRecord>()
+                .Property(e => e.ProviderLogoUrl)
+                .IsRequired()
+                .HasMaxLength(600);
+
+            modelBuilder.Entity<SourceChannelEnrichmentRecord>()
+                .Property(e => e.ResolvedLogoUrl)
+                .IsRequired()
+                .HasMaxLength(600);
+
+            modelBuilder.Entity<SourceChannelEnrichmentRecord>()
+                .Property(e => e.MatchedXmltvChannelId)
+                .IsRequired()
+                .HasMaxLength(220);
+
+            modelBuilder.Entity<SourceChannelEnrichmentRecord>()
+                .Property(e => e.MatchedXmltvDisplayName)
+                .IsRequired()
+                .HasMaxLength(220);
+
+            modelBuilder.Entity<SourceChannelEnrichmentRecord>()
+                .Property(e => e.MatchedXmltvIconUrl)
+                .IsRequired()
+                .HasMaxLength(600);
+
+            modelBuilder.Entity<SourceChannelEnrichmentRecord>()
+                .Property(e => e.EpgMatchSummary)
+                .IsRequired()
+                .HasMaxLength(220);
+
+            modelBuilder.Entity<SourceChannelEnrichmentRecord>()
+                .Property(e => e.LogoSummary)
+                .IsRequired()
+                .HasMaxLength(220);
+
+            modelBuilder.Entity<SourceChannelEnrichmentRecord>()
+                .HasOne<SourceProfile>()
+                .WithMany()
+                .HasForeignKey(e => e.SourceProfileId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<LogicalOperationalState>()
+                .HasIndex(e => new { e.ContentType, e.LogicalContentKey })
+                .IsUnique();
+
+            modelBuilder.Entity<LogicalOperationalState>()
+                .Property(e => e.LogicalContentKey)
+                .IsRequired()
+                .HasMaxLength(260);
+
+            modelBuilder.Entity<LogicalOperationalState>()
+                .Property(e => e.SelectionSummary)
+                .IsRequired()
+                .HasMaxLength(240);
+
+            modelBuilder.Entity<LogicalOperationalState>()
+                .Property(e => e.RecoverySummary)
+                .IsRequired()
+                .HasMaxLength(240);
+
+            modelBuilder.Entity<LogicalOperationalCandidate>()
+                .HasIndex(e => new { e.LogicalOperationalStateId, e.ContentId, e.SourceProfileId })
+                .IsUnique();
+
+            modelBuilder.Entity<LogicalOperationalCandidate>()
+                .HasIndex(e => new { e.SourceProfileId, e.IsSelected });
+
+            modelBuilder.Entity<LogicalOperationalCandidate>()
+                .Property(e => e.SourceName)
+                .IsRequired()
+                .HasMaxLength(150);
+
+            modelBuilder.Entity<LogicalOperationalCandidate>()
+                .Property(e => e.StreamUrl)
+                .IsRequired()
+                .HasMaxLength(1200);
+
+            modelBuilder.Entity<LogicalOperationalCandidate>()
+                .Property(e => e.Summary)
+                .IsRequired()
+                .HasMaxLength(240);
+
+            modelBuilder.Entity<LogicalOperationalCandidate>()
+                .HasOne(candidate => candidate.State)
+                .WithMany(state => state.Candidates)
+                .HasForeignKey(candidate => candidate.LogicalOperationalStateId)
+                .OnDelete(DeleteBehavior.Cascade);
+
             modelBuilder.Entity<EpgSyncLog>()
                 .HasIndex(e => e.SourceProfileId)
                 .IsUnique();
@@ -177,6 +302,60 @@ namespace Kroira.App.Data
                 .HasIndex(e => e.EpgChannelId)
                 .HasDatabaseName("IX_Channels_EpgChannelId");
 
+            modelBuilder.Entity<Channel>()
+                .HasIndex(e => e.NormalizedIdentityKey)
+                .HasDatabaseName("IX_Channels_NormalizedIdentityKey");
+
+            modelBuilder.Entity<Channel>()
+                .Property(e => e.ProviderLogoUrl)
+                .IsRequired()
+                .HasMaxLength(600);
+
+            modelBuilder.Entity<Channel>()
+                .Property(e => e.ProviderEpgChannelId)
+                .IsRequired()
+                .HasMaxLength(220);
+
+            modelBuilder.Entity<Channel>()
+                .Property(e => e.NormalizedIdentityKey)
+                .IsRequired()
+                .HasMaxLength(180);
+
+            modelBuilder.Entity<Channel>()
+                .Property(e => e.NormalizedName)
+                .IsRequired()
+                .HasMaxLength(180);
+
+            modelBuilder.Entity<Channel>()
+                .Property(e => e.AliasKeys)
+                .IsRequired()
+                .HasMaxLength(2000);
+
+            modelBuilder.Entity<Channel>()
+                .Property(e => e.EpgMatchSummary)
+                .IsRequired()
+                .HasMaxLength(220);
+
+            modelBuilder.Entity<Channel>()
+                .Property(e => e.LogoSummary)
+                .IsRequired()
+                .HasMaxLength(220);
+
+            modelBuilder.Entity<Channel>()
+                .Property(e => e.ProviderCatchupMode)
+                .IsRequired()
+                .HasMaxLength(64);
+
+            modelBuilder.Entity<Channel>()
+                .Property(e => e.ProviderCatchupSource)
+                .IsRequired()
+                .HasMaxLength(600);
+
+            modelBuilder.Entity<Channel>()
+                .Property(e => e.CatchupSummary)
+                .IsRequired()
+                .HasMaxLength(220);
+
             modelBuilder.Entity<ParentalControlSetting>()
                 .HasIndex(setting => setting.ProfileId)
                 .IsUnique();
@@ -191,11 +370,32 @@ namespace Kroira.App.Data
             modelBuilder.Entity<Favorite>()
                 .HasIndex(f => new { f.ContentType, f.ContentId });
 
+            modelBuilder.Entity<Favorite>()
+                .HasIndex(f => new { f.ProfileId, f.ContentType, f.LogicalContentKey });
+
+            modelBuilder.Entity<Favorite>()
+                .Property(f => f.LogicalContentKey)
+                .IsRequired()
+                .HasMaxLength(220);
+
             modelBuilder.Entity<PlaybackProgress>()
                 .HasIndex(p => new { p.ProfileId, p.ContentType, p.ContentId });
 
             modelBuilder.Entity<PlaybackProgress>()
                 .HasIndex(p => new { p.ContentType, p.ContentId });
+
+            modelBuilder.Entity<PlaybackProgress>()
+                .HasIndex(p => new { p.ProfileId, p.ContentType, p.LogicalContentKey });
+
+            modelBuilder.Entity<PlaybackProgress>()
+                .Property(p => p.LogicalContentKey)
+                .IsRequired()
+                .HasMaxLength(260);
+
+            modelBuilder.Entity<SourceSyncState>()
+                .Property(state => state.AutoRefreshSummary)
+                .IsRequired()
+                .HasMaxLength(220);
 
             modelBuilder.Entity<RecordingJob>()
                 .HasIndex(job => new { job.ProfileId, job.Status, job.StartTimeUtc });

@@ -6,6 +6,7 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using Kroira.App.Data;
 using Kroira.App.Models;
+using Kroira.App.Services;
 using Microsoft.EntityFrameworkCore;
 
 namespace Kroira.App.Services.Parsing
@@ -62,6 +63,13 @@ namespace Kroira.App.Services.Parsing
 
     public sealed class M3uEpgDiscoveryService : IEpgSourceDiscoveryService
     {
+        private readonly ISourceRoutingService _sourceRoutingService;
+
+        public M3uEpgDiscoveryService(ISourceRoutingService sourceRoutingService)
+        {
+            _sourceRoutingService = sourceRoutingService;
+        }
+
         public SourceType SourceType => SourceType.M3U;
 
         public async Task<EpgDiscoveryResult> DiscoverAsync(AppDbContext db, int sourceProfileId)
@@ -72,7 +80,7 @@ namespace Kroira.App.Services.Parsing
                 throw new Exception("M3U source URL or path is empty.");
             }
 
-            var playlistContent = await EpgDiscoveryHelpers.ReadTextAsync(cred.Url);
+            var playlistContent = await EpgDiscoveryHelpers.ReadTextAsync(cred.Url, cred, SourceNetworkPurpose.Import, _sourceRoutingService);
             var headerMetadata = M3uMetadataParser.ParseHeaderMetadata(playlistContent, cred.Url);
             LogHeaderDiscovery(sourceProfileId, headerMetadata);
 
@@ -105,7 +113,7 @@ namespace Kroira.App.Services.Parsing
                     throw new EpgUnavailableException("Manual XMLTV URL is not configured.");
                 }
 
-                var xmlContent = await EpgDiscoveryHelpers.ReadXmltvAsync(manualUrl, activeMode);
+                var xmlContent = await EpgDiscoveryHelpers.ReadXmltvAsync(manualUrl, activeMode, cred, _sourceRoutingService);
                 return new EpgDiscoveryResult(
                     xmlContent,
                     "Manual XMLTV override",
@@ -124,7 +132,7 @@ namespace Kroira.App.Services.Parsing
             {
                 try
                 {
-                    var xmlContent = await EpgDiscoveryHelpers.ReadXmltvAsync(candidate.Url, EpgActiveMode.Detected);
+                    var xmlContent = await EpgDiscoveryHelpers.ReadXmltvAsync(candidate.Url, EpgActiveMode.Detected, cred, _sourceRoutingService);
                     ImportRuntimeLogger.Log(
                         "EPG DISCOVERY",
                         $"source_profile_id={sourceProfileId}; source_type=M3U; mode=detected; discovery_method={candidate.Method}; xmltv_candidate={FormatDiagnosticValue(candidate.Url)}; fetch_status=success");
@@ -185,6 +193,13 @@ namespace Kroira.App.Services.Parsing
 
     public sealed class XtreamEpgDiscoveryService : IEpgSourceDiscoveryService
     {
+        private readonly ISourceRoutingService _sourceRoutingService;
+
+        public XtreamEpgDiscoveryService(ISourceRoutingService sourceRoutingService)
+        {
+            _sourceRoutingService = sourceRoutingService;
+        }
+
         public SourceType SourceType => SourceType.Xtream;
 
         public async Task<EpgDiscoveryResult> DiscoverAsync(AppDbContext db, int sourceProfileId)
@@ -209,7 +224,7 @@ namespace Kroira.App.Services.Parsing
                     throw new EpgUnavailableException("Manual XMLTV URL is not configured.");
                 }
 
-                var xml = await EpgDiscoveryHelpers.ReadXmltvAsync(manualUrl, activeMode);
+                var xml = await EpgDiscoveryHelpers.ReadXmltvAsync(manualUrl, activeMode, cred, _sourceRoutingService);
                 return new EpgDiscoveryResult(
                     xml,
                     "Manual XMLTV override",
@@ -220,7 +235,7 @@ namespace Kroira.App.Services.Parsing
 
             try
             {
-                var xml = await EpgDiscoveryHelpers.ReadXmltvAsync(providerGuideUrl, EpgActiveMode.Detected);
+                var xml = await EpgDiscoveryHelpers.ReadXmltvAsync(providerGuideUrl, EpgActiveMode.Detected, cred, _sourceRoutingService);
                 ImportRuntimeLogger.Log(
                     "EPG DISCOVERY",
                     $"source_profile_id={sourceProfileId}; source_type=Xtream; mode=detected; xmltv_candidate={FormatDiagnosticValue(providerGuideUrl)}; fetch_status=success");
@@ -268,11 +283,15 @@ namespace Kroira.App.Services.Parsing
             };
         }
 
-        internal static async Task<string> ReadXmltvAsync(string location, EpgActiveMode activeMode)
+        internal static async Task<string> ReadXmltvAsync(
+            string location,
+            EpgActiveMode activeMode,
+            SourceCredential? credential,
+            ISourceRoutingService sourceRoutingService)
         {
             try
             {
-                var content = await ReadTextAsync(location);
+                var content = await ReadTextAsync(location, credential, SourceNetworkPurpose.Guide, sourceRoutingService);
                 if (!LooksLikeXmltv(content))
                 {
                     throw new EpgFetchException("XMLTV URL did not return XMLTV content.", location, activeMode);
@@ -290,11 +309,15 @@ namespace Kroira.App.Services.Parsing
             }
         }
 
-        internal static async Task<string> ReadTextAsync(string location)
+        internal static async Task<string> ReadTextAsync(
+            string location,
+            SourceCredential? credential,
+            SourceNetworkPurpose purpose,
+            ISourceRoutingService sourceRoutingService)
         {
             if (location.StartsWith("http", StringComparison.OrdinalIgnoreCase))
             {
-                using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(60) };
+                using var client = sourceRoutingService.CreateHttpClient(credential, purpose, TimeSpan.FromSeconds(60));
                 return await client.GetStringAsync(location);
             }
 

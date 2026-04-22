@@ -538,6 +538,13 @@
                                                    MaxLines="1"
                                                    TextTrimming="CharacterEllipsis"
                                                    Visibility="{Binding GuideMetaVisibility}" />
+                                        <TextBlock Text="{Binding CatchupBadgeText}"
+                                                   Foreground="{StaticResource KroiraAccentBrush}"
+                                                   FontSize="10"
+                                                   FontWeight="SemiBold"
+                                                   MaxLines="1"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   Visibility="{Binding CatchupVisibility}" />
                                     </StackPanel>
 
                                     <Grid Grid.Row="4" ColumnSpacing="8">

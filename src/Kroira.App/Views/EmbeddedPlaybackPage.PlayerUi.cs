@@ -26,6 +26,8 @@ namespace Kroira.App.Views
         private sealed class PlayerChannelSwitchItem
         {
             public int Id { get; init; }
+            public int PreferredSourceProfileId { get; init; }
+            public string LogicalContentKey { get; init; } = string.Empty;
             public string Name { get; init; } = string.Empty;
             public string SourceName { get; init; } = string.Empty;
             public string StreamUrl { get; init; } = string.Empty;
@@ -63,6 +65,7 @@ namespace Kroira.App.Views
         private DateTimeOffset? _sleepDeadline;
         private string _resolvedSourceName = string.Empty;
         private string _resolvedGuideSummary = string.Empty;
+        private string _resolvedRoutingSummary = string.Empty;
         private int _resolvedSourceProfileId;
         private FavoriteType? _favoriteType;
         private int _favoriteContentId;
@@ -99,6 +102,8 @@ namespace Kroira.App.Views
             var profileService = scope.ServiceProvider.GetRequiredService<IProfileStateService>();
             var guideService = scope.ServiceProvider.GetRequiredService<ILiveGuideService>();
             var browsePreferencesService = scope.ServiceProvider.GetRequiredService<IBrowsePreferencesService>();
+            var logicalCatalogStateService = scope.ServiceProvider.GetRequiredService<ILogicalCatalogStateService>();
+            var contentOperationalService = scope.ServiceProvider.GetRequiredService<IContentOperationalService>();
             var access = await profileService.GetAccessSnapshotAsync(db);
 
             if (cancellationToken.IsCancellationRequested)
@@ -108,9 +113,12 @@ namespace Kroira.App.Views
 
             _playerPreferences = await _playerPreferencesService.LoadAsync(db, _context.ProfileId);
             ApplyEnhancedPreferencesToContext();
+            await logicalCatalogStateService.EnsureLaunchContextLogicalStateAsync(db, _context);
+            await contentOperationalService.ResolvePlaybackContextAsync(db, _context);
 
             _resolvedSourceName = string.Empty;
             _resolvedGuideSummary = string.Empty;
+            _resolvedRoutingSummary = _context.RoutingSummary;
             _resolvedSourceProfileId = 0;
             _favoriteType = null;
             _favoriteContentId = 0;
@@ -123,13 +131,13 @@ namespace Kroira.App.Views
             switch (_context.ContentType)
             {
                 case PlaybackContentType.Channel:
-                    await LoadLiveContentStateAsync(db, access, guideService, browsePreferencesService, cancellationToken);
+                    await LoadLiveContentStateAsync(db, access, guideService, browsePreferencesService, logicalCatalogStateService, cancellationToken);
                     break;
                 case PlaybackContentType.Movie:
-                    await LoadMovieContentStateAsync(db, access, cancellationToken);
+                    await LoadMovieContentStateAsync(db, access, logicalCatalogStateService, cancellationToken);
                     break;
                 case PlaybackContentType.Episode:
-                    await LoadEpisodeContentStateAsync(db, access, profileService, cancellationToken);
+                    await LoadEpisodeContentStateAsync(db, access, profileService, logicalCatalogStateService, cancellationToken);
                     break;
             }
 
@@ -151,6 +159,7 @@ namespace Kroira.App.Views
             ProfileAccessSnapshot access,
             ILiveGuideService guideService,
             IBrowsePreferencesService browsePreferencesService,
+            ILogicalCatalogStateService logicalCatalogStateService,
             CancellationToken cancellationToken)
         {
             if (_context == null)
@@ -191,18 +200,33 @@ namespace Kroira.App.Views
             _resolvedSourceProfileId = currentRow.SourceId;
             _favoriteType = FavoriteType.Channel;
             _favoriteContentId = currentRow.Channel.Id;
-            _isFavorite = await db.Favorites.AnyAsync(
-                favorite => favorite.ProfileId == _context.ProfileId &&
-                            favorite.ContentType == FavoriteType.Channel &&
-                            favorite.ContentId == currentRow.Channel.Id,
-                cancellationToken);
+            _isFavorite = await logicalCatalogStateService.IsFavoritedAsync(db, _context.ProfileId, FavoriteType.Channel, currentRow.Channel.Id);
 
             TitleText.Text = currentRow.Channel.Name;
             BottomLiveTitleText.Text = currentRow.Channel.Name;
             BottomLiveMetaText.Text = "Guide not available.";
 
             var browsePreferences = await browsePreferencesService.GetAsync(db, ProfileDomains.Live, _context.ProfileId);
-            _lastChannelCandidateId = browsePreferences.RecentChannelIds.FirstOrDefault(id => id != currentRow.Channel.Id);
+            var logicalKeyByChannelId = visibleRows.ToDictionary(
+                row => row.Channel.Id,
+                row => logicalCatalogStateService.BuildChannelLogicalKey(row.Channel));
+            var currentLogicalKey = logicalKeyByChannelId.TryGetValue(currentRow.Channel.Id, out var currentKey)
+                ? currentKey
+                : _context.LogicalContentKey;
+            _lastChannelCandidateId = browsePreferences.RecentChannels
+                .Where(reference => !string.IsNullOrWhiteSpace(reference.LogicalKey) &&
+                                    !string.Equals(reference.LogicalKey, currentLogicalKey, StringComparison.OrdinalIgnoreCase))
+                .Select(reference => visibleRows
+                    .Where(row => logicalKeyByChannelId.TryGetValue(row.Channel.Id, out var rowKey) &&
+                                  string.Equals(rowKey, reference.LogicalKey, StringComparison.OrdinalIgnoreCase))
+                    .OrderByDescending(row => row.SourceId == reference.PreferredSourceProfileId)
+                    .Select(row => row.Channel.Id)
+                    .FirstOrDefault())
+                .FirstOrDefault(id => id > 0);
+            if (_lastChannelCandidateId <= 0)
+            {
+                _lastChannelCandidateId = browsePreferences.RecentChannelIds.FirstOrDefault(id => id != currentRow.Channel.Id);
+            }
 
             var scopedRows = visibleRows
                 .Where(row => row.SourceId == currentRow.SourceId)
@@ -228,6 +252,8 @@ namespace Kroira.App.Views
                 _allChannelSwitchItems.Add(new PlayerChannelSwitchItem
                 {
                     Id = row.Channel.Id,
+                    PreferredSourceProfileId = row.SourceId,
+                    LogicalContentKey = logicalKeyByChannelId.TryGetValue(row.Channel.Id, out var rowLogicalKey) ? rowLogicalKey : string.Empty,
                     Name = row.Channel.Name,
                     SourceName = row.SourceName,
                     StreamUrl = row.Channel.StreamUrl,
@@ -246,7 +272,11 @@ namespace Kroira.App.Views
             }
         }
 
-        private async Task LoadMovieContentStateAsync(AppDbContext db, ProfileAccessSnapshot access, CancellationToken cancellationToken)
+        private async Task LoadMovieContentStateAsync(
+            AppDbContext db,
+            ProfileAccessSnapshot access,
+            ILogicalCatalogStateService logicalCatalogStateService,
+            CancellationToken cancellationToken)
         {
             if (_context == null)
             {
@@ -261,11 +291,7 @@ namespace Kroira.App.Views
 
             _favoriteType = FavoriteType.Movie;
             _favoriteContentId = movie.Id;
-            _isFavorite = await db.Favorites.AnyAsync(
-                favorite => favorite.ProfileId == _context.ProfileId &&
-                            favorite.ContentType == FavoriteType.Movie &&
-                            favorite.ContentId == movie.Id,
-                cancellationToken);
+            _isFavorite = await logicalCatalogStateService.IsFavoritedAsync(db, _context.ProfileId, FavoriteType.Movie, movie.Id);
             _resolvedSourceName = movie.CategoryName;
             TitleText.Text = movie.Title;
             ContextText.Text = movie.MetadataLine;
@@ -277,6 +303,7 @@ namespace Kroira.App.Views
             AppDbContext db,
             ProfileAccessSnapshot access,
             IProfileStateService profileService,
+            ILogicalCatalogStateService logicalCatalogStateService,
             CancellationToken cancellationToken)
         {
             if (_context == null)
@@ -308,11 +335,7 @@ namespace Kroira.App.Views
 
             _favoriteType = FavoriteType.Series;
             _favoriteContentId = series.Id;
-            _isFavorite = await db.Favorites.AnyAsync(
-                favorite => favorite.ProfileId == _context.ProfileId &&
-                            favorite.ContentType == FavoriteType.Series &&
-                            favorite.ContentId == series.Id,
-                cancellationToken);
+            _isFavorite = await logicalCatalogStateService.IsFavoritedAsync(db, _context.ProfileId, FavoriteType.Series, series.Id);
             _resolvedSourceName = series.Title;
             TitleText.Text = series.Title;
             ContextText.Text = $"S{season.SeasonNumber:00} E{episode.EpisodeNumber:00}  {episode.Title}";

@@ -110,6 +110,7 @@ namespace Kroira.App.ViewModels
         private readonly IServiceProvider _serviceProvider;
         private readonly IBrowsePreferencesService _browsePreferencesService;
         private readonly ICatalogTaxonomyService _taxonomyService;
+        private readonly ILogicalCatalogStateService _logicalCatalogStateService;
         private readonly List<CatalogMovieGroup> _allMovieGroups = new();
         private readonly Dictionary<int, CatalogCategoryProjection> _movieCategoryById = new();
         private readonly Dictionary<int, SourceType> _sourceTypeById = new();
@@ -117,7 +118,7 @@ namespace Kroira.App.ViewModels
         private static readonly int _sessionRotationIndex = Math.Abs(Environment.TickCount % 5);
         private List<MovieBrowseItemViewModel> _filteredMovies = new();
         private BrowsePreferences _preferences = new();
-        private HashSet<int> _favoriteMovieIds = new();
+        private HashSet<string> _favoriteMovieKeys = new(StringComparer.OrdinalIgnoreCase);
         private int _activeProfileId;
         private string _languageCode = AppLanguageService.DefaultLanguageCode;
         private string _visibleCategorySignature = string.Empty;
@@ -177,6 +178,7 @@ namespace Kroira.App.ViewModels
             _serviceProvider = serviceProvider;
             _browsePreferencesService = serviceProvider.GetRequiredService<IBrowsePreferencesService>();
             _taxonomyService = serviceProvider.GetRequiredService<ICatalogTaxonomyService>();
+            _logicalCatalogStateService = serviceProvider.GetRequiredService<ILogicalCatalogStateService>();
             SortOptions.Add(new BrowseSortOptionViewModel("recommended", "Recommended"));
             SortOptions.Add(new BrowseSortOptionViewModel("title_asc", "Title A-Z"));
             SortOptions.Add(new BrowseSortOptionViewModel("rating_desc", "Highest rated"));
@@ -264,6 +266,7 @@ namespace Kroira.App.ViewModels
 
                 var access = await profileService.GetAccessSnapshotAsync(db);
                 _activeProfileId = access.ProfileId;
+                await _logicalCatalogStateService.ReconcileFavoritesAsync(db, access.ProfileId);
                 _languageCode = await AppLanguageService.GetLanguageAsync(db, access.ProfileId);
                 _preferences = await browsePreferencesService.GetAsync(db, Domain, _activeProfileId);
 
@@ -271,11 +274,7 @@ namespace Kroira.App.ViewModels
                     .Select(group => FilterGroup(group, access))
                     .OfType<CatalogMovieGroup>()
                     .ToList();
-                _favoriteMovieIds = (await db.Favorites
-                    .Where(favorite => favorite.ProfileId == access.ProfileId && favorite.ContentType == FavoriteType.Movie)
-                    .Select(favorite => favorite.ContentId)
-                    .ToListAsync())
-                    .ToHashSet();
+                _favoriteMovieKeys = await _logicalCatalogStateService.GetFavoriteLogicalKeysAsync(db, access.ProfileId, FavoriteType.Movie);
 
                 var movieOrderEntries = movieGroups
                     .Select(group => new
@@ -462,7 +461,7 @@ namespace Kroira.App.ViewModels
             _filteredMovies = filteredResults
                 .Select(result => new MovieBrowseItemViewModel(
                     result.Group,
-                    result.Group.Variants.Any(variant => _favoriteMovieIds.Contains(variant.Movie.Id)),
+                    IsMovieGroupFavorite(result.Group),
                     result.DisplayCategoryName))
                 .ToList();
             OnPropertyChanged(nameof(FilteredMovies));
@@ -497,26 +496,18 @@ namespace Kroira.App.ViewModels
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             var profileService = scope.ServiceProvider.GetRequiredService<IProfileStateService>();
             var activeProfileId = await profileService.GetActiveProfileIdAsync(db);
-            var variantIds = group.Variants.Select(variant => variant.Movie.Id).ToList();
-            var existingFavorites = await db.Favorites
-                .Where(favorite => favorite.ProfileId == activeProfileId && favorite.ContentType == FavoriteType.Movie && variantIds.Contains(favorite.ContentId))
-                .ToListAsync();
-
-            if (existingFavorites.Count == 0)
+            var targetMovie = group.Variants.First(variant => variant.Movie.Id == movieId).Movie;
+            var logicalKey = _logicalCatalogStateService.BuildMovieLogicalKey(targetMovie);
+            var isFavorite = await _logicalCatalogStateService.ToggleFavoriteAsync(db, activeProfileId, FavoriteType.Movie, movieId);
+            if (isFavorite)
             {
-                db.Favorites.Add(new Favorite { ProfileId = activeProfileId, ContentType = FavoriteType.Movie, ContentId = movieId });
-                _favoriteMovieIds.Add(movieId);
+                _favoriteMovieKeys.Add(logicalKey);
             }
             else
             {
-                db.Favorites.RemoveRange(existingFavorites);
-                foreach (var favorite in existingFavorites)
-                {
-                    _favoriteMovieIds.Remove(favorite.ContentId);
-                }
+                _favoriteMovieKeys.Remove(logicalKey);
             }
 
-            await db.SaveChangesAsync();
             if (RequiresFullBrowseRefreshForFavoriteToggle())
             {
                 ApplyFilter("toggle-favorite");
@@ -575,7 +566,7 @@ namespace Kroira.App.ViewModels
                     SourceSummary = BuildSourceSummary(variants.Select(variant => variant.SourceProfile.Name))
                 };
 
-                if (FavoritesOnly && !filteredGroup.Variants.Any(variant => _favoriteMovieIds.Contains(variant.Movie.Id)))
+                if (FavoritesOnly && !IsMovieGroupFavorite(filteredGroup))
                 {
                     continue;
                 }
@@ -903,7 +894,7 @@ namespace Kroira.App.ViewModels
                 "rating_desc" => groups.OrderByDescending(group => group.PreferredMovie.VoteAverage).ThenByDescending(group => group.PreferredMovie.Popularity).ThenBy(group => group.PreferredMovie.Title, StringComparer.CurrentCultureIgnoreCase),
                 "popularity_desc" => groups.OrderByDescending(group => group.PreferredMovie.Popularity).ThenByDescending(group => group.PreferredMovie.VoteAverage).ThenBy(group => group.PreferredMovie.Title, StringComparer.CurrentCultureIgnoreCase),
                 "year_desc" => groups.OrderByDescending(group => group.PreferredMovie.ReleaseDate ?? DateTime.MinValue).ThenBy(group => group.PreferredMovie.Title, StringComparer.CurrentCultureIgnoreCase),
-                "favorites_first" => groups.OrderByDescending(group => group.Variants.Any(variant => _favoriteMovieIds.Contains(variant.Movie.Id))).ThenBy(group => group.PreferredMovie.Title, StringComparer.CurrentCultureIgnoreCase),
+                "favorites_first" => groups.OrderByDescending(IsMovieGroupFavorite).ThenBy(group => group.PreferredMovie.Title, StringComparer.CurrentCultureIgnoreCase),
                 _ => groups
             };
         }
@@ -921,6 +912,12 @@ namespace Kroira.App.ViewModels
                    string.Equals(SelectedSortOption?.Key ?? "recommended", "favorites_first", StringComparison.OrdinalIgnoreCase);
         }
 
+        private bool IsMovieGroupFavorite(CatalogMovieGroup group)
+        {
+            return group.Variants.Any(variant =>
+                _favoriteMovieKeys.Contains(_logicalCatalogStateService.BuildMovieLogicalKey(variant.Movie)));
+        }
+
         private void RefreshMovieFavoriteState(string groupKey)
         {
             if (string.IsNullOrWhiteSpace(groupKey))
@@ -928,10 +925,9 @@ namespace Kroira.App.ViewModels
                 return;
             }
 
-            var isFavorite = _favoriteMovieIds.Count > 0 &&
-                             _allMovieGroups
-                                 .FirstOrDefault(group => string.Equals(group.GroupKey, groupKey, StringComparison.OrdinalIgnoreCase))
-                                 ?.Variants.Any(variant => _favoriteMovieIds.Contains(variant.Movie.Id)) == true;
+            var isFavorite = _allMovieGroups
+                .FirstOrDefault(group => string.Equals(group.GroupKey, groupKey, StringComparison.OrdinalIgnoreCase)) is { } group &&
+                IsMovieGroupFavorite(group);
 
             foreach (var item in _filteredMovies.Where(item => string.Equals(item.GroupKey, groupKey, StringComparison.OrdinalIgnoreCase)))
             {

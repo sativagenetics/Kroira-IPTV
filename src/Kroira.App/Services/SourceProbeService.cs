@@ -12,7 +12,10 @@ namespace Kroira.App.Services
 {
     public interface ISourceProbeService
     {
-        Task<SourceProbeRunResult> ProbeAsync(SourceHealthProbeType probeType, IReadOnlyList<SourceProbeCandidate> candidates);
+        Task<SourceProbeRunResult> ProbeAsync(
+            SourceHealthProbeType probeType,
+            IReadOnlyList<SourceProbeCandidate> candidates,
+            SourceRoutingDecision? routing = null);
     }
 
     public sealed class SourceProbeCandidate
@@ -39,25 +42,10 @@ namespace Kroira.App.Services
     {
         private const int MaxSampleSize = 4;
         private static readonly TimeSpan ProbeTimeout = TimeSpan.FromSeconds(4);
-        private readonly HttpClient _httpClient;
-
-        public SourceProbeService()
-        {
-            var handler = new HttpClientHandler
-            {
-                AllowAutoRedirect = true,
-                AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate | DecompressionMethods.Brotli,
-                UseCookies = false
-            };
-
-            _httpClient = new HttpClient(handler)
-            {
-                Timeout = Timeout.InfiniteTimeSpan
-            };
-            _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("Kroira/1.0");
-        }
-
-        public async Task<SourceProbeRunResult> ProbeAsync(SourceHealthProbeType probeType, IReadOnlyList<SourceProbeCandidate> candidates)
+        public async Task<SourceProbeRunResult> ProbeAsync(
+            SourceHealthProbeType probeType,
+            IReadOnlyList<SourceProbeCandidate> candidates,
+            SourceRoutingDecision? routing = null)
         {
             var probeable = candidates
                 .Where(candidate => TryCreateHttpUri(candidate.StreamUrl, out _))
@@ -80,7 +68,8 @@ namespace Kroira.App.Services
             }
 
             var sample = SelectSample(probeable, MaxSampleSize);
-            var results = await Task.WhenAll(sample.Select(ProbeCandidateAsync));
+            using var httpClient = CreateHttpClient(routing);
+            var results = await Task.WhenAll(sample.Select(candidate => ProbeCandidateAsync(httpClient, candidate)));
 
             var successCount = results.Count(result => result.Kind == ProbeResultKind.Success);
             var timeoutCount = results.Count(result => result.Kind == ProbeResultKind.Timeout);
@@ -103,7 +92,7 @@ namespace Kroira.App.Services
             };
         }
 
-        private async Task<ProbeAttemptResult> ProbeCandidateAsync(SourceProbeCandidate candidate)
+        private async Task<ProbeAttemptResult> ProbeCandidateAsync(HttpClient httpClient, SourceProbeCandidate candidate)
         {
             if (!TryCreateHttpUri(candidate.StreamUrl, out var uri))
             {
@@ -115,7 +104,7 @@ namespace Kroira.App.Services
 
             try
             {
-                using var response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, timeoutCts.Token);
+                using var response = await httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, timeoutCts.Token);
                 return (int)response.StatusCode < 400
                     ? new ProbeAttemptResult(ProbeResultKind.Success)
                     : new ProbeAttemptResult(ProbeResultKind.HttpError);
@@ -212,6 +201,29 @@ namespace Kroira.App.Services
             }
 
             return summary;
+        }
+
+        private static HttpClient CreateHttpClient(SourceRoutingDecision? routing)
+        {
+            var handler = new HttpClientHandler
+            {
+                AllowAutoRedirect = true,
+                AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate | DecompressionMethods.Brotli,
+                UseCookies = false
+            };
+
+            if (routing is { UseProxy: true } && Uri.TryCreate(routing.ProxyUrl, UriKind.Absolute, out var proxyUri))
+            {
+                handler.Proxy = new WebProxy(proxyUri);
+                handler.UseProxy = true;
+            }
+
+            var httpClient = new HttpClient(handler)
+            {
+                Timeout = Timeout.InfiniteTimeSpan
+            };
+            httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("Kroira/1.0");
+            return httpClient;
         }
 
         private sealed record ProbeAttemptResult(ProbeResultKind Kind);

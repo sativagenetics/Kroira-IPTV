@@ -149,6 +149,8 @@ namespace Kroira.App.Views
             {
                 ContentId = channel.Id,
                 ContentType = PlaybackContentType.Channel,
+                LogicalContentKey = channel.LogicalContentKey,
+                PreferredSourceProfileId = channel.PreferredSourceProfileId,
                 StreamUrl = channel.StreamUrl,
                 StartPositionMs = 0
             });
