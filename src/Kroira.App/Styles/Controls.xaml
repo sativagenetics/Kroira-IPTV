@@ -66,6 +66,7 @@
         <Setter Property="Padding" Value="15,10" />
         <Setter Property="FontSize" Value="13" />
         <Setter Property="MinHeight" Value="42" />
+        <Setter Property="UseSystemFocusVisuals" Value="True" />
     </Style>
 
     <Style x:Key="KroiraComboBoxStyle" TargetType="ComboBox">
@@ -77,6 +78,7 @@
         <Setter Property="Padding" Value="15,8" />
         <Setter Property="FontSize" Value="13" />
         <Setter Property="MinHeight" Value="42" />
+        <Setter Property="UseSystemFocusVisuals" Value="True" />
     </Style>
 
     <Style x:Key="KroiraButtonStyle" TargetType="Button">
@@ -89,6 +91,7 @@
         <Setter Property="FontSize" Value="13" />
         <Setter Property="MinHeight" Value="38" />
         <Setter Property="MinWidth" Value="0" />
+        <Setter Property="UseSystemFocusVisuals" Value="True" />
     </Style>
 
     <Style x:Key="KroiraGhostButtonStyle" TargetType="Button">
@@ -101,6 +104,7 @@
         <Setter Property="FontSize" Value="13" />
         <Setter Property="MinHeight" Value="38" />
         <Setter Property="MinWidth" Value="0" />
+        <Setter Property="UseSystemFocusVisuals" Value="True" />
     </Style>
 
     <Style x:Key="KroiraPrimaryButtonStyle" TargetType="Button">
@@ -114,6 +118,7 @@
         <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="MinHeight" Value="42" />
         <Setter Property="MinWidth" Value="0" />
+        <Setter Property="UseSystemFocusVisuals" Value="True" />
     </Style>
 
     <Style x:Key="KroiraDangerButtonStyle" TargetType="Button">
@@ -126,6 +131,7 @@
         <Setter Property="FontSize" Value="13" />
         <Setter Property="MinHeight" Value="38" />
         <Setter Property="MinWidth" Value="0" />
+        <Setter Property="UseSystemFocusVisuals" Value="True" />
     </Style>
 
     <Style x:Key="KroiraChromePanelStyle" TargetType="Border">

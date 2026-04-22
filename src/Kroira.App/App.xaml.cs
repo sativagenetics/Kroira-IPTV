@@ -107,6 +107,10 @@ namespace Kroira.App
                 {
                     Services.GetRequiredService<IMediaJobService>().Start();
                 });
+                RunRecoverableStartupStep("APP 12A: remote navigation init", () =>
+                {
+                    Services.GetRequiredService<IRemoteNavigationService>().InitializeAsync().GetAwaiter().GetResult();
+                });
                 RunRecoverableStartupStep("APP 13: auto refresh start", () =>
                 {
                     Services.GetRequiredService<ISourceAutoRefreshService>().Start();

@@ -196,6 +196,16 @@ namespace Kroira.App.ViewModels
 
             try
             {
+                StatusMessage = "Testing the source before save...";
+                var validation = await ValidateCurrentDraftAsync(force: false);
+                if (!validation.CanSave)
+                {
+                    StatusMessage = string.IsNullOrWhiteSpace(validation.SummaryText)
+                        ? "KROIRA could not confirm this source yet. Review the setup preview and try again."
+                        : validation.SummaryText;
+                    return;
+                }
+
                 using var scope = _serviceProvider.CreateScope();
                 var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
                 var sourceLimit = _entitlementService.GetLimit(EntitlementLimitKeys.SourcesMaxCount);
@@ -253,6 +263,7 @@ namespace Kroira.App.ViewModels
                 StalkerSerialNumber = string.Empty;
                 StalkerTimezone = ResolveDefaultTimezone();
                 StalkerLocale = CultureInfo.CurrentCulture.Name;
+                ClearValidationSnapshot();
             }
             catch (Exception ex)
             {

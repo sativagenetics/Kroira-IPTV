@@ -1,12 +1,15 @@
+using Kroira.App.Services;
 using Kroira.App.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Navigation;
+using Windows.System;
 
 namespace Kroira.App.Views
 {
-    public sealed partial class FavoritesPage : Page
+    public sealed partial class FavoritesPage : Page, IRemoteNavigationPage
     {
         public FavoritesViewModel ViewModel { get; }
 
@@ -27,40 +30,52 @@ namespace Kroira.App.Views
             Frame.Navigate(typeof(SourceListPage));
         }
 
-        private void ChannelList_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void ChannelList_ItemClick(object sender, ItemClickEventArgs e)
         {
-            if (e.AddedItems.Count > 0 && e.AddedItems[0] is BrowserChannelViewModel channel)
+            if (e.ClickedItem is BrowserChannelViewModel channel)
             {
-                if (!string.IsNullOrWhiteSpace(channel.StreamUrl))
-                {
-                    this.Frame.Navigate(typeof(EmbeddedPlaybackPage), new Kroira.App.Models.PlaybackLaunchContext
-                    {
-                        ContentId = channel.Id,
-                        ContentType = Kroira.App.Models.PlaybackContentType.Channel,
-                        StreamUrl = channel.StreamUrl,
-                        StartPositionMs = 0
-                    });
-                }
+                PlayChannel(channel);
             }
-            ((ListView)sender).SelectedItem = null;
         }
 
-        private void MovieList_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void ChannelList_KeyDown(object sender, KeyRoutedEventArgs e)
         {
-            if (e.AddedItems.Count > 0 && e.AddedItems[0] is FavoriteMovieViewModel movie)
+            if (HandleLaneBackKey(e))
             {
-                if (!string.IsNullOrWhiteSpace(movie.StreamUrl))
-                {
-                    this.Frame.Navigate(typeof(EmbeddedPlaybackPage), new Kroira.App.Models.PlaybackLaunchContext
-                    {
-                        ContentId = movie.Id,
-                        ContentType = Kroira.App.Models.PlaybackContentType.Movie,
-                        StreamUrl = movie.StreamUrl,
-                        StartPositionMs = 0
-                    });
-                }
+                return;
             }
-            ((ListView)sender).SelectedItem = null;
+
+            if ((e.Key == VirtualKey.Enter || e.Key == VirtualKey.Space) &&
+                !RemoteNavigationHelper.IsWithinInteractiveControl(e.OriginalSource) &&
+                RemoteNavigationHelper.FindDataContextInAncestors<BrowserChannelViewModel>(e.OriginalSource) is { } channel)
+            {
+                PlayChannel(channel);
+                e.Handled = true;
+            }
+        }
+
+        private void MovieList_ItemClick(object sender, ItemClickEventArgs e)
+        {
+            if (e.ClickedItem is FavoriteMovieViewModel movie)
+            {
+                PlayMovie(movie);
+            }
+        }
+
+        private void MovieList_KeyDown(object sender, KeyRoutedEventArgs e)
+        {
+            if (HandleLaneBackKey(e))
+            {
+                return;
+            }
+
+            if ((e.Key == VirtualKey.Enter || e.Key == VirtualKey.Space) &&
+                !RemoteNavigationHelper.IsWithinInteractiveControl(e.OriginalSource) &&
+                RemoteNavigationHelper.FindDataContextInAncestors<FavoriteMovieViewModel>(e.OriginalSource) is { } movie)
+            {
+                PlayMovie(movie);
+                e.Handled = true;
+            }
         }
 
         private async void SeriesList_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -72,6 +87,24 @@ namespace Kroira.App.Views
             ((ListView)sender).SelectedItem = null;
         }
 
+        private async void SeriesList_KeyDown(object sender, KeyRoutedEventArgs e)
+        {
+            if (e.Key == VirtualKey.Escape)
+            {
+                RemoteNavigationHelper.TryFocusListItem(ChannelList);
+                e.Handled = true;
+                return;
+            }
+
+            if ((e.Key == VirtualKey.Enter || e.Key == VirtualKey.Space) &&
+                !RemoteNavigationHelper.IsWithinInteractiveControl(e.OriginalSource) &&
+                RemoteNavigationHelper.FindDataContextInAncestors<FavoriteSeriesViewModel>(e.OriginalSource) is { } series)
+            {
+                await ViewModel.SelectSeriesAsync(series.Id);
+                e.Handled = true;
+            }
+        }
+
         private void EpisodeList_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (e.AddedItems.Count > 0 && e.AddedItems[0] is Kroira.App.Models.Episode episode)
@@ -79,6 +112,25 @@ namespace Kroira.App.Views
                 ViewModel.SelectEpisode(episode);
             }
             ((ListView)sender).SelectedItem = null;
+        }
+
+        private void EpisodeList_KeyDown(object sender, KeyRoutedEventArgs e)
+        {
+            if (e.Key == VirtualKey.Escape)
+            {
+                RemoteNavigationHelper.TryFocusElement(PlaySelectedEpisodeButton);
+                e.Handled = true;
+                return;
+            }
+
+            if ((e.Key == VirtualKey.Enter || e.Key == VirtualKey.Space) &&
+                !RemoteNavigationHelper.IsWithinInteractiveControl(e.OriginalSource) &&
+                RemoteNavigationHelper.FindDataContextInAncestors<Kroira.App.Models.Episode>(e.OriginalSource) is { } episode)
+            {
+                ViewModel.SelectEpisode(episode);
+                PlaySelectedEpisode_Click(sender, new RoutedEventArgs());
+                e.Handled = true;
+            }
         }
 
         private void PlaySelectedEpisode_Click(object sender, RoutedEventArgs e)
@@ -128,6 +180,85 @@ namespace Kroira.App.Views
             {
                 ViewModel.RemoveSeriesFavoriteCommand.Execute(id);
             }
+        }
+
+        private void PlayChannel(BrowserChannelViewModel channel)
+        {
+            if (string.IsNullOrWhiteSpace(channel.StreamUrl))
+            {
+                return;
+            }
+
+            Frame.Navigate(typeof(EmbeddedPlaybackPage), new Kroira.App.Models.PlaybackLaunchContext
+            {
+                ContentId = channel.Id,
+                ContentType = Kroira.App.Models.PlaybackContentType.Channel,
+                StreamUrl = channel.StreamUrl,
+                StartPositionMs = 0
+            });
+        }
+
+        private void PlayMovie(FavoriteMovieViewModel movie)
+        {
+            if (string.IsNullOrWhiteSpace(movie.StreamUrl))
+            {
+                return;
+            }
+
+            Frame.Navigate(typeof(EmbeddedPlaybackPage), new Kroira.App.Models.PlaybackLaunchContext
+            {
+                ContentId = movie.Id,
+                ContentType = Kroira.App.Models.PlaybackContentType.Movie,
+                StreamUrl = movie.StreamUrl,
+                StartPositionMs = 0
+            });
+        }
+
+        private bool HandleLaneBackKey(KeyRoutedEventArgs e)
+        {
+            if (e.Key != VirtualKey.Escape)
+            {
+                return false;
+            }
+
+            if (ViewModel.SelectedSeries != null)
+            {
+                ViewModel.ClearSelectedSeries();
+                RemoteNavigationHelper.TryFocusListItem(SeriesList);
+            }
+            else
+            {
+                RemoteNavigationHelper.TryFocusListItem(ChannelList);
+            }
+
+            e.Handled = true;
+            return true;
+        }
+
+        public bool TryFocusPrimaryTarget()
+        {
+            return RemoteNavigationHelper.TryFocusListItem(ChannelList) ||
+                   RemoteNavigationHelper.TryFocusListItem(MovieList) ||
+                   RemoteNavigationHelper.TryFocusListItem(SeriesList) ||
+                   RemoteNavigationHelper.TryFocusElement(CloseSeriesDetailButton) ||
+                   RemoteNavigationHelper.TryFocusElement(PlaySelectedEpisodeButton);
+        }
+
+        public bool TryHandleBackRequest()
+        {
+            if (ViewModel.SelectedSeries != null)
+            {
+                ViewModel.ClearSelectedSeries();
+                return RemoteNavigationHelper.TryFocusListItem(SeriesList);
+            }
+
+            var focusedElement = FocusManager.GetFocusedElement(XamlRoot) as DependencyObject;
+            if (!RemoteNavigationHelper.IsDescendantOf(focusedElement, ChannelList))
+            {
+                return RemoteNavigationHelper.TryFocusListItem(ChannelList);
+            }
+
+            return false;
         }
     }
 }

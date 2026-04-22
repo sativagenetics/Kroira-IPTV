@@ -1,13 +1,16 @@
 using Kroira.App.Models;
+using Kroira.App.Services;
 using Kroira.App.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Navigation;
+using Windows.System;
 
 namespace Kroira.App.Views
 {
-    public sealed partial class ContinueWatchingPage : Page
+    public sealed partial class ContinueWatchingPage : Page, IRemoteNavigationPage
     {
         public ContinueWatchingViewModel ViewModel { get; }
 
@@ -28,22 +31,30 @@ namespace Kroira.App.Views
             Frame.Navigate(typeof(SourceListPage));
         }
 
-        private void ItemList_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void ItemList_ItemClick(object sender, ItemClickEventArgs e)
         {
-            if (e.AddedItems.Count > 0 && e.AddedItems[0] is ProgressItemViewModel item)
+            if (e.ClickedItem is ProgressItemViewModel item)
             {
-                if (!string.IsNullOrWhiteSpace(item.StreamUrl))
-                {
-                    this.Frame.Navigate(typeof(EmbeddedPlaybackPage), new PlaybackLaunchContext
-                    {
-                        ContentId = item.ContentId,
-                        ContentType = item.ContentType,
-                        StreamUrl = item.StreamUrl,
-                        StartPositionMs = item.SavedPositionMs
-                    });
-                }
+                OpenProgressItem(item);
             }
-            ((ListView)sender).SelectedItem = null;
+        }
+
+        private void ItemList_KeyDown(object sender, KeyRoutedEventArgs e)
+        {
+            if (e.Key == VirtualKey.Escape)
+            {
+                RemoteNavigationHelper.TryFocusElement(HideWatchedToggle);
+                e.Handled = true;
+                return;
+            }
+
+            if ((e.Key == VirtualKey.Enter || e.Key == VirtualKey.Space) &&
+                !RemoteNavigationHelper.IsWithinInteractiveControl(e.OriginalSource) &&
+                RemoteNavigationHelper.FindDataContextInAncestors<ProgressItemViewModel>(e.OriginalSource) is { } item)
+            {
+                OpenProgressItem(item);
+                e.Handled = true;
+            }
         }
 
         private void RemoveProgress_Click(object sender, RoutedEventArgs e)
@@ -68,6 +79,41 @@ namespace Kroira.App.Views
             {
                 _ = ViewModel.MarkUnwatchedCommand.ExecuteAsync(item);
             }
+        }
+
+        private void OpenProgressItem(ProgressItemViewModel item)
+        {
+            if (string.IsNullOrWhiteSpace(item.StreamUrl))
+            {
+                return;
+            }
+
+            Frame.Navigate(typeof(EmbeddedPlaybackPage), new PlaybackLaunchContext
+            {
+                ContentId = item.ContentId,
+                ContentType = item.ContentType,
+                StreamUrl = item.StreamUrl,
+                StartPositionMs = item.SavedPositionMs
+            });
+        }
+
+        public bool TryFocusPrimaryTarget()
+        {
+            return RemoteNavigationHelper.TryFocusListItem(LiveList) ||
+                   RemoteNavigationHelper.TryFocusListItem(MovieList) ||
+                   RemoteNavigationHelper.TryFocusListItem(SeriesList) ||
+                   RemoteNavigationHelper.TryFocusElement(HideWatchedToggle);
+        }
+
+        public bool TryHandleBackRequest()
+        {
+            var focusedElement = FocusManager.GetFocusedElement(XamlRoot) as DependencyObject;
+            if (!RemoteNavigationHelper.IsDescendantOf(focusedElement, HideWatchedToggle))
+            {
+                return RemoteNavigationHelper.TryFocusElement(HideWatchedToggle);
+            }
+
+            return false;
         }
     }
 }

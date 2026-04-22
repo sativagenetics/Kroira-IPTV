@@ -4,9 +4,12 @@ using Kroira.App.Composition;
 using Kroira.App.Data;
 using Kroira.App.Models;
 using Kroira.App.Services;
+using Kroira.App.Services.Playback;
 using Kroira.App.ViewModels;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Windows.System;
+using System.Globalization;
 
 namespace Kroira.Regressions;
 
@@ -282,6 +285,70 @@ internal sealed class RegressionRunner
             db.ChangeTracker.Clear();
         }
 
+        RemoteNavigationSnapshot? remoteNavigation = null;
+        if (definition.RemoteNavigation != null)
+        {
+            remoteNavigation = await ExecuteRemoteNavigationAsync(bootstrapScope.ServiceProvider, definition.RemoteNavigation);
+            db.ChangeTracker.Clear();
+        }
+
+        List<PlaybackRemoteCommandSnapshot>? playbackRemoteCommands = null;
+        if (definition.PlaybackRemoteCommands.Count > 0)
+        {
+            playbackRemoteCommands = ExecutePlaybackRemoteCommands(definition.PlaybackRemoteCommands);
+        }
+
+        List<DiscoveryFacetSnapshot>? discoveryFacets = null;
+        if (definition.DiscoveryRequests.Count > 0)
+        {
+            discoveryFacets = ExecuteDiscoveryRequests(bootstrapScope.ServiceProvider, definition.DiscoveryRequests);
+        }
+
+        List<SourceSetupValidationRegressionSnapshot>? setupValidations = null;
+        if (definition.SetupValidationRequests.Count > 0)
+        {
+            setupValidations = await ExecuteSetupValidationRequestsAsync(
+                bootstrapScope.ServiceProvider,
+                definition.SetupValidationRequests,
+                serverBaseUrl);
+            db.ChangeTracker.Clear();
+        }
+
+        List<SourceRepairRegressionSnapshot>? sourceRepairs = null;
+        if (definition.RepairRequests.Count > 0)
+        {
+            sourceRepairs = await ExecuteSourceRepairRequestsAsync(
+                db,
+                bootstrapScope.ServiceProvider,
+                definition.RepairRequests,
+                runtimeSources,
+                serverBaseUrl);
+            db.ChangeTracker.Clear();
+        }
+
+        List<SourceRepairActionRegressionSnapshot>? sourceRepairActions = null;
+        if (definition.RepairActionRequests.Count > 0)
+        {
+            sourceRepairActions = await ExecuteSourceRepairActionRequestsAsync(
+                bootstrapScope.ServiceProvider,
+                definition.RepairActionRequests,
+                runtimeSources,
+                serverBaseUrl);
+            db.ChangeTracker.Clear();
+        }
+
+        List<SourceActivityRegressionSnapshot>? sourceActivities = null;
+        if (definition.ActivityRequests.Count > 0)
+        {
+            sourceActivities = await ExecuteSourceActivityRequestsAsync(
+                db,
+                bootstrapScope.ServiceProvider,
+                definition.ActivityRequests,
+                runtimeSources,
+                serverBaseUrl);
+            db.ChangeTracker.Clear();
+        }
+
         RegressionSurfaceSnapshotBundle? surfaces = null;
         if (definition.SurfaceLoads != null)
         {
@@ -307,6 +374,41 @@ internal sealed class RegressionRunner
         if (externalLaunches is { Count: > 0 })
         {
             snapshot.ExternalLaunches = externalLaunches;
+        }
+
+        if (remoteNavigation != null)
+        {
+            snapshot.RemoteNavigation = remoteNavigation;
+        }
+
+        if (playbackRemoteCommands is { Count: > 0 })
+        {
+            snapshot.PlaybackRemoteCommands = playbackRemoteCommands;
+        }
+
+        if (discoveryFacets is { Count: > 0 })
+        {
+            snapshot.DiscoveryFacets = discoveryFacets;
+        }
+
+        if (sourceActivities is { Count: > 0 })
+        {
+            snapshot.SourceActivities = sourceActivities;
+        }
+
+        if (setupValidations is { Count: > 0 })
+        {
+            snapshot.SetupValidations = setupValidations;
+        }
+
+        if (sourceRepairs is { Count: > 0 })
+        {
+            snapshot.SourceRepairs = sourceRepairs;
+        }
+
+        if (sourceRepairActions is { Count: > 0 })
+        {
+            snapshot.SourceRepairActions = sourceRepairActions;
         }
 
         return snapshot;
@@ -336,6 +438,464 @@ internal sealed class RegressionRunner
         }
 
         await db.SaveChangesAsync();
+    }
+
+    private static DateTime ParseUtcOrDefault(string? value, DateTime fallbackUtc)
+    {
+        return DateTime.TryParse(
+                   value,
+                   CultureInfo.InvariantCulture,
+                   DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal,
+                   out var parsed)
+            ? parsed
+            : fallbackUtc;
+    }
+
+    private static async Task<List<SourceActivityRegressionSnapshot>> ExecuteSourceActivityRequestsAsync(
+        AppDbContext db,
+        IServiceProvider services,
+        IReadOnlyList<RegressionSourceActivityRequestDefinition> requests,
+        IReadOnlyList<RuntimeSource> runtimeSources,
+        string serverBaseUrl)
+    {
+        var snapshots = new List<SourceActivityRegressionSnapshot>(requests.Count);
+        if (requests.Count == 0)
+        {
+            return snapshots;
+        }
+
+        var sourceIdsByKey = runtimeSources.ToDictionary(item => item.Definition.Key, item => item.SourceProfileId, StringComparer.OrdinalIgnoreCase);
+        var activityService = services.GetRequiredService<ISourceActivityService>();
+        var requestedSourceIds = requests
+            .Select(request => ResolveSourceProfileId(sourceIdsByKey, request.SourceKey))
+            .Distinct()
+            .ToList();
+        var activityLookup = await activityService.GetSnapshotsAsync(db, requestedSourceIds);
+
+        foreach (var request in requests)
+        {
+            var sourceProfileId = ResolveSourceProfileId(sourceIdsByKey, request.SourceKey);
+            if (!activityLookup.TryGetValue(sourceProfileId, out var activity))
+            {
+                continue;
+            }
+
+            snapshots.Add(new SourceActivityRegressionSnapshot
+            {
+                Id = string.IsNullOrWhiteSpace(request.Id) ? request.SourceKey : request.Id.Trim(),
+                SourceKey = request.SourceKey,
+                Headline = NormalizeText(activity.HeadlineText, serverBaseUrl),
+                Trend = NormalizeText(activity.TrendText, serverBaseUrl),
+                CurrentState = NormalizeText(activity.CurrentStateText, serverBaseUrl),
+                LatestAttempt = NormalizeText(activity.LatestAttemptText, serverBaseUrl),
+                LastSuccess = NormalizeText(activity.LastSuccessText, serverBaseUrl),
+                QuietState = NormalizeText(activity.QuietStateText, serverBaseUrl),
+                SafeReport = NormalizeText(activity.SafeReportText, serverBaseUrl),
+                Metrics = activity.Metrics
+                    .Select(metric => new SourceActivityMetricRegressionSnapshot
+                    {
+                        Label = NormalizeText(metric.Label, serverBaseUrl),
+                        Value = NormalizeText(metric.Value, serverBaseUrl),
+                        Detail = NormalizeText(metric.Detail, serverBaseUrl),
+                        Tone = metric.Tone.ToString()
+                    })
+                    .ToList(),
+                Timeline = activity.Timeline
+                    .Select(item => new SourceActivityTimelineRegressionSnapshot
+                    {
+                        TimestampUtc = item.TimestampUtc > DateTime.MinValue ? "[recorded]" : string.Empty,
+                        Category = NormalizeText(item.Category, serverBaseUrl),
+                        Title = NormalizeText(item.Title, serverBaseUrl),
+                        Subtitle = NormalizeText(item.Subtitle, serverBaseUrl),
+                        Detail = NormalizeText(item.Detail, serverBaseUrl),
+                        BadgeText = NormalizeText(item.BadgeText, serverBaseUrl),
+                        Tone = item.Tone.ToString()
+                    })
+                    .ToList()
+            });
+        }
+
+        return snapshots;
+    }
+
+    private static async Task<List<SourceSetupValidationRegressionSnapshot>> ExecuteSetupValidationRequestsAsync(
+        IServiceProvider services,
+        IReadOnlyList<RegressionSetupValidationRequestDefinition> requests,
+        string serverBaseUrl)
+    {
+        var snapshots = new List<SourceSetupValidationRegressionSnapshot>(requests.Count);
+        if (requests.Count == 0)
+        {
+            return snapshots;
+        }
+
+        var guidanceService = services.GetRequiredService<ISourceGuidanceService>();
+        foreach (var request in requests)
+        {
+            var draft = new SourceSetupDraft
+            {
+                Name = ResolveTokens(request.Name, serverBaseUrl),
+                Type = request.Type,
+                Url = ResolveTokens(request.Url, serverBaseUrl),
+                Username = ResolveTokens(request.Username, serverBaseUrl),
+                Password = ResolveTokens(request.Password, serverBaseUrl),
+                ManualEpgUrl = ResolveTokens(request.ManualEpgUrl, serverBaseUrl),
+                EpgMode = request.EpgMode,
+                ProxyScope = request.ProxyScope,
+                ProxyUrl = ResolveTokens(request.ProxyUrl, serverBaseUrl),
+                CompanionScope = request.CompanionScope,
+                CompanionMode = request.CompanionMode,
+                CompanionUrl = ResolveTokens(request.CompanionUrl, serverBaseUrl),
+                StalkerMacAddress = ResolveTokens(request.StalkerMacAddress, serverBaseUrl),
+                StalkerDeviceId = ResolveTokens(request.StalkerDeviceId, serverBaseUrl),
+                StalkerSerialNumber = ResolveTokens(request.StalkerSerialNumber, serverBaseUrl),
+                StalkerTimezone = ResolveTokens(request.StalkerTimezone, serverBaseUrl),
+                StalkerLocale = ResolveTokens(request.StalkerLocale, serverBaseUrl)
+            };
+            var validation = await guidanceService.ValidateDraftAsync(draft);
+            snapshots.Add(new SourceSetupValidationRegressionSnapshot
+            {
+                Id = string.IsNullOrWhiteSpace(request.Id)
+                    ? request.Type.ToString()
+                    : request.Id.Trim(),
+                RequestedType = validation.RequestedType.ToString(),
+                DetectedTypeHint = validation.DetectedTypeHint?.ToString() ?? string.Empty,
+                CanSave = validation.CanSave,
+                Headline = NormalizeText(validation.HeadlineText, serverBaseUrl),
+                Summary = NormalizeText(validation.SummaryText, serverBaseUrl),
+                Connection = NormalizeText(validation.ConnectionText, serverBaseUrl),
+                TypeHint = NormalizeText(validation.TypeHintText, serverBaseUrl),
+                CapabilitySummary = NormalizeText(validation.CapabilitySummaryText, serverBaseUrl),
+                SafeReport = NormalizeText(validation.SafeReportText, serverBaseUrl),
+                Capabilities = validation.Capabilities
+                    .Select(capability => new SourceGuidanceCapabilityRegressionSnapshot
+                    {
+                        Label = NormalizeText(capability.Label, serverBaseUrl),
+                        Value = NormalizeText(capability.Value, serverBaseUrl),
+                        Detail = NormalizeText(capability.Detail, serverBaseUrl),
+                        Tone = capability.Tone.ToString()
+                    })
+                    .ToList(),
+                Issues = validation.Issues
+                    .Select(issue => new SourceGuidanceIssueRegressionSnapshot
+                    {
+                        Title = NormalizeText(issue.Title, serverBaseUrl),
+                        Detail = NormalizeText(issue.Detail, serverBaseUrl),
+                        Tone = issue.Tone.ToString()
+                    })
+                    .ToList()
+            });
+        }
+
+        return snapshots;
+    }
+
+    private static async Task<List<SourceRepairRegressionSnapshot>> ExecuteSourceRepairRequestsAsync(
+        AppDbContext db,
+        IServiceProvider services,
+        IReadOnlyList<RegressionSourceRepairRequestDefinition> requests,
+        IReadOnlyList<RuntimeSource> runtimeSources,
+        string serverBaseUrl)
+    {
+        var snapshots = new List<SourceRepairRegressionSnapshot>(requests.Count);
+        if (requests.Count == 0)
+        {
+            return snapshots;
+        }
+
+        var sourceIdsByKey = runtimeSources.ToDictionary(item => item.Definition.Key, item => item.SourceProfileId, StringComparer.OrdinalIgnoreCase);
+        var requestedSourceIds = requests
+            .Select(request => ResolveSourceProfileId(sourceIdsByKey, request.SourceKey))
+            .Distinct()
+            .ToList();
+
+        var guidanceService = services.GetRequiredService<ISourceGuidanceService>();
+        var repairLookup = await guidanceService.GetRepairSnapshotsAsync(db, requestedSourceIds);
+        foreach (var request in requests)
+        {
+            var sourceProfileId = ResolveSourceProfileId(sourceIdsByKey, request.SourceKey);
+            if (!repairLookup.TryGetValue(sourceProfileId, out var repair))
+            {
+                continue;
+            }
+
+            snapshots.Add(new SourceRepairRegressionSnapshot
+            {
+                Id = string.IsNullOrWhiteSpace(request.Id) ? request.SourceKey : request.Id.Trim(),
+                SourceKey = request.SourceKey,
+                IsStable = repair.IsStable,
+                Headline = NormalizeText(repair.HeadlineText, serverBaseUrl),
+                Summary = NormalizeText(repair.SummaryText, serverBaseUrl),
+                Status = NormalizeText(repair.StatusText, serverBaseUrl),
+                CapabilitySummary = NormalizeText(repair.CapabilitySummaryText, serverBaseUrl),
+                SafeReport = NormalizeText(repair.SafeReportText, serverBaseUrl),
+                Capabilities = repair.Capabilities
+                    .Select(capability => new SourceGuidanceCapabilityRegressionSnapshot
+                    {
+                        Label = NormalizeText(capability.Label, serverBaseUrl),
+                        Value = NormalizeText(capability.Value, serverBaseUrl),
+                        Detail = NormalizeText(capability.Detail, serverBaseUrl),
+                        Tone = capability.Tone.ToString()
+                    })
+                    .ToList(),
+                Issues = repair.Issues
+                    .Select(issue => new SourceGuidanceIssueRegressionSnapshot
+                    {
+                        Title = NormalizeText(issue.Title, serverBaseUrl),
+                        Detail = NormalizeText(issue.Detail, serverBaseUrl),
+                        Tone = issue.Tone.ToString()
+                    })
+                    .ToList(),
+                Actions = repair.Actions
+                    .Select(action => new SourceRepairActionOptionRegressionSnapshot
+                    {
+                        ActionType = action.ActionType.ToString(),
+                        Kind = action.Kind.ToString(),
+                        IsPrimary = action.IsPrimary,
+                        Title = NormalizeText(action.Title, serverBaseUrl),
+                        Summary = NormalizeText(action.Summary, serverBaseUrl),
+                        ButtonText = NormalizeText(action.ButtonText, serverBaseUrl),
+                        Tone = action.Tone.ToString()
+                    })
+                    .ToList()
+            });
+        }
+
+        return snapshots;
+    }
+
+    private static async Task<List<SourceRepairActionRegressionSnapshot>> ExecuteSourceRepairActionRequestsAsync(
+        IServiceProvider services,
+        IReadOnlyList<RegressionSourceRepairActionRequestDefinition> requests,
+        IReadOnlyList<RuntimeSource> runtimeSources,
+        string serverBaseUrl)
+    {
+        var snapshots = new List<SourceRepairActionRegressionSnapshot>(requests.Count);
+        if (requests.Count == 0)
+        {
+            return snapshots;
+        }
+
+        var sourceIdsByKey = runtimeSources.ToDictionary(item => item.Definition.Key, item => item.SourceProfileId, StringComparer.OrdinalIgnoreCase);
+        var guidanceService = services.GetRequiredService<ISourceGuidanceService>();
+        foreach (var request in requests)
+        {
+            var sourceProfileId = ResolveSourceProfileId(sourceIdsByKey, request.SourceKey);
+            var result = await guidanceService.ApplyRepairActionAsync(sourceProfileId, request.ActionType);
+            snapshots.Add(new SourceRepairActionRegressionSnapshot
+            {
+                Id = string.IsNullOrWhiteSpace(request.Id)
+                    ? $"{request.SourceKey}:{request.ActionType}"
+                    : request.Id.Trim(),
+                SourceKey = request.SourceKey,
+                ActionType = request.ActionType.ToString(),
+                Success = result.Success,
+                Headline = NormalizeText(result.HeadlineText, serverBaseUrl),
+                Detail = NormalizeText(result.DetailText, serverBaseUrl),
+                Change = NormalizeText(result.ChangeText, serverBaseUrl),
+                SafeReport = NormalizeText(result.SafeReportText, serverBaseUrl)
+            });
+        }
+
+        return snapshots;
+    }
+
+    private static async Task<RemoteNavigationSnapshot> ExecuteRemoteNavigationAsync(
+        IServiceProvider services,
+        RegressionRemoteNavigationDefinition definition)
+    {
+        const string settingKeyPrefix = "RemoteNavigation.Profile.";
+        var remoteNavigationService = services.GetRequiredService<IRemoteNavigationService>();
+        var stateChangedCount = 0;
+
+        void HandleStateChanged(object? _, EventArgs __)
+        {
+            stateChangedCount++;
+        }
+
+        remoteNavigationService.StateChanged += HandleStateChanged;
+        try
+        {
+            await remoteNavigationService.InitializeAsync();
+            var initialEnabled = remoteNavigationService.IsRemoteModeEnabled;
+            var updatedEnabled = initialEnabled;
+
+            if (definition.UpdatedEnabled.HasValue)
+            {
+                await remoteNavigationService.SetRemoteModeEnabledAsync(definition.UpdatedEnabled.Value);
+                updatedEnabled = remoteNavigationService.IsRemoteModeEnabled;
+            }
+
+            using var scope = services.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var profileService = scope.ServiceProvider.GetRequiredService<IProfileStateService>();
+            var profileId = await profileService.GetActiveProfileIdAsync(db);
+            var settingKey = settingKeyPrefix + Math.Max(0, profileId);
+            var storedJson = await db.AppSettings
+                .Where(item => item.Key == settingKey)
+                .Select(item => item.Value)
+                .FirstOrDefaultAsync() ?? string.Empty;
+
+            var reloadedService = new RemoteNavigationService(services);
+            await reloadedService.InitializeAsync();
+
+            return new RemoteNavigationSnapshot
+            {
+                InitialEnabled = initialEnabled,
+                UpdatedEnabled = updatedEnabled,
+                ReloadedEnabled = reloadedService.IsRemoteModeEnabled,
+                StateChangedCount = stateChangedCount,
+                SettingKey = settingKey,
+                StoredJson = storedJson
+            };
+        }
+        finally
+        {
+            remoteNavigationService.StateChanged -= HandleStateChanged;
+        }
+    }
+
+    private static List<DiscoveryFacetSnapshot> ExecuteDiscoveryRequests(
+        IServiceProvider services,
+        IReadOnlyList<RegressionDiscoveryRequestDefinition> requests)
+    {
+        var catalogDiscoveryService = services.GetRequiredService<ICatalogDiscoveryService>();
+        var snapshots = new List<DiscoveryFacetSnapshot>(requests.Count);
+
+        foreach (var request in requests)
+        {
+            var requestId = string.IsNullOrWhiteSpace(request.Id)
+                ? request.Domain.ToString()
+                : request.Id.Trim();
+            var nowUtc = ParseUtcOrDefault(request.NowUtc, DateTime.UtcNow);
+            var records = request.Records
+                .Where(item => !string.IsNullOrWhiteSpace(item.Key))
+                .Select(item => new CatalogDiscoveryRecord
+                {
+                    Key = item.Key.Trim(),
+                    Domain = request.Domain,
+                    SourceProfileIds = item.SourceProfileIds
+                        .Where(id => id > 0)
+                        .Distinct()
+                        .OrderBy(id => id)
+                        .ToList(),
+                    SourceTypes = item.SourceTypes
+                        .Distinct()
+                        .ToList(),
+                    LanguageKey = catalogDiscoveryService.ResolveLanguageKey(item.Language),
+                    LanguageLabel = catalogDiscoveryService.ResolveLanguageLabel(item.Language),
+                    Tags = catalogDiscoveryService.ExtractTags(item.Tags),
+                    IsFavorite = item.IsFavorite,
+                    HasGuide = item.HasGuide,
+                    HasCatchup = item.HasCatchup,
+                    HasArtwork = item.HasArtwork,
+                    HasPlayableChildren = item.HasPlayableChildren,
+                    HealthBucket = item.HealthBucket,
+                    LastSyncUtc = string.IsNullOrWhiteSpace(item.LastSyncUtc)
+                        ? null
+                        : ParseUtcOrDefault(item.LastSyncUtc, DateTime.MinValue),
+                    LastInteractionUtc = string.IsNullOrWhiteSpace(item.LastInteractionUtc)
+                        ? null
+                        : ParseUtcOrDefault(item.LastInteractionUtc, DateTime.MinValue)
+                })
+                .ToList();
+            var projection = catalogDiscoveryService.BuildProjection(
+                request.Domain,
+                records,
+                new CatalogDiscoverySelection
+                {
+                    SignalKey = request.Selection.SignalKey,
+                    SourceTypeKey = request.Selection.SourceTypeKey,
+                    LanguageKey = request.Selection.LanguageKey,
+                    TagKey = request.Selection.TagKey
+                },
+                nowUtc);
+
+            snapshots.Add(new DiscoveryFacetSnapshot
+            {
+                Id = requestId,
+                Domain = request.Domain.ToString(),
+                MatchingCount = projection.MatchingCount,
+                ProviderCount = projection.ProviderCount,
+                HasActiveFacetFilters = projection.HasActiveFacetFilters,
+                SummaryText = projection.SummaryText,
+                EffectiveSelection = new DiscoverySelectionSnapshot
+                {
+                    SignalKey = projection.EffectiveSelection.SignalKey,
+                    SourceTypeKey = projection.EffectiveSelection.SourceTypeKey,
+                    LanguageKey = projection.EffectiveSelection.LanguageKey,
+                    TagKey = projection.EffectiveSelection.TagKey
+                },
+                SignalOptions = projection.SignalOptions
+                    .Select(BuildDiscoveryFacetOptionSnapshot)
+                    .ToList(),
+                SourceTypeOptions = projection.SourceTypeOptions
+                    .Select(BuildDiscoveryFacetOptionSnapshot)
+                    .ToList(),
+                LanguageOptions = projection.LanguageOptions
+                    .Select(BuildDiscoveryFacetOptionSnapshot)
+                    .ToList(),
+                TagOptions = projection.TagOptions
+                    .Select(BuildDiscoveryFacetOptionSnapshot)
+                    .ToList(),
+                MatchingKeys = projection.MatchingKeys
+                    .OrderBy(value => value, StringComparer.OrdinalIgnoreCase)
+                    .ToList()
+            });
+        }
+
+        return snapshots;
+    }
+
+    private static List<PlaybackRemoteCommandSnapshot> ExecutePlaybackRemoteCommands(
+        IReadOnlyList<RegressionPlaybackRemoteCommandRequestDefinition> requests)
+    {
+        var snapshots = new List<PlaybackRemoteCommandSnapshot>(requests.Count);
+        foreach (var request in requests)
+        {
+            if (!Enum.TryParse<VirtualKey>(request.Key, true, out var key))
+            {
+                throw new InvalidOperationException($"Playback remote command request '{request.Id}' uses unsupported key '{request.Key}'.");
+            }
+
+            var contextDefinition = request.Context ?? new RegressionPlaybackRemoteContextDefinition();
+            var context = new PlaybackRemoteContext
+            {
+                IsTextInputFocused = contextDefinition.IsTextInputFocused,
+                IsMenuOpen = contextDefinition.IsMenuOpen,
+                ReserveFocusedControlKeys = contextDefinition.ReserveFocusedControlKeys,
+                IsPictureInPicture = contextDefinition.IsPictureInPicture,
+                IsLivePlayback = contextDefinition.IsLivePlayback,
+                IsChannelPlayback = contextDefinition.IsChannelPlayback,
+                CanSeek = contextDefinition.CanSeek,
+                HasLastChannel = contextDefinition.HasLastChannel,
+                CanRestartOrStartOver = contextDefinition.CanRestartOrStartOver,
+                CanGoLive = contextDefinition.CanGoLive
+            };
+
+            var command = PlaybackRemoteCommandMap.Resolve(key, request.ShiftDown, context);
+            snapshots.Add(new PlaybackRemoteCommandSnapshot
+            {
+                Id = string.IsNullOrWhiteSpace(request.Id)
+                    ? request.Key.Trim()
+                    : request.Id.Trim(),
+                Key = key.ToString(),
+                ShiftDown = request.ShiftDown,
+                Command = command.ToString(),
+                IsTextInputFocused = context.IsTextInputFocused,
+                IsMenuOpen = context.IsMenuOpen,
+                ReserveFocusedControlKeys = context.ReserveFocusedControlKeys,
+                IsPictureInPicture = context.IsPictureInPicture,
+                IsLivePlayback = context.IsLivePlayback,
+                IsChannelPlayback = context.IsChannelPlayback,
+                CanSeek = context.CanSeek,
+                HasLastChannel = context.HasLastChannel,
+                CanRestartOrStartOver = context.CanRestartOrStartOver,
+                CanGoLive = context.CanGoLive
+            });
+        }
+
+        return snapshots;
     }
 
     private static async Task ApplyMutationsAsync(
@@ -1668,6 +2228,16 @@ internal sealed class RegressionRunner
         };
     }
 
+    private static DiscoveryFacetOptionSnapshot BuildDiscoveryFacetOptionSnapshot(CatalogDiscoveryFacetOption option)
+    {
+        return new DiscoveryFacetOptionSnapshot
+        {
+            Key = option.Key,
+            Label = option.Label,
+            ItemCount = option.ItemCount
+        };
+    }
+
     private static SourceCredentialSnapshot BuildCredentialSnapshot(SourceCredential? credential, string serverBaseUrl)
     {
         return new SourceCredentialSnapshot
@@ -2057,7 +2627,12 @@ internal sealed class RegressionRunner
             return string.Empty;
         }
 
-        var normalized = value.Trim().Replace(serverBaseUrl, "[fixture-server]", StringComparison.OrdinalIgnoreCase);
+        var encodedServerBaseUrl = Uri.EscapeDataString(serverBaseUrl);
+        var doubleEncodedServerBaseUrl = Uri.EscapeDataString(encodedServerBaseUrl);
+        var normalized = value.Trim()
+            .Replace(serverBaseUrl, "[fixture-server]", StringComparison.OrdinalIgnoreCase)
+            .Replace(encodedServerBaseUrl, "[fixture-server]", StringComparison.OrdinalIgnoreCase)
+            .Replace(doubleEncodedServerBaseUrl, "[fixture-server]", StringComparison.OrdinalIgnoreCase);
         normalized = AbsoluteSyncTimestampPattern.Replace(normalized, "[timestamp]");
         return GenericLocalTimestampPattern.Replace(normalized, "[timestamp]");
     }

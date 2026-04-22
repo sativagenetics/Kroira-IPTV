@@ -1,0 +1,153 @@
+{
+  "routes": [
+    {
+      "path": "/repair-playlist.m3u",
+      "bodyFile": "repair-playlist.m3u"
+    },
+    {
+      "path": "/guide.xml",
+      "bodyFile": "guide.xml"
+    },
+    {
+      "path": "/probe/live/repair-news.m3u8",
+      "statusCode": 200,
+      "body": "#EXTM3U\n#EXTINF:2,\nsegment.ts"
+    },
+    {
+      "path": "/probe/live/repair-archive.m3u8",
+      "statusCode": 200,
+      "body": "#EXTM3U\n#EXTINF:2,\nsegment.ts"
+    },
+    {
+      "path": "/probe/vod/fixture-movie.mp4",
+      "statusCode": 200,
+      "body": "ok"
+    },
+    {
+      "path": "/companion-down/ping",
+      "statusCode": 503,
+      "body": "down"
+    },
+    {
+      "path": "/xtream/player_api.php",
+      "query": { "username": "demo", "password": "demo", "action": "get_live_categories" },
+      "bodyFile": "xtream_live_categories.json"
+    },
+    {
+      "path": "/xtream/player_api.php",
+      "query": { "username": "demo", "password": "demo", "action": "get_live_streams" },
+      "bodyFile": "xtream_live_streams.json"
+    },
+    {
+      "path": "/xtream/player_api.php",
+      "query": { "username": "demo", "password": "demo", "action": "get_vod_categories" },
+      "bodyFile": "xtream_vod_categories.json"
+    },
+    {
+      "path": "/xtream/player_api.php",
+      "query": { "username": "demo", "password": "demo", "action": "get_series_categories" },
+      "bodyFile": "xtream_series_categories.json"
+    },
+    {
+      "path": "/stalker-ok/c/portal.php",
+      "query": { "type": "stb", "action": "handshake" },
+      "bodyFile": "stalker_ok_handshake.json"
+    },
+    {
+      "path": "/stalker-ok/c/portal.php",
+      "query": { "type": "stb", "action": "get_profile" },
+      "bodyFile": "stalker_ok_profile.json"
+    },
+    {
+      "path": "/stalker-ok/c/portal.php",
+      "query": { "type": "itv", "action": "get_genres" },
+      "bodyFile": "stalker_ok_live_genres.json"
+    },
+    {
+      "path": "/stalker-ok/c/portal.php",
+      "query": { "type": "itv", "action": "get_all_channels" },
+      "bodyFile": "stalker_ok_live_channels.json"
+    },
+    {
+      "path": "/stalker-ok/c/portal.php",
+      "query": { "type": "vod", "action": "get_genres" },
+      "bodyFile": "stalker_ok_vod_genres.json"
+    },
+    {
+      "path": "/stalker-ok/c/portal.php",
+      "query": { "type": "vod", "action": "get_ordered_list" },
+      "bodyFile": "stalker_ok_vod_ordered_list.json"
+    },
+    {
+      "path": "/stalker-ok/c/portal.php",
+      "query": { "type": "series", "action": "get_genres" },
+      "bodyFile": "stalker_ok_series_genres.json"
+    },
+    {
+      "path": "/stalker-ok/c/portal.php",
+      "query": { "type": "series", "action": "get_ordered_list" },
+      "bodyFile": "stalker_ok_series_ordered_list.json"
+    },
+    {
+      "path": "/stalker-partial/c/portal.php",
+      "query": { "type": "stb", "action": "handshake" },
+      "bodyFile": "stalker_partial_handshake.json"
+    },
+    {
+      "path": "/stalker-partial/c/portal.php",
+      "query": { "type": "stb", "action": "get_profile" },
+      "bodyFile": "stalker_partial_profile.json"
+    },
+    {
+      "path": "/stalker-partial/c/portal.php",
+      "query": { "type": "itv", "action": "get_genres" },
+      "bodyFile": "stalker_partial_live_genres.json"
+    },
+    {
+      "path": "/stalker-partial/c/portal.php",
+      "query": { "type": "itv", "action": "get_all_channels" },
+      "bodyFile": "stalker_partial_live_channels.json"
+    },
+    {
+      "path": "/stalker-partial/c/portal.php",
+      "query": { "type": "vod", "action": "get_genres" },
+      "bodyFile": "stalker_partial_vod_genres.json"
+    },
+    {
+      "path": "/stalker-partial/c/portal.php",
+      "query": { "type": "vod", "action": "get_ordered_list" },
+      "bodyFile": "stalker_partial_vod_ordered_list.json"
+    },
+    {
+      "path": "/stalker-partial/c/portal.php",
+      "query": { "type": "series", "action": "get_genres" },
+      "bodyFile": "stalker_partial_series_genres.json"
+    },
+    {
+      "path": "/stalker-partial/c/portal.php",
+      "query": { "type": "series", "action": "get_ordered_list" },
+      "statusCode": 500,
+      "body": "series down"
+    },
+    {
+      "path": "/stalker-partial/c/portal.php",
+      "query": { "type": "itv", "action": "create_link", "cmd": "ffmpeg /stalker-partial/live/551.ts", "series": "0" },
+      "bodyFile": "stalker_partial_create_link_live_551.json"
+    },
+    {
+      "path": "/stalker-partial/c/portal.php",
+      "query": { "type": "vod", "action": "create_link", "cmd": "ffmpeg /stalker-partial/vod/651.mp4", "series": "0" },
+      "bodyFile": "stalker_partial_create_link_movie_651.json"
+    },
+    {
+      "path": "/stalker-partial/play/live/551.ts",
+      "statusCode": 200,
+      "body": "ok"
+    },
+    {
+      "path": "/stalker-partial/play/vod/651.mp4",
+      "statusCode": 200,
+      "body": "ok"
+    }
+  ]
+}

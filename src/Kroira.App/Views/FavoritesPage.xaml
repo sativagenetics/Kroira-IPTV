@@ -21,7 +21,7 @@
         </Style>
     </Page.Resources>
 
-    <Grid>
+    <Grid XYFocusKeyboardNavigation="Enabled">
         <Grid Padding="34,30,36,34"
               RowSpacing="20"
               MaxWidth="1420"
@@ -115,9 +115,12 @@
                             </StackPanel>
                         </Border>
 
-                        <ListView ItemsSource="{x:Bind ViewModel.FavoriteChannels, Mode=OneWay}"
-                                  SelectionMode="Single"
-                                  SelectionChanged="ChannelList_SelectionChanged"
+                        <ListView x:Name="ChannelList"
+                                  ItemsSource="{x:Bind ViewModel.FavoriteChannels, Mode=OneWay}"
+                                  SelectionMode="None"
+                                  IsItemClickEnabled="True"
+                                  ItemClick="ChannelList_ItemClick"
+                                  KeyDown="ChannelList_KeyDown"
                                   ItemContainerStyle="{StaticResource HubItemContainerStyle}"
                                   ScrollViewer.VerticalScrollMode="Enabled"
                                   ScrollViewer.VerticalScrollBarVisibility="Auto"
@@ -201,9 +204,12 @@
                             </StackPanel>
                         </Border>
 
-                        <ListView ItemsSource="{x:Bind ViewModel.FavoriteMovies, Mode=OneWay}"
-                                  SelectionMode="Single"
-                                  SelectionChanged="MovieList_SelectionChanged"
+                        <ListView x:Name="MovieList"
+                                  ItemsSource="{x:Bind ViewModel.FavoriteMovies, Mode=OneWay}"
+                                  SelectionMode="None"
+                                  IsItemClickEnabled="True"
+                                  ItemClick="MovieList_ItemClick"
+                                  KeyDown="MovieList_KeyDown"
                                   ItemContainerStyle="{StaticResource HubItemContainerStyle}"
                                   ScrollViewer.VerticalScrollMode="Enabled"
                                   ScrollViewer.VerticalScrollBarVisibility="Auto"
@@ -272,9 +278,11 @@
                             </StackPanel>
                         </Border>
 
-                        <ListView ItemsSource="{x:Bind ViewModel.FavoriteSeries, Mode=OneWay}"
+                        <ListView x:Name="SeriesList"
+                                  ItemsSource="{x:Bind ViewModel.FavoriteSeries, Mode=OneWay}"
                                   SelectionMode="Single"
                                   SelectionChanged="SeriesList_SelectionChanged"
+                                  KeyDown="SeriesList_KeyDown"
                                   ItemContainerStyle="{StaticResource HubItemContainerStyle}"
                                   ScrollViewer.VerticalScrollMode="Enabled"
                                   ScrollViewer.VerticalScrollBarVisibility="Auto"
@@ -340,7 +348,8 @@
                                 <TextBlock Text="Inline inspect"
                                            Style="{StaticResource KroiraSectionTitleStyle}" />
                             </StackPanel>
-                            <Button Grid.Column="1"
+                            <Button x:Name="CloseSeriesDetailButton"
+                                    Grid.Column="1"
                                     Content="Close"
                                     Click="CloseSeriesDetail_Click"
                                     Style="{StaticResource KroiraGhostButtonStyle}"
@@ -420,7 +429,8 @@
                                     <TextBlock Text="SEASON"
                                                Style="{StaticResource KroiraLabelStyle}"
                                                Foreground="{StaticResource KroiraAccentBrush}" />
-                                    <ComboBox Style="{StaticResource KroiraFilterComboBoxStyle}"
+                                    <ComboBox x:Name="SeasonComboBox"
+                                              Style="{StaticResource KroiraFilterComboBoxStyle}"
                                               ItemsSource="{x:Bind ViewModel.SelectedSeries.Seasons, Mode=OneWay}"
                                               SelectedItem="{x:Bind ViewModel.SelectedSeason, Mode=TwoWay}"
                                               HorizontalAlignment="Stretch">
@@ -431,7 +441,8 @@
                                         </ComboBox.ItemTemplate>
                                     </ComboBox>
                                 </StackPanel>
-                                <Button Grid.Column="1"
+                                <Button x:Name="PlaySelectedEpisodeButton"
+                                        Grid.Column="1"
                                         Content="Play"
                                         Click="PlaySelectedEpisode_Click"
                                         Visibility="{x:Bind ViewModel.SelectedEpisodePlayVisibility, Mode=OneWay}"
@@ -466,10 +477,12 @@
                             </StackPanel>
                         </Border>
 
-                        <ListView Visibility="{x:Bind ViewModel.SelectedSeriesEpisodesVisibility, Mode=OneWay}"
+                        <ListView x:Name="EpisodeList"
+                                  Visibility="{x:Bind ViewModel.SelectedSeriesEpisodesVisibility, Mode=OneWay}"
                                   ItemsSource="{x:Bind ViewModel.SelectedSeason.Episodes, Mode=OneWay}"
                                   SelectionMode="Single"
                                   SelectionChanged="EpisodeList_SelectionChanged"
+                                  KeyDown="EpisodeList_KeyDown"
                                   ItemContainerStyle="{StaticResource HubItemContainerStyle}"
                                   MaxHeight="330"
                                   Padding="0"

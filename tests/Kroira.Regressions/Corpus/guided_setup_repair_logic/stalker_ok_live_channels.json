@@ -1,0 +1,12 @@
+{
+  "js": [
+    {
+      "id": "801",
+      "name": "Fixture Portal News",
+      "tv_genre_id": "10",
+      "logo": "/stalker-ok/assets/news.png",
+      "xmltv_id": "fixture.portal.news",
+      "cmd": "ffmpeg /stalker-ok/live/801.ts"
+    }
+  ]
+}

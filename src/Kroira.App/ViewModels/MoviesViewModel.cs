@@ -109,11 +109,14 @@ namespace Kroira.App.ViewModels
         private const int InitialDisplayMovieSlotBatchSize = BrowseGridColumns * 2;
         private readonly IServiceProvider _serviceProvider;
         private readonly IBrowsePreferencesService _browsePreferencesService;
+        private readonly ICatalogDiscoveryService _catalogDiscoveryService;
         private readonly ICatalogTaxonomyService _taxonomyService;
         private readonly ILogicalCatalogStateService _logicalCatalogStateService;
         private readonly List<CatalogMovieGroup> _allMovieGroups = new();
         private readonly Dictionary<int, CatalogCategoryProjection> _movieCategoryById = new();
         private readonly Dictionary<int, SourceType> _sourceTypeById = new();
+        private readonly Dictionary<int, CatalogDiscoveryHealthBucket> _sourceHealthById = new();
+        private readonly Dictionary<int, DateTime?> _sourceLastSyncById = new();
         private readonly List<(string CategoryName, int Count)> _allCategories = new();
         private static readonly int _sessionRotationIndex = Math.Abs(Environment.TickCount % 5);
         private List<MovieBrowseItemViewModel> _filteredMovies = new();
@@ -143,11 +146,19 @@ namespace Kroira.App.ViewModels
         public BulkObservableCollection<BrowseSourceFilterOptionViewModel> SourceOptions { get; } = new();
         public BulkObservableCollection<BrowseSourceVisibilityViewModel> SourceVisibilityOptions { get; } = new();
         public BulkObservableCollection<BrowseCategoryManagerOptionViewModel> ManageCategoryOptions { get; } = new();
+        public BulkObservableCollection<BrowseFacetOptionViewModel> DiscoverySignalOptions { get; } = new();
+        public BulkObservableCollection<BrowseFacetOptionViewModel> DiscoverySourceTypeOptions { get; } = new();
+        public BulkObservableCollection<BrowseFacetOptionViewModel> DiscoveryLanguageOptions { get; } = new();
+        public BulkObservableCollection<BrowseFacetOptionViewModel> DiscoveryTagOptions { get; } = new();
 
         [ObservableProperty] private string _searchQuery = string.Empty;
         [ObservableProperty] private BrowserCategoryViewModel? _selectedCategory;
         [ObservableProperty] private BrowseSortOptionViewModel? _selectedSortOption;
         [ObservableProperty] private BrowseSourceFilterOptionViewModel? _selectedSourceOption;
+        [ObservableProperty] private BrowseFacetOptionViewModel? _selectedDiscoverySignalOption;
+        [ObservableProperty] private BrowseFacetOptionViewModel? _selectedDiscoverySourceTypeOption;
+        [ObservableProperty] private BrowseFacetOptionViewModel? _selectedDiscoveryLanguageOption;
+        [ObservableProperty] private BrowseFacetOptionViewModel? _selectedDiscoveryTagOption;
         [ObservableProperty] private BrowseCategoryManagerOptionViewModel? _selectedManageCategory;
         [ObservableProperty] private string _manageCategoryAliasDraft = string.Empty;
         [ObservableProperty] private bool _isManageCategoryHidden;
@@ -155,6 +166,9 @@ namespace Kroira.App.ViewModels
         [ObservableProperty] private bool _hideSecondaryContent;
         [ObservableProperty] private bool _hasAdvancedFilters;
         [ObservableProperty] private bool _isEmpty;
+        [ObservableProperty] private string _discoverySummaryText = "Source type, language, genre, artwork, and health appear only when the catalog proves them.";
+        [ObservableProperty] private string _emptyStateTitle = "No movies to show";
+        [ObservableProperty] private string _emptyStateMessage = "Sync a VOD source, or clear your search and browse filters.";
         [ObservableProperty] private SurfaceStatePresentation _surfaceState = SurfaceStateCopies.Movies.Create(SurfaceViewState.Loading);
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(FeaturedMovieCanPlay))]
@@ -162,6 +176,10 @@ namespace Kroira.App.ViewModels
 
         public bool FeaturedMovieCanPlay => !string.IsNullOrWhiteSpace(FeaturedMovie?.StreamUrl);
         public bool HasManageCategorySelection => SelectedManageCategory != null;
+        public Visibility DiscoverySignalVisibility => DiscoverySignalOptions.Count > 2 ? Visibility.Visible : Visibility.Collapsed;
+        public Visibility DiscoverySourceTypeVisibility => DiscoverySourceTypeOptions.Count > 2 ? Visibility.Visible : Visibility.Collapsed;
+        public Visibility DiscoveryLanguageVisibility => DiscoveryLanguageOptions.Count > 2 ? Visibility.Visible : Visibility.Collapsed;
+        public Visibility DiscoveryTagVisibility => DiscoveryTagOptions.Count > 2 ? Visibility.Visible : Visibility.Collapsed;
         private bool IsBlockingSurfaceState =>
             SurfaceState.State is SurfaceViewState.NoSources or SurfaceViewState.Offline or SurfaceViewState.ImportFailed;
 
@@ -177,6 +195,7 @@ namespace Kroira.App.ViewModels
         {
             _serviceProvider = serviceProvider;
             _browsePreferencesService = serviceProvider.GetRequiredService<IBrowsePreferencesService>();
+            _catalogDiscoveryService = serviceProvider.GetRequiredService<ICatalogDiscoveryService>();
             _taxonomyService = serviceProvider.GetRequiredService<ICatalogTaxonomyService>();
             _logicalCatalogStateService = serviceProvider.GetRequiredService<ILogicalCatalogStateService>();
             SortOptions.Add(new BrowseSortOptionViewModel("recommended", "Recommended"));
@@ -185,6 +204,10 @@ namespace Kroira.App.ViewModels
             SortOptions.Add(new BrowseSortOptionViewModel("popularity_desc", "Most popular"));
             SortOptions.Add(new BrowseSortOptionViewModel("year_desc", "Newest release"));
             SortOptions.Add(new BrowseSortOptionViewModel("favorites_first", "Favorites first"));
+            DiscoverySignalOptions.CollectionChanged += (_, _) => OnPropertyChanged(nameof(DiscoverySignalVisibility));
+            DiscoverySourceTypeOptions.CollectionChanged += (_, _) => OnPropertyChanged(nameof(DiscoverySourceTypeVisibility));
+            DiscoveryLanguageOptions.CollectionChanged += (_, _) => OnPropertyChanged(nameof(DiscoveryLanguageVisibility));
+            DiscoveryTagOptions.CollectionChanged += (_, _) => OnPropertyChanged(nameof(DiscoveryTagVisibility));
         }
 
         partial void OnSearchQueryChanged(string value)
@@ -211,6 +234,10 @@ namespace Kroira.App.ViewModels
         }
         partial void OnSelectedSortOptionChanged(BrowseSortOptionViewModel? value) { if (!_isInitializing) { _preferences.SortKey = value?.Key ?? "recommended"; _ = SavePreferencesAsync(false); } }
         partial void OnSelectedSourceOptionChanged(BrowseSourceFilterOptionViewModel? value) { if (!_isInitializing) { _preferences.SelectedSourceId = value?.Id ?? 0; _ = SavePreferencesAsync(false); } }
+        partial void OnSelectedDiscoverySignalOptionChanged(BrowseFacetOptionViewModel? value) { if (!_isInitializing) { _preferences.DiscoverySignalKey = value?.Key ?? string.Empty; _ = SavePreferencesAsync(false); } }
+        partial void OnSelectedDiscoverySourceTypeOptionChanged(BrowseFacetOptionViewModel? value) { if (!_isInitializing) { _preferences.DiscoverySourceTypeKey = value?.Key ?? string.Empty; _ = SavePreferencesAsync(false); } }
+        partial void OnSelectedDiscoveryLanguageOptionChanged(BrowseFacetOptionViewModel? value) { if (!_isInitializing) { _preferences.DiscoveryLanguageKey = value?.Key ?? string.Empty; _ = SavePreferencesAsync(false); } }
+        partial void OnSelectedDiscoveryTagOptionChanged(BrowseFacetOptionViewModel? value) { if (!_isInitializing) { _preferences.DiscoveryTagKey = value?.Key ?? string.Empty; _ = SavePreferencesAsync(false); } }
         partial void OnFavoritesOnlyChanged(bool value) { if (!_isInitializing) { _preferences.FavoritesOnly = value; _ = SavePreferencesAsync(false); } }
         partial void OnHideSecondaryContentChanged(bool value) { if (!_isInitializing) { _preferences.HideSecondaryContent = value; _ = SavePreferencesAsync(true); } }
 
@@ -269,6 +296,24 @@ namespace Kroira.App.ViewModels
                 await _logicalCatalogStateService.ReconcileFavoritesAsync(db, access.ProfileId);
                 _languageCode = await AppLanguageService.GetLanguageAsync(db, access.ProfileId);
                 _preferences = await browsePreferencesService.GetAsync(db, Domain, _activeProfileId);
+                var sourceProfiles = await db.SourceProfiles
+                    .AsNoTracking()
+                    .Select(source => new
+                    {
+                        source.Id,
+                        source.Type,
+                        source.LastSync
+                    })
+                    .ToListAsync();
+                var healthStates = await db.SourceHealthReports
+                    .AsNoTracking()
+                    .OrderByDescending(report => report.EvaluatedAtUtc)
+                    .Select(report => new
+                    {
+                        report.SourceProfileId,
+                        report.HealthState
+                    })
+                    .ToListAsync();
 
                 var movieGroups = (await deduplicationService.LoadMovieGroupsAsync(db))
                     .Select(group => FilterGroup(group, access))
@@ -294,6 +339,19 @@ namespace Kroira.App.ViewModels
 
                 _movieCategoryById.Clear();
                 _sourceTypeById.Clear();
+                _sourceHealthById.Clear();
+                _sourceLastSyncById.Clear();
+                foreach (var source in sourceProfiles)
+                {
+                    _sourceTypeById[source.Id] = source.Type;
+                    _sourceLastSyncById[source.Id] = source.LastSync;
+                }
+
+                foreach (var health in healthStates.GroupBy(item => item.SourceProfileId))
+                {
+                    _sourceHealthById[health.Key] = _catalogDiscoveryService.ResolveHealthBucket(health.First().HealthState);
+                }
+
                 foreach (var group in _allMovieGroups)
                 {
                     foreach (var variant in group.Variants)
@@ -445,7 +503,12 @@ namespace Kroira.App.ViewModels
             LogBrowse(
                 $"apply start reason={reason} selectedKey={currentCategoryKey} search='{SearchQuery}' source={SelectedSourceOption?.Id ?? 0}");
 
-            var filteredResults = BuildFilteredMovieResults().ToList();
+            var baseResults = BuildFilteredMovieResults().ToList();
+            var discoveryProjection = BuildDiscoveryProjection(baseResults, DateTime.UtcNow);
+            RefreshDiscoveryOptions(discoveryProjection);
+            var filteredResults = baseResults
+                .Where(result => discoveryProjection.MatchingKeys.Contains(result.Group.GroupKey))
+                .ToList();
 
             _isInitializing = true;
             try
@@ -468,14 +531,17 @@ namespace Kroira.App.ViewModels
             OnPropertyChanged(nameof(FilteredMovieCount));
 
             RefreshFeaturedMovie(_filteredMovies);
+            DiscoverySummaryText = discoveryProjection.SummaryText;
             IsEmpty = _filteredMovies.Count == 0;
             HasAdvancedFilters = FavoritesOnly ||
                                  HideSecondaryContent ||
                                  SourceVisibilityOptions.Any(option => !option.IsVisible) ||
                                  _preferences.HiddenCategoryKeys.Count > 0 ||
                                  _preferences.CategoryRemaps.Count > 0 ||
+                                 HasDiscoveryFilters(discoveryProjection.EffectiveSelection) ||
                                  (SelectedSourceOption?.Id ?? 0) != 0 ||
                                  !string.Equals(SelectedSortOption?.Key ?? "recommended", "recommended", StringComparison.OrdinalIgnoreCase);
+            UpdateEmptyState(baseResults.Count, discoveryProjection.HasActiveFacetFilters);
             var shouldStageFirstPaint = _preferStagedFirstPaint;
             _preferStagedFirstPaint = false;
             _displayMovieSlotRefreshTask = RefreshDisplayMovieSlotsAsync(shouldStageFirstPaint, reason);
@@ -584,6 +650,162 @@ namespace Kroira.App.ViewModels
                 .Select(group => new FilteredMovieResult(
                     group,
                     GetCategoryProjection(group.PreferredMovie).DisplayCategoryName));
+        }
+
+        private CatalogDiscoveryProjection BuildDiscoveryProjection(
+            IReadOnlyList<FilteredMovieResult> results,
+            DateTime nowUtc)
+        {
+            var records = results
+                .Select(result =>
+                {
+                    var sourceProfileIds = result.Group.Variants
+                        .Select(variant => variant.SourceProfile.Id)
+                        .Where(id => id > 0)
+                        .Distinct()
+                        .ToList();
+
+                    return new CatalogDiscoveryRecord
+                    {
+                        Key = result.Group.GroupKey,
+                        Domain = CatalogDiscoveryDomain.Movies,
+                        SourceProfileIds = sourceProfileIds,
+                        SourceTypes = sourceProfileIds
+                            .Select(id => _sourceTypeById.TryGetValue(id, out var sourceType) ? sourceType : SourceType.M3U)
+                            .Distinct()
+                            .ToList(),
+                        LanguageKey = _catalogDiscoveryService.ResolveLanguageKey(result.Group.PreferredMovie.OriginalLanguage),
+                        LanguageLabel = _catalogDiscoveryService.ResolveLanguageLabel(result.Group.PreferredMovie.OriginalLanguage),
+                        Tags = _catalogDiscoveryService.ExtractTags(result.Group.PreferredMovie.Genres),
+                        IsFavorite = IsMovieGroupFavorite(result.Group),
+                        HasArtwork = HasMovieArtwork(result.Group.PreferredMovie),
+                        HealthBucket = ResolveBestHealthBucket(sourceProfileIds),
+                        LastSyncUtc = ResolveLatestSync(sourceProfileIds)
+                    };
+                })
+                .ToList();
+
+            return _catalogDiscoveryService.BuildProjection(
+                CatalogDiscoveryDomain.Movies,
+                records,
+                new CatalogDiscoverySelection
+                {
+                    SignalKey = SelectedDiscoverySignalOption?.Key ?? _preferences.DiscoverySignalKey,
+                    SourceTypeKey = SelectedDiscoverySourceTypeOption?.Key ?? _preferences.DiscoverySourceTypeKey,
+                    LanguageKey = SelectedDiscoveryLanguageOption?.Key ?? _preferences.DiscoveryLanguageKey,
+                    TagKey = SelectedDiscoveryTagOption?.Key ?? _preferences.DiscoveryTagKey
+                },
+                nowUtc);
+        }
+
+        private void RefreshDiscoveryOptions(CatalogDiscoveryProjection projection)
+        {
+            _preferences.DiscoverySignalKey = projection.EffectiveSelection.SignalKey;
+            _preferences.DiscoverySourceTypeKey = projection.EffectiveSelection.SourceTypeKey;
+            _preferences.DiscoveryLanguageKey = projection.EffectiveSelection.LanguageKey;
+            _preferences.DiscoveryTagKey = projection.EffectiveSelection.TagKey;
+
+            var wasInitializing = _isInitializing;
+            _isInitializing = true;
+            try
+            {
+                DiscoverySignalOptions.ReplaceAll(projection.SignalOptions.Select(ToBrowseFacetOption));
+                DiscoverySourceTypeOptions.ReplaceAll(projection.SourceTypeOptions.Select(ToBrowseFacetOption));
+                DiscoveryLanguageOptions.ReplaceAll(projection.LanguageOptions.Select(ToBrowseFacetOption));
+                DiscoveryTagOptions.ReplaceAll(projection.TagOptions.Select(ToBrowseFacetOption));
+
+                SelectedDiscoverySignalOption = DiscoverySignalOptions.FirstOrDefault(option => string.Equals(option.Key, projection.EffectiveSelection.SignalKey, StringComparison.OrdinalIgnoreCase))
+                    ?? DiscoverySignalOptions.FirstOrDefault();
+                SelectedDiscoverySourceTypeOption = DiscoverySourceTypeOptions.FirstOrDefault(option => string.Equals(option.Key, projection.EffectiveSelection.SourceTypeKey, StringComparison.OrdinalIgnoreCase))
+                    ?? DiscoverySourceTypeOptions.FirstOrDefault();
+                SelectedDiscoveryLanguageOption = DiscoveryLanguageOptions.FirstOrDefault(option => string.Equals(option.Key, projection.EffectiveSelection.LanguageKey, StringComparison.OrdinalIgnoreCase))
+                    ?? DiscoveryLanguageOptions.FirstOrDefault();
+                SelectedDiscoveryTagOption = DiscoveryTagOptions.FirstOrDefault(option => string.Equals(option.Key, projection.EffectiveSelection.TagKey, StringComparison.OrdinalIgnoreCase))
+                    ?? DiscoveryTagOptions.FirstOrDefault();
+            }
+            finally
+            {
+                _isInitializing = wasInitializing;
+            }
+        }
+
+        private static BrowseFacetOptionViewModel ToBrowseFacetOption(CatalogDiscoveryFacetOption option)
+        {
+            return new BrowseFacetOptionViewModel(option.Key, option.Label, option.ItemCount);
+        }
+
+        private void UpdateEmptyState(int baseResultCount, bool hasDiscoveryFacetFilters)
+        {
+            if (!IsEmpty)
+            {
+                EmptyStateTitle = string.Empty;
+                EmptyStateMessage = string.Empty;
+                return;
+            }
+
+            var hasNarrowingFilters = hasDiscoveryFacetFilters ||
+                                      FavoritesOnly ||
+                                      (SelectedSourceOption?.Id ?? 0) != 0 ||
+                                      !string.IsNullOrWhiteSpace(SearchQuery) ||
+                                      !string.IsNullOrWhiteSpace(SelectedCategory?.FilterKey);
+            if (hasNarrowingFilters)
+            {
+                EmptyStateTitle = "Nothing matches this explore mix";
+                EmptyStateMessage = "Relax one or two facets, switch providers, or widen your search to reopen the movie library.";
+                return;
+            }
+
+            EmptyStateTitle = baseResultCount == 0 ? "No movies to show" : "Movie shelf is empty";
+            EmptyStateMessage = "Sync a VOD source, or review your category rules if this provider should already contain movies.";
+        }
+
+        private static bool HasMovieArtwork(Movie movie)
+        {
+            return !string.IsNullOrWhiteSpace(movie.DisplayPosterUrl) ||
+                   !string.IsNullOrWhiteSpace(movie.DisplayHeroArtworkUrl);
+        }
+
+        private CatalogDiscoveryHealthBucket ResolveBestHealthBucket(IReadOnlyList<int> sourceProfileIds)
+        {
+            var buckets = sourceProfileIds
+                .Select(id => _sourceHealthById.TryGetValue(id, out var bucket) ? bucket : CatalogDiscoveryHealthBucket.Unknown)
+                .ToList();
+            if (buckets.Contains(CatalogDiscoveryHealthBucket.Healthy))
+            {
+                return CatalogDiscoveryHealthBucket.Healthy;
+            }
+
+            if (buckets.Contains(CatalogDiscoveryHealthBucket.Attention))
+            {
+                return CatalogDiscoveryHealthBucket.Attention;
+            }
+
+            if (buckets.Contains(CatalogDiscoveryHealthBucket.Degraded))
+            {
+                return CatalogDiscoveryHealthBucket.Degraded;
+            }
+
+            return CatalogDiscoveryHealthBucket.Unknown;
+        }
+
+        private DateTime? ResolveLatestSync(IReadOnlyList<int> sourceProfileIds)
+        {
+            return sourceProfileIds
+                .Select(id => _sourceLastSyncById.TryGetValue(id, out var lastSyncUtc) ? lastSyncUtc : null)
+                .Where(value => value.HasValue)
+                .Max();
+        }
+
+        private static bool HasDiscoveryFilters(CatalogDiscoverySelection selection)
+        {
+            return !string.IsNullOrWhiteSpace(selection.SignalKey) &&
+                   !string.Equals(selection.SignalKey, "all", StringComparison.OrdinalIgnoreCase) ||
+                   !string.IsNullOrWhiteSpace(selection.SourceTypeKey) &&
+                   !string.Equals(selection.SourceTypeKey, "all", StringComparison.OrdinalIgnoreCase) ||
+                   !string.IsNullOrWhiteSpace(selection.LanguageKey) &&
+                   !string.Equals(selection.LanguageKey, "all", StringComparison.OrdinalIgnoreCase) ||
+                   !string.IsNullOrWhiteSpace(selection.TagKey) &&
+                   !string.Equals(selection.TagKey, "all", StringComparison.OrdinalIgnoreCase);
         }
 
         private async Task RefreshDisplayMovieSlotsAsync(bool prioritizeFirstPaint, string reason)

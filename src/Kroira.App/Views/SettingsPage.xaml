@@ -4,9 +4,10 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     Background="{StaticResource KroiraPageBackgroundBrush}">
 
-    <ScrollViewer>
+    <ScrollViewer x:Name="PageScrollViewer">
         <Grid Padding="34,28,34,34"
               RowSpacing="22"
+              XYFocusKeyboardNavigation="Enabled"
               MaxWidth="1040"
               HorizontalAlignment="Left">
             <Grid.RowDefinitions>
@@ -76,13 +77,35 @@
                                 </Grid.ColumnDefinitions>
 
                                 <StackPanel Spacing="5">
+                                    <TextBlock Text="Remote-friendly mode" Style="{StaticResource KroiraTitleStyle}" />
+                                    <TextBlock Text="{x:Bind ViewModel.RemoteModeStatusText, Mode=OneWay}"
+                                               Style="{StaticResource KroiraBodyStyle}"
+                                               MaxWidth="520"
+                                               TextWrapping="Wrap" />
+                                </StackPanel>
+
+                                <ToggleSwitch x:Name="RemoteModeToggle"
+                                              Grid.Column="1"
+                                              IsOn="{x:Bind ViewModel.RemoteModeEnabled, Mode=TwoWay}"
+                                              HorizontalAlignment="Right"
+                                              VerticalAlignment="Center" />
+                            </Grid>
+
+                            <Grid ColumnSpacing="18">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="220" />
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Spacing="5">
                                     <TextBlock Text="App language" Style="{StaticResource KroiraTitleStyle}" />
                                     <TextBlock Text="{x:Bind ViewModel.LanguageStatusText, Mode=OneWay}"
                                                Style="{StaticResource KroiraBodyStyle}"
                                                MaxWidth="520" />
                                 </StackPanel>
 
-                                <ComboBox Grid.Column="1"
+                                <ComboBox x:Name="LanguageComboBox"
+                                          Grid.Column="1"
                                           Style="{StaticResource KroiraComboBoxStyle}"
                                           ItemsSource="{x:Bind ViewModel.Languages, Mode=OneWay}"
                                           SelectedItem="{x:Bind ViewModel.SelectedLanguage, Mode=TwoWay}"

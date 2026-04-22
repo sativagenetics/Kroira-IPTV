@@ -83,7 +83,7 @@
 
     </Page.Resources>
 
-    <Grid>
+    <Grid XYFocusKeyboardNavigation="Enabled">
         <Grid Padding="24,16,24,20"
               MaxWidth="1440"
               HorizontalAlignment="Center"
@@ -154,6 +154,7 @@
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
 
                 <Grid Grid.Row="0" ColumnSpacing="8">
@@ -216,7 +217,56 @@
                     </StackPanel>
                 </Grid>
 
-                <Expander Grid.Row="1"
+                <Grid Grid.Row="1"
+                      ColumnSpacing="14">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Spacing="4"
+                                MaxWidth="560">
+                        <TextBlock Text="EXPLORE"
+                                   Style="{StaticResource KroiraLabelStyle}"
+                                   Foreground="{StaticResource KroiraAccentBrush}" />
+                        <TextBlock Text="{x:Bind ViewModel.DiscoverySummaryText, Mode=OneWay}"
+                                   Foreground="{StaticResource KroiraTextSecondaryBrush}"
+                                   FontSize="12"
+                                   TextWrapping="Wrap" />
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="1"
+                                Orientation="Horizontal"
+                                Spacing="10"
+                                HorizontalAlignment="Right">
+                        <StackPanel Width="182"
+                                    Spacing="4"
+                                    Visibility="{x:Bind ViewModel.DiscoverySignalVisibility, Mode=OneWay}">
+                            <TextBlock Text="Focus"
+                                       Style="{StaticResource KroiraLabelStyle}"
+                                       Foreground="{StaticResource KroiraAccentBrush}" />
+                            <ComboBox Style="{StaticResource ChannelComboStyle}"
+                                      ItemsSource="{x:Bind ViewModel.DiscoverySignalOptions, Mode=OneWay}"
+                                      SelectedItem="{x:Bind ViewModel.SelectedDiscoverySignalOption, Mode=TwoWay}"
+                                      DisplayMemberPath="DisplayName"
+                                      AutomationProperties.Name="Live discovery focus" />
+                        </StackPanel>
+                        <StackPanel Width="170"
+                                    Spacing="4"
+                                    Visibility="{x:Bind ViewModel.DiscoverySourceTypeVisibility, Mode=OneWay}">
+                            <TextBlock Text="Source type"
+                                       Style="{StaticResource KroiraLabelStyle}"
+                                       Foreground="{StaticResource KroiraAccentBrush}" />
+                            <ComboBox Style="{StaticResource ChannelComboStyle}"
+                                      ItemsSource="{x:Bind ViewModel.DiscoverySourceTypeOptions, Mode=OneWay}"
+                                      SelectedItem="{x:Bind ViewModel.SelectedDiscoverySourceTypeOption, Mode=TwoWay}"
+                                      DisplayMemberPath="DisplayName"
+                                      AutomationProperties.Name="Live discovery source type" />
+                        </StackPanel>
+                    </StackPanel>
+                </Grid>
+
+                <Expander Grid.Row="2"
                           Header="Advanced browse controls"
                           IsExpanded="{x:Bind ViewModel.HasAdvancedFilters, Mode=OneWay}">
                     <Grid Margin="0,6,0,0" ColumnSpacing="14">
@@ -400,12 +450,12 @@
                                   Foreground="{StaticResource KroiraTextTertiaryBrush}"
                                   FontSize="28"
                                   HorizontalAlignment="Center" />
-                        <TextBlock Text="No channels to show"
+                        <TextBlock Text="{x:Bind ViewModel.EmptyStateTitle, Mode=OneWay}"
                                    Foreground="{StaticResource KroiraTextPrimaryBrush}"
                                    FontSize="20"
                                    FontWeight="SemiBold"
                                    HorizontalAlignment="Center" />
-                        <TextBlock Text="Sync an Xtream live source, or clear your search and category filters."
+                        <TextBlock Text="{x:Bind ViewModel.EmptyStateMessage, Mode=OneWay}"
                                    Foreground="{StaticResource KroiraTextSecondaryBrush}"
                                    FontSize="13"
                                    TextWrapping="Wrap"

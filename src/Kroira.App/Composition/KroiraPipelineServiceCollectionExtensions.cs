@@ -8,7 +8,9 @@ namespace Kroira.App.Composition
     {
         public static IServiceCollection AddKroiraPipelineServices(this IServiceCollection services)
         {
+            services.AddSingleton<IRemoteNavigationService, RemoteNavigationService>();
             services.AddSingleton<IBrowsePreferencesService, BrowsePreferencesService>();
+            services.AddSingleton<ICatalogDiscoveryService, CatalogDiscoveryService>();
             services.AddSingleton<ILiveChannelIdentityService, LiveChannelIdentityService>();
             services.AddSingleton<IChannelCatchupService, ChannelCatchupService>();
             services.AddSingleton<ICatchupPlaybackService, CatchupPlaybackService>();
@@ -23,6 +25,8 @@ namespace Kroira.App.Composition
             services.AddSingleton<IExternalUriLauncher, SystemExternalUriLauncher>();
             services.AddSingleton<IExternalPlayerLaunchService, ExternalPlayerLaunchService>();
             services.AddSingleton<ISourceDiagnosticsService, SourceDiagnosticsService>();
+            services.AddSingleton<ISourceActivityService, SourceActivityService>();
+            services.AddSingleton<ISourceGuidanceService, SourceGuidanceService>();
             services.AddSingleton<ISourceEnrichmentService, SourceEnrichmentService>();
             services.AddSingleton<ISourceHealthService, SourceHealthService>();
             services.AddSingleton<ISourceProbeService, SourceProbeService>();

@@ -320,8 +320,9 @@
         </DataTemplate>
     </Page.Resources>
 
-    <Grid>
-        <ScrollViewer VerticalScrollBarVisibility="Auto"
+    <Grid XYFocusKeyboardNavigation="Enabled">
+        <ScrollViewer x:Name="HomeScrollViewer"
+                      VerticalScrollBarVisibility="Auto"
                       VerticalScrollMode="Auto"
                       HorizontalScrollBarVisibility="Disabled"
                       HorizontalScrollMode="Disabled"
@@ -411,7 +412,8 @@
                                        MaxLines="2"
                                        TextTrimming="CharacterEllipsis" />
                             <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,5,0,0">
-                                <Button Click="FeaturedPrimary_Click"
+                                <Button x:Name="FeaturedPrimaryButton"
+                                        Click="FeaturedPrimary_Click"
                                         Style="{StaticResource KroiraPrimaryButtonStyle}"
                                         Padding="18,10"
                                         MinWidth="132">

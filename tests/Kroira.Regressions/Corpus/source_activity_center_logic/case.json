@@ -1,0 +1,73 @@
+{
+  "id": "source_activity_center_logic",
+  "description": "Source activity aggregation stays bounded and high-signal across sync history, guide failure, catchup attempts, routing policy, and degraded Stalker portal state.",
+  "sources": [
+    {
+      "key": "m3u-ops",
+      "name": "Fixture Activity M3U",
+      "type": "M3U",
+      "url": "{{server}}/playlist.m3u",
+      "epgMode": "Detected",
+      "m3uImportMode": "LiveMoviesAndSeries",
+      "proxyScope": "PlaybackOnly",
+      "proxyUrl": "http://alice:supersecret@proxy.local:8080/edge?token=abcdef1234567890",
+      "companionScope": "PlaybackAndProbing",
+      "companionMode": "Buffered",
+      "companionUrl": "{{server}}/companion",
+      "refreshTrigger": "InitialImport",
+      "refreshScope": "Full"
+    },
+    {
+      "key": "stalker-partial",
+      "name": "Fixture Activity Stalker",
+      "type": "Stalker",
+      "url": "{{server}}/stalker/c",
+      "stalkerMacAddress": "00:1A:79:10:00:02",
+      "stalkerTimezone": "Europe/Istanbul",
+      "stalkerLocale": "en",
+      "epgMode": "Detected",
+      "refreshTrigger": "InitialImport",
+      "refreshScope": "Full"
+    }
+  ],
+  "catchupRequests": [
+    {
+      "id": "activity_start_over_ok",
+      "sourceKey": "m3u-ops",
+      "matchName": "Archive Sports HD",
+      "requestKind": "StartOver",
+      "requestedAtUtc": "2020-04-22T10:30:00Z"
+    },
+    {
+      "id": "activity_start_over_broken",
+      "sourceKey": "m3u-ops",
+      "matchName": "Broken Replay HD",
+      "requestKind": "StartOver",
+      "requestedAtUtc": "2020-04-22T10:30:00Z"
+    }
+  ],
+  "activityRequests": [
+    {
+      "id": "m3u_activity",
+      "sourceKey": "m3u-ops"
+    },
+    {
+      "id": "stalker_activity",
+      "sourceKey": "stalker-partial"
+    }
+  ],
+  "mutations": [
+    {
+      "kind": "update_guide_settings",
+      "sourceKey": "m3u-ops",
+      "activeMode": "Manual",
+      "manualEpgUrl": "{{server}}/missing-guide.xml",
+      "proxyScope": "PlaybackOnly",
+      "proxyUrl": "http://alice:supersecret@proxy.local:8080/edge?token=abcdef1234567890",
+      "companionScope": "PlaybackAndProbing",
+      "companionMode": "Buffered",
+      "companionUrl": "{{server}}/companion",
+      "syncNow": true
+    }
+  ]
+}

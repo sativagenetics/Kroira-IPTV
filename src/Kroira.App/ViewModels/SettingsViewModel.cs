@@ -19,10 +19,12 @@ namespace Kroira.App.ViewModels
     public partial class SettingsViewModel : ObservableObject
     {
         private readonly IEntitlementService _entitlementService;
+        private readonly IRemoteNavigationService _remoteNavigationService;
         private readonly IServiceProvider _serviceProvider;
         private bool _isLoadingLanguage;
         private bool _isLoadingAppearance;
         private bool _isLoadingAutoRefresh;
+        private bool _isLoadingRemoteMode;
 
         public ObservableCollection<LanguageOptionViewModel> Languages { get; } = new()
         {
@@ -80,6 +82,12 @@ namespace Kroira.App.ViewModels
 
         [ObservableProperty]
         private string _autoRefreshStatusText = "Automatic refresh checks for source updates while the app is open.";
+
+        [ObservableProperty]
+        private bool _remoteModeEnabled = true;
+
+        [ObservableProperty]
+        private string _remoteModeStatusText = "Remote-friendly mode keeps page landing focus, directional navigation, and back behavior predictable.";
 
         public bool IsBackupIdle => !IsBackupBusy;
         public bool CanUseBackupRestore => _entitlementService.IsFeatureEnabled(EntitlementFeatureKeys.LibraryBackupRestore);
@@ -151,9 +159,21 @@ namespace Kroira.App.ViewModels
             }
         }
 
-        public SettingsViewModel(IEntitlementService entitlementService, IServiceProvider serviceProvider)
+        partial void OnRemoteModeEnabledChanged(bool value)
+        {
+            if (!_isLoadingRemoteMode)
+            {
+                _ = SaveRemoteModeAsync();
+            }
+        }
+
+        public SettingsViewModel(
+            IEntitlementService entitlementService,
+            IRemoteNavigationService remoteNavigationService,
+            IServiceProvider serviceProvider)
         {
             _entitlementService = entitlementService;
+            _remoteNavigationService = remoteNavigationService;
             _serviceProvider = serviceProvider;
             var appearanceService = _serviceProvider.GetRequiredService<IAppAppearanceService>();
             foreach (var option in appearanceService.ThemeOptions)
@@ -187,6 +207,7 @@ namespace Kroira.App.ViewModels
             await AppLanguageService.SetLanguageAsync(db, languageCode, activeProfile.Id);
             var appearance = await appearanceService.LoadAsync(db);
             var autoRefresh = await autoRefreshService.LoadSettingsAsync(db);
+            await _remoteNavigationService.InitializeAsync();
 
             _isLoadingLanguage = true;
             SelectedLanguage = Languages.FirstOrDefault(language => language.Code == languageCode)
@@ -209,6 +230,13 @@ namespace Kroira.App.ViewModels
             AutoRefreshStatusText = autoRefresh.IsEnabled
                 ? $"Automatic refresh runs every {autoRefresh.IntervalHours} hour{(autoRefresh.IntervalHours == 1 ? string.Empty : "s")} while KROIRA stays open."
                 : "Automatic refresh is turned off.";
+
+            _isLoadingRemoteMode = true;
+            RemoteModeEnabled = _remoteNavigationService.IsRemoteModeEnabled;
+            _isLoadingRemoteMode = false;
+            RemoteModeStatusText = RemoteModeEnabled
+                ? "Remote-friendly mode is on. Pages land on a primary target and Esc/Back stay predictable."
+                : "Remote-friendly mode is off. KROIRA keeps desktop behavior without automatic page landing focus.";
         }
 
         private async Task SaveLanguageAsync(string languageCode)
@@ -255,6 +283,14 @@ namespace Kroira.App.ViewModels
             AutoRefreshStatusText = settings.IsEnabled
                 ? $"Automatic refresh runs every {settings.IntervalHours} hour{(settings.IntervalHours == 1 ? string.Empty : "s")} while KROIRA stays open."
                 : "Automatic refresh is turned off.";
+        }
+
+        private async Task SaveRemoteModeAsync()
+        {
+            await _remoteNavigationService.SetRemoteModeEnabledAsync(RemoteModeEnabled);
+            RemoteModeStatusText = RemoteModeEnabled
+                ? "Remote-friendly mode is on. Pages land on a primary target and Esc/Back stay predictable."
+                : "Remote-friendly mode is off. KROIRA keeps desktop behavior without automatic page landing focus.";
         }
 
         [RelayCommand]

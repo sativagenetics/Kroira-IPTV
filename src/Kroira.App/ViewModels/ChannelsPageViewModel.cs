@@ -45,17 +45,23 @@ namespace Kroira.App.ViewModels
         private const string Domain = ProfileDomains.Live;
         private readonly IServiceProvider _serviceProvider;
         private readonly IBrowsePreferencesService _browsePreferencesService;
+        private readonly ICatalogDiscoveryService _catalogDiscoveryService;
         private readonly ICatalogTaxonomyService _taxonomyService;
         private readonly ILogicalCatalogStateService _logicalCatalogStateService;
         private readonly List<BrowserChannelViewModel> _allChannels = new();
         private readonly List<(int Id, string Name, int Count)> _allRawCategories = new();
         private readonly Dictionary<int, string> _sourceNames = new();
+        private readonly Dictionary<int, SourceType> _sourceTypes = new();
+        private readonly Dictionary<int, CatalogDiscoveryHealthBucket> _sourceHealthById = new();
+        private readonly Dictionary<int, DateTime?> _sourceLastSyncById = new();
         private readonly Dictionary<int, string> _categoryNames = new();
         private readonly Dictionary<string, LiveChannelSectionViewModel> _spotlightSectionMap = new(StringComparer.OrdinalIgnoreCase);
         private HashSet<string> _favoriteLogicalKeys = new(StringComparer.OrdinalIgnoreCase);
         private BrowsePreferences _preferences = new();
         private int _activeProfileId;
         private int _filterRequestVersion;
+        private int _lastPreDiscoveryCount;
+        private bool _lastDiscoveryFacetFiltersActive;
         private bool _isInitializing;
 
         public ObservableCollection<BrowserChannelViewModel> FilteredChannels { get; } = new();
@@ -65,6 +71,8 @@ namespace Kroira.App.ViewModels
         public ObservableCollection<BrowseSourceFilterOptionViewModel> SourceOptions { get; } = new();
         public ObservableCollection<BrowseSourceVisibilityViewModel> SourceVisibilityOptions { get; } = new();
         public ObservableCollection<BrowseCategoryManagerOptionViewModel> ManageCategoryOptions { get; } = new();
+        public BulkObservableCollection<BrowseFacetOptionViewModel> DiscoverySignalOptions { get; } = new();
+        public BulkObservableCollection<BrowseFacetOptionViewModel> DiscoverySourceTypeOptions { get; } = new();
 
         [ObservableProperty]
         private string _searchQuery = string.Empty;
@@ -85,6 +93,12 @@ namespace Kroira.App.ViewModels
         private BrowseSourceFilterOptionViewModel? _selectedSourceOption;
 
         [ObservableProperty]
+        private BrowseFacetOptionViewModel? _selectedDiscoverySignalOption;
+
+        [ObservableProperty]
+        private BrowseFacetOptionViewModel? _selectedDiscoverySourceTypeOption;
+
+        [ObservableProperty]
         private bool _favoritesOnly;
 
         [ObservableProperty]
@@ -102,12 +116,27 @@ namespace Kroira.App.ViewModels
         [ObservableProperty]
         private bool _hasAdvancedFilters;
 
+        [ObservableProperty]
+        private string _discoverySummaryText = "Guide, catchup, source type, and health stay quiet until sync evidence proves them.";
+
+        [ObservableProperty]
+        private string _emptyStateTitle = "No channels to show";
+
+        [ObservableProperty]
+        private string _emptyStateMessage = "Sync a live source, or clear your search and browse filters.";
+
         public bool HasManageCategorySelection => SelectedManageCategory != null;
         public string BrowseResultTitle => SelectedCategory?.Name ?? "All channels";
         public string BrowseResultSubtitle => ResolveBrowseResultSubtitle();
         public string BrowseResultCountText => FilteredChannels.Count == 1
             ? "1 channel"
             : $"{FilteredChannels.Count:N0} channels";
+        public Microsoft.UI.Xaml.Visibility DiscoverySignalVisibility => DiscoverySignalOptions.Count > 2
+            ? Microsoft.UI.Xaml.Visibility.Visible
+            : Microsoft.UI.Xaml.Visibility.Collapsed;
+        public Microsoft.UI.Xaml.Visibility DiscoverySourceTypeVisibility => DiscoverySourceTypeOptions.Count > 2
+            ? Microsoft.UI.Xaml.Visibility.Visible
+            : Microsoft.UI.Xaml.Visibility.Collapsed;
         public Microsoft.UI.Xaml.Visibility ClearRecentHistoryVisibility => HasRecentHistory
             ? Microsoft.UI.Xaml.Visibility.Visible
             : Microsoft.UI.Xaml.Visibility.Collapsed;
@@ -169,6 +198,30 @@ namespace Kroira.App.ViewModels
             _ = SavePreferencesAndRefreshAsync(rebuildCollections: true);
         }
 
+        partial void OnSelectedDiscoverySignalOptionChanged(BrowseFacetOptionViewModel? value)
+        {
+            if (_isInitializing)
+            {
+                return;
+            }
+
+            _preferences.DiscoverySignalKey = value?.Key ?? string.Empty;
+            Log($"SEL: discovery signal -> {_preferences.DiscoverySignalKey}");
+            _ = SavePreferencesAndRefreshAsync(rebuildCollections: false);
+        }
+
+        partial void OnSelectedDiscoverySourceTypeOptionChanged(BrowseFacetOptionViewModel? value)
+        {
+            if (_isInitializing)
+            {
+                return;
+            }
+
+            _preferences.DiscoverySourceTypeKey = value?.Key ?? string.Empty;
+            Log($"SEL: discovery source type -> {_preferences.DiscoverySourceTypeKey}");
+            _ = SavePreferencesAndRefreshAsync(rebuildCollections: false);
+        }
+
         partial void OnFavoritesOnlyChanged(bool value)
         {
             if (_isInitializing)
@@ -221,6 +274,7 @@ namespace Kroira.App.ViewModels
         {
             _serviceProvider = serviceProvider;
             _browsePreferencesService = serviceProvider.GetRequiredService<IBrowsePreferencesService>();
+            _catalogDiscoveryService = serviceProvider.GetRequiredService<ICatalogDiscoveryService>();
             _taxonomyService = serviceProvider.GetRequiredService<ICatalogTaxonomyService>();
             _logicalCatalogStateService = serviceProvider.GetRequiredService<ILogicalCatalogStateService>();
             RegisterSpotlightSection("last_tuned", "Last tuned", "Jump straight back into the last live channel you opened.");
@@ -233,6 +287,8 @@ namespace Kroira.App.ViewModels
             SortOptions.Add(new BrowseSortOptionViewModel("name_asc", "Name A-Z"));
             SortOptions.Add(new BrowseSortOptionViewModel("favorites_first", "Favorites first"));
             SortOptions.Add(new BrowseSortOptionViewModel("guide_first", "Guide-ready first"));
+            DiscoverySignalOptions.CollectionChanged += (_, _) => OnPropertyChanged(nameof(DiscoverySignalVisibility));
+            DiscoverySourceTypeOptions.CollectionChanged += (_, _) => OnPropertyChanged(nameof(DiscoverySourceTypeVisibility));
         }
 
         [RelayCommand]
@@ -243,6 +299,9 @@ namespace Kroira.App.ViewModels
             _allChannels.Clear();
             _allRawCategories.Clear();
             _sourceNames.Clear();
+            _sourceTypes.Clear();
+            _sourceHealthById.Clear();
+            _sourceLastSyncById.Clear();
             _categoryNames.Clear();
             Categories.Clear();
             ClearSpotlightSections();
@@ -286,10 +345,26 @@ namespace Kroira.App.ViewModels
                     .AsNoTracking()
                     .OrderBy(source => source.Name)
                     .ToListAsync();
+                var healthStates = await db.SourceHealthReports
+                    .AsNoTracking()
+                    .OrderByDescending(report => report.EvaluatedAtUtc)
+                    .Select(report => new
+                    {
+                        report.SourceProfileId,
+                        report.HealthState
+                    })
+                    .ToListAsync();
                 var sourceTypeById = sources.ToDictionary(source => source.Id, source => source.Type);
                 foreach (var source in sources)
                 {
                     _sourceNames[source.Id] = source.Name;
+                    _sourceTypes[source.Id] = source.Type;
+                    _sourceLastSyncById[source.Id] = source.LastSync;
+                }
+
+                foreach (var health in healthStates.GroupBy(item => item.SourceProfileId))
+                {
+                    _sourceHealthById[health.Key] = _catalogDiscoveryService.ResolveHealthBucket(health.First().HealthState);
                 }
 
                 _favoriteLogicalKeys = await _logicalCatalogStateService.GetFavoriteLogicalKeysAsync(db, _activeProfileId, FavoriteType.Channel);
@@ -332,17 +407,21 @@ namespace Kroira.App.ViewModels
                         PreferredSourceProfileId = category.SourceProfileId,
                         LogicalContentKey = logicalKey,
                         SourceName = _sourceNames.TryGetValue(category.SourceProfileId, out var sourceName) ? sourceName : "Unknown Source",
+                        SourceType = sourceTypeById.TryGetValue(category.SourceProfileId, out var sourceType) ? sourceType : SourceType.M3U,
                         RawName = channel.Name,
                         Name = cleanedChannelName,
                         CategoryName = category.Name,
                         DisplayCategoryName = displayCategory,
                         StreamUrl = channel.StreamUrl,
                         LogoUrl = channel.LogoUrl ?? string.Empty,
+                        HasGuideLink = !string.IsNullOrWhiteSpace(channel.EpgChannelId) || channel.EpgMatchConfidence > 0,
                         IsFavorite = _favoriteLogicalKeys.Contains(logicalKey),
                         IsSportsChannel = ContentClassifier.IsSportsLikeChannel(cleanedChannelName, displayCategory),
                         IsTurkishSportsChannel = ContentClassifier.IsTurkishSportsLikeChannel(cleanedChannelName, displayCategory),
                         WatchCount = watchCount,
                         LastWatchedAtUtc = lastWatchedAtUtc,
+                        SourceLastSyncUtc = _sourceLastSyncById.TryGetValue(category.SourceProfileId, out var lastSyncUtc) ? lastSyncUtc : null,
+                        SourceHealthBucket = _sourceHealthById.TryGetValue(category.SourceProfileId, out var healthBucket) ? healthBucket : CatalogDiscoveryHealthBucket.Unknown,
                         SupportsCatchup = channel.SupportsCatchup,
                         CatchupWindowHours = channel.CatchupWindowHours,
                         CatchupSummary = channel.CatchupSummary ?? string.Empty
@@ -538,8 +617,16 @@ namespace Kroira.App.ViewModels
                     channel.SourceName.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase));
             }
 
-            var filteredList = filtered.ToList();
             var nowUtc = DateTime.UtcNow;
+            var preDiscoveryList = filtered.ToList();
+            var discoveryProjection = BuildDiscoveryProjection(preDiscoveryList, nowUtc);
+            RefreshDiscoveryOptions(discoveryProjection);
+            var filteredList = preDiscoveryList
+                .Where(channel => discoveryProjection.MatchingKeys.Contains(channel.LogicalContentKey))
+                .ToList();
+            DiscoverySummaryText = discoveryProjection.SummaryText;
+            _lastPreDiscoveryCount = preDiscoveryList.Count;
+            _lastDiscoveryFacetFiltersActive = discoveryProjection.HasActiveFacetFilters;
             Log($"08: filtered down to {filteredList.Count} channels before guide load");
 
             if (requestVersion != _filterRequestVersion)
@@ -753,6 +840,93 @@ namespace Kroira.App.ViewModels
             OnPropertyChanged(nameof(BrowseResultCountText));
             OnPropertyChanged(nameof(ClearRecentHistoryVisibility));
             OnPropertyChanged(nameof(BrowseClearRecentVisibility));
+        }
+
+        private CatalogDiscoveryProjection BuildDiscoveryProjection(
+            IReadOnlyList<BrowserChannelViewModel> channels,
+            DateTime nowUtc)
+        {
+            var records = channels
+                .Select(channel => new CatalogDiscoveryRecord
+                {
+                    Key = channel.LogicalContentKey,
+                    Domain = CatalogDiscoveryDomain.Live,
+                    SourceProfileIds = [channel.SourceProfileId],
+                    SourceTypes = [channel.SourceType],
+                    IsFavorite = channel.IsFavorite,
+                    HasGuide = channel.HasGuideLink,
+                    HasCatchup = channel.SupportsCatchup,
+                    HealthBucket = channel.SourceHealthBucket,
+                    LastSyncUtc = channel.SourceLastSyncUtc,
+                    LastInteractionUtc = channel.LastWatchedAtUtc
+                })
+                .ToList();
+
+            return _catalogDiscoveryService.BuildProjection(
+                CatalogDiscoveryDomain.Live,
+                records,
+                new CatalogDiscoverySelection
+                {
+                    SignalKey = SelectedDiscoverySignalOption?.Key ?? _preferences.DiscoverySignalKey,
+                    SourceTypeKey = SelectedDiscoverySourceTypeOption?.Key ?? _preferences.DiscoverySourceTypeKey
+                },
+                nowUtc);
+        }
+
+        private void RefreshDiscoveryOptions(CatalogDiscoveryProjection projection)
+        {
+            _preferences.DiscoverySignalKey = projection.EffectiveSelection.SignalKey;
+            _preferences.DiscoverySourceTypeKey = projection.EffectiveSelection.SourceTypeKey;
+            _preferences.DiscoveryLanguageKey = string.Empty;
+            _preferences.DiscoveryTagKey = string.Empty;
+
+            var wasInitializing = _isInitializing;
+            _isInitializing = true;
+            try
+            {
+                DiscoverySignalOptions.ReplaceAll(projection.SignalOptions.Select(ToBrowseFacetOption));
+                DiscoverySourceTypeOptions.ReplaceAll(projection.SourceTypeOptions.Select(ToBrowseFacetOption));
+
+                SelectedDiscoverySignalOption = DiscoverySignalOptions.FirstOrDefault(option => string.Equals(option.Key, projection.EffectiveSelection.SignalKey, StringComparison.OrdinalIgnoreCase))
+                    ?? DiscoverySignalOptions.FirstOrDefault();
+                SelectedDiscoverySourceTypeOption = DiscoverySourceTypeOptions.FirstOrDefault(option => string.Equals(option.Key, projection.EffectiveSelection.SourceTypeKey, StringComparison.OrdinalIgnoreCase))
+                    ?? DiscoverySourceTypeOptions.FirstOrDefault();
+            }
+            finally
+            {
+                _isInitializing = wasInitializing;
+            }
+        }
+
+        private static BrowseFacetOptionViewModel ToBrowseFacetOption(CatalogDiscoveryFacetOption option)
+        {
+            return new BrowseFacetOptionViewModel(option.Key, option.Label, option.ItemCount);
+        }
+
+        private void UpdateEmptyState(int baseResultCount, bool hasDiscoveryFacetFilters)
+        {
+            if (!IsEmpty)
+            {
+                EmptyStateTitle = string.Empty;
+                EmptyStateMessage = string.Empty;
+                return;
+            }
+
+            var hasNarrowingFilters = hasDiscoveryFacetFilters ||
+                                      FavoritesOnly ||
+                                      GuideMatchedOnly ||
+                                      (SelectedSourceOption?.Id ?? 0) != 0 ||
+                                      !string.IsNullOrWhiteSpace(SearchQuery) ||
+                                      !string.IsNullOrWhiteSpace(SelectedCategory?.FilterKey);
+            if (hasNarrowingFilters)
+            {
+                EmptyStateTitle = "Nothing matches this explore mix";
+                EmptyStateMessage = "Relax one or two facets, clear guide or favorite filters, or widen your search to reopen live browsing.";
+                return;
+            }
+
+            EmptyStateTitle = baseResultCount == 0 ? "No channels to show" : "Live browser is empty";
+            EmptyStateMessage = "Sync a live source, or review provider and category rules if this source should already contain channels.";
         }
 
         private void RegisterSpotlightSection(string key, string title, string subtitle)
@@ -1059,7 +1233,7 @@ namespace Kroira.App.ViewModels
         private string ResolveBrowseResultSubtitle()
         {
             var filterKey = SelectedCategory?.FilterKey ?? string.Empty;
-            return filterKey switch
+            var baseText = filterKey switch
             {
                 SmartPriorityCategoryKey => "High-value sports, favorites, and repeat channels ordered for fast match watching.",
                 SmartSportsCategoryKey => "Sports-led channels across the visible providers, still ordered by priority first.",
@@ -1069,6 +1243,10 @@ namespace Kroira.App.ViewModels
                 _ when !string.IsNullOrWhiteSpace(SelectedCategory?.Description) => SelectedCategory!.Description,
                 _ => $"Channels in {SelectedCategory?.Name ?? "this category"}, ordered to surface the best watch options first."
             };
+
+            return HasDiscoveryFilters()
+                ? $"{baseText} {DiscoverySummaryText}"
+                : baseText;
         }
 
         private void BuildSourceOptions()
@@ -1391,11 +1569,21 @@ namespace Kroira.App.ViewModels
                                  SourceVisibilityOptions.Any(option => !option.IsVisible) ||
                                  _preferences.HiddenCategoryKeys.Count > 0 ||
                                  _preferences.CategoryRemaps.Count > 0 ||
+                                 HasDiscoveryFilters() ||
                                  (SelectedSourceOption?.Id ?? 0) != 0 ||
                                  !string.Equals(SelectedSortOption?.Key ?? DefaultPrioritySortKey, DefaultPrioritySortKey, StringComparison.OrdinalIgnoreCase);
             IsEmpty = FilteredChannels.Count == 0;
+            UpdateEmptyState(_lastPreDiscoveryCount, _lastDiscoveryFacetFiltersActive);
             NotifyBrowseResultChanged();
             Log($"{phaseLogMessage}; visible channels={FilteredChannels.Count}");
+        }
+
+        private bool HasDiscoveryFilters()
+        {
+            return !string.IsNullOrWhiteSpace(_preferences.DiscoverySignalKey) &&
+                   !string.Equals(_preferences.DiscoverySignalKey, "all", StringComparison.OrdinalIgnoreCase) ||
+                   !string.IsNullOrWhiteSpace(_preferences.DiscoverySourceTypeKey) &&
+                   !string.Equals(_preferences.DiscoverySourceTypeKey, "all", StringComparison.OrdinalIgnoreCase);
         }
     }
 }

@@ -454,13 +454,54 @@ namespace Kroira.App.Views
 
         private void FocusActivePanelTarget()
         {
-            if (_channelPanelOpen)
+            if (_guidePanelOpen)
             {
-                ChannelSearchBox.Focus(FocusState.Programmatic);
-                return;
+                if (GuideProgramList.Items.Count > 0 &&
+                    GuideProgramList.ContainerFromIndex(0) is ListViewItem firstGuideItem &&
+                    firstGuideItem.Focus(FocusState.Keyboard))
+                {
+                    return;
+                }
+
+                if (GuideProgramList.Focus(FocusState.Keyboard))
+                {
+                    return;
+                }
             }
 
-            RootGrid.Focus(FocusState.Programmatic);
+            if (_channelPanelOpen)
+            {
+                if (ChannelSearchBox.Focus(FocusState.Keyboard))
+                {
+                    return;
+                }
+            }
+
+            if (_episodePanelOpen)
+            {
+                if (EpisodeSwitchList.Items.Count > 0 &&
+                    EpisodeSwitchList.ContainerFromIndex(0) is ListViewItem firstEpisodeItem &&
+                    firstEpisodeItem.Focus(FocusState.Keyboard))
+                {
+                    return;
+                }
+
+                if (EpisodeSwitchList.Focus(FocusState.Keyboard))
+                {
+                    return;
+                }
+            }
+
+            if (_infoPanelOpen)
+            {
+                if (InspectCurrentItemButton.Focus(FocusState.Keyboard) ||
+                    OpenExternalPlayerButton.Focus(FocusState.Keyboard))
+                {
+                    return;
+                }
+            }
+
+            RootGrid.Focus(FocusState.Keyboard);
         }
 
         private bool CloseOpenPanels()
@@ -476,7 +517,7 @@ namespace Kroira.App.Views
             _infoPanelOpen = false;
             UpdatePanelVisibility();
             RefreshToolToggleStates();
-            RootGrid.Focus(FocusState.Programmatic);
+            RootGrid.Focus(FocusState.Keyboard);
             return true;
         }
 
@@ -838,6 +879,27 @@ namespace Kroira.App.Views
             return e.Key != VirtualKey.Escape && IsTextInputFocused();
         }
 
+        private bool ShouldReserveFocusedControlKeys()
+        {
+            var current = GetFocusedElement();
+            while (current != null)
+            {
+                if (ReferenceEquals(current, RootGrid))
+                {
+                    return false;
+                }
+
+                if (current is ButtonBase or HyperlinkButton or ToggleSwitch or CheckBox or ComboBox or ComboBoxItem or Slider or ListViewItem or GridViewItem)
+                {
+                    return true;
+                }
+
+                current = VisualTreeHelper.GetParent(current);
+            }
+
+            return false;
+        }
+
         private bool CloseTopmostOverlayFlyout()
         {
             if (_pendingUtilityFlyout != null && _activeUtilityFlyout == null)
@@ -945,54 +1007,93 @@ namespace Kroira.App.Views
             }
 
             var shiftDown = InputKeyboardSource.GetKeyStateForCurrentThread(VirtualKey.Shift).HasFlag(CoreVirtualKeyStates.Down);
-            switch (e.Key)
+            var context = new PlaybackRemoteContext
             {
-                case VirtualKey.Space:
+                IsTextInputFocused = IsTextInputFocused(),
+                IsMenuOpen = IsMenuOpen,
+                ReserveFocusedControlKeys = ShouldReserveFocusedControlKeys(),
+                IsPictureInPicture = IsPictureInPictureMode(),
+                IsLivePlayback = IsLivePlayback(),
+                IsChannelPlayback = IsChannelPlayback(),
+                CanSeek = IsTimelineSeekAllowed(),
+                HasLastChannel = _lastChannelCandidateId > 0,
+                CanRestartOrStartOver = IsTimelineSeekAllowed() || (IsChannelPlayback() && _guideProgramItems.Any(item => item.IsCurrent && item.RequestKind != CatchupRequestKind.None)),
+                CanGoLive = IsChannelPlayback()
+            };
+
+            var command = PlaybackRemoteCommandMap.Resolve(e.Key, shiftDown, context);
+            if (command == PlaybackRemoteCommand.None)
+            {
+                return false;
+            }
+
+            switch (command)
+            {
+                case PlaybackRemoteCommand.TogglePlayPause:
                     TogglePlayPauseOrLive();
                     break;
-                case VirtualKey.Left when IsTimelineSeekAllowed():
-                    TrySeekRelativeSeconds(shiftDown ? -30 : -10);
+                case PlaybackRemoteCommand.SeekBackward10:
+                    TrySeekRelativeSeconds(-10);
                     break;
-                case VirtualKey.Right when IsTimelineSeekAllowed():
-                    TrySeekRelativeSeconds(shiftDown ? 30 : 10);
+                case PlaybackRemoteCommand.SeekBackward30:
+                    TrySeekRelativeSeconds(-30);
                     break;
-                case VirtualKey.Up:
+                case PlaybackRemoteCommand.SeekForward10:
+                    TrySeekRelativeSeconds(10);
+                    break;
+                case PlaybackRemoteCommand.SeekForward30:
+                    TrySeekRelativeSeconds(30);
+                    break;
+                case PlaybackRemoteCommand.VolumeUp:
                     AdjustVolume(5);
                     break;
-                case VirtualKey.Down:
+                case PlaybackRemoteCommand.VolumeDown:
                     AdjustVolume(-5);
                     break;
-                case VirtualKey.PageUp when IsLivePlayback():
+                case PlaybackRemoteCommand.PreviousChannel:
                     _ = SwitchRelativeChannelAsync(-1);
                     break;
-                case VirtualKey.PageDown when IsLivePlayback():
+                case PlaybackRemoteCommand.NextChannel:
                     _ = SwitchRelativeChannelAsync(1);
                     break;
-                case VirtualKey.Back when IsLivePlayback() && _lastChannelCandidateId > 0:
+                case PlaybackRemoteCommand.LastChannel:
                     _ = SwitchToChannelAsync(_lastChannelCandidateId, "last_hotkey");
                     break;
-                case VirtualKey.F:
-                    if (!IsPictureInPictureMode())
-                    {
-                        RequestFullscreenToggle("hotkey");
-                    }
+                case PlaybackRemoteCommand.ToggleFullscreen:
+                    RequestFullscreenToggle("hotkey");
                     break;
-                case VirtualKey.M:
+                case PlaybackRemoteCommand.ToggleMute:
                     Mute_Click(this, new RoutedEventArgs());
                     break;
-                case VirtualKey.S:
+                case PlaybackRemoteCommand.ToggleSubtitles:
                     ToggleSubtitleSelection();
                     break;
-                case VirtualKey.A:
+                case PlaybackRemoteCommand.OpenTrackSelection:
                     OpenTracksFlyout();
                     break;
-                case VirtualKey.I:
+                case PlaybackRemoteCommand.ToggleInfoPanel:
                     TogglePanel(nameof(InfoPanel));
                     break;
-                case VirtualKey.G when IsChannelPlayback():
+                case PlaybackRemoteCommand.ToggleGuidePanel:
                     TogglePanel(nameof(MiniGuidePanel));
                     break;
-                case VirtualKey.Escape:
+                case PlaybackRemoteCommand.RestartOrStartOver:
+                    _ = TryRestartOrStartOverAsync();
+                    break;
+                case PlaybackRemoteCommand.GoLive:
+                    if (IsCatchupPlayback())
+                    {
+                        _ = ReturnToLivePlaybackAsync("hotkey");
+                    }
+                    else
+                    {
+                        GoToLiveEdge("hotkey");
+                    }
+                    break;
+                case PlaybackRemoteCommand.StopPlayback:
+                    Stop_Click(this, new RoutedEventArgs());
+                    break;
+                case PlaybackRemoteCommand.CloseContext:
                     if (!HandleEscapeHotkey())
                     {
                         return false;
@@ -1007,6 +1108,29 @@ namespace Kroira.App.Views
             UpdatePlaybackHint();
             e.Handled = true;
             return true;
+        }
+
+        private async Task TryRestartOrStartOverAsync()
+        {
+            if (_context == null)
+            {
+                return;
+            }
+
+            if (IsChannelPlayback())
+            {
+                var currentProgram = _guideProgramItems.FirstOrDefault(item => item.IsCurrent && item.RequestKind != CatchupRequestKind.None);
+                if (currentProgram != null)
+                {
+                    await PlayGuideProgramAsync(currentProgram);
+                    return;
+                }
+            }
+
+            if (IsTimelineSeekAllowed())
+            {
+                RestartPlayerSession("remote_restart", 0);
+            }
         }
 
         private async Task SwitchRelativeChannelAsync(int delta)

@@ -1,0 +1,1078 @@
+{
+  "Sources": [
+    {
+      "Key": "repair-m3u",
+      "Name": "Fixture Repair M3U",
+      "Type": "M3U",
+      "Refresh": {
+        "Success": true,
+        "Trigger": "InitialImport",
+        "Scope": "Full",
+        "Message": "Playlist import completed. Guide sync completed.",
+        "CatalogSummary": "Playlist import completed.",
+        "GuideSummary": "Guide sync completed.",
+        "GuideAttempted": true,
+        "GuideSucceeded": true
+      },
+      "Credential": {
+        "Url": "[fixture-server]/repair-playlist.m3u",
+        "DetectedEpgUrl": "[fixture-server]/guide.xml",
+        "ManualEpgUrl": "",
+        "EpgMode": "Detected",
+        "M3uImportMode": "LiveMoviesAndSeries",
+        "ProxyScope": "Disabled",
+        "ProxyUrl": "",
+        "CompanionScope": "Disabled",
+        "CompanionMode": "Buffered",
+        "CompanionUrl": "",
+        "StalkerMacAddress": "",
+        "StalkerDeviceId": "",
+        "StalkerSerialNumber": "",
+        "StalkerTimezone": "",
+        "StalkerLocale": "",
+        "StalkerApiUrl": ""
+      },
+      "SyncState": {
+        "HttpStatusCode": 200,
+        "ErrorLog": "Parsed 2 channels, 1 movies, 0 episodes across 0 series. Mode: LiveMoviesAndSeries. Uncategorized=0, pseudo_rejected=0, xmltv_found=yes.",
+        "AutoRefreshState": "Disabled",
+        "AutoRefreshSummary": "Automatic refresh is turned off.",
+        "AutoRefreshFailureCount": 0
+      },
+      "Counts": {
+        "Channels": 2,
+        "Movies": 1,
+        "Series": 0,
+        "Seasons": 0,
+        "Episodes": 0,
+        "EpgPrograms": 2
+      },
+      "AcquisitionProfile": {
+        "ProfileKey": "kroira.m3u.balanced",
+        "ProfileLabel": "KROIRA M3U Balanced",
+        "ProviderKey": "127.0.0.1",
+        "NormalizationSummary": "Playlist titles, ids, and group labels normalize into stable identities while keeping provider values intact.",
+        "MatchingSummary": "Guide matching prefers provider ids, then normalized aliases, regex-safe aliases, and bounded fuzzy fallback.",
+        "SuppressionSummary": "Provider buckets, promotional rows, garbage labels, and unsafe adult or bundle groups are suppressed.",
+        "ValidationSummary": "Bounded live and VOD probing stays routing-aware and preserves last-known-good operational recovery paths.",
+        "SupportsRegexMatching": true,
+        "PreferProxyDuringValidation": false,
+        "PreferLastKnownGoodRollback": true
+      },
+      "AcquisitionRun": {
+        "Trigger": "Manual",
+        "Scope": "Full",
+        "Status": "Succeeded",
+        "ProfileKey": "kroira.m3u.balanced",
+        "ProfileLabel": "KROIRA M3U Balanced",
+        "ProviderKey": "127.0.0.1",
+        "RoutingSummary": "Direct routing",
+        "ValidationRoutingSummary": "Direct routing",
+        "Message": "Playlist import completed. Guide sync completed.",
+        "CatalogSummary": "Playlist import completed.",
+        "GuideSummary": "Guide sync completed.",
+        "ValidationSummary": "Component health found serious source problems (39/100). 0 invalid playable items and 1 suspicious entries make the catalog unreliable. VOD data is unreliable across 1 items and needs review. VOD probe reached 1/1 sampled items.",
+        "RawItemCount": 3,
+        "AcceptedCount": 3,
+        "SuppressedCount": 0,
+        "DemotedCount": 0,
+        "MatchedCount": 2,
+        "UnmatchedCount": 0,
+        "LiveCount": 2,
+        "MovieCount": 1,
+        "SeriesCount": 0,
+        "EpisodeCount": 0,
+        "AliasMatchCount": 0,
+        "RegexMatchCount": 0,
+        "FuzzyMatchCount": 0,
+        "ProbeSuccessCount": 3,
+        "ProbeFailureCount": 0,
+        "WarningCount": 2,
+        "ErrorCount": 0
+      },
+      "Health": {
+        "State": "Problematic",
+        "Score": 39,
+        "StatusSummary": "Source needs attention before it can be trusted. 0 invalid playable items and 1 suspicious entries make the catalog unreliable. VOD data is unreliable across 1 items and needs review. VOD probe reached 1/1 sampled items.",
+        "ImportResultSummary": "Parsed 2 channels, 1 movies, 0 episodes across 0 series. Mode: LiveMoviesAndSeries. Uncategorized=0, pseudo_rejected=0, xmltv_found=yes.",
+        "ValidationSummary": "Component health found serious source problems (39/100). 0 invalid playable items and 1 suspicious entries make the catalog unreliable. VOD data is unreliable across 1 items and needs review. VOD probe reached 1/1 sampled items.",
+        "TopIssueSummary": "1 titles or categories look like placeholders, promo rows, or other low-confidence content. 0 of 2 live channels currently have logos.",
+        "DuplicateCount": 0,
+        "InvalidStreamCount": 0,
+        "ChannelsWithEpgMatchCount": 2,
+        "ChannelsWithLogoCount": 0,
+        "SuspiciousEntryCount": 1,
+        "WarningCount": 2,
+        "ErrorCount": 0,
+        "Components": [
+          {
+            "Type": "Catalog",
+            "State": "Problematic",
+            "Score": 39,
+            "Summary": "0 invalid playable items and 1 suspicious entries make the catalog unreliable.",
+            "RelevantCount": 3,
+            "HealthyCount": 2,
+            "IssueCount": 1
+          },
+          {
+            "Type": "Live",
+            "State": "Healthy",
+            "Score": 100,
+            "Summary": "Live catalog is present across 2 channels. Live probe reached 2/2 sampled items.",
+            "RelevantCount": 2,
+            "HealthyCount": 2,
+            "IssueCount": 0
+          },
+          {
+            "Type": "Vod",
+            "State": "Problematic",
+            "Score": 39,
+            "Summary": "VOD data is unreliable across 1 items and needs review. VOD probe reached 1/1 sampled items.",
+            "RelevantCount": 1,
+            "HealthyCount": 0,
+            "IssueCount": 1
+          },
+          {
+            "Type": "Epg",
+            "State": "Incomplete",
+            "Score": 64,
+            "Summary": "Guide coverage is too thin across the 2 live channels.",
+            "RelevantCount": 2,
+            "HealthyCount": 2,
+            "IssueCount": 0
+          },
+          {
+            "Type": "Logos",
+            "State": "Incomplete",
+            "Score": 64,
+            "Summary": "Many live channels are still missing logos (0/2).",
+            "RelevantCount": 2,
+            "HealthyCount": 0,
+            "IssueCount": 2
+          },
+          {
+            "Type": "Freshness",
+            "State": "Healthy",
+            "Score": 100,
+            "Summary": "Last successful sync was [timestamp].",
+            "RelevantCount": 1,
+            "HealthyCount": 1,
+            "IssueCount": 0
+          }
+        ],
+        "Probes": [
+          {
+            "Type": "Live",
+            "Status": "Completed",
+            "CandidateCount": 2,
+            "SampleSize": 2,
+            "SuccessCount": 2,
+            "FailureCount": 0,
+            "TimeoutCount": 0,
+            "HttpErrorCount": 0,
+            "TransportErrorCount": 0,
+            "Summary": "Live probe reached 2/2 sampled items."
+          },
+          {
+            "Type": "Vod",
+            "Status": "Completed",
+            "CandidateCount": 1,
+            "SampleSize": 1,
+            "SuccessCount": 1,
+            "FailureCount": 0,
+            "TimeoutCount": 0,
+            "HttpErrorCount": 0,
+            "TransportErrorCount": 0,
+            "Summary": "VOD probe reached 1/1 sampled items."
+          }
+        ],
+        "Issues": [
+          {
+            "Severity": "Warning",
+            "Code": "suspicious_entries",
+            "Title": "Suspicious entries detected",
+            "AffectedCount": 1,
+            "SampleItems": "Fixture Movie"
+          },
+          {
+            "Severity": "Warning",
+            "Code": "missing_logos",
+            "Title": "Channel branding is thin",
+            "AffectedCount": 2,
+            "SampleItems": ""
+          }
+        ]
+      },
+      "Epg": {
+        "IsPresent": true,
+        "IsSuccess": true,
+        "Status": "Ready",
+        "ResultCode": "Ready",
+        "FailureStage": "None",
+        "ActiveMode": "Detected",
+        "ActiveXmltvUrl": "[fixture-server]/guide.xml",
+        "MatchedChannelCount": 2,
+        "UnmatchedChannelCount": 0,
+        "CurrentCoverageCount": 0,
+        "NextCoverageCount": 0,
+        "TotalLiveChannelCount": 2,
+        "ProgrammeCount": 2,
+        "MatchBreakdown": "provider_id=2; reused=0; normalized=0; alias=0; regex=0; fuzzy=0; unmatched=0",
+        "FailureReason": ""
+      },
+      "Channels": [
+        {
+          "Category": "News",
+          "Name": "Repair News HD",
+          "StreamUrl": "[fixture-server]/probe/live/repair-news.m3u8",
+          "ProviderEpgChannelId": "repair.news",
+          "EpgChannelId": "repair.news",
+          "ProviderLogoUrl": "",
+          "LogoUrl": "",
+          "NormalizedIdentityKey": "id:repairnews",
+          "AliasKeys": "repair.news\nrepairnews",
+          "EpgMatchSource": "Provider",
+          "EpgMatchConfidence": 97,
+          "EpgMatchSummary": "Provider guide metadata matched XMLTV channel Repair News HD.",
+          "LogoSource": "None",
+          "LogoConfidence": 0,
+          "LogoSummary": "",
+          "SupportsCatchup": false,
+          "CatchupWindowHours": 0,
+          "CatchupSource": "None",
+          "CatchupConfidence": 0,
+          "CatchupSummary": "No clear provider catchup signal was detected."
+        },
+        {
+          "Category": "Sports",
+          "Name": "Repair Archive HD",
+          "StreamUrl": "[fixture-server]/probe/live/repair-archive.m3u8",
+          "ProviderEpgChannelId": "repair.archive",
+          "EpgChannelId": "repair.archive",
+          "ProviderLogoUrl": "",
+          "LogoUrl": "",
+          "NormalizedIdentityKey": "id:repairarchive",
+          "AliasKeys": "repair.archive\nrepairarchive",
+          "EpgMatchSource": "Provider",
+          "EpgMatchConfidence": 97,
+          "EpgMatchSummary": "Provider guide metadata matched XMLTV channel Repair Archive HD.",
+          "LogoSource": "None",
+          "LogoConfidence": 0,
+          "LogoSummary": "",
+          "SupportsCatchup": true,
+          "CatchupWindowHours": 48,
+          "CatchupSource": "M3uAttributes",
+          "CatchupConfidence": 84,
+          "CatchupSummary": "Catchup available for about 2 days."
+        }
+      ],
+      "Movies": [
+        {
+          "Title": "Fixture Movie",
+          "RawTitle": "Fixture Movie",
+          "CategoryName": "Movies",
+          "ContentKind": "Primary",
+          "CanonicalTitleKey": "fixture movie",
+          "DedupFingerprint": "movie:source:Primary:1:url:[fixture-server]/probe/vod/fixture-movie.mp4",
+          "StreamUrl": "[fixture-server]/probe/vod/fixture-movie.mp4"
+        }
+      ],
+      "Series": [],
+      "Enrichment": [
+        {
+          "IdentityKey": "id:repairarchive",
+          "NormalizedName": "repair archive",
+          "AliasKeys": "repair.archive\nrepairarchive",
+          "MatchedXmltvChannelId": "repair.archive",
+          "MatchedXmltvDisplayName": "Repair Archive HD",
+          "ResolvedLogoUrl": "",
+          "EpgMatchSource": "Provider",
+          "EpgMatchConfidence": 97,
+          "LogoSource": "None",
+          "LogoConfidence": 0
+        },
+        {
+          "IdentityKey": "id:repairnews",
+          "NormalizedName": "repair news",
+          "AliasKeys": "repair.news\nrepairnews",
+          "MatchedXmltvChannelId": "repair.news",
+          "MatchedXmltvDisplayName": "Repair News HD",
+          "ResolvedLogoUrl": "",
+          "EpgMatchSource": "Provider",
+          "EpgMatchConfidence": 97,
+          "LogoSource": "None",
+          "LogoConfidence": 0
+        }
+      ],
+      "AcquisitionEvidence": [
+        {
+          "Stage": "Validation",
+          "Outcome": "Matched",
+          "ItemKind": "Probe",
+          "RuleCode": "validation.probe.live",
+          "Reason": "Live probe reached 2/2 sampled items.",
+          "RawName": "Live",
+          "NormalizedName": "",
+          "MatchedTarget": "",
+          "Confidence": 100
+        },
+        {
+          "Stage": "Validation",
+          "Outcome": "Matched",
+          "ItemKind": "Probe",
+          "RuleCode": "validation.probe.vod",
+          "Reason": "VOD probe reached 1/1 sampled items.",
+          "RawName": "Vod",
+          "NormalizedName": "",
+          "MatchedTarget": "",
+          "Confidence": 100
+        },
+        {
+          "Stage": "Validation",
+          "Outcome": "Warning",
+          "ItemKind": "Source",
+          "RuleCode": "suspicious_entries",
+          "Reason": "1 titles or categories look like placeholders, promo rows, or other low-confidence content.",
+          "RawName": "Suspicious entries detected",
+          "NormalizedName": "",
+          "MatchedTarget": "",
+          "Confidence": 0
+        },
+        {
+          "Stage": "Validation",
+          "Outcome": "Warning",
+          "ItemKind": "Source",
+          "RuleCode": "missing_logos",
+          "Reason": "0 of 2 live channels currently have logos.",
+          "RawName": "Channel branding is thin",
+          "NormalizedName": "",
+          "MatchedTarget": "",
+          "Confidence": 0
+        }
+      ]
+    },
+    {
+      "Key": "repair-stalker",
+      "Name": "Fixture Repair Stalker",
+      "Type": "Stalker",
+      "Refresh": {
+        "Success": true,
+        "Trigger": "InitialImport",
+        "Scope": "Full",
+        "Message": "Stalker catalog refresh completed.",
+        "CatalogSummary": "Stalker catalog refresh completed.",
+        "GuideSummary": "",
+        "GuideAttempted": false,
+        "GuideSucceeded": false
+      },
+      "Credential": {
+        "Url": "[fixture-server]/stalker-partial/c",
+        "DetectedEpgUrl": "",
+        "ManualEpgUrl": "",
+        "EpgMode": "Detected",
+        "M3uImportMode": "LiveMoviesAndSeries",
+        "ProxyScope": "Disabled",
+        "ProxyUrl": "",
+        "CompanionScope": "Disabled",
+        "CompanionMode": "Buffered",
+        "CompanionUrl": "",
+        "StalkerMacAddress": "00:1A:79:10:00:55",
+        "StalkerDeviceId": "",
+        "StalkerSerialNumber": "",
+        "StalkerTimezone": "Europe/Istanbul",
+        "StalkerLocale": "en",
+        "StalkerApiUrl": ""
+      },
+      "SyncState": {
+        "HttpStatusCode": 200,
+        "ErrorLog": "Stalker sync imported 1 live, 1 movies, and 0 series.",
+        "AutoRefreshState": "Disabled",
+        "AutoRefreshSummary": "Automatic refresh is turned off.",
+        "AutoRefreshFailureCount": 0
+      },
+      "Counts": {
+        "Channels": 1,
+        "Movies": 1,
+        "Series": 0,
+        "Seasons": 0,
+        "Episodes": 0,
+        "EpgPrograms": 0
+      },
+      "AcquisitionProfile": {
+        "ProfileKey": "kroira.stalker.portal",
+        "ProfileLabel": "KROIRA Stalker Portal",
+        "ProviderKey": "127.0.0.1",
+        "NormalizationSummary": "Portal titles, genre ids, and command locators normalize into stable catalog identities while keeping provider fields intact.",
+        "MatchingSummary": "Portal item ids stay durable while live channels reuse normalized aliases, regex-safe guide matching, and bounded fuzzy fallback.",
+        "SuppressionSummary": "Broken portal rows, unsafe categories, missing commands, and series without usable episodes are suppressed without poisoning the source.",
+        "ValidationSummary": "Bounded live and VOD probing stays routing-aware and preserves last-known-good operational recovery paths.",
+        "SupportsRegexMatching": true,
+        "PreferProxyDuringValidation": false,
+        "PreferLastKnownGoodRollback": true
+      },
+      "AcquisitionRun": {
+        "Trigger": "InitialImport",
+        "Scope": "Full",
+        "Status": "Succeeded",
+        "ProfileKey": "kroira.stalker.portal",
+        "ProfileLabel": "KROIRA Stalker Portal",
+        "ProviderKey": "127.0.0.1",
+        "RoutingSummary": "Direct routing",
+        "ValidationRoutingSummary": "Direct routing",
+        "Message": "Stalker catalog refresh completed.",
+        "CatalogSummary": "Stalker catalog refresh completed.",
+        "GuideSummary": "",
+        "ValidationSummary": "Component health is usable but uneven (84/100). Many live channels are still missing logos (0/1).",
+        "RawItemCount": 2,
+        "AcceptedCount": 2,
+        "SuppressedCount": 0,
+        "DemotedCount": 0,
+        "MatchedCount": 0,
+        "UnmatchedCount": 0,
+        "LiveCount": 1,
+        "MovieCount": 1,
+        "SeriesCount": 0,
+        "EpisodeCount": 0,
+        "AliasMatchCount": 0,
+        "RegexMatchCount": 0,
+        "FuzzyMatchCount": 0,
+        "ProbeSuccessCount": 2,
+        "ProbeFailureCount": 0,
+        "WarningCount": 2,
+        "ErrorCount": 0
+      },
+      "Health": {
+        "State": "Weak",
+        "Score": 84,
+        "StatusSummary": "Source works, but quality is uneven. Many live channels are still missing logos (0/1).",
+        "ImportResultSummary": "Stalker sync imported 1 live, 1 movies, and 0 series.",
+        "ValidationSummary": "Component health is usable but uneven (84/100). Many live channels are still missing logos (0/1).",
+        "TopIssueSummary": "Live channels imported successfully, but none of them match persisted guide data. 0 of 1 live channels currently have logos.",
+        "DuplicateCount": 0,
+        "InvalidStreamCount": 0,
+        "ChannelsWithEpgMatchCount": 0,
+        "ChannelsWithLogoCount": 0,
+        "SuspiciousEntryCount": 0,
+        "WarningCount": 2,
+        "ErrorCount": 0,
+        "Components": [
+          {
+            "Type": "Catalog",
+            "State": "Healthy",
+            "Score": 100,
+            "Summary": "Catalog looks coherent across 2 items.",
+            "RelevantCount": 2,
+            "HealthyCount": 2,
+            "IssueCount": 0
+          },
+          {
+            "Type": "Live",
+            "State": "Healthy",
+            "Score": 100,
+            "Summary": "Live catalog is present across 1 channels. Live probe reached 1/1 sampled items.",
+            "RelevantCount": 1,
+            "HealthyCount": 1,
+            "IssueCount": 0
+          },
+          {
+            "Type": "Vod",
+            "State": "Healthy",
+            "Score": 100,
+            "Summary": "VOD catalog is present across 1 movies and 0 series. VOD probe reached 1/1 sampled items.",
+            "RelevantCount": 1,
+            "HealthyCount": 1,
+            "IssueCount": 0
+          },
+          {
+            "Type": "Epg",
+            "State": "NotApplicable",
+            "Score": 0,
+            "Summary": "Guide is optional for this Stalker source until you add a manual XMLTV feed.",
+            "RelevantCount": 1,
+            "HealthyCount": 0,
+            "IssueCount": 0
+          },
+          {
+            "Type": "Logos",
+            "State": "Incomplete",
+            "Score": 64,
+            "Summary": "Many live channels are still missing logos (0/1).",
+            "RelevantCount": 1,
+            "HealthyCount": 0,
+            "IssueCount": 1
+          },
+          {
+            "Type": "Freshness",
+            "State": "Healthy",
+            "Score": 100,
+            "Summary": "Last successful sync was [timestamp].",
+            "RelevantCount": 1,
+            "HealthyCount": 1,
+            "IssueCount": 0
+          }
+        ],
+        "Probes": [
+          {
+            "Type": "Live",
+            "Status": "Completed",
+            "CandidateCount": 1,
+            "SampleSize": 1,
+            "SuccessCount": 1,
+            "FailureCount": 0,
+            "TimeoutCount": 0,
+            "HttpErrorCount": 0,
+            "TransportErrorCount": 0,
+            "Summary": "Live probe reached 1/1 sampled items."
+          },
+          {
+            "Type": "Vod",
+            "Status": "Completed",
+            "CandidateCount": 1,
+            "SampleSize": 1,
+            "SuccessCount": 1,
+            "FailureCount": 0,
+            "TimeoutCount": 0,
+            "HttpErrorCount": 0,
+            "TransportErrorCount": 0,
+            "Summary": "VOD probe reached 1/1 sampled items."
+          }
+        ],
+        "Issues": [
+          {
+            "Severity": "Warning",
+            "Code": "guide_zero_coverage",
+            "Title": "Guide coverage is empty",
+            "AffectedCount": 1,
+            "SampleItems": ""
+          },
+          {
+            "Severity": "Warning",
+            "Code": "missing_logos",
+            "Title": "Channel branding is thin",
+            "AffectedCount": 1,
+            "SampleItems": ""
+          }
+        ]
+      },
+      "Epg": {
+        "IsPresent": false,
+        "IsSuccess": false,
+        "Status": "",
+        "ResultCode": "",
+        "FailureStage": "",
+        "ActiveMode": "",
+        "ActiveXmltvUrl": "",
+        "MatchedChannelCount": 0,
+        "UnmatchedChannelCount": 0,
+        "CurrentCoverageCount": 0,
+        "NextCoverageCount": 0,
+        "TotalLiveChannelCount": 0,
+        "ProgrammeCount": 0,
+        "MatchBreakdown": "",
+        "FailureReason": ""
+      },
+      "StalkerPortal": {
+        "PortalName": "Fixture Partial Portal",
+        "PortalVersion": "5.6.2",
+        "ProfileName": "Bedroom",
+        "ProfileId": "52",
+        "MacAddress": "00:1A:79:10:00:55",
+        "DeviceId": "db1c1c7c03c9b7d0ad93693719c1e659",
+        "SerialNumber": "001A79100055",
+        "Locale": "en",
+        "Timezone": "Europe/Istanbul",
+        "DiscoveredApiUrl": "[fixture-server]/stalker-partial/c/portal.php",
+        "SupportsLive": true,
+        "SupportsMovies": true,
+        "SupportsSeries": true,
+        "LiveCategoryCount": 1,
+        "MovieCategoryCount": 1,
+        "SeriesCategoryCount": 1,
+        "Summary": "Portal Fixture Partial Portal at [fixture-server]/stalker-partial/c/portal.php exposed 1 live, 1 movies, and 0 series.",
+        "Error": "Series could not be loaded: Response status code does not indicate success: 500 (Internal Server Error)."
+      },
+      "Channels": [
+        {
+          "Category": "Sports",
+          "Name": "Fixture Sports HD",
+          "StreamUrl": "stalker://live/551?source=2\u0026cmd=ffmpeg%20%2Fstalker-partial%2Flive%2F551.ts",
+          "ProviderEpgChannelId": "fixture.sports",
+          "EpgChannelId": "fixture.sports",
+          "ProviderLogoUrl": "/stalker-partial/assets/sports.png",
+          "LogoUrl": "",
+          "NormalizedIdentityKey": "id:fixturesports",
+          "AliasKeys": "fixture.sports\nfixturesports",
+          "EpgMatchSource": "Provider",
+          "EpgMatchConfidence": 70,
+          "EpgMatchSummary": "Using provider guide metadata until XMLTV confirms a better match.",
+          "LogoSource": "None",
+          "LogoConfidence": 0,
+          "LogoSummary": "",
+          "SupportsCatchup": false,
+          "CatchupWindowHours": 0,
+          "CatchupSource": "None",
+          "CatchupConfidence": 0,
+          "CatchupSummary": "Catchup is not currently advertised by this Stalker source."
+        }
+      ],
+      "Movies": [
+        {
+          "Title": "Fixture Movie",
+          "RawTitle": "Fixture Movie",
+          "CategoryName": "Movies",
+          "ContentKind": "Primary",
+          "CanonicalTitleKey": "fixture movie",
+          "DedupFingerprint": "movie:source:Primary:2:ext:651",
+          "StreamUrl": "stalker://movie/651?source=2\u0026cmd=ffmpeg%20%2Fstalker-partial%2Fvod%2F651.mp4"
+        }
+      ],
+      "Series": [],
+      "Enrichment": [
+        {
+          "IdentityKey": "id:fixturesports",
+          "NormalizedName": "fixture sports",
+          "AliasKeys": "fixture.sports\nfixturesports",
+          "MatchedXmltvChannelId": "",
+          "MatchedXmltvDisplayName": "",
+          "ResolvedLogoUrl": "",
+          "EpgMatchSource": "None",
+          "EpgMatchConfidence": 0,
+          "LogoSource": "None",
+          "LogoConfidence": 0
+        }
+      ],
+      "AcquisitionEvidence": [
+        {
+          "Stage": "Validation",
+          "Outcome": "Matched",
+          "ItemKind": "Probe",
+          "RuleCode": "validation.probe.live",
+          "Reason": "Live probe reached 1/1 sampled items.",
+          "RawName": "Live",
+          "NormalizedName": "",
+          "MatchedTarget": "",
+          "Confidence": 100
+        },
+        {
+          "Stage": "Validation",
+          "Outcome": "Matched",
+          "ItemKind": "Probe",
+          "RuleCode": "validation.probe.vod",
+          "Reason": "VOD probe reached 1/1 sampled items.",
+          "RawName": "Vod",
+          "NormalizedName": "",
+          "MatchedTarget": "",
+          "Confidence": 100
+        },
+        {
+          "Stage": "Validation",
+          "Outcome": "Warning",
+          "ItemKind": "Source",
+          "RuleCode": "guide_zero_coverage",
+          "Reason": "Live channels imported successfully, but none of them match persisted guide data.",
+          "RawName": "Guide coverage is empty",
+          "NormalizedName": "",
+          "MatchedTarget": "",
+          "Confidence": 0
+        },
+        {
+          "Stage": "Validation",
+          "Outcome": "Warning",
+          "ItemKind": "Source",
+          "RuleCode": "missing_logos",
+          "Reason": "0 of 1 live channels currently have logos.",
+          "RawName": "Channel branding is thin",
+          "NormalizedName": "",
+          "MatchedTarget": "",
+          "Confidence": 0
+        }
+      ]
+    }
+  ],
+  "OperationalStates": [
+    {
+      "ContentType": "Channel",
+      "LogicalContentKey": "id:fixturesports",
+      "CandidateCount": 1,
+      "PreferredSourceName": "Fixture Repair Stalker",
+      "PreferredTitle": "Fixture Sports HD",
+      "PreferredScore": 93,
+      "SelectionSummary": "Using Fixture Repair Stalker. Probe-backed, guide mapped.",
+      "RecoveryAction": "None",
+      "RecoverySummary": "",
+      "Candidates": [
+        {
+          "Rank": 1,
+          "SourceName": "Fixture Repair Stalker",
+          "Title": "Fixture Sports HD",
+          "Score": 93,
+          "IsSelected": true,
+          "IsLastKnownGood": true,
+          "SupportsProxy": false,
+          "Summary": "Probe-backed, guide mapped."
+        }
+      ]
+    },
+    {
+      "ContentType": "Channel",
+      "LogicalContentKey": "id:repairarchive",
+      "CandidateCount": 1,
+      "PreferredSourceName": "Fixture Repair M3U",
+      "PreferredTitle": "Repair Archive HD",
+      "PreferredScore": 83,
+      "SelectionSummary": "Using Fixture Repair M3U. Probe-backed, guide mapped, catchup.",
+      "RecoveryAction": "None",
+      "RecoverySummary": "",
+      "Candidates": [
+        {
+          "Rank": 1,
+          "SourceName": "Fixture Repair M3U",
+          "Title": "Repair Archive HD",
+          "Score": 83,
+          "IsSelected": true,
+          "IsLastKnownGood": true,
+          "SupportsProxy": false,
+          "Summary": "Probe-backed, guide mapped, catchup."
+        }
+      ]
+    },
+    {
+      "ContentType": "Channel",
+      "LogicalContentKey": "id:repairnews",
+      "CandidateCount": 1,
+      "PreferredSourceName": "Fixture Repair M3U",
+      "PreferredTitle": "Repair News HD",
+      "PreferredScore": 82,
+      "SelectionSummary": "Using Fixture Repair M3U. Probe-backed, guide mapped.",
+      "RecoveryAction": "None",
+      "RecoverySummary": "",
+      "Candidates": [
+        {
+          "Rank": 1,
+          "SourceName": "Fixture Repair M3U",
+          "Title": "Repair News HD",
+          "Score": 82,
+          "IsSelected": true,
+          "IsLastKnownGood": true,
+          "SupportsProxy": false,
+          "Summary": "Probe-backed, guide mapped."
+        }
+      ]
+    },
+    {
+      "ContentType": "Movie",
+      "LogicalContentKey": "movie:source:Primary:1:url:[fixture-server]/probe/vod/fixture-movie.mp4",
+      "CandidateCount": 1,
+      "PreferredSourceName": "Fixture Repair M3U",
+      "PreferredTitle": "Fixture Movie",
+      "PreferredScore": 58,
+      "SelectionSummary": "Using Fixture Repair M3U. Probe-backed.",
+      "RecoveryAction": "None",
+      "RecoverySummary": "",
+      "Candidates": [
+        {
+          "Rank": 1,
+          "SourceName": "Fixture Repair M3U",
+          "Title": "Fixture Movie",
+          "Score": 58,
+          "IsSelected": true,
+          "IsLastKnownGood": true,
+          "SupportsProxy": false,
+          "Summary": "Probe-backed."
+        }
+      ]
+    },
+    {
+      "ContentType": "Movie",
+      "LogicalContentKey": "movie:source:Primary:2:ext:651",
+      "CandidateCount": 1,
+      "PreferredSourceName": "Fixture Repair Stalker",
+      "PreferredTitle": "Fixture Movie",
+      "PreferredScore": 93,
+      "SelectionSummary": "Using Fixture Repair Stalker. Probe-backed, poster, overview.",
+      "RecoveryAction": "None",
+      "RecoverySummary": "",
+      "Candidates": [
+        {
+          "Rank": 1,
+          "SourceName": "Fixture Repair Stalker",
+          "Title": "Fixture Movie",
+          "Score": 93,
+          "IsSelected": true,
+          "IsLastKnownGood": true,
+          "SupportsProxy": false,
+          "Summary": "Probe-backed, poster, overview."
+        }
+      ]
+    }
+  ],
+  "SetupValidations": [
+    {
+      "Id": "setup_m3u",
+      "RequestedType": "M3U",
+      "DetectedTypeHint": "M3U",
+      "CanSave": true,
+      "Headline": "Playlist looks importable",
+      "Summary": "Live \u002B Movies was detected in the sampled playlist preview.",
+      "Connection": "KROIRA reached the playlist and parsed a representative slice successfully.",
+      "TypeHint": "M3U setup and the tested endpoint look consistent.",
+      "CapabilitySummary": "Connection: Playlist reachable / Catalog: Live \u002B Movies / Guide: Guide found / Catchup: 1 hints",
+      "SafeReport": "KROIRA source setup report\r\nSensitive values are redacted.\r\n\r\nRequested type: M3U\r\nHeadline: Playlist looks importable\r\nSummary: Live \u002B Movies was detected in the sampled playlist preview.\r\nConnection: KROIRA reached the playlist and parsed a representative slice successfully.\r\nType hint: M3U setup and the tested endpoint look consistent.\r\n\r\nCapabilities\r\nConnection: Playlist reachable - Sampled 3 entries without provider auth errors.\r\nCatalog: Live \u002B Movies - 2 live, 1 VOD, 0 episodic hints in the sampled slice.\r\nGuide: Guide found - [fixture-server]/guide.xml\r\nCatchup: 1 hints - Catchup attributes or archive-style stream patterns were found in the sampled slice.",
+      "Capabilities": [
+        {
+          "Label": "Connection",
+          "Value": "Playlist reachable",
+          "Detail": "Sampled 3 entries without provider auth errors.",
+          "Tone": "Healthy"
+        },
+        {
+          "Label": "Catalog",
+          "Value": "Live \u002B Movies",
+          "Detail": "2 live, 1 VOD, 0 episodic hints in the sampled slice.",
+          "Tone": "Healthy"
+        },
+        {
+          "Label": "Guide",
+          "Value": "Guide found",
+          "Detail": "[fixture-server]/guide.xml",
+          "Tone": "Healthy"
+        },
+        {
+          "Label": "Catchup",
+          "Value": "1 hints",
+          "Detail": "Catchup attributes or archive-style stream patterns were found in the sampled slice.",
+          "Tone": "Healthy"
+        }
+      ],
+      "Issues": []
+    },
+    {
+      "Id": "setup_xtream",
+      "RequestedType": "Xtream",
+      "DetectedTypeHint": "Xtream",
+      "CanSave": true,
+      "Headline": "Xtream provider looks reachable",
+      "Summary": "Live \u002B Movies \u002B Series was confirmed through player_api preview calls.",
+      "Connection": "KROIRA reached the Xtream player_api endpoints with the supplied credentials.",
+      "TypeHint": "Xtream setup and the tested endpoint look consistent.",
+      "CapabilitySummary": "Connection: Credentials accepted / Catalog: Live \u002B Movies \u002B Series / Guide: Guide derived / Catchup: 1 archive hints",
+      "SafeReport": "KROIRA source setup report\r\nSensitive values are redacted.\r\n\r\nRequested type: Xtream\r\nHeadline: Xtream provider looks reachable\r\nSummary: Live \u002B Movies \u002B Series was confirmed through player_api preview calls.\r\nConnection: KROIRA reached the Xtream player_api endpoints with the supplied credentials.\r\nType hint: Xtream setup and the tested endpoint look consistent.\r\n\r\nCapabilities\r\nConnection: Credentials accepted - 1 live stream rows were reachable during the preview.\r\nCatalog: Live \u002B Movies \u002B Series - 1 live categories, 1 movie categories, 1 series categories.\r\nGuide: Guide derived - [fixture-server]/xtream/xmltv.php?username=***\u0026password=***\r\nCatchup: 1 archive hints - Archive-capable channels were detected in the sampled live stream list.",
+      "Capabilities": [
+        {
+          "Label": "Connection",
+          "Value": "Credentials accepted",
+          "Detail": "1 live stream rows were reachable during the preview.",
+          "Tone": "Healthy"
+        },
+        {
+          "Label": "Catalog",
+          "Value": "Live \u002B Movies \u002B Series",
+          "Detail": "1 live categories, 1 movie categories, 1 series categories.",
+          "Tone": "Healthy"
+        },
+        {
+          "Label": "Guide",
+          "Value": "Guide derived",
+          "Detail": "[fixture-server]/xtream/xmltv.php?username=***\u0026password=***",
+          "Tone": "Healthy"
+        },
+        {
+          "Label": "Catchup",
+          "Value": "1 archive hints",
+          "Detail": "Archive-capable channels were detected in the sampled live stream list.",
+          "Tone": "Healthy"
+        }
+      ],
+      "Issues": []
+    },
+    {
+      "Id": "setup_stalker",
+      "RequestedType": "Stalker",
+      "DetectedTypeHint": "Stalker",
+      "CanSave": true,
+      "Headline": "Portal handshake completed",
+      "Summary": "Live \u002B Movies was confirmed through the portal preview.",
+      "Connection": "KROIRA completed handshake and profile discovery with the supplied portal identity.",
+      "TypeHint": "Stalker setup and the tested endpoint look consistent.",
+      "CapabilitySummary": "Connection: Portal reachable / Catalog: Live \u002B Movies / Portal profile: Living Room / Guide: Manual guide optional",
+      "SafeReport": "KROIRA source setup report\r\nSensitive values are redacted.\r\n\r\nRequested type: Stalker\r\nHeadline: Portal handshake completed\r\nSummary: Live \u002B Movies was confirmed through the portal preview.\r\nConnection: KROIRA completed handshake and profile discovery with the supplied portal identity.\r\nType hint: Stalker setup and the tested endpoint look consistent.\r\n\r\nCapabilities\r\nConnection: Portal reachable - [fixture-server]/stalker-ok/c/portal.php\r\nCatalog: Live \u002B Movies - 1 live, 1 movies, 0 series items discovered.\r\nPortal profile: Living Room - Fixture Setup Portal\r\nGuide: Manual guide optional - Stalker portals do not always expose XMLTV directly. Add a manual guide only when you have one.",
+      "Capabilities": [
+        {
+          "Label": "Connection",
+          "Value": "Portal reachable",
+          "Detail": "[fixture-server]/stalker-ok/c/portal.php",
+          "Tone": "Healthy"
+        },
+        {
+          "Label": "Catalog",
+          "Value": "Live \u002B Movies",
+          "Detail": "1 live, 1 movies, 0 series items discovered.",
+          "Tone": "Healthy"
+        },
+        {
+          "Label": "Portal profile",
+          "Value": "Living Room",
+          "Detail": "Fixture Setup Portal",
+          "Tone": "Healthy"
+        },
+        {
+          "Label": "Guide",
+          "Value": "Manual guide optional",
+          "Detail": "Stalker portals do not always expose XMLTV directly. Add a manual guide only when you have one.",
+          "Tone": "Neutral"
+        }
+      ],
+      "Issues": []
+    }
+  ],
+  "SourceRepairs": [
+    {
+      "Id": "repair_m3u_before",
+      "SourceKey": "repair-m3u",
+      "IsStable": false,
+      "Headline": "Companion routing is getting in the way",
+      "Summary": "Live probe reached 2/2 sampled items. Route: Companion relay unavailable. Direct provider path kept.",
+      "Status": "Sync succeeded at [timestamp] [timestamp] - Sync succeeded",
+      "CapabilitySummary": "Catalog: Live \u002B Movies / Guide: Guide ready / Catchup: 1 channels / Routing: Companion enabled",
+      "SafeReport": "KROIRA source repair report\r\nSensitive values are redacted.\r\n\r\nSource: Fixture Repair M3U\r\nType: M3U\r\nHeadline: Companion routing is getting in the way\r\nSummary: Live probe reached 2/2 sampled items. Route: Companion relay unavailable. Direct provider path kept.\r\nCurrent status: Sync succeeded at [timestamp] [timestamp] - Sync succeeded\r\nActivity focus: Health Problematic Guide Guide ready Direct routing Playback \u002B probe companion: buffered relay via [fixture-server]/companion-down\r\nLatest attempt: Sync succeeded at [timestamp]\r\nLast success: [timestamp] - Sync succeeded\r\nHealth: Problematic / 39/100\r\n\r\nCapabilities\r\nCatalog: Live \u002B Movies - 2 live, 1 movies, 0 series.\r\nGuide: Guide ready - 2/2 live channels matched. Current coverage 0/2, next coverage 0/2, unmatched 0.\r\nCatchup: 1 channels - 1 live channel(s) advertise catchup or start-over support.\r\nRouting: Companion enabled - Companion enabled (buffered relay) via [fixture-server]/companion-down.\r\n\r\nCurrent issues\r\nSuspicious entries detected: 1 titles or categories look like placeholders, promo rows, or other low-confidence content.\r\nChannel branding is thin: 0 of 2 live channels currently have logos.\r\n\r\nSuggested actions\r\nDisable companion: Keep the provider path direct for this source, then rerun refresh and validation.\r\nRetest guide: Retry XMLTV fetch and rematch without changing catalog settings.\r\nGuide settings: Check detected versus manual XMLTV and routing choices before the next guide sync.",
+      "Capabilities": [
+        {
+          "Label": "Catalog",
+          "Value": "Live \u002B Movies",
+          "Detail": "2 live, 1 movies, 0 series.",
+          "Tone": "Healthy"
+        },
+        {
+          "Label": "Guide",
+          "Value": "Guide ready",
+          "Detail": "2/2 live channels matched. Current coverage 0/2, next coverage 0/2, unmatched 0.",
+          "Tone": "Healthy"
+        },
+        {
+          "Label": "Catchup",
+          "Value": "1 channels",
+          "Detail": "1 live channel(s) advertise catchup or start-over support.",
+          "Tone": "Healthy"
+        },
+        {
+          "Label": "Routing",
+          "Value": "Companion enabled",
+          "Detail": "Companion enabled (buffered relay) via [fixture-server]/companion-down.",
+          "Tone": "Neutral"
+        }
+      ],
+      "Issues": [
+        {
+          "Title": "Suspicious entries detected",
+          "Detail": "1 titles or categories look like placeholders, promo rows, or other low-confidence content.",
+          "Tone": "Warning"
+        },
+        {
+          "Title": "Channel branding is thin",
+          "Detail": "0 of 2 live channels currently have logos.",
+          "Tone": "Warning"
+        }
+      ],
+      "Actions": [
+        {
+          "ActionType": "DisableCompanionRelay",
+          "Kind": "Apply",
+          "IsPrimary": true,
+          "Title": "Disable local companion relay",
+          "Summary": "Keep the provider path direct for this source, then rerun refresh and validation.",
+          "ButtonText": "Disable companion",
+          "Tone": "Warning"
+        },
+        {
+          "ActionType": "RetestGuide",
+          "Kind": "Apply",
+          "IsPrimary": false,
+          "Title": "Retest guide feed",
+          "Summary": "Retry XMLTV fetch and rematch without changing catalog settings.",
+          "ButtonText": "Retest guide",
+          "Tone": "Warning"
+        },
+        {
+          "ActionType": "ReviewGuideSettings",
+          "Kind": "Review",
+          "IsPrimary": false,
+          "Title": "Review guide settings",
+          "Summary": "Check detected versus manual XMLTV and routing choices before the next guide sync.",
+          "ButtonText": "Guide settings",
+          "Tone": "Neutral"
+        }
+      ]
+    },
+    {
+      "Id": "repair_stalker_before",
+      "SourceKey": "repair-stalker",
+      "IsStable": false,
+      "Headline": "Portal connection needs attention",
+      "Summary": "Series could not be loaded: Response status code does not indicate success: 500 (Internal Server Error).",
+      "Status": "Sync succeeded at [timestamp] [timestamp] - Sync succeeded",
+      "CapabilitySummary": "Catalog: Live \u002B Movies / Guide: Guide not synced / Catchup: No advertised support / Routing: Direct",
+      "SafeReport": "KROIRA source repair report\r\nSensitive values are redacted.\r\n\r\nSource: Fixture Repair Stalker\r\nType: Stalker\r\nHeadline: Portal connection needs attention\r\nSummary: Series could not be loaded: Response status code does not indicate success: 500 (Internal Server Error).\r\nCurrent status: Sync succeeded at [timestamp] [timestamp] - Sync succeeded\r\nActivity focus: Health Weak Guide Guide not synced Direct routing Local companion relay off\r\nLatest attempt: Sync succeeded at [timestamp]\r\nLast success: [timestamp] - Sync succeeded\r\nHealth: Weak / 84/100\r\n\r\nCapabilities\r\nCatalog: Live \u002B Movies - 1 live, 1 movies, 0 series.\r\nGuide: Guide not synced - 0/1 live channels matched. Current coverage 0/1, next coverage 0/1, unmatched 1.\r\nCatchup: No advertised support - No live channels advertise catchup on this source.\r\nRouting: Direct - Direct routing\r\n\r\nCurrent issues\r\nGuide coverage is empty: Live channels imported successfully, but none of them match persisted guide data.\r\nChannel branding is thin: 0 of 1 live channels currently have logos.\r\n\r\nSuggested actions\r\nRefresh portal: Run a fresh Stalker handshake, reload profile data, and retest the portal catalog.",
+      "Capabilities": [
+        {
+          "Label": "Catalog",
+          "Value": "Live \u002B Movies",
+          "Detail": "1 live, 1 movies, 0 series.",
+          "Tone": "Healthy"
+        },
+        {
+          "Label": "Guide",
+          "Value": "Guide not synced",
+          "Detail": "0/1 live channels matched. Current coverage 0/1, next coverage 0/1, unmatched 1.",
+          "Tone": "Neutral"
+        },
+        {
+          "Label": "Catchup",
+          "Value": "No advertised support",
+          "Detail": "No live channels advertise catchup on this source.",
+          "Tone": "Neutral"
+        },
+        {
+          "Label": "Routing",
+          "Value": "Direct",
+          "Detail": "Direct routing",
+          "Tone": "Healthy"
+        }
+      ],
+      "Issues": [
+        {
+          "Title": "Guide coverage is empty",
+          "Detail": "Live channels imported successfully, but none of them match persisted guide data.",
+          "Tone": "Warning"
+        },
+        {
+          "Title": "Channel branding is thin",
+          "Detail": "0 of 1 live channels currently have logos.",
+          "Tone": "Warning"
+        }
+      ],
+      "Actions": [
+        {
+          "ActionType": "RefreshPortalProfile",
+          "Kind": "Apply",
+          "IsPrimary": true,
+          "Title": "Refresh portal profile",
+          "Summary": "Run a fresh Stalker handshake, reload profile data, and retest the portal catalog.",
+          "ButtonText": "Refresh portal",
+          "Tone": "Warning"
+        }
+      ]
+    }
+  ],
+  "SourceRepairActions": [
+    {
+      "Id": "disable_companion",
+      "SourceKey": "repair-m3u",
+      "ActionType": "DisableCompanionRelay",
+      "Success": true,
+      "Headline": "Repair applied, but the source still needs attention",
+      "Detail": "Routing saved. Existing guide data is unchanged until the next sync. Playlist import completed. Guide sync completed.",
+      "Change": "Companion policy changed from Playback \u002B probe companion: buffered relay via [fixture-server]/companion-down to Local companion relay off. Top repair focus changed from Companion routing is getting in the way to Guide data needs attention.",
+      "SafeReport": "KROIRA repair execution\r\nSensitive values are redacted.\r\n\r\nAction: DisableCompanionRelay\r\nResult: Completed\r\nDetail: Routing saved. Existing guide data is unchanged until the next sync. Playlist import completed. Guide sync completed.\r\nChange: Companion policy changed from Playback \u002B probe companion: buffered relay via [fixture-server]/companion-down to Local companion relay off. Top repair focus changed from Companion routing is getting in the way to Guide data needs attention."
+    }
+  ]
+}

@@ -46,6 +46,7 @@ namespace Kroira.App.ViewModels
         public int PreferredSourceProfileId { get; set; }
         public string LogicalContentKey { get; set; } = string.Empty;
         public string SourceName { get; set; } = string.Empty;
+        public SourceType SourceType { get; set; }
         public string RawName { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
         public string CategoryName { get; set; } = string.Empty;
@@ -80,6 +81,7 @@ namespace Kroira.App.ViewModels
         public Visibility LastTunedVisibility { get; set; } = Visibility.Collapsed;
         public Visibility QuickAccessBadgeVisibility { get; set; } = Visibility.Collapsed;
         public Visibility RemoveFromRecentVisibility { get; set; } = Visibility.Collapsed;
+        public bool HasGuideLink { get; set; }
         public bool HasGuideData { get; set; }
         public bool HasMatchedGuide { get; set; }
         public bool IsLastTuned { get; set; }
@@ -87,6 +89,8 @@ namespace Kroira.App.ViewModels
         public bool IsTurkishSportsChannel { get; set; }
         public int WatchCount { get; set; }
         public DateTime? LastWatchedAtUtc { get; set; }
+        public DateTime? SourceLastSyncUtc { get; set; }
+        public CatalogDiscoveryHealthBucket SourceHealthBucket { get; set; }
         public string QuickAccessBadgeText { get; set; } = string.Empty;
         public Visibility CatchupVisibility => SupportsCatchup ? Visibility.Visible : Visibility.Collapsed;
         public string CatchupBadgeText => CatchupWindowHours > 0 ? $"Catchup {CatchupWindowHours}h" : "Catchup";
@@ -424,12 +428,14 @@ namespace Kroira.App.ViewModels
                         SourceProfileId = category.SourceProfileId,
                         PreferredSourceProfileId = category.SourceProfileId,
                         LogicalContentKey = logicalKey,
+                        SourceType = sourceType,
                         RawName = ch.Name,
                         Name = string.IsNullOrWhiteSpace(presentation.DisplayName) ? ch.Name : presentation.DisplayName,
                         CategoryName = category.Name,
                         DisplayCategoryName = taxonomy.DisplayCategoryName,
                         StreamUrl = ch.StreamUrl,
                         LogoUrl = ch.LogoUrl ?? string.Empty,
+                        HasGuideLink = !string.IsNullOrWhiteSpace(ch.EpgChannelId) || ch.EpgMatchConfidence > 0,
                         IsFavorite = _favoriteLogicalKeys.Contains(logicalKey),
                         SupportsCatchup = ch.SupportsCatchup,
                         CatchupWindowHours = ch.CatchupWindowHours,

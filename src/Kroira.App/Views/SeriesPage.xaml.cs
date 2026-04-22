@@ -11,7 +11,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Data;
+using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Navigation;
+using Windows.System;
 
 namespace Kroira.App.Views
 {
@@ -43,7 +45,7 @@ namespace Kroira.App.Views
         public object ConvertBack(object value, Type targetType, object parameter, string language) => throw new NotImplementedException();
     }
 
-    public sealed partial class SeriesPage : Page
+    public sealed partial class SeriesPage : Page, IRemoteNavigationPage
     {
         private bool _isRestoringCategorySelection;
         private bool _isCategorySelectionRestoreQueued;
@@ -175,13 +177,12 @@ namespace Kroira.App.Views
             }
         }
 
-        private void EpisodeList_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void EpisodeList_ItemClick(object sender, ItemClickEventArgs e)
         {
-            if (e.AddedItems.Count > 0 && e.AddedItems[0] is SeriesEpisodeItemViewModel item)
+            if (e.ClickedItem is SeriesEpisodeItemViewModel item)
             {
                 PlayEpisode(item);
             }
-            ((ListView)sender).SelectedItem = null;
         }
 
         private void SeriesGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -192,6 +193,38 @@ namespace Kroira.App.Views
             }
 
             ((GridView)sender).SelectedItem = null;
+        }
+
+        private void SearchBox_KeyDown(object sender, KeyRoutedEventArgs e)
+        {
+            if (e.Key == VirtualKey.Down || e.Key == VirtualKey.Enter)
+            {
+                RemoteNavigationHelper.TryFocusListItem(SeriesGrid);
+                e.Handled = true;
+            }
+        }
+
+        private void SeriesGrid_KeyDown(object sender, KeyRoutedEventArgs e)
+        {
+            if (e.Key == VirtualKey.Escape)
+            {
+                RemoteNavigationHelper.TryFocusElement(SearchBox);
+                e.Handled = true;
+                return;
+            }
+
+            if ((e.Key == VirtualKey.Enter || e.Key == VirtualKey.Space) &&
+                !RemoteNavigationHelper.IsWithinInteractiveControl(e.OriginalSource) &&
+                RemoteNavigationHelper.FindDataContextInAncestors<SeriesBrowseSlotViewModel>(e.OriginalSource) is { HasSeries: true } slot)
+            {
+                ViewModel.SelectSeriesFromSlot(slot);
+                if (!RemoteNavigationHelper.TryFocusElement(PlaySelectedEpisodeButton))
+                {
+                    RemoteNavigationHelper.TryFocusListItem(EpisodeList);
+                }
+
+                e.Handled = true;
+            }
         }
 
         private void PlaySelectedEpisode_Click(object sender, RoutedEventArgs e)
@@ -262,6 +295,24 @@ namespace Kroira.App.Views
             await ItemInspectorDialog.ShowAsync(XamlRoot, CreateEpisodeLaunchContext(item));
         }
 
+        private void EpisodeList_KeyDown(object sender, KeyRoutedEventArgs e)
+        {
+            if (e.Key == VirtualKey.Escape)
+            {
+                RemoteNavigationHelper.TryFocusElement(PlaySelectedEpisodeButton);
+                e.Handled = true;
+                return;
+            }
+
+            if ((e.Key == VirtualKey.Enter || e.Key == VirtualKey.Space) &&
+                !RemoteNavigationHelper.IsWithinInteractiveControl(e.OriginalSource) &&
+                RemoteNavigationHelper.FindDataContextInAncestors<SeriesEpisodeItemViewModel>(e.OriginalSource) is { } item)
+            {
+                PlayEpisode(item);
+                e.Handled = true;
+            }
+        }
+
         private void PlayEpisode(SeriesEpisodeItemViewModel item)
         {
             if (!string.IsNullOrWhiteSpace(item.StreamUrl))
@@ -310,6 +361,37 @@ namespace Kroira.App.Views
                 StreamUrl = item.StreamUrl,
                 StartPositionMs = item.ResumePositionMs
             };
+        }
+
+        public bool TryFocusPrimaryTarget()
+        {
+            return RemoteNavigationHelper.TryFocusElement(SearchBox) ||
+                   RemoteNavigationHelper.TryFocusListItem(SeriesGrid) ||
+                   RemoteNavigationHelper.TryFocusElement(PlaySelectedEpisodeButton) ||
+                   RemoteNavigationHelper.TryFocusListItem(EpisodeList);
+        }
+
+        public bool TryHandleBackRequest()
+        {
+            var focusedElement = FocusManager.GetFocusedElement(XamlRoot) as DependencyObject;
+            if (RemoteNavigationHelper.IsDescendantOf(focusedElement, EpisodeList) ||
+                RemoteNavigationHelper.IsDescendantOf(focusedElement, PlaySelectedEpisodeButton))
+            {
+                return RemoteNavigationHelper.TryFocusListItem(SeriesGrid);
+            }
+
+            if (!RemoteNavigationHelper.IsDescendantOf(focusedElement, SearchBox))
+            {
+                return RemoteNavigationHelper.TryFocusElement(SearchBox);
+            }
+
+            if (!string.IsNullOrWhiteSpace(SearchBox.Text))
+            {
+                SearchBox.Text = string.Empty;
+                return true;
+            }
+
+            return false;
         }
     }
 }

@@ -31,6 +31,21 @@ namespace Kroira.App.ViewModels
         public string DisplayName => ItemCount > 0 ? $"{Name} ({ItemCount:N0})" : Name;
     }
 
+    public sealed class BrowseFacetOptionViewModel
+    {
+        public BrowseFacetOptionViewModel(string key, string label, int itemCount)
+        {
+            Key = key;
+            Label = label;
+            ItemCount = itemCount;
+        }
+
+        public string Key { get; }
+        public string Label { get; }
+        public int ItemCount { get; }
+        public string DisplayName => ItemCount > 0 ? $"{Label} ({ItemCount:N0})" : Label;
+    }
+
     public sealed partial class BrowseSourceVisibilityViewModel : ObservableObject
     {
         private readonly Action<BrowseSourceVisibilityViewModel, bool>? _onChanged;

@@ -41,7 +41,7 @@
         </Style>
     </Page.Resources>
 
-    <Grid>
+    <Grid XYFocusKeyboardNavigation="Enabled">
         <Grid Padding="30,28,30,34"
               MaxWidth="1360"
               HorizontalAlignment="Center"
@@ -91,6 +91,7 @@
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
 
                 <Grid ColumnSpacing="12">
@@ -102,8 +103,10 @@
                     </Grid.ColumnDefinitions>
 
                     <Grid Grid.Column="0">
-                        <TextBox Style="{StaticResource KroiraFilterTextBoxStyle}"
+                        <TextBox x:Name="SearchBox"
+                                 Style="{StaticResource KroiraFilterTextBoxStyle}"
                                  Text="{x:Bind ViewModel.SearchQuery, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                 KeyDown="SearchBox_KeyDown"
                                  PlaceholderText="Search series" />
                         <FontIcon Glyph="&#xE721;"
                                   FontSize="14"
@@ -143,7 +146,76 @@
                     </StackPanel>
                 </Grid>
 
-                <Expander Grid.Row="1"
+                <Grid Grid.Row="1"
+                      ColumnSpacing="14">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Spacing="4"
+                                MaxWidth="560">
+                        <TextBlock Text="EXPLORE"
+                                   Style="{StaticResource KroiraLabelStyle}"
+                                   Foreground="{StaticResource KroiraAccentBrush}" />
+                        <TextBlock Text="{x:Bind ViewModel.DiscoverySummaryText, Mode=OneWay}"
+                                   Style="{StaticResource KroiraMetaStyle}"
+                                   Foreground="{StaticResource KroiraTextSecondaryBrush}"
+                                   TextWrapping="Wrap" />
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="1"
+                                Orientation="Horizontal"
+                                Spacing="10"
+                                HorizontalAlignment="Right">
+                        <StackPanel Width="182"
+                                    Spacing="4"
+                                    Visibility="{x:Bind ViewModel.DiscoverySignalVisibility, Mode=OneWay}">
+                            <TextBlock Text="Focus"
+                                       Style="{StaticResource KroiraLabelStyle}"
+                                       Foreground="{StaticResource KroiraAccentBrush}" />
+                            <ComboBox Style="{StaticResource KroiraFilterComboBoxStyle}"
+                                      ItemsSource="{x:Bind ViewModel.DiscoverySignalOptions, Mode=OneWay}"
+                                      SelectedItem="{x:Bind ViewModel.SelectedDiscoverySignalOption, Mode=TwoWay}"
+                                      DisplayMemberPath="DisplayName" />
+                        </StackPanel>
+                        <StackPanel Width="170"
+                                    Spacing="4"
+                                    Visibility="{x:Bind ViewModel.DiscoverySourceTypeVisibility, Mode=OneWay}">
+                            <TextBlock Text="Source type"
+                                       Style="{StaticResource KroiraLabelStyle}"
+                                       Foreground="{StaticResource KroiraAccentBrush}" />
+                            <ComboBox Style="{StaticResource KroiraFilterComboBoxStyle}"
+                                      ItemsSource="{x:Bind ViewModel.DiscoverySourceTypeOptions, Mode=OneWay}"
+                                      SelectedItem="{x:Bind ViewModel.SelectedDiscoverySourceTypeOption, Mode=TwoWay}"
+                                      DisplayMemberPath="DisplayName" />
+                        </StackPanel>
+                        <StackPanel Width="170"
+                                    Spacing="4"
+                                    Visibility="{x:Bind ViewModel.DiscoveryLanguageVisibility, Mode=OneWay}">
+                            <TextBlock Text="Language"
+                                       Style="{StaticResource KroiraLabelStyle}"
+                                       Foreground="{StaticResource KroiraAccentBrush}" />
+                            <ComboBox Style="{StaticResource KroiraFilterComboBoxStyle}"
+                                      ItemsSource="{x:Bind ViewModel.DiscoveryLanguageOptions, Mode=OneWay}"
+                                      SelectedItem="{x:Bind ViewModel.SelectedDiscoveryLanguageOption, Mode=TwoWay}"
+                                      DisplayMemberPath="DisplayName" />
+                        </StackPanel>
+                        <StackPanel Width="182"
+                                    Spacing="4"
+                                    Visibility="{x:Bind ViewModel.DiscoveryTagVisibility, Mode=OneWay}">
+                            <TextBlock Text="Genre"
+                                       Style="{StaticResource KroiraLabelStyle}"
+                                       Foreground="{StaticResource KroiraAccentBrush}" />
+                            <ComboBox Style="{StaticResource KroiraFilterComboBoxStyle}"
+                                      ItemsSource="{x:Bind ViewModel.DiscoveryTagOptions, Mode=OneWay}"
+                                      SelectedItem="{x:Bind ViewModel.SelectedDiscoveryTagOption, Mode=TwoWay}"
+                                      DisplayMemberPath="DisplayName" />
+                        </StackPanel>
+                    </StackPanel>
+                </Grid>
+
+                <Expander Grid.Row="2"
                           Header="Advanced browse controls"
                           IsExpanded="{x:Bind ViewModel.IsAdvancedControlsExpanded, Mode=TwoWay}">
                     <Grid Margin="0,12,0,0" ColumnSpacing="18">
@@ -284,16 +356,18 @@
                               Foreground="{StaticResource KroiraTextTertiaryBrush}"
                               FontSize="28"
                               HorizontalAlignment="Center" />
-                    <TextBlock Text="No series to show"
+                    <TextBlock Text="{x:Bind ViewModel.EmptyStateTitle, Mode=OneWay}"
                                Style="{StaticResource KroiraSectionTitleStyle}"
                                HorizontalAlignment="Center" />
-                    <TextBlock Text="Sync an Xtream VOD source, or clear your filters."
+                    <TextBlock Text="{x:Bind ViewModel.EmptyStateMessage, Mode=OneWay}"
                                Style="{StaticResource KroiraBodyStyle}"
                                TextAlignment="Center" />
                 </StackPanel>
 
-                <GridView ItemsSource="{x:Bind ViewModel.DisplaySeriesSlots, Mode=OneWay}"
+                <GridView x:Name="SeriesGrid"
+                          ItemsSource="{x:Bind ViewModel.DisplaySeriesSlots, Mode=OneWay}"
                           SelectionChanged="SeriesGrid_SelectionChanged"
+                          KeyDown="SeriesGrid_KeyDown"
                           SelectionMode="Single"
                           ItemContainerStyle="{StaticResource SeriesTileContainerStyle}"
                           HorizontalAlignment="Left"
@@ -612,7 +686,8 @@
                                                 Spacing="8"
                                                 VerticalAlignment="Bottom"
                                                 Visibility="{x:Bind ViewModel.SelectedEpisodePlayVisibility, Mode=OneWay}">
-                                        <Button Content="Play"
+                                        <Button x:Name="PlaySelectedEpisodeButton"
+                                                Content="Play"
                                                 Click="PlaySelectedEpisode_Click"
                                                 Style="{StaticResource KroiraPrimaryButtonStyle}"
                                                 Padding="18,11" />
@@ -675,11 +750,14 @@
                             </Border>
 
                             <!-- Episodes list with constrained max height so it scrolls within the panel -->
-                            <ListView Visibility="{x:Bind ViewModel.EpisodesListVisibility, Mode=OneWay}"
+                            <ListView x:Name="EpisodeList"
+                                      Visibility="{x:Bind ViewModel.EpisodesListVisibility, Mode=OneWay}"
                                       ItemsSource="{x:Bind ViewModel.EpisodeItems, Mode=OneWay}"
                                       MaxHeight="380"
-                                      SelectionMode="Single"
-                                      SelectionChanged="EpisodeList_SelectionChanged"
+                                      SelectionMode="None"
+                                      IsItemClickEnabled="True"
+                                      ItemClick="EpisodeList_ItemClick"
+                                      KeyDown="EpisodeList_KeyDown"
                                       ItemContainerStyle="{StaticResource SeriesEpisodeRowStyle}"
                                       ScrollViewer.VerticalScrollMode="Enabled"
                                       ScrollViewer.VerticalScrollBarVisibility="Auto"

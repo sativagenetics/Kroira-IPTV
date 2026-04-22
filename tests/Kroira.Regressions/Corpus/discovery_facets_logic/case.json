@@ -1,0 +1,132 @@
+{
+  "id": "discovery_facets_logic",
+  "description": "Discovery facet projections stay deterministic for live, movie, and series browsing, including invalid-selection reset and confident summary text.",
+  "discoveryRequests": [
+    {
+      "id": "live_catchup_xtream",
+      "domain": "Live",
+      "nowUtc": "2026-04-22T12:00:00Z",
+      "selection": {
+        "signalKey": "catchup_ready",
+        "sourceTypeKey": "xtream"
+      },
+      "records": [
+        {
+          "key": "live_xtream_catchup",
+          "sourceProfileIds": [ 1 ],
+          "sourceTypes": [ "Xtream" ],
+          "language": "tr",
+          "tags": "Sports",
+          "isFavorite": true,
+          "hasGuide": true,
+          "hasCatchup": true,
+          "healthBucket": "Healthy",
+          "lastInteractionUtc": "2026-04-21T22:00:00Z"
+        },
+        {
+          "key": "live_stalker_general",
+          "sourceProfileIds": [ 2 ],
+          "sourceTypes": [ "Stalker" ],
+          "language": "tr",
+          "tags": "General",
+          "hasGuide": true,
+          "healthBucket": "Healthy"
+        },
+        {
+          "key": "live_m3u_news",
+          "sourceProfileIds": [ 3 ],
+          "sourceTypes": [ "M3U" ],
+          "language": "en",
+          "tags": "News",
+          "healthBucket": "Attention"
+        }
+      ]
+    },
+    {
+      "id": "movies_recent_stalker_action",
+      "domain": "Movies",
+      "nowUtc": "2026-04-22T12:00:00Z",
+      "selection": {
+        "signalKey": "recently_synced",
+        "sourceTypeKey": "stalker",
+        "languageKey": "en",
+        "tagKey": "action"
+      },
+      "records": [
+        {
+          "key": "movie_stalker_action",
+          "sourceProfileIds": [ 7 ],
+          "sourceTypes": [ "Stalker" ],
+          "language": "en",
+          "tags": "Action, Thriller",
+          "isFavorite": true,
+          "hasArtwork": true,
+          "healthBucket": "Healthy",
+          "lastSyncUtc": "2026-04-21T08:00:00Z"
+        },
+        {
+          "key": "movie_xtream_action_old",
+          "sourceProfileIds": [ 8 ],
+          "sourceTypes": [ "Xtream" ],
+          "language": "en",
+          "tags": "Action",
+          "hasArtwork": true,
+          "healthBucket": "Healthy",
+          "lastSyncUtc": "2026-04-01T08:00:00Z"
+        },
+        {
+          "key": "movie_stalker_drama",
+          "sourceProfileIds": [ 9 ],
+          "sourceTypes": [ "Stalker" ],
+          "language": "tr",
+          "tags": "Drama",
+          "healthBucket": "Attention",
+          "lastSyncUtc": "2026-04-20T08:00:00Z"
+        }
+      ]
+    },
+    {
+      "id": "series_invalid_source_reset",
+      "domain": "Series",
+      "nowUtc": "2026-04-22T12:00:00Z",
+      "selection": {
+        "signalKey": "episode_ready",
+        "sourceTypeKey": "ghost",
+        "languageKey": "en",
+        "tagKey": "drama"
+      },
+      "records": [
+        {
+          "key": "series_ready_en_drama",
+          "sourceProfileIds": [ 12 ],
+          "sourceTypes": [ "Xtream" ],
+          "language": "en",
+          "tags": "Drama",
+          "hasArtwork": true,
+          "hasPlayableChildren": true,
+          "healthBucket": "Healthy",
+          "lastSyncUtc": "2026-04-18T08:00:00Z"
+        },
+        {
+          "key": "series_unready_en_drama",
+          "sourceProfileIds": [ 13 ],
+          "sourceTypes": [ "Xtream" ],
+          "language": "en",
+          "tags": "Drama",
+          "healthBucket": "Attention",
+          "lastSyncUtc": "2026-04-19T08:00:00Z"
+        },
+        {
+          "key": "series_ready_tr_drama",
+          "sourceProfileIds": [ 14 ],
+          "sourceTypes": [ "Stalker" ],
+          "language": "tr",
+          "tags": "Drama",
+          "hasPlayableChildren": true,
+          "healthBucket": "Healthy",
+          "lastSyncUtc": "2026-04-20T08:00:00Z"
+        }
+      ]
+    }
+  ]
+}

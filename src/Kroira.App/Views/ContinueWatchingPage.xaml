@@ -20,7 +20,7 @@
         </Style>
     </Page.Resources>
 
-    <Grid>
+    <Grid XYFocusKeyboardNavigation="Enabled">
         <Grid Padding="34,30,36,34"
               RowSpacing="20"
               MaxWidth="1420"
@@ -93,7 +93,16 @@
                                 <TextBlock Text="Live playback entries appear here when saved progress exists." Style="{StaticResource KroiraBodyStyle}" TextWrapping="Wrap" />
                             </StackPanel>
                         </Border>
-                        <ListView ItemsSource="{x:Bind ViewModel.LiveProgressItems, Mode=OneWay}" SelectionMode="Single" SelectionChanged="ItemList_SelectionChanged" ItemContainerStyle="{StaticResource ResumeItemContainerStyle}" Padding="0" ScrollViewer.VerticalScrollMode="Enabled" ScrollViewer.VerticalScrollBarVisibility="Auto">
+                        <ListView x:Name="LiveList"
+                                  ItemsSource="{x:Bind ViewModel.LiveProgressItems, Mode=OneWay}"
+                                  SelectionMode="None"
+                                  IsItemClickEnabled="True"
+                                  ItemClick="ItemList_ItemClick"
+                                  KeyDown="ItemList_KeyDown"
+                                  ItemContainerStyle="{StaticResource ResumeItemContainerStyle}"
+                                  Padding="0"
+                                  ScrollViewer.VerticalScrollMode="Enabled"
+                                  ScrollViewer.VerticalScrollBarVisibility="Auto">
                             <ListView.ItemTemplate>
                                 <DataTemplate>
                                     <Border Background="#AA11161E" BorderBrush="{StaticResource KroiraChromeLineBrush}" BorderThickness="1" CornerRadius="12" Padding="11">
@@ -143,7 +152,8 @@
                         <Border Grid.Column="1" Style="{StaticResource KroiraCountBadgeStyle}" Padding="8,4">
                             <TextBlock Text="{x:Bind ViewModel.MovieCountText, Mode=OneWay}" Foreground="{StaticResource KroiraAccentBrush}" FontSize="10" FontWeight="SemiBold" />
                         </Border>
-                        <ToggleSwitch Grid.Column="2"
+                        <ToggleSwitch x:Name="HideWatchedToggle"
+                                      Grid.Column="2"
                                       Header="Hide watched"
                                       IsOn="{x:Bind ViewModel.HideWatchedItems, Mode=TwoWay}"
                                       OnContent=""
@@ -159,7 +169,16 @@
                                 <TextBlock Text="Partially watched movies will collect here." Style="{StaticResource KroiraBodyStyle}" TextWrapping="Wrap" />
                             </StackPanel>
                         </Border>
-                        <ListView ItemsSource="{x:Bind ViewModel.MovieProgressItems, Mode=OneWay}" SelectionMode="Single" SelectionChanged="ItemList_SelectionChanged" ItemContainerStyle="{StaticResource ResumeItemContainerStyle}" Padding="0" ScrollViewer.VerticalScrollMode="Enabled" ScrollViewer.VerticalScrollBarVisibility="Auto">
+                        <ListView x:Name="MovieList"
+                                  ItemsSource="{x:Bind ViewModel.MovieProgressItems, Mode=OneWay}"
+                                  SelectionMode="None"
+                                  IsItemClickEnabled="True"
+                                  ItemClick="ItemList_ItemClick"
+                                  KeyDown="ItemList_KeyDown"
+                                  ItemContainerStyle="{StaticResource ResumeItemContainerStyle}"
+                                  Padding="0"
+                                  ScrollViewer.VerticalScrollMode="Enabled"
+                                  ScrollViewer.VerticalScrollBarVisibility="Auto">
                             <ListView.ItemTemplate>
                                 <DataTemplate>
                                     <Border Background="#AA11161E" BorderBrush="{StaticResource KroiraChromeLineBrush}" BorderThickness="1" CornerRadius="12" Padding="10">
@@ -237,7 +256,16 @@
                                 <TextBlock Text="Saved episode progress will appear as a compact queue." Style="{StaticResource KroiraBodyStyle}" TextWrapping="Wrap" />
                             </StackPanel>
                         </Border>
-                        <ListView ItemsSource="{x:Bind ViewModel.SeriesProgressItems, Mode=OneWay}" SelectionMode="Single" SelectionChanged="ItemList_SelectionChanged" ItemContainerStyle="{StaticResource ResumeItemContainerStyle}" Padding="0" ScrollViewer.VerticalScrollMode="Enabled" ScrollViewer.VerticalScrollBarVisibility="Auto">
+                        <ListView x:Name="SeriesList"
+                                  ItemsSource="{x:Bind ViewModel.SeriesProgressItems, Mode=OneWay}"
+                                  SelectionMode="None"
+                                  IsItemClickEnabled="True"
+                                  ItemClick="ItemList_ItemClick"
+                                  KeyDown="ItemList_KeyDown"
+                                  ItemContainerStyle="{StaticResource ResumeItemContainerStyle}"
+                                  Padding="0"
+                                  ScrollViewer.VerticalScrollMode="Enabled"
+                                  ScrollViewer.VerticalScrollBarVisibility="Auto">
                             <ListView.ItemTemplate>
                                 <DataTemplate>
                                     <Border Background="#AA11161E" BorderBrush="{StaticResource KroiraChromeLineBrush}" BorderThickness="1" CornerRadius="12" Padding="10">

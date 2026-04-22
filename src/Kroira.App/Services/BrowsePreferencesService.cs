@@ -30,6 +30,10 @@ namespace Kroira.App.Services
         public bool FavoritesOnly { get; set; }
         public bool HideSecondaryContent { get; set; }
         public bool GuideMatchedOnly { get; set; }
+        public string DiscoverySignalKey { get; set; } = string.Empty;
+        public string DiscoverySourceTypeKey { get; set; } = string.Empty;
+        public string DiscoveryLanguageKey { get; set; } = string.Empty;
+        public string DiscoveryTagKey { get; set; } = string.Empty;
         public List<int> HiddenSourceIds { get; set; } = new();
         public List<int> RecentChannelIds { get; set; } = new();
         public Dictionary<int, int> LiveChannelWatchCounts { get; set; } = new();
@@ -74,6 +78,10 @@ namespace Kroira.App.Services
             {
                 var preferences = JsonSerializer.Deserialize<BrowsePreferences>(json, JsonOptions) ?? new BrowsePreferences();
                 preferences.SelectedCategoryKey = NormalizeCategoryKey(preferences.SelectedCategoryKey);
+                preferences.DiscoverySignalKey = NormalizeSelectionKey(preferences.DiscoverySignalKey);
+                preferences.DiscoverySourceTypeKey = NormalizeSelectionKey(preferences.DiscoverySourceTypeKey);
+                preferences.DiscoveryLanguageKey = NormalizeSelectionKey(preferences.DiscoveryLanguageKey);
+                preferences.DiscoveryTagKey = NormalizeSelectionKey(preferences.DiscoveryTagKey);
                 preferences.HiddenSourceIds = preferences.HiddenSourceIds
                     .Where(id => id > 0)
                     .Distinct()
@@ -244,7 +252,11 @@ namespace Kroira.App.Services
                 HasExplicitLiveSortPreference = preferences.HasExplicitLiveSortPreference,
                 FavoritesOnly = preferences.FavoritesOnly,
                 HideSecondaryContent = preferences.HideSecondaryContent,
-                GuideMatchedOnly = preferences.GuideMatchedOnly
+                GuideMatchedOnly = preferences.GuideMatchedOnly,
+                DiscoverySignalKey = NormalizeSelectionKey(preferences.DiscoverySignalKey),
+                DiscoverySourceTypeKey = NormalizeSelectionKey(preferences.DiscoverySourceTypeKey),
+                DiscoveryLanguageKey = NormalizeSelectionKey(preferences.DiscoveryLanguageKey),
+                DiscoveryTagKey = NormalizeSelectionKey(preferences.DiscoveryTagKey)
             };
 
             normalized.HiddenSourceIds = preferences.HiddenSourceIds
@@ -413,6 +425,13 @@ namespace Kroira.App.Services
         {
             var normalizedDomain = string.IsNullOrWhiteSpace(domain) ? "General" : domain.Trim();
             return $"{KeyPrefix}{normalizedDomain}.Profile.{Math.Max(0, profileId)}";
+        }
+
+        private static string NormalizeSelectionKey(string? value)
+        {
+            return string.IsNullOrWhiteSpace(value)
+                ? string.Empty
+                : value.Trim().ToLowerInvariant();
         }
 
         private static BrowseChannelReference? NormalizeChannelReference(BrowseChannelReference? reference)

@@ -1,14 +1,19 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using Kroira.App.Models;
 using Kroira.App.Services;
 using Kroira.App.ViewModels;
 using Kroira.App.Views;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.UI.Input;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Navigation;
+using Windows.System;
+using Windows.UI.Core;
 
 namespace Kroira.App
 {
@@ -16,6 +21,7 @@ namespace Kroira.App
     {
         public MainViewModel ViewModel { get; }
         private readonly IWindowManagerService _windowManager;
+        private readonly IRemoteNavigationService _remoteNavigationService;
         private static readonly string StartupLogPath =
             Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Kroira", "startup-log.txt");
 
@@ -35,6 +41,7 @@ namespace Kroira.App
                 LogStartupCheckpoint("MW 03: after InitializeComponent");
 
                 ContentFrame.NavigationFailed += ContentFrame_NavigationFailed;
+                ContentFrame.Navigated += ContentFrame_Navigated;
 
                 LogStartupCheckpoint("MW 04: before resolving MainViewModel");
                 ViewModel = ((App)Application.Current).Services.GetRequiredService<MainViewModel>();
@@ -43,6 +50,7 @@ namespace Kroira.App
                 LogStartupCheckpoint("MW 06: before resolving IWindowManagerService");
                 _windowManager = ((App)Application.Current).Services.GetRequiredService<IWindowManagerService>();
                 LogStartupCheckpoint("MW 07: after resolving IWindowManagerService");
+                _remoteNavigationService = ((App)Application.Current).Services.GetRequiredService<IRemoteNavigationService>();
 
                 Title = "Kroira IPTV";
                 LogStartupCheckpoint("MW 08: title set");
@@ -50,6 +58,11 @@ namespace Kroira.App
                 _windowManager.FullscreenStateChanged += WindowManager_FullscreenStateChanged;
                 LogStartupCheckpoint("MW 09: subscribed to FullscreenStateChanged");
                 UpdatePaneHeader(true);
+
+                if (Content is UIElement rootElement)
+                {
+                    rootElement.AddHandler(UIElement.KeyDownEvent, new KeyEventHandler(RootElement_KeyDown), true);
+                }
             }
             catch (Exception ex)
             {
@@ -95,6 +108,62 @@ namespace Kroira.App
             throw new InvalidOperationException(
                 $"Navigation to {e.SourcePageType?.FullName} failed.",
                 e.Exception);
+        }
+
+        private void ContentFrame_Navigated(object sender, NavigationEventArgs e)
+        {
+            SyncSelectedNavigationItem(e.SourcePageType);
+            if (!_remoteNavigationService.IsRemoteModeEnabled ||
+                ContentFrame.Content is not IRemoteNavigationPage remotePage)
+            {
+                return;
+            }
+
+            var dispatcherQueue = Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread();
+            if (dispatcherQueue == null)
+            {
+                remotePage.TryFocusPrimaryTarget();
+                return;
+            }
+
+            dispatcherQueue.TryEnqueue(() =>
+            {
+                if (remotePage.TryFocusPrimaryTarget())
+                {
+                    return;
+                }
+
+                dispatcherQueue.TryEnqueue(() => remotePage.TryFocusPrimaryTarget());
+            });
+        }
+
+        private void RootElement_KeyDown(object sender, KeyRoutedEventArgs e)
+        {
+            if (e.Handled)
+            {
+                return;
+            }
+
+            var altDown = InputKeyboardSource.GetKeyStateForCurrentThread(VirtualKey.Menu).HasFlag(CoreVirtualKeyStates.Down);
+            switch (e.Key)
+            {
+                case VirtualKey.Left when altDown:
+                case VirtualKey.GoBack:
+                case VirtualKey.Back when altDown:
+                    if (TryHandleGlobalBackRequest())
+                    {
+                        e.Handled = true;
+                    }
+                    break;
+                case VirtualKey.Escape:
+                    if (_remoteNavigationService.IsRemoteModeEnabled &&
+                        ((ContentFrame.Content is IRemoteNavigationPage remotePage && remotePage.TryHandleBackRequest()) ||
+                         TryFocusSelectedNavigationItem()))
+                    {
+                        e.Handled = true;
+                    }
+                    break;
+            }
         }
 
         private void RootNavView_PaneOpening(NavigationView sender, object args)
@@ -166,6 +235,93 @@ namespace Kroira.App
                 LogStartupCheckpoint("MW NAV ERROR");
                 LogStartupException("MAINWINDOW NAVIGATION COMMAND ERROR", ex);
                 throw;
+            }
+        }
+
+        private bool TryHandleGlobalBackRequest()
+        {
+            if (ContentFrame.Content is IRemoteNavigationPage remotePage &&
+                remotePage.TryHandleBackRequest())
+            {
+                return true;
+            }
+
+            if (ContentFrame.CanGoBack)
+            {
+                ContentFrame.GoBack();
+                return true;
+            }
+
+            return _remoteNavigationService.IsRemoteModeEnabled && TryFocusSelectedNavigationItem();
+        }
+
+        private bool TryFocusSelectedNavigationItem()
+        {
+            if (!RootNavView.IsPaneVisible)
+            {
+                return false;
+            }
+
+            var focusedElement = FocusManager.GetFocusedElement() as DependencyObject;
+            if (RemoteNavigationHelper.IsDescendantOf(focusedElement, RootNavView))
+            {
+                if (ContentFrame.CanGoBack)
+                {
+                    ContentFrame.GoBack();
+                    return true;
+                }
+
+                return false;
+            }
+
+            if (RootNavView.SelectedItem is NavigationViewItem selectedItem &&
+                selectedItem.Visibility == Visibility.Visible &&
+                selectedItem.Focus(FocusState.Keyboard))
+            {
+                return true;
+            }
+
+            foreach (var item in RootNavView.MenuItems.OfType<NavigationViewItem>())
+            {
+                if (item.Visibility == Visibility.Visible && item.Focus(FocusState.Keyboard))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private void SyncSelectedNavigationItem(Type? pageType)
+        {
+            var tag = pageType switch
+            {
+                var type when type == typeof(HomePage) => "Home",
+                var type when type == typeof(ContinueWatchingPage) => "ContinueWatching",
+                var type when type == typeof(MediaLibraryPage) => "MediaLibrary",
+                var type when type == typeof(ChannelsPage) => "Channels",
+                var type when type == typeof(MoviesPage) => "Movies",
+                var type when type == typeof(SeriesPage) => "Series",
+                var type when type == typeof(FavoritesPage) => "Favorites",
+                var type when type == typeof(SourceListPage) => "Sources",
+                var type when type == typeof(SourceOnboardingPage) => "Sources",
+                var type when type == typeof(ChannelBrowserPage) => "Sources",
+                var type when type == typeof(SettingsPage) => "Settings",
+                var type when type == typeof(ProfilePage) => "Profile",
+                _ => string.Empty
+            };
+
+            if (string.IsNullOrWhiteSpace(tag))
+            {
+                return;
+            }
+
+            var selected = RootNavView.MenuItems
+                .OfType<NavigationViewItem>()
+                .FirstOrDefault(item => string.Equals(item.Tag?.ToString(), tag, StringComparison.OrdinalIgnoreCase));
+            if (selected != null)
+            {
+                RootNavView.SelectedItem = selected;
             }
         }
 

@@ -16,8 +16,8 @@
             <Setter Property="CornerRadius" Value="16" />
             <Setter Property="MinWidth" Value="34" />
             <Setter Property="Height" Value="34" />
-            <Setter Property="IsTabStop" Value="False" />
-            <Setter Property="UseSystemFocusVisuals" Value="False" />
+            <Setter Property="IsTabStop" Value="True" />
+            <Setter Property="UseSystemFocusVisuals" Value="True" />
         </Style>
 
         <Style x:Key="PlayerHeaderTextButtonStyle" TargetType="Button" BasedOn="{StaticResource PlayerHeaderButtonStyle}">
@@ -34,8 +34,8 @@
             <Setter Property="MinWidth" Value="36" />
             <Setter Property="Height" Value="36" />
             <Setter Property="Padding" Value="0" />
-            <Setter Property="IsTabStop" Value="False" />
-            <Setter Property="UseSystemFocusVisuals" Value="False" />
+            <Setter Property="IsTabStop" Value="True" />
+            <Setter Property="UseSystemFocusVisuals" Value="True" />
         </Style>
 
         <Style x:Key="PlayerPillButtonStyle" TargetType="Button" BasedOn="{StaticResource PlayerIconButtonStyle}">
@@ -67,7 +67,7 @@
             <Setter Property="CornerRadius" Value="11" />
             <Setter Property="MinWidth" Value="0" />
             <Setter Property="Height" Value="28" />
-            <Setter Property="UseSystemFocusVisuals" Value="False" />
+            <Setter Property="UseSystemFocusVisuals" Value="True" />
         </Style>
 
         <Style x:Key="PlayerToolsSectionBorderStyle" TargetType="Border">
@@ -79,7 +79,11 @@
         </Style>
     </Page.Resources>
 
-    <Grid x:Name="RootGrid" Background="Black" IsTabStop="True" UseSystemFocusVisuals="False">
+    <Grid x:Name="RootGrid"
+          Background="Black"
+          IsTabStop="True"
+          UseSystemFocusVisuals="True"
+          XYFocusKeyboardNavigation="Enabled">
         <Grid.RowDefinitions>
             <RowDefinition x:Name="TopRow" Height="Auto" />
             <RowDefinition Height="*" />
@@ -266,10 +270,12 @@
                             <TextBlock x:Name="InfoGuideText" Grid.Row="3" Grid.Column="3" Foreground="{StaticResource KroiraTextPrimaryBrush}" TextWrapping="Wrap" />
                         </Grid>
                         <StackPanel Orientation="Horizontal" Spacing="8">
-                            <Button Content="Inspect item"
+                            <Button x:Name="InspectCurrentItemButton"
+                                    Content="Inspect item"
                                     Click="InspectCurrentItem_Click"
                                     Style="{StaticResource PlayerToolsChipButtonStyle}" />
-                            <Button Content="Open external"
+                            <Button x:Name="OpenExternalPlayerButton"
+                                    Content="Open external"
                                     Click="OpenInExternalPlayer_Click"
                                     Style="{StaticResource PlayerToolsChipButtonStyle}" />
                         </StackPanel>
@@ -382,7 +388,7 @@
                                 <Button x:Name="MuteButton" Style="{StaticResource PlayerIconButtonStyle}" Click="Mute_Click" MinWidth="32" Height="32" ToolTipService.ToolTip="Mute">
                                     <FontIcon x:Name="MuteIcon" FontFamily="Segoe MDL2 Assets" Glyph="&#xE767;" />
                                 </Button>
-                                <Slider x:Name="VolumeSlider" Minimum="0" Maximum="100" Value="100" Width="72" Height="32" StepFrequency="1" IsTabStop="False" IsThumbToolTipEnabled="False" VerticalAlignment="Center" ValueChanged="VolumeSlider_ValueChanged" Foreground="#83A8FF" Background="#26FFFFFF" />
+                                <Slider x:Name="VolumeSlider" Minimum="0" Maximum="100" Value="100" Width="72" Height="32" StepFrequency="1" IsTabStop="True" IsThumbToolTipEnabled="False" VerticalAlignment="Center" ValueChanged="VolumeSlider_ValueChanged" Foreground="#83A8FF" Background="#26FFFFFF" />
                             </StackPanel>
                         </Border>
                         </StackPanel>

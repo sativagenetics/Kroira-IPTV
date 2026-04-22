@@ -488,6 +488,8 @@ namespace Kroira.App.ViewModels
             using var scope = _serviceProvider.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             var diagnosticsService = scope.ServiceProvider.GetRequiredService<ISourceDiagnosticsService>();
+            var activityService = scope.ServiceProvider.GetRequiredService<ISourceActivityService>();
+            var guidanceService = scope.ServiceProvider.GetRequiredService<ISourceGuidanceService>();
 
             var profiles = await db.SourceProfiles
                 .AsNoTracking()
@@ -496,6 +498,8 @@ namespace Kroira.App.ViewModels
 
             var sourceIds = profiles.Select(profile => profile.Id).ToList();
             var diagnostics = await diagnosticsService.GetSnapshotsAsync(db, sourceIds);
+            var activitySnapshots = await activityService.GetSnapshotsAsync(db, sourceIds, diagnostics);
+            var repairSnapshots = await guidanceService.GetRepairSnapshotsAsync(db, sourceIds, diagnostics, activitySnapshots);
             var epgLogs = await db.EpgSyncLogs
                 .AsNoTracking()
                 .Where(log => sourceIds.Contains(log.SourceProfileId))
@@ -534,6 +538,23 @@ namespace Kroira.App.ViewModels
                     HealthComponents = Array.Empty<SourceDiagnosticsComponentSnapshot>(),
                     HealthProbes = Array.Empty<SourceDiagnosticsProbeSnapshot>()
                 };
+                activitySnapshots.TryGetValue(profile.Id, out var activitySnapshot);
+                activitySnapshot ??= new SourceActivitySnapshot
+                {
+                    SourceProfileId = profile.Id,
+                    SourceName = profile.Name,
+                    SourceType = profile.Type
+                };
+                repairSnapshots.TryGetValue(profile.Id, out var repairSnapshot);
+                repairSnapshot ??= new SourceRepairSnapshot
+                {
+                    SourceId = profile.Id,
+                    HeadlineText = "Source is connected and currently usable",
+                    SummaryText = snapshot.StatusSummary,
+                    StatusText = activitySnapshot.LatestAttemptText,
+                    IsStable = true
+                };
+                _repairResults.TryGetValue(profile.Id, out var repairExecutionResult);
 
                 loadedSources.Add(new SourceItemViewModel
                 {
@@ -639,6 +660,34 @@ namespace Kroira.App.ViewModels
                             PillKind = MapAcquisitionEvidencePillKind(evidence.Outcome)
                         })
                         .ToList(),
+                    ActivityHeadlineText = activitySnapshot.HeadlineText,
+                    ActivityTrendText = activitySnapshot.TrendText,
+                    ActivityCurrentStateText = activitySnapshot.CurrentStateText,
+                    ActivityLatestAttemptText = activitySnapshot.LatestAttemptText,
+                    ActivityLastSuccessText = activitySnapshot.LastSuccessText,
+                    ActivityQuietStateText = activitySnapshot.QuietStateText,
+                    ActivitySafeReportText = activitySnapshot.SafeReportText,
+                    ActivityMetrics = BuildActivityMetrics(activitySnapshot),
+                    ActivityTimeline = BuildActivityTimeline(activitySnapshot),
+                    RepairHeadlineText = repairSnapshot.HeadlineText,
+                    RepairSummaryText = repairSnapshot.SummaryText,
+                    RepairStatusText = repairSnapshot.StatusText,
+                    RepairStatusBadgeText = BuildRepairStatusBadgeText(repairSnapshot),
+                    RepairStatusKind = MapRepairStatusKind(repairSnapshot),
+                    RepairCapabilitySummaryText = repairSnapshot.CapabilitySummaryText,
+                    RepairSafeReportText = repairSnapshot.SafeReportText,
+                    RepairCapabilities = BuildRepairCapabilities(repairSnapshot),
+                    RepairIssues = BuildRepairIssues(repairSnapshot),
+                    RepairActions = BuildRepairActions(repairSnapshot),
+                    RepairLatestResultHeadlineText = repairExecutionResult?.HeadlineText ?? string.Empty,
+                    RepairLatestResultDetailText = repairExecutionResult?.DetailText ?? string.Empty,
+                    RepairLatestResultChangeText = repairExecutionResult?.ChangeText ?? string.Empty,
+                    RepairLatestResultSafeReportText = repairExecutionResult?.SafeReportText ?? string.Empty,
+                    RepairLatestResultKind = repairExecutionResult == null
+                        ? StatusPillKind.Neutral
+                        : repairExecutionResult.Success
+                            ? StatusPillKind.Healthy
+                            : StatusPillKind.Warning,
                     ImportWarningCount = snapshot.ImportWarningCount,
                     GuideWarningCount = snapshot.GuideWarningCount
                 });
@@ -729,10 +778,18 @@ namespace Kroira.App.ViewModels
                     ContainsSearch(source.HealthLabel, search) ||
                     ContainsSearch(source.GuideStatusText, search) ||
                     ContainsSearch(source.Status, search) ||
+                    ContainsSearch(source.ActivityHeadlineText, search) ||
+                    ContainsSearch(source.ActivityTrendText, search) ||
+                    ContainsSearch(source.ActivityCurrentStateText, search) ||
+                    ContainsSearch(source.RepairHeadlineText, search) ||
+                    ContainsSearch(source.RepairSummaryText, search) ||
+                    ContainsSearch(source.RepairStatusText, search) ||
                     ContainsSearch(source.ValidationResultText, search) ||
                     ContainsSearch(source.OperationalStatusText, search) ||
                     ContainsSearch(source.ProxyStatusText, search) ||
                     source.HealthComponents.Any(component => ContainsSearch(component.Label, search) || ContainsSearch(component.Summary, search)) ||
+                    source.RepairIssues.Any(issue => ContainsSearch(issue.Title, search) || ContainsSearch(issue.Detail, search)) ||
+                    source.RepairActions.Any(action => ContainsSearch(action.Title, search) || ContainsSearch(action.Summary, search)) ||
                     ContainsSearch(source.GuideModeText, search) ||
                     ContainsSearch(source.GuideUrlText, search));
             }

@@ -10,12 +10,14 @@ using Kroira.App.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Navigation;
 using Windows.Foundation;
+using Windows.System;
 
 namespace Kroira.App.Views
 {
-    public sealed partial class MoviesPage : Page
+    public sealed partial class MoviesPage : Page, IRemoteNavigationPage
     {
         private bool _isRestoringCategorySelection;
         private bool _isCategorySelectionRestoreQueued;
@@ -193,6 +195,38 @@ namespace Kroira.App.Views
             }
         }
 
+        private void SearchBox_KeyDown(object sender, KeyRoutedEventArgs e)
+        {
+            if (e.Key == VirtualKey.Down || e.Key == VirtualKey.Enter)
+            {
+                RemoteNavigationHelper.TryFocusListItem(MovieGrid);
+                e.Handled = true;
+            }
+        }
+
+        private async void MovieGrid_KeyDown(object sender, KeyRoutedEventArgs e)
+        {
+            if (e.Key == VirtualKey.Escape)
+            {
+                RemoteNavigationHelper.TryFocusElement(SearchBox);
+                e.Handled = true;
+                return;
+            }
+
+            if ((e.Key == VirtualKey.Enter || e.Key == VirtualKey.Space) &&
+                !RemoteNavigationHelper.IsWithinInteractiveControl(e.OriginalSource) &&
+                RemoteNavigationHelper.FindDataContextInAncestors<MovieBrowseSlotViewModel>(e.OriginalSource) is { HasMovie: true, Movie: { } movie })
+            {
+                var variant = await ChooseMovieVariantAsync(movie, "Play");
+                if (variant != null && !string.IsNullOrWhiteSpace(variant.Movie.StreamUrl))
+                {
+                    Frame.Navigate(typeof(EmbeddedPlaybackPage), CreateMovieLaunchContext(variant));
+                }
+
+                e.Handled = true;
+            }
+        }
+
         private async void FeaturedInspect_Click(object sender, RoutedEventArgs e)
         {
             var movie = ViewModel.FeaturedMovie;
@@ -356,6 +390,30 @@ namespace Kroira.App.Views
             };
 
             return completion.Task;
+        }
+
+        public bool TryFocusPrimaryTarget()
+        {
+            return RemoteNavigationHelper.TryFocusElement(FeaturedPlayButton) ||
+                   RemoteNavigationHelper.TryFocusElement(SearchBox) ||
+                   RemoteNavigationHelper.TryFocusListItem(MovieGrid);
+        }
+
+        public bool TryHandleBackRequest()
+        {
+            var focusedElement = FocusManager.GetFocusedElement(XamlRoot) as DependencyObject;
+            if (!RemoteNavigationHelper.IsDescendantOf(focusedElement, SearchBox))
+            {
+                return RemoteNavigationHelper.TryFocusElement(SearchBox);
+            }
+
+            if (!string.IsNullOrWhiteSpace(SearchBox.Text))
+            {
+                SearchBox.Text = string.Empty;
+                return true;
+            }
+
+            return false;
         }
     }
 }

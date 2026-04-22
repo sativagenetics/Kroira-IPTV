@@ -7,7 +7,8 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
 
-    <Grid Background="{StaticResource KroiraPageAtmosphereBrush}">
+    <Grid Background="{StaticResource KroiraPageAtmosphereBrush}"
+          XYFocusKeyboardNavigation="Enabled">
         <Border HorizontalAlignment="Stretch"
                 VerticalAlignment="Top"
                 Height="1"
@@ -145,7 +146,8 @@
                     </StackPanel>
                 </Border>
             </NavigationView.PaneFooter>
-            <Grid Background="Transparent">
+            <Grid Background="Transparent"
+                  XYFocusKeyboardNavigation="Enabled">
                 <Border Margin="0,0,0,0"
                         Background="#3305070A"
                         BorderBrush="#14FFFFFF"

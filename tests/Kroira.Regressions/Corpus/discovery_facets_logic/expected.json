@@ -1,0 +1,273 @@
+{
+  "Sources": [],
+  "OperationalStates": [],
+  "DiscoveryFacets": [
+    {
+      "Id": "live_catchup_xtream",
+      "Domain": "Live",
+      "MatchingCount": 1,
+      "ProviderCount": 1,
+      "HasActiveFacetFilters": true,
+      "SummaryText": "Focused by Catchup ready / Xtream.",
+      "EffectiveSelection": {
+        "SignalKey": "catchup_ready",
+        "SourceTypeKey": "xtream",
+        "LanguageKey": "all",
+        "TagKey": "all"
+      },
+      "SignalOptions": [
+        {
+          "Key": "all",
+          "Label": "All live",
+          "ItemCount": 1
+        },
+        {
+          "Key": "favorites",
+          "Label": "Favorites",
+          "ItemCount": 1
+        },
+        {
+          "Key": "catchup_ready",
+          "Label": "Catchup ready",
+          "ItemCount": 1
+        },
+        {
+          "Key": "guide_linked",
+          "Label": "Guide linked",
+          "ItemCount": 1
+        },
+        {
+          "Key": "healthy_sources",
+          "Label": "Healthy sources",
+          "ItemCount": 1
+        },
+        {
+          "Key": "recently_watched",
+          "Label": "Recently watched",
+          "ItemCount": 1
+        }
+      ],
+      "SourceTypeOptions": [
+        {
+          "Key": "all",
+          "Label": "All source types",
+          "ItemCount": 1
+        },
+        {
+          "Key": "xtream",
+          "Label": "Xtream",
+          "ItemCount": 1
+        }
+      ],
+      "LanguageOptions": [
+        {
+          "Key": "all",
+          "Label": "All languages",
+          "ItemCount": 1
+        },
+        {
+          "Key": "tr",
+          "Label": "Turkish",
+          "ItemCount": 1
+        }
+      ],
+      "TagOptions": [
+        {
+          "Key": "all",
+          "Label": "All shelves",
+          "ItemCount": 1
+        },
+        {
+          "Key": "sports",
+          "Label": "Sports",
+          "ItemCount": 1
+        }
+      ],
+      "MatchingKeys": [
+        "live_xtream_catchup"
+      ]
+    },
+    {
+      "Id": "movies_recent_stalker_action",
+      "Domain": "Movies",
+      "MatchingCount": 1,
+      "ProviderCount": 1,
+      "HasActiveFacetFilters": true,
+      "SummaryText": "Focused by Recently synced / Stalker / English / Action.",
+      "EffectiveSelection": {
+        "SignalKey": "recently_synced",
+        "SourceTypeKey": "stalker",
+        "LanguageKey": "en",
+        "TagKey": "action"
+      },
+      "SignalOptions": [
+        {
+          "Key": "all",
+          "Label": "All movies",
+          "ItemCount": 1
+        },
+        {
+          "Key": "favorites",
+          "Label": "Favorites",
+          "ItemCount": 1
+        },
+        {
+          "Key": "artwork_ready",
+          "Label": "Artwork ready",
+          "ItemCount": 1
+        },
+        {
+          "Key": "healthy_sources",
+          "Label": "Healthy sources",
+          "ItemCount": 1
+        },
+        {
+          "Key": "recently_synced",
+          "Label": "Recently synced",
+          "ItemCount": 1
+        }
+      ],
+      "SourceTypeOptions": [
+        {
+          "Key": "all",
+          "Label": "All source types",
+          "ItemCount": 1
+        },
+        {
+          "Key": "stalker",
+          "Label": "Stalker",
+          "ItemCount": 1
+        }
+      ],
+      "LanguageOptions": [
+        {
+          "Key": "all",
+          "Label": "All languages",
+          "ItemCount": 1
+        },
+        {
+          "Key": "en",
+          "Label": "English",
+          "ItemCount": 1
+        }
+      ],
+      "TagOptions": [
+        {
+          "Key": "all",
+          "Label": "All genres",
+          "ItemCount": 1
+        },
+        {
+          "Key": "action",
+          "Label": "Action",
+          "ItemCount": 1
+        },
+        {
+          "Key": "thriller",
+          "Label": "Thriller",
+          "ItemCount": 1
+        }
+      ],
+      "MatchingKeys": [
+        "movie_stalker_action"
+      ]
+    },
+    {
+      "Id": "series_invalid_source_reset",
+      "Domain": "Series",
+      "MatchingCount": 3,
+      "ProviderCount": 3,
+      "HasActiveFacetFilters": false,
+      "SummaryText": "Source type, language, genre, episode-ready, and health appear only when the catalog proves them.",
+      "EffectiveSelection": {
+        "SignalKey": "all",
+        "SourceTypeKey": "all",
+        "LanguageKey": "all",
+        "TagKey": "all"
+      },
+      "SignalOptions": [
+        {
+          "Key": "all",
+          "Label": "All series",
+          "ItemCount": 3
+        },
+        {
+          "Key": "artwork_ready",
+          "Label": "Artwork ready",
+          "ItemCount": 1
+        },
+        {
+          "Key": "episode_ready",
+          "Label": "Episode ready",
+          "ItemCount": 2
+        },
+        {
+          "Key": "healthy_sources",
+          "Label": "Healthy sources",
+          "ItemCount": 2
+        },
+        {
+          "Key": "needs_attention",
+          "Label": "Needs attention",
+          "ItemCount": 1
+        },
+        {
+          "Key": "recently_synced",
+          "Label": "Recently synced",
+          "ItemCount": 3
+        }
+      ],
+      "SourceTypeOptions": [
+        {
+          "Key": "all",
+          "Label": "All source types",
+          "ItemCount": 3
+        },
+        {
+          "Key": "stalker",
+          "Label": "Stalker",
+          "ItemCount": 1
+        },
+        {
+          "Key": "xtream",
+          "Label": "Xtream",
+          "ItemCount": 2
+        }
+      ],
+      "LanguageOptions": [
+        {
+          "Key": "all",
+          "Label": "All languages",
+          "ItemCount": 3
+        },
+        {
+          "Key": "en",
+          "Label": "English",
+          "ItemCount": 2
+        },
+        {
+          "Key": "tr",
+          "Label": "Turkish",
+          "ItemCount": 1
+        }
+      ],
+      "TagOptions": [
+        {
+          "Key": "all",
+          "Label": "All genres",
+          "ItemCount": 3
+        },
+        {
+          "Key": "drama",
+          "Label": "Drama",
+          "ItemCount": 3
+        }
+      ],
+      "MatchingKeys": [
+        "series_ready_en_drama",
+        "series_ready_tr_drama",
+        "series_unready_en_drama"
+      ]
+    }
+  ]
+}

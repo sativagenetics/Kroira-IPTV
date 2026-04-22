@@ -1,0 +1,13 @@
+{
+  "js": [
+    {
+      "id": "651",
+      "name": "Fixture Movie",
+      "genre_id": "20",
+      "screenshot_uri": "/stalker-partial/assets/movie.png",
+      "cmd": "ffmpeg /stalker-partial/vod/651.mp4",
+      "description": "Fixture partial movie",
+      "year": "2024"
+    }
+  ]
+}

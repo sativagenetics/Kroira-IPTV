@@ -14,7 +14,7 @@ using Windows.System;
 
 namespace Kroira.App.Views
 {
-    public sealed partial class ChannelsPage : Page
+    public sealed partial class ChannelsPage : Page, IRemoteNavigationPage
     {
         private static string LogPath => System.IO.Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
@@ -468,6 +468,30 @@ namespace Kroira.App.Views
             };
 
             return completion.Task;
+        }
+
+        public bool TryFocusPrimaryTarget()
+        {
+            return RemoteNavigationHelper.TryFocusElement(SearchBox) ||
+                   RemoteNavigationHelper.TryFocusListItem(ChannelList);
+        }
+
+        public bool TryHandleBackRequest()
+        {
+            if (!string.IsNullOrWhiteSpace(SearchBox.Text) &&
+                RemoteNavigationHelper.IsDescendantOf(FocusManager.GetFocusedElement(XamlRoot) as DependencyObject, SearchBox))
+            {
+                SearchBox.Text = string.Empty;
+                return true;
+            }
+
+            var focusedElement = FocusManager.GetFocusedElement(XamlRoot) as DependencyObject;
+            if (!RemoteNavigationHelper.IsDescendantOf(focusedElement, SearchBox))
+            {
+                return RemoteNavigationHelper.TryFocusElement(SearchBox);
+            }
+
+            return false;
         }
     }
 }

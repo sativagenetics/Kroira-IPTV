@@ -8,11 +8,12 @@ using Kroira.App.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Navigation;
 
 namespace Kroira.App.Views
 {
-    public sealed partial class HomePage : Page
+    public sealed partial class HomePage : Page, IRemoteNavigationPage
     {
         private static readonly bool BypassInitialHomeLoad = false;
         private static readonly string StartupLogPath =
@@ -284,6 +285,31 @@ namespace Kroira.App.Views
             catch
             {
             }
+        }
+
+        public bool TryFocusPrimaryTarget()
+        {
+            if (RemoteNavigationHelper.TryFocusElement(FeaturedPrimaryButton))
+            {
+                return true;
+            }
+
+            return ContinueWatchingRail.TryFocusPrimaryItem() ||
+                   RecommendedRail.TryFocusPrimaryItem() ||
+                   RecentlyAddedRail.TryFocusPrimaryItem() ||
+                   TopRatedRail.TryFocusPrimaryItem() ||
+                   LiveNowRail.TryFocusPrimaryItem();
+        }
+
+        public bool TryHandleBackRequest()
+        {
+            var focusedElement = FocusManager.GetFocusedElement(XamlRoot) as DependencyObject;
+            if (!RemoteNavigationHelper.IsDescendantOf(focusedElement, FeaturedPrimaryButton))
+            {
+                return TryFocusPrimaryTarget();
+            }
+
+            return false;
         }
     }
 }

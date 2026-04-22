@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tv>
+  <channel id="repair.news">
+    <display-name>Repair News HD</display-name>
+  </channel>
+  <channel id="repair.archive">
+    <display-name>Repair Archive HD</display-name>
+  </channel>
+  <programme start="20200101090000 +0000" stop="20200101100000 +0000" channel="repair.news">
+    <title>Morning Bulletin</title>
+  </programme>
+  <programme start="20200101100000 +0000" stop="20200101110000 +0000" channel="repair.archive">
+    <title>Archive Match</title>
+  </programme>
+</tv>

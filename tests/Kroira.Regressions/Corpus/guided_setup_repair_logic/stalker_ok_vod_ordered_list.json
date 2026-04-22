@@ -1,0 +1,13 @@
+{
+  "js": [
+    {
+      "id": "901",
+      "name": "Fixture Portal Movie",
+      "genre_id": "20",
+      "screenshot_uri": "/stalker-ok/assets/movie.png",
+      "cmd": "ffmpeg /stalker-ok/vod/901.mp4",
+      "description": "Fixture movie",
+      "year": "2024"
+    }
+  ]
+}

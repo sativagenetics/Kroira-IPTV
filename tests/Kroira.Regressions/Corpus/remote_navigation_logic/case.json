@@ -1,0 +1,86 @@
+{
+  "id": "remote_navigation_logic",
+  "description": "Remote-friendly mode persists per profile and the centralized player remote command map stays deterministic across focused-control and live-player contexts.",
+  "remoteNavigation": {
+    "updatedEnabled": false
+  },
+  "playbackRemoteCommands": [
+    {
+      "id": "space_toggle_play_pause",
+      "key": "Space",
+      "context": {}
+    },
+    {
+      "id": "space_reserved_control",
+      "key": "Space",
+      "context": {
+        "reserveFocusedControlKeys": true
+      }
+    },
+    {
+      "id": "shift_right_seek_30",
+      "key": "Right",
+      "shiftDown": true,
+      "context": {
+        "canSeek": true
+      }
+    },
+    {
+      "id": "pagedown_next_channel",
+      "key": "PageDown",
+      "context": {
+        "isLivePlayback": true
+      }
+    },
+    {
+      "id": "back_last_channel",
+      "key": "Back",
+      "context": {
+        "isLivePlayback": true,
+        "hasLastChannel": true
+      }
+    },
+    {
+      "id": "guide_for_channel",
+      "key": "G",
+      "context": {
+        "isChannelPlayback": true
+      }
+    },
+    {
+      "id": "home_start_over",
+      "key": "Home",
+      "context": {
+        "canRestartOrStartOver": true
+      }
+    },
+    {
+      "id": "end_go_live",
+      "key": "End",
+      "context": {
+        "canGoLive": true
+      }
+    },
+    {
+      "id": "f_disabled_in_pip",
+      "key": "F",
+      "context": {
+        "isPictureInPicture": true
+      }
+    },
+    {
+      "id": "m_blocked_by_text_input",
+      "key": "M",
+      "context": {
+        "isTextInputFocused": true
+      }
+    },
+    {
+      "id": "escape_closes_open_menu",
+      "key": "Escape",
+      "context": {
+        "isMenuOpen": true
+      }
+    }
+  ]
+}

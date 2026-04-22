@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Windows.Foundation;
+using Windows.ApplicationModel.DataTransfer;
 
 namespace Kroira.App.Views
 {
@@ -78,6 +79,40 @@ namespace Kroira.App.Views
             }
         }
 
+        private async void CopyActivityReport_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not FrameworkElement { Tag: int id })
+            {
+                return;
+            }
+
+            var report = ViewModel.GetSafeActivityReport(id);
+            if (string.IsNullOrWhiteSpace(report))
+            {
+                await ShowMessageAsync("Activity report unavailable", "This source does not have a share-safe activity summary yet.");
+                return;
+            }
+
+            await CopyTextAsync(report, "Activity report unavailable");
+        }
+
+        private async void CopyRepairReport_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not FrameworkElement { Tag: int id })
+            {
+                return;
+            }
+
+            var report = ViewModel.GetSafeRepairReport(id);
+            if (string.IsNullOrWhiteSpace(report))
+            {
+                await ShowMessageAsync("Repair report unavailable", "This source does not have a share-safe repair summary yet.");
+                return;
+            }
+
+            await CopyTextAsync(report, "Repair report unavailable");
+        }
+
         private void SyncEpgSource_Click(object sender, RoutedEventArgs e)
         {
             if (sender is FrameworkElement { Tag: int id })
@@ -109,6 +144,43 @@ namespace Kroira.App.Views
                 return;
             }
 
+            await OpenGuideSettingsAsync(id);
+        }
+
+        private async void RepairAction_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not FrameworkElement { Tag: SourceRepairActionItemViewModel action })
+            {
+                return;
+            }
+
+            if (action.Kind == SourceRepairActionKind.Review || action.ActionType == SourceRepairActionType.ReviewGuideSettings)
+            {
+                await OpenGuideSettingsAsync(action.SourceId);
+                return;
+            }
+
+            try
+            {
+                var result = await ViewModel.ApplyRepairActionAsync(action.SourceId, action.ActionType);
+                if (result == null)
+                {
+                    return;
+                }
+
+                var detail = string.IsNullOrWhiteSpace(result.ChangeText)
+                    ? result.DetailText
+                    : $"{result.DetailText}{Environment.NewLine}{Environment.NewLine}{result.ChangeText}".Trim();
+                await ShowMessageAsync(result.HeadlineText, detail);
+            }
+            catch (Exception ex)
+            {
+                await ShowMessageAsync("Repair attempt failed", ex.Message);
+            }
+        }
+
+        private async Task OpenGuideSettingsAsync(int id)
+        {
             var draft = await ViewModel.GetGuideSettingsAsync(id);
             if (draft == null)
             {
@@ -343,6 +415,27 @@ namespace Kroira.App.Views
             catch (Exception ex)
             {
                 await ShowMessageAsync("Guide settings failed", ex.Message);
+            }
+        }
+
+        private async Task CopyTextAsync(string text, string unavailableTitle)
+        {
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                await ShowMessageAsync(unavailableTitle, "Nothing safe to copy yet.");
+                return;
+            }
+
+            try
+            {
+                var package = new DataPackage();
+                package.SetText(text);
+                Clipboard.SetContent(package);
+                Clipboard.Flush();
+            }
+            catch (Exception ex)
+            {
+                await ShowMessageAsync("Copy failed", ex.Message);
             }
         }
 

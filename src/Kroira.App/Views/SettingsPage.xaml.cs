@@ -5,11 +5,12 @@ using Kroira.App.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Navigation;
 
 namespace Kroira.App.Views
 {
-    public sealed partial class SettingsPage : Page
+    public sealed partial class SettingsPage : Page, IRemoteNavigationPage
     {
         private bool _isExportPickerOpen;
 
@@ -132,6 +133,23 @@ namespace Kroira.App.Views
         private static void LogExport(string message)
         {
             BackupRuntimeLogger.Log("SETTINGS PAGE", message);
+        }
+
+        public bool TryFocusPrimaryTarget()
+        {
+            return RemoteNavigationHelper.TryFocusElement(RemoteModeToggle) ||
+                   RemoteNavigationHelper.TryFocusElement(LanguageComboBox);
+        }
+
+        public bool TryHandleBackRequest()
+        {
+            var focusedElement = FocusManager.GetFocusedElement(XamlRoot) as DependencyObject;
+            if (!RemoteNavigationHelper.IsDescendantOf(focusedElement, RemoteModeToggle))
+            {
+                return TryFocusPrimaryTarget();
+            }
+
+            return false;
         }
     }
 }

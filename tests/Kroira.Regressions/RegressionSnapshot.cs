@@ -20,6 +20,27 @@ internal sealed class RegressionSnapshot
     public List<ExternalLaunchSnapshot>? ExternalLaunches { get; set; }
 
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public RemoteNavigationSnapshot? RemoteNavigation { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public List<PlaybackRemoteCommandSnapshot>? PlaybackRemoteCommands { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public List<DiscoveryFacetSnapshot>? DiscoveryFacets { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public List<SourceActivityRegressionSnapshot>? SourceActivities { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public List<SourceSetupValidationRegressionSnapshot>? SetupValidations { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public List<SourceRepairRegressionSnapshot>? SourceRepairs { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public List<SourceRepairActionRegressionSnapshot>? SourceRepairActions { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public List<PlaybackProgressSnapshot>? PlaybackProgresses { get; set; }
 
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
@@ -399,6 +420,168 @@ internal sealed class ExternalLaunchSnapshot
     public string ResolvedUrlText { get; set; } = string.Empty;
     public string LaunchedUrl { get; set; } = string.Empty;
     public bool UsedApplicationPicker { get; set; }
+}
+
+internal sealed class RemoteNavigationSnapshot
+{
+    public bool InitialEnabled { get; set; }
+    public bool UpdatedEnabled { get; set; }
+    public bool ReloadedEnabled { get; set; }
+    public int StateChangedCount { get; set; }
+    public string SettingKey { get; set; } = string.Empty;
+    public string StoredJson { get; set; } = string.Empty;
+}
+
+internal sealed class PlaybackRemoteCommandSnapshot
+{
+    public string Id { get; set; } = string.Empty;
+    public string Key { get; set; } = string.Empty;
+    public bool ShiftDown { get; set; }
+    public string Command { get; set; } = string.Empty;
+    public bool IsTextInputFocused { get; set; }
+    public bool IsMenuOpen { get; set; }
+    public bool ReserveFocusedControlKeys { get; set; }
+    public bool IsPictureInPicture { get; set; }
+    public bool IsLivePlayback { get; set; }
+    public bool IsChannelPlayback { get; set; }
+    public bool CanSeek { get; set; }
+    public bool HasLastChannel { get; set; }
+    public bool CanRestartOrStartOver { get; set; }
+    public bool CanGoLive { get; set; }
+}
+
+internal sealed class DiscoveryFacetSnapshot
+{
+    public string Id { get; set; } = string.Empty;
+    public string Domain { get; set; } = string.Empty;
+    public int MatchingCount { get; set; }
+    public int ProviderCount { get; set; }
+    public bool HasActiveFacetFilters { get; set; }
+    public string SummaryText { get; set; } = string.Empty;
+    public DiscoverySelectionSnapshot EffectiveSelection { get; set; } = new();
+    public List<DiscoveryFacetOptionSnapshot> SignalOptions { get; set; } = [];
+    public List<DiscoveryFacetOptionSnapshot> SourceTypeOptions { get; set; } = [];
+    public List<DiscoveryFacetOptionSnapshot> LanguageOptions { get; set; } = [];
+    public List<DiscoveryFacetOptionSnapshot> TagOptions { get; set; } = [];
+    public List<string> MatchingKeys { get; set; } = [];
+}
+
+internal sealed class DiscoverySelectionSnapshot
+{
+    public string SignalKey { get; set; } = string.Empty;
+    public string SourceTypeKey { get; set; } = string.Empty;
+    public string LanguageKey { get; set; } = string.Empty;
+    public string TagKey { get; set; } = string.Empty;
+}
+
+internal sealed class DiscoveryFacetOptionSnapshot
+{
+    public string Key { get; set; } = string.Empty;
+    public string Label { get; set; } = string.Empty;
+    public int ItemCount { get; set; }
+}
+
+internal sealed class SourceActivityRegressionSnapshot
+{
+    public string Id { get; set; } = string.Empty;
+    public string SourceKey { get; set; } = string.Empty;
+    public string Headline { get; set; } = string.Empty;
+    public string Trend { get; set; } = string.Empty;
+    public string CurrentState { get; set; } = string.Empty;
+    public string LatestAttempt { get; set; } = string.Empty;
+    public string LastSuccess { get; set; } = string.Empty;
+    public string QuietState { get; set; } = string.Empty;
+    public string SafeReport { get; set; } = string.Empty;
+    public List<SourceActivityMetricRegressionSnapshot> Metrics { get; set; } = [];
+    public List<SourceActivityTimelineRegressionSnapshot> Timeline { get; set; } = [];
+}
+
+internal sealed class SourceActivityMetricRegressionSnapshot
+{
+    public string Label { get; set; } = string.Empty;
+    public string Value { get; set; } = string.Empty;
+    public string Detail { get; set; } = string.Empty;
+    public string Tone { get; set; } = string.Empty;
+}
+
+internal sealed class SourceActivityTimelineRegressionSnapshot
+{
+    public string TimestampUtc { get; set; } = string.Empty;
+    public string Category { get; set; } = string.Empty;
+    public string Title { get; set; } = string.Empty;
+    public string Subtitle { get; set; } = string.Empty;
+    public string Detail { get; set; } = string.Empty;
+    public string BadgeText { get; set; } = string.Empty;
+    public string Tone { get; set; } = string.Empty;
+}
+
+internal sealed class SourceSetupValidationRegressionSnapshot
+{
+    public string Id { get; set; } = string.Empty;
+    public string RequestedType { get; set; } = string.Empty;
+    public string DetectedTypeHint { get; set; } = string.Empty;
+    public bool CanSave { get; set; }
+    public string Headline { get; set; } = string.Empty;
+    public string Summary { get; set; } = string.Empty;
+    public string Connection { get; set; } = string.Empty;
+    public string TypeHint { get; set; } = string.Empty;
+    public string CapabilitySummary { get; set; } = string.Empty;
+    public string SafeReport { get; set; } = string.Empty;
+    public List<SourceGuidanceCapabilityRegressionSnapshot> Capabilities { get; set; } = [];
+    public List<SourceGuidanceIssueRegressionSnapshot> Issues { get; set; } = [];
+}
+
+internal sealed class SourceRepairRegressionSnapshot
+{
+    public string Id { get; set; } = string.Empty;
+    public string SourceKey { get; set; } = string.Empty;
+    public bool IsStable { get; set; }
+    public string Headline { get; set; } = string.Empty;
+    public string Summary { get; set; } = string.Empty;
+    public string Status { get; set; } = string.Empty;
+    public string CapabilitySummary { get; set; } = string.Empty;
+    public string SafeReport { get; set; } = string.Empty;
+    public List<SourceGuidanceCapabilityRegressionSnapshot> Capabilities { get; set; } = [];
+    public List<SourceGuidanceIssueRegressionSnapshot> Issues { get; set; } = [];
+    public List<SourceRepairActionOptionRegressionSnapshot> Actions { get; set; } = [];
+}
+
+internal sealed class SourceRepairActionRegressionSnapshot
+{
+    public string Id { get; set; } = string.Empty;
+    public string SourceKey { get; set; } = string.Empty;
+    public string ActionType { get; set; } = string.Empty;
+    public bool Success { get; set; }
+    public string Headline { get; set; } = string.Empty;
+    public string Detail { get; set; } = string.Empty;
+    public string Change { get; set; } = string.Empty;
+    public string SafeReport { get; set; } = string.Empty;
+}
+
+internal sealed class SourceGuidanceCapabilityRegressionSnapshot
+{
+    public string Label { get; set; } = string.Empty;
+    public string Value { get; set; } = string.Empty;
+    public string Detail { get; set; } = string.Empty;
+    public string Tone { get; set; } = string.Empty;
+}
+
+internal sealed class SourceGuidanceIssueRegressionSnapshot
+{
+    public string Title { get; set; } = string.Empty;
+    public string Detail { get; set; } = string.Empty;
+    public string Tone { get; set; } = string.Empty;
+}
+
+internal sealed class SourceRepairActionOptionRegressionSnapshot
+{
+    public string ActionType { get; set; } = string.Empty;
+    public string Kind { get; set; } = string.Empty;
+    public bool IsPrimary { get; set; }
+    public string Title { get; set; } = string.Empty;
+    public string Summary { get; set; } = string.Empty;
+    public string ButtonText { get; set; } = string.Empty;
+    public string Tone { get; set; } = string.Empty;
 }
 
 internal sealed class PlaybackResolutionSnapshot

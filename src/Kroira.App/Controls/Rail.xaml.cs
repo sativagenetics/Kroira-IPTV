@@ -97,6 +97,29 @@ namespace Kroira.App.Controls
             set => SetValue(ScrollAmountProperty, value);
         }
 
+        public bool TryFocusPrimaryItem()
+        {
+            if (RailRepeater.ItemsSource == null)
+            {
+                return false;
+            }
+
+            if (RailRepeater.TryGetElement(0) is FrameworkElement element)
+            {
+                if (element is Control control && control.Focus(FocusState.Keyboard))
+                {
+                    return true;
+                }
+
+                if (element.Focus(FocusState.Keyboard))
+                {
+                    return true;
+                }
+            }
+
+            return RailRoot.Focus(FocusState.Keyboard);
+        }
+
         private void Rail_Loaded(object sender, RoutedEventArgs e)
         {
             UpdateButtonState();

@@ -32,7 +32,7 @@
         </Style>
     </Page.Resources>
 
-    <Grid>
+    <Grid XYFocusKeyboardNavigation="Enabled">
         <Grid Padding="42,32,42,40"
               MaxWidth="1480"
               HorizontalAlignment="Center"
@@ -162,7 +162,8 @@
                         <StackPanel Orientation="Horizontal"
                                     Spacing="10"
                                     Margin="0,6,0,0">
-                            <Button Click="FeaturedPlay_Click"
+                            <Button x:Name="FeaturedPlayButton"
+                                    Click="FeaturedPlay_Click"
                                     IsEnabled="{x:Bind ViewModel.FeaturedMovieCanPlay, Mode=OneWay}"
                                     Style="{StaticResource KroiraPrimaryButtonStyle}"
                                     Padding="20,11"
@@ -334,6 +335,7 @@
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
 
                     <Grid Grid.Row="0" ColumnSpacing="12">
@@ -345,8 +347,10 @@
                         </Grid.ColumnDefinitions>
 
                         <Grid Grid.Column="0">
-                            <TextBox Style="{StaticResource KroiraFilterTextBoxStyle}"
+                            <TextBox x:Name="SearchBox"
+                                     Style="{StaticResource KroiraFilterTextBoxStyle}"
                                      Text="{x:Bind ViewModel.SearchQuery, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                     KeyDown="SearchBox_KeyDown"
                                      PlaceholderText="Search movies" />
                             <FontIcon Glyph="&#xE721;"
                                       FontSize="14"
@@ -386,7 +390,76 @@
                         </StackPanel>
                     </Grid>
 
-                    <Expander Grid.Row="1"
+                    <Grid Grid.Row="1"
+                          ColumnSpacing="14">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel Spacing="4"
+                                    MaxWidth="540">
+                            <TextBlock Text="EXPLORE"
+                                       Style="{StaticResource KroiraLabelStyle}"
+                                       Foreground="{StaticResource KroiraAccentBrush}" />
+                            <TextBlock Text="{x:Bind ViewModel.DiscoverySummaryText, Mode=OneWay}"
+                                       Style="{StaticResource KroiraMetaStyle}"
+                                       Foreground="{StaticResource KroiraTextSecondaryBrush}"
+                                       TextWrapping="Wrap" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="1"
+                                    Orientation="Horizontal"
+                                    Spacing="10"
+                                    HorizontalAlignment="Right">
+                            <StackPanel Width="182"
+                                        Spacing="4"
+                                        Visibility="{x:Bind ViewModel.DiscoverySignalVisibility, Mode=OneWay}">
+                                <TextBlock Text="Focus"
+                                           Style="{StaticResource KroiraLabelStyle}"
+                                           Foreground="{StaticResource KroiraAccentBrush}" />
+                                <ComboBox Style="{StaticResource KroiraFilterComboBoxStyle}"
+                                          ItemsSource="{x:Bind ViewModel.DiscoverySignalOptions, Mode=OneWay}"
+                                          SelectedItem="{x:Bind ViewModel.SelectedDiscoverySignalOption, Mode=TwoWay}"
+                                          DisplayMemberPath="DisplayName" />
+                            </StackPanel>
+                            <StackPanel Width="170"
+                                        Spacing="4"
+                                        Visibility="{x:Bind ViewModel.DiscoverySourceTypeVisibility, Mode=OneWay}">
+                                <TextBlock Text="Source type"
+                                           Style="{StaticResource KroiraLabelStyle}"
+                                           Foreground="{StaticResource KroiraAccentBrush}" />
+                                <ComboBox Style="{StaticResource KroiraFilterComboBoxStyle}"
+                                          ItemsSource="{x:Bind ViewModel.DiscoverySourceTypeOptions, Mode=OneWay}"
+                                          SelectedItem="{x:Bind ViewModel.SelectedDiscoverySourceTypeOption, Mode=TwoWay}"
+                                          DisplayMemberPath="DisplayName" />
+                            </StackPanel>
+                            <StackPanel Width="170"
+                                        Spacing="4"
+                                        Visibility="{x:Bind ViewModel.DiscoveryLanguageVisibility, Mode=OneWay}">
+                                <TextBlock Text="Language"
+                                           Style="{StaticResource KroiraLabelStyle}"
+                                           Foreground="{StaticResource KroiraAccentBrush}" />
+                                <ComboBox Style="{StaticResource KroiraFilterComboBoxStyle}"
+                                          ItemsSource="{x:Bind ViewModel.DiscoveryLanguageOptions, Mode=OneWay}"
+                                          SelectedItem="{x:Bind ViewModel.SelectedDiscoveryLanguageOption, Mode=TwoWay}"
+                                          DisplayMemberPath="DisplayName" />
+                            </StackPanel>
+                            <StackPanel Width="182"
+                                        Spacing="4"
+                                        Visibility="{x:Bind ViewModel.DiscoveryTagVisibility, Mode=OneWay}">
+                                <TextBlock Text="Genre"
+                                           Style="{StaticResource KroiraLabelStyle}"
+                                           Foreground="{StaticResource KroiraAccentBrush}" />
+                                <ComboBox Style="{StaticResource KroiraFilterComboBoxStyle}"
+                                          ItemsSource="{x:Bind ViewModel.DiscoveryTagOptions, Mode=OneWay}"
+                                          SelectedItem="{x:Bind ViewModel.SelectedDiscoveryTagOption, Mode=TwoWay}"
+                                          DisplayMemberPath="DisplayName" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Grid>
+
+                    <Expander Grid.Row="2"
                               Header="Advanced browse controls"
                               IsExpanded="{x:Bind ViewModel.HasAdvancedFilters, Mode=OneWay}">
                         <Grid Margin="0,12,0,0" ColumnSpacing="18">
@@ -445,27 +518,29 @@
             </Border>
 
             <Grid Grid.Column="1" Grid.Row="1">
-                <StackPanel Visibility="{x:Bind ViewModel.IsEmpty, Mode=OneWay}"
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            Spacing="10"
-                            MaxWidth="460">
+                    <StackPanel Visibility="{x:Bind ViewModel.IsEmpty, Mode=OneWay}"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Spacing="10"
+                                MaxWidth="460">
                     <FontIcon Glyph="&#xE8B2;"
                               Foreground="{StaticResource KroiraTextTertiaryBrush}"
                               FontSize="28"
                               HorizontalAlignment="Center" />
-                    <TextBlock Text="No movies to show"
-                               Style="{StaticResource KroiraSectionTitleStyle}"
-                               HorizontalAlignment="Center" />
-                    <TextBlock Text="Sync an Xtream VOD source, or clear your search and category filters."
-                               Style="{StaticResource KroiraBodyStyle}"
-                               TextAlignment="Center" />
-                </StackPanel>
+                        <TextBlock Text="{x:Bind ViewModel.EmptyStateTitle, Mode=OneWay}"
+                                   Style="{StaticResource KroiraSectionTitleStyle}"
+                                   HorizontalAlignment="Center" />
+                        <TextBlock Text="{x:Bind ViewModel.EmptyStateMessage, Mode=OneWay}"
+                                   Style="{StaticResource KroiraBodyStyle}"
+                                   TextAlignment="Center" />
+                    </StackPanel>
 
-                <GridView ItemsSource="{x:Bind ViewModel.DisplayMovieSlots, Mode=OneWay}"
+                <GridView x:Name="MovieGrid"
+                          ItemsSource="{x:Bind ViewModel.DisplayMovieSlots, Mode=OneWay}"
                           SelectionMode="None"
                           IsItemClickEnabled="True"
                           ItemClick="GridView_ItemClick"
+                          KeyDown="MovieGrid_KeyDown"
                           ItemContainerStyle="{StaticResource MovieTileContainerStyle}"
                           HorizontalAlignment="Left"
                           Width="1030"

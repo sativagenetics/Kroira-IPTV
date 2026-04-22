@@ -1,0 +1,72 @@
+{
+  "id": "guided_setup_repair_logic",
+  "description": "Guided source setup previews real capabilities and the repair assistant suggests bounded actions from persisted diagnostics and activity.",
+  "sources": [
+    {
+      "key": "repair-m3u",
+      "name": "Fixture Repair M3U",
+      "type": "M3U",
+      "url": "{{server}}/repair-playlist.m3u",
+      "epgMode": "Detected",
+      "companionScope": "PlaybackAndProbing",
+      "companionMode": "Buffered",
+      "companionUrl": "{{server}}/companion-down",
+      "refreshTrigger": "InitialImport",
+      "refreshScope": "Full"
+    },
+    {
+      "key": "repair-stalker",
+      "name": "Fixture Repair Stalker",
+      "type": "Stalker",
+      "url": "{{server}}/stalker-partial/c",
+      "stalkerMacAddress": "00:1A:79:10:00:55",
+      "stalkerTimezone": "Europe/Istanbul",
+      "stalkerLocale": "en",
+      "epgMode": "Detected",
+      "refreshTrigger": "InitialImport",
+      "refreshScope": "Full"
+    }
+  ],
+  "setupValidationRequests": [
+    {
+      "id": "setup_m3u",
+      "type": "M3U",
+      "url": "{{server}}/repair-playlist.m3u",
+      "epgMode": "Detected"
+    },
+    {
+      "id": "setup_xtream",
+      "type": "Xtream",
+      "url": "{{server}}/xtream",
+      "username": "demo",
+      "password": "demo",
+      "epgMode": "Detected"
+    },
+    {
+      "id": "setup_stalker",
+      "type": "Stalker",
+      "url": "{{server}}/stalker-ok/c",
+      "stalkerMacAddress": "00:1A:79:10:00:01",
+      "stalkerTimezone": "Europe/Istanbul",
+      "stalkerLocale": "en",
+      "epgMode": "Detected"
+    }
+  ],
+  "repairRequests": [
+    {
+      "id": "repair_m3u_before",
+      "sourceKey": "repair-m3u"
+    },
+    {
+      "id": "repair_stalker_before",
+      "sourceKey": "repair-stalker"
+    }
+  ],
+  "repairActionRequests": [
+    {
+      "id": "disable_companion",
+      "sourceKey": "repair-m3u",
+      "actionType": "DisableCompanionRelay"
+    }
+  ]
+}

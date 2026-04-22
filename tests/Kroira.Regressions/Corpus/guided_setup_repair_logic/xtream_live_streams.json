@@ -1,0 +1,11 @@
+[
+  {
+    "stream_id": "1101",
+    "category_id": "10",
+    "name": "Fixture Sports 1",
+    "stream_icon": "",
+    "epg_channel_id": "fixture.sports.1",
+    "tv_archive": "1",
+    "tv_archive_duration": "48"
+  }
+]

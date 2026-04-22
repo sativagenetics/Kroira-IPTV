@@ -9,10 +9,17 @@ internal sealed class RegressionCaseDefinition
     public string Id { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
     public List<RegressionSourceDefinition> Sources { get; set; } = [];
+    public List<RegressionDiscoveryRequestDefinition> DiscoveryRequests { get; set; } = [];
     public List<RegressionPlaybackRequestDefinition> PlaybackRequests { get; set; } = [];
     public List<RegressionCatchupRequestDefinition> CatchupRequests { get; set; } = [];
     public List<RegressionInspectionRequestDefinition> InspectionRequests { get; set; } = [];
     public List<RegressionExternalLaunchRequestDefinition> ExternalLaunchRequests { get; set; } = [];
+    public List<RegressionSetupValidationRequestDefinition> SetupValidationRequests { get; set; } = [];
+    public List<RegressionSourceRepairRequestDefinition> RepairRequests { get; set; } = [];
+    public List<RegressionSourceRepairActionRequestDefinition> RepairActionRequests { get; set; } = [];
+    public List<RegressionSourceActivityRequestDefinition> ActivityRequests { get; set; } = [];
+    public RegressionRemoteNavigationDefinition? RemoteNavigation { get; set; }
+    public List<RegressionPlaybackRemoteCommandRequestDefinition> PlaybackRemoteCommands { get; set; } = [];
     public List<RegressionMutationDefinition> Mutations { get; set; } = [];
     public RegressionRuntimeMaintenanceDefinition? RuntimeMaintenance { get; set; }
     public RegressionSurfaceLoadDefinition? SurfaceLoads { get; set; }
@@ -24,6 +31,40 @@ internal sealed class RegressionPlaybackRequestDefinition
     public string SourceKey { get; set; } = string.Empty;
     public PlaybackContentType ContentType { get; set; } = PlaybackContentType.Channel;
     public string MatchName { get; set; } = string.Empty;
+}
+
+internal sealed class RegressionDiscoveryRequestDefinition
+{
+    public string Id { get; set; } = string.Empty;
+    public CatalogDiscoveryDomain Domain { get; set; } = CatalogDiscoveryDomain.Live;
+    public string NowUtc { get; set; } = string.Empty;
+    public RegressionDiscoverySelectionDefinition Selection { get; set; } = new();
+    public List<RegressionDiscoveryRecordDefinition> Records { get; set; } = [];
+}
+
+internal sealed class RegressionDiscoverySelectionDefinition
+{
+    public string SignalKey { get; set; } = string.Empty;
+    public string SourceTypeKey { get; set; } = string.Empty;
+    public string LanguageKey { get; set; } = string.Empty;
+    public string TagKey { get; set; } = string.Empty;
+}
+
+internal sealed class RegressionDiscoveryRecordDefinition
+{
+    public string Key { get; set; } = string.Empty;
+    public List<int> SourceProfileIds { get; set; } = [];
+    public List<SourceType> SourceTypes { get; set; } = [];
+    public string Language { get; set; } = string.Empty;
+    public string Tags { get; set; } = string.Empty;
+    public bool IsFavorite { get; set; }
+    public bool HasGuide { get; set; }
+    public bool HasCatchup { get; set; }
+    public bool HasArtwork { get; set; }
+    public bool HasPlayableChildren { get; set; }
+    public CatalogDiscoveryHealthBucket HealthBucket { get; set; } = CatalogDiscoveryHealthBucket.Unknown;
+    public string LastSyncUtc { get; set; } = string.Empty;
+    public string LastInteractionUtc { get; set; } = string.Empty;
 }
 
 internal sealed class RegressionCatchupRequestDefinition
@@ -78,6 +119,74 @@ internal sealed class RegressionInspectionRuntimeStateDefinition
     public long PositionMs { get; set; }
     public long DurationMs { get; set; }
     public bool IsSeekable { get; set; }
+}
+
+internal sealed class RegressionSourceActivityRequestDefinition
+{
+    public string Id { get; set; } = string.Empty;
+    public string SourceKey { get; set; } = string.Empty;
+}
+
+internal sealed class RegressionSetupValidationRequestDefinition
+{
+    public string Id { get; set; } = string.Empty;
+    public SourceType Type { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string Url { get; set; } = string.Empty;
+    public string Username { get; set; } = string.Empty;
+    public string Password { get; set; } = string.Empty;
+    public string ManualEpgUrl { get; set; } = string.Empty;
+    public EpgActiveMode EpgMode { get; set; } = EpgActiveMode.Detected;
+    public SourceProxyScope ProxyScope { get; set; } = SourceProxyScope.Disabled;
+    public string ProxyUrl { get; set; } = string.Empty;
+    public SourceCompanionScope CompanionScope { get; set; } = SourceCompanionScope.Disabled;
+    public SourceCompanionRelayMode CompanionMode { get; set; } = SourceCompanionRelayMode.Buffered;
+    public string CompanionUrl { get; set; } = string.Empty;
+    public string StalkerMacAddress { get; set; } = string.Empty;
+    public string StalkerDeviceId { get; set; } = string.Empty;
+    public string StalkerSerialNumber { get; set; } = string.Empty;
+    public string StalkerTimezone { get; set; } = string.Empty;
+    public string StalkerLocale { get; set; } = string.Empty;
+}
+
+internal sealed class RegressionSourceRepairRequestDefinition
+{
+    public string Id { get; set; } = string.Empty;
+    public string SourceKey { get; set; } = string.Empty;
+}
+
+internal sealed class RegressionSourceRepairActionRequestDefinition
+{
+    public string Id { get; set; } = string.Empty;
+    public string SourceKey { get; set; } = string.Empty;
+    public SourceRepairActionType ActionType { get; set; } = SourceRepairActionType.RetestSource;
+}
+
+internal sealed class RegressionRemoteNavigationDefinition
+{
+    public bool? UpdatedEnabled { get; set; }
+}
+
+internal sealed class RegressionPlaybackRemoteCommandRequestDefinition
+{
+    public string Id { get; set; } = string.Empty;
+    public string Key { get; set; } = string.Empty;
+    public bool ShiftDown { get; set; }
+    public RegressionPlaybackRemoteContextDefinition Context { get; set; } = new();
+}
+
+internal sealed class RegressionPlaybackRemoteContextDefinition
+{
+    public bool IsTextInputFocused { get; set; }
+    public bool IsMenuOpen { get; set; }
+    public bool ReserveFocusedControlKeys { get; set; }
+    public bool IsPictureInPicture { get; set; }
+    public bool IsLivePlayback { get; set; }
+    public bool IsChannelPlayback { get; set; }
+    public bool CanSeek { get; set; }
+    public bool HasLastChannel { get; set; }
+    public bool CanRestartOrStartOver { get; set; }
+    public bool CanGoLive { get; set; }
 }
 
 internal sealed class RegressionSourceDefinition
