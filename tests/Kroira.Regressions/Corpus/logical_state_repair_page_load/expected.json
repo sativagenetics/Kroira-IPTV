@@ -1,0 +1,502 @@
+{
+  "Sources": [
+    {
+      "Key": "repair-source",
+      "Name": "Fixture Repair Source",
+      "Type": "M3U",
+      "Refresh": {
+        "Success": true,
+        "Trigger": "InitialImport",
+        "Scope": "Full",
+        "Message": "Playlist import completed. Guide sync completed.",
+        "CatalogSummary": "Playlist import completed.",
+        "GuideSummary": "Guide sync completed.",
+        "GuideAttempted": true,
+        "GuideSucceeded": true
+      },
+      "Credential": {
+        "Url": "[fixture-server]/playlist.m3u",
+        "DetectedEpgUrl": "[fixture-server]/guide.xml",
+        "ManualEpgUrl": "",
+        "EpgMode": "Detected",
+        "M3uImportMode": "LiveMoviesAndSeries",
+        "ProxyScope": "Disabled",
+        "ProxyUrl": ""
+      },
+      "SyncState": {
+        "HttpStatusCode": 200,
+        "ErrorLog": "Parsed 4 channels, 0 movies, 2 episodes across 1 series. Mode: LiveMoviesAndSeries. Uncategorized=0, pseudo_rejected=1, xmltv_found=yes.",
+        "AutoRefreshState": "Disabled",
+        "AutoRefreshSummary": "Automatic refresh is turned off.",
+        "AutoRefreshFailureCount": 0
+      },
+      "Counts": {
+        "Channels": 4,
+        "Movies": 0,
+        "Series": 1,
+        "Seasons": 1,
+        "Episodes": 2,
+        "EpgPrograms": 6
+      },
+      "Health": {
+        "State": "Problematic",
+        "Score": 39,
+        "StatusSummary": "Source needs attention before it can be trusted. 1 invalid playable items and 1 suspicious entries make the catalog unreliable. Too many live channels are unusable or suspicious inside the 4-channel catalog. Live probe reached 2/3 sampled items and missed 1. 1 HTTP failure.",
+        "ImportResultSummary": "Parsed 4 channels, 0 movies, 2 episodes across 1 series. Mode: LiveMoviesAndSeries. Uncategorized=0, pseudo_rejected=1, xmltv_found=yes.",
+        "ValidationSummary": "Component health found serious source problems (39/100). 1 invalid playable items and 1 suspicious entries make the catalog unreliable. Too many live channels are unusable or suspicious inside the 4-channel catalog. Live probe reached 2/3 sampled items and missed 1. 1 HTTP fai...",
+        "TopIssueSummary": "1 playable entries have empty or unsupported stream URLs. Live probe reached 2/3 sampled items and missed 1. 1 HTTP failure.",
+        "DuplicateCount": 1,
+        "InvalidStreamCount": 1,
+        "ChannelsWithEpgMatchCount": 3,
+        "ChannelsWithLogoCount": 3,
+        "SuspiciousEntryCount": 1,
+        "WarningCount": 1,
+        "ErrorCount": 3,
+        "Components": [
+          {
+            "Type": "Catalog",
+            "State": "Problematic",
+            "Score": 39,
+            "Summary": "1 invalid playable items and 1 suspicious entries make the catalog unreliable.",
+            "RelevantCount": 5,
+            "HealthyCount": 3,
+            "IssueCount": 3
+          },
+          {
+            "Type": "Live",
+            "State": "Problematic",
+            "Score": 39,
+            "Summary": "Too many live channels are unusable or suspicious inside the 4-channel catalog. Live probe reached 2/3 sampled items and missed 1. 1 HTTP failure.",
+            "RelevantCount": 4,
+            "HealthyCount": 3,
+            "IssueCount": 2
+          },
+          {
+            "Type": "Vod",
+            "State": "Problematic",
+            "Score": 39,
+            "Summary": "VOD data is unreliable across 1 items and needs review. VOD probe reached 1/2 sampled items and missed 1. 1 timeout.",
+            "RelevantCount": 1,
+            "HealthyCount": 0,
+            "IssueCount": 1
+          },
+          {
+            "Type": "Epg",
+            "State": "Weak",
+            "Score": 80,
+            "Summary": "Guide covers 3 of 4 live channels, but coverage is still uneven. 2 channels rely on fallback matching.",
+            "RelevantCount": 4,
+            "HealthyCount": 3,
+            "IssueCount": 1
+          },
+          {
+            "Type": "Logos",
+            "State": "Weak",
+            "Score": 84,
+            "Summary": "Logos cover 3 of 4 live channels, but branding is still thin. 2 logos come from safe fallback coverage.",
+            "RelevantCount": 4,
+            "HealthyCount": 3,
+            "IssueCount": 1
+          },
+          {
+            "Type": "Freshness",
+            "State": "Healthy",
+            "Score": 100,
+            "Summary": "Last successful sync was [timestamp].",
+            "RelevantCount": 1,
+            "HealthyCount": 1,
+            "IssueCount": 0
+          }
+        ],
+        "Probes": [
+          {
+            "Type": "Live",
+            "Status": "Completed",
+            "CandidateCount": 3,
+            "SampleSize": 3,
+            "SuccessCount": 2,
+            "FailureCount": 1,
+            "TimeoutCount": 0,
+            "HttpErrorCount": 1,
+            "TransportErrorCount": 0,
+            "Summary": "Live probe reached 2/3 sampled items and missed 1. 1 HTTP failure."
+          },
+          {
+            "Type": "Vod",
+            "Status": "Completed",
+            "CandidateCount": 2,
+            "SampleSize": 2,
+            "SuccessCount": 1,
+            "FailureCount": 1,
+            "TimeoutCount": 1,
+            "HttpErrorCount": 0,
+            "TransportErrorCount": 0,
+            "Summary": "VOD probe reached 1/2 sampled items and missed 1. 1 timeout."
+          }
+        ],
+        "Issues": [
+          {
+            "Severity": "Error",
+            "Code": "invalid_streams",
+            "Title": "Invalid stream URLs detected",
+            "AffectedCount": 1,
+            "SampleItems": "Broken News"
+          },
+          {
+            "Severity": "Info",
+            "Code": "duplicates",
+            "Title": "Duplicate items found",
+            "AffectedCount": 1,
+            "SampleItems": "TRT 1 HD x2"
+          },
+          {
+            "Severity": "Warning",
+            "Code": "suspicious_entries",
+            "Title": "Suspicious entries detected",
+            "AffectedCount": 1,
+            "SampleItems": "The Office"
+          },
+          {
+            "Severity": "Info",
+            "Code": "guide_partial_coverage",
+            "Title": "Guide coverage is partial",
+            "AffectedCount": 1,
+            "SampleItems": ""
+          },
+          {
+            "Severity": "Info",
+            "Code": "missing_logos",
+            "Title": "Channel branding is thin",
+            "AffectedCount": 1,
+            "SampleItems": ""
+          },
+          {
+            "Severity": "Error",
+            "Code": "live_probe",
+            "Title": "Live probe found weak reachability",
+            "AffectedCount": 1,
+            "SampleItems": ""
+          },
+          {
+            "Severity": "Error",
+            "Code": "vod_probe",
+            "Title": "VOD probe found weak reachability",
+            "AffectedCount": 1,
+            "SampleItems": ""
+          }
+        ]
+      },
+      "Epg": {
+        "IsPresent": true,
+        "IsSuccess": true,
+        "Status": "Ready",
+        "ResultCode": "PartialMatch",
+        "FailureStage": "None",
+        "ActiveMode": "Detected",
+        "ActiveXmltvUrl": "[fixture-server]/guide.xml",
+        "MatchedChannelCount": 3,
+        "UnmatchedChannelCount": 1,
+        "CurrentCoverageCount": 0,
+        "NextCoverageCount": 3,
+        "TotalLiveChannelCount": 4,
+        "ProgrammeCount": 6,
+        "MatchBreakdown": "provider_id=1; reused=0; normalized=1; alias=0; fuzzy=0; unmatched=1",
+        "FailureReason": ""
+      },
+      "Channels": [
+        {
+          "Category": "National",
+          "Name": "TRT 1 HD",
+          "StreamUrl": "[fixture-server]/probe/live/trt1-backup.m3u8",
+          "ProviderEpgChannelId": "TRT 1",
+          "EpgChannelId": "trt1.tr",
+          "ProviderLogoUrl": "",
+          "LogoUrl": "[fixture-server]/logos/xmltv/trt1.png",
+          "NormalizedIdentityKey": "id:trt1",
+          "AliasKeys": "trt1",
+          "EpgMatchSource": "Normalized",
+          "EpgMatchConfidence": 88,
+          "EpgMatchSummary": "Normalized channel identity matched XMLTV channel TRT 1.",
+          "LogoSource": "Xmltv",
+          "LogoConfidence": 84,
+          "LogoSummary": "Logo recovered from the matched XMLTV channel TRT 1.",
+          "SupportsCatchup": false,
+          "CatchupWindowHours": 0,
+          "CatchupSource": "None",
+          "CatchupConfidence": 0,
+          "CatchupSummary": "No clear provider catchup signal was detected."
+        },
+        {
+          "Category": "National",
+          "Name": "TRT 1 HD",
+          "StreamUrl": "[fixture-server]/probe/live/trt1-ok.m3u8",
+          "ProviderEpgChannelId": "TRT 1",
+          "EpgChannelId": "trt1.tr",
+          "ProviderLogoUrl": "",
+          "LogoUrl": "[fixture-server]/logos/xmltv/trt1.png",
+          "NormalizedIdentityKey": "id:trt1",
+          "AliasKeys": "trt1",
+          "EpgMatchSource": "Normalized",
+          "EpgMatchConfidence": 88,
+          "EpgMatchSummary": "Normalized channel identity matched XMLTV channel TRT 1.",
+          "LogoSource": "Xmltv",
+          "LogoConfidence": 84,
+          "LogoSummary": "Logo recovered from the matched XMLTV channel TRT 1.",
+          "SupportsCatchup": true,
+          "CatchupWindowHours": 72,
+          "CatchupSource": "M3uAttributes",
+          "CatchupConfidence": 84,
+          "CatchupSummary": "Catchup available for about 3 days."
+        },
+        {
+          "Category": "News",
+          "Name": "Broken News",
+          "StreamUrl": "not-a-valid-url",
+          "ProviderEpgChannelId": "",
+          "EpgChannelId": "",
+          "ProviderLogoUrl": "",
+          "LogoUrl": "",
+          "NormalizedIdentityKey": "name:brokennews",
+          "AliasKeys": "brokennews",
+          "EpgMatchSource": "None",
+          "EpgMatchConfidence": 0,
+          "EpgMatchSummary": "",
+          "LogoSource": "None",
+          "LogoConfidence": 0,
+          "LogoSummary": "",
+          "SupportsCatchup": false,
+          "CatchupWindowHours": 0,
+          "CatchupSource": "None",
+          "CatchupConfidence": 0,
+          "CatchupSummary": "No clear provider catchup signal was detected."
+        },
+        {
+          "Category": "Sports",
+          "Name": "beIN Sports 1 TR",
+          "StreamUrl": "[fixture-server]/probe/live/bein1-ok.m3u8",
+          "ProviderEpgChannelId": "bein1.tr",
+          "EpgChannelId": "bein1.tr",
+          "ProviderLogoUrl": "[fixture-server]/logos/provider/bein1.png",
+          "LogoUrl": "[fixture-server]/logos/provider/bein1.png",
+          "NormalizedIdentityKey": "id:bein1",
+          "AliasKeys": "bein1\nbein1.tr\nbeinsports1\nbeinsports1tr",
+          "EpgMatchSource": "Provider",
+          "EpgMatchConfidence": 97,
+          "EpgMatchSummary": "Provider guide metadata matched XMLTV channel beIN SPORTS 1.",
+          "LogoSource": "Provider",
+          "LogoConfidence": 92,
+          "LogoSummary": "Using the provider logo.",
+          "SupportsCatchup": false,
+          "CatchupWindowHours": 0,
+          "CatchupSource": "None",
+          "CatchupConfidence": 0,
+          "CatchupSummary": "No clear provider catchup signal was detected."
+        }
+      ],
+      "Movies": [],
+      "Series": [
+        {
+          "Title": "The Office",
+          "RawTitle": "The Office S01E01 Pilot",
+          "CategoryName": "Series",
+          "ContentKind": "Primary",
+          "CanonicalTitleKey": "the office",
+          "DedupFingerprint": "",
+          "Seasons": [
+            {
+              "SeasonNumber": 1,
+              "Episodes": [
+                {
+                  "ExternalId": "",
+                  "Title": "Pilot",
+                  "EpisodeNumber": 1,
+                  "StreamUrl": "[fixture-server]/probe/vod/office-s01e01.mp4"
+                },
+                {
+                  "ExternalId": "",
+                  "Title": "Diversity Day",
+                  "EpisodeNumber": 2,
+                  "StreamUrl": "[fixture-server]/probe/vod/office-s01e02.mp4"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "Enrichment": [
+        {
+          "IdentityKey": "id:bein1",
+          "NormalizedName": "bein sports 1 tr",
+          "AliasKeys": "bein1\nbein1.tr\nbeinsports1\nbeinsports1tr",
+          "MatchedXmltvChannelId": "bein1.tr",
+          "MatchedXmltvDisplayName": "beIN SPORTS 1",
+          "ResolvedLogoUrl": "[fixture-server]/logos/provider/bein1.png",
+          "EpgMatchSource": "Provider",
+          "EpgMatchConfidence": 97,
+          "LogoSource": "Provider",
+          "LogoConfidence": 92
+        },
+        {
+          "IdentityKey": "id:trt1",
+          "NormalizedName": "trt 1",
+          "AliasKeys": "trt1",
+          "MatchedXmltvChannelId": "trt1.tr",
+          "MatchedXmltvDisplayName": "TRT 1",
+          "ResolvedLogoUrl": "[fixture-server]/logos/xmltv/trt1.png",
+          "EpgMatchSource": "Normalized",
+          "EpgMatchConfidence": 88,
+          "LogoSource": "Xmltv",
+          "LogoConfidence": 84
+        },
+        {
+          "IdentityKey": "name:brokennews",
+          "NormalizedName": "broken news",
+          "AliasKeys": "brokennews",
+          "MatchedXmltvChannelId": "",
+          "MatchedXmltvDisplayName": "",
+          "ResolvedLogoUrl": "",
+          "EpgMatchSource": "None",
+          "EpgMatchConfidence": 0,
+          "LogoSource": "None",
+          "LogoConfidence": 0
+        }
+      ]
+    }
+  ],
+  "OperationalStates": [
+    {
+      "ContentType": "Channel",
+      "LogicalContentKey": "id:bein1",
+      "CandidateCount": 1,
+      "PreferredSourceName": "Fixture Repair Source",
+      "PreferredTitle": "beIN Sports 1 TR",
+      "PreferredScore": 56,
+      "SelectionSummary": "Using Fixture Repair Source. Guide mapped, logo ready.",
+      "RecoveryAction": "None",
+      "RecoverySummary": "",
+      "Candidates": [
+        {
+          "Rank": 1,
+          "SourceName": "Fixture Repair Source",
+          "Title": "beIN Sports 1 TR",
+          "Score": 56,
+          "IsSelected": true,
+          "IsLastKnownGood": true,
+          "SupportsProxy": false,
+          "Summary": "Guide mapped, logo ready."
+        }
+      ]
+    },
+    {
+      "ContentType": "Channel",
+      "LogicalContentKey": "id:trt1",
+      "CandidateCount": 2,
+      "PreferredSourceName": "Fixture Repair Source",
+      "PreferredTitle": "TRT 1 HD",
+      "PreferredScore": 57,
+      "SelectionSummary": "Preferred Fixture Repair Source from 2 mirrored candidates. Guide mapped, logo ready, catchup.",
+      "RecoveryAction": "None",
+      "RecoverySummary": "",
+      "Candidates": [
+        {
+          "Rank": 1,
+          "SourceName": "Fixture Repair Source",
+          "Title": "TRT 1 HD",
+          "Score": 57,
+          "IsSelected": true,
+          "IsLastKnownGood": true,
+          "SupportsProxy": false,
+          "Summary": "Guide mapped, logo ready, catchup."
+        },
+        {
+          "Rank": 2,
+          "SourceName": "Fixture Repair Source",
+          "Title": "TRT 1 HD",
+          "Score": 56,
+          "IsSelected": false,
+          "IsLastKnownGood": false,
+          "SupportsProxy": false,
+          "Summary": "Guide mapped, logo ready."
+        }
+      ]
+    },
+    {
+      "ContentType": "Channel",
+      "LogicalContentKey": "name:brokennews",
+      "CandidateCount": 1,
+      "PreferredSourceName": "Fixture Repair Source",
+      "PreferredTitle": "Broken News",
+      "PreferredScore": 51,
+      "SelectionSummary": "Using Fixture Repair Source. Operationally usable live mirror.",
+      "RecoveryAction": "None",
+      "RecoverySummary": "",
+      "Candidates": [
+        {
+          "Rank": 1,
+          "SourceName": "Fixture Repair Source",
+          "Title": "Broken News",
+          "Score": 51,
+          "IsSelected": true,
+          "IsLastKnownGood": true,
+          "SupportsProxy": false,
+          "Summary": "Operationally usable live mirror."
+        }
+      ]
+    }
+  ],
+  "PlaybackProgresses": [
+    {
+      "ContentType": "Channel",
+      "ContentId": 2,
+      "LogicalContentKey": "id:trt1",
+      "PreferredSourceProfileId": 1,
+      "IsCompleted": false
+    },
+    {
+      "ContentType": "Channel",
+      "ContentId": 999999,
+      "LogicalContentKey": "channel:identity:ghost-channel",
+      "PreferredSourceProfileId": 999999,
+      "IsCompleted": false
+    }
+  ],
+  "Home": {
+    "State": "Ready",
+    "Title": "",
+    "Message": "",
+    "LibraryStatusMessage": "5 library items available across live TV and VOD",
+    "SourceStatusMessage": "1 source configured",
+    "SummaryItemCount": 4,
+    "ContinueCount": 1,
+    "LiveCount": 0,
+    "ContinueTitles": [
+      "TRT 1 HD"
+    ],
+    "LiveTitles": []
+  },
+  "LiveTv": {
+    "State": "Ready",
+    "Title": "",
+    "Message": "",
+    "ChannelCount": 4,
+    "CategoryCount": 7,
+    "ChannelTitles": [
+      "beIN Sports 1 TR",
+      "Trt 1",
+      "Trt 1",
+      "Broken News"
+    ]
+  },
+  "ContinueWatching": {
+    "State": "Ready",
+    "Title": "",
+    "Message": "",
+    "TotalCount": 1,
+    "LiveCount": 1,
+    "MovieCount": 0,
+    "SeriesCount": 0,
+    "Titles": [
+      "TRT 1 HD"
+    ]
+  }
+}

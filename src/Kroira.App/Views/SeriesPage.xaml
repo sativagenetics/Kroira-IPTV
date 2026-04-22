@@ -145,7 +145,7 @@
 
                 <Expander Grid.Row="1"
                           Header="Advanced browse controls"
-                          IsExpanded="{x:Bind ViewModel.HasAdvancedFilters, Mode=OneWay}">
+                          IsExpanded="{x:Bind ViewModel.IsAdvancedControlsExpanded, Mode=TwoWay}">
                     <Grid Margin="0,12,0,0" ColumnSpacing="18">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="1.1*" />

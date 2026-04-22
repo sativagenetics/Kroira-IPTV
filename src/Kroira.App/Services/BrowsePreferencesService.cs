@@ -21,6 +21,7 @@ namespace Kroira.App.Services
         public string SortKey { get; set; } = string.Empty;
         public string SelectedCategoryKey { get; set; } = string.Empty;
         public int SelectedSourceId { get; set; }
+        public bool IsAdvancedControlsExpanded { get; set; }
         public BrowseChannelReference? LastChannel { get; set; }
         public List<BrowseChannelReference> RecentChannels { get; set; } = new();
         public Dictionary<string, int> LiveChannelWatchCountsByKey { get; set; } = new(StringComparer.OrdinalIgnoreCase);
@@ -187,6 +188,7 @@ namespace Kroira.App.Services
                     ? string.Empty
                     : ContentClassifier.NormalizeLabel(preferences.SelectedCategoryKey).Trim().ToLowerInvariant(),
                 SelectedSourceId = Math.Max(0, preferences.SelectedSourceId),
+                IsAdvancedControlsExpanded = preferences.IsAdvancedControlsExpanded,
                 LastChannel = NormalizeChannelReference(preferences.LastChannel),
                 LastChannelId = Math.Max(0, preferences.LastChannelId),
                 HasExplicitLiveSortPreference = preferences.HasExplicitLiveSortPreference,

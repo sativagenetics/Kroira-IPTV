@@ -1,9 +1,23 @@
+using System.Text.Json.Serialization;
+
 namespace Kroira.Regressions;
 
 internal sealed class RegressionSnapshot
 {
     public List<SourceSnapshot> Sources { get; set; } = [];
     public List<OperationalStateSnapshot> OperationalStates { get; set; } = [];
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public List<PlaybackProgressSnapshot>? PlaybackProgresses { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public HomeSurfaceSnapshot? Home { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public LiveTvSurfaceSnapshot? LiveTv { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public ContinueWatchingSurfaceSnapshot? ContinueWatching { get; set; }
 }
 
 internal sealed class SourceSnapshot
@@ -236,4 +250,49 @@ internal sealed class OperationalCandidateSnapshot
     public bool IsLastKnownGood { get; set; }
     public bool SupportsProxy { get; set; }
     public string Summary { get; set; } = string.Empty;
+}
+
+internal sealed class PlaybackProgressSnapshot
+{
+    public string ContentType { get; set; } = string.Empty;
+    public int ContentId { get; set; }
+    public string LogicalContentKey { get; set; } = string.Empty;
+    public int PreferredSourceProfileId { get; set; }
+    public bool IsCompleted { get; set; }
+}
+
+internal sealed class HomeSurfaceSnapshot
+{
+    public string State { get; set; } = string.Empty;
+    public string Title { get; set; } = string.Empty;
+    public string Message { get; set; } = string.Empty;
+    public string LibraryStatusMessage { get; set; } = string.Empty;
+    public string SourceStatusMessage { get; set; } = string.Empty;
+    public int SummaryItemCount { get; set; }
+    public int ContinueCount { get; set; }
+    public int LiveCount { get; set; }
+    public List<string> ContinueTitles { get; set; } = [];
+    public List<string> LiveTitles { get; set; } = [];
+}
+
+internal sealed class LiveTvSurfaceSnapshot
+{
+    public string State { get; set; } = string.Empty;
+    public string Title { get; set; } = string.Empty;
+    public string Message { get; set; } = string.Empty;
+    public int ChannelCount { get; set; }
+    public int CategoryCount { get; set; }
+    public List<string> ChannelTitles { get; set; } = [];
+}
+
+internal sealed class ContinueWatchingSurfaceSnapshot
+{
+    public string State { get; set; } = string.Empty;
+    public string Title { get; set; } = string.Empty;
+    public string Message { get; set; } = string.Empty;
+    public int TotalCount { get; set; }
+    public int LiveCount { get; set; }
+    public int MovieCount { get; set; }
+    public int SeriesCount { get; set; }
+    public List<string> Titles { get; set; } = [];
 }

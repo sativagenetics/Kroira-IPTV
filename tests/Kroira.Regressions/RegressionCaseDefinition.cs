@@ -9,6 +9,8 @@ internal sealed class RegressionCaseDefinition
     public string Id { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
     public List<RegressionSourceDefinition> Sources { get; set; } = [];
+    public List<RegressionMutationDefinition> Mutations { get; set; } = [];
+    public RegressionSurfaceLoadDefinition? SurfaceLoads { get; set; }
 }
 
 internal sealed class RegressionSourceDefinition
@@ -26,6 +28,30 @@ internal sealed class RegressionSourceDefinition
     public string ProxyUrl { get; set; } = string.Empty;
     public SourceRefreshTrigger RefreshTrigger { get; set; } = SourceRefreshTrigger.InitialImport;
     public SourceRefreshScope RefreshScope { get; set; } = SourceRefreshScope.Full;
+}
+
+internal sealed class RegressionMutationDefinition
+{
+    public string Kind { get; set; } = string.Empty;
+    public PlaybackContentType ContentType { get; set; } = PlaybackContentType.Channel;
+    public string SourceKey { get; set; } = string.Empty;
+    public string MatchName { get; set; } = string.Empty;
+    public string LogicalContentKey { get; set; } = string.Empty;
+    public string PreferredSourceKey { get; set; } = string.Empty;
+    public int ContentIdOverride { get; set; }
+    public int PreferredSourceProfileIdOverride { get; set; }
+    public long PositionMs { get; set; }
+    public long DurationMs { get; set; }
+    public bool IsCompleted { get; set; }
+    public WatchStateOverride WatchStateOverride { get; set; } = WatchStateOverride.None;
+    public string LastWatchedUtc { get; set; } = string.Empty;
+}
+
+internal sealed class RegressionSurfaceLoadDefinition
+{
+    public bool Home { get; set; }
+    public bool LiveTv { get; set; }
+    public bool ContinueWatching { get; set; }
 }
 
 internal sealed class FixtureServerManifest

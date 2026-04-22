@@ -271,6 +271,9 @@ namespace Kroira.App.ViewModels
         private bool _hasAdvancedFilters;
 
         [ObservableProperty]
+        private bool _isAdvancedControlsExpanded;
+
+        [ObservableProperty]
         private SeriesBrowseItemViewModel? _selectedSeries;
 
         [ObservableProperty]
@@ -407,6 +410,17 @@ namespace Kroira.App.ViewModels
 
             _browsePreferences.HideSecondaryContent = value;
             _ = SaveBrowsePreferencesAsync(rebuildCollections: true);
+        }
+
+        partial void OnIsAdvancedControlsExpandedChanged(bool value)
+        {
+            if (_isInitializingBrowsePreferences)
+            {
+                return;
+            }
+
+            _browsePreferences.IsAdvancedControlsExpanded = value;
+            _ = SaveBrowsePreferencesAsync(rebuildCollections: false);
         }
 
         partial void OnSelectedSeriesChanged(SeriesBrowseItemViewModel? value)
@@ -566,6 +580,7 @@ namespace Kroira.App.ViewModels
                 {
                     FavoritesOnly = _browsePreferences.FavoritesOnly;
                     HideSecondaryContent = _browsePreferences.HideSecondaryContent;
+                    IsAdvancedControlsExpanded = _browsePreferences.IsAdvancedControlsExpanded;
                     SelectedSortOption = SortOptions.FirstOrDefault(option => string.Equals(option.Key, _browsePreferences.SortKey, StringComparison.OrdinalIgnoreCase))
                         ?? SortOptions.First();
                     SelectedSourceOption = SourceOptions.FirstOrDefault(option => option.Id == _browsePreferences.SelectedSourceId)

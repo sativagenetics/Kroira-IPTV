@@ -4,6 +4,7 @@ using Kroira.App.Composition;
 using Kroira.App.Data;
 using Kroira.App.Models;
 using Kroira.App.Services;
+using Kroira.App.ViewModels;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -125,6 +126,14 @@ internal sealed class RegressionRunner
         var services = new ServiceCollection();
         services.AddDbContext<AppDbContext>(options => options.UseSqlite($"Data Source={dbPath}"));
         services.AddKroiraPipelineServices();
+        services.AddSingleton<IEntitlementService, MockEntitlementService>();
+        services.AddSingleton<ILibraryWatchStateService, LibraryWatchStateService>();
+        services.AddSingleton<IProfileStateService, ProfileStateService>();
+        services.AddSingleton<ICatalogDeduplicationService, CatalogDeduplicationService>();
+        services.AddSingleton<ICatalogTaxonomyService, CatalogTaxonomyService>();
+        services.AddSingleton<ICatalogSurfaceCountService, CatalogSurfaceCountService>();
+        services.AddSingleton<IHomeRecommendationService, HomeRecommendationService>();
+        services.AddSingleton<ISurfaceStateService, SurfaceStateService>();
         return services.BuildServiceProvider();
     }
 
@@ -191,7 +200,15 @@ internal sealed class RegressionRunner
         }
 
         await bootstrapScope.ServiceProvider.GetRequiredService<IContentOperationalService>().RefreshOperationalStateAsync(db);
-        return await CaptureSnapshotAsync(db, runtimeSources, serverBaseUrl);
+        await ApplyMutationsAsync(db, bootstrapScope.ServiceProvider, definition, runtimeSources);
+
+        RegressionSurfaceSnapshotBundle? surfaces = null;
+        if (definition.SurfaceLoads != null)
+        {
+            surfaces = await CaptureSurfaceSnapshotsAsync(bootstrapScope.ServiceProvider, definition.SurfaceLoads, serverBaseUrl);
+        }
+
+        return await CaptureSnapshotAsync(db, runtimeSources, surfaces, definition, serverBaseUrl);
     }
 
     private static async Task SeedDeterministicSettingsAsync(AppDbContext db)
@@ -220,7 +237,352 @@ internal sealed class RegressionRunner
         await db.SaveChangesAsync();
     }
 
-    private static async Task<RegressionSnapshot> CaptureSnapshotAsync(AppDbContext db, IReadOnlyList<RuntimeSource> runtimeSources, string serverBaseUrl)
+    private static async Task ApplyMutationsAsync(
+        AppDbContext db,
+        IServiceProvider services,
+        RegressionCaseDefinition definition,
+        IReadOnlyList<RuntimeSource> runtimeSources)
+    {
+        if (definition.Mutations.Count == 0)
+        {
+            return;
+        }
+
+        var sourceIdsByKey = runtimeSources.ToDictionary(item => item.Definition.Key, item => item.SourceProfileId, StringComparer.OrdinalIgnoreCase);
+        var profileService = services.GetRequiredService<IProfileStateService>();
+        var logicalCatalogStateService = services.GetRequiredService<ILogicalCatalogStateService>();
+        var activeProfileId = await profileService.GetActiveProfileIdAsync(db);
+
+        foreach (var mutation in definition.Mutations)
+        {
+            switch ((mutation.Kind ?? string.Empty).Trim().ToLowerInvariant())
+            {
+                case "clear_channel_logical_state":
+                {
+                    var channel = await FindChannelAsync(db, sourceIdsByKey, mutation);
+                    channel.NormalizedIdentityKey = string.Empty;
+                    channel.NormalizedName = string.Empty;
+                    channel.AliasKeys = string.Empty;
+                    break;
+                }
+
+                case "insert_playback_progress":
+                {
+                    var progress = await BuildPlaybackProgressAsync(
+                        db,
+                        logicalCatalogStateService,
+                        sourceIdsByKey,
+                        activeProfileId,
+                        mutation);
+                    db.PlaybackProgresses.Add(progress);
+                    break;
+                }
+
+                default:
+                    throw new InvalidOperationException($"Unsupported regression mutation kind '{mutation.Kind}'.");
+            }
+        }
+
+        await db.SaveChangesAsync();
+    }
+
+    private static async Task<RegressionSurfaceSnapshotBundle> CaptureSurfaceSnapshotsAsync(
+        IServiceProvider services,
+        RegressionSurfaceLoadDefinition loads,
+        string serverBaseUrl)
+    {
+        var snapshot = new RegressionSurfaceSnapshotBundle();
+        if (loads.Home)
+        {
+            snapshot.Home = await LoadHomeSnapshotAsync(services, serverBaseUrl);
+        }
+
+        if (loads.LiveTv)
+        {
+            snapshot.LiveTv = await LoadLiveTvSnapshotAsync(services, serverBaseUrl);
+        }
+
+        if (loads.ContinueWatching)
+        {
+            snapshot.ContinueWatching = await LoadContinueWatchingSnapshotAsync(services, serverBaseUrl);
+        }
+
+        return snapshot;
+    }
+
+    private static async Task<HomeSurfaceSnapshot> LoadHomeSnapshotAsync(IServiceProvider services, string serverBaseUrl)
+    {
+        var previousSections = Environment.GetEnvironmentVariable("KROIRA_HOME_LOAD_SECTIONS");
+        Environment.SetEnvironmentVariable("KROIRA_HOME_LOAD_SECTIONS", "all");
+        try
+        {
+            var viewModel = new HomeViewModel(services, services.GetRequiredService<IEntitlementService>());
+            await viewModel.LoadAsync();
+
+            return new HomeSurfaceSnapshot
+            {
+                State = viewModel.SurfaceState.State.ToString(),
+                Title = NormalizeText(viewModel.SurfaceState.Title, serverBaseUrl),
+                Message = NormalizeText(viewModel.SurfaceState.Message, serverBaseUrl),
+                LibraryStatusMessage = NormalizeText(viewModel.LibraryStatusMessage, serverBaseUrl),
+                SourceStatusMessage = NormalizeText(viewModel.SourceStatusMessage, serverBaseUrl),
+                SummaryItemCount = viewModel.SummaryItems.Count,
+                ContinueCount = viewModel.ContinueItems.Count,
+                LiveCount = viewModel.LiveItems.Count,
+                ContinueTitles = viewModel.ContinueItems
+                    .Select(item => NormalizeText(item.Title, serverBaseUrl))
+                    .ToList(),
+                LiveTitles = viewModel.LiveItems
+                    .Select(item => NormalizeText(item.Title, serverBaseUrl))
+                    .ToList()
+            };
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("KROIRA_HOME_LOAD_SECTIONS", previousSections);
+        }
+    }
+
+    private static async Task<LiveTvSurfaceSnapshot> LoadLiveTvSnapshotAsync(IServiceProvider services, string serverBaseUrl)
+    {
+        var viewModel = new ChannelsPageViewModel(services);
+        await viewModel.LoadChannelsAsync();
+        await WaitForConditionAsync(() => viewModel.FilteredChannels.Count > 0 || viewModel.IsEmpty, TimeSpan.FromSeconds(1));
+
+        return new LiveTvSurfaceSnapshot
+        {
+            State = viewModel.SurfaceState.State.ToString(),
+            Title = NormalizeText(viewModel.SurfaceState.Title, serverBaseUrl),
+            Message = NormalizeText(viewModel.SurfaceState.Message, serverBaseUrl),
+            ChannelCount = viewModel.FilteredChannels.Count,
+            CategoryCount = viewModel.Categories.Count,
+            ChannelTitles = viewModel.FilteredChannels
+                .Take(8)
+                .Select(item => NormalizeText(item.Name, serverBaseUrl))
+                .ToList()
+        };
+    }
+
+    private static async Task<ContinueWatchingSurfaceSnapshot> LoadContinueWatchingSnapshotAsync(IServiceProvider services, string serverBaseUrl)
+    {
+        var viewModel = new ContinueWatchingViewModel(services);
+        await viewModel.LoadProgressAsync();
+
+        return new ContinueWatchingSurfaceSnapshot
+        {
+            State = viewModel.SurfaceState.State.ToString(),
+            Title = NormalizeText(viewModel.SurfaceState.Title, serverBaseUrl),
+            Message = NormalizeText(viewModel.SurfaceState.Message, serverBaseUrl),
+            TotalCount = viewModel.ProgressItems.Count,
+            LiveCount = viewModel.LiveProgressItems.Count,
+            MovieCount = viewModel.MovieProgressItems.Count,
+            SeriesCount = viewModel.SeriesProgressItems.Count,
+            Titles = viewModel.ProgressItems
+                .Select(item => NormalizeText(item.Title, serverBaseUrl))
+                .ToList()
+        };
+    }
+
+    private static async Task WaitForConditionAsync(Func<bool> condition, TimeSpan timeout)
+    {
+        var start = DateTime.UtcNow;
+        while (!condition())
+        {
+            if (DateTime.UtcNow - start >= timeout)
+            {
+                break;
+            }
+
+            await Task.Delay(25);
+        }
+    }
+
+    private static async Task<Channel> FindChannelAsync(
+        AppDbContext db,
+        IReadOnlyDictionary<string, int> sourceIdsByKey,
+        RegressionMutationDefinition mutation)
+    {
+        var sourceProfileId = ResolveSourceProfileId(sourceIdsByKey, mutation.SourceKey);
+        var channel = await db.Channels
+            .Join(
+                db.ChannelCategories,
+                channel => channel.ChannelCategoryId,
+                category => category.Id,
+                (channel, category) => new
+                {
+                    Channel = channel,
+                    category.SourceProfileId
+                })
+            .Where(item => item.SourceProfileId == sourceProfileId &&
+                           item.Channel.Name == mutation.MatchName)
+            .Select(item => item.Channel)
+            .FirstOrDefaultAsync();
+
+        return channel ?? throw new InvalidOperationException(
+            $"Regression mutation could not find channel '{mutation.MatchName}' in source '{mutation.SourceKey}'.");
+    }
+
+    private static async Task<Movie> FindMovieAsync(
+        AppDbContext db,
+        IReadOnlyDictionary<string, int> sourceIdsByKey,
+        RegressionMutationDefinition mutation)
+    {
+        var sourceProfileId = ResolveSourceProfileId(sourceIdsByKey, mutation.SourceKey);
+        var movie = await db.Movies
+            .FirstOrDefaultAsync(item => item.SourceProfileId == sourceProfileId && item.Title == mutation.MatchName);
+
+        return movie ?? throw new InvalidOperationException(
+            $"Regression mutation could not find movie '{mutation.MatchName}' in source '{mutation.SourceKey}'.");
+    }
+
+    private static async Task<(Episode Episode, Series Series)> FindEpisodeAsync(
+        AppDbContext db,
+        IReadOnlyDictionary<string, int> sourceIdsByKey,
+        RegressionMutationDefinition mutation)
+    {
+        var sourceProfileId = ResolveSourceProfileId(sourceIdsByKey, mutation.SourceKey);
+        var row = await db.Episodes
+            .Join(
+                db.Seasons,
+                episode => episode.SeasonId,
+                season => season.Id,
+                (episode, season) => new { Episode = episode, Season = season })
+            .Join(
+                db.Series,
+                item => item.Season.SeriesId,
+                series => series.Id,
+                (item, series) => new
+                {
+                    item.Episode,
+                    Series = series
+                })
+            .FirstOrDefaultAsync(item => item.Series.SourceProfileId == sourceProfileId &&
+                                         item.Episode.Title == mutation.MatchName);
+
+        return row == null
+            ? throw new InvalidOperationException(
+                $"Regression mutation could not find episode '{mutation.MatchName}' in source '{mutation.SourceKey}'.")
+            : (row.Episode, row.Series);
+    }
+
+    private static async Task<PlaybackProgress> BuildPlaybackProgressAsync(
+        AppDbContext db,
+        ILogicalCatalogStateService logicalCatalogStateService,
+        IReadOnlyDictionary<string, int> sourceIdsByKey,
+        int profileId,
+        RegressionMutationDefinition mutation)
+    {
+        string logicalContentKey;
+        int contentId;
+        int preferredSourceProfileId;
+
+        switch (mutation.ContentType)
+        {
+            case PlaybackContentType.Channel:
+            {
+                var channel = await FindChannelAsync(db, sourceIdsByKey, mutation);
+                logicalContentKey = !string.IsNullOrWhiteSpace(mutation.LogicalContentKey)
+                    ? mutation.LogicalContentKey.Trim()
+                    : logicalCatalogStateService.BuildChannelLogicalKey(channel);
+                contentId = mutation.ContentIdOverride > 0 ? mutation.ContentIdOverride : channel.Id;
+                preferredSourceProfileId = mutation.PreferredSourceProfileIdOverride > 0
+                    ? mutation.PreferredSourceProfileIdOverride
+                    : !string.IsNullOrWhiteSpace(mutation.PreferredSourceKey)
+                        ? ResolveSourceProfileId(sourceIdsByKey, mutation.PreferredSourceKey)
+                        : await ResolveChannelSourceProfileIdAsync(db, channel.Id);
+                break;
+            }
+
+            case PlaybackContentType.Movie:
+            {
+                var movie = await FindMovieAsync(db, sourceIdsByKey, mutation);
+                logicalContentKey = !string.IsNullOrWhiteSpace(mutation.LogicalContentKey)
+                    ? mutation.LogicalContentKey.Trim()
+                    : logicalCatalogStateService.BuildMovieLogicalKey(movie);
+                contentId = mutation.ContentIdOverride > 0 ? mutation.ContentIdOverride : movie.Id;
+                preferredSourceProfileId = mutation.PreferredSourceProfileIdOverride > 0
+                    ? mutation.PreferredSourceProfileIdOverride
+                    : !string.IsNullOrWhiteSpace(mutation.PreferredSourceKey)
+                        ? ResolveSourceProfileId(sourceIdsByKey, mutation.PreferredSourceKey)
+                        : movie.SourceProfileId;
+                break;
+            }
+
+            case PlaybackContentType.Episode:
+            {
+                var (episode, series) = await FindEpisodeAsync(db, sourceIdsByKey, mutation);
+                logicalContentKey = mutation.LogicalContentKey?.Trim() ?? string.Empty;
+                contentId = mutation.ContentIdOverride > 0 ? mutation.ContentIdOverride : episode.Id;
+                preferredSourceProfileId = mutation.PreferredSourceProfileIdOverride > 0
+                    ? mutation.PreferredSourceProfileIdOverride
+                    : !string.IsNullOrWhiteSpace(mutation.PreferredSourceKey)
+                        ? ResolveSourceProfileId(sourceIdsByKey, mutation.PreferredSourceKey)
+                        : series.SourceProfileId;
+                break;
+            }
+
+            default:
+                throw new InvalidOperationException($"Unsupported playback content type '{mutation.ContentType}'.");
+        }
+
+        return new PlaybackProgress
+        {
+            ProfileId = profileId,
+            ContentType = mutation.ContentType,
+            ContentId = contentId,
+            LogicalContentKey = logicalContentKey,
+            PreferredSourceProfileId = preferredSourceProfileId,
+            PositionMs = mutation.PositionMs,
+            DurationMs = mutation.DurationMs,
+            IsCompleted = mutation.IsCompleted,
+            WatchStateOverride = mutation.WatchStateOverride,
+            LastWatched = ParseTimestampOrDefault(mutation.LastWatchedUtc)
+        };
+    }
+
+    private static async Task<int> ResolveChannelSourceProfileIdAsync(AppDbContext db, int channelId)
+    {
+        var sourceProfileId = await db.Channels
+            .Join(
+                db.ChannelCategories,
+                channel => channel.ChannelCategoryId,
+                category => category.Id,
+                (channel, category) => new
+                {
+                    channel.Id,
+                    category.SourceProfileId
+                })
+            .Where(item => item.Id == channelId)
+            .Select(item => item.SourceProfileId)
+            .FirstOrDefaultAsync();
+
+        return sourceProfileId;
+    }
+
+    private static int ResolveSourceProfileId(IReadOnlyDictionary<string, int> sourceIdsByKey, string sourceKey)
+    {
+        return sourceIdsByKey.TryGetValue(sourceKey ?? string.Empty, out var sourceProfileId)
+            ? sourceProfileId
+            : throw new InvalidOperationException($"Regression mutation referenced unknown source key '{sourceKey}'.");
+    }
+
+    private static DateTime ParseTimestampOrDefault(string value)
+    {
+        return DateTime.TryParse(
+            value,
+            System.Globalization.CultureInfo.InvariantCulture,
+            System.Globalization.DateTimeStyles.AssumeUniversal | System.Globalization.DateTimeStyles.AdjustToUniversal,
+            out var parsed)
+            ? parsed
+            : new DateTime(2026, 4, 22, 9, 15, 0, DateTimeKind.Utc);
+    }
+
+    private static async Task<RegressionSnapshot> CaptureSnapshotAsync(
+        AppDbContext db,
+        IReadOnlyList<RuntimeSource> runtimeSources,
+        RegressionSurfaceSnapshotBundle? surfaces,
+        RegressionCaseDefinition definition,
+        string serverBaseUrl)
     {
         var sourceIds = runtimeSources.Select(item => item.SourceProfileId).ToHashSet();
 
@@ -387,6 +749,31 @@ internal sealed class RegressionRunner
                         Summary = NormalizeText(item.Summary, serverBaseUrl)
                     }).ToList()
             });
+        }
+
+        if (definition.Mutations.Count > 0 || definition.SurfaceLoads != null)
+        {
+            snapshot.PlaybackProgresses = await db.PlaybackProgresses
+                .AsNoTracking()
+                .OrderBy(item => item.ContentType)
+                .ThenByDescending(item => item.LastWatched)
+                .ThenBy(item => item.Id)
+                .Select(item => new PlaybackProgressSnapshot
+                {
+                    ContentType = item.ContentType.ToString(),
+                    ContentId = item.ContentId,
+                    LogicalContentKey = NormalizeText(item.LogicalContentKey, serverBaseUrl),
+                    PreferredSourceProfileId = item.PreferredSourceProfileId,
+                    IsCompleted = item.IsCompleted
+                })
+                .ToListAsync();
+        }
+
+        if (surfaces != null)
+        {
+            snapshot.Home = surfaces.Home;
+            snapshot.LiveTv = surfaces.LiveTv;
+            snapshot.ContinueWatching = surfaces.ContinueWatching;
         }
 
         return snapshot;
@@ -688,6 +1075,13 @@ internal sealed class RegressionRunner
         public RegressionSourceDefinition Definition { get; init; } = new();
         public int SourceProfileId { get; init; }
         public SourceRefreshResult? Result { get; set; }
+    }
+
+    private sealed class RegressionSurfaceSnapshotBundle
+    {
+        public HomeSurfaceSnapshot? Home { get; set; }
+        public LiveTvSurfaceSnapshot? LiveTv { get; set; }
+        public ContinueWatchingSurfaceSnapshot? ContinueWatching { get; set; }
     }
 
     private sealed record ChannelFixtureRow(int SourceProfileId, string CategoryName, Channel Channel);

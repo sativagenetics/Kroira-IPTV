@@ -1,0 +1,49 @@
+{
+  "id": "logical_state_repair_page_load",
+  "description": "Populated live catalog with missing channel logical state and mixed playback progress rows still loads Home, Live TV, and Continue Watching without false unavailable states.",
+  "sources": [
+    {
+      "key": "repair-source",
+      "name": "Fixture Repair Source",
+      "type": "M3U",
+      "url": "{{server}}/playlist.m3u",
+      "epgMode": "Detected",
+      "m3uImportMode": "LiveMoviesAndSeries",
+      "refreshTrigger": "InitialImport",
+      "refreshScope": "Full"
+    }
+  ],
+  "mutations": [
+    {
+      "kind": "clear_channel_logical_state",
+      "sourceKey": "repair-source",
+      "matchName": "TRT 1 HD"
+    },
+    {
+      "kind": "insert_playback_progress",
+      "contentType": "Channel",
+      "sourceKey": "repair-source",
+      "matchName": "TRT 1 HD",
+      "positionMs": 120000,
+      "durationMs": 0,
+      "lastWatchedUtc": "2026-04-22T08:30:00Z"
+    },
+    {
+      "kind": "insert_playback_progress",
+      "contentType": "Channel",
+      "sourceKey": "repair-source",
+      "matchName": "beIN Sports 1 TR",
+      "logicalContentKey": "channel:identity:ghost-channel",
+      "contentIdOverride": 999999,
+      "preferredSourceProfileIdOverride": 999999,
+      "positionMs": 45000,
+      "durationMs": 0,
+      "lastWatchedUtc": "2026-04-22T07:45:00Z"
+    }
+  ],
+  "surfaceLoads": {
+    "home": true,
+    "liveTv": true,
+    "continueWatching": true
+  }
+}
