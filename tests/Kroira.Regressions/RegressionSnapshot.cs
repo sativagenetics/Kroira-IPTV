@@ -1,0 +1,239 @@
+namespace Kroira.Regressions;
+
+internal sealed class RegressionSnapshot
+{
+    public List<SourceSnapshot> Sources { get; set; } = [];
+    public List<OperationalStateSnapshot> OperationalStates { get; set; } = [];
+}
+
+internal sealed class SourceSnapshot
+{
+    public string Key { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
+    public string Type { get; set; } = string.Empty;
+    public SourceRefreshSnapshot Refresh { get; set; } = new();
+    public SourceCredentialSnapshot Credential { get; set; } = new();
+    public SourceSyncStateSnapshot SyncState { get; set; } = new();
+    public SourceCountSnapshot Counts { get; set; } = new();
+    public SourceHealthSnapshot Health { get; set; } = new();
+    public SourceEpgSnapshot Epg { get; set; } = new();
+    public List<ChannelSnapshot> Channels { get; set; } = [];
+    public List<MovieSnapshot> Movies { get; set; } = [];
+    public List<SeriesSnapshot> Series { get; set; } = [];
+    public List<EnrichmentRecordSnapshot> Enrichment { get; set; } = [];
+}
+
+internal sealed class SourceRefreshSnapshot
+{
+    public bool Success { get; set; }
+    public string Trigger { get; set; } = string.Empty;
+    public string Scope { get; set; } = string.Empty;
+    public string Message { get; set; } = string.Empty;
+    public string CatalogSummary { get; set; } = string.Empty;
+    public string GuideSummary { get; set; } = string.Empty;
+    public bool GuideAttempted { get; set; }
+    public bool GuideSucceeded { get; set; }
+}
+
+internal sealed class SourceCredentialSnapshot
+{
+    public string Url { get; set; } = string.Empty;
+    public string DetectedEpgUrl { get; set; } = string.Empty;
+    public string ManualEpgUrl { get; set; } = string.Empty;
+    public string EpgMode { get; set; } = string.Empty;
+    public string M3uImportMode { get; set; } = string.Empty;
+    public string ProxyScope { get; set; } = string.Empty;
+    public string ProxyUrl { get; set; } = string.Empty;
+}
+
+internal sealed class SourceSyncStateSnapshot
+{
+    public int HttpStatusCode { get; set; }
+    public string ErrorLog { get; set; } = string.Empty;
+    public string AutoRefreshState { get; set; } = string.Empty;
+    public string AutoRefreshSummary { get; set; } = string.Empty;
+    public int AutoRefreshFailureCount { get; set; }
+}
+
+internal sealed class SourceCountSnapshot
+{
+    public int Channels { get; set; }
+    public int Movies { get; set; }
+    public int Series { get; set; }
+    public int Seasons { get; set; }
+    public int Episodes { get; set; }
+    public int EpgPrograms { get; set; }
+}
+
+internal sealed class SourceHealthSnapshot
+{
+    public string State { get; set; } = string.Empty;
+    public int Score { get; set; }
+    public string StatusSummary { get; set; } = string.Empty;
+    public string ImportResultSummary { get; set; } = string.Empty;
+    public string ValidationSummary { get; set; } = string.Empty;
+    public string TopIssueSummary { get; set; } = string.Empty;
+    public int DuplicateCount { get; set; }
+    public int InvalidStreamCount { get; set; }
+    public int ChannelsWithEpgMatchCount { get; set; }
+    public int ChannelsWithLogoCount { get; set; }
+    public int SuspiciousEntryCount { get; set; }
+    public int WarningCount { get; set; }
+    public int ErrorCount { get; set; }
+    public List<SourceHealthComponentSnapshot> Components { get; set; } = [];
+    public List<SourceHealthProbeSnapshot> Probes { get; set; } = [];
+    public List<SourceHealthIssueSnapshot> Issues { get; set; } = [];
+}
+
+internal sealed class SourceHealthComponentSnapshot
+{
+    public string Type { get; set; } = string.Empty;
+    public string State { get; set; } = string.Empty;
+    public int Score { get; set; }
+    public string Summary { get; set; } = string.Empty;
+    public int RelevantCount { get; set; }
+    public int HealthyCount { get; set; }
+    public int IssueCount { get; set; }
+}
+
+internal sealed class SourceHealthProbeSnapshot
+{
+    public string Type { get; set; } = string.Empty;
+    public string Status { get; set; } = string.Empty;
+    public int CandidateCount { get; set; }
+    public int SampleSize { get; set; }
+    public int SuccessCount { get; set; }
+    public int FailureCount { get; set; }
+    public int TimeoutCount { get; set; }
+    public int HttpErrorCount { get; set; }
+    public int TransportErrorCount { get; set; }
+    public string Summary { get; set; } = string.Empty;
+}
+
+internal sealed class SourceHealthIssueSnapshot
+{
+    public string Severity { get; set; } = string.Empty;
+    public string Code { get; set; } = string.Empty;
+    public string Title { get; set; } = string.Empty;
+    public int AffectedCount { get; set; }
+    public string SampleItems { get; set; } = string.Empty;
+}
+
+internal sealed class SourceEpgSnapshot
+{
+    public bool IsPresent { get; set; }
+    public bool IsSuccess { get; set; }
+    public string Status { get; set; } = string.Empty;
+    public string ResultCode { get; set; } = string.Empty;
+    public string FailureStage { get; set; } = string.Empty;
+    public string ActiveMode { get; set; } = string.Empty;
+    public string ActiveXmltvUrl { get; set; } = string.Empty;
+    public int MatchedChannelCount { get; set; }
+    public int UnmatchedChannelCount { get; set; }
+    public int CurrentCoverageCount { get; set; }
+    public int NextCoverageCount { get; set; }
+    public int TotalLiveChannelCount { get; set; }
+    public int ProgrammeCount { get; set; }
+    public string MatchBreakdown { get; set; } = string.Empty;
+    public string FailureReason { get; set; } = string.Empty;
+}
+
+internal sealed class ChannelSnapshot
+{
+    public string Category { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
+    public string StreamUrl { get; set; } = string.Empty;
+    public string ProviderEpgChannelId { get; set; } = string.Empty;
+    public string EpgChannelId { get; set; } = string.Empty;
+    public string ProviderLogoUrl { get; set; } = string.Empty;
+    public string LogoUrl { get; set; } = string.Empty;
+    public string NormalizedIdentityKey { get; set; } = string.Empty;
+    public string AliasKeys { get; set; } = string.Empty;
+    public string EpgMatchSource { get; set; } = string.Empty;
+    public int EpgMatchConfidence { get; set; }
+    public string EpgMatchSummary { get; set; } = string.Empty;
+    public string LogoSource { get; set; } = string.Empty;
+    public int LogoConfidence { get; set; }
+    public string LogoSummary { get; set; } = string.Empty;
+    public bool SupportsCatchup { get; set; }
+    public int CatchupWindowHours { get; set; }
+    public string CatchupSource { get; set; } = string.Empty;
+    public int CatchupConfidence { get; set; }
+    public string CatchupSummary { get; set; } = string.Empty;
+}
+
+internal sealed class MovieSnapshot
+{
+    public string Title { get; set; } = string.Empty;
+    public string RawTitle { get; set; } = string.Empty;
+    public string CategoryName { get; set; } = string.Empty;
+    public string ContentKind { get; set; } = string.Empty;
+    public string CanonicalTitleKey { get; set; } = string.Empty;
+    public string DedupFingerprint { get; set; } = string.Empty;
+    public string StreamUrl { get; set; } = string.Empty;
+}
+
+internal sealed class SeriesSnapshot
+{
+    public string Title { get; set; } = string.Empty;
+    public string RawTitle { get; set; } = string.Empty;
+    public string CategoryName { get; set; } = string.Empty;
+    public string ContentKind { get; set; } = string.Empty;
+    public string CanonicalTitleKey { get; set; } = string.Empty;
+    public string DedupFingerprint { get; set; } = string.Empty;
+    public List<SeasonSnapshot> Seasons { get; set; } = [];
+}
+
+internal sealed class SeasonSnapshot
+{
+    public int SeasonNumber { get; set; }
+    public List<EpisodeSnapshot> Episodes { get; set; } = [];
+}
+
+internal sealed class EpisodeSnapshot
+{
+    public string ExternalId { get; set; } = string.Empty;
+    public string Title { get; set; } = string.Empty;
+    public int EpisodeNumber { get; set; }
+    public string StreamUrl { get; set; } = string.Empty;
+}
+
+internal sealed class EnrichmentRecordSnapshot
+{
+    public string IdentityKey { get; set; } = string.Empty;
+    public string NormalizedName { get; set; } = string.Empty;
+    public string AliasKeys { get; set; } = string.Empty;
+    public string MatchedXmltvChannelId { get; set; } = string.Empty;
+    public string MatchedXmltvDisplayName { get; set; } = string.Empty;
+    public string ResolvedLogoUrl { get; set; } = string.Empty;
+    public string EpgMatchSource { get; set; } = string.Empty;
+    public int EpgMatchConfidence { get; set; }
+    public string LogoSource { get; set; } = string.Empty;
+    public int LogoConfidence { get; set; }
+}
+
+internal sealed class OperationalStateSnapshot
+{
+    public string ContentType { get; set; } = string.Empty;
+    public string LogicalContentKey { get; set; } = string.Empty;
+    public int CandidateCount { get; set; }
+    public string PreferredSourceName { get; set; } = string.Empty;
+    public string PreferredTitle { get; set; } = string.Empty;
+    public int PreferredScore { get; set; }
+    public string SelectionSummary { get; set; } = string.Empty;
+    public string RecoveryAction { get; set; } = string.Empty;
+    public string RecoverySummary { get; set; } = string.Empty;
+    public List<OperationalCandidateSnapshot> Candidates { get; set; } = [];
+}
+
+internal sealed class OperationalCandidateSnapshot
+{
+    public int Rank { get; set; }
+    public string SourceName { get; set; } = string.Empty;
+    public string Title { get; set; } = string.Empty;
+    public int Score { get; set; }
+    public bool IsSelected { get; set; }
+    public bool IsLastKnownGood { get; set; }
+    public bool SupportsProxy { get; set; }
+    public string Summary { get; set; } = string.Empty;
+}

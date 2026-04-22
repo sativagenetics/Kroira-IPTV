@@ -1,0 +1,18 @@
+{
+  "episodes": {
+    "1": [
+      {
+        "id": "30011",
+        "title": "Pilot",
+        "episode_num": 1,
+        "container_extension": "mp4"
+      },
+      {
+        "id": "30012",
+        "title": "Diversity Day",
+        "episode_num": 2,
+        "container_extension": "mp4"
+      }
+    ]
+  }
+}

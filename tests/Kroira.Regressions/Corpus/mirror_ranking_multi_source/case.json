@@ -1,0 +1,28 @@
+{
+  "id": "mirror_ranking_multi_source",
+  "description": "Two mirrored live sources with different guide and probe quality so operational selection stays conservative.",
+  "sources": [
+    {
+      "key": "mirror-good",
+      "name": "Mirror Good",
+      "type": "M3U",
+      "url": "{{server}}/good.m3u",
+      "epgMode": "Detected",
+      "m3uImportMode": "LiveOnly",
+      "proxyScope": "PlaybackOnly",
+      "proxyUrl": "http://127.0.0.1:65500",
+      "refreshTrigger": "InitialImport",
+      "refreshScope": "Full"
+    },
+    {
+      "key": "mirror-weak",
+      "name": "Mirror Weak",
+      "type": "M3U",
+      "url": "{{server}}/weak.m3u",
+      "epgMode": "Detected",
+      "m3uImportMode": "LiveOnly",
+      "refreshTrigger": "InitialImport",
+      "refreshScope": "Full"
+    }
+  ]
+}

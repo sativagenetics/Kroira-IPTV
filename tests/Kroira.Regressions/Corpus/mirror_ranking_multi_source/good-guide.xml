@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tv>
+  <channel id="global.news">
+    <display-name>Global News</display-name>
+    <icon src="{{server}}/logos/xmltv/global-news.png" />
+  </channel>
+  <programme start="20260422090000 +0000" stop="20260422100000 +0000" channel="global.news">
+    <title>World Briefing</title>
+    <desc>Fixture world briefing.</desc>
+  </programme>
+  <programme start="20260422100000 +0000" stop="20260422110000 +0000" channel="global.news">
+    <title>Markets</title>
+    <desc>Fixture markets.</desc>
+  </programme>
+</tv>

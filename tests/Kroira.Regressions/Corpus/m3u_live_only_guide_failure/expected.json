@@ -1,0 +1,295 @@
+{
+  "Sources": [
+    {
+      "Key": "m3u-live-only",
+      "Name": "Fixture M3U Live Only",
+      "Type": "M3U",
+      "Refresh": {
+        "Success": true,
+        "Trigger": "InitialImport",
+        "Scope": "Full",
+        "Message": "Playlist import completed. Guide sync failed: Failed to sync XMLTV EPG: Discovered 1 XMLTV URL candidate(s) for the M3U source, but none returned usable XMLTV. last_error=XMLTV URL did not return XMLTV content.",
+        "CatalogSummary": "Playlist import completed.",
+        "GuideSummary": "Guide sync failed: Failed to sync XMLTV EPG: Discovered 1 XMLTV URL candidate(s) for the M3U source, but none returned usable XMLTV. last_error=XMLTV URL did not return XMLTV content.",
+        "GuideAttempted": true,
+        "GuideSucceeded": false
+      },
+      "Credential": {
+        "Url": "[fixture-server]/playlist.m3u",
+        "DetectedEpgUrl": "[fixture-server]/broken-guide.txt",
+        "ManualEpgUrl": "",
+        "EpgMode": "Detected",
+        "M3uImportMode": "LiveOnly",
+        "ProxyScope": "Disabled",
+        "ProxyUrl": ""
+      },
+      "SyncState": {
+        "HttpStatusCode": 200,
+        "ErrorLog": "Parsed 2 channels (LiveOnly mode - VOD suppressed). Uncategorized=0, pseudo_rejected=0, xmltv_found=yes.",
+        "AutoRefreshState": "Disabled",
+        "AutoRefreshSummary": "Automatic refresh is turned off.",
+        "AutoRefreshFailureCount": 0
+      },
+      "Counts": {
+        "Channels": 2,
+        "Movies": 0,
+        "Series": 0,
+        "Seasons": 0,
+        "Episodes": 0,
+        "EpgPrograms": 0
+      },
+      "Health": {
+        "State": "Incomplete",
+        "Score": 64,
+        "StatusSummary": "Source synced, but important parts are still incomplete. Guide refresh failed before any usable coverage was stored. Many live channels are still missing logos (0/2).",
+        "ImportResultSummary": "Parsed 2 channels (LiveOnly mode - VOD suppressed). Uncategorized=0, pseudo_rejected=0, xmltv_found=yes.",
+        "ValidationSummary": "Component health shows missing core coverage (64/100). Guide refresh failed before any usable coverage was stored. Many live channels are still missing logos (0/2).",
+        "TopIssueSummary": "Guide validation failed before any usable live-channel coverage was stored. 0 of 2 live channels currently have logos.",
+        "DuplicateCount": 0,
+        "InvalidStreamCount": 0,
+        "ChannelsWithEpgMatchCount": 0,
+        "ChannelsWithLogoCount": 0,
+        "SuspiciousEntryCount": 0,
+        "WarningCount": 1,
+        "ErrorCount": 1,
+        "Components": [
+          {
+            "Type": "Catalog",
+            "State": "Healthy",
+            "Score": 100,
+            "Summary": "Catalog looks coherent across 2 items.",
+            "RelevantCount": 2,
+            "HealthyCount": 2,
+            "IssueCount": 0
+          },
+          {
+            "Type": "Live",
+            "State": "Healthy",
+            "Score": 100,
+            "Summary": "Live catalog is present across 2 channels. Live health is currently structure-only because no HTTP sample was available for probing.",
+            "RelevantCount": 2,
+            "HealthyCount": 2,
+            "IssueCount": 0
+          },
+          {
+            "Type": "Vod",
+            "State": "NotApplicable",
+            "Score": 0,
+            "Summary": "VOD import is intentionally disabled for this playlist.",
+            "RelevantCount": 0,
+            "HealthyCount": 0,
+            "IssueCount": 0
+          },
+          {
+            "Type": "Epg",
+            "State": "Problematic",
+            "Score": 39,
+            "Summary": "Guide refresh failed before any usable coverage was stored.",
+            "RelevantCount": 2,
+            "HealthyCount": 0,
+            "IssueCount": 2
+          },
+          {
+            "Type": "Logos",
+            "State": "Incomplete",
+            "Score": 64,
+            "Summary": "Many live channels are still missing logos (0/2).",
+            "RelevantCount": 2,
+            "HealthyCount": 0,
+            "IssueCount": 2
+          },
+          {
+            "Type": "Freshness",
+            "State": "Healthy",
+            "Score": 100,
+            "Summary": "Last successful sync was [timestamp].",
+            "RelevantCount": 1,
+            "HealthyCount": 1,
+            "IssueCount": 0
+          }
+        ],
+        "Probes": [
+          {
+            "Type": "Live",
+            "Status": "Skipped",
+            "CandidateCount": 0,
+            "SampleSize": 0,
+            "SuccessCount": 0,
+            "FailureCount": 0,
+            "TimeoutCount": 0,
+            "HttpErrorCount": 0,
+            "TransportErrorCount": 0,
+            "Summary": "Live health is currently structure-only because no HTTP sample was available for probing."
+          },
+          {
+            "Type": "Vod",
+            "Status": "Skipped",
+            "CandidateCount": 0,
+            "SampleSize": 0,
+            "SuccessCount": 0,
+            "FailureCount": 0,
+            "TimeoutCount": 0,
+            "HttpErrorCount": 0,
+            "TransportErrorCount": 0,
+            "Summary": "VOD probing is not applicable because VOD import is disabled for this playlist."
+          }
+        ],
+        "Issues": [
+          {
+            "Severity": "Error",
+            "Code": "guide_failed",
+            "Title": "Guide refresh failed",
+            "AffectedCount": 2,
+            "SampleItems": "Discovered 1 XMLTV URL candidate(s) for the M3U source, but none returned usable XMLTV. last_error=XMLTV URL did not return XMLTV content."
+          },
+          {
+            "Severity": "Warning",
+            "Code": "missing_logos",
+            "Title": "Channel branding is thin",
+            "AffectedCount": 2,
+            "SampleItems": ""
+          }
+        ]
+      },
+      "Epg": {
+        "IsPresent": true,
+        "IsSuccess": false,
+        "Status": "FailedFetchOrParse",
+        "ResultCode": "FetchFailed",
+        "FailureStage": "Fetch",
+        "ActiveMode": "Detected",
+        "ActiveXmltvUrl": "[fixture-server]/broken-guide.txt",
+        "MatchedChannelCount": 0,
+        "UnmatchedChannelCount": 0,
+        "CurrentCoverageCount": 0,
+        "NextCoverageCount": 0,
+        "TotalLiveChannelCount": 0,
+        "ProgrammeCount": 0,
+        "MatchBreakdown": "",
+        "FailureReason": "Discovered 1 XMLTV URL candidate(s) for the M3U source, but none returned usable XMLTV. last_error=XMLTV URL did not return XMLTV content."
+      },
+      "Channels": [
+        {
+          "Category": "News",
+          "Name": "Archive News",
+          "StreamUrl": "udp://239.0.0.1:1234",
+          "ProviderEpgChannelId": "",
+          "EpgChannelId": "",
+          "ProviderLogoUrl": "",
+          "LogoUrl": "",
+          "NormalizedIdentityKey": "name:archivenews",
+          "AliasKeys": "archivenews",
+          "EpgMatchSource": "None",
+          "EpgMatchConfidence": 0,
+          "EpgMatchSummary": "",
+          "LogoSource": "None",
+          "LogoConfidence": 0,
+          "LogoSummary": "",
+          "SupportsCatchup": true,
+          "CatchupWindowHours": 48,
+          "CatchupSource": "M3uAttributes",
+          "CatchupConfidence": 84,
+          "CatchupSummary": "Catchup available for about 2 days."
+        },
+        {
+          "Category": "TR Sports",
+          "Name": "Sports TR",
+          "StreamUrl": "udp://239.0.0.2:1234",
+          "ProviderEpgChannelId": "Sports TR",
+          "EpgChannelId": "Sports TR",
+          "ProviderLogoUrl": "",
+          "LogoUrl": "",
+          "NormalizedIdentityKey": "id:sports",
+          "AliasKeys": "sports\nsportstr",
+          "EpgMatchSource": "Provider",
+          "EpgMatchConfidence": 70,
+          "EpgMatchSummary": "Using provider guide metadata until XMLTV confirms a better match.",
+          "LogoSource": "None",
+          "LogoConfidence": 0,
+          "LogoSummary": "",
+          "SupportsCatchup": false,
+          "CatchupWindowHours": 0,
+          "CatchupSource": "None",
+          "CatchupConfidence": 0,
+          "CatchupSummary": "No clear provider catchup signal was detected."
+        }
+      ],
+      "Movies": [],
+      "Series": [],
+      "Enrichment": [
+        {
+          "IdentityKey": "id:sports",
+          "NormalizedName": "sports tr",
+          "AliasKeys": "sports\nsportstr",
+          "MatchedXmltvChannelId": "",
+          "MatchedXmltvDisplayName": "",
+          "ResolvedLogoUrl": "",
+          "EpgMatchSource": "None",
+          "EpgMatchConfidence": 0,
+          "LogoSource": "None",
+          "LogoConfidence": 0
+        },
+        {
+          "IdentityKey": "name:archivenews",
+          "NormalizedName": "archive news",
+          "AliasKeys": "archivenews",
+          "MatchedXmltvChannelId": "",
+          "MatchedXmltvDisplayName": "",
+          "ResolvedLogoUrl": "",
+          "EpgMatchSource": "None",
+          "EpgMatchConfidence": 0,
+          "LogoSource": "None",
+          "LogoConfidence": 0
+        }
+      ]
+    }
+  ],
+  "OperationalStates": [
+    {
+      "ContentType": "Channel",
+      "LogicalContentKey": "id:sports",
+      "CandidateCount": 1,
+      "PreferredSourceName": "Fixture M3U Live Only",
+      "PreferredTitle": "Sports TR",
+      "PreferredScore": 80,
+      "SelectionSummary": "Using Fixture M3U Live Only. Guide mapped.",
+      "RecoveryAction": "None",
+      "RecoverySummary": "",
+      "Candidates": [
+        {
+          "Rank": 1,
+          "SourceName": "Fixture M3U Live Only",
+          "Title": "Sports TR",
+          "Score": 80,
+          "IsSelected": true,
+          "IsLastKnownGood": true,
+          "SupportsProxy": false,
+          "Summary": "Guide mapped."
+        }
+      ]
+    },
+    {
+      "ContentType": "Channel",
+      "LogicalContentKey": "name:archivenews",
+      "CandidateCount": 1,
+      "PreferredSourceName": "Fixture M3U Live Only",
+      "PreferredTitle": "Archive News",
+      "PreferredScore": 78,
+      "SelectionSummary": "Using Fixture M3U Live Only. Catchup.",
+      "RecoveryAction": "None",
+      "RecoverySummary": "",
+      "Candidates": [
+        {
+          "Rank": 1,
+          "SourceName": "Fixture M3U Live Only",
+          "Title": "Archive News",
+          "Score": 78,
+          "IsSelected": true,
+          "IsLastKnownGood": true,
+          "SupportsProxy": false,
+          "Summary": "Catchup."
+        }
+      ]
+    }
+  ]
+}

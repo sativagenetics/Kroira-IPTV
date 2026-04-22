@@ -1,0 +1,368 @@
+{
+  "Sources": [
+    {
+      "Key": "xtream-main",
+      "Name": "Fixture Xtream Main",
+      "Type": "Xtream",
+      "Refresh": {
+        "Success": true,
+        "Trigger": "InitialImport",
+        "Scope": "Full",
+        "Message": "Xtream catalog refresh completed. Guide sync completed.",
+        "CatalogSummary": "Xtream catalog refresh completed.",
+        "GuideSummary": "Guide sync completed.",
+        "GuideAttempted": true,
+        "GuideSucceeded": true
+      },
+      "Credential": {
+        "Url": "[fixture-server]/xtream",
+        "DetectedEpgUrl": "[fixture-server]/xtream/xmltv.php?username=demo\u0026password=demo",
+        "ManualEpgUrl": "",
+        "EpgMode": "Detected",
+        "M3uImportMode": "LiveMoviesAndSeries",
+        "ProxyScope": "Disabled",
+        "ProxyUrl": ""
+      },
+      "SyncState": {
+        "HttpStatusCode": 200,
+        "ErrorLog": "Xtream VOD Sync: movies \u002B2/~0, series \u002B1/~0.",
+        "AutoRefreshState": "Disabled",
+        "AutoRefreshSummary": "Automatic refresh is turned off.",
+        "AutoRefreshFailureCount": 0
+      },
+      "Counts": {
+        "Channels": 2,
+        "Movies": 2,
+        "Series": 1,
+        "Seasons": 1,
+        "Episodes": 2,
+        "EpgPrograms": 4
+      },
+      "Health": {
+        "State": "Weak",
+        "Score": 84,
+        "StatusSummary": "Source works, but quality is uneven. Catalog is usable, with 1 duplicates and 0 suspicious entries. VOD catalog is usable, but duplicate or suspicious entries remain across 3 items. VOD probe reached 3/4 sampled items and missed 1. 1 HTTP failure.",
+        "ImportResultSummary": "Xtream VOD Sync: movies \u002B2/~0, series \u002B1/~0.",
+        "ValidationSummary": "Component health is usable but uneven (84/100). Catalog is usable, with 1 duplicates and 0 suspicious entries. VOD catalog is usable, but duplicate or suspicious entries remain across 3 items. VOD probe reached 3/4 sampled items and missed 1. 1 HTTP failure.",
+        "TopIssueSummary": "1 entries look duplicated inside this source.",
+        "DuplicateCount": 1,
+        "InvalidStreamCount": 0,
+        "ChannelsWithEpgMatchCount": 2,
+        "ChannelsWithLogoCount": 2,
+        "SuspiciousEntryCount": 0,
+        "WarningCount": 0,
+        "ErrorCount": 0,
+        "Components": [
+          {
+            "Type": "Catalog",
+            "State": "Weak",
+            "Score": 84,
+            "Summary": "Catalog is usable, with 1 duplicates and 0 suspicious entries.",
+            "RelevantCount": 5,
+            "HealthyCount": 5,
+            "IssueCount": 1
+          },
+          {
+            "Type": "Live",
+            "State": "Healthy",
+            "Score": 100,
+            "Summary": "Live catalog is present across 2 channels. Live probe reached 2/2 sampled items.",
+            "RelevantCount": 2,
+            "HealthyCount": 2,
+            "IssueCount": 0
+          },
+          {
+            "Type": "Vod",
+            "State": "Weak",
+            "Score": 82,
+            "Summary": "VOD catalog is usable, but duplicate or suspicious entries remain across 3 items. VOD probe reached 3/4 sampled items and missed 1. 1 HTTP failure.",
+            "RelevantCount": 3,
+            "HealthyCount": 3,
+            "IssueCount": 1
+          },
+          {
+            "Type": "Epg",
+            "State": "Weak",
+            "Score": 84,
+            "Summary": "Guide covers 2 of 2 live channels, but coverage is still uneven. 1 channels rely on fallback matching.",
+            "RelevantCount": 2,
+            "HealthyCount": 2,
+            "IssueCount": 0
+          },
+          {
+            "Type": "Logos",
+            "State": "Healthy",
+            "Score": 100,
+            "Summary": "Logos cover 2 of 2 live channels. Coverage is driven by safe fallback logos.",
+            "RelevantCount": 2,
+            "HealthyCount": 2,
+            "IssueCount": 0
+          },
+          {
+            "Type": "Freshness",
+            "State": "Healthy",
+            "Score": 100,
+            "Summary": "Last successful sync was [timestamp].",
+            "RelevantCount": 1,
+            "HealthyCount": 1,
+            "IssueCount": 0
+          }
+        ],
+        "Probes": [
+          {
+            "Type": "Live",
+            "Status": "Completed",
+            "CandidateCount": 2,
+            "SampleSize": 2,
+            "SuccessCount": 2,
+            "FailureCount": 0,
+            "TimeoutCount": 0,
+            "HttpErrorCount": 0,
+            "TransportErrorCount": 0,
+            "Summary": "Live probe reached 2/2 sampled items."
+          },
+          {
+            "Type": "Vod",
+            "Status": "Completed",
+            "CandidateCount": 4,
+            "SampleSize": 4,
+            "SuccessCount": 3,
+            "FailureCount": 1,
+            "TimeoutCount": 0,
+            "HttpErrorCount": 1,
+            "TransportErrorCount": 0,
+            "Summary": "VOD probe reached 3/4 sampled items and missed 1. 1 HTTP failure."
+          }
+        ],
+        "Issues": [
+          {
+            "Severity": "Info",
+            "Code": "duplicates",
+            "Title": "Duplicate items found",
+            "AffectedCount": 1,
+            "SampleItems": "The Matrix x2"
+          }
+        ]
+      },
+      "Epg": {
+        "IsPresent": true,
+        "IsSuccess": true,
+        "Status": "Ready",
+        "ResultCode": "Ready",
+        "FailureStage": "None",
+        "ActiveMode": "Detected",
+        "ActiveXmltvUrl": "[fixture-server]/xtream/xmltv.php?username=demo\u0026password=demo",
+        "MatchedChannelCount": 2,
+        "UnmatchedChannelCount": 0,
+        "CurrentCoverageCount": 0,
+        "NextCoverageCount": 2,
+        "TotalLiveChannelCount": 2,
+        "ProgrammeCount": 4,
+        "MatchBreakdown": "provider_id=1; reused=0; normalized=1; alias=0; fuzzy=0; unmatched=0",
+        "FailureReason": ""
+      },
+      "Channels": [
+        {
+          "Category": "News",
+          "Name": "TRT 1 HD",
+          "StreamUrl": "[fixture-server]/xtream/live/demo/demo/1002.ts",
+          "ProviderEpgChannelId": "1002",
+          "EpgChannelId": "trt1.tr",
+          "ProviderLogoUrl": "",
+          "LogoUrl": "[fixture-server]/logos/xmltv/trt1.png",
+          "NormalizedIdentityKey": "name:trt1",
+          "AliasKeys": "1002\ntrt1",
+          "EpgMatchSource": "Normalized",
+          "EpgMatchConfidence": 88,
+          "EpgMatchSummary": "Normalized channel identity matched XMLTV channel TRT 1.",
+          "LogoSource": "Xmltv",
+          "LogoConfidence": 84,
+          "LogoSummary": "Logo recovered from the matched XMLTV channel TRT 1.",
+          "SupportsCatchup": false,
+          "CatchupWindowHours": 0,
+          "CatchupSource": "None",
+          "CatchupConfidence": 0,
+          "CatchupSummary": "No clear provider catchup signal was detected."
+        },
+        {
+          "Category": "Sports",
+          "Name": "beIN Sports 1 Turkey",
+          "StreamUrl": "[fixture-server]/xtream/live/demo/demo/1001.ts",
+          "ProviderEpgChannelId": "bein1.tr",
+          "EpgChannelId": "bein1.tr",
+          "ProviderLogoUrl": "",
+          "LogoUrl": "[fixture-server]/logos/xmltv/bein1.png",
+          "NormalizedIdentityKey": "id:bein1",
+          "AliasKeys": "bein1\nbein1.tr\nbeinsports1\nbeinsports1turkey",
+          "EpgMatchSource": "Provider",
+          "EpgMatchConfidence": 97,
+          "EpgMatchSummary": "Provider guide metadata matched XMLTV channel beIN SPORTS 1.",
+          "LogoSource": "Xmltv",
+          "LogoConfidence": 88,
+          "LogoSummary": "Logo recovered from the matched XMLTV channel beIN SPORTS 1.",
+          "SupportsCatchup": true,
+          "CatchupWindowHours": 72,
+          "CatchupSource": "XtreamArchive",
+          "CatchupConfidence": 92,
+          "CatchupSummary": "Catchup available for about 3 days."
+        }
+      ],
+      "Movies": [
+        {
+          "Title": "The Matrix",
+          "RawTitle": "The Matrix [1080p]",
+          "CategoryName": "Provider",
+          "ContentKind": "Primary",
+          "CanonicalTitleKey": "the matrix",
+          "DedupFingerprint": "movie:tmdb:Primary:603",
+          "StreamUrl": "[fixture-server]/xtream/movie/demo/demo/2001.mp4"
+        },
+        {
+          "Title": "The Matrix",
+          "RawTitle": "The Matrix [Trailer]",
+          "CategoryName": "Provider",
+          "ContentKind": "Primary",
+          "CanonicalTitleKey": "the matrix",
+          "DedupFingerprint": "movie:tmdb:Primary:603",
+          "StreamUrl": "[fixture-server]/xtream/movie/demo/demo/2002.mp4"
+        }
+      ],
+      "Series": [
+        {
+          "Title": "The Office",
+          "RawTitle": "The Office",
+          "CategoryName": "Provider",
+          "ContentKind": "Primary",
+          "CanonicalTitleKey": "the office",
+          "DedupFingerprint": "series:tmdb:Primary:2316",
+          "Seasons": [
+            {
+              "SeasonNumber": 1,
+              "Episodes": [
+                {
+                  "ExternalId": "30011",
+                  "Title": "Pilot",
+                  "EpisodeNumber": 1,
+                  "StreamUrl": "[fixture-server]/xtream/series/demo/demo/30011.mp4"
+                },
+                {
+                  "ExternalId": "30012",
+                  "Title": "Diversity Day",
+                  "EpisodeNumber": 2,
+                  "StreamUrl": "[fixture-server]/xtream/series/demo/demo/30012.mp4"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "Enrichment": [
+        {
+          "IdentityKey": "id:bein1",
+          "NormalizedName": "bein sports 1 turkey",
+          "AliasKeys": "bein1\nbein1.tr\nbeinsports1\nbeinsports1turkey",
+          "MatchedXmltvChannelId": "bein1.tr",
+          "MatchedXmltvDisplayName": "beIN SPORTS 1",
+          "ResolvedLogoUrl": "[fixture-server]/logos/xmltv/bein1.png",
+          "EpgMatchSource": "Provider",
+          "EpgMatchConfidence": 97,
+          "LogoSource": "Xmltv",
+          "LogoConfidence": 88
+        },
+        {
+          "IdentityKey": "name:trt1",
+          "NormalizedName": "trt 1",
+          "AliasKeys": "1002\ntrt1",
+          "MatchedXmltvChannelId": "trt1.tr",
+          "MatchedXmltvDisplayName": "TRT 1",
+          "ResolvedLogoUrl": "[fixture-server]/logos/xmltv/trt1.png",
+          "EpgMatchSource": "Normalized",
+          "EpgMatchConfidence": 88,
+          "LogoSource": "Xmltv",
+          "LogoConfidence": 84
+        }
+      ]
+    }
+  ],
+  "OperationalStates": [
+    {
+      "ContentType": "Channel",
+      "LogicalContentKey": "id:bein1",
+      "CandidateCount": 1,
+      "PreferredSourceName": "Fixture Xtream Main",
+      "PreferredTitle": "beIN Sports 1 Turkey",
+      "PreferredScore": 95,
+      "SelectionSummary": "Using Fixture Xtream Main. Probe-backed, guide mapped, logo ready, catchup.",
+      "RecoveryAction": "None",
+      "RecoverySummary": "",
+      "Candidates": [
+        {
+          "Rank": 1,
+          "SourceName": "Fixture Xtream Main",
+          "Title": "beIN Sports 1 Turkey",
+          "Score": 95,
+          "IsSelected": true,
+          "IsLastKnownGood": true,
+          "SupportsProxy": false,
+          "Summary": "Probe-backed, guide mapped, logo ready, catchup."
+        }
+      ]
+    },
+    {
+      "ContentType": "Channel",
+      "LogicalContentKey": "name:trt1",
+      "CandidateCount": 1,
+      "PreferredSourceName": "Fixture Xtream Main",
+      "PreferredTitle": "TRT 1 HD",
+      "PreferredScore": 94,
+      "SelectionSummary": "Using Fixture Xtream Main. Probe-backed, guide mapped, logo ready.",
+      "RecoveryAction": "None",
+      "RecoverySummary": "",
+      "Candidates": [
+        {
+          "Rank": 1,
+          "SourceName": "Fixture Xtream Main",
+          "Title": "TRT 1 HD",
+          "Score": 94,
+          "IsSelected": true,
+          "IsLastKnownGood": true,
+          "SupportsProxy": false,
+          "Summary": "Probe-backed, guide mapped, logo ready."
+        }
+      ]
+    },
+    {
+      "ContentType": "Movie",
+      "LogicalContentKey": "movie:tmdb:Primary:603",
+      "CandidateCount": 2,
+      "PreferredSourceName": "Fixture Xtream Main",
+      "PreferredTitle": "The Matrix",
+      "PreferredScore": 84,
+      "SelectionSummary": "Preferred Fixture Xtream Main from 2 mirrored candidates. Probe-backed, poster, metadata.",
+      "RecoveryAction": "None",
+      "RecoverySummary": "",
+      "Candidates": [
+        {
+          "Rank": 1,
+          "SourceName": "Fixture Xtream Main",
+          "Title": "The Matrix",
+          "Score": 84,
+          "IsSelected": true,
+          "IsLastKnownGood": true,
+          "SupportsProxy": false,
+          "Summary": "Probe-backed, poster, metadata."
+        },
+        {
+          "Rank": 2,
+          "SourceName": "Fixture Xtream Main",
+          "Title": "The Matrix",
+          "Score": 83,
+          "IsSelected": false,
+          "IsLastKnownGood": false,
+          "SupportsProxy": false,
+          "Summary": "Probe-backed, metadata."
+        }
+      ]
+    }
+  ]
+}

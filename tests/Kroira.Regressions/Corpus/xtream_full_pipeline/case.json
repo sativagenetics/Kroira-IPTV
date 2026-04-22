@@ -1,0 +1,17 @@
+{
+  "id": "xtream_full_pipeline",
+  "description": "Xtream live and VOD import with XMLTV fallback, catchup archive fields, and probe-backed operational data.",
+  "sources": [
+    {
+      "key": "xtream-main",
+      "name": "Fixture Xtream Main",
+      "type": "Xtream",
+      "url": "{{server}}/xtream",
+      "username": "demo",
+      "password": "demo",
+      "epgMode": "Detected",
+      "refreshTrigger": "InitialImport",
+      "refreshScope": "Full"
+    }
+  ]
+}

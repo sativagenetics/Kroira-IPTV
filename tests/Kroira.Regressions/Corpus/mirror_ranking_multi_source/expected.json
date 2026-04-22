@@ -1,0 +1,449 @@
+{
+  "Sources": [
+    {
+      "Key": "mirror-good",
+      "Name": "Mirror Good",
+      "Type": "M3U",
+      "Refresh": {
+        "Success": true,
+        "Trigger": "InitialImport",
+        "Scope": "Full",
+        "Message": "Playlist import completed. Guide sync completed.",
+        "CatalogSummary": "Playlist import completed.",
+        "GuideSummary": "Guide sync completed.",
+        "GuideAttempted": true,
+        "GuideSucceeded": true
+      },
+      "Credential": {
+        "Url": "[fixture-server]/good.m3u",
+        "DetectedEpgUrl": "[fixture-server]/good-guide.xml",
+        "ManualEpgUrl": "",
+        "EpgMode": "Detected",
+        "M3uImportMode": "LiveOnly",
+        "ProxyScope": "PlaybackOnly",
+        "ProxyUrl": "http://127.0.0.1:65500"
+      },
+      "SyncState": {
+        "HttpStatusCode": 200,
+        "ErrorLog": "Parsed 1 channels (LiveOnly mode - VOD suppressed). Uncategorized=0, pseudo_rejected=0, xmltv_found=yes.",
+        "AutoRefreshState": "Disabled",
+        "AutoRefreshSummary": "Automatic refresh is turned off.",
+        "AutoRefreshFailureCount": 0
+      },
+      "Counts": {
+        "Channels": 1,
+        "Movies": 0,
+        "Series": 0,
+        "Seasons": 0,
+        "Episodes": 0,
+        "EpgPrograms": 2
+      },
+      "Health": {
+        "State": "Weak",
+        "Score": 84,
+        "StatusSummary": "Source works, but quality is uneven. Guide covers 1 of 1 live channels, but coverage is still uneven.",
+        "ImportResultSummary": "Parsed 1 channels (LiveOnly mode - VOD suppressed). Uncategorized=0, pseudo_rejected=0, xmltv_found=yes.",
+        "ValidationSummary": "Component health is usable but uneven (84/100). Guide covers 1 of 1 live channels, but coverage is still uneven.",
+        "TopIssueSummary": "No obvious source-quality issues were flagged in the latest validation run.",
+        "DuplicateCount": 0,
+        "InvalidStreamCount": 0,
+        "ChannelsWithEpgMatchCount": 1,
+        "ChannelsWithLogoCount": 1,
+        "SuspiciousEntryCount": 0,
+        "WarningCount": 0,
+        "ErrorCount": 0,
+        "Components": [
+          {
+            "Type": "Catalog",
+            "State": "Healthy",
+            "Score": 100,
+            "Summary": "Catalog looks coherent across 1 items.",
+            "RelevantCount": 1,
+            "HealthyCount": 1,
+            "IssueCount": 0
+          },
+          {
+            "Type": "Live",
+            "State": "Healthy",
+            "Score": 100,
+            "Summary": "Live catalog is present across 1 channels. Live probe reached 1/1 sampled items.",
+            "RelevantCount": 1,
+            "HealthyCount": 1,
+            "IssueCount": 0
+          },
+          {
+            "Type": "Vod",
+            "State": "NotApplicable",
+            "Score": 0,
+            "Summary": "VOD import is intentionally disabled for this playlist.",
+            "RelevantCount": 0,
+            "HealthyCount": 0,
+            "IssueCount": 0
+          },
+          {
+            "Type": "Epg",
+            "State": "Weak",
+            "Score": 84,
+            "Summary": "Guide covers 1 of 1 live channels, but coverage is still uneven.",
+            "RelevantCount": 1,
+            "HealthyCount": 1,
+            "IssueCount": 0
+          },
+          {
+            "Type": "Logos",
+            "State": "Healthy",
+            "Score": 100,
+            "Summary": "Logos cover 1 of 1 live channels. Coverage is driven by safe fallback logos.",
+            "RelevantCount": 1,
+            "HealthyCount": 1,
+            "IssueCount": 0
+          },
+          {
+            "Type": "Freshness",
+            "State": "Healthy",
+            "Score": 100,
+            "Summary": "Last successful sync was [timestamp].",
+            "RelevantCount": 1,
+            "HealthyCount": 1,
+            "IssueCount": 0
+          }
+        ],
+        "Probes": [
+          {
+            "Type": "Live",
+            "Status": "Completed",
+            "CandidateCount": 1,
+            "SampleSize": 1,
+            "SuccessCount": 1,
+            "FailureCount": 0,
+            "TimeoutCount": 0,
+            "HttpErrorCount": 0,
+            "TransportErrorCount": 0,
+            "Summary": "Live probe reached 1/1 sampled items."
+          },
+          {
+            "Type": "Vod",
+            "Status": "Skipped",
+            "CandidateCount": 0,
+            "SampleSize": 0,
+            "SuccessCount": 0,
+            "FailureCount": 0,
+            "TimeoutCount": 0,
+            "HttpErrorCount": 0,
+            "TransportErrorCount": 0,
+            "Summary": "VOD probing is not applicable because VOD import is disabled for this playlist."
+          }
+        ],
+        "Issues": []
+      },
+      "Epg": {
+        "IsPresent": true,
+        "IsSuccess": true,
+        "Status": "Ready",
+        "ResultCode": "Ready",
+        "FailureStage": "None",
+        "ActiveMode": "Detected",
+        "ActiveXmltvUrl": "[fixture-server]/good-guide.xml",
+        "MatchedChannelCount": 1,
+        "UnmatchedChannelCount": 0,
+        "CurrentCoverageCount": 0,
+        "NextCoverageCount": 1,
+        "TotalLiveChannelCount": 1,
+        "ProgrammeCount": 2,
+        "MatchBreakdown": "provider_id=1; reused=0; normalized=0; alias=0; fuzzy=0; unmatched=0",
+        "FailureReason": ""
+      },
+      "Channels": [
+        {
+          "Category": "World",
+          "Name": "Global News HD",
+          "StreamUrl": "[fixture-server]/probe/good/global-news.m3u8",
+          "ProviderEpgChannelId": "global.news",
+          "EpgChannelId": "global.news",
+          "ProviderLogoUrl": "",
+          "LogoUrl": "[fixture-server]/logos/xmltv/global-news.png",
+          "NormalizedIdentityKey": "id:globalnews",
+          "AliasKeys": "global.news\nglobalnews",
+          "EpgMatchSource": "Provider",
+          "EpgMatchConfidence": 97,
+          "EpgMatchSummary": "Provider guide metadata matched XMLTV channel Global News.",
+          "LogoSource": "Xmltv",
+          "LogoConfidence": 88,
+          "LogoSummary": "Logo recovered from the matched XMLTV channel Global News.",
+          "SupportsCatchup": false,
+          "CatchupWindowHours": 0,
+          "CatchupSource": "None",
+          "CatchupConfidence": 0,
+          "CatchupSummary": "No clear provider catchup signal was detected."
+        }
+      ],
+      "Movies": [],
+      "Series": [],
+      "Enrichment": [
+        {
+          "IdentityKey": "id:globalnews",
+          "NormalizedName": "global news",
+          "AliasKeys": "global.news\nglobalnews",
+          "MatchedXmltvChannelId": "global.news",
+          "MatchedXmltvDisplayName": "Global News",
+          "ResolvedLogoUrl": "[fixture-server]/logos/xmltv/global-news.png",
+          "EpgMatchSource": "Provider",
+          "EpgMatchConfidence": 97,
+          "LogoSource": "Xmltv",
+          "LogoConfidence": 88
+        }
+      ]
+    },
+    {
+      "Key": "mirror-weak",
+      "Name": "Mirror Weak",
+      "Type": "M3U",
+      "Refresh": {
+        "Success": true,
+        "Trigger": "InitialImport",
+        "Scope": "Full",
+        "Message": "Playlist import completed. Guide sync completed.",
+        "CatalogSummary": "Playlist import completed.",
+        "GuideSummary": "Guide sync completed.",
+        "GuideAttempted": true,
+        "GuideSucceeded": true
+      },
+      "Credential": {
+        "Url": "[fixture-server]/weak.m3u",
+        "DetectedEpgUrl": "",
+        "ManualEpgUrl": "",
+        "EpgMode": "Detected",
+        "M3uImportMode": "LiveOnly",
+        "ProxyScope": "Disabled",
+        "ProxyUrl": ""
+      },
+      "SyncState": {
+        "HttpStatusCode": 200,
+        "ErrorLog": "Parsed 1 channels (LiveOnly mode - VOD suppressed). Uncategorized=0, pseudo_rejected=0, xmltv_found=no.",
+        "AutoRefreshState": "Disabled",
+        "AutoRefreshSummary": "Automatic refresh is turned off.",
+        "AutoRefreshFailureCount": 0
+      },
+      "Counts": {
+        "Channels": 1,
+        "Movies": 0,
+        "Series": 0,
+        "Seasons": 0,
+        "Episodes": 0,
+        "EpgPrograms": 0
+      },
+      "Health": {
+        "State": "Incomplete",
+        "Score": 64,
+        "StatusSummary": "Source synced, but important parts are still incomplete. Live catalog is present across 1 channels. Live probe reached 0/1 sampled items and missed 1. 1 HTTP failure. No active guide source is available for live-channel matching.",
+        "ImportResultSummary": "Parsed 1 channels (LiveOnly mode - VOD suppressed). Uncategorized=0, pseudo_rejected=0, xmltv_found=no.",
+        "ValidationSummary": "Component health shows missing core coverage (64/100). Live catalog is present across 1 channels. Live probe reached 0/1 sampled items and missed 1. 1 HTTP failure. No active guide source is available for live-channel matching.",
+        "TopIssueSummary": "Live channels are present, but no active XMLTV source is available for guide matching. 0 of 1 live channels currently have logos.",
+        "DuplicateCount": 0,
+        "InvalidStreamCount": 0,
+        "ChannelsWithEpgMatchCount": 0,
+        "ChannelsWithLogoCount": 0,
+        "SuspiciousEntryCount": 0,
+        "WarningCount": 3,
+        "ErrorCount": 0,
+        "Components": [
+          {
+            "Type": "Catalog",
+            "State": "Healthy",
+            "Score": 100,
+            "Summary": "Catalog looks coherent across 1 items.",
+            "RelevantCount": 1,
+            "HealthyCount": 1,
+            "IssueCount": 0
+          },
+          {
+            "Type": "Live",
+            "State": "Incomplete",
+            "Score": 46,
+            "Summary": "Live catalog is present across 1 channels. Live probe reached 0/1 sampled items and missed 1. 1 HTTP failure.",
+            "RelevantCount": 1,
+            "HealthyCount": 1,
+            "IssueCount": 1
+          },
+          {
+            "Type": "Vod",
+            "State": "NotApplicable",
+            "Score": 0,
+            "Summary": "VOD import is intentionally disabled for this playlist.",
+            "RelevantCount": 0,
+            "HealthyCount": 0,
+            "IssueCount": 0
+          },
+          {
+            "Type": "Epg",
+            "State": "Incomplete",
+            "Score": 40,
+            "Summary": "No active guide source is available for live-channel matching.",
+            "RelevantCount": 1,
+            "HealthyCount": 0,
+            "IssueCount": 1
+          },
+          {
+            "Type": "Logos",
+            "State": "Incomplete",
+            "Score": 64,
+            "Summary": "Many live channels are still missing logos (0/1).",
+            "RelevantCount": 1,
+            "HealthyCount": 0,
+            "IssueCount": 1
+          },
+          {
+            "Type": "Freshness",
+            "State": "Healthy",
+            "Score": 100,
+            "Summary": "Last successful sync was [timestamp].",
+            "RelevantCount": 1,
+            "HealthyCount": 1,
+            "IssueCount": 0
+          }
+        ],
+        "Probes": [
+          {
+            "Type": "Live",
+            "Status": "Completed",
+            "CandidateCount": 1,
+            "SampleSize": 1,
+            "SuccessCount": 0,
+            "FailureCount": 1,
+            "TimeoutCount": 0,
+            "HttpErrorCount": 1,
+            "TransportErrorCount": 0,
+            "Summary": "Live probe reached 0/1 sampled items and missed 1. 1 HTTP failure."
+          },
+          {
+            "Type": "Vod",
+            "Status": "Skipped",
+            "CandidateCount": 0,
+            "SampleSize": 0,
+            "SuccessCount": 0,
+            "FailureCount": 0,
+            "TimeoutCount": 0,
+            "HttpErrorCount": 0,
+            "TransportErrorCount": 0,
+            "Summary": "VOD probing is not applicable because VOD import is disabled for this playlist."
+          }
+        ],
+        "Issues": [
+          {
+            "Severity": "Warning",
+            "Code": "guide_missing",
+            "Title": "Guide source is missing",
+            "AffectedCount": 1,
+            "SampleItems": ""
+          },
+          {
+            "Severity": "Warning",
+            "Code": "missing_logos",
+            "Title": "Channel branding is thin",
+            "AffectedCount": 1,
+            "SampleItems": ""
+          },
+          {
+            "Severity": "Warning",
+            "Code": "live_probe",
+            "Title": "Live probe found weak reachability",
+            "AffectedCount": 1,
+            "SampleItems": ""
+          }
+        ]
+      },
+      "Epg": {
+        "IsPresent": true,
+        "IsSuccess": false,
+        "Status": "UnavailableNoXmltv",
+        "ResultCode": "NoXmltvAdvertised",
+        "FailureStage": "Discovery",
+        "ActiveMode": "Detected",
+        "ActiveXmltvUrl": "",
+        "MatchedChannelCount": 0,
+        "UnmatchedChannelCount": 0,
+        "CurrentCoverageCount": 0,
+        "NextCoverageCount": 0,
+        "TotalLiveChannelCount": 0,
+        "ProgrammeCount": 0,
+        "MatchBreakdown": "",
+        "FailureReason": "Playlist does not advertise an XMLTV guide URL"
+      },
+      "Channels": [
+        {
+          "Category": "World",
+          "Name": "Global News",
+          "StreamUrl": "[fixture-server]/probe/weak/global-news.m3u8",
+          "ProviderEpgChannelId": "global.news",
+          "EpgChannelId": "global.news",
+          "ProviderLogoUrl": "",
+          "LogoUrl": "",
+          "NormalizedIdentityKey": "id:globalnews",
+          "AliasKeys": "global.news\nglobalnews",
+          "EpgMatchSource": "Provider",
+          "EpgMatchConfidence": 70,
+          "EpgMatchSummary": "Using provider guide metadata until XMLTV confirms a better match.",
+          "LogoSource": "None",
+          "LogoConfidence": 0,
+          "LogoSummary": "",
+          "SupportsCatchup": false,
+          "CatchupWindowHours": 0,
+          "CatchupSource": "None",
+          "CatchupConfidence": 0,
+          "CatchupSummary": "No clear provider catchup signal was detected."
+        }
+      ],
+      "Movies": [],
+      "Series": [],
+      "Enrichment": [
+        {
+          "IdentityKey": "id:globalnews",
+          "NormalizedName": "global news",
+          "AliasKeys": "global.news\nglobalnews",
+          "MatchedXmltvChannelId": "",
+          "MatchedXmltvDisplayName": "",
+          "ResolvedLogoUrl": "",
+          "EpgMatchSource": "None",
+          "EpgMatchConfidence": 0,
+          "LogoSource": "None",
+          "LogoConfidence": 0
+        }
+      ]
+    }
+  ],
+  "OperationalStates": [
+    {
+      "ContentType": "Channel",
+      "LogicalContentKey": "id:globalnews",
+      "CandidateCount": 2,
+      "PreferredSourceName": "Mirror Good",
+      "PreferredTitle": "Global News HD",
+      "PreferredScore": 94,
+      "SelectionSummary": "Preferred Mirror Good from 2 mirrored candidates. Probe-backed, guide mapped, logo ready, proxy routed.",
+      "RecoveryAction": "None",
+      "RecoverySummary": "",
+      "Candidates": [
+        {
+          "Rank": 1,
+          "SourceName": "Mirror Good",
+          "Title": "Global News HD",
+          "Score": 94,
+          "IsSelected": true,
+          "IsLastKnownGood": true,
+          "SupportsProxy": true,
+          "Summary": "Probe-backed, guide mapped, logo ready, proxy routed."
+        },
+        {
+          "Rank": 2,
+          "SourceName": "Mirror Weak",
+          "Title": "Global News",
+          "Score": 56,
+          "IsSelected": false,
+          "IsLastKnownGood": false,
+          "SupportsProxy": false,
+          "Summary": "Weak probe confidence, guide mapped."
+        }
+      ]
+    }
+  ]
+}

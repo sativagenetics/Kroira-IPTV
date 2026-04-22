@@ -1,0 +1,3 @@
+#EXTM3U x-tvg-url="{{server}}/good-guide.xml"
+#EXTINF:-1 tvg-id="global.news" tvg-name="Global News" group-title="World",Global News HD
+{{server}}/probe/good/global-news.m3u8

@@ -1,0 +1,5 @@
+#EXTM3U x-tvg-url="{{server}}/broken-guide.txt"
+#EXTINF:-1 group-title="News" catchup="append" catchup-days="2" catchup-source="?utc={utc}",Archive News
+udp://239.0.0.1:1234
+#EXTINF:-1 tvg-name="Sports TR" group-title="TR Sports",Sports TR
+udp://239.0.0.2:1234

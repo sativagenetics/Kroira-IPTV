@@ -1,0 +1,14 @@
+{
+  "routes": [
+    {
+      "path": "/probe/good/global-news.m3u8",
+      "statusCode": 200,
+      "body": "#EXTM3U\n#EXTINF:2,\nsegment.ts"
+    },
+    {
+      "path": "/probe/weak/global-news.m3u8",
+      "statusCode": 503,
+      "body": "down"
+    }
+  ]
+}

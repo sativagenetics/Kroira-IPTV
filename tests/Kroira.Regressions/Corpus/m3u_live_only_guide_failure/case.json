@@ -1,0 +1,16 @@
+{
+  "id": "m3u_live_only_guide_failure",
+  "description": "Live-only M3U import with broken XMLTV, non-HTTP streams, and conservative catchup-only structure.",
+  "sources": [
+    {
+      "key": "m3u-live-only",
+      "name": "Fixture M3U Live Only",
+      "type": "M3U",
+      "url": "{{server}}/playlist.m3u",
+      "epgMode": "Detected",
+      "m3uImportMode": "LiveOnly",
+      "refreshTrigger": "InitialImport",
+      "refreshScope": "Full"
+    }
+  ]
+}

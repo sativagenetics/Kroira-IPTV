@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using Kroira.App.Composition;
 using Kroira.App.Data;
 using Kroira.App.Services;
 using Kroira.App.Services.Metadata;
@@ -241,7 +242,6 @@ namespace Kroira.App
             services.AddSingleton<IEntitlementService, MockEntitlementService>();
             services.AddSingleton<ILibraryWatchStateService, LibraryWatchStateService>();
             services.AddSingleton<IProfileStateService, ProfileStateService>();
-            services.AddSingleton<IBrowsePreferencesService, BrowsePreferencesService>();
             services.AddSingleton<IAppAppearanceService, AppAppearanceService>();
             services.AddSingleton<IWindowManagerService, WindowManagerService>();
             services.AddSingleton<IPictureInPictureService, PictureInPictureService>();
@@ -253,26 +253,10 @@ namespace Kroira.App
             services.AddSingleton<ICatalogSurfaceCountService, CatalogSurfaceCountService>();
             services.AddSingleton<IHomeRecommendationService, HomeRecommendationService>();
             services.AddSingleton<ILiveGuideService, LiveGuideService>();
-            services.AddSingleton<ILiveChannelIdentityService, LiveChannelIdentityService>();
-            services.AddSingleton<IChannelCatchupService, ChannelCatchupService>();
-            services.AddSingleton<ILogicalCatalogStateService, LogicalCatalogStateService>();
-            services.AddSingleton<ISourceRoutingService, SourceRoutingService>();
-            services.AddSingleton<IContentOperationalService, ContentOperationalService>();
-            services.AddSingleton<ISourceDiagnosticsService, SourceDiagnosticsService>();
-            services.AddSingleton<ISourceEnrichmentService, SourceEnrichmentService>();
-            services.AddSingleton<ISourceHealthService, SourceHealthService>();
-            services.AddSingleton<ISourceProbeService, SourceProbeService>();
-            services.AddSingleton<ISourceRefreshService, SourceRefreshService>();
-            services.AddSingleton<ISourceAutoRefreshService, SourceAutoRefreshService>();
             services.AddSingleton<ISurfaceStateService, SurfaceStateService>();
             services.AddSingleton<IBackupPackageService, BackupPackageService>();
             services.AddSingleton<IMediaJobService, MediaJobService>();
-            services.AddSingleton<Kroira.App.Services.Parsing.ICatalogNormalizationService, Kroira.App.Services.Parsing.CatalogNormalizationService>();
-            services.AddSingleton<Kroira.App.Services.Parsing.IM3uParserService, Kroira.App.Services.Parsing.M3uParserService>();
-            services.AddSingleton<Kroira.App.Services.Parsing.IEpgSourceDiscoveryService, Kroira.App.Services.Parsing.M3uEpgDiscoveryService>();
-            services.AddSingleton<Kroira.App.Services.Parsing.IEpgSourceDiscoveryService, Kroira.App.Services.Parsing.XtreamEpgDiscoveryService>();
-            services.AddSingleton<Kroira.App.Services.Parsing.IXmltvParserService, Kroira.App.Services.Parsing.XmltvParserService>();
-            services.AddSingleton<Kroira.App.Services.Parsing.IXtreamParserService, Kroira.App.Services.Parsing.XtreamParserService>();
+            services.AddKroiraPipelineServices();
 
             return services.BuildServiceProvider();
         }

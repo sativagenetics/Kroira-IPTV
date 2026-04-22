@@ -1,0 +1,27 @@
+[
+  {
+    "stream_id": "2001",
+    "category_id": "30",
+    "name": "The Matrix [1080p]",
+    "container_extension": "mp4",
+    "stream_icon": "{{server}}/logos/provider/matrix.png",
+    "tmdb_id": "603",
+    "imdb_id": "tt0133093"
+  },
+  {
+    "stream_id": "2002",
+    "category_id": "30",
+    "name": "The Matrix [Trailer]",
+    "container_extension": "mp4",
+    "stream_icon": "",
+    "tmdb_id": "603",
+    "imdb_id": "tt0133093"
+  },
+  {
+    "stream_id": "2999",
+    "category_id": "30",
+    "name": "Garbage Movie",
+    "container_extension": "m3u8",
+    "stream_icon": ""
+  }
+]

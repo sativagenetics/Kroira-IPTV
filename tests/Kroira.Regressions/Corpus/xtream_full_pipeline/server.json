@@ -1,0 +1,74 @@
+{
+  "routes": [
+    {
+      "path": "/xtream/xmltv.php",
+      "query": { "username": "demo", "password": "demo" },
+      "bodyFile": "guide.xml"
+    },
+    {
+      "path": "/xtream/player_api.php",
+      "query": { "username": "demo", "password": "demo", "action": "get_live_categories" },
+      "bodyFile": "live_categories.json"
+    },
+    {
+      "path": "/xtream/player_api.php",
+      "query": { "username": "demo", "password": "demo", "action": "get_live_streams" },
+      "bodyFile": "live_streams.json"
+    },
+    {
+      "path": "/xtream/player_api.php",
+      "query": { "username": "demo", "password": "demo", "action": "get_vod_categories" },
+      "bodyFile": "vod_categories.json"
+    },
+    {
+      "path": "/xtream/player_api.php",
+      "query": { "username": "demo", "password": "demo", "action": "get_series_categories" },
+      "bodyFile": "series_categories.json"
+    },
+    {
+      "path": "/xtream/player_api.php",
+      "query": { "username": "demo", "password": "demo", "action": "get_vod_streams" },
+      "bodyFile": "vod_streams.json"
+    },
+    {
+      "path": "/xtream/player_api.php",
+      "query": { "username": "demo", "password": "demo", "action": "get_series" },
+      "bodyFile": "series.json"
+    },
+    {
+      "path": "/xtream/player_api.php",
+      "query": { "username": "demo", "password": "demo", "action": "get_series_info", "series_id": "5001" },
+      "bodyFile": "series_info_5001.json"
+    },
+    {
+      "path": "/xtream/live/demo/demo/1001.ts",
+      "statusCode": 200,
+      "body": "ok"
+    },
+    {
+      "path": "/xtream/live/demo/demo/1002.ts",
+      "statusCode": 200,
+      "body": "ok"
+    },
+    {
+      "path": "/xtream/movie/demo/demo/2001.mp4",
+      "statusCode": 200,
+      "body": "ok"
+    },
+    {
+      "path": "/xtream/movie/demo/demo/2002.mp4",
+      "statusCode": 200,
+      "body": "ok"
+    },
+    {
+      "path": "/xtream/series/demo/demo/30011.mp4",
+      "statusCode": 503,
+      "body": "down"
+    },
+    {
+      "path": "/xtream/series/demo/demo/30012.mp4",
+      "statusCode": 200,
+      "body": "ok"
+    }
+  ]
+}

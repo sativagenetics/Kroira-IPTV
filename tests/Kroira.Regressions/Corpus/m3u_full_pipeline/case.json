@@ -1,0 +1,16 @@
+{
+  "id": "m3u_full_pipeline",
+  "description": "Full M3U import with duplicates, fallback guide/logo matching, timeout-aware probing, and catchup detection.",
+  "sources": [
+    {
+      "key": "m3u-main",
+      "name": "Fixture M3U Main",
+      "type": "M3U",
+      "url": "{{server}}/playlist.m3u",
+      "epgMode": "Detected",
+      "m3uImportMode": "LiveMoviesAndSeries",
+      "refreshTrigger": "InitialImport",
+      "refreshScope": "Full"
+    }
+  ]
+}

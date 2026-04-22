@@ -85,3 +85,7 @@ PublishProfiles/
 *.tmp
 *.temp
 ~$*
+
+## Regression runner artifacts
+tests/Kroira.Regressions/artifacts/
+tests/Kroira.Regressions/**/*.actual.json

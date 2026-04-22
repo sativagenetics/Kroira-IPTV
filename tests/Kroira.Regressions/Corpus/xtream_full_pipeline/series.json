@@ -1,0 +1,10 @@
+[
+  {
+    "series_id": "5001",
+    "category_id": "40",
+    "name": "The Office",
+    "cover": "{{server}}/logos/provider/office.png",
+    "tmdb_id": "2316",
+    "imdb_id": "tt0386676"
+  }
+]

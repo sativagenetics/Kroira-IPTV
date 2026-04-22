@@ -461,55 +461,63 @@ namespace Kroira.App.Services
 
         private async Task<List<LiveCandidateRow>> LoadLiveCandidatesAsync(AppDbContext db)
         {
-            return await db.Channels
+            var rows = await db.Channels
                 .AsNoTracking()
                 .Join(
                     db.ChannelCategories.AsNoTracking(),
                     channel => channel.ChannelCategoryId,
                     category => category.Id,
-                    (channel, category) => new { Channel = channel, Category = category })
+                    (channel, category) => new { Channel = channel, SourceProfileId = category.SourceProfileId })
                 .Join(
                     db.SourceProfiles.AsNoTracking(),
-                    item => item.Category.SourceProfileId,
+                    item => item.SourceProfileId,
                     source => source.Id,
-                    (item, source) => new LiveCandidateRow
-                    {
-                        ContentId = item.Channel.Id,
-                        SourceProfileId = source.Id,
-                        SourceName = source.Name,
-                        LogicalKey = BuildChannelLogicalKey(item.Channel),
-                        StreamUrl = item.Channel.StreamUrl,
-                        HasGuide = !string.IsNullOrWhiteSpace(item.Channel.EpgChannelId),
-                        HasLogo = !string.IsNullOrWhiteSpace(item.Channel.LogoUrl),
-                        SupportsCatchup = item.Channel.SupportsCatchup,
-                        EpgConfidence = item.Channel.EpgMatchConfidence,
-                        LogoConfidence = item.Channel.LogoConfidence
-                    })
-                .Where(item => !string.IsNullOrWhiteSpace(item.LogicalKey) && !string.IsNullOrWhiteSpace(item.StreamUrl))
+                    (item, source) => new { item.Channel, SourceId = source.Id, SourceName = source.Name })
                 .ToListAsync();
+
+            return rows
+                .Select(item => new LiveCandidateRow
+                {
+                    ContentId = item.Channel.Id,
+                    SourceProfileId = item.SourceId,
+                    SourceName = item.SourceName,
+                    LogicalKey = BuildChannelLogicalKey(item.Channel),
+                    StreamUrl = item.Channel.StreamUrl,
+                    HasGuide = !string.IsNullOrWhiteSpace(item.Channel.EpgChannelId),
+                    HasLogo = !string.IsNullOrWhiteSpace(item.Channel.LogoUrl),
+                    SupportsCatchup = item.Channel.SupportsCatchup,
+                    EpgConfidence = item.Channel.EpgMatchConfidence,
+                    LogoConfidence = item.Channel.LogoConfidence
+                })
+                .Where(item => !string.IsNullOrWhiteSpace(item.LogicalKey) && !string.IsNullOrWhiteSpace(item.StreamUrl))
+                .ToList();
         }
 
         private async Task<List<MovieCandidateRow>> LoadMovieCandidatesAsync(AppDbContext db)
         {
-            return await db.Movies
+            var rows = await db.Movies
                 .AsNoTracking()
                 .Join(
                     db.SourceProfiles.AsNoTracking(),
                     movie => movie.SourceProfileId,
                     source => source.Id,
-                    (movie, source) => new MovieCandidateRow
-                    {
-                        ContentId = movie.Id,
-                        SourceProfileId = source.Id,
-                        SourceName = source.Name,
-                        LogicalKey = BuildMovieLogicalKey(movie),
-                        StreamUrl = movie.StreamUrl,
-                        HasPoster = !string.IsNullOrWhiteSpace(movie.DisplayPosterUrl),
-                        HasOverview = !string.IsNullOrWhiteSpace(movie.Overview),
-                        HasExternalMetadata = !string.IsNullOrWhiteSpace(movie.TmdbId) || !string.IsNullOrWhiteSpace(movie.ImdbId)
-                    })
-                .Where(item => !string.IsNullOrWhiteSpace(item.LogicalKey) && !string.IsNullOrWhiteSpace(item.StreamUrl))
+                    (movie, source) => new { Movie = movie, SourceId = source.Id, SourceName = source.Name })
                 .ToListAsync();
+
+            return rows
+                .Select(item => new MovieCandidateRow
+                {
+                    ContentId = item.Movie.Id,
+                    SourceProfileId = item.SourceId,
+                    SourceName = item.SourceName,
+                    LogicalKey = BuildMovieLogicalKey(item.Movie),
+                    StreamUrl = item.Movie.StreamUrl,
+                    HasPoster = !string.IsNullOrWhiteSpace(item.Movie.DisplayPosterUrl),
+                    HasOverview = !string.IsNullOrWhiteSpace(item.Movie.Overview),
+                    HasExternalMetadata = !string.IsNullOrWhiteSpace(item.Movie.TmdbId) || !string.IsNullOrWhiteSpace(item.Movie.ImdbId)
+                })
+                .Where(item => !string.IsNullOrWhiteSpace(item.LogicalKey) && !string.IsNullOrWhiteSpace(item.StreamUrl))
+                .ToList();
         }
 
         private List<CandidateGroup> BuildCandidateGroups(

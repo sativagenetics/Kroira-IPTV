@@ -51,7 +51,7 @@ namespace Kroira.App.Data
             try
             {
                 context.Database.Migrate();
-                EnsureRuntimeSchema(dbPath);
+                EnsureRuntimeSchemaCore(dbPath);
             }
             catch (Exception ex)
             {
@@ -59,7 +59,18 @@ namespace Kroira.App.Data
             }
         }
 
-        private static void EnsureRuntimeSchema(string dbPath)
+        public static void EnsureRuntimeSchema(AppDbContext context)
+        {
+            var dbPath = context.Database.GetDbConnection().DataSource;
+            if (string.IsNullOrWhiteSpace(dbPath))
+            {
+                throw new InvalidOperationException("Unable to resolve the current SQLite database path.");
+            }
+
+            EnsureRuntimeSchemaCore(dbPath);
+        }
+
+        private static void EnsureRuntimeSchemaCore(string dbPath)
         {
             using var conn = new SqliteConnection($"Data Source={dbPath}");
             conn.Open();
