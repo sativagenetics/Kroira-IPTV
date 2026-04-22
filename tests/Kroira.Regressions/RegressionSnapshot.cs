@@ -32,12 +32,15 @@ internal sealed class SourceSnapshot
     public SourceCredentialSnapshot Credential { get; set; } = new();
     public SourceSyncStateSnapshot SyncState { get; set; } = new();
     public SourceCountSnapshot Counts { get; set; } = new();
+    public SourceAcquisitionProfileSnapshot AcquisitionProfile { get; set; } = new();
+    public SourceAcquisitionRunSnapshot AcquisitionRun { get; set; } = new();
     public SourceHealthSnapshot Health { get; set; } = new();
     public SourceEpgSnapshot Epg { get; set; } = new();
     public List<ChannelSnapshot> Channels { get; set; } = [];
     public List<MovieSnapshot> Movies { get; set; } = [];
     public List<SeriesSnapshot> Series { get; set; } = [];
     public List<EnrichmentRecordSnapshot> Enrichment { get; set; } = [];
+    public List<SourceAcquisitionEvidenceSnapshot> AcquisitionEvidence { get; set; } = [];
 }
 
 internal sealed class SourceRefreshSnapshot
@@ -80,6 +83,53 @@ internal sealed class SourceCountSnapshot
     public int Seasons { get; set; }
     public int Episodes { get; set; }
     public int EpgPrograms { get; set; }
+}
+
+internal sealed class SourceAcquisitionProfileSnapshot
+{
+    public string ProfileKey { get; set; } = string.Empty;
+    public string ProfileLabel { get; set; } = string.Empty;
+    public string ProviderKey { get; set; } = string.Empty;
+    public string NormalizationSummary { get; set; } = string.Empty;
+    public string MatchingSummary { get; set; } = string.Empty;
+    public string SuppressionSummary { get; set; } = string.Empty;
+    public string ValidationSummary { get; set; } = string.Empty;
+    public bool SupportsRegexMatching { get; set; }
+    public bool PreferProxyDuringValidation { get; set; }
+    public bool PreferLastKnownGoodRollback { get; set; }
+}
+
+internal sealed class SourceAcquisitionRunSnapshot
+{
+    public string Trigger { get; set; } = string.Empty;
+    public string Scope { get; set; } = string.Empty;
+    public string Status { get; set; } = string.Empty;
+    public string ProfileKey { get; set; } = string.Empty;
+    public string ProfileLabel { get; set; } = string.Empty;
+    public string ProviderKey { get; set; } = string.Empty;
+    public string RoutingSummary { get; set; } = string.Empty;
+    public string ValidationRoutingSummary { get; set; } = string.Empty;
+    public string Message { get; set; } = string.Empty;
+    public string CatalogSummary { get; set; } = string.Empty;
+    public string GuideSummary { get; set; } = string.Empty;
+    public string ValidationSummary { get; set; } = string.Empty;
+    public int RawItemCount { get; set; }
+    public int AcceptedCount { get; set; }
+    public int SuppressedCount { get; set; }
+    public int DemotedCount { get; set; }
+    public int MatchedCount { get; set; }
+    public int UnmatchedCount { get; set; }
+    public int LiveCount { get; set; }
+    public int MovieCount { get; set; }
+    public int SeriesCount { get; set; }
+    public int EpisodeCount { get; set; }
+    public int AliasMatchCount { get; set; }
+    public int RegexMatchCount { get; set; }
+    public int FuzzyMatchCount { get; set; }
+    public int ProbeSuccessCount { get; set; }
+    public int ProbeFailureCount { get; set; }
+    public int WarningCount { get; set; }
+    public int ErrorCount { get; set; }
 }
 
 internal sealed class SourceHealthSnapshot
@@ -227,6 +277,19 @@ internal sealed class EnrichmentRecordSnapshot
     public int EpgMatchConfidence { get; set; }
     public string LogoSource { get; set; } = string.Empty;
     public int LogoConfidence { get; set; }
+}
+
+internal sealed class SourceAcquisitionEvidenceSnapshot
+{
+    public string Stage { get; set; } = string.Empty;
+    public string Outcome { get; set; } = string.Empty;
+    public string ItemKind { get; set; } = string.Empty;
+    public string RuleCode { get; set; } = string.Empty;
+    public string Reason { get; set; } = string.Empty;
+    public string RawName { get; set; } = string.Empty;
+    public string NormalizedName { get; set; } = string.Empty;
+    public string MatchedTarget { get; set; } = string.Empty;
+    public int Confidence { get; set; }
 }
 
 internal sealed class OperationalStateSnapshot

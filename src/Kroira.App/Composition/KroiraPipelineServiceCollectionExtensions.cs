@@ -13,6 +13,7 @@ namespace Kroira.App.Composition
             services.AddSingleton<IChannelCatchupService, ChannelCatchupService>();
             services.AddSingleton<ILogicalCatalogStateService, LogicalCatalogStateService>();
             services.AddSingleton<ISourceRoutingService, SourceRoutingService>();
+            services.AddSingleton<ISourceAcquisitionService, SourceAcquisitionService>();
             services.AddSingleton<IContentOperationalService, ContentOperationalService>();
             services.AddSingleton<ISourceDiagnosticsService, SourceDiagnosticsService>();
             services.AddSingleton<ISourceEnrichmentService, SourceEnrichmentService>();

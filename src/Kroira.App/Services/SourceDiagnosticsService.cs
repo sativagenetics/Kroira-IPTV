@@ -19,10 +19,14 @@ namespace Kroira.App.Services
     public sealed class SourceDiagnosticsService : ISourceDiagnosticsService
     {
         private readonly ISourceHealthService _sourceHealthService;
+        private readonly ISourceAcquisitionService _sourceAcquisitionService;
 
-        public SourceDiagnosticsService(ISourceHealthService sourceHealthService)
+        public SourceDiagnosticsService(
+            ISourceHealthService sourceHealthService,
+            ISourceAcquisitionService sourceAcquisitionService)
         {
             _sourceHealthService = sourceHealthService;
+            _sourceAcquisitionService = sourceAcquisitionService;
         }
 
         public async Task<IReadOnlyDictionary<int, SourceDiagnosticsSnapshot>> GetSnapshotsAsync(
@@ -34,6 +38,9 @@ namespace Kroira.App.Services
             {
                 return new Dictionary<int, SourceDiagnosticsSnapshot>();
             }
+
+            await _sourceAcquisitionService.BackfillAsync(db, ids);
+            db.ChangeTracker.Clear();
 
             var reportSourceIds = await db.SourceHealthReports
                 .AsNoTracking()
@@ -109,6 +116,46 @@ namespace Kroira.App.Services
                 .AsNoTracking()
                 .Where(report => ids.Contains(report.SourceProfileId))
                 .ToDictionaryAsync(report => report.SourceProfileId);
+            var acquisitionProfiles = await db.SourceAcquisitionProfiles
+                .AsNoTracking()
+                .Where(profile => ids.Contains(profile.SourceProfileId))
+                .ToDictionaryAsync(profile => profile.SourceProfileId);
+            var acquisitionRuns = await db.SourceAcquisitionRuns
+                .AsNoTracking()
+                .Where(run => ids.Contains(run.SourceProfileId))
+                .OrderByDescending(run => run.StartedAtUtc)
+                .ThenByDescending(run => run.Id)
+                .ToListAsync();
+            var latestRunLookup = acquisitionRuns
+                .GroupBy(run => run.SourceProfileId)
+                .ToDictionary(group => group.Key, group => group.First());
+            var latestRunIds = latestRunLookup.Values.Select(run => run.Id).ToList();
+            var acquisitionEvidenceRows = latestRunIds.Count == 0
+                ? new List<SourceAcquisitionEvidence>()
+                : await db.SourceAcquisitionEvidence
+                    .AsNoTracking()
+                    .Where(evidence => latestRunIds.Contains(evidence.SourceAcquisitionRunId))
+                    .OrderBy(evidence => evidence.SortOrder)
+                    .ToListAsync();
+            var acquisitionEvidenceLookup = acquisitionEvidenceRows
+                .GroupBy(evidence => evidence.SourceProfileId)
+                .ToDictionary(
+                    group => group.Key,
+                    group => (IReadOnlyList<SourceDiagnosticsEvidenceSnapshot>)group
+                        .Take(6)
+                        .Select(evidence => new SourceDiagnosticsEvidenceSnapshot
+                        {
+                            Stage = evidence.Stage,
+                            Outcome = evidence.Outcome,
+                            ItemKind = evidence.ItemKind,
+                            RuleCode = evidence.RuleCode,
+                            Reason = evidence.Reason,
+                            RawName = evidence.RawName,
+                            NormalizedName = evidence.NormalizedName,
+                            MatchedTarget = evidence.MatchedTarget,
+                            Confidence = evidence.Confidence
+                        })
+                        .ToList());
             var healthComponents = await db.SourceHealthComponents
                 .AsNoTracking()
                 .Join(
@@ -282,9 +329,12 @@ namespace Kroira.App.Services
                 credentials.TryGetValue(sourceId, out var credential);
                 epgLogs.TryGetValue(sourceId, out var epgLog);
                 healthReports.TryGetValue(sourceId, out var healthReport);
+                acquisitionProfiles.TryGetValue(sourceId, out var acquisitionProfile);
+                latestRunLookup.TryGetValue(sourceId, out var acquisitionRun);
                 componentLookup.TryGetValue(sourceId, out var sourceComponents);
                 probeLookup.TryGetValue(sourceId, out var sourceProbes);
                 issueLookup.TryGetValue(sourceId, out var sourceIssues);
+                acquisitionEvidenceLookup.TryGetValue(sourceId, out var sourceEvidence);
                 operationalLookup.TryGetValue(sourceId, out var operationalView);
 
                 var sourceType = profile?.Type ?? SourceType.M3U;
@@ -374,13 +424,28 @@ namespace Kroira.App.Services
                         : syncState!.AutoRefreshSummary,
                     NextAutoRefreshText = FormatTimestamp(syncState?.NextAutoRefreshDueAtUtc),
                     LastAutoRefreshText = FormatTimestamp(syncState?.LastAutoRefreshSuccessAtUtc),
+                    AcquisitionProfileKey = acquisitionProfile?.ProfileKey ?? string.Empty,
+                    AcquisitionProfileLabel = acquisitionProfile?.ProfileLabel ?? string.Empty,
+                    AcquisitionProviderKey = acquisitionProfile?.ProviderKey ?? string.Empty,
+                    AcquisitionNormalizationSummary = acquisitionProfile?.NormalizationSummary ?? string.Empty,
+                    AcquisitionMatchingSummary = acquisitionProfile?.MatchingSummary ?? string.Empty,
+                    AcquisitionSuppressionSummary = acquisitionProfile?.SuppressionSummary ?? string.Empty,
+                    AcquisitionValidationProfileSummary = acquisitionProfile?.ValidationSummary ?? string.Empty,
+                    AcquisitionRunStatusText = BuildAcquisitionRunStatus(acquisitionRun),
+                    AcquisitionRunSummaryText = BuildAcquisitionRunSummary(acquisitionRun),
+                    AcquisitionRunMessageText = acquisitionRun?.Message ?? string.Empty,
+                    AcquisitionStatsText = BuildAcquisitionStats(acquisitionRun),
+                    AcquisitionRoutingText = acquisitionRun?.RoutingSummary ?? string.Empty,
+                    AcquisitionValidationRoutingText = acquisitionRun?.ValidationRoutingSummary ?? string.Empty,
+                    AcquisitionLastRunText = FormatTimestamp(acquisitionRun?.CompletedAtUtc ?? acquisitionRun?.StartedAtUtc),
                     OperationalStatusText = BuildOperationalStatusText(operationalView),
                     ProxyStatusText = BuildProxyStatusText(credential),
                     GuideAvailableForLive = liveCount == 0 || status is EpgStatus.Ready or EpgStatus.ManualOverride,
                     IsPartialGuideMatch = resultCode == EpgSyncResultCode.PartialMatch,
                     HealthComponents = sourceComponents ?? Array.Empty<SourceDiagnosticsComponentSnapshot>(),
                     HealthProbes = sourceProbes ?? Array.Empty<SourceDiagnosticsProbeSnapshot>(),
-                    Issues = sourceIssues ?? Array.Empty<SourceDiagnosticsIssueSnapshot>()
+                    Issues = sourceIssues ?? Array.Empty<SourceDiagnosticsIssueSnapshot>(),
+                    AcquisitionEvidence = sourceEvidence ?? Array.Empty<SourceDiagnosticsEvidenceSnapshot>()
                 };
             }
 
@@ -857,6 +922,43 @@ namespace Kroira.App.Services
                 : $"{scopeText}: {credential.ProxyUrl}";
         }
 
+        private static string BuildAcquisitionRunStatus(SourceAcquisitionRun? run)
+        {
+            if (run == null)
+            {
+                return "No run";
+            }
+
+            return run.Status switch
+            {
+                SourceAcquisitionRunStatus.Succeeded => "Succeeded",
+                SourceAcquisitionRunStatus.Partial => "Partial",
+                SourceAcquisitionRunStatus.Failed => "Failed",
+                SourceAcquisitionRunStatus.Backfilled => "Backfilled",
+                _ => "Running"
+            };
+        }
+
+        private static string BuildAcquisitionRunSummary(SourceAcquisitionRun? run)
+        {
+            if (run == null)
+            {
+                return "No persisted acquisition run is available yet.";
+            }
+
+            return $"{run.ProfileLabel} captured {run.AcceptedCount:N0} accepted item(s), {run.SuppressedCount:N0} suppressed, {run.MatchedCount:N0} matched, and {run.UnmatchedCount:N0} unmatched.";
+        }
+
+        private static string BuildAcquisitionStats(SourceAcquisitionRun? run)
+        {
+            if (run == null)
+            {
+                return string.Empty;
+            }
+
+            return $"raw {run.RawItemCount:N0} | live {run.LiveCount:N0} | movies {run.MovieCount:N0} | series {run.SeriesCount:N0} | episodes {run.EpisodeCount:N0} | alias {run.AliasMatchCount:N0} | regex {run.RegexMatchCount:N0} | fuzzy {run.FuzzyMatchCount:N0} | probes ok {run.ProbeSuccessCount:N0} | probes fail {run.ProbeFailureCount:N0}";
+        }
+
         private static string FormatTimestamp(DateTime? timestampUtc)
         {
             if (!timestampUtc.HasValue) return "Never";
@@ -946,11 +1048,26 @@ namespace Kroira.App.Services
         public string AutoRefreshSummaryText { get; set; } = string.Empty;
         public string NextAutoRefreshText { get; set; } = "Never";
         public string LastAutoRefreshText { get; set; } = "Never";
+        public string AcquisitionProfileKey { get; set; } = string.Empty;
+        public string AcquisitionProfileLabel { get; set; } = string.Empty;
+        public string AcquisitionProviderKey { get; set; } = string.Empty;
+        public string AcquisitionNormalizationSummary { get; set; } = string.Empty;
+        public string AcquisitionMatchingSummary { get; set; } = string.Empty;
+        public string AcquisitionSuppressionSummary { get; set; } = string.Empty;
+        public string AcquisitionValidationProfileSummary { get; set; } = string.Empty;
+        public string AcquisitionRunStatusText { get; set; } = string.Empty;
+        public string AcquisitionRunSummaryText { get; set; } = string.Empty;
+        public string AcquisitionRunMessageText { get; set; } = string.Empty;
+        public string AcquisitionStatsText { get; set; } = string.Empty;
+        public string AcquisitionRoutingText { get; set; } = string.Empty;
+        public string AcquisitionValidationRoutingText { get; set; } = string.Empty;
+        public string AcquisitionLastRunText { get; set; } = "Never";
         public string OperationalStatusText { get; set; } = string.Empty;
         public string ProxyStatusText { get; set; } = "Direct routing";
         public IReadOnlyList<SourceDiagnosticsComponentSnapshot> HealthComponents { get; set; } = Array.Empty<SourceDiagnosticsComponentSnapshot>();
         public IReadOnlyList<SourceDiagnosticsProbeSnapshot> HealthProbes { get; set; } = Array.Empty<SourceDiagnosticsProbeSnapshot>();
         public IReadOnlyList<SourceDiagnosticsIssueSnapshot> Issues { get; set; } = Array.Empty<SourceDiagnosticsIssueSnapshot>();
+        public IReadOnlyList<SourceDiagnosticsEvidenceSnapshot> AcquisitionEvidence { get; set; } = Array.Empty<SourceDiagnosticsEvidenceSnapshot>();
     }
 
     public sealed class SourceDiagnosticsComponentSnapshot
@@ -986,5 +1103,18 @@ namespace Kroira.App.Services
         public string Message { get; set; } = string.Empty;
         public int AffectedCount { get; set; }
         public string SampleItems { get; set; } = string.Empty;
+    }
+
+    public sealed class SourceDiagnosticsEvidenceSnapshot
+    {
+        public SourceAcquisitionStage Stage { get; set; }
+        public SourceAcquisitionOutcome Outcome { get; set; }
+        public SourceAcquisitionItemKind ItemKind { get; set; }
+        public string RuleCode { get; set; } = string.Empty;
+        public string Reason { get; set; } = string.Empty;
+        public string RawName { get; set; } = string.Empty;
+        public string NormalizedName { get; set; } = string.Empty;
+        public string MatchedTarget { get; set; } = string.Empty;
+        public int Confidence { get; set; }
     }
 }

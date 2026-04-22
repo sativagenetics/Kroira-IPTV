@@ -1,0 +1,19 @@
+{
+  "routes": [
+    {
+      "path": "/probe/live/aspor-feed.m3u8",
+      "statusCode": 200,
+      "body": "#EXTM3U\n#EXTINF:2,\nsegment.ts"
+    },
+    {
+      "path": "/probe/live/shadow-down.m3u8",
+      "statusCode": 503,
+      "body": "shadow unavailable"
+    },
+    {
+      "path": "/probe/vod/single-story.mp4",
+      "statusCode": 200,
+      "body": "ok"
+    }
+  ]
+}

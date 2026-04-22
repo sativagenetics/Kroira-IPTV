@@ -14,7 +14,11 @@ namespace Kroira.App.Services.Parsing
 {
     public interface IXmltvParserService
     {
-        Task ParseAndImportEpgAsync(AppDbContext db, int sourceProfileId);
+        Task ParseAndImportEpgAsync(
+            AppDbContext db,
+            int sourceProfileId,
+            SourceAcquisitionSession? acquisitionSession = null,
+            bool refreshHealth = true);
     }
 
     public class XmltvParserService : IXmltvParserService
@@ -33,7 +37,11 @@ namespace Kroira.App.Services.Parsing
             _sourceHealthService = sourceHealthService;
         }
 
-        public async Task ParseAndImportEpgAsync(AppDbContext db, int sourceProfileId)
+        public async Task ParseAndImportEpgAsync(
+            AppDbContext db,
+            int sourceProfileId,
+            SourceAcquisitionSession? acquisitionSession = null,
+            bool refreshHealth = true)
         {
             var profile = await db.SourceProfiles.FirstOrDefaultAsync(p => p.Id == sourceProfileId);
             if (profile == null)
@@ -55,7 +63,10 @@ namespace Kroira.App.Services.Parsing
             if (activeMode == EpgActiveMode.None)
             {
                 await ClearGuideDataAsync(db, sourceProfileId, activeMode, "Guide mode is set to none for this source.");
-                await _sourceHealthService.RefreshSourceHealthAsync(db, sourceProfileId);
+                if (refreshHealth)
+                {
+                    await _sourceHealthService.RefreshSourceHealthAsync(db, sourceProfileId, acquisitionSession);
+                }
                 return;
             }
 
@@ -82,13 +93,19 @@ namespace Kroira.App.Services.Parsing
                     "EPG SYNC",
                     $"source_profile_id={sourceProfileId}; stage=discovery_complete; mode={discovered.ActiveMode}; active_xmltv_url={FormatDiagnosticValue(discovered.ActiveXmltvUrl)}; detected_xmltv_url={FormatDiagnosticValue(discovered.DetectedXmltvUrl)}; description={FormatDiagnosticValue(discovered.Description)}");
 
-                await ParseAndPersistXmltvAsync(db, sourceProfileId, discovered, _sourceEnrichmentService);
-                await _sourceHealthService.RefreshSourceHealthAsync(db, sourceProfileId);
+                await ParseAndPersistXmltvAsync(db, sourceProfileId, discovered, _sourceEnrichmentService, acquisitionSession);
+                if (refreshHealth)
+                {
+                    await _sourceHealthService.RefreshSourceHealthAsync(db, sourceProfileId, acquisitionSession);
+                }
             }
             catch (EpgUnavailableException ex)
             {
                 await MarkEpgUnavailableAsync(db, sourceProfileId, activeMode, ex.Message);
-                await _sourceHealthService.RefreshSourceHealthAsync(db, sourceProfileId);
+                if (refreshHealth)
+                {
+                    await _sourceHealthService.RefreshSourceHealthAsync(db, sourceProfileId, acquisitionSession);
+                }
             }
             catch (EpgFetchException ex)
             {
@@ -101,7 +118,10 @@ namespace Kroira.App.Services.Parsing
                     ex.Message,
                     ex.XmltvUrl);
 
-                await _sourceHealthService.RefreshSourceHealthAsync(db, sourceProfileId);
+                if (refreshHealth)
+                {
+                    await _sourceHealthService.RefreshSourceHealthAsync(db, sourceProfileId, acquisitionSession);
+                }
                 throw new Exception($"Failed to sync XMLTV EPG: {ex.Message}");
             }
             catch (EpgSyncFailureException ex)
@@ -115,7 +135,10 @@ namespace Kroira.App.Services.Parsing
                     ex.Message,
                     ex.ActiveXmltvUrl);
 
-                await _sourceHealthService.RefreshSourceHealthAsync(db, sourceProfileId);
+                if (refreshHealth)
+                {
+                    await _sourceHealthService.RefreshSourceHealthAsync(db, sourceProfileId, acquisitionSession);
+                }
                 throw new Exception($"Failed to sync XMLTV EPG: {ex.Message}");
             }
             catch (Exception ex)
@@ -129,7 +152,10 @@ namespace Kroira.App.Services.Parsing
                     ex.Message,
                     string.Empty);
 
-                await _sourceHealthService.RefreshSourceHealthAsync(db, sourceProfileId);
+                if (refreshHealth)
+                {
+                    await _sourceHealthService.RefreshSourceHealthAsync(db, sourceProfileId, acquisitionSession);
+                }
                 throw new Exception($"Failed to sync XMLTV EPG: {ex.Message}");
             }
         }
@@ -138,7 +164,8 @@ namespace Kroira.App.Services.Parsing
             AppDbContext db,
             int sourceProfileId,
             EpgDiscoveryResult discovered,
-            ISourceEnrichmentService sourceEnrichmentService)
+            ISourceEnrichmentService sourceEnrichmentService,
+            SourceAcquisitionSession? acquisitionSession)
         {
             XDocument doc;
             try
@@ -203,7 +230,7 @@ namespace Kroira.App.Services.Parsing
                 .OrderByDescending(channel => programmeChannelIds.Contains(channel.Id))
                 .ThenBy(channel => channel.Id, StringComparer.OrdinalIgnoreCase)
                 .ToList();
-            var enrichmentResult = await sourceEnrichmentService.ApplyXmltvEnrichmentAsync(db, sourceProfileId, orderedXmltvChannels);
+            var enrichmentResult = await sourceEnrichmentService.ApplyXmltvEnrichmentAsync(db, sourceProfileId, orderedXmltvChannels, acquisitionSession);
             var channelMatches = enrichmentResult.Matches;
             var channels = await db.Channels
                 .Join(
@@ -596,7 +623,7 @@ namespace Kroira.App.Services.Parsing
             static int GetCount(IReadOnlyDictionary<ChannelEpgMatchSource, int> map, ChannelEpgMatchSource reason) =>
                 map.TryGetValue(reason, out var count) ? count : 0;
 
-            return $"provider_id={GetCount(counts, ChannelEpgMatchSource.Provider)}; reused={GetCount(counts, ChannelEpgMatchSource.Previous)}; normalized={GetCount(counts, ChannelEpgMatchSource.Normalized)}; alias={GetCount(counts, ChannelEpgMatchSource.Alias)}; fuzzy={GetCount(counts, ChannelEpgMatchSource.Fuzzy)}; unmatched={unmatchedCount}";
+            return $"provider_id={GetCount(counts, ChannelEpgMatchSource.Provider)}; reused={GetCount(counts, ChannelEpgMatchSource.Previous)}; normalized={GetCount(counts, ChannelEpgMatchSource.Normalized)}; alias={GetCount(counts, ChannelEpgMatchSource.Alias)}; regex={GetCount(counts, ChannelEpgMatchSource.Regex)}; fuzzy={GetCount(counts, ChannelEpgMatchSource.Fuzzy)}; unmatched={unmatchedCount}";
         }
 
         private static void LogMatchOutcome(int sourceProfileId, XmltvChannelDescriptor xmltvChannel, ChannelEpgMatchOutcome outcome)
@@ -610,7 +637,7 @@ namespace Kroira.App.Services.Parsing
 
             ImportRuntimeLogger.Log(
                 "EPG MATCH",
-                $"source_profile_id={sourceProfileId}; xmltv_channel_id={FormatDiagnosticValue(xmltvChannel.Id)}; display_names={FormatDiagnosticValue(string.Join(" | ", xmltvChannel.DisplayNames))}; match_reason={outcome.Reason}; confidence={outcome.Confidence}; matched_channel_count={outcome.Channels.Count}; channel_ids={FormatDiagnosticValue(matchedChannelIds)}; channel_names={FormatDiagnosticValue(matchedChannelNames)}; diagnostics={FormatDiagnosticValue(outcome.Diagnostic)}");
+                $"source_profile_id={sourceProfileId}; xmltv_channel_id={FormatDiagnosticValue(xmltvChannel.Id)}; display_names={FormatDiagnosticValue(string.Join(" | ", xmltvChannel.DisplayNames))}; match_reason={outcome.Reason}; confidence={outcome.Confidence}; matched_channel_count={outcome.Channels.Count}; channel_ids={FormatDiagnosticValue(matchedChannelIds)}; channel_names={FormatDiagnosticValue(matchedChannelNames)}; matched_value={FormatDiagnosticValue(outcome.MatchedValue)}; matched_key={FormatDiagnosticValue(outcome.MatchedKey)}; diagnostics={FormatDiagnosticValue(outcome.Diagnostic)}");
         }
 
         private static DateTime? ParseXmltvDate(string dateStr)

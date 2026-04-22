@@ -38,6 +38,49 @@
         "Episodes": 0,
         "EpgPrograms": 3
       },
+      "AcquisitionProfile": {
+        "ProfileKey": "kroira.m3u.balanced",
+        "ProfileLabel": "KROIRA M3U Balanced",
+        "ProviderKey": "127.0.0.1",
+        "NormalizationSummary": "Playlist titles, ids, and group labels normalize into stable identities while keeping provider values intact.",
+        "MatchingSummary": "Guide matching prefers provider ids, then normalized aliases, regex-safe aliases, and bounded fuzzy fallback.",
+        "SuppressionSummary": "Provider buckets, promotional rows, garbage labels, and unsafe adult or bundle groups are suppressed.",
+        "ValidationSummary": "Bounded live and VOD probing stays routing-aware and preserves last-known-good operational recovery paths.",
+        "SupportsRegexMatching": true,
+        "PreferProxyDuringValidation": false,
+        "PreferLastKnownGoodRollback": true
+      },
+      "AcquisitionRun": {
+        "Trigger": "InitialImport",
+        "Scope": "Full",
+        "Status": "Succeeded",
+        "ProfileKey": "kroira.m3u.balanced",
+        "ProfileLabel": "KROIRA M3U Balanced",
+        "ProviderKey": "127.0.0.1",
+        "RoutingSummary": "Direct routing",
+        "ValidationRoutingSummary": "Direct routing",
+        "Message": "Playlist import completed. Guide sync completed.",
+        "CatalogSummary": "Playlist import completed.",
+        "GuideSummary": "Guide sync completed.",
+        "ValidationSummary": "Component health is usable but uneven (84/100). Guide covers 2 of 2 live channels, but coverage is still uneven.",
+        "RawItemCount": 2,
+        "AcceptedCount": 2,
+        "SuppressedCount": 0,
+        "DemotedCount": 0,
+        "MatchedCount": 2,
+        "UnmatchedCount": 0,
+        "LiveCount": 2,
+        "MovieCount": 0,
+        "SeriesCount": 0,
+        "EpisodeCount": 0,
+        "AliasMatchCount": 0,
+        "RegexMatchCount": 0,
+        "FuzzyMatchCount": 0,
+        "ProbeSuccessCount": 2,
+        "ProbeFailureCount": 0,
+        "WarningCount": 0,
+        "ErrorCount": 0
+      },
       "Health": {
         "State": "Weak",
         "Score": 84,
@@ -146,11 +189,11 @@
         "ActiveXmltvUrl": "[fixture-server]/guide.xml",
         "MatchedChannelCount": 2,
         "UnmatchedChannelCount": 0,
-        "CurrentCoverageCount": 0,
-        "NextCoverageCount": 2,
+        "CurrentCoverageCount": 1,
+        "NextCoverageCount": 0,
         "TotalLiveChannelCount": 2,
         "ProgrammeCount": 3,
-        "MatchBreakdown": "provider_id=2; reused=0; normalized=0; alias=0; fuzzy=0; unmatched=0",
+        "MatchBreakdown": "provider_id=2; reused=0; normalized=0; alias=0; regex=0; fuzzy=0; unmatched=0",
         "FailureReason": ""
       },
       "Channels": [
@@ -226,6 +269,30 @@
           "LogoSource": "Xmltv",
           "LogoConfidence": 88
         }
+      ],
+      "AcquisitionEvidence": [
+        {
+          "Stage": "Validation",
+          "Outcome": "Matched",
+          "ItemKind": "Probe",
+          "RuleCode": "validation.probe.live",
+          "Reason": "Live probe reached 2/2 sampled items.",
+          "RawName": "Live",
+          "NormalizedName": "",
+          "MatchedTarget": "",
+          "Confidence": 100
+        },
+        {
+          "Stage": "Validation",
+          "Outcome": "Matched",
+          "ItemKind": "Probe",
+          "RuleCode": "validation.probe.vod",
+          "Reason": "VOD probing is not applicable because VOD import is disabled for this playlist.",
+          "RawName": "Vod",
+          "NormalizedName": "",
+          "MatchedTarget": "",
+          "Confidence": 100
+        }
       ]
     },
     {
@@ -266,6 +333,49 @@
         "Episodes": 0,
         "EpgPrograms": 0
       },
+      "AcquisitionProfile": {
+        "ProfileKey": "",
+        "ProfileLabel": "",
+        "ProviderKey": "",
+        "NormalizationSummary": "",
+        "MatchingSummary": "",
+        "SuppressionSummary": "",
+        "ValidationSummary": "",
+        "SupportsRegexMatching": false,
+        "PreferProxyDuringValidation": false,
+        "PreferLastKnownGoodRollback": false
+      },
+      "AcquisitionRun": {
+        "Trigger": "",
+        "Scope": "",
+        "Status": "",
+        "ProfileKey": "",
+        "ProfileLabel": "",
+        "ProviderKey": "",
+        "RoutingSummary": "",
+        "ValidationRoutingSummary": "",
+        "Message": "",
+        "CatalogSummary": "",
+        "GuideSummary": "",
+        "ValidationSummary": "",
+        "RawItemCount": 0,
+        "AcceptedCount": 0,
+        "SuppressedCount": 0,
+        "DemotedCount": 0,
+        "MatchedCount": 0,
+        "UnmatchedCount": 0,
+        "LiveCount": 0,
+        "MovieCount": 0,
+        "SeriesCount": 0,
+        "EpisodeCount": 0,
+        "AliasMatchCount": 0,
+        "RegexMatchCount": 0,
+        "FuzzyMatchCount": 0,
+        "ProbeSuccessCount": 0,
+        "ProbeFailureCount": 0,
+        "WarningCount": 0,
+        "ErrorCount": 0
+      },
       "Health": {
         "State": "",
         "Score": 0,
@@ -304,7 +414,8 @@
       "Channels": [],
       "Movies": [],
       "Series": [],
-      "Enrichment": []
+      "Enrichment": [],
+      "AcquisitionEvidence": []
     }
   ],
   "OperationalStates": [

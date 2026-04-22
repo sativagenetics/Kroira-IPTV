@@ -13,7 +13,10 @@ namespace Kroira.App.Services
 {
     public interface ISourceHealthService
     {
-        Task RefreshSourceHealthAsync(AppDbContext db, int sourceProfileId);
+        Task RefreshSourceHealthAsync(
+            AppDbContext db,
+            int sourceProfileId,
+            SourceAcquisitionSession? acquisitionSession = null);
     }
 
     public sealed class SourceHealthService : ISourceHealthService
@@ -50,7 +53,10 @@ namespace Kroira.App.Services
             _sourceRoutingService = sourceRoutingService;
         }
 
-        public async Task RefreshSourceHealthAsync(AppDbContext db, int sourceProfileId)
+        public async Task RefreshSourceHealthAsync(
+            AppDbContext db,
+            int sourceProfileId,
+            SourceAcquisitionSession? acquisitionSession = null)
         {
             var profile = await db.SourceProfiles.AsNoTracking().FirstOrDefaultAsync(item => item.Id == sourceProfileId);
             if (profile == null)
@@ -144,6 +150,32 @@ namespace Kroira.App.Services
             var guideMetrics = await BuildGuideMetricsAsync(db, liveChannels.Select(channel => channel.Id).ToList());
             var probes = await ResolveProbesAsync(profile, credential, liveChannels, movies, episodes, report);
             var evaluation = Evaluate(profile, syncState, credential, epgLog, liveChannels, movies, series, guideMetrics, probes);
+            if (acquisitionSession != null)
+            {
+                acquisitionSession.SetValidationSummary(evaluation.ValidationSummary);
+
+                foreach (var probe in evaluation.Probes.OrderBy(item => item.SortOrder))
+                {
+                    acquisitionSession.RecordValidationProbe(
+                        probe.ProbeType,
+                        probe.Status,
+                        probe.SuccessCount,
+                        probe.FailureCount,
+                        probe.Summary);
+                }
+
+                foreach (var issue in evaluation.Issues
+                             .OrderByDescending(item => item.Severity)
+                             .ThenBy(item => item.SortOrder)
+                             .Take(8))
+                {
+                    acquisitionSession.RecordValidationIssue(
+                        issue.Severity,
+                        issue.Code,
+                        issue.Title,
+                        issue.Message);
+                }
+            }
 
             if (report == null)
             {
@@ -333,7 +365,7 @@ namespace Kroira.App.Services
             var suspiciousVod = AnalyzeSuspiciousVodEntries(profile.Type, movies, series);
             var suspiciousEntryCount = suspiciousLive.Count + suspiciousVod.Count;
             var logoCount = liveChannels.Count(channel => !string.IsNullOrWhiteSpace(channel.LogoUrl));
-            var guideFallbackCount = liveChannels.Count(channel => channel.EpgMatchSource is ChannelEpgMatchSource.Previous or ChannelEpgMatchSource.Normalized or ChannelEpgMatchSource.Alias or ChannelEpgMatchSource.Fuzzy);
+            var guideFallbackCount = liveChannels.Count(channel => channel.EpgMatchSource is ChannelEpgMatchSource.Previous or ChannelEpgMatchSource.Normalized or ChannelEpgMatchSource.Alias or ChannelEpgMatchSource.Regex or ChannelEpgMatchSource.Fuzzy);
             var guideReuseCount = liveChannels.Count(channel => channel.EpgMatchSource == ChannelEpgMatchSource.Previous);
             var logoFallbackCount = liveChannels.Count(channel => channel.LogoSource is ChannelLogoSource.Previous or ChannelLogoSource.Xmltv);
             var providerLogoCount = liveChannels.Count(channel => channel.LogoSource == ChannelLogoSource.Provider);

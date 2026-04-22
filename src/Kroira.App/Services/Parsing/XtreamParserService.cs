@@ -14,8 +14,17 @@ namespace Kroira.App.Services.Parsing
 {
     public interface IXtreamParserService
     {
-        Task ParseAndImportXtreamAsync(AppDbContext db, int sourceProfileId);
-        Task ParseAndImportXtreamVodAsync(AppDbContext db, int sourceProfileId);
+        Task ParseAndImportXtreamAsync(
+            AppDbContext db,
+            int sourceProfileId,
+            SourceAcquisitionSession? acquisitionSession = null,
+            bool refreshHealth = true);
+
+        Task ParseAndImportXtreamVodAsync(
+            AppDbContext db,
+            int sourceProfileId,
+            SourceAcquisitionSession? acquisitionSession = null,
+            bool refreshHealth = true);
     }
 
     public class XtreamParserService : IXtreamParserService
@@ -40,7 +49,11 @@ namespace Kroira.App.Services.Parsing
             _sourceRoutingService = sourceRoutingService;
         }
 
-        public async Task ParseAndImportXtreamAsync(AppDbContext db, int sourceProfileId)
+        public async Task ParseAndImportXtreamAsync(
+            AppDbContext db,
+            int sourceProfileId,
+            SourceAcquisitionSession? acquisitionSession = null,
+            bool refreshHealth = true)
         {
             var profile = await db.SourceProfiles.FindAsync(sourceProfileId);
             if (profile == null) throw new Exception("Source not found.");
@@ -70,6 +83,10 @@ namespace Kroira.App.Services.Parsing
                 var streamsJson = await streamsResponse.Content.ReadAsStringAsync();
                 if (string.IsNullOrWhiteSpace(streamsJson)) streamsJson = "[]";
                 using var streamsDoc = JsonDocument.Parse(streamsJson);
+                if (streamsDoc.RootElement.ValueKind == JsonValueKind.Array)
+                {
+                    acquisitionSession?.RegisterRawItems(streamsDoc.RootElement.GetArrayLength());
+                }
 
                 using var transaction = await db.Database.BeginTransactionAsync();
                 try
@@ -136,31 +153,64 @@ namespace Kroira.App.Services.Parsing
                             var logo = element.TryGetProperty("stream_icon", out var lProp) ? lProp.GetString() : string.Empty;
                             var epgChannelId = GetFirstJsonString(element, "epg_channel_id", "epg_id", "tvg_id");
 
-                            if (string.IsNullOrEmpty(streamId)) continue;
-
-                            if (catId != null && categoryMap.TryGetValue(catId, out var mappedCat))
+                            if (string.IsNullOrEmpty(streamId))
                             {
-                                string streamUrl = $"{baseUrl}/live/{cred.Username}/{cred.Password}/{streamId}.ts";
-                                if (!ContentClassifier.IsPlayableXtreamLiveChannel(name ?? string.Empty, streamUrl, liveCategoryLabels)) continue;
-
-                                var channel = new Channel
-                                {
-                                    ChannelCategoryId = mappedCat.Id,
-                                    Name = string.IsNullOrWhiteSpace(name) ? "Unknown Channel" : name,
-                                    StreamUrl = streamUrl,
-                                    LogoUrl = logo ?? string.Empty,
-                                    ProviderLogoUrl = logo ?? string.Empty,
-                                    EpgChannelId = string.IsNullOrWhiteSpace(epgChannelId) ? streamId : epgChannelId,
-                                    ProviderEpgChannelId = string.IsNullOrWhiteSpace(epgChannelId) ? streamId : epgChannelId
-                                };
-                                _channelCatchupService.ApplyXtreamCatchup(channel, element);
-                                channelsList.Add(channel);
+                                acquisitionSession?.RecordSuppressed(
+                                    SourceAcquisitionItemKind.LiveChannel,
+                                    "acquire.xtream.live_missing_id",
+                                    "Live stream row was missing a stream id and was ignored.",
+                                    name ?? string.Empty,
+                                    catId ?? string.Empty,
+                                    name ?? string.Empty,
+                                    catId ?? string.Empty);
+                                continue;
                             }
+
+                            if (catId == null || !categoryMap.TryGetValue(catId, out var mappedCat))
+                            {
+                                acquisitionSession?.RecordSuppressed(
+                                    SourceAcquisitionItemKind.LiveChannel,
+                                    "acquire.xtream.live_missing_category",
+                                    "Live stream row referenced a missing provider category and was ignored.",
+                                    name ?? string.Empty,
+                                    catId ?? string.Empty,
+                                    name ?? string.Empty,
+                                    catId ?? string.Empty);
+                                continue;
+                            }
+
+                            string streamUrl = $"{baseUrl}/live/{cred.Username}/{cred.Password}/{streamId}.ts";
+                            if (!ContentClassifier.IsPlayableXtreamLiveChannel(name ?? string.Empty, streamUrl, liveCategoryLabels))
+                            {
+                                acquisitionSession?.RecordSuppressed(
+                                    SourceAcquisitionItemKind.LiveChannel,
+                                    "acquire.xtream.live_filtered",
+                                    "Live stream row failed playability or quality screening and was ignored.",
+                                    name ?? string.Empty,
+                                    mappedCat.Name,
+                                    name ?? string.Empty,
+                                    mappedCat.Name);
+                                continue;
+                            }
+
+                            var channel = new Channel
+                            {
+                                ChannelCategoryId = mappedCat.Id,
+                                Name = string.IsNullOrWhiteSpace(name) ? "Unknown Channel" : name,
+                                StreamUrl = streamUrl,
+                                LogoUrl = logo ?? string.Empty,
+                                ProviderLogoUrl = logo ?? string.Empty,
+                                EpgChannelId = string.IsNullOrWhiteSpace(epgChannelId) ? streamId : epgChannelId,
+                                ProviderEpgChannelId = string.IsNullOrWhiteSpace(epgChannelId) ? streamId : epgChannelId
+                            };
+                            _channelCatchupService.ApplyXtreamCatchup(channel, element);
+                            channelsList.Add(channel);
                         }
 
                         db.Channels.AddRange(channelsList);
                         await db.SaveChangesAsync();
-                        await _sourceEnrichmentService.PrepareLiveCatalogAsync(db, sourceProfileId);
+                        await _sourceEnrichmentService.PrepareLiveCatalogAsync(db, sourceProfileId, acquisitionSession);
+                        acquisitionSession?.RegisterAccepted(SourceAcquisitionItemKind.LiveChannel, channelsList.Count);
                     }
 
                     var syncState = await db.SourceSyncStates.FirstOrDefaultAsync(s => s.SourceProfileId == sourceProfileId);
@@ -175,7 +225,10 @@ namespace Kroira.App.Services.Parsing
 
                     await db.SaveChangesAsync();
                     await transaction.CommitAsync();
-                    await _sourceHealthService.RefreshSourceHealthAsync(db, sourceProfileId);
+                    if (refreshHealth)
+                    {
+                        await _sourceHealthService.RefreshSourceHealthAsync(db, sourceProfileId, acquisitionSession);
+                    }
                 }
                 catch
                 {
@@ -193,12 +246,19 @@ namespace Kroira.App.Services.Parsing
                     syncState.ErrorLog = $"Xtream Live sync failed: {ex.Message}";
                     await db.SaveChangesAsync();
                 }
-                await _sourceHealthService.RefreshSourceHealthAsync(db, sourceProfileId);
+                if (refreshHealth)
+                {
+                    await _sourceHealthService.RefreshSourceHealthAsync(db, sourceProfileId, acquisitionSession);
+                }
                 throw;
             }
         }
 
-        public async Task ParseAndImportXtreamVodAsync(AppDbContext db, int sourceProfileId)
+        public async Task ParseAndImportXtreamVodAsync(
+            AppDbContext db,
+            int sourceProfileId,
+            SourceAcquisitionSession? acquisitionSession = null,
+            bool refreshHealth = true)
         {
             var profile = await db.SourceProfiles.FindAsync(sourceProfileId);
             if (profile == null) throw new Exception("Source not found.");
@@ -248,6 +308,10 @@ namespace Kroira.App.Services.Parsing
                 if (string.IsNullOrWhiteSpace(moviesJson)) moviesJson = "[]";
                 using var moviesDoc = JsonDocument.Parse(moviesJson);
                 var parsedMovies = new List<Movie>();
+                if (moviesDoc.RootElement.ValueKind == JsonValueKind.Array)
+                {
+                    acquisitionSession?.RegisterRawItems(moviesDoc.RootElement.GetArrayLength());
+                }
 
                 if (moviesDoc.RootElement.ValueKind == JsonValueKind.Array)
                 {
@@ -256,7 +320,16 @@ namespace Kroira.App.Services.Parsing
                         string streamId = element.TryGetProperty("stream_id", out var sProp) ? (sProp.ValueKind == JsonValueKind.Number ? sProp.GetInt32().ToString() : sProp.GetString()) : null;
                         string catId = element.TryGetProperty("category_id", out var cProp) ? (cProp.ValueKind == JsonValueKind.Number ? cProp.GetInt32().ToString() : cProp.GetString()) : null;
 
-                        if (string.IsNullOrEmpty(streamId)) continue;
+                        if (string.IsNullOrEmpty(streamId))
+                        {
+                            acquisitionSession?.RecordSuppressed(
+                                SourceAcquisitionItemKind.Movie,
+                                "acquire.xtream.movie_missing_id",
+                                "Movie row was missing a stream id and was ignored.",
+                                GetJsonString(element, "name"),
+                                catId ?? string.Empty);
+                            continue;
+                        }
 
                         var ext = (element.TryGetProperty("container_extension", out var exProp) ? exProp.GetString() : null) ?? "mp4";
                         var name = element.TryGetProperty("name", out var nProp) ? nProp.GetString() : "Unknown";
@@ -266,9 +339,38 @@ namespace Kroira.App.Services.Parsing
 
                         md.TryGetValue(catId ?? "", out var mappedCatName);
 
-                        if (ContentClassifier.IsGarbageMovieExtension(ext)) continue;
-                        if (ContentClassifier.IsGarbageCategoryName(mappedCatName)) continue;
-                        if (ContentClassifier.IsGarbageTitle(name ?? string.Empty)) continue;
+                        if (ContentClassifier.IsGarbageMovieExtension(ext))
+                        {
+                            acquisitionSession?.RecordSuppressed(
+                                SourceAcquisitionItemKind.Movie,
+                                "acquire.xtream.movie_bad_extension",
+                                "Movie row used a blocked or suspicious container extension and was ignored.",
+                                name ?? string.Empty,
+                                mappedCatName ?? string.Empty);
+                            continue;
+                        }
+
+                        if (ContentClassifier.IsGarbageCategoryName(mappedCatName))
+                        {
+                            acquisitionSession?.RecordSuppressed(
+                                SourceAcquisitionItemKind.Movie,
+                                "acquire.xtream.movie_garbage_category",
+                                "Movie row used a garbage provider category and was ignored.",
+                                name ?? string.Empty,
+                                mappedCatName ?? string.Empty);
+                            continue;
+                        }
+
+                        if (ContentClassifier.IsGarbageTitle(name ?? string.Empty))
+                        {
+                            acquisitionSession?.RecordSuppressed(
+                                SourceAcquisitionItemKind.Movie,
+                                "acquire.xtream.movie_garbage_title",
+                                "Movie row used a garbage provider title and was ignored.",
+                                name ?? string.Empty,
+                                mappedCatName ?? string.Empty);
+                            continue;
+                        }
 
                         var normalized = _catalogNormalizationService.NormalizeMovie(
                             SourceType.Xtream,
@@ -298,6 +400,10 @@ namespace Kroira.App.Services.Parsing
                 if (string.IsNullOrWhiteSpace(seriesJson)) seriesJson = "[]";
                 using var seriesDoc = JsonDocument.Parse(seriesJson);
                 var pendingSeries = new List<(string SeriesId, Series BaseObj)>();
+                if (seriesDoc.RootElement.ValueKind == JsonValueKind.Array)
+                {
+                    acquisitionSession?.RegisterRawItems(seriesDoc.RootElement.GetArrayLength());
+                }
 
                 if (seriesDoc.RootElement.ValueKind == JsonValueKind.Array)
                 {
@@ -306,7 +412,16 @@ namespace Kroira.App.Services.Parsing
                         string seriesId = element.TryGetProperty("series_id", out var sProp) ? (sProp.ValueKind == JsonValueKind.Number ? sProp.GetInt32().ToString() : sProp.GetString()) : null;
                         string catId = element.TryGetProperty("category_id", out var cProp) ? (cProp.ValueKind == JsonValueKind.Number ? cProp.GetInt32().ToString() : cProp.GetString()) : null;
 
-                        if (string.IsNullOrEmpty(seriesId)) continue;
+                        if (string.IsNullOrEmpty(seriesId))
+                        {
+                            acquisitionSession?.RecordSuppressed(
+                                SourceAcquisitionItemKind.Series,
+                                "acquire.xtream.series_missing_id",
+                                "Series row was missing a series id and was ignored.",
+                                GetJsonString(element, "name"),
+                                catId ?? string.Empty);
+                            continue;
+                        }
 
                         var name = element.TryGetProperty("name", out var nProp) ? nProp.GetString() : "Unknown";
                         var cover = element.TryGetProperty("cover", out var lProp) ? lProp.GetString() : string.Empty;
@@ -315,8 +430,27 @@ namespace Kroira.App.Services.Parsing
 
                         sd.TryGetValue(catId ?? "", out var mappedCatName);
 
-                        if (ContentClassifier.IsGarbageCategoryName(mappedCatName)) continue;
-                        if (ContentClassifier.IsGarbageTitle(name ?? string.Empty)) continue;
+                        if (ContentClassifier.IsGarbageCategoryName(mappedCatName))
+                        {
+                            acquisitionSession?.RecordSuppressed(
+                                SourceAcquisitionItemKind.Series,
+                                "acquire.xtream.series_garbage_category",
+                                "Series row used a garbage provider category and was ignored.",
+                                name ?? string.Empty,
+                                mappedCatName ?? string.Empty);
+                            continue;
+                        }
+
+                        if (ContentClassifier.IsGarbageTitle(name ?? string.Empty))
+                        {
+                            acquisitionSession?.RecordSuppressed(
+                                SourceAcquisitionItemKind.Series,
+                                "acquire.xtream.series_garbage_title",
+                                "Series row used a garbage provider title and was ignored.",
+                                name ?? string.Empty,
+                                mappedCatName ?? string.Empty);
+                            continue;
+                        }
 
                         var normalized = _catalogNormalizationService.NormalizeSeries(
                             SourceType.Xtream,
@@ -400,6 +534,8 @@ namespace Kroira.App.Services.Parsing
 
                     await Task.WhenAll(seriesTasks);
                 }
+
+                var totalEpisodeCount = pendingSeries.Sum(item => item.BaseObj.Seasons?.Sum(season => season.Episodes?.Count ?? 0) ?? 0);
 
                 using var transaction = await db.Database.BeginTransactionAsync();
                 try
@@ -641,7 +777,14 @@ namespace Kroira.App.Services.Parsing
 
                     await db.SaveChangesAsync();
                     await transaction.CommitAsync();
-                    await _sourceHealthService.RefreshSourceHealthAsync(db, sourceProfileId);
+                    acquisitionSession?.RegisterAccepted(SourceAcquisitionItemKind.Movie, parsedMovies.Count);
+                    acquisitionSession?.RegisterAccepted(SourceAcquisitionItemKind.Series, pendingSeries.Count);
+                    acquisitionSession?.RegisterAccepted(SourceAcquisitionItemKind.Episode, totalEpisodeCount);
+
+                    if (refreshHealth)
+                    {
+                        await _sourceHealthService.RefreshSourceHealthAsync(db, sourceProfileId, acquisitionSession);
+                    }
                 }
                 catch
                 {
@@ -659,7 +802,10 @@ namespace Kroira.App.Services.Parsing
                     syncState.ErrorLog = $"Xtream VOD parsing failed: {ex.Message}";
                     await db.SaveChangesAsync();
                 }
-                await _sourceHealthService.RefreshSourceHealthAsync(db, sourceProfileId);
+                if (refreshHealth)
+                {
+                    await _sourceHealthService.RefreshSourceHealthAsync(db, sourceProfileId, acquisitionSession);
+                }
                 throw;
             }
         }

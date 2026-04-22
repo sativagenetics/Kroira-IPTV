@@ -1,0 +1,16 @@
+{
+  "id": "m3u_acquisition_regex_profile",
+  "description": "M3U acquisition run with regex-safe guide matching, bounded suppression, unmatched capture, and demotion evidence.",
+  "sources": [
+    {
+      "key": "m3u-acquisition",
+      "name": "Fixture M3U Acquisition",
+      "type": "M3U",
+      "url": "{{server}}/playlist.m3u",
+      "epgMode": "Detected",
+      "m3uImportMode": "LiveMoviesAndSeries",
+      "refreshTrigger": "InitialImport",
+      "refreshScope": "Full"
+    }
+  ]
+}

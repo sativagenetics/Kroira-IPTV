@@ -45,10 +45,12 @@ namespace Kroira.App.Services
             var parserM3u = scopeServices.ServiceProvider.GetRequiredService<IM3uParserService>();
             var parserXtream = scopeServices.ServiceProvider.GetRequiredService<IXtreamParserService>();
             var parserXmltv = scopeServices.ServiceProvider.GetRequiredService<IXmltvParserService>();
+            var acquisitionService = scopeServices.ServiceProvider.GetRequiredService<ISourceAcquisitionService>();
             var browsePreferencesService = scopeServices.ServiceProvider.GetRequiredService<IBrowsePreferencesService>();
             var logicalCatalogStateService = scopeServices.ServiceProvider.GetRequiredService<ILogicalCatalogStateService>();
             var contentOperationalService = scopeServices.ServiceProvider.GetRequiredService<IContentOperationalService>();
             var autoRefreshService = scopeServices.ServiceProvider.GetRequiredService<ISourceAutoRefreshService>();
+            var sourceHealthService = scopeServices.ServiceProvider.GetRequiredService<ISourceHealthService>();
 
             var profile = await db.SourceProfiles.FirstOrDefaultAsync(item => item.Id == sourceProfileId);
             if (profile == null)
@@ -76,6 +78,9 @@ namespace Kroira.App.Services
                 await db.SaveChangesAsync();
             }
 
+            var credential = await db.SourceCredentials.FirstOrDefaultAsync(item => item.SourceProfileId == sourceProfileId);
+            var acquisitionSession = await acquisitionService.BeginSessionAsync(db, profile, credential, trigger, scope);
+
             var guideAttempted = false;
             var guideSucceeded = false;
             var guideSummary = string.Empty;
@@ -87,7 +92,7 @@ namespace Kroira.App.Services
                 {
                     case SourceRefreshScope.EpgOnly:
                         guideAttempted = true;
-                        await parserXmltv.ParseAndImportEpgAsync(db, sourceProfileId);
+                        await parserXmltv.ParseAndImportEpgAsync(db, sourceProfileId, acquisitionSession, refreshHealth: false);
                         guideSucceeded = true;
                         guideSummary = "Guide sync completed.";
                         break;
@@ -98,23 +103,23 @@ namespace Kroira.App.Services
                             throw new InvalidOperationException("VOD-only refresh is only supported for Xtream sources.");
                         }
 
-                        await parserXtream.ParseAndImportXtreamVodAsync(db, sourceProfileId);
+                        await parserXtream.ParseAndImportXtreamVodAsync(db, sourceProfileId, acquisitionSession, refreshHealth: false);
                         break;
 
                     case SourceRefreshScope.LiveOnly:
                         if (profile.Type == SourceType.M3U)
                         {
-                            await parserM3u.ParseAndImportM3uAsync(db, sourceProfileId);
+                            await parserM3u.ParseAndImportM3uAsync(db, sourceProfileId, acquisitionSession, refreshHealth: false);
                         }
                         else
                         {
-                            await parserXtream.ParseAndImportXtreamAsync(db, sourceProfileId);
+                            await parserXtream.ParseAndImportXtreamAsync(db, sourceProfileId, acquisitionSession, refreshHealth: false);
                         }
 
                         guideAttempted = true;
                         try
                         {
-                            await parserXmltv.ParseAndImportEpgAsync(db, sourceProfileId);
+                            await parserXmltv.ParseAndImportEpgAsync(db, sourceProfileId, acquisitionSession, refreshHealth: false);
                             guideSucceeded = true;
                             guideSummary = "Guide sync completed.";
                         }
@@ -127,18 +132,18 @@ namespace Kroira.App.Services
                     default:
                         if (profile.Type == SourceType.M3U)
                         {
-                            await parserM3u.ParseAndImportM3uAsync(db, sourceProfileId);
+                            await parserM3u.ParseAndImportM3uAsync(db, sourceProfileId, acquisitionSession, refreshHealth: false);
                         }
                         else
                         {
-                            await parserXtream.ParseAndImportXtreamAsync(db, sourceProfileId);
-                            await parserXtream.ParseAndImportXtreamVodAsync(db, sourceProfileId);
+                            await parserXtream.ParseAndImportXtreamAsync(db, sourceProfileId, acquisitionSession, refreshHealth: false);
+                            await parserXtream.ParseAndImportXtreamVodAsync(db, sourceProfileId, acquisitionSession, refreshHealth: false);
                         }
 
                         guideAttempted = true;
                         try
                         {
-                            await parserXmltv.ParseAndImportEpgAsync(db, sourceProfileId);
+                            await parserXmltv.ParseAndImportEpgAsync(db, sourceProfileId, acquisitionSession, refreshHealth: false);
                             guideSucceeded = true;
                             guideSummary = "Guide sync completed.";
                         }
@@ -149,12 +154,14 @@ namespace Kroira.App.Services
                         break;
                 }
 
+                await sourceHealthService.RefreshSourceHealthAsync(db, sourceProfileId, acquisitionSession);
                 runtimeRepairSummary = await TryFinalizeRuntimeStateAsync(
                     db,
                     sourceProfileId,
                     browsePreferencesService,
                     logicalCatalogStateService,
-                    contentOperationalService);
+                    contentOperationalService,
+                    acquisitionSession);
                 var scheduleSummary = CombineSummaries(guideSummary, runtimeRepairSummary);
                 await autoRefreshService.UpdateScheduleAsync(db, sourceProfileId, trigger, success: true, scheduleSummary);
 
@@ -169,6 +176,17 @@ namespace Kroira.App.Services
                 };
 
                 var message = CombineSummaries(catalogSummary, guideSummary, runtimeRepairSummary);
+                var runStatus = guideAttempted && !guideSucceeded
+                    ? SourceAcquisitionRunStatus.Partial
+                    : SourceAcquisitionRunStatus.Succeeded;
+                await acquisitionService.CompleteSessionAsync(
+                    db,
+                    acquisitionSession,
+                    runStatus,
+                    message,
+                    catalogSummary,
+                    guideSummary,
+                    acquisitionSession.ValidationSummary);
 
                 return new SourceRefreshResult
                 {
@@ -185,12 +203,31 @@ namespace Kroira.App.Services
             }
             catch (Exception ex)
             {
+                acquisitionSession.RecordFailure(
+                    scope == SourceRefreshScope.EpgOnly ? SourceAcquisitionStage.GuideMatch : SourceAcquisitionStage.Acquire,
+                    SourceAcquisitionItemKind.Source,
+                    "source.refresh.failed",
+                    ex.Message);
+
+                try
+                {
+                    await sourceHealthService.RefreshSourceHealthAsync(db, sourceProfileId, acquisitionSession);
+                }
+                catch (Exception healthEx)
+                {
+                    RuntimeEventLogger.Log("SOURCE-REFRESH", healthEx, $"source_id={sourceProfileId} health refresh skipped after failure");
+                    acquisitionSession.RecordRuntimeRepairWarning(
+                        "runtime.health_refresh_deferred",
+                        "Validation refresh was deferred after the source refresh failure.");
+                }
+
                 runtimeRepairSummary = await TryFinalizeRuntimeStateAsync(
                     db,
                     sourceProfileId,
                     browsePreferencesService,
                     logicalCatalogStateService,
-                    contentOperationalService);
+                    contentOperationalService,
+                    acquisitionSession);
 
                 await autoRefreshService.UpdateScheduleAsync(
                     db,
@@ -199,6 +236,14 @@ namespace Kroira.App.Services
                     success: false,
                     CombineSummaries(ex.Message, runtimeRepairSummary));
                 RuntimeEventLogger.Log("SOURCE-REFRESH", ex, $"source_id={sourceProfileId} refresh failed");
+                await acquisitionService.CompleteSessionAsync(
+                    db,
+                    acquisitionSession,
+                    SourceAcquisitionRunStatus.Failed,
+                    ex.Message,
+                    string.Empty,
+                    guideSummary,
+                    acquisitionSession.ValidationSummary);
 
                 return new SourceRefreshResult
                 {
@@ -220,7 +265,8 @@ namespace Kroira.App.Services
             int sourceProfileId,
             IBrowsePreferencesService browsePreferencesService,
             ILogicalCatalogStateService logicalCatalogStateService,
-            IContentOperationalService contentOperationalService)
+            IContentOperationalService contentOperationalService,
+            SourceAcquisitionSession? acquisitionSession)
         {
             var warnings = new List<string>();
 
@@ -232,6 +278,9 @@ namespace Kroira.App.Services
             {
                 RuntimeEventLogger.Log("SOURCE-REFRESH", ex, $"source_id={sourceProfileId} browse repair skipped");
                 warnings.Add("Some browse state repairs were deferred.");
+                acquisitionSession?.RecordRuntimeRepairWarning(
+                    "runtime.browse_repair_deferred",
+                    "Browse state repairs were deferred after the source sync.");
             }
 
             try
@@ -242,6 +291,9 @@ namespace Kroira.App.Services
             {
                 RuntimeEventLogger.Log("SOURCE-REFRESH", ex, $"source_id={sourceProfileId} state reconciliation skipped");
                 warnings.Add("Some saved state repairs were deferred.");
+                acquisitionSession?.RecordRuntimeRepairWarning(
+                    "runtime.state_reconciliation_deferred",
+                    "Saved state reconciliation was deferred after the source sync.");
             }
 
             try
@@ -252,6 +304,9 @@ namespace Kroira.App.Services
             {
                 RuntimeEventLogger.Log("SOURCE-REFRESH", ex, $"source_id={sourceProfileId} operational rebuild skipped");
                 warnings.Add("Operational mirror refresh was deferred.");
+                acquisitionSession?.RecordRuntimeRepairWarning(
+                    "runtime.operational_refresh_deferred",
+                    "Operational candidate refresh was deferred after the source sync.");
             }
 
             return CombineSummaries(warnings.ToArray());

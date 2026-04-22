@@ -170,7 +170,7 @@ internal sealed class RegressionRunner
     {
         using var bootstrapScope = provider.CreateScope();
         var db = bootstrapScope.ServiceProvider.GetRequiredService<AppDbContext>();
-        await db.Database.MigrateAsync();
+        await db.Database.EnsureCreatedAsync();
         DatabaseBootstrapper.EnsureRuntimeSchema(db);
         await SeedDeterministicSettingsAsync(db);
 
@@ -819,6 +819,27 @@ internal sealed class RegressionRunner
             .Where(item => sourceIds.Contains(item.SourceProfileId))
             .ToDictionaryAsync(item => item.SourceProfileId);
 
+        var acquisitionProfiles = await db.SourceAcquisitionProfiles
+            .AsNoTracking()
+            .Where(item => sourceIds.Contains(item.SourceProfileId))
+            .ToDictionaryAsync(item => item.SourceProfileId);
+
+        var acquisitionRuns = await db.SourceAcquisitionRuns
+            .AsNoTracking()
+            .Where(item => sourceIds.Contains(item.SourceProfileId))
+            .OrderByDescending(item => item.StartedAtUtc)
+            .ThenByDescending(item => item.Id)
+            .ToListAsync();
+        var acquisitionRunLookup = acquisitionRuns
+            .GroupBy(item => item.SourceProfileId)
+            .ToDictionary(group => group.Key, group => group.First());
+        var acquisitionRunIds = acquisitionRunLookup.Values.Select(item => item.Id).ToHashSet();
+        var acquisitionEvidence = await db.SourceAcquisitionEvidence
+            .AsNoTracking()
+            .Where(item => acquisitionRunIds.Contains(item.SourceAcquisitionRunId))
+            .OrderBy(item => item.SortOrder)
+            .ToListAsync();
+
         var healthReports = await db.SourceHealthReports
             .AsNoTracking()
             .Include(item => item.Components)
@@ -881,6 +902,8 @@ internal sealed class RegressionRunner
             sourceProfiles.TryGetValue(sourceId, out var profile);
             credentials.TryGetValue(sourceId, out var credential);
             syncStates.TryGetValue(sourceId, out var syncState);
+            acquisitionProfiles.TryGetValue(sourceId, out var acquisitionProfile);
+            acquisitionRunLookup.TryGetValue(sourceId, out var acquisitionRun);
             healthReports.TryGetValue(sourceId, out var health);
             epgLogs.TryGetValue(sourceId, out var epg);
 
@@ -920,6 +943,8 @@ internal sealed class RegressionRunner
                     Episodes = sourceSeries.SelectMany(item => item.Seasons ?? []).SelectMany(item => item.Episodes ?? []).Count(),
                     EpgPrograms = sourcePrograms.Count
                 },
+                AcquisitionProfile = BuildAcquisitionProfileSnapshot(acquisitionProfile, serverBaseUrl),
+                AcquisitionRun = BuildAcquisitionRunSnapshot(acquisitionRun, serverBaseUrl),
                 Health = BuildHealthSnapshot(health, serverBaseUrl),
                 Epg = BuildEpgSnapshot(epg, serverBaseUrl),
                 Channels = sourceChannels.Select(item => BuildChannelSnapshot(item, serverBaseUrl)).ToList(),
@@ -929,6 +954,10 @@ internal sealed class RegressionRunner
                     .Where(item => item.SourceProfileId == sourceId)
                     .OrderBy(item => item.IdentityKey, StringComparer.OrdinalIgnoreCase)
                     .Select(item => BuildEnrichmentSnapshot(item, serverBaseUrl))
+                    .ToList(),
+                AcquisitionEvidence = acquisitionEvidence
+                    .Where(item => item.SourceProfileId == sourceId)
+                    .Select(item => BuildAcquisitionEvidenceSnapshot(item, serverBaseUrl))
                     .ToList()
             });
         }
@@ -1043,6 +1072,69 @@ internal sealed class RegressionRunner
         };
     }
 
+    private static SourceAcquisitionProfileSnapshot BuildAcquisitionProfileSnapshot(SourceAcquisitionProfile? profile, string serverBaseUrl)
+    {
+        if (profile == null)
+        {
+            return new SourceAcquisitionProfileSnapshot();
+        }
+
+        return new SourceAcquisitionProfileSnapshot
+        {
+            ProfileKey = NormalizeText(profile.ProfileKey, serverBaseUrl),
+            ProfileLabel = NormalizeText(profile.ProfileLabel, serverBaseUrl),
+            ProviderKey = NormalizeText(profile.ProviderKey, serverBaseUrl),
+            NormalizationSummary = NormalizeText(profile.NormalizationSummary, serverBaseUrl),
+            MatchingSummary = NormalizeText(profile.MatchingSummary, serverBaseUrl),
+            SuppressionSummary = NormalizeText(profile.SuppressionSummary, serverBaseUrl),
+            ValidationSummary = NormalizeText(profile.ValidationSummary, serverBaseUrl),
+            SupportsRegexMatching = profile.SupportsRegexMatching,
+            PreferProxyDuringValidation = profile.PreferProxyDuringValidation,
+            PreferLastKnownGoodRollback = profile.PreferLastKnownGoodRollback
+        };
+    }
+
+    private static SourceAcquisitionRunSnapshot BuildAcquisitionRunSnapshot(SourceAcquisitionRun? run, string serverBaseUrl)
+    {
+        if (run == null)
+        {
+            return new SourceAcquisitionRunSnapshot();
+        }
+
+        return new SourceAcquisitionRunSnapshot
+        {
+            Trigger = run.Trigger.ToString(),
+            Scope = run.Scope.ToString(),
+            Status = run.Status.ToString(),
+            ProfileKey = NormalizeText(run.ProfileKey, serverBaseUrl),
+            ProfileLabel = NormalizeText(run.ProfileLabel, serverBaseUrl),
+            ProviderKey = NormalizeText(run.ProviderKey, serverBaseUrl),
+            RoutingSummary = NormalizeText(run.RoutingSummary, serverBaseUrl),
+            ValidationRoutingSummary = NormalizeText(run.ValidationRoutingSummary, serverBaseUrl),
+            Message = NormalizeText(run.Message, serverBaseUrl),
+            CatalogSummary = NormalizeText(run.CatalogSummary, serverBaseUrl),
+            GuideSummary = NormalizeText(run.GuideSummary, serverBaseUrl),
+            ValidationSummary = NormalizeText(run.ValidationSummary, serverBaseUrl),
+            RawItemCount = run.RawItemCount,
+            AcceptedCount = run.AcceptedCount,
+            SuppressedCount = run.SuppressedCount,
+            DemotedCount = run.DemotedCount,
+            MatchedCount = run.MatchedCount,
+            UnmatchedCount = run.UnmatchedCount,
+            LiveCount = run.LiveCount,
+            MovieCount = run.MovieCount,
+            SeriesCount = run.SeriesCount,
+            EpisodeCount = run.EpisodeCount,
+            AliasMatchCount = run.AliasMatchCount,
+            RegexMatchCount = run.RegexMatchCount,
+            FuzzyMatchCount = run.FuzzyMatchCount,
+            ProbeSuccessCount = run.ProbeSuccessCount,
+            ProbeFailureCount = run.ProbeFailureCount,
+            WarningCount = run.WarningCount,
+            ErrorCount = run.ErrorCount
+        };
+    }
+
     private static ChannelSnapshot BuildChannelSnapshot(ChannelFixtureRow item, string serverBaseUrl)
     {
         var channel = item.Channel;
@@ -1129,6 +1221,22 @@ internal sealed class RegressionRunner
             EpgMatchConfidence = item.EpgMatchConfidence,
             LogoSource = item.LogoSource.ToString(),
             LogoConfidence = item.LogoConfidence
+        };
+    }
+
+    private static SourceAcquisitionEvidenceSnapshot BuildAcquisitionEvidenceSnapshot(SourceAcquisitionEvidence item, string serverBaseUrl)
+    {
+        return new SourceAcquisitionEvidenceSnapshot
+        {
+            Stage = item.Stage.ToString(),
+            Outcome = item.Outcome.ToString(),
+            ItemKind = item.ItemKind.ToString(),
+            RuleCode = NormalizeText(item.RuleCode, serverBaseUrl),
+            Reason = NormalizeText(item.Reason, serverBaseUrl),
+            RawName = NormalizeText(item.RawName, serverBaseUrl),
+            NormalizedName = NormalizeText(item.NormalizedName, serverBaseUrl),
+            MatchedTarget = NormalizeText(item.MatchedTarget, serverBaseUrl),
+            Confidence = item.Confidence
         };
     }
 

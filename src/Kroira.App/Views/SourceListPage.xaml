@@ -598,6 +598,80 @@
                                                 <TextBlock Text="{Binding GuideUrlText}" Visibility="{Binding GuideUrlVisibility}" Style="{StaticResource KroiraBodyStyle}" MaxLines="2" TextWrapping="WrapWholeWords" TextTrimming="CharacterEllipsis" />
                                                 <TextBlock Text="{Binding GuideMatchText}" Visibility="{Binding GuideMatchVisibility}" Style="{StaticResource KroiraBodyStyle}" MaxLines="2" TextWrapping="WrapWholeWords" TextTrimming="CharacterEllipsis" />
                                                 <Border Height="1" Background="{StaticResource KroiraBorderBrush}" Opacity="0.3" Margin="0,4,0,4" />
+                                                <TextBlock Text="Acquisition profile"
+                                                           Visibility="{Binding AcquisitionProfileVisibility}"
+                                                           Style="{StaticResource SourceMiniLabelStyle}" />
+                                                <TextBlock Text="{Binding AcquisitionProfileText}"
+                                                           Visibility="{Binding AcquisitionProfileVisibility}"
+                                                           Style="{StaticResource KroiraBodyStyle}"
+                                                           MaxLines="2"
+                                                           TextWrapping="WrapWholeWords"
+                                                           TextTrimming="CharacterEllipsis" />
+                                                <TextBlock Text="{Binding AcquisitionRuleSummaryText}"
+                                                           Visibility="{Binding AcquisitionRuleSummaryVisibility}"
+                                                           Style="{StaticResource KroiraBodyStyle}"
+                                                           MaxLines="3"
+                                                           TextWrapping="WrapWholeWords"
+                                                           TextTrimming="CharacterEllipsis" />
+                                                <StackPanel Orientation="Horizontal"
+                                                            Spacing="8"
+                                                            Visibility="{Binding AcquisitionProfileVisibility}">
+                                                    <controls:StatusPill Label="{Binding AcquisitionRunStatusText}"
+                                                                         Kind="{Binding AcquisitionRunPillKind}" />
+                                                    <TextBlock Text="{Binding AcquisitionLastRunText}"
+                                                               Style="{StaticResource KroiraBodyStyle}"
+                                                               Foreground="{StaticResource KroiraTextSecondaryBrush}"
+                                                               VerticalAlignment="Center" />
+                                                </StackPanel>
+                                                <TextBlock Text="{Binding AcquisitionRunSummaryText}"
+                                                           Visibility="{Binding AcquisitionRunSummaryVisibility}"
+                                                           Style="{StaticResource KroiraBodyStyle}"
+                                                           MaxLines="2"
+                                                           TextWrapping="WrapWholeWords"
+                                                           TextTrimming="CharacterEllipsis" />
+                                                <TextBlock Text="{Binding AcquisitionRunMessageText}"
+                                                           Visibility="{Binding AcquisitionRunMessageVisibility}"
+                                                           Style="{StaticResource KroiraBodyStyle}"
+                                                           Foreground="{StaticResource KroiraTextSecondaryBrush}"
+                                                           MaxLines="2"
+                                                           TextWrapping="WrapWholeWords"
+                                                           TextTrimming="CharacterEllipsis" />
+                                                <TextBlock Text="{Binding AcquisitionStatsText}"
+                                                           Visibility="{Binding AcquisitionStatsVisibility}"
+                                                           Style="{StaticResource KroiraBodyStyle}"
+                                                           Foreground="{StaticResource KroiraTextSecondaryBrush}"
+                                                           MaxLines="3"
+                                                           TextWrapping="WrapWholeWords"
+                                                           TextTrimming="CharacterEllipsis" />
+                                                <TextBlock Text="{Binding AcquisitionRoutingText}"
+                                                           Visibility="{Binding AcquisitionRoutingVisibility}"
+                                                           Style="{StaticResource KroiraBodyStyle}"
+                                                           Foreground="{StaticResource KroiraTextSecondaryBrush}"
+                                                           MaxLines="3"
+                                                           TextWrapping="WrapWholeWords"
+                                                           TextTrimming="CharacterEllipsis" />
+                                                <ItemsControl ItemsSource="{Binding AcquisitionEvidence}"
+                                                              Visibility="{Binding AcquisitionEvidenceVisibility}">
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <StackPanel Spacing="4">
+                                                                <controls:StatusPill Label="{Binding PillLabel}" Kind="{Binding PillKind}" />
+                                                                <TextBlock Text="{Binding Label}"
+                                                                           Style="{StaticResource KroiraBodyStyle}"
+                                                                           FontWeight="SemiBold"
+                                                                           MaxLines="1"
+                                                                           TextTrimming="CharacterEllipsis" />
+                                                                <TextBlock Text="{Binding Detail}"
+                                                                           Style="{StaticResource KroiraBodyStyle}"
+                                                                           Foreground="{StaticResource KroiraTextSecondaryBrush}"
+                                                                           MaxLines="3"
+                                                                           TextWrapping="WrapWholeWords"
+                                                                           TextTrimming="CharacterEllipsis" />
+                                                            </StackPanel>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                                <Border Height="1" Background="{StaticResource KroiraBorderBrush}" Opacity="0.3" Margin="0,4,0,4" />
                                                 <TextBlock Text="Automatic refresh" Style="{StaticResource SourceMiniLabelStyle}" />
                                                 <StackPanel Orientation="Horizontal" Spacing="8">
                                                     <controls:StatusPill Label="{Binding AutoRefreshStatusText}" Kind="Neutral" />

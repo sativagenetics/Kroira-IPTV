@@ -38,6 +38,49 @@
         "Episodes": 2,
         "EpgPrograms": 4
       },
+      "AcquisitionProfile": {
+        "ProfileKey": "kroira.xtream.structured",
+        "ProfileLabel": "KROIRA Xtream Structured",
+        "ProviderKey": "127.0.0.1",
+        "NormalizationSummary": "Structured API titles and categories normalize through title cleanup while keeping provider values intact.",
+        "MatchingSummary": "Identifier-first upserts use normalized aliases, regex-safe guide matching, and bounded fuzzy fallback.",
+        "SuppressionSummary": "Garbage titles, unsafe categories, missing live category bindings, and invalid stream extensions are suppressed.",
+        "ValidationSummary": "Bounded live and VOD probing stays routing-aware and preserves last-known-good operational recovery paths.",
+        "SupportsRegexMatching": true,
+        "PreferProxyDuringValidation": false,
+        "PreferLastKnownGoodRollback": true
+      },
+      "AcquisitionRun": {
+        "Trigger": "InitialImport",
+        "Scope": "Full",
+        "Status": "Succeeded",
+        "ProfileKey": "kroira.xtream.structured",
+        "ProfileLabel": "KROIRA Xtream Structured",
+        "ProviderKey": "127.0.0.1",
+        "RoutingSummary": "Direct routing",
+        "ValidationRoutingSummary": "Direct routing",
+        "Message": "Xtream catalog refresh completed. Guide sync completed.",
+        "CatalogSummary": "Xtream catalog refresh completed.",
+        "GuideSummary": "Guide sync completed.",
+        "ValidationSummary": "Component health is usable but uneven (84/100). Catalog is usable, with 1 duplicates and 0 suspicious entries. VOD catalog is usable, but duplicate or suspicious entries remain across 3 items. VOD probe reached 3/4 sampled items and missed 1. 1 HTTP failure.",
+        "RawItemCount": 6,
+        "AcceptedCount": 7,
+        "SuppressedCount": 1,
+        "DemotedCount": 0,
+        "MatchedCount": 2,
+        "UnmatchedCount": 0,
+        "LiveCount": 2,
+        "MovieCount": 2,
+        "SeriesCount": 1,
+        "EpisodeCount": 2,
+        "AliasMatchCount": 0,
+        "RegexMatchCount": 0,
+        "FuzzyMatchCount": 0,
+        "ProbeSuccessCount": 5,
+        "ProbeFailureCount": 1,
+        "WarningCount": 2,
+        "ErrorCount": 0
+      },
       "Health": {
         "State": "Weak",
         "Score": 84,
@@ -154,11 +197,11 @@
         "ActiveXmltvUrl": "[fixture-server]/xtream/xmltv.php?username=demo\u0026password=demo",
         "MatchedChannelCount": 2,
         "UnmatchedChannelCount": 0,
-        "CurrentCoverageCount": 0,
-        "NextCoverageCount": 2,
+        "CurrentCoverageCount": 2,
+        "NextCoverageCount": 0,
         "TotalLiveChannelCount": 2,
         "ProgrammeCount": 4,
-        "MatchBreakdown": "provider_id=1; reused=0; normalized=1; alias=0; fuzzy=0; unmatched=0",
+        "MatchBreakdown": "provider_id=1; reused=0; normalized=1; alias=0; regex=0; fuzzy=0; unmatched=0",
         "FailureReason": ""
       },
       "Channels": [
@@ -280,6 +323,63 @@
           "EpgMatchConfidence": 88,
           "LogoSource": "Xmltv",
           "LogoConfidence": 84
+        }
+      ],
+      "AcquisitionEvidence": [
+        {
+          "Stage": "Acquire",
+          "Outcome": "Suppressed",
+          "ItemKind": "Movie",
+          "RuleCode": "acquire.xtream.movie_bad_extension",
+          "Reason": "Movie row used a blocked or suspicious container extension and was ignored.",
+          "RawName": "Garbage Movie",
+          "NormalizedName": "",
+          "MatchedTarget": "",
+          "Confidence": 0
+        },
+        {
+          "Stage": "GuideMatch",
+          "Outcome": "Matched",
+          "ItemKind": "LiveChannel",
+          "RuleCode": "epg.normalized_alias",
+          "Reason": "Normalized channel identity matched \u0027TRT 1\u0027.",
+          "RawName": "TRT 1 HD",
+          "NormalizedName": "trt 1",
+          "MatchedTarget": "TRT 1",
+          "Confidence": 88
+        },
+        {
+          "Stage": "Validation",
+          "Outcome": "Matched",
+          "ItemKind": "Probe",
+          "RuleCode": "validation.probe.live",
+          "Reason": "Live probe reached 2/2 sampled items.",
+          "RawName": "Live",
+          "NormalizedName": "",
+          "MatchedTarget": "",
+          "Confidence": 100
+        },
+        {
+          "Stage": "Validation",
+          "Outcome": "Warning",
+          "ItemKind": "Probe",
+          "RuleCode": "validation.probe.vod",
+          "Reason": "VOD probe reached 3/4 sampled items and missed 1. 1 HTTP failure.",
+          "RawName": "Vod",
+          "NormalizedName": "",
+          "MatchedTarget": "",
+          "Confidence": 75
+        },
+        {
+          "Stage": "Validation",
+          "Outcome": "Warning",
+          "ItemKind": "Source",
+          "RuleCode": "duplicates",
+          "Reason": "1 entries look duplicated inside this source.",
+          "RawName": "Duplicate items found",
+          "NormalizedName": "",
+          "MatchedTarget": "",
+          "Confidence": 0
         }
       ]
     }

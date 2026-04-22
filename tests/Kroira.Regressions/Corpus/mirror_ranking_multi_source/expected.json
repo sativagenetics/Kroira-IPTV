@@ -38,6 +38,49 @@
         "Episodes": 0,
         "EpgPrograms": 2
       },
+      "AcquisitionProfile": {
+        "ProfileKey": "kroira.m3u.balanced",
+        "ProfileLabel": "KROIRA M3U Balanced",
+        "ProviderKey": "127.0.0.1",
+        "NormalizationSummary": "Playlist titles, ids, and group labels normalize into stable identities while keeping provider values intact.",
+        "MatchingSummary": "Guide matching prefers provider ids, then normalized aliases, regex-safe aliases, and bounded fuzzy fallback.",
+        "SuppressionSummary": "Provider buckets, promotional rows, garbage labels, and unsafe adult or bundle groups are suppressed.",
+        "ValidationSummary": "Bounded live and VOD probing stays routing-aware and preserves last-known-good operational recovery paths.",
+        "SupportsRegexMatching": true,
+        "PreferProxyDuringValidation": false,
+        "PreferLastKnownGoodRollback": true
+      },
+      "AcquisitionRun": {
+        "Trigger": "InitialImport",
+        "Scope": "Full",
+        "Status": "Succeeded",
+        "ProfileKey": "kroira.m3u.balanced",
+        "ProfileLabel": "KROIRA M3U Balanced",
+        "ProviderKey": "127.0.0.1",
+        "RoutingSummary": "Proxy configured but inactive",
+        "ValidationRoutingSummary": "Proxy configured but inactive",
+        "Message": "Playlist import completed. Guide sync completed.",
+        "CatalogSummary": "Playlist import completed.",
+        "GuideSummary": "Guide sync completed.",
+        "ValidationSummary": "Component health is usable but uneven (84/100). Guide covers 1 of 1 live channels, but coverage is still uneven.",
+        "RawItemCount": 1,
+        "AcceptedCount": 1,
+        "SuppressedCount": 0,
+        "DemotedCount": 0,
+        "MatchedCount": 1,
+        "UnmatchedCount": 0,
+        "LiveCount": 1,
+        "MovieCount": 0,
+        "SeriesCount": 0,
+        "EpisodeCount": 0,
+        "AliasMatchCount": 0,
+        "RegexMatchCount": 0,
+        "FuzzyMatchCount": 0,
+        "ProbeSuccessCount": 1,
+        "ProbeFailureCount": 0,
+        "WarningCount": 0,
+        "ErrorCount": 0
+      },
       "Health": {
         "State": "Weak",
         "Score": 84,
@@ -146,11 +189,11 @@
         "ActiveXmltvUrl": "[fixture-server]/good-guide.xml",
         "MatchedChannelCount": 1,
         "UnmatchedChannelCount": 0,
-        "CurrentCoverageCount": 0,
-        "NextCoverageCount": 1,
+        "CurrentCoverageCount": 1,
+        "NextCoverageCount": 0,
         "TotalLiveChannelCount": 1,
         "ProgrammeCount": 2,
-        "MatchBreakdown": "provider_id=1; reused=0; normalized=0; alias=0; fuzzy=0; unmatched=0",
+        "MatchBreakdown": "provider_id=1; reused=0; normalized=0; alias=0; regex=0; fuzzy=0; unmatched=0",
         "FailureReason": ""
       },
       "Channels": [
@@ -192,6 +235,30 @@
           "LogoSource": "Xmltv",
           "LogoConfidence": 88
         }
+      ],
+      "AcquisitionEvidence": [
+        {
+          "Stage": "Validation",
+          "Outcome": "Matched",
+          "ItemKind": "Probe",
+          "RuleCode": "validation.probe.live",
+          "Reason": "Live probe reached 1/1 sampled items.",
+          "RawName": "Live",
+          "NormalizedName": "",
+          "MatchedTarget": "",
+          "Confidence": 100
+        },
+        {
+          "Stage": "Validation",
+          "Outcome": "Matched",
+          "ItemKind": "Probe",
+          "RuleCode": "validation.probe.vod",
+          "Reason": "VOD probing is not applicable because VOD import is disabled for this playlist.",
+          "RawName": "Vod",
+          "NormalizedName": "",
+          "MatchedTarget": "",
+          "Confidence": 100
+        }
       ]
     },
     {
@@ -231,6 +298,49 @@
         "Seasons": 0,
         "Episodes": 0,
         "EpgPrograms": 0
+      },
+      "AcquisitionProfile": {
+        "ProfileKey": "kroira.m3u.balanced",
+        "ProfileLabel": "KROIRA M3U Balanced",
+        "ProviderKey": "127.0.0.1",
+        "NormalizationSummary": "Playlist titles, ids, and group labels normalize into stable identities while keeping provider values intact.",
+        "MatchingSummary": "Guide matching prefers provider ids, then normalized aliases, regex-safe aliases, and bounded fuzzy fallback.",
+        "SuppressionSummary": "Provider buckets, promotional rows, garbage labels, and unsafe adult or bundle groups are suppressed.",
+        "ValidationSummary": "Bounded live and VOD probing stays routing-aware and preserves last-known-good operational recovery paths.",
+        "SupportsRegexMatching": true,
+        "PreferProxyDuringValidation": false,
+        "PreferLastKnownGoodRollback": true
+      },
+      "AcquisitionRun": {
+        "Trigger": "InitialImport",
+        "Scope": "Full",
+        "Status": "Succeeded",
+        "ProfileKey": "kroira.m3u.balanced",
+        "ProfileLabel": "KROIRA M3U Balanced",
+        "ProviderKey": "127.0.0.1",
+        "RoutingSummary": "Direct routing",
+        "ValidationRoutingSummary": "Direct routing",
+        "Message": "Playlist import completed. Guide sync completed.",
+        "CatalogSummary": "Playlist import completed.",
+        "GuideSummary": "Guide sync completed.",
+        "ValidationSummary": "Component health shows missing core coverage (64/100). Live catalog is present across 1 channels. Live probe reached 0/1 sampled items and missed 1. 1 HTTP failure. No active guide source is available for live-channel matching.",
+        "RawItemCount": 1,
+        "AcceptedCount": 1,
+        "SuppressedCount": 0,
+        "DemotedCount": 0,
+        "MatchedCount": 0,
+        "UnmatchedCount": 0,
+        "LiveCount": 1,
+        "MovieCount": 0,
+        "SeriesCount": 0,
+        "EpisodeCount": 0,
+        "AliasMatchCount": 0,
+        "RegexMatchCount": 0,
+        "FuzzyMatchCount": 0,
+        "ProbeSuccessCount": 0,
+        "ProbeFailureCount": 1,
+        "WarningCount": 3,
+        "ErrorCount": 1
       },
       "Health": {
         "State": "Incomplete",
@@ -407,6 +517,63 @@
           "EpgMatchConfidence": 0,
           "LogoSource": "None",
           "LogoConfidence": 0
+        }
+      ],
+      "AcquisitionEvidence": [
+        {
+          "Stage": "Validation",
+          "Outcome": "Warning",
+          "ItemKind": "Probe",
+          "RuleCode": "validation.probe.live",
+          "Reason": "Live probe reached 0/1 sampled items and missed 1. 1 HTTP failure.",
+          "RawName": "Live",
+          "NormalizedName": "",
+          "MatchedTarget": "",
+          "Confidence": 75
+        },
+        {
+          "Stage": "Validation",
+          "Outcome": "Matched",
+          "ItemKind": "Probe",
+          "RuleCode": "validation.probe.vod",
+          "Reason": "VOD probing is not applicable because VOD import is disabled for this playlist.",
+          "RawName": "Vod",
+          "NormalizedName": "",
+          "MatchedTarget": "",
+          "Confidence": 100
+        },
+        {
+          "Stage": "Validation",
+          "Outcome": "Warning",
+          "ItemKind": "Source",
+          "RuleCode": "guide_missing",
+          "Reason": "Live channels are present, but no active XMLTV source is available for guide matching.",
+          "RawName": "Guide source is missing",
+          "NormalizedName": "",
+          "MatchedTarget": "",
+          "Confidence": 0
+        },
+        {
+          "Stage": "Validation",
+          "Outcome": "Warning",
+          "ItemKind": "Source",
+          "RuleCode": "missing_logos",
+          "Reason": "0 of 1 live channels currently have logos.",
+          "RawName": "Channel branding is thin",
+          "NormalizedName": "",
+          "MatchedTarget": "",
+          "Confidence": 0
+        },
+        {
+          "Stage": "Validation",
+          "Outcome": "Warning",
+          "ItemKind": "Source",
+          "RuleCode": "live_probe",
+          "Reason": "Live probe reached 0/1 sampled items and missed 1. 1 HTTP failure.",
+          "RawName": "Live probe found weak reachability",
+          "NormalizedName": "",
+          "MatchedTarget": "",
+          "Confidence": 0
         }
       ]
     }

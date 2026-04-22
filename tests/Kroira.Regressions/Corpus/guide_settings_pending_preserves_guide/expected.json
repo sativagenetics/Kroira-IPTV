@@ -38,6 +38,49 @@
         "Episodes": 2,
         "EpgPrograms": 6
       },
+      "AcquisitionProfile": {
+        "ProfileKey": "kroira.m3u.balanced",
+        "ProfileLabel": "KROIRA M3U Balanced",
+        "ProviderKey": "127.0.0.1",
+        "NormalizationSummary": "Playlist titles, ids, and group labels normalize into stable identities while keeping provider values intact.",
+        "MatchingSummary": "Guide matching prefers provider ids, then normalized aliases, regex-safe aliases, and bounded fuzzy fallback.",
+        "SuppressionSummary": "Provider buckets, promotional rows, garbage labels, and unsafe adult or bundle groups are suppressed.",
+        "ValidationSummary": "Bounded live and VOD probing stays routing-aware and preserves last-known-good operational recovery paths.",
+        "SupportsRegexMatching": true,
+        "PreferProxyDuringValidation": false,
+        "PreferLastKnownGoodRollback": true
+      },
+      "AcquisitionRun": {
+        "Trigger": "InitialImport",
+        "Scope": "Full",
+        "Status": "Succeeded",
+        "ProfileKey": "kroira.m3u.balanced",
+        "ProfileLabel": "KROIRA M3U Balanced",
+        "ProviderKey": "127.0.0.1",
+        "RoutingSummary": "Direct routing",
+        "ValidationRoutingSummary": "Direct routing",
+        "Message": "Playlist import completed. Guide sync completed.",
+        "CatalogSummary": "Playlist import completed.",
+        "GuideSummary": "Guide sync completed.",
+        "ValidationSummary": "Component health found serious source problems (39/100). 1 invalid playable items and 1 suspicious entries make the catalog unreliable. Too many live channels are unusable or suspicious inside the 4-channel catalog. Live probe reached 2/3 sampled items and missed 1. 1 HTTP failure.",
+        "RawItemCount": 9,
+        "AcceptedCount": 7,
+        "SuppressedCount": 2,
+        "DemotedCount": 0,
+        "MatchedCount": 3,
+        "UnmatchedCount": 1,
+        "LiveCount": 4,
+        "MovieCount": 0,
+        "SeriesCount": 1,
+        "EpisodeCount": 2,
+        "AliasMatchCount": 0,
+        "RegexMatchCount": 0,
+        "FuzzyMatchCount": 0,
+        "ProbeSuccessCount": 3,
+        "ProbeFailureCount": 2,
+        "WarningCount": 6,
+        "ErrorCount": 3
+      },
       "Health": {
         "State": "Problematic",
         "Score": 39,
@@ -203,11 +246,11 @@
         "ActiveXmltvUrl": "[fixture-server]/guide-alt.xml",
         "MatchedChannelCount": 3,
         "UnmatchedChannelCount": 1,
-        "CurrentCoverageCount": 0,
-        "NextCoverageCount": 3,
+        "CurrentCoverageCount": 3,
+        "NextCoverageCount": 0,
         "TotalLiveChannelCount": 4,
         "ProgrammeCount": 6,
-        "MatchBreakdown": "provider_id=1; reused=0; normalized=1; alias=0; fuzzy=0; unmatched=1",
+        "MatchBreakdown": "provider_id=1; reused=0; normalized=1; alias=0; regex=0; fuzzy=0; unmatched=1",
         "FailureReason": "Guide settings changed. Sync pending; last successful guide data is still available."
       },
       "Channels": [
@@ -366,6 +409,162 @@
           "EpgMatchConfidence": 0,
           "LogoSource": "None",
           "LogoConfidence": 0
+        }
+      ],
+      "AcquisitionEvidence": [
+        {
+          "Stage": "Acquire",
+          "Outcome": "Suppressed",
+          "ItemKind": "LiveChannel",
+          "RuleCode": "acquire.m3u.unsafe_group",
+          "Reason": "Explicit provider group was suppressed by the M3U safety profile.",
+          "RawName": "The Matrix 1999 [1080p] [TR]",
+          "NormalizedName": "The Matrix 1999 [1080p] [TR]",
+          "MatchedTarget": "",
+          "Confidence": 0
+        },
+        {
+          "Stage": "Acquire",
+          "Outcome": "Suppressed",
+          "ItemKind": "LiveChannel",
+          "RuleCode": "acquire.m3u.unsafe_group",
+          "Reason": "Explicit provider group was suppressed by the M3U safety profile.",
+          "RawName": "The Matrix 1999 [Trailer]",
+          "NormalizedName": "The Matrix 1999 [Trailer]",
+          "MatchedTarget": "",
+          "Confidence": 0
+        },
+        {
+          "Stage": "GuideMatch",
+          "Outcome": "Matched",
+          "ItemKind": "LiveChannel",
+          "RuleCode": "epg.normalized_alias",
+          "Reason": "Normalized channel identity matched \u0027TRT 1\u0027.",
+          "RawName": "TRT 1 HD",
+          "NormalizedName": "trt 1",
+          "MatchedTarget": "TRT 1",
+          "Confidence": 88
+        },
+        {
+          "Stage": "GuideMatch",
+          "Outcome": "Matched",
+          "ItemKind": "LiveChannel",
+          "RuleCode": "epg.normalized_alias",
+          "Reason": "Normalized channel identity matched \u0027TRT 1\u0027.",
+          "RawName": "TRT 1 HD",
+          "NormalizedName": "trt 1",
+          "MatchedTarget": "TRT 1",
+          "Confidence": 88
+        },
+        {
+          "Stage": "GuideMatch",
+          "Outcome": "Unmatched",
+          "ItemKind": "LiveChannel",
+          "RuleCode": "epg.unmatched.channel",
+          "Reason": "No XMLTV alias, regex, or fuzzy candidate matched the normalized channel identity.",
+          "RawName": "Broken News",
+          "NormalizedName": "broken news",
+          "MatchedTarget": "",
+          "Confidence": 0
+        },
+        {
+          "Stage": "Validation",
+          "Outcome": "Warning",
+          "ItemKind": "Probe",
+          "RuleCode": "validation.probe.live",
+          "Reason": "Live probe reached 2/3 sampled items and missed 1. 1 HTTP failure.",
+          "RawName": "Live",
+          "NormalizedName": "",
+          "MatchedTarget": "",
+          "Confidence": 75
+        },
+        {
+          "Stage": "Validation",
+          "Outcome": "Warning",
+          "ItemKind": "Probe",
+          "RuleCode": "validation.probe.vod",
+          "Reason": "VOD probe reached 1/2 sampled items and missed 1. 1 timeout.",
+          "RawName": "Vod",
+          "NormalizedName": "",
+          "MatchedTarget": "",
+          "Confidence": 75
+        },
+        {
+          "Stage": "Validation",
+          "Outcome": "Failure",
+          "ItemKind": "Source",
+          "RuleCode": "invalid_streams",
+          "Reason": "1 playable entries have empty or unsupported stream URLs.",
+          "RawName": "Invalid stream URLs detected",
+          "NormalizedName": "",
+          "MatchedTarget": "",
+          "Confidence": 0
+        },
+        {
+          "Stage": "Validation",
+          "Outcome": "Failure",
+          "ItemKind": "Source",
+          "RuleCode": "live_probe",
+          "Reason": "Live probe reached 2/3 sampled items and missed 1. 1 HTTP failure.",
+          "RawName": "Live probe found weak reachability",
+          "NormalizedName": "",
+          "MatchedTarget": "",
+          "Confidence": 0
+        },
+        {
+          "Stage": "Validation",
+          "Outcome": "Failure",
+          "ItemKind": "Source",
+          "RuleCode": "vod_probe",
+          "Reason": "VOD probe reached 1/2 sampled items and missed 1. 1 timeout.",
+          "RawName": "VOD probe found weak reachability",
+          "NormalizedName": "",
+          "MatchedTarget": "",
+          "Confidence": 0
+        },
+        {
+          "Stage": "Validation",
+          "Outcome": "Warning",
+          "ItemKind": "Source",
+          "RuleCode": "suspicious_entries",
+          "Reason": "1 titles or categories look like placeholders, promo rows, or other low-confidence content.",
+          "RawName": "Suspicious entries detected",
+          "NormalizedName": "",
+          "MatchedTarget": "",
+          "Confidence": 0
+        },
+        {
+          "Stage": "Validation",
+          "Outcome": "Warning",
+          "ItemKind": "Source",
+          "RuleCode": "duplicates",
+          "Reason": "1 entries look duplicated inside this source.",
+          "RawName": "Duplicate items found",
+          "NormalizedName": "",
+          "MatchedTarget": "",
+          "Confidence": 0
+        },
+        {
+          "Stage": "Validation",
+          "Outcome": "Warning",
+          "ItemKind": "Source",
+          "RuleCode": "guide_partial_coverage",
+          "Reason": "3 of 4 live channels match guide data.",
+          "RawName": "Guide coverage is partial",
+          "NormalizedName": "",
+          "MatchedTarget": "",
+          "Confidence": 0
+        },
+        {
+          "Stage": "Validation",
+          "Outcome": "Warning",
+          "ItemKind": "Source",
+          "RuleCode": "missing_logos",
+          "Reason": "3 of 4 live channels currently have logos.",
+          "RawName": "Channel branding is thin",
+          "NormalizedName": "",
+          "MatchedTarget": "",
+          "Confidence": 0
         }
       ]
     }

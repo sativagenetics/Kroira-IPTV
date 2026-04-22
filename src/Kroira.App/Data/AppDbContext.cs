@@ -19,6 +19,9 @@ namespace Kroira.App.Data
         public DbSet<SourceProfile> SourceProfiles { get; set; } = null!;
         public DbSet<SourceCredential> SourceCredentials { get; set; } = null!;
         public DbSet<SourceSyncState> SourceSyncStates { get; set; } = null!;
+        public DbSet<SourceAcquisitionProfile> SourceAcquisitionProfiles { get; set; } = null!;
+        public DbSet<SourceAcquisitionRun> SourceAcquisitionRuns { get; set; } = null!;
+        public DbSet<SourceAcquisitionEvidence> SourceAcquisitionEvidence { get; set; } = null!;
         public DbSet<SourceHealthReport> SourceHealthReports { get; set; } = null!;
         public DbSet<SourceHealthComponent> SourceHealthComponents { get; set; } = null!;
         public DbSet<SourceHealthProbe> SourceHealthProbes { get; set; } = null!;
@@ -79,6 +82,164 @@ namespace Kroira.App.Data
                 .HasOne<SourceProfile>()
                 .WithOne()
                 .HasForeignKey<SourceSyncState>(e => e.SourceProfileId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<SourceAcquisitionProfile>()
+                .HasIndex(e => e.SourceProfileId)
+                .IsUnique();
+
+            modelBuilder.Entity<SourceAcquisitionProfile>()
+                .HasOne<SourceProfile>()
+                .WithOne()
+                .HasForeignKey<SourceAcquisitionProfile>(e => e.SourceProfileId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<SourceAcquisitionProfile>()
+                .Property(e => e.ProfileKey)
+                .IsRequired()
+                .HasMaxLength(96);
+
+            modelBuilder.Entity<SourceAcquisitionProfile>()
+                .Property(e => e.ProfileLabel)
+                .IsRequired()
+                .HasMaxLength(140);
+
+            modelBuilder.Entity<SourceAcquisitionProfile>()
+                .Property(e => e.ProviderKey)
+                .IsRequired()
+                .HasMaxLength(180);
+
+            modelBuilder.Entity<SourceAcquisitionProfile>()
+                .Property(e => e.NormalizationSummary)
+                .IsRequired()
+                .HasMaxLength(320);
+
+            modelBuilder.Entity<SourceAcquisitionProfile>()
+                .Property(e => e.MatchingSummary)
+                .IsRequired()
+                .HasMaxLength(320);
+
+            modelBuilder.Entity<SourceAcquisitionProfile>()
+                .Property(e => e.SuppressionSummary)
+                .IsRequired()
+                .HasMaxLength(320);
+
+            modelBuilder.Entity<SourceAcquisitionProfile>()
+                .Property(e => e.ValidationSummary)
+                .IsRequired()
+                .HasMaxLength(320);
+
+            modelBuilder.Entity<SourceAcquisitionRun>()
+                .HasIndex(e => new { e.SourceProfileId, e.StartedAtUtc });
+
+            modelBuilder.Entity<SourceAcquisitionRun>()
+                .Property(e => e.ProfileKey)
+                .IsRequired()
+                .HasMaxLength(96);
+
+            modelBuilder.Entity<SourceAcquisitionRun>()
+                .Property(e => e.ProfileLabel)
+                .IsRequired()
+                .HasMaxLength(140);
+
+            modelBuilder.Entity<SourceAcquisitionRun>()
+                .Property(e => e.ProviderKey)
+                .IsRequired()
+                .HasMaxLength(180);
+
+            modelBuilder.Entity<SourceAcquisitionRun>()
+                .Property(e => e.RoutingSummary)
+                .IsRequired()
+                .HasMaxLength(240);
+
+            modelBuilder.Entity<SourceAcquisitionRun>()
+                .Property(e => e.ValidationRoutingSummary)
+                .IsRequired()
+                .HasMaxLength(240);
+
+            modelBuilder.Entity<SourceAcquisitionRun>()
+                .Property(e => e.Message)
+                .IsRequired()
+                .HasMaxLength(420);
+
+            modelBuilder.Entity<SourceAcquisitionRun>()
+                .Property(e => e.CatalogSummary)
+                .IsRequired()
+                .HasMaxLength(280);
+
+            modelBuilder.Entity<SourceAcquisitionRun>()
+                .Property(e => e.GuideSummary)
+                .IsRequired()
+                .HasMaxLength(280);
+
+            modelBuilder.Entity<SourceAcquisitionRun>()
+                .Property(e => e.ValidationSummary)
+                .IsRequired()
+                .HasMaxLength(320);
+
+            modelBuilder.Entity<SourceAcquisitionRun>()
+                .HasOne<SourceProfile>()
+                .WithMany()
+                .HasForeignKey(e => e.SourceProfileId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<SourceAcquisitionEvidence>()
+                .HasIndex(e => new { e.SourceAcquisitionRunId, e.SortOrder });
+
+            modelBuilder.Entity<SourceAcquisitionEvidence>()
+                .Property(e => e.RuleCode)
+                .IsRequired()
+                .HasMaxLength(96);
+
+            modelBuilder.Entity<SourceAcquisitionEvidence>()
+                .Property(e => e.Reason)
+                .IsRequired()
+                .HasMaxLength(320);
+
+            modelBuilder.Entity<SourceAcquisitionEvidence>()
+                .Property(e => e.RawName)
+                .IsRequired()
+                .HasMaxLength(220);
+
+            modelBuilder.Entity<SourceAcquisitionEvidence>()
+                .Property(e => e.RawCategory)
+                .IsRequired()
+                .HasMaxLength(220);
+
+            modelBuilder.Entity<SourceAcquisitionEvidence>()
+                .Property(e => e.NormalizedName)
+                .IsRequired()
+                .HasMaxLength(220);
+
+            modelBuilder.Entity<SourceAcquisitionEvidence>()
+                .Property(e => e.NormalizedCategory)
+                .IsRequired()
+                .HasMaxLength(220);
+
+            modelBuilder.Entity<SourceAcquisitionEvidence>()
+                .Property(e => e.IdentityKey)
+                .IsRequired()
+                .HasMaxLength(220);
+
+            modelBuilder.Entity<SourceAcquisitionEvidence>()
+                .Property(e => e.AliasKeys)
+                .IsRequired()
+                .HasMaxLength(1600);
+
+            modelBuilder.Entity<SourceAcquisitionEvidence>()
+                .Property(e => e.MatchedValue)
+                .IsRequired()
+                .HasMaxLength(220);
+
+            modelBuilder.Entity<SourceAcquisitionEvidence>()
+                .Property(e => e.MatchedTarget)
+                .IsRequired()
+                .HasMaxLength(220);
+
+            modelBuilder.Entity<SourceAcquisitionEvidence>()
+                .HasOne(evidence => evidence.Run)
+                .WithMany(run => run.Evidence)
+                .HasForeignKey(evidence => evidence.SourceAcquisitionRunId)
                 .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<SourceHealthReport>()

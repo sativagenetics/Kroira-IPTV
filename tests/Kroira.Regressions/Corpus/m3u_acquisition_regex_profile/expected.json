@@ -1,0 +1,486 @@
+{
+  "Sources": [
+    {
+      "Key": "m3u-acquisition",
+      "Name": "Fixture M3U Acquisition",
+      "Type": "M3U",
+      "Refresh": {
+        "Success": true,
+        "Trigger": "InitialImport",
+        "Scope": "Full",
+        "Message": "Playlist import completed. Guide sync completed.",
+        "CatalogSummary": "Playlist import completed.",
+        "GuideSummary": "Guide sync completed.",
+        "GuideAttempted": true,
+        "GuideSucceeded": true
+      },
+      "Credential": {
+        "Url": "[fixture-server]/playlist.m3u",
+        "DetectedEpgUrl": "[fixture-server]/guide.xml",
+        "ManualEpgUrl": "",
+        "EpgMode": "Detected",
+        "M3uImportMode": "LiveMoviesAndSeries",
+        "ProxyScope": "Disabled",
+        "ProxyUrl": ""
+      },
+      "SyncState": {
+        "HttpStatusCode": 200,
+        "ErrorLog": "Parsed 2 channels, 1 movies, 0 episodes across 0 series. Mode: LiveMoviesAndSeries. Uncategorized=0, pseudo_rejected=1, xmltv_found=yes.",
+        "AutoRefreshState": "Disabled",
+        "AutoRefreshSummary": "Automatic refresh is turned off.",
+        "AutoRefreshFailureCount": 0
+      },
+      "Counts": {
+        "Channels": 2,
+        "Movies": 1,
+        "Series": 0,
+        "Seasons": 0,
+        "Episodes": 0,
+        "EpgPrograms": 2
+      },
+      "AcquisitionProfile": {
+        "ProfileKey": "kroira.m3u.balanced",
+        "ProfileLabel": "KROIRA M3U Balanced",
+        "ProviderKey": "127.0.0.1",
+        "NormalizationSummary": "Playlist titles, ids, and group labels normalize into stable identities while keeping provider values intact.",
+        "MatchingSummary": "Guide matching prefers provider ids, then normalized aliases, regex-safe aliases, and bounded fuzzy fallback.",
+        "SuppressionSummary": "Provider buckets, promotional rows, garbage labels, and unsafe adult or bundle groups are suppressed.",
+        "ValidationSummary": "Bounded live and VOD probing stays routing-aware and preserves last-known-good operational recovery paths.",
+        "SupportsRegexMatching": true,
+        "PreferProxyDuringValidation": false,
+        "PreferLastKnownGoodRollback": true
+      },
+      "AcquisitionRun": {
+        "Trigger": "InitialImport",
+        "Scope": "Full",
+        "Status": "Succeeded",
+        "ProfileKey": "kroira.m3u.balanced",
+        "ProfileLabel": "KROIRA M3U Balanced",
+        "ProviderKey": "127.0.0.1",
+        "RoutingSummary": "Direct routing",
+        "ValidationRoutingSummary": "Direct routing",
+        "Message": "Playlist import completed. Guide sync completed.",
+        "CatalogSummary": "Playlist import completed.",
+        "GuideSummary": "Guide sync completed.",
+        "ValidationSummary": "Component health found serious source problems (39/100). 0 invalid playable items and 1 suspicious entries make the catalog unreliable. VOD data is unreliable across 1 items and needs review. VOD probe reached 1/1 sampled items.",
+        "RawItemCount": 4,
+        "AcceptedCount": 3,
+        "SuppressedCount": 0,
+        "DemotedCount": 1,
+        "MatchedCount": 1,
+        "UnmatchedCount": 1,
+        "LiveCount": 2,
+        "MovieCount": 1,
+        "SeriesCount": 0,
+        "EpisodeCount": 0,
+        "AliasMatchCount": 0,
+        "RegexMatchCount": 1,
+        "FuzzyMatchCount": 0,
+        "ProbeSuccessCount": 2,
+        "ProbeFailureCount": 1,
+        "WarningCount": 6,
+        "ErrorCount": 0
+      },
+      "Health": {
+        "State": "Problematic",
+        "Score": 39,
+        "StatusSummary": "Source needs attention before it can be trusted. 0 invalid playable items and 1 suspicious entries make the catalog unreliable. VOD data is unreliable across 1 items and needs review. VOD probe reached 1/1 sampled items.",
+        "ImportResultSummary": "Parsed 2 channels, 1 movies, 0 episodes across 0 series. Mode: LiveMoviesAndSeries. Uncategorized=0, pseudo_rejected=1, xmltv_found=yes.",
+        "ValidationSummary": "Component health found serious source problems (39/100). 0 invalid playable items and 1 suspicious entries make the catalog unreliable. VOD data is unreliable across 1 items and needs review. VOD probe reached 1/1 sampled items.",
+        "TopIssueSummary": "1 titles or categories look like placeholders, promo rows, or other low-confidence content. 1 of 2 live channels match guide data.",
+        "DuplicateCount": 0,
+        "InvalidStreamCount": 0,
+        "ChannelsWithEpgMatchCount": 1,
+        "ChannelsWithLogoCount": 1,
+        "SuspiciousEntryCount": 1,
+        "WarningCount": 3,
+        "ErrorCount": 0,
+        "Components": [
+          {
+            "Type": "Catalog",
+            "State": "Problematic",
+            "Score": 39,
+            "Summary": "0 invalid playable items and 1 suspicious entries make the catalog unreliable.",
+            "RelevantCount": 3,
+            "HealthyCount": 2,
+            "IssueCount": 1
+          },
+          {
+            "Type": "Live",
+            "State": "Weak",
+            "Score": 78,
+            "Summary": "Live catalog is present across 2 channels. Live probe reached 1/2 sampled items and missed 1. 1 HTTP failure.",
+            "RelevantCount": 2,
+            "HealthyCount": 2,
+            "IssueCount": 1
+          },
+          {
+            "Type": "Vod",
+            "State": "Problematic",
+            "Score": 39,
+            "Summary": "VOD data is unreliable across 1 items and needs review. VOD probe reached 1/1 sampled items.",
+            "RelevantCount": 1,
+            "HealthyCount": 0,
+            "IssueCount": 1
+          },
+          {
+            "Type": "Epg",
+            "State": "Incomplete",
+            "Score": 64,
+            "Summary": "Guide coverage is too thin across the 2 live channels. 1 channels rely on fallback matching.",
+            "RelevantCount": 2,
+            "HealthyCount": 1,
+            "IssueCount": 1
+          },
+          {
+            "Type": "Logos",
+            "State": "Incomplete",
+            "Score": 64,
+            "Summary": "Many live channels are still missing logos (1/2). Coverage is driven by safe fallback logos.",
+            "RelevantCount": 2,
+            "HealthyCount": 1,
+            "IssueCount": 1
+          },
+          {
+            "Type": "Freshness",
+            "State": "Healthy",
+            "Score": 100,
+            "Summary": "Last successful sync was [timestamp].",
+            "RelevantCount": 1,
+            "HealthyCount": 1,
+            "IssueCount": 0
+          }
+        ],
+        "Probes": [
+          {
+            "Type": "Live",
+            "Status": "Completed",
+            "CandidateCount": 2,
+            "SampleSize": 2,
+            "SuccessCount": 1,
+            "FailureCount": 1,
+            "TimeoutCount": 0,
+            "HttpErrorCount": 1,
+            "TransportErrorCount": 0,
+            "Summary": "Live probe reached 1/2 sampled items and missed 1. 1 HTTP failure."
+          },
+          {
+            "Type": "Vod",
+            "Status": "Completed",
+            "CandidateCount": 1,
+            "SampleSize": 1,
+            "SuccessCount": 1,
+            "FailureCount": 0,
+            "TimeoutCount": 0,
+            "HttpErrorCount": 0,
+            "TransportErrorCount": 0,
+            "Summary": "VOD probe reached 1/1 sampled items."
+          }
+        ],
+        "Issues": [
+          {
+            "Severity": "Warning",
+            "Code": "suspicious_entries",
+            "Title": "Suspicious entries detected",
+            "AffectedCount": 1,
+            "SampleItems": "Single Story S01E01 Pilot"
+          },
+          {
+            "Severity": "Warning",
+            "Code": "guide_partial_coverage",
+            "Title": "Guide coverage is partial",
+            "AffectedCount": 1,
+            "SampleItems": ""
+          },
+          {
+            "Severity": "Info",
+            "Code": "missing_logos",
+            "Title": "Channel branding is thin",
+            "AffectedCount": 1,
+            "SampleItems": ""
+          },
+          {
+            "Severity": "Warning",
+            "Code": "live_probe",
+            "Title": "Live probe found weak reachability",
+            "AffectedCount": 1,
+            "SampleItems": ""
+          }
+        ]
+      },
+      "Epg": {
+        "IsPresent": true,
+        "IsSuccess": true,
+        "Status": "Ready",
+        "ResultCode": "PartialMatch",
+        "FailureStage": "None",
+        "ActiveMode": "Detected",
+        "ActiveXmltvUrl": "[fixture-server]/guide.xml",
+        "MatchedChannelCount": 1,
+        "UnmatchedChannelCount": 1,
+        "CurrentCoverageCount": 1,
+        "NextCoverageCount": 1,
+        "TotalLiveChannelCount": 2,
+        "ProgrammeCount": 2,
+        "MatchBreakdown": "provider_id=0; reused=0; normalized=0; alias=0; regex=1; fuzzy=0; unmatched=1",
+        "FailureReason": ""
+      },
+      "Channels": [
+        {
+          "Category": "Mystery",
+          "Name": "Shadow Pop Up",
+          "StreamUrl": "[fixture-server]/probe/live/shadow-down.m3u8",
+          "ProviderEpgChannelId": "",
+          "EpgChannelId": "",
+          "ProviderLogoUrl": "",
+          "LogoUrl": "",
+          "NormalizedIdentityKey": "name:shadowpopup",
+          "AliasKeys": "shadowpopup",
+          "EpgMatchSource": "None",
+          "EpgMatchConfidence": 0,
+          "EpgMatchSummary": "",
+          "LogoSource": "None",
+          "LogoConfidence": 0,
+          "LogoSummary": "",
+          "SupportsCatchup": false,
+          "CatchupWindowHours": 0,
+          "CatchupSource": "None",
+          "CatchupConfidence": 0,
+          "CatchupSummary": "No clear provider catchup signal was detected."
+        },
+        {
+          "Category": "Sports",
+          "Name": "A Spor Plus Feed",
+          "StreamUrl": "[fixture-server]/probe/live/aspor-feed.m3u8",
+          "ProviderEpgChannelId": "",
+          "EpgChannelId": "asporplus.tr",
+          "ProviderLogoUrl": "",
+          "LogoUrl": "[fixture-server]/logos/xmltv/aspor.png",
+          "NormalizedIdentityKey": "name:asporplusfeed",
+          "AliasKeys": "asporplusfeed",
+          "EpgMatchSource": "Regex",
+          "EpgMatchConfidence": 74,
+          "EpgMatchSummary": "Regex-safe alias matching resolved XMLTV channel A Spor Plus.",
+          "LogoSource": "Xmltv",
+          "LogoConfidence": 0,
+          "LogoSummary": "Logo recovered from the matched XMLTV channel A Spor Plus using regex-safe alias fallback.",
+          "SupportsCatchup": false,
+          "CatchupWindowHours": 0,
+          "CatchupSource": "None",
+          "CatchupConfidence": 0,
+          "CatchupSummary": "No clear provider catchup signal was detected."
+        }
+      ],
+      "Movies": [
+        {
+          "Title": "Single Story S01E01 Pilot",
+          "RawTitle": "Single Story S01E01 Pilot",
+          "CategoryName": "Series",
+          "ContentKind": "Primary",
+          "CanonicalTitleKey": "single story s01e01 pilot",
+          "DedupFingerprint": "movie:source:Primary:1:url:[fixture-server]/probe/vod/single-story.mp4",
+          "StreamUrl": "[fixture-server]/probe/vod/single-story.mp4"
+        }
+      ],
+      "Series": [],
+      "Enrichment": [
+        {
+          "IdentityKey": "name:asporplusfeed",
+          "NormalizedName": "a spor plus feed",
+          "AliasKeys": "asporplusfeed",
+          "MatchedXmltvChannelId": "asporplus.tr",
+          "MatchedXmltvDisplayName": "A Spor Plus",
+          "ResolvedLogoUrl": "[fixture-server]/logos/xmltv/aspor.png",
+          "EpgMatchSource": "Regex",
+          "EpgMatchConfidence": 74,
+          "LogoSource": "Xmltv",
+          "LogoConfidence": 0
+        },
+        {
+          "IdentityKey": "name:shadowpopup",
+          "NormalizedName": "shadow pop up",
+          "AliasKeys": "shadowpopup",
+          "MatchedXmltvChannelId": "",
+          "MatchedXmltvDisplayName": "",
+          "ResolvedLogoUrl": "",
+          "EpgMatchSource": "None",
+          "EpgMatchConfidence": 0,
+          "LogoSource": "None",
+          "LogoConfidence": 0
+        }
+      ],
+      "AcquisitionEvidence": [
+        {
+          "Stage": "Acquire",
+          "Outcome": "Demoted",
+          "ItemKind": "Episode",
+          "RuleCode": "acquire.m3u.series_group_low_confidence",
+          "Reason": "Series grouping did not have enough stable episode evidence, so the row was demoted to a movie.",
+          "RawName": "Single Story S01E01 Pilot",
+          "NormalizedName": "Single Story",
+          "MatchedTarget": "",
+          "Confidence": 0
+        },
+        {
+          "Stage": "GuideMatch",
+          "Outcome": "Matched",
+          "ItemKind": "LiveChannel",
+          "RuleCode": "epg.regex_alias",
+          "Reason": "Regex-safe alias matched \u0027A Spor Plus\u0027 using pattern \u0027spor plus\u0027.",
+          "RawName": "A Spor Plus Feed",
+          "NormalizedName": "a spor plus feed",
+          "MatchedTarget": "A Spor Plus",
+          "Confidence": 74
+        },
+        {
+          "Stage": "GuideMatch",
+          "Outcome": "Unmatched",
+          "ItemKind": "LiveChannel",
+          "RuleCode": "epg.unmatched.channel",
+          "Reason": "No XMLTV alias, regex, or fuzzy candidate matched the normalized channel identity.",
+          "RawName": "Shadow Pop Up",
+          "NormalizedName": "shadow pop up",
+          "MatchedTarget": "",
+          "Confidence": 0
+        },
+        {
+          "Stage": "Validation",
+          "Outcome": "Warning",
+          "ItemKind": "Probe",
+          "RuleCode": "validation.probe.live",
+          "Reason": "Live probe reached 1/2 sampled items and missed 1. 1 HTTP failure.",
+          "RawName": "Live",
+          "NormalizedName": "",
+          "MatchedTarget": "",
+          "Confidence": 75
+        },
+        {
+          "Stage": "Validation",
+          "Outcome": "Matched",
+          "ItemKind": "Probe",
+          "RuleCode": "validation.probe.vod",
+          "Reason": "VOD probe reached 1/1 sampled items.",
+          "RawName": "Vod",
+          "NormalizedName": "",
+          "MatchedTarget": "",
+          "Confidence": 100
+        },
+        {
+          "Stage": "Validation",
+          "Outcome": "Warning",
+          "ItemKind": "Source",
+          "RuleCode": "suspicious_entries",
+          "Reason": "1 titles or categories look like placeholders, promo rows, or other low-confidence content.",
+          "RawName": "Suspicious entries detected",
+          "NormalizedName": "",
+          "MatchedTarget": "",
+          "Confidence": 0
+        },
+        {
+          "Stage": "Validation",
+          "Outcome": "Warning",
+          "ItemKind": "Source",
+          "RuleCode": "guide_partial_coverage",
+          "Reason": "1 of 2 live channels match guide data.",
+          "RawName": "Guide coverage is partial",
+          "NormalizedName": "",
+          "MatchedTarget": "",
+          "Confidence": 0
+        },
+        {
+          "Stage": "Validation",
+          "Outcome": "Warning",
+          "ItemKind": "Source",
+          "RuleCode": "live_probe",
+          "Reason": "Live probe reached 1/2 sampled items and missed 1. 1 HTTP failure.",
+          "RawName": "Live probe found weak reachability",
+          "NormalizedName": "",
+          "MatchedTarget": "",
+          "Confidence": 0
+        },
+        {
+          "Stage": "Validation",
+          "Outcome": "Warning",
+          "ItemKind": "Source",
+          "RuleCode": "missing_logos",
+          "Reason": "1 of 2 live channels currently have logos.",
+          "RawName": "Channel branding is thin",
+          "NormalizedName": "",
+          "MatchedTarget": "",
+          "Confidence": 0
+        }
+      ]
+    }
+  ],
+  "OperationalStates": [
+    {
+      "ContentType": "Channel",
+      "LogicalContentKey": "name:asporplusfeed",
+      "CandidateCount": 1,
+      "PreferredSourceName": "Fixture M3U Acquisition",
+      "PreferredTitle": "A Spor Plus Feed",
+      "PreferredScore": 69,
+      "SelectionSummary": "Using Fixture M3U Acquisition. Guide mapped, logo ready.",
+      "RecoveryAction": "None",
+      "RecoverySummary": "",
+      "Candidates": [
+        {
+          "Rank": 1,
+          "SourceName": "Fixture M3U Acquisition",
+          "Title": "A Spor Plus Feed",
+          "Score": 69,
+          "IsSelected": true,
+          "IsLastKnownGood": true,
+          "SupportsProxy": false,
+          "Summary": "Guide mapped, logo ready."
+        }
+      ]
+    },
+    {
+      "ContentType": "Channel",
+      "LogicalContentKey": "name:shadowpopup",
+      "CandidateCount": 1,
+      "PreferredSourceName": "Fixture M3U Acquisition",
+      "PreferredTitle": "Shadow Pop Up",
+      "PreferredScore": 65,
+      "SelectionSummary": "Using Fixture M3U Acquisition. Operationally usable live mirror.",
+      "RecoveryAction": "None",
+      "RecoverySummary": "",
+      "Candidates": [
+        {
+          "Rank": 1,
+          "SourceName": "Fixture M3U Acquisition",
+          "Title": "Shadow Pop Up",
+          "Score": 65,
+          "IsSelected": true,
+          "IsLastKnownGood": true,
+          "SupportsProxy": false,
+          "Summary": "Operationally usable live mirror."
+        }
+      ]
+    },
+    {
+      "ContentType": "Movie",
+      "LogicalContentKey": "movie:source:Primary:1:url:[fixture-server]/probe/vod/single-story.mp4",
+      "CandidateCount": 1,
+      "PreferredSourceName": "Fixture M3U Acquisition",
+      "PreferredTitle": "Single Story S01E01 Pilot",
+      "PreferredScore": 58,
+      "SelectionSummary": "Using Fixture M3U Acquisition. Probe-backed.",
+      "RecoveryAction": "None",
+      "RecoverySummary": "",
+      "Candidates": [
+        {
+          "Rank": 1,
+          "SourceName": "Fixture M3U Acquisition",
+          "Title": "Single Story S01E01 Pilot",
+          "Score": 58,
+          "IsSelected": true,
+          "IsLastKnownGood": true,
+          "SupportsProxy": false,
+          "Summary": "Probe-backed."
+        }
+      ]
+    }
+  ]
+}

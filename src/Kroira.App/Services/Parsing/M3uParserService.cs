@@ -14,7 +14,11 @@ namespace Kroira.App.Services.Parsing
 {
     public interface IM3uParserService
     {
-        Task ParseAndImportM3uAsync(AppDbContext db, int sourceProfileId);
+        Task ParseAndImportM3uAsync(
+            AppDbContext db,
+            int sourceProfileId,
+            SourceAcquisitionSession? acquisitionSession = null,
+            bool refreshHealth = true);
     }
 
     public class M3uParserService : IM3uParserService
@@ -40,7 +44,11 @@ namespace Kroira.App.Services.Parsing
             _sourceRoutingService = sourceRoutingService;
         }
 
-        public async Task ParseAndImportM3uAsync(AppDbContext db, int sourceProfileId)
+        public async Task ParseAndImportM3uAsync(
+            AppDbContext db,
+            int sourceProfileId,
+            SourceAcquisitionSession? acquisitionSession = null,
+            bool refreshHealth = true)
         {
             var cred = await db.SourceCredentials.FirstOrDefaultAsync(c => c.SourceProfileId == sourceProfileId);
             if (cred == null || string.IsNullOrWhiteSpace(cred.Url))
@@ -158,161 +166,201 @@ namespace Kroira.App.Services.Parsing
                 var normalizedExplicitCategoryLabels = explicitCategoryLabels
                     .Select(label => label.Trim().ToLowerInvariant())
                     .ToHashSet(StringComparer.OrdinalIgnoreCase);
+                acquisitionSession?.RegisterRawItems(parsedEntries.Count);
 
-            var categoriesDict = new Dictionary<string, ChannelCategory>(StringComparer.OrdinalIgnoreCase);
-            var movieList = new List<Movie>();
-            var episodeEntries = new List<EpisodeEntry>();
-            var totalChannels = 0;
+                var categoriesDict = new Dictionary<string, ChannelCategory>(StringComparer.OrdinalIgnoreCase);
+                var movieList = new List<Movie>();
+                var episodeEntries = new List<EpisodeEntry>();
+                var totalChannels = 0;
 
-            foreach (var entry in parsedEntries)
-            {
-                if (entry.HadExplicitGroupTitle && IsVodGroupUnsafe(entry.GroupName))
+                foreach (var entry in parsedEntries)
                 {
-                    continue;
-                }
+                    if (entry.HadExplicitGroupTitle && IsVodGroupUnsafe(entry.GroupName))
+                    {
+                        acquisitionSession?.RecordSuppressed(
+                            SourceAcquisitionItemKind.LiveChannel,
+                            "acquire.m3u.unsafe_group",
+                            "Explicit provider group was suppressed by the M3U safety profile.",
+                            entry.Name,
+                            entry.GroupName,
+                            entry.Name,
+                            entry.GroupName);
+                        continue;
+                    }
 
-                if (ContentClassifier.IsGarbageCategoryName(entry.GroupName))
-                {
-                    continue;
-                }
+                    if (ContentClassifier.IsGarbageCategoryName(entry.GroupName))
+                    {
+                        acquisitionSession?.RecordSuppressed(
+                            SourceAcquisitionItemKind.LiveChannel,
+                            "acquire.m3u.garbage_category",
+                            "Provider category label was classified as garbage and ignored.",
+                            entry.Name,
+                            entry.GroupName,
+                            entry.Name,
+                            entry.GroupName);
+                        continue;
+                    }
 
-                if (ContentClassifier.IsGarbageTitle(entry.Name))
-                {
-                    continue;
-                }
+                    if (ContentClassifier.IsGarbageTitle(entry.Name))
+                    {
+                        acquisitionSession?.RecordSuppressed(
+                            SourceAcquisitionItemKind.LiveChannel,
+                            "acquire.m3u.garbage_title",
+                            "Provider title was classified as garbage and ignored.",
+                            entry.Name,
+                            entry.GroupName,
+                            entry.Name,
+                            entry.GroupName);
+                        continue;
+                    }
 
-                if (ContentClassifier.IsProviderCategoryRow(entry.Name, categoryLabels))
-                {
-                    continue;
-                }
+                    if (ContentClassifier.IsProviderCategoryRow(entry.Name, categoryLabels))
+                    {
+                        acquisitionSession?.RecordSuppressed(
+                            SourceAcquisitionItemKind.LiveChannel,
+                            "acquire.m3u.provider_bucket",
+                            "Provider bucket/header row was suppressed before catalog import.",
+                            entry.Name,
+                            entry.GroupName,
+                            entry.Name,
+                            entry.GroupName);
+                        continue;
+                    }
 
-                var entryType = ContentClassifier.ClassifyM3uEntry(
-                    entry.Name,
-                    entry.Url,
-                    entry.GroupName,
-                    entry.TvgType);
+                    var entryType = ContentClassifier.ClassifyM3uEntry(
+                        entry.Name,
+                        entry.Url,
+                        entry.GroupName,
+                        entry.TvgType);
 
-                switch (entryType)
-                {
-                    case ContentClassifier.M3uEntryType.Live:
-                        if (!categoriesDict.TryGetValue(entry.GroupName, out var category))
-                        {
-                            category = new ChannelCategory
+                    switch (entryType)
+                    {
+                        case ContentClassifier.M3uEntryType.Live:
+                            if (!categoriesDict.TryGetValue(entry.GroupName, out var category))
                             {
-                                SourceProfileId = sourceProfileId,
-                                Name = entry.GroupName,
-                                OrderIndex = categoriesDict.Count,
-                                Channels = new List<Channel>()
-                            };
-                            categoriesDict[entry.GroupName] = category;
-                        }
-
-                        var channel = new Channel
-                        {
-                            Name = entry.Name,
-                            StreamUrl = entry.Url,
-                            LogoUrl = entry.LogoUrl,
-                            ProviderLogoUrl = entry.LogoUrl,
-                            EpgChannelId = !string.IsNullOrWhiteSpace(entry.TvgId)
-                                ? entry.TvgId
-                                : entry.TvgName,
-                            ProviderEpgChannelId = !string.IsNullOrWhiteSpace(entry.TvgId)
-                                ? entry.TvgId
-                                : entry.TvgName
-                        };
-                        _channelCatchupService.ApplyM3uCatchup(channel, entry.Attributes);
-                        category.Channels!.Add(channel);
-                        totalChannels++;
-                        break;
-
-                    case ContentClassifier.M3uEntryType.Movie:
-                        if (importMode == M3uImportMode.LiveOnly)
-                        {
-                            break;
-                        }
-
-                        if (ContentClassifier.IsM3uBucketOrAdultLabel(entry.Name))
-                        {
-                            break;
-                        }
-
-                        movieList.Add(BuildMovie(sourceProfileId, entry));
-                        break;
-
-                    case ContentClassifier.M3uEntryType.Episode:
-                        if (importMode != M3uImportMode.LiveMoviesAndSeries)
-                        {
-                            if (importMode == M3uImportMode.LiveAndMovies &&
-                                !ContentClassifier.IsM3uBucketOrAdultLabel(entry.Name))
-                            {
-                                movieList.Add(BuildMovie(sourceProfileId, entry));
+                                category = new ChannelCategory
+                                {
+                                    SourceProfileId = sourceProfileId,
+                                    Name = entry.GroupName,
+                                    OrderIndex = categoriesDict.Count,
+                                    Channels = new List<Channel>()
+                                };
+                                categoriesDict[entry.GroupName] = category;
                             }
 
+                            var channel = new Channel
+                            {
+                                Name = entry.Name,
+                                StreamUrl = entry.Url,
+                                LogoUrl = entry.LogoUrl,
+                                ProviderLogoUrl = entry.LogoUrl,
+                                EpgChannelId = !string.IsNullOrWhiteSpace(entry.TvgId)
+                                    ? entry.TvgId
+                                    : entry.TvgName,
+                                ProviderEpgChannelId = !string.IsNullOrWhiteSpace(entry.TvgId)
+                                    ? entry.TvgId
+                                    : entry.TvgName
+                            };
+                            _channelCatchupService.ApplyM3uCatchup(channel, entry.Attributes);
+                            category.Channels!.Add(channel);
+                            totalChannels++;
                             break;
-                        }
 
-                        var parsed = ContentClassifier.TryParseEpisodeInfo(
-                            entry.Name,
-                            out var seriesTitle,
-                            out var seasonNum,
-                            out var episodeNum,
-                            out var epTitle);
+                        case ContentClassifier.M3uEntryType.Movie:
+                            if (importMode == M3uImportMode.LiveOnly)
+                            {
+                                break;
+                            }
 
-                        var cleanedSeriesTitle = ContentClassifier.CleanSeriesBaseTitle(seriesTitle);
-
-                        if (!parsed ||
-                            string.IsNullOrWhiteSpace(cleanedSeriesTitle) ||
-                            cleanedSeriesTitle.Length < 2 ||
-                            IsTitleAmbiguouslyCategory(
-                                cleanedSeriesTitle,
-                                entry.HadExplicitGroupTitle ? entry.GroupName : string.Empty,
-                                normalizedExplicitCategoryLabels) ||
-                            ContentClassifier.IsM3uBucketOrAdultLabel(cleanedSeriesTitle))
-                        {
                             if (!ContentClassifier.IsM3uBucketOrAdultLabel(entry.Name))
                             {
                                 movieList.Add(BuildMovie(sourceProfileId, entry));
                             }
-
                             break;
-                        }
 
-                        episodeEntries.Add(new EpisodeEntry
-                        {
-                            GroupName = entry.GroupName,
-                            Name = entry.Name,
-                            Url = entry.Url,
-                            LogoUrl = entry.LogoUrl,
-                            TvgType = entry.TvgType,
-                            SeriesTitle = cleanedSeriesTitle,
-                            GroupingKey = ContentClassifier.ComputeSeriesGroupingKey(cleanedSeriesTitle),
-                            SeasonNumber = seasonNum > 0 ? seasonNum : 1,
-                            EpisodeNumber = episodeNum,
-                            EpisodeTitle = epTitle,
-                            HasStrongMarker = ContentClassifier.HasStrongEpisodeMarker(entry.Name),
-                            HadExplicitGroupTitle = entry.HadExplicitGroupTitle
-                        });
-                        break;
+                        case ContentClassifier.M3uEntryType.Episode:
+                            if (importMode != M3uImportMode.LiveMoviesAndSeries)
+                            {
+                                if (importMode == M3uImportMode.LiveAndMovies &&
+                                    !ContentClassifier.IsM3uBucketOrAdultLabel(entry.Name))
+                                {
+                                    movieList.Add(BuildMovie(sourceProfileId, entry));
+                                }
+
+                                break;
+                            }
+
+                            var parsed = ContentClassifier.TryParseEpisodeInfo(
+                                entry.Name,
+                                out var seriesTitle,
+                                out var seasonNum,
+                                out var episodeNum,
+                                out var epTitle);
+
+                            var cleanedSeriesTitle = ContentClassifier.CleanSeriesBaseTitle(seriesTitle);
+
+                            if (!parsed ||
+                                string.IsNullOrWhiteSpace(cleanedSeriesTitle) ||
+                                cleanedSeriesTitle.Length < 2 ||
+                                IsTitleAmbiguouslyCategory(
+                                    cleanedSeriesTitle,
+                                    entry.HadExplicitGroupTitle ? entry.GroupName : string.Empty,
+                                    normalizedExplicitCategoryLabels) ||
+                                ContentClassifier.IsM3uBucketOrAdultLabel(cleanedSeriesTitle))
+                            {
+                                acquisitionSession?.RecordDemotion(
+                                    "acquire.m3u.episode_demoted",
+                                    "Episode metadata could not produce a stable series grouping, so the row was kept as a movie.",
+                                    entry.Name,
+                                    entry.GroupName,
+                                    entry.Name,
+                                    entry.GroupName);
+
+                                if (!ContentClassifier.IsM3uBucketOrAdultLabel(entry.Name))
+                                {
+                                    movieList.Add(BuildMovie(sourceProfileId, entry));
+                                }
+
+                                break;
+                            }
+
+                            episodeEntries.Add(new EpisodeEntry
+                            {
+                                GroupName = entry.GroupName,
+                                Name = entry.Name,
+                                Url = entry.Url,
+                                LogoUrl = entry.LogoUrl,
+                                TvgType = entry.TvgType,
+                                SeriesTitle = cleanedSeriesTitle,
+                                GroupingKey = ContentClassifier.ComputeSeriesGroupingKey(cleanedSeriesTitle),
+                                SeasonNumber = seasonNum > 0 ? seasonNum : 1,
+                                EpisodeNumber = episodeNum,
+                                EpisodeTitle = epTitle,
+                                HasStrongMarker = ContentClassifier.HasStrongEpisodeMarker(entry.Name),
+                                HadExplicitGroupTitle = entry.HadExplicitGroupTitle
+                            });
+                            break;
+                    }
                 }
-            }
 
-            var (seriesList, demotedToMovies) = BuildSeriesList(
-                sourceProfileId,
-                episodeEntries,
-                normalizedExplicitCategoryLabels,
-                _catalogNormalizationService);
-            movieList.AddRange(demotedToMovies);
+                var (seriesList, demotedToMovies) = BuildSeriesList(
+                    sourceProfileId,
+                    episodeEntries,
+                    normalizedExplicitCategoryLabels,
+                    _catalogNormalizationService,
+                    acquisitionSession);
+                movieList.AddRange(demotedToMovies);
 
-            var totalMovies = movieList.Count;
-            var totalSeries = seriesList.Count;
-            var totalEpisodes = seriesList.Sum(series => series.Seasons?.Sum(season => season.Episodes?.Count ?? 0) ?? 0);
-            var uncategorizedCount = GetUncategorizedCount(categoriesDict, movieList, seriesList);
+                var totalMovies = movieList.Count;
+                var totalSeries = seriesList.Count;
+                var totalEpisodes = seriesList.Sum(series => series.Seasons?.Sum(season => season.Episodes?.Count ?? 0) ?? 0);
+                var uncategorizedCount = GetUncategorizedCount(categoriesDict, movieList, seriesList);
 
-            diagnostics.LiveCount = totalChannels;
-            diagnostics.MovieCount = totalMovies;
-            diagnostics.SeriesCount = totalSeries;
-            diagnostics.UncategorizedCount = uncategorizedCount;
-            LogImportDiagnostics(sourceProfileId, diagnostics);
+                diagnostics.LiveCount = totalChannels;
+                diagnostics.MovieCount = totalMovies;
+                diagnostics.SeriesCount = totalSeries;
+                diagnostics.UncategorizedCount = uncategorizedCount;
+                LogImportDiagnostics(sourceProfileId, diagnostics);
 
                 using var transaction = await db.Database.BeginTransactionAsync();
                 try
@@ -366,11 +414,19 @@ namespace Kroira.App.Services.Parsing
                     }
 
                     await db.SaveChangesAsync();
-                    await _sourceEnrichmentService.PrepareLiveCatalogAsync(db, sourceProfileId);
+                    await _sourceEnrichmentService.PrepareLiveCatalogAsync(db, sourceProfileId, acquisitionSession);
                     await transaction.CommitAsync();
 
+                    acquisitionSession?.RegisterAccepted(SourceAcquisitionItemKind.LiveChannel, totalChannels);
+                    acquisitionSession?.RegisterAccepted(SourceAcquisitionItemKind.Movie, totalMovies);
+                    acquisitionSession?.RegisterAccepted(SourceAcquisitionItemKind.Series, totalSeries);
+                    acquisitionSession?.RegisterAccepted(SourceAcquisitionItemKind.Episode, totalEpisodes);
+
                     await LogPersistedDiagnosticsAsync(sourceProfileId, db, totalChannels, totalMovies, totalSeries);
-                    await _sourceHealthService.RefreshSourceHealthAsync(db, sourceProfileId);
+                    if (refreshHealth)
+                    {
+                        await _sourceHealthService.RefreshSourceHealthAsync(db, sourceProfileId, acquisitionSession);
+                    }
                 }
                 catch
                 {
@@ -389,7 +445,10 @@ namespace Kroira.App.Services.Parsing
                     await db.SaveChangesAsync();
                 }
 
-                await _sourceHealthService.RefreshSourceHealthAsync(db, sourceProfileId);
+                if (refreshHealth)
+                {
+                    await _sourceHealthService.RefreshSourceHealthAsync(db, sourceProfileId, acquisitionSession);
+                }
                 throw;
             }
         }
@@ -478,7 +537,8 @@ namespace Kroira.App.Services.Parsing
             int sourceProfileId,
             List<EpisodeEntry> entries,
             HashSet<string> normalizedCategoryLabels,
-            ICatalogNormalizationService catalogNormalizationService)
+            ICatalogNormalizationService catalogNormalizationService,
+            SourceAcquisitionSession? acquisitionSession)
         {
             var seriesResult = new List<Series>();
             var demoted = new List<Movie>();
@@ -499,6 +559,13 @@ namespace Kroira.App.Services.Parsing
                 {
                     foreach (var episode in items)
                     {
+                        acquisitionSession?.RecordDemotion(
+                            "acquire.m3u.series_group_invalid",
+                            "Episode grouping collapsed into a category-like or unsafe title, so the row was demoted to a movie.",
+                            episode.Name,
+                            episode.GroupName,
+                            episode.SeriesTitle,
+                            episode.GroupName);
                         demoted.Add(DemoteEpisodeToMovie(sourceProfileId, episode, catalogNormalizationService));
                     }
 
@@ -519,6 +586,13 @@ namespace Kroira.App.Services.Parsing
                 {
                     foreach (var episode in items)
                     {
+                        acquisitionSession?.RecordDemotion(
+                            "acquire.m3u.series_group_low_confidence",
+                            "Series grouping did not have enough stable episode evidence, so the row was demoted to a movie.",
+                            episode.Name,
+                            episode.GroupName,
+                            episode.SeriesTitle,
+                            episode.GroupName);
                         demoted.Add(DemoteEpisodeToMovie(sourceProfileId, episode, catalogNormalizationService));
                     }
 

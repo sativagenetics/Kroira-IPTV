@@ -52,10 +52,20 @@ namespace Kroira.App.ViewModels
         public string AutoRefreshSummaryText { get; set; } = string.Empty;
         public string NextAutoRefreshText { get; set; } = string.Empty;
         public string LastAutoRefreshText { get; set; } = string.Empty;
+        public string AcquisitionProfileText { get; set; } = string.Empty;
+        public string AcquisitionRuleSummaryText { get; set; } = string.Empty;
+        public string AcquisitionRunStatusText { get; set; } = string.Empty;
+        public StatusPillKind AcquisitionRunPillKind { get; set; } = StatusPillKind.Neutral;
+        public string AcquisitionRunSummaryText { get; set; } = string.Empty;
+        public string AcquisitionRunMessageText { get; set; } = string.Empty;
+        public string AcquisitionStatsText { get; set; } = string.Empty;
+        public string AcquisitionRoutingText { get; set; } = string.Empty;
+        public string AcquisitionLastRunText { get; set; } = string.Empty;
         public string OperationalStatusText { get; set; } = string.Empty;
         public string ProxyStatusText { get; set; } = "Direct routing";
         public IReadOnlyList<SourceHealthComponentItemViewModel> HealthComponents { get; set; } = Array.Empty<SourceHealthComponentItemViewModel>();
         public IReadOnlyList<SourceIssueItemViewModel> HealthIssues { get; set; } = Array.Empty<SourceIssueItemViewModel>();
+        public IReadOnlyList<SourceAcquisitionEvidenceItemViewModel> AcquisitionEvidence { get; set; } = Array.Empty<SourceAcquisitionEvidenceItemViewModel>();
         public int ImportWarningCount { get; set; }
         public int GuideWarningCount { get; set; }
 
@@ -213,6 +223,34 @@ namespace Kroira.App.ViewModels
             ? Microsoft.UI.Xaml.Visibility.Visible
             : Microsoft.UI.Xaml.Visibility.Collapsed;
 
+        public Microsoft.UI.Xaml.Visibility AcquisitionProfileVisibility => string.IsNullOrWhiteSpace(AcquisitionProfileText)
+            ? Microsoft.UI.Xaml.Visibility.Collapsed
+            : Microsoft.UI.Xaml.Visibility.Visible;
+
+        public Microsoft.UI.Xaml.Visibility AcquisitionRuleSummaryVisibility => string.IsNullOrWhiteSpace(AcquisitionRuleSummaryText)
+            ? Microsoft.UI.Xaml.Visibility.Collapsed
+            : Microsoft.UI.Xaml.Visibility.Visible;
+
+        public Microsoft.UI.Xaml.Visibility AcquisitionRunSummaryVisibility => string.IsNullOrWhiteSpace(AcquisitionRunSummaryText)
+            ? Microsoft.UI.Xaml.Visibility.Collapsed
+            : Microsoft.UI.Xaml.Visibility.Visible;
+
+        public Microsoft.UI.Xaml.Visibility AcquisitionRunMessageVisibility => string.IsNullOrWhiteSpace(AcquisitionRunMessageText)
+            ? Microsoft.UI.Xaml.Visibility.Collapsed
+            : Microsoft.UI.Xaml.Visibility.Visible;
+
+        public Microsoft.UI.Xaml.Visibility AcquisitionStatsVisibility => string.IsNullOrWhiteSpace(AcquisitionStatsText)
+            ? Microsoft.UI.Xaml.Visibility.Collapsed
+            : Microsoft.UI.Xaml.Visibility.Visible;
+
+        public Microsoft.UI.Xaml.Visibility AcquisitionRoutingVisibility => string.IsNullOrWhiteSpace(AcquisitionRoutingText)
+            ? Microsoft.UI.Xaml.Visibility.Collapsed
+            : Microsoft.UI.Xaml.Visibility.Visible;
+
+        public Microsoft.UI.Xaml.Visibility AcquisitionEvidenceVisibility => AcquisitionEvidence.Count > 0
+            ? Microsoft.UI.Xaml.Visibility.Visible
+            : Microsoft.UI.Xaml.Visibility.Collapsed;
+
         partial void OnHealthLabelChanged(string value)
         {
             OnPropertyChanged(nameof(HealthyVisibility));
@@ -236,6 +274,14 @@ namespace Kroira.App.ViewModels
         public string Summary { get; set; } = string.Empty;
         public string PillLabel { get; set; } = string.Empty;
         public StatusPillKind PillKind { get; set; } = StatusPillKind.Standby;
+    }
+
+    public sealed class SourceAcquisitionEvidenceItemViewModel
+    {
+        public string Label { get; set; } = string.Empty;
+        public string Detail { get; set; } = string.Empty;
+        public string PillLabel { get; set; } = string.Empty;
+        public StatusPillKind PillKind { get; set; } = StatusPillKind.Neutral;
     }
 
     public sealed class SourceRecentActivityItemViewModel
@@ -508,16 +554,25 @@ namespace Kroira.App.ViewModels
                     GuideStatusSummaryText = snapshot.EpgStatusSummary,
                     GuideModeText = snapshot.ActiveEpgModeText,
                     GuideUrlText = snapshot.EpgUrlSummaryText,
-                      GuideMatchText = snapshot.MatchBreakdownText,
-                      AutoRefreshStatusText = snapshot.AutoRefreshStatusText,
-                      AutoRefreshSummaryText = snapshot.AutoRefreshSummaryText,
-                      NextAutoRefreshText = snapshot.NextAutoRefreshText,
-                      LastAutoRefreshText = snapshot.LastAutoRefreshText,
-                      OperationalStatusText = snapshot.OperationalStatusText,
-                      ProxyStatusText = snapshot.ProxyStatusText,
-                      HealthComponents = snapshot.HealthComponents
-                          .Select(component => new SourceHealthComponentItemViewModel
-                          {
+                    GuideMatchText = snapshot.MatchBreakdownText,
+                    AutoRefreshStatusText = snapshot.AutoRefreshStatusText,
+                    AutoRefreshSummaryText = snapshot.AutoRefreshSummaryText,
+                    NextAutoRefreshText = snapshot.NextAutoRefreshText,
+                    LastAutoRefreshText = snapshot.LastAutoRefreshText,
+                    AcquisitionProfileText = BuildAcquisitionProfileText(snapshot),
+                    AcquisitionRuleSummaryText = BuildAcquisitionRuleSummary(snapshot),
+                    AcquisitionRunStatusText = snapshot.AcquisitionRunStatusText,
+                    AcquisitionRunPillKind = MapAcquisitionRunPillKind(snapshot),
+                    AcquisitionRunSummaryText = snapshot.AcquisitionRunSummaryText,
+                    AcquisitionRunMessageText = snapshot.AcquisitionRunMessageText,
+                    AcquisitionStatsText = snapshot.AcquisitionStatsText,
+                    AcquisitionRoutingText = BuildAcquisitionRoutingText(snapshot),
+                    AcquisitionLastRunText = snapshot.AcquisitionLastRunText,
+                    OperationalStatusText = snapshot.OperationalStatusText,
+                    ProxyStatusText = snapshot.ProxyStatusText,
+                    HealthComponents = snapshot.HealthComponents
+                        .Select(component => new SourceHealthComponentItemViewModel
+                        {
                             Label = SourceHealthDisplay.GetComponentLabel(component.ComponentType),
                             Summary = component.Summary,
                             PillLabel = BuildComponentPillLabel(component, snapshot.HealthProbes),
@@ -531,6 +586,15 @@ namespace Kroira.App.ViewModels
                             Title = issue.Title,
                             Message = issue.Message,
                             SeverityKind = MapIssuePillKind(issue.Severity)
+                        })
+                        .ToList(),
+                    AcquisitionEvidence = snapshot.AcquisitionEvidence
+                        .Select(evidence => new SourceAcquisitionEvidenceItemViewModel
+                        {
+                            Label = evidence.RuleCode,
+                            Detail = BuildAcquisitionEvidenceDetail(evidence),
+                            PillLabel = $"{evidence.Stage} | {evidence.Outcome}",
+                            PillKind = MapAcquisitionEvidencePillKind(evidence.Outcome)
                         })
                         .ToList(),
                     ImportWarningCount = snapshot.ImportWarningCount,
@@ -826,6 +890,108 @@ namespace Kroira.App.ViewModels
                 EpgStatus.UnavailableNoXmltv => StatusPillKind.Info,
                 _ => StatusPillKind.Standby
             };
+        }
+
+        private static string BuildAcquisitionProfileText(SourceDiagnosticsSnapshot snapshot)
+        {
+            if (string.IsNullOrWhiteSpace(snapshot.AcquisitionProfileLabel))
+            {
+                return string.Empty;
+            }
+
+            return string.IsNullOrWhiteSpace(snapshot.AcquisitionProviderKey)
+                ? $"{snapshot.AcquisitionProfileLabel} ({snapshot.AcquisitionProfileKey})"
+                : $"{snapshot.AcquisitionProfileLabel} ({snapshot.AcquisitionProfileKey}) - {snapshot.AcquisitionProviderKey}";
+        }
+
+        private static string BuildAcquisitionRuleSummary(SourceDiagnosticsSnapshot snapshot)
+        {
+            var parts = new[]
+            {
+                snapshot.AcquisitionNormalizationSummary,
+                snapshot.AcquisitionMatchingSummary,
+                snapshot.AcquisitionSuppressionSummary,
+                snapshot.AcquisitionValidationProfileSummary
+            }
+            .Where(value => !string.IsNullOrWhiteSpace(value))
+            .Take(2)
+            .ToList();
+
+            return parts.Count == 0 ? string.Empty : string.Join(" ", parts);
+        }
+
+        private static StatusPillKind MapAcquisitionRunPillKind(SourceDiagnosticsSnapshot snapshot)
+        {
+            return snapshot.AcquisitionRunStatusText switch
+            {
+                "Succeeded" => StatusPillKind.Healthy,
+                "Partial" => StatusPillKind.Warning,
+                "Failed" => StatusPillKind.Failed,
+                "Running" => StatusPillKind.Syncing,
+                "Backfilled" => StatusPillKind.Info,
+                _ => StatusPillKind.Standby
+            };
+        }
+
+        private static string BuildAcquisitionRoutingText(SourceDiagnosticsSnapshot snapshot)
+        {
+            var segments = new List<string>();
+            if (!string.IsNullOrWhiteSpace(snapshot.AcquisitionRoutingText))
+            {
+                segments.Add($"Import path: {snapshot.AcquisitionRoutingText}");
+            }
+
+            if (!string.IsNullOrWhiteSpace(snapshot.AcquisitionValidationRoutingText))
+            {
+                segments.Add($"Validation path: {snapshot.AcquisitionValidationRoutingText}");
+            }
+
+            if (!string.IsNullOrWhiteSpace(snapshot.AcquisitionLastRunText) &&
+                !string.Equals(snapshot.AcquisitionLastRunText, "Never", StringComparison.OrdinalIgnoreCase))
+            {
+                segments.Add($"Last run: {snapshot.AcquisitionLastRunText}");
+            }
+
+            return segments.Count == 0 ? string.Empty : string.Join(" ", segments);
+        }
+
+        private static StatusPillKind MapAcquisitionEvidencePillKind(SourceAcquisitionOutcome outcome)
+        {
+            return outcome switch
+            {
+                SourceAcquisitionOutcome.Matched => StatusPillKind.Healthy,
+                SourceAcquisitionOutcome.Suppressed or SourceAcquisitionOutcome.Demoted or SourceAcquisitionOutcome.Unmatched or SourceAcquisitionOutcome.Warning => StatusPillKind.Warning,
+                SourceAcquisitionOutcome.Failure => StatusPillKind.Failed,
+                SourceAcquisitionOutcome.Backfilled => StatusPillKind.Info,
+                _ => StatusPillKind.Neutral
+            };
+        }
+
+        private static string BuildAcquisitionEvidenceDetail(SourceDiagnosticsEvidenceSnapshot evidence)
+        {
+            var detail = evidence.Reason;
+
+            if (!string.IsNullOrWhiteSpace(evidence.RawName))
+            {
+                detail = $"{detail} Raw: {evidence.RawName}.";
+            }
+
+            if (!string.IsNullOrWhiteSpace(evidence.NormalizedName))
+            {
+                detail = $"{detail} Normalized: {evidence.NormalizedName}.";
+            }
+
+            if (!string.IsNullOrWhiteSpace(evidence.MatchedTarget))
+            {
+                detail = $"{detail} Target: {evidence.MatchedTarget}.";
+            }
+
+            if (evidence.Confidence > 0)
+            {
+                detail = $"{detail} Confidence {evidence.Confidence}.";
+            }
+
+            return detail;
         }
 
         [RelayCommand]

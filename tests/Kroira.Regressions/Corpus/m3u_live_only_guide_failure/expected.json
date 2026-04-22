@@ -38,6 +38,49 @@
         "Episodes": 0,
         "EpgPrograms": 0
       },
+      "AcquisitionProfile": {
+        "ProfileKey": "kroira.m3u.balanced",
+        "ProfileLabel": "KROIRA M3U Balanced",
+        "ProviderKey": "127.0.0.1",
+        "NormalizationSummary": "Playlist titles, ids, and group labels normalize into stable identities while keeping provider values intact.",
+        "MatchingSummary": "Guide matching prefers provider ids, then normalized aliases, regex-safe aliases, and bounded fuzzy fallback.",
+        "SuppressionSummary": "Provider buckets, promotional rows, garbage labels, and unsafe adult or bundle groups are suppressed.",
+        "ValidationSummary": "Bounded live and VOD probing stays routing-aware and preserves last-known-good operational recovery paths.",
+        "SupportsRegexMatching": true,
+        "PreferProxyDuringValidation": false,
+        "PreferLastKnownGoodRollback": true
+      },
+      "AcquisitionRun": {
+        "Trigger": "InitialImport",
+        "Scope": "Full",
+        "Status": "Partial",
+        "ProfileKey": "kroira.m3u.balanced",
+        "ProfileLabel": "KROIRA M3U Balanced",
+        "ProviderKey": "127.0.0.1",
+        "RoutingSummary": "Direct routing",
+        "ValidationRoutingSummary": "Direct routing",
+        "Message": "Playlist import completed. Guide sync failed: Failed to sync XMLTV EPG: Discovered 1 XMLTV URL candidate(s) for the M3U source, but none returned usable XMLTV. last_error=XMLTV URL did not return XMLTV content.",
+        "CatalogSummary": "Playlist import completed.",
+        "GuideSummary": "Guide sync failed: Failed to sync XMLTV EPG: Discovered 1 XMLTV URL candidate(s) for the M3U source, but none returned usable XMLTV. last_error=XMLTV URL did not return XMLTV content.",
+        "ValidationSummary": "Component health shows missing core coverage (64/100). Guide refresh failed before any usable coverage was stored. Many live channels are still missing logos (0/2).",
+        "RawItemCount": 2,
+        "AcceptedCount": 2,
+        "SuppressedCount": 0,
+        "DemotedCount": 0,
+        "MatchedCount": 0,
+        "UnmatchedCount": 0,
+        "LiveCount": 2,
+        "MovieCount": 0,
+        "SeriesCount": 0,
+        "EpisodeCount": 0,
+        "AliasMatchCount": 0,
+        "RegexMatchCount": 0,
+        "FuzzyMatchCount": 0,
+        "ProbeSuccessCount": 0,
+        "ProbeFailureCount": 0,
+        "WarningCount": 1,
+        "ErrorCount": 1
+      },
       "Health": {
         "State": "Incomplete",
         "Score": 64,
@@ -240,6 +283,52 @@
           "EpgMatchConfidence": 0,
           "LogoSource": "None",
           "LogoConfidence": 0
+        }
+      ],
+      "AcquisitionEvidence": [
+        {
+          "Stage": "Validation",
+          "Outcome": "Matched",
+          "ItemKind": "Probe",
+          "RuleCode": "validation.probe.live",
+          "Reason": "Live health is currently structure-only because no HTTP sample was available for probing.",
+          "RawName": "Live",
+          "NormalizedName": "",
+          "MatchedTarget": "",
+          "Confidence": 100
+        },
+        {
+          "Stage": "Validation",
+          "Outcome": "Matched",
+          "ItemKind": "Probe",
+          "RuleCode": "validation.probe.vod",
+          "Reason": "VOD probing is not applicable because VOD import is disabled for this playlist.",
+          "RawName": "Vod",
+          "NormalizedName": "",
+          "MatchedTarget": "",
+          "Confidence": 100
+        },
+        {
+          "Stage": "Validation",
+          "Outcome": "Failure",
+          "ItemKind": "Source",
+          "RuleCode": "guide_failed",
+          "Reason": "Guide validation failed before any usable live-channel coverage was stored.",
+          "RawName": "Guide refresh failed",
+          "NormalizedName": "",
+          "MatchedTarget": "",
+          "Confidence": 0
+        },
+        {
+          "Stage": "Validation",
+          "Outcome": "Warning",
+          "ItemKind": "Source",
+          "RuleCode": "missing_logos",
+          "Reason": "0 of 2 live channels currently have logos.",
+          "RawName": "Channel branding is thin",
+          "NormalizedName": "",
+          "MatchedTarget": "",
+          "Confidence": 0
         }
       ]
     }

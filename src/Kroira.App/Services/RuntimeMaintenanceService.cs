@@ -32,6 +32,7 @@ namespace Kroira.App.Services
             {
                 var db = services.GetRequiredService<AppDbContext>();
                 var profileStateService = services.GetRequiredService<IProfileStateService>();
+                var acquisitionService = services.GetRequiredService<ISourceAcquisitionService>();
                 var browsePreferencesService = services.GetRequiredService<IBrowsePreferencesService>();
                 var logicalCatalogStateService = services.GetRequiredService<ILogicalCatalogStateService>();
                 var contentOperationalService = services.GetRequiredService<IContentOperationalService>();
@@ -41,6 +42,7 @@ namespace Kroira.App.Services
                 await CleanupOrphanedRowsAsync(db, cancellationToken);
                 cancellationToken.ThrowIfCancellationRequested();
 
+                await acquisitionService.BackfillAsync(db, cancellationToken: cancellationToken);
                 await autoRefreshService.RepairRuntimeStateAsync(db);
                 await browsePreferencesService.RepairSourceReferencesAsync(db);
                 await logicalCatalogStateService.ReconcilePersistentStateAsync(db);
@@ -59,12 +61,14 @@ namespace Kroira.App.Services
             {
                 var db = services.GetRequiredService<AppDbContext>();
                 var profileStateService = services.GetRequiredService<IProfileStateService>();
+                var acquisitionService = services.GetRequiredService<ISourceAcquisitionService>();
                 var browsePreferencesService = services.GetRequiredService<IBrowsePreferencesService>();
                 var contentOperationalService = services.GetRequiredService<IContentOperationalService>();
                 var sourceHealthService = services.GetRequiredService<ISourceHealthService>();
 
                 await profileStateService.GetActiveProfileAsync(db);
                 await CleanupOrphanedRowsAsync(db, cancellationToken);
+                await acquisitionService.BackfillAsync(db, cancellationToken: cancellationToken);
                 await browsePreferencesService.RepairSourceReferencesAsync(db);
 
                 var sourcesToRefresh = await FindSourcesNeedingHealthRepairAsync(db, cancellationToken);
@@ -263,6 +267,12 @@ namespace Kroira.App.Services
             var orphanSyncStates = await db.SourceSyncStates
                 .Where(state => !sourceIds.Contains(state.SourceProfileId))
                 .ToListAsync(cancellationToken);
+            var orphanAcquisitionProfiles = await db.SourceAcquisitionProfiles
+                .Where(profile => !sourceIds.Contains(profile.SourceProfileId))
+                .ToListAsync(cancellationToken);
+            var orphanAcquisitionRuns = await db.SourceAcquisitionRuns
+                .Where(run => !sourceIds.Contains(run.SourceProfileId))
+                .ToListAsync(cancellationToken);
             var orphanCredentials = await db.SourceCredentials
                 .Where(credential => !sourceIds.Contains(credential.SourceProfileId))
                 .ToListAsync(cancellationToken);
@@ -288,6 +298,13 @@ namespace Kroira.App.Services
             var orphanEnrichment = await db.SourceChannelEnrichmentRecords
                 .Where(record => !sourceIds.Contains(record.SourceProfileId))
                 .ToListAsync(cancellationToken);
+            var acquisitionRunIds = await db.SourceAcquisitionRuns
+                .AsNoTracking()
+                .Select(run => run.Id)
+                .ToListAsync(cancellationToken);
+            var orphanAcquisitionEvidence = await db.SourceAcquisitionEvidence
+                .Where(evidence => !acquisitionRunIds.Contains(evidence.SourceAcquisitionRunId))
+                .ToListAsync(cancellationToken);
             var operationalStateIds = await db.LogicalOperationalStates
                 .AsNoTracking()
                 .Select(state => state.Id)
@@ -308,6 +325,8 @@ namespace Kroira.App.Services
                 orphanProgress.Count == 0 &&
                 orphanControls.Count == 0 &&
                 orphanSyncStates.Count == 0 &&
+                orphanAcquisitionProfiles.Count == 0 &&
+                orphanAcquisitionRuns.Count == 0 &&
                 orphanCredentials.Count == 0 &&
                 orphanEpgLogs.Count == 0 &&
                 orphanHealthReports.Count == 0 &&
@@ -315,6 +334,7 @@ namespace Kroira.App.Services
                 orphanHealthProbes.Count == 0 &&
                 orphanHealthIssues.Count == 0 &&
                 orphanEnrichment.Count == 0 &&
+                orphanAcquisitionEvidence.Count == 0 &&
                 orphanOperationalCandidates.Count == 0 &&
                 orphanOperationalStates.Count == 0)
             {
@@ -325,6 +345,9 @@ namespace Kroira.App.Services
             db.PlaybackProgresses.RemoveRange(orphanProgress);
             db.ParentalControlSettings.RemoveRange(orphanControls);
             db.SourceSyncStates.RemoveRange(orphanSyncStates);
+            db.SourceAcquisitionEvidence.RemoveRange(orphanAcquisitionEvidence);
+            db.SourceAcquisitionRuns.RemoveRange(orphanAcquisitionRuns);
+            db.SourceAcquisitionProfiles.RemoveRange(orphanAcquisitionProfiles);
             db.SourceCredentials.RemoveRange(orphanCredentials);
             db.EpgSyncLogs.RemoveRange(orphanEpgLogs);
             db.SourceHealthComponents.RemoveRange(orphanHealthComponents);
@@ -338,7 +361,7 @@ namespace Kroira.App.Services
             await db.SaveChangesAsync(cancellationToken);
             RuntimeEventLogger.Log(
                 "RUNTIME-MAINT",
-                $"removed orphaned rows: favorites={orphanFavorites.Count}, progress={orphanProgress.Count}, sync={orphanSyncStates.Count}, operational={orphanOperationalCandidates.Count + orphanOperationalStates.Count}");
+                $"removed orphaned rows: favorites={orphanFavorites.Count}, progress={orphanProgress.Count}, sync={orphanSyncStates.Count}, acquisition={orphanAcquisitionProfiles.Count + orphanAcquisitionRuns.Count + orphanAcquisitionEvidence.Count}, operational={orphanOperationalCandidates.Count + orphanOperationalStates.Count}");
         }
     }
 }

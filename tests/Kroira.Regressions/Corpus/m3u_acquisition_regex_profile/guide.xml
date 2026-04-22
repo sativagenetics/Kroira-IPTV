@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tv>
+  <channel id="asporplus.tr">
+    <display-name>A Spor Plus</display-name>
+    <icon src="{{server}}/logos/xmltv/aspor.png" />
+  </channel>
+  <programme start="20260422090000 +0000" stop="20260422110000 +0000" channel="asporplus.tr">
+    <title>Morning Sports</title>
+    <desc>Fixture acquisition guide programme.</desc>
+  </programme>
+  <programme start="20260422110000 +0000" stop="20260422123000 +0000" channel="asporplus.tr">
+    <title>Match Desk</title>
+    <desc>Fixture acquisition guide follow-up.</desc>
+  </programme>
+</tv>
