@@ -1,0 +1,23 @@
+{
+  "id": "release_hardening_surface_loads",
+  "description": "Mixed-catalog browse surfaces still load cleanly after release-hardening changes across live, movies, series, home, and continue watching.",
+  "sources": [
+    {
+      "key": "mixed-source",
+      "name": "Fixture Mixed Source",
+      "type": "M3U",
+      "url": "{{server}}/playlist.m3u",
+      "epgMode": "Detected",
+      "m3uImportMode": "LiveMoviesAndSeries",
+      "refreshTrigger": "InitialImport",
+      "refreshScope": "Full"
+    }
+  ],
+  "surfaceLoads": {
+    "home": true,
+    "liveTv": true,
+    "movies": true,
+    "series": true,
+    "continueWatching": true
+  }
+}

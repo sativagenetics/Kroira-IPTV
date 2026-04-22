@@ -26,7 +26,7 @@ namespace Kroira.App.ViewModels
             IsFavorite = isFavorite;
         }
 
-        public CatalogMovieGroup Group { get; }
+        public CatalogMovieGroup Group { get; private set; }
         public Movie Movie => Group.PreferredMovie;
         public IReadOnlyList<CatalogMovieVariant> Variants => Group.Variants;
         public IReadOnlyList<int> VariantIds => Group.Variants.Select(variant => variant.Movie.Id).ToList();
@@ -56,7 +56,6 @@ namespace Kroira.App.ViewModels
         }
         public string Overview => Movie.Overview;
         public string CategoryName => Movie.CategoryName;
-        public string DisplayCategoryName { get; }
         public double Popularity => Movie.Popularity;
         public double VoteAverage => Movie.VoteAverage;
         public string BackdropUrl => Movie.BackdropUrl;
@@ -65,6 +64,7 @@ namespace Kroira.App.ViewModels
         public string TmdbPosterPath => Movie.TmdbPosterPath;
         public bool HasAlternateSources => Group.Variants.Count > 1;
         public string SourceSummary => Group.SourceSummary;
+        public string DisplayCategoryName { get; private set; }
 
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(FavoriteGlyph))]
@@ -73,16 +73,53 @@ namespace Kroira.App.ViewModels
 
         public string FavoriteGlyph => IsFavorite ? "\uE735" : "\uE734";
         public string FavoriteLabel => IsFavorite ? "Saved" : "Save";
+
+        public void UpdateFrom(CatalogMovieGroup group, bool isFavorite, string displayCategoryName)
+        {
+            Group = group;
+            DisplayCategoryName = displayCategoryName;
+            IsFavorite = isFavorite;
+            RefreshContentState();
+        }
+
+        public void RefreshContentState()
+        {
+            OnPropertyChanged(nameof(Group));
+            OnPropertyChanged(nameof(Movie));
+            OnPropertyChanged(nameof(Variants));
+            OnPropertyChanged(nameof(VariantIds));
+            OnPropertyChanged(nameof(GroupKey));
+            OnPropertyChanged(nameof(Id));
+            OnPropertyChanged(nameof(Title));
+            OnPropertyChanged(nameof(StreamUrl));
+            OnPropertyChanged(nameof(DisplayPosterUrl));
+            OnPropertyChanged(nameof(DisplayHeroArtworkUrl));
+            OnPropertyChanged(nameof(RatingText));
+            OnPropertyChanged(nameof(MetadataLine));
+            OnPropertyChanged(nameof(Overview));
+            OnPropertyChanged(nameof(CategoryName));
+            OnPropertyChanged(nameof(DisplayCategoryName));
+            OnPropertyChanged(nameof(Popularity));
+            OnPropertyChanged(nameof(VoteAverage));
+            OnPropertyChanged(nameof(BackdropUrl));
+            OnPropertyChanged(nameof(TmdbBackdropPath));
+            OnPropertyChanged(nameof(PosterUrl));
+            OnPropertyChanged(nameof(TmdbPosterPath));
+            OnPropertyChanged(nameof(HasAlternateSources));
+            OnPropertyChanged(nameof(SourceSummary));
+        }
     }
 
     public partial class MovieBrowseSlotViewModel : ObservableObject
     {
         public MovieBrowseSlotViewModel(MovieBrowseItemViewModel? movie)
         {
-            Movie = movie;
+            _movie = movie;
         }
 
-        public MovieBrowseItemViewModel? Movie { get; }
+        private MovieBrowseItemViewModel? _movie;
+
+        public MovieBrowseItemViewModel? Movie => _movie;
         public bool HasMovie => Movie != null;
         public int Id => Movie?.Id ?? 0;
         public string Title => Movie?.Title ?? string.Empty;
@@ -99,6 +136,44 @@ namespace Kroira.App.ViewModels
             OnPropertyChanged(nameof(FavoriteGlyph));
             OnPropertyChanged(nameof(FavoriteLabel));
         }
+
+        public bool Matches(MovieBrowseSlotViewModel other)
+        {
+            return Matches(other.Movie);
+        }
+
+        public bool Matches(MovieBrowseItemViewModel? movie)
+        {
+            if (!HasMovie && movie == null)
+            {
+                return true;
+            }
+
+            return HasMovie &&
+                   movie != null &&
+                   string.Equals(Movie?.GroupKey, movie.GroupKey, StringComparison.OrdinalIgnoreCase);
+        }
+
+        public void UpdateFrom(MovieBrowseItemViewModel? movie)
+        {
+            _movie = movie;
+            RefreshMovieState();
+        }
+
+        public void RefreshMovieState()
+        {
+            OnPropertyChanged(nameof(Movie));
+            OnPropertyChanged(nameof(HasMovie));
+            OnPropertyChanged(nameof(Id));
+            OnPropertyChanged(nameof(Title));
+            OnPropertyChanged(nameof(DisplayPosterUrl));
+            OnPropertyChanged(nameof(RatingText));
+            OnPropertyChanged(nameof(MetadataLine));
+            OnPropertyChanged(nameof(FavoriteGlyph));
+            OnPropertyChanged(nameof(FavoriteLabel));
+            OnPropertyChanged(nameof(MovieVisibility));
+            OnPropertyChanged(nameof(PlaceholderVisibility));
+        }
     }
 
     public partial class MoviesViewModel : ObservableObject
@@ -107,6 +182,7 @@ namespace Kroira.App.ViewModels
         private const string FixedFeaturedMovieTitle = "Kurtlar Vadisi Gladio";
         private const int BrowseGridColumns = 5;
         private const int InitialDisplayMovieSlotBatchSize = BrowseGridColumns * 2;
+        private const int SearchApplyDebounceMilliseconds = 180;
         private readonly IServiceProvider _serviceProvider;
         private readonly IBrowsePreferencesService _browsePreferencesService;
         private readonly ICatalogDiscoveryService _catalogDiscoveryService;
@@ -132,6 +208,7 @@ namespace Kroira.App.ViewModels
         private bool _preferStagedFirstPaint;
         private string _pendingApplyFilterReason = string.Empty;
         private int _movieSlotRefreshVersion;
+        private int _searchApplyRequestVersion;
         private Stopwatch? _activeLoadStopwatch;
         private Task _displayMovieSlotRefreshTask = Task.CompletedTask;
 
@@ -213,7 +290,7 @@ namespace Kroira.App.ViewModels
         partial void OnSearchQueryChanged(string value)
         {
             LogBrowse($"search changed query='{value}'");
-            ApplyFilter("search-query-changed");
+            QueueSearchApplyFilter(value);
         }
 
         partial void OnSelectedCategoryChanged(BrowserCategoryViewModel? value)
@@ -470,6 +547,11 @@ namespace Kroira.App.ViewModels
 
         private void ApplyFilter(string reason = "direct")
         {
+            if (!string.Equals(reason, "search-query-changed", StringComparison.Ordinal))
+            {
+                System.Threading.Interlocked.Increment(ref _searchApplyRequestVersion);
+            }
+
             if (_isApplyingFilter)
             {
                 _pendingApplyFilter = true;
@@ -497,6 +579,25 @@ namespace Kroira.App.ViewModels
             }
         }
 
+        private void QueueSearchApplyFilter(string query)
+        {
+            var requestVersion = System.Threading.Interlocked.Increment(ref _searchApplyRequestVersion);
+            LogBrowse($"search apply queued request={requestVersion} query='{query}'");
+            _ = ApplySearchFilterAsync(requestVersion);
+        }
+
+        private async Task ApplySearchFilterAsync(int requestVersion)
+        {
+            await Task.Delay(SearchApplyDebounceMilliseconds);
+            if (requestVersion != _searchApplyRequestVersion)
+            {
+                LogBrowse($"search apply skipped stale request={requestVersion}");
+                return;
+            }
+
+            ApplyFilter("search-query-changed");
+        }
+
         private void ApplyFilterCore(string reason)
         {
             string currentCategoryKey = SelectedCategory?.FilterKey ?? string.Empty;
@@ -521,12 +622,7 @@ namespace Kroira.App.ViewModels
                 _isInitializing = false;
             }
 
-            _filteredMovies = filteredResults
-                .Select(result => new MovieBrowseItemViewModel(
-                    result.Group,
-                    IsMovieGroupFavorite(result.Group),
-                    result.DisplayCategoryName))
-                .ToList();
+            PatchFilteredMovies(filteredResults);
             OnPropertyChanged(nameof(FilteredMovies));
             OnPropertyChanged(nameof(FilteredMovieCount));
 
@@ -812,7 +908,11 @@ namespace Kroira.App.ViewModels
         {
             if (_filteredMovies.Count == 0)
             {
-                DisplayMovieSlots.ReplaceAll(Array.Empty<MovieBrowseSlotViewModel>());
+                var emptyPatch = DisplayMovieSlots.PatchToMatch(
+                    Array.Empty<MovieBrowseSlotViewModel>(),
+                    static (existing, incoming) => existing.Matches(incoming),
+                    static (existing, incoming) => existing.UpdateFrom(incoming.Movie));
+                LogBrowse($"slot patch reason={reason} reused={emptyPatch.ReusedCount} inserted={emptyPatch.InsertedCount} removed={emptyPatch.RemovedCount} moved={emptyPatch.MovedCount}");
                 return;
             }
 
@@ -822,7 +922,11 @@ namespace Kroira.App.ViewModels
                 var slots = BuildMovieSlots(_filteredMovies);
                 if (!prioritizeFirstPaint || slots.Count <= InitialDisplayMovieSlotBatchSize)
                 {
-                    DisplayMovieSlots.ReplaceAll(slots);
+                    var patch = DisplayMovieSlots.PatchToMatch(
+                        slots,
+                        static (existing, incoming) => existing.Matches(incoming),
+                        static (existing, incoming) => existing.UpdateFrom(incoming.Movie));
+                    LogBrowse($"slot patch reason={reason} reused={patch.ReusedCount} inserted={patch.InsertedCount} removed={patch.RemovedCount} moved={patch.MovedCount}");
                     if (prioritizeFirstPaint)
                     {
                         LogBrowse(
@@ -834,7 +938,11 @@ namespace Kroira.App.ViewModels
 
                 var initialSlots = slots.Take(InitialDisplayMovieSlotBatchSize).ToList();
                 var deferredSlots = slots.Skip(InitialDisplayMovieSlotBatchSize).ToList();
-                DisplayMovieSlots.ReplaceAll(initialSlots);
+                var initialPatch = DisplayMovieSlots.PatchToMatch(
+                    initialSlots,
+                    static (existing, incoming) => existing.Matches(incoming),
+                    static (existing, incoming) => existing.UpdateFrom(incoming.Movie));
+                LogBrowse($"slot patch reason={reason}:initial reused={initialPatch.ReusedCount} inserted={initialPatch.InsertedCount} removed={initialPatch.RemovedCount} moved={initialPatch.MovedCount}");
                 LogBrowse(
                     $"first content ready ms={_activeLoadStopwatch?.ElapsedMilliseconds ?? -1} reason={reason} visibleSlots={initialSlots.Count}");
 
@@ -866,6 +974,35 @@ namespace Kroira.App.ViewModels
             }
 
             return slots;
+        }
+
+        private void PatchFilteredMovies(IReadOnlyList<FilteredMovieResult> filteredResults)
+        {
+            var existingByGroupKey = _filteredMovies
+                .Where(item => !string.IsNullOrWhiteSpace(item.GroupKey))
+                .GroupBy(item => item.GroupKey, StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(group => group.Key, group => group.First(), StringComparer.OrdinalIgnoreCase);
+            var nextItems = new List<MovieBrowseItemViewModel>(filteredResults.Count);
+            var reusedCount = 0;
+
+            foreach (var result in filteredResults)
+            {
+                if (existingByGroupKey.TryGetValue(result.Group.GroupKey, out var existing))
+                {
+                    existing.UpdateFrom(result.Group, IsMovieGroupFavorite(result.Group), result.DisplayCategoryName);
+                    nextItems.Add(existing);
+                    reusedCount++;
+                    continue;
+                }
+
+                nextItems.Add(new MovieBrowseItemViewModel(
+                    result.Group,
+                    IsMovieGroupFavorite(result.Group),
+                    result.DisplayCategoryName));
+            }
+
+            _filteredMovies = nextItems;
+            LogBrowse($"item patch reused={reusedCount} inserted={Math.Max(nextItems.Count - reusedCount, 0)} total={nextItems.Count}");
         }
 
         private void RefreshFeaturedMovie(IEnumerable<MovieBrowseItemViewModel> filteredMovies)
@@ -971,14 +1108,22 @@ namespace Kroira.App.ViewModels
                 sourceVisibilityOptions.Add(new BrowseSourceVisibilityViewModel(group.Id, group.Name, $"{group.Count:N0} variants", isVisible, OnSourceVisibilityChanged));
             }
 
-            SourceOptions.ReplaceAll(sourceOptions);
-            SourceVisibilityOptions.ReplaceAll(sourceVisibilityOptions);
-            var selectedSourceOption = SourceOptions.FirstOrDefault(option => option.Id == existingSelection) ?? SourceOptions.FirstOrDefault();
             var wasInitializing = _isInitializing;
             _isInitializing = true;
             try
             {
+                var sourcePatch = SourceOptions.PatchToMatch(
+                    sourceOptions,
+                    static (existing, incoming) => existing.Id == incoming.Id,
+                    static (existing, incoming) => existing.UpdateFrom(incoming));
+                var visibilityPatch = SourceVisibilityOptions.PatchToMatch(
+                    sourceVisibilityOptions,
+                    static (existing, incoming) => existing.Id == incoming.Id,
+                    static (existing, incoming) => existing.UpdateFrom(incoming));
+                var selectedSourceOption = SourceOptions.FirstOrDefault(option => option.Id == existingSelection) ?? SourceOptions.FirstOrDefault();
                 SelectedSourceOption = selectedSourceOption;
+                LogBrowse(
+                    $"source options patched reused={sourcePatch.ReusedCount} inserted={sourcePatch.InsertedCount} removed={sourcePatch.RemovedCount}; visibility_reused={visibilityPatch.ReusedCount} visibility_inserted={visibilityPatch.InsertedCount} visibility_removed={visibilityPatch.RemovedCount}");
             }
             finally
             {

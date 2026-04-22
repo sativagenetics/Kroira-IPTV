@@ -94,7 +94,7 @@ namespace Kroira.App.ViewModels
 
         public event EventHandler? ActiveSeriesChanged;
 
-        public CatalogSeriesGroup Group { get; }
+        public CatalogSeriesGroup Group { get; private set; }
         public Series PreferredSeries => Group.PreferredSeries;
         public string GroupKey => Group.GroupKey;
         public Series ActiveSeries => SelectedSourceOption?.Variant.Series ?? PreferredSeries;
@@ -126,7 +126,7 @@ namespace Kroira.App.ViewModels
         }
         public string Overview => string.IsNullOrWhiteSpace(ActiveSeries.Overview) ? PreferredSeries.Overview : ActiveSeries.Overview;
         public string CategoryName => DisplayCategoryName;
-        public string DisplayCategoryName { get; }
+        public string DisplayCategoryName { get; private set; }
         public ICollection<Season>? Seasons => ActiveSeries.Seasons;
         public bool HasAlternateSources => SourceOptions.Count > 1;
         public Visibility SourceSelectionVisibility => HasAlternateSources ? Visibility.Visible : Visibility.Collapsed;
@@ -142,6 +142,46 @@ namespace Kroira.App.ViewModels
 
         public string FavoriteGlyph => IsFavorite ? "\uE735" : "\uE734";
         public string FavoriteLabel => IsFavorite ? "Saved" : "Save";
+
+        public void UpdateFrom(CatalogSeriesGroup group, bool isFavorite, string displayCategoryName)
+        {
+            var selectedVariantId = SelectedSourceOption?.Id;
+            Group = group;
+            DisplayCategoryName = displayCategoryName;
+            IsFavorite = isFavorite;
+
+            SourceOptions.Clear();
+            foreach (var variant in group.Variants)
+            {
+                SourceOptions.Add(new SeriesSourceOptionViewModel(variant));
+            }
+
+            SelectedSourceOption = SourceOptions.FirstOrDefault(option => option.Id == selectedVariantId) ?? SourceOptions.FirstOrDefault();
+            RefreshSeriesState();
+        }
+
+        public void RefreshSeriesState()
+        {
+            OnPropertyChanged(nameof(Group));
+            OnPropertyChanged(nameof(PreferredSeries));
+            OnPropertyChanged(nameof(GroupKey));
+            OnPropertyChanged(nameof(ActiveSeries));
+            OnPropertyChanged(nameof(SourceOptions));
+            OnPropertyChanged(nameof(VariantIds));
+            OnPropertyChanged(nameof(Id));
+            OnPropertyChanged(nameof(Title));
+            OnPropertyChanged(nameof(DisplayPosterUrl));
+            OnPropertyChanged(nameof(DisplayHeroArtworkUrl));
+            OnPropertyChanged(nameof(RatingText));
+            OnPropertyChanged(nameof(MetadataLine));
+            OnPropertyChanged(nameof(Overview));
+            OnPropertyChanged(nameof(CategoryName));
+            OnPropertyChanged(nameof(DisplayCategoryName));
+            OnPropertyChanged(nameof(Seasons));
+            OnPropertyChanged(nameof(HasAlternateSources));
+            OnPropertyChanged(nameof(SourceSelectionVisibility));
+            OnPropertyChanged(nameof(SourceSummary));
+        }
 
         partial void OnSelectedSourceOptionChanged(SeriesSourceOptionViewModel? value)
         {
@@ -159,10 +199,12 @@ namespace Kroira.App.ViewModels
     {
         public SeriesBrowseSlotViewModel(SeriesBrowseItemViewModel? series)
         {
-            Series = series;
+            _series = series;
         }
 
-        public SeriesBrowseItemViewModel? Series { get; }
+        private SeriesBrowseItemViewModel? _series;
+
+        public SeriesBrowseItemViewModel? Series => _series;
         public bool HasSeries => Series != null;
         public int Id => Series?.Id ?? 0;
         public string Title => Series?.Title ?? string.Empty;
@@ -188,6 +230,43 @@ namespace Kroira.App.ViewModels
             OnPropertyChanged(nameof(FavoriteGlyph));
             OnPropertyChanged(nameof(FavoriteLabel));
         }
+
+        public bool Matches(SeriesBrowseSlotViewModel other)
+        {
+            return Matches(other.Series);
+        }
+
+        public bool Matches(SeriesBrowseItemViewModel? series)
+        {
+            if (!HasSeries && series == null)
+            {
+                return true;
+            }
+
+            return HasSeries &&
+                   series != null &&
+                   string.Equals(Series?.GroupKey, series.GroupKey, StringComparison.OrdinalIgnoreCase);
+        }
+
+        public void UpdateFrom(SeriesBrowseItemViewModel? series)
+        {
+            _series = series;
+            RefreshSeriesState();
+        }
+
+        public void RefreshSeriesState()
+        {
+            OnPropertyChanged(nameof(Series));
+            OnPropertyChanged(nameof(HasSeries));
+            OnPropertyChanged(nameof(Id));
+            OnPropertyChanged(nameof(Title));
+            OnPropertyChanged(nameof(DisplayPosterUrl));
+            OnPropertyChanged(nameof(CategoryName));
+            OnPropertyChanged(nameof(FavoriteGlyph));
+            OnPropertyChanged(nameof(FavoriteLabel));
+            OnPropertyChanged(nameof(SeriesVisibility));
+            OnPropertyChanged(nameof(PlaceholderVisibility));
+        }
     }
 
     public partial class SeriesViewModel : ObservableObject
@@ -195,6 +274,7 @@ namespace Kroira.App.ViewModels
         private const string Domain = ProfileDomains.Series;
         private const int BrowseGridColumns = 3;
         private const int InitialDisplaySeriesSlotBatchSize = BrowseGridColumns * 2;
+        private const int SearchApplyDebounceMilliseconds = 180;
         private readonly IServiceProvider _serviceProvider;
         private readonly IBrowsePreferencesService _browsePreferencesService;
         private readonly ICatalogDiscoveryService _catalogDiscoveryService;
@@ -227,6 +307,7 @@ namespace Kroira.App.ViewModels
         private string _pendingApplyFilterReason = string.Empty;
         private bool _preserveSeriesDetailContextOnSelectionChange;
         private int _seriesSlotRefreshVersion;
+        private int _searchApplyRequestVersion;
         private Stopwatch? _activeLoadStopwatch;
         private Task _displaySeriesSlotRefreshTask = Task.CompletedTask;
 
@@ -355,7 +436,7 @@ namespace Kroira.App.ViewModels
         partial void OnSearchQueryChanged(string value)
         {
             LogBrowse($"search changed query='{value}'");
-            ApplyFilter("search-query-changed");
+            QueueSearchApplyFilter(value);
         }
 
         partial void OnSelectedCategoryChanged(BrowserCategoryViewModel? value)
@@ -732,6 +813,11 @@ namespace Kroira.App.ViewModels
 
         private void ApplyFilter(string reason = "direct")
         {
+            if (!string.Equals(reason, "search-query-changed", StringComparison.Ordinal))
+            {
+                System.Threading.Interlocked.Increment(ref _searchApplyRequestVersion);
+            }
+
             if (_isApplyingFilter)
             {
                 _pendingApplyFilter = true;
@@ -793,12 +879,7 @@ namespace Kroira.App.ViewModels
                 _isInitializingBrowsePreferences = false;
             }
 
-            _allSeries = filteredResults
-                .Select(result => new SeriesBrowseItemViewModel(
-                    result.Group,
-                    IsSeriesGroupFavorite(result.Group),
-                    result.DisplayCategoryName))
-                .ToList();
+            PatchFilteredSeriesItems(filteredResults);
 
             _filteredSeries = _allSeries;
             OnPropertyChanged(nameof(FilteredSeries));
@@ -814,7 +895,18 @@ namespace Kroira.App.ViewModels
                 ClearPreferredSeriesDetailContext();
             }
 
-            SelectedSeries = nextSelectedSeries;
+            if (ReferenceEquals(SelectedSeries, nextSelectedSeries) && nextSelectedSeries != null)
+            {
+                _preserveSeriesDetailContextOnSelectionChange = true;
+                nextSelectedSeries.ActiveSeriesChanged -= SelectedSeries_ActiveSeriesChanged;
+                nextSelectedSeries.ActiveSeriesChanged += SelectedSeries_ActiveSeriesChanged;
+                UpdateSelectedSeriesSlotState();
+                _ = EnsureSeriesDetailsAsync(nextSelectedSeries);
+            }
+            else
+            {
+                SelectedSeries = nextSelectedSeries;
+            }
             DiscoverySummaryText = discoveryProjection.SummaryText;
             HasAdvancedFilters = FavoritesOnly ||
                                  HideSecondaryContent ||
@@ -943,7 +1035,11 @@ namespace Kroira.App.ViewModels
         {
             if (_filteredSeries.Count == 0)
             {
-                DisplaySeriesSlots.ReplaceAll(Array.Empty<SeriesBrowseSlotViewModel>());
+                var emptyPatch = DisplaySeriesSlots.PatchToMatch(
+                    Array.Empty<SeriesBrowseSlotViewModel>(),
+                    static (existing, incoming) => existing.Matches(incoming),
+                    static (existing, incoming) => existing.UpdateFrom(incoming.Series));
+                LogBrowse($"slot patch reason={reason} reused={emptyPatch.ReusedCount} inserted={emptyPatch.InsertedCount} removed={emptyPatch.RemovedCount} moved={emptyPatch.MovedCount}");
                 UpdateSelectedSeriesSlotState();
                 return;
             }
@@ -954,7 +1050,11 @@ namespace Kroira.App.ViewModels
                 var slots = BuildSeriesSlots(_filteredSeries);
                 if (!prioritizeFirstPaint || slots.Count <= InitialDisplaySeriesSlotBatchSize)
                 {
-                    DisplaySeriesSlots.ReplaceAll(slots);
+                    var patch = DisplaySeriesSlots.PatchToMatch(
+                        slots,
+                        static (existing, incoming) => existing.Matches(incoming),
+                        static (existing, incoming) => existing.UpdateFrom(incoming.Series));
+                    LogBrowse($"slot patch reason={reason} reused={patch.ReusedCount} inserted={patch.InsertedCount} removed={patch.RemovedCount} moved={patch.MovedCount}");
                     UpdateSelectedSeriesSlotState();
                     if (prioritizeFirstPaint)
                     {
@@ -967,7 +1067,11 @@ namespace Kroira.App.ViewModels
 
                 var initialSlots = slots.Take(InitialDisplaySeriesSlotBatchSize).ToList();
                 var deferredSlots = slots.Skip(InitialDisplaySeriesSlotBatchSize).ToList();
-                DisplaySeriesSlots.ReplaceAll(initialSlots);
+                var initialPatch = DisplaySeriesSlots.PatchToMatch(
+                    initialSlots,
+                    static (existing, incoming) => existing.Matches(incoming),
+                    static (existing, incoming) => existing.UpdateFrom(incoming.Series));
+                LogBrowse($"slot patch reason={reason}:initial reused={initialPatch.ReusedCount} inserted={initialPatch.InsertedCount} removed={initialPatch.RemovedCount} moved={initialPatch.MovedCount}");
                 UpdateSelectedSeriesSlotState();
                 LogBrowse(
                     $"first content ready ms={_activeLoadStopwatch?.ElapsedMilliseconds ?? -1} reason={reason} visibleSlots={initialSlots.Count}");
@@ -1001,6 +1105,35 @@ namespace Kroira.App.ViewModels
             }
 
             return slots;
+        }
+
+        private void PatchFilteredSeriesItems(IReadOnlyList<FilteredSeriesResult> filteredResults)
+        {
+            var existingByGroupKey = _allSeries
+                .Where(item => !string.IsNullOrWhiteSpace(item.GroupKey))
+                .GroupBy(item => item.GroupKey, StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(group => group.Key, group => group.First(), StringComparer.OrdinalIgnoreCase);
+            var nextItems = new List<SeriesBrowseItemViewModel>(filteredResults.Count);
+            var reusedCount = 0;
+
+            foreach (var result in filteredResults)
+            {
+                if (existingByGroupKey.TryGetValue(result.Group.GroupKey, out var existing))
+                {
+                    existing.UpdateFrom(result.Group, IsSeriesGroupFavorite(result.Group), result.DisplayCategoryName);
+                    nextItems.Add(existing);
+                    reusedCount++;
+                    continue;
+                }
+
+                nextItems.Add(new SeriesBrowseItemViewModel(
+                    result.Group,
+                    IsSeriesGroupFavorite(result.Group),
+                    result.DisplayCategoryName));
+            }
+
+            _allSeries = nextItems;
+            LogBrowse($"item patch reused={reusedCount} inserted={Math.Max(nextItems.Count - reusedCount, 0)} total={nextItems.Count}");
         }
 
         private IEnumerable<FilteredSeriesResult> BuildFilteredSeriesResults()
@@ -1149,6 +1282,25 @@ namespace Kroira.App.ViewModels
             {
                 _isInitializingBrowsePreferences = wasInitializing;
             }
+        }
+
+        private void QueueSearchApplyFilter(string query)
+        {
+            var requestVersion = System.Threading.Interlocked.Increment(ref _searchApplyRequestVersion);
+            LogBrowse($"search apply queued request={requestVersion} query='{query}'");
+            _ = ApplySearchFilterAsync(requestVersion);
+        }
+
+        private async Task ApplySearchFilterAsync(int requestVersion)
+        {
+            await Task.Delay(SearchApplyDebounceMilliseconds);
+            if (requestVersion != _searchApplyRequestVersion)
+            {
+                LogBrowse($"search apply skipped stale request={requestVersion}");
+                return;
+            }
+
+            ApplyFilter("search-query-changed");
         }
 
         private static BrowseFacetOptionViewModel ToBrowseFacetOption(CatalogDiscoveryFacetOption option)
@@ -1344,14 +1496,22 @@ namespace Kroira.App.ViewModels
                 sourceVisibilityOptions.Add(new BrowseSourceVisibilityViewModel(group.Id, group.Name, $"{group.Count:N0} variants", isVisible, OnSourceVisibilityChanged));
             }
 
-            SourceOptions.ReplaceAll(sourceOptions);
-            SourceVisibilityOptions.ReplaceAll(sourceVisibilityOptions);
-            var selectedSourceOption = SourceOptions.FirstOrDefault(option => option.Id == existingSelection) ?? SourceOptions.FirstOrDefault();
             var wasInitializingBrowsePreferences = _isInitializingBrowsePreferences;
             _isInitializingBrowsePreferences = true;
             try
             {
+                var sourcePatch = SourceOptions.PatchToMatch(
+                    sourceOptions,
+                    static (existing, incoming) => existing.Id == incoming.Id,
+                    static (existing, incoming) => existing.UpdateFrom(incoming));
+                var visibilityPatch = SourceVisibilityOptions.PatchToMatch(
+                    sourceVisibilityOptions,
+                    static (existing, incoming) => existing.Id == incoming.Id,
+                    static (existing, incoming) => existing.UpdateFrom(incoming));
+                var selectedSourceOption = SourceOptions.FirstOrDefault(option => option.Id == existingSelection) ?? SourceOptions.FirstOrDefault();
                 SelectedSourceOption = selectedSourceOption;
+                LogBrowse(
+                    $"source options patched reused={sourcePatch.ReusedCount} inserted={sourcePatch.InsertedCount} removed={sourcePatch.RemovedCount}; visibility_reused={visibilityPatch.ReusedCount} visibility_inserted={visibilityPatch.InsertedCount} visibility_removed={visibilityPatch.RemovedCount}");
             }
             finally
             {

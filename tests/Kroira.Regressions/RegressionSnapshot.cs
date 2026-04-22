@@ -32,6 +32,9 @@ internal sealed class RegressionSnapshot
     public List<SourceActivityRegressionSnapshot>? SourceActivities { get; set; }
 
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public List<IncrementalPatchRegressionSnapshot>? IncrementalPatches { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public List<SourceSetupValidationRegressionSnapshot>? SetupValidations { get; set; }
 
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
@@ -48,6 +51,12 @@ internal sealed class RegressionSnapshot
 
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public LiveTvSurfaceSnapshot? LiveTv { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public MovieSurfaceSnapshot? Movies { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public SeriesSurfaceSnapshot? Series { get; set; }
 
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public ContinueWatchingSurfaceSnapshot? ContinueWatching { get; set; }
@@ -677,6 +686,31 @@ internal sealed class LiveTvSurfaceSnapshot
     public List<string> ChannelTitles { get; set; } = [];
 }
 
+internal sealed class MovieSurfaceSnapshot
+{
+    public string State { get; set; } = string.Empty;
+    public string Title { get; set; } = string.Empty;
+    public string Message { get; set; } = string.Empty;
+    public int MovieCount { get; set; }
+    public int DisplaySlotCount { get; set; }
+    public string SelectedSourceLabel { get; set; } = string.Empty;
+    public string DiscoverySummary { get; set; } = string.Empty;
+    public List<string> Titles { get; set; } = [];
+}
+
+internal sealed class SeriesSurfaceSnapshot
+{
+    public string State { get; set; } = string.Empty;
+    public string Title { get; set; } = string.Empty;
+    public string Message { get; set; } = string.Empty;
+    public int SeriesCount { get; set; }
+    public int DisplaySlotCount { get; set; }
+    public string SelectedSourceLabel { get; set; } = string.Empty;
+    public string SelectedSeriesTitle { get; set; } = string.Empty;
+    public string DiscoverySummary { get; set; } = string.Empty;
+    public List<string> Titles { get; set; } = [];
+}
+
 internal sealed class ContinueWatchingSurfaceSnapshot
 {
     public string State { get; set; } = string.Empty;
@@ -687,6 +721,22 @@ internal sealed class ContinueWatchingSurfaceSnapshot
     public int MovieCount { get; set; }
     public int SeriesCount { get; set; }
     public List<string> Titles { get; set; } = [];
+}
+
+internal sealed class IncrementalPatchRegressionSnapshot
+{
+    public string Id { get; set; } = string.Empty;
+    public string Surface { get; set; } = string.Empty;
+    public int InitialCount { get; set; }
+    public int ReloadedCount { get; set; }
+    public int ReusedItemCount { get; set; }
+    public int ReusedSlotCount { get; set; }
+    public int ReusedSourceOptionCount { get; set; }
+    public int ReusedSourceVisibilityCount { get; set; }
+    public string FirstTitle { get; set; } = string.Empty;
+    public bool HealthExpandedPreserved { get; set; }
+    public bool RepairExpandedPreserved { get; set; }
+    public bool ActivityExpandedPreserved { get; set; }
 }
 
 internal sealed class LiveBrowsePreferencesSnapshot

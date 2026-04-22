@@ -100,7 +100,7 @@ namespace Kroira.App.Views
         private bool _isLiveTimeshiftActive;
         private DateTime _ignoreLivePlaybackEndedUntilUtc = DateTime.MinValue;
         private long _playbackSessionId;
-        private CancellationTokenSource _playbackSessionCancellation = new();
+        private CancellationTokenSource? _playbackSessionCancellation = new();
         private readonly List<FlyoutBase> _openOverlayFlyouts = new();
         private readonly HashSet<int> _failedMirrorContentIds = new();
         private FlyoutBase _activeUtilityFlyout;
@@ -211,8 +211,16 @@ namespace Kroira.App.Views
 
         private void StartNewPlaybackSession()
         {
+            _teardownStarted = false;
+            _isNavigatingBack = false;
+            _playbackStarted = false;
+            _isStartingPlayback = false;
+            _recoveryInProgress = false;
+            ResetTransientPlaybackPanels(clearChannelSearch: true, restoreFocus: false);
+            ResetResolvedPlaybackUiState();
+            HideZapBanner();
             CancelPlaybackSession();
-            _playbackSessionCancellation.Dispose();
+            DisposePlaybackSessionCancellation();
             _playbackSessionCancellation = new CancellationTokenSource();
             _playbackSessionId = Interlocked.Increment(ref s_nextPlaybackSessionId);
             _switchGeneration = Interlocked.Increment(ref s_nextSwitchGeneration);
@@ -223,6 +231,7 @@ namespace Kroira.App.Views
             _lastStateMessage = _stateMachine.Message;
             _overlayHiddenByInactivity = false;
             _failedMirrorContentIds.Clear();
+            ResetSessionRuntimeState("session_start", 0, clearRetryState: true);
         }
 
         private CancellationToken CurrentPlaybackSessionToken =>
@@ -239,11 +248,39 @@ namespace Kroira.App.Views
             }
         }
 
+        private void DisposePlaybackSessionCancellation()
+        {
+            try
+            {
+                _playbackSessionCancellation?.Dispose();
+            }
+            catch
+            {
+            }
+            finally
+            {
+                _playbackSessionCancellation = null;
+            }
+        }
+
         private bool IsPlaybackSessionActive(long playbackSessionId, CancellationToken cancellationToken)
         {
             return !_teardownStarted &&
                    !cancellationToken.IsCancellationRequested &&
                    playbackSessionId == _playbackSessionId;
+        }
+
+        private bool IsPlaybackContextOperationActive(long playbackSessionId, int switchGeneration, CancellationToken cancellationToken)
+        {
+            return IsPlaybackSessionActive(playbackSessionId, cancellationToken) &&
+                   switchGeneration == _switchGeneration;
+        }
+
+        private int BeginContextSwitch(string reason)
+        {
+            _switchGeneration = Interlocked.Increment(ref s_nextSwitchGeneration);
+            LogStructuredPlayback("context_switch", $"generation={_switchGeneration}; reason={SanitizeForLog(reason)}");
+            return _switchGeneration;
         }
 
         private bool IsCurrentAttempt(int attemptId, long playbackSessionId, CancellationToken cancellationToken)
@@ -380,6 +417,8 @@ namespace Kroira.App.Views
         {
             LogPlaybackState("PAGE: unloaded");
             TeardownPlayback();
+            DisposePageTimerHandlers();
+            _windowManager = null;
         }
 
         private void TeardownPlayback()
@@ -391,8 +430,12 @@ namespace Kroira.App.Views
 
             LogPlaybackState("PAGE: teardown begin");
             _teardownStarted = true;
+            _playbackStarted = false;
+            _isStartingPlayback = false;
+            _activeAttemptId = 0;
             _recoveryInProgress = false;
             CancelPlaybackSession();
+            DisposePlaybackSessionCancellation();
             VideoHost.SizeChanged -= VideoHost_StartSizeChanged;
 
             if (_fullscreenSubscribed && _windowManager != null)
@@ -418,6 +461,10 @@ namespace Kroira.App.Views
                 _zapBannerTimer.Stop();
             }
             _overlayHiddenByInactivity = false;
+            _ignoreSurfaceClickUntilUtc = DateTime.MinValue;
+            ResetInteractionTrackingState("teardown");
+            ResetTransientPlaybackPanels(clearChannelSearch: true, restoreFocus: false);
+            ResetResolvedPlaybackUiState();
             EnsureCursorVisible();
             DismissOverlayFlyoutsForTeardown();
             SetMenuSurfaceInputShield(false, "teardown");
@@ -428,6 +475,8 @@ namespace Kroira.App.Views
                 _ = PersistProgressOnTeardownAsync(_context, _lastPositionMs, _lastDurationMs);
             }
 
+            HideZapBanner();
+            ResetSessionRuntimeState("teardown", 0, clearRetryState: true);
             DetachAndDisposePlayer();
 
             if (_surface != null)
@@ -480,6 +529,91 @@ namespace Kroira.App.Views
                 _progressPersistTimer = new DispatcherTimer { Interval = ProgressPersistInterval };
                 _progressPersistTimer.Tick += ProgressPersistTimer_Tick;
             }
+        }
+
+        private void ResetInteractionTrackingState(string reason)
+        {
+            _isUserSeeking = false;
+            _isUserAdjustingVolume = false;
+            _isOverlayPointerInteractionActive = false;
+            _isPointerOverControls = false;
+            _suppressSliderUpdates = false;
+            _isVolumeSliderUpdating = false;
+            _hasLastPointerPosition = false;
+            _lastPointerPosition = default;
+            _ignorePointerUntilUtc = DateTime.MinValue;
+            _lastPointerTimerRestartUtc = DateTime.MinValue;
+            _ignoreSurfaceClickUntilUtc = DateTime.MinValue;
+            UpdateInteractionState();
+            LogStructuredPlayback("interaction_state_reset", $"reason={SanitizeForLog(reason)}");
+        }
+
+        private void ResetSessionRuntimeState(string reason, long startPositionMs, bool clearRetryState)
+        {
+            ResetInteractionTrackingState(reason);
+            _lastPositionMs = Math.Max(0, startPositionMs);
+            _lastDurationMs = 0;
+            _lastPlayerWarning = string.Empty;
+            _isLiveTimeshiftActive = false;
+            _ignoreLivePlaybackEndedUntilUtc = DateTime.MinValue;
+            if (clearRetryState)
+            {
+                _retryAttempt = 0;
+                _loadTimeoutAttemptId = 0;
+                _bufferTimeoutAttemptId = 0;
+            }
+
+            PositionText.Text = FormatTime(TimeSpan.FromMilliseconds(_lastPositionMs));
+            DurationText.Text = FormatTime(TimeSpan.Zero);
+            _suppressSliderUpdates = true;
+            TimelineSlider.Value = 0;
+            _suppressSliderUpdates = false;
+            LogStructuredPlayback(
+                "session_runtime_reset",
+                $"reason={SanitizeForLog(reason)}; start_position_ms={_lastPositionMs}; clear_retry_state={BoolToLog(clearRetryState)}");
+        }
+
+        private void DisposePageTimerHandlers()
+        {
+            if (_controlsHideTimer != null)
+            {
+                _controlsHideTimer.Stop();
+                _controlsHideTimer.Tick -= ControlsHideTimer_Tick;
+            }
+
+            if (_loadTimeoutTimer != null)
+            {
+                _loadTimeoutTimer.Stop();
+                _loadTimeoutTimer.Tick -= LoadTimeoutTimer_Tick;
+            }
+
+            if (_bufferTimeoutTimer != null)
+            {
+                _bufferTimeoutTimer.Stop();
+                _bufferTimeoutTimer.Tick -= BufferTimeoutTimer_Tick;
+            }
+
+            if (_progressPersistTimer != null)
+            {
+                _progressPersistTimer.Stop();
+                _progressPersistTimer.Tick -= ProgressPersistTimer_Tick;
+            }
+
+            if (_sleepTimer != null)
+            {
+                _sleepTimer.Stop();
+                _sleepTimer.Tick -= SleepTimer_Tick;
+                _sleepTimer = null;
+            }
+
+            if (_zapBannerTimer != null)
+            {
+                _zapBannerTimer.Stop();
+                _zapBannerTimer.Tick -= ZapBannerTimer_Tick;
+                _zapBannerTimer = null;
+            }
+
+            LogStructuredPlayback("page_timers_disposed", "reason=unloaded");
         }
 
         private void ControlsHideTimer_Tick(object sender, object e)
@@ -1488,12 +1622,24 @@ namespace Kroira.App.Views
             }
 
             _isWindowActive = _windowManager.IsWindowActive;
+            LogStructuredPlayback("window_activation", $"active={BoolToLog(_isWindowActive)}");
             if (_isWindowActive)
             {
+                ShowControls(cause: "focus_gained");
                 ResetInactivityTimer("focus_gained");
+                DispatcherQueue.TryEnqueue(() =>
+                {
+                    if (_teardownStarted || !_isWindowActive)
+                    {
+                        return;
+                    }
+
+                    TryFocusPrimaryTarget();
+                });
             }
             else
             {
+                ResetInteractionTrackingState("focus_lost");
                 StopInactivityTimer("focus_lost");
             }
         }
@@ -2992,7 +3138,14 @@ namespace Kroira.App.Views
                 return true;
             }
 
+            var playbackSessionId = _playbackSessionId;
+            var switchGeneration = _switchGeneration;
             var resolution = await ResolveCatchupContextAsync(_context, cancellationToken);
+            if (!IsPlaybackContextOperationActive(playbackSessionId, switchGeneration, cancellationToken))
+            {
+                return false;
+            }
+
             if (resolution.Success)
             {
                 _resolvedRoutingSummary = _context.RoutingSummary;
@@ -3023,6 +3176,7 @@ namespace Kroira.App.Views
 
             var playbackSessionId = _playbackSessionId;
             var cancellationToken = CurrentPlaybackSessionToken;
+            var switchGeneration = BeginContextSwitch($"go_live:{reason}");
 
             if (string.IsNullOrWhiteSpace(_context.LiveStreamUrl))
             {
@@ -3042,6 +3196,11 @@ namespace Kroira.App.Views
                 }
             }
 
+            if (!IsPlaybackContextOperationActive(playbackSessionId, switchGeneration, cancellationToken))
+            {
+                return;
+            }
+
             var liveStreamUrl = string.IsNullOrWhiteSpace(_context.LiveStreamUrl)
                 ? _context.StreamUrl
                 : _context.LiveStreamUrl;
@@ -3052,8 +3211,9 @@ namespace Kroira.App.Views
             }
 
             ResetCatchupContext(_context, liveStreamUrl);
+            ResetResolvedPlaybackUiState();
             await LoadEnhancedPlayerStateAsync(cancellationToken);
-            if (!IsPlaybackSessionActive(playbackSessionId, cancellationToken))
+            if (!IsPlaybackContextOperationActive(playbackSessionId, switchGeneration, cancellationToken))
             {
                 return;
             }
@@ -3072,6 +3232,7 @@ namespace Kroira.App.Views
 
         private static void ResetCatchupContext(PlaybackLaunchContext context, string liveStreamUrl)
         {
+            ResetResolvedTransportState(context);
             context.PlaybackMode = CatchupPlaybackMode.Live;
             context.CatchupRequestKind = CatchupRequestKind.None;
             context.CatchupResolutionStatus = CatchupResolutionStatus.None;
@@ -3083,6 +3244,34 @@ namespace Kroira.App.Views
             context.CatalogStreamUrl = liveStreamUrl;
             context.LiveStreamUrl = liveStreamUrl;
             context.StreamUrl = liveStreamUrl;
+            context.StartPositionMs = 0;
+        }
+
+        private static void ResetResolvedTransportState(PlaybackLaunchContext context)
+        {
+            context.PlaybackMode = CatchupPlaybackMode.Live;
+            context.CatalogStreamUrl = string.Empty;
+            context.UpstreamStreamUrl = string.Empty;
+            context.StreamUrl = string.Empty;
+            context.LiveStreamUrl = string.Empty;
+            context.ProxyScope = SourceProxyScope.Disabled;
+            context.ProxyUrl = string.Empty;
+            context.CompanionScope = SourceCompanionScope.Disabled;
+            context.CompanionMode = SourceCompanionRelayMode.Buffered;
+            context.CompanionUrl = string.Empty;
+            context.CompanionStatus = CompanionRelayStatus.None;
+            context.CompanionStatusText = string.Empty;
+            context.RoutingSummary = string.Empty;
+            context.ProviderSummary = string.Empty;
+            context.OperationalSummary = string.Empty;
+            context.MirrorCandidateCount = 0;
+            context.CatchupRequestKind = CatchupRequestKind.None;
+            context.CatchupResolutionStatus = CatchupResolutionStatus.None;
+            context.CatchupStatusText = string.Empty;
+            context.CatchupProgramTitle = string.Empty;
+            context.CatchupProgramStartTimeUtc = null;
+            context.CatchupProgramEndTimeUtc = null;
+            context.CatchupRequestedAtUtc = null;
             context.StartPositionMs = 0;
         }
     }

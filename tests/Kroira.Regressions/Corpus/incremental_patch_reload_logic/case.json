@@ -1,0 +1,34 @@
+{
+  "id": "incremental_patch_reload_logic",
+  "description": "Reloading browse and source surfaces reuses existing item and card viewmodels instead of rebuilding them cold.",
+  "sources": [
+    {
+      "key": "mixed-source",
+      "name": "Fixture Mixed Source",
+      "type": "M3U",
+      "url": "{{server}}/playlist.m3u",
+      "epgMode": "Detected",
+      "m3uImportMode": "LiveMoviesAndSeries",
+      "refreshTrigger": "InitialImport",
+      "refreshScope": "Full"
+    }
+  ],
+  "incrementalPatchRequests": [
+    {
+      "id": "live-reload",
+      "surface": "live"
+    },
+    {
+      "id": "movies-reload",
+      "surface": "movies"
+    },
+    {
+      "id": "series-reload",
+      "surface": "series"
+    },
+    {
+      "id": "sources-reload",
+      "surface": "sources"
+    }
+  ]
+}

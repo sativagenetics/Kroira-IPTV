@@ -2,6 +2,7 @@ using System;
 using System.Collections.ObjectModel;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -16,6 +17,87 @@ namespace Kroira.App.ViewModels
 {
     public partial class SourceItemViewModel : ObservableObject
     {
+        private static readonly PropertyInfo[] UpdatableProperties = typeof(SourceItemViewModel)
+            .GetProperties(BindingFlags.Instance | BindingFlags.Public)
+            .Where(property => property.CanRead &&
+                               property.CanWrite &&
+                               property.GetIndexParameters().Length == 0 &&
+                               property.Name is not nameof(IsHealthDetailsExpanded) &&
+                               property.Name is not nameof(IsRepairAssistantExpanded) &&
+                               property.Name is not nameof(IsActivityCenterExpanded) &&
+                               property.Name is not nameof(IsEpgSyncing))
+            .ToArray();
+
+        private static readonly string[] DerivedPropertyNames =
+        [
+            nameof(ParseVisibility),
+            nameof(SyncEpgVisibility),
+            nameof(SyncXtreamVisibility),
+            nameof(BrowseVisibility),
+            nameof(PrimarySyncVisibility),
+            nameof(XtreamVodOnlyVisibility),
+            nameof(HealthyVisibility),
+            nameof(DegradedVisibility),
+            nameof(AttentionVisibility),
+            nameof(WorkingVisibility),
+            nameof(IdleVisibility),
+            nameof(EpgHealthVisibility),
+            nameof(EpgConfiguredVisibility),
+            nameof(GuideUrlVisibility),
+            nameof(GuideMatchVisibility),
+            nameof(CatchupStatusVisibility),
+            nameof(CatchupLatestAttemptVisibility),
+            nameof(GuideStatusSummaryVisibility),
+            nameof(AutoRefreshSummaryVisibility),
+            nameof(OperationalStatusVisibility),
+            nameof(ProxyStatusVisibility),
+            nameof(CompanionStatusVisibility),
+            nameof(ParseWarningsVisibility),
+            nameof(NetworkFailureVisibility),
+            nameof(CatalogAssetCount),
+            nameof(GuideCoveragePercent),
+            nameof(GuideCoverageRatioText),
+            nameof(GuideCoverageSecondaryText),
+            nameof(OperationalSummaryText),
+            nameof(QualitySnapshotText),
+            nameof(LogoCoverageText),
+            nameof(ValidationScoreText),
+            nameof(GuideCoverageVisibility),
+            nameof(ValidationVisibility),
+            nameof(HealthComponentsVisibility),
+            nameof(HealthIssuesVisibility),
+            nameof(AcquisitionProfileVisibility),
+            nameof(AcquisitionRuleSummaryVisibility),
+            nameof(AcquisitionRunSummaryVisibility),
+            nameof(AcquisitionRunMessageVisibility),
+            nameof(AcquisitionStatsVisibility),
+            nameof(AcquisitionRoutingVisibility),
+            nameof(AcquisitionEvidenceVisibility),
+            nameof(ActivityHeadlineVisibility),
+            nameof(ActivityTrendVisibility),
+            nameof(ActivityCurrentStateVisibility),
+            nameof(ActivityLatestAttemptVisibility),
+            nameof(ActivityLastSuccessVisibility),
+            nameof(ActivityMetricsVisibility),
+            nameof(ActivityTimelineVisibility),
+            nameof(ActivityQuietStateVisibility),
+            nameof(HasSafeActivityReport),
+            nameof(RepairHeadlineVisibility),
+            nameof(RepairSummaryVisibility),
+            nameof(RepairStatusVisibility),
+            nameof(RepairCapabilitySummaryVisibility),
+            nameof(RepairCapabilitiesVisibility),
+            nameof(RepairIssuesVisibility),
+            nameof(RepairActionsVisibility),
+            nameof(RepairLatestResultVisibility),
+            nameof(RepairLatestResultDetailVisibility),
+            nameof(RepairLatestResultChangeVisibility),
+            nameof(HasSafeRepairReport),
+            nameof(EpgSyncButtonText),
+            nameof(IsEpgSyncEnabled),
+            nameof(CanRunXtreamVodOnly)
+        ];
+
         public int Id { get; set; }
         public string Name { get; set; } = string.Empty;
         public string Type { get; set; } = string.Empty;
@@ -95,6 +177,15 @@ namespace Kroira.App.ViewModels
 
         [ObservableProperty]
         private string _healthLabel = "Saved";
+
+        [ObservableProperty]
+        private bool _isHealthDetailsExpanded;
+
+        [ObservableProperty]
+        private bool _isRepairAssistantExpanded;
+
+        [ObservableProperty]
+        private bool _isActivityCenterExpanded;
 
         public Microsoft.UI.Xaml.Visibility ParseVisibility => Type == "M3U"
             ? Microsoft.UI.Xaml.Visibility.Visible
@@ -274,6 +365,27 @@ namespace Kroira.App.ViewModels
             OnPropertyChanged(nameof(WorkingVisibility));
             OnPropertyChanged(nameof(IdleVisibility));
         }
+
+        public void ApplyFrom(SourceItemViewModel source)
+        {
+            foreach (var property in UpdatableProperties)
+            {
+                var nextValue = property.GetValue(source);
+                var currentValue = property.GetValue(this);
+                if (Equals(currentValue, nextValue))
+                {
+                    continue;
+                }
+
+                property.SetValue(this, nextValue);
+                OnPropertyChanged(property.Name);
+            }
+
+            foreach (var propertyName in DerivedPropertyNames)
+            {
+                OnPropertyChanged(propertyName);
+            }
+        }
     }
 
     public sealed class SourceIssueItemViewModel
@@ -329,7 +441,7 @@ namespace Kroira.App.ViewModels
         private readonly IServiceProvider _serviceProvider;
         private List<SourceItemViewModel> _allSources = new();
 
-        public ObservableCollection<SourceItemViewModel> Sources { get; } = new();
+        public BulkObservableCollection<SourceItemViewModel> Sources { get; } = new();
         public ObservableCollection<SourceRecentActivityItemViewModel> RecentActivities { get; } = new();
 
         [ObservableProperty]
@@ -490,6 +602,9 @@ namespace Kroira.App.ViewModels
             var diagnosticsService = scope.ServiceProvider.GetRequiredService<ISourceDiagnosticsService>();
             var activityService = scope.ServiceProvider.GetRequiredService<ISourceActivityService>();
             var guidanceService = scope.ServiceProvider.GetRequiredService<ISourceGuidanceService>();
+            var existingById = _allSources
+                .GroupBy(source => source.Id)
+                .ToDictionary(group => group.Key, group => group.First());
 
             var profiles = await db.SourceProfiles
                 .AsNoTracking()
@@ -555,8 +670,7 @@ namespace Kroira.App.ViewModels
                     IsStable = true
                 };
                 _repairResults.TryGetValue(profile.Id, out var repairExecutionResult);
-
-                loadedSources.Add(new SourceItemViewModel
+                var snapshotItem = new SourceItemViewModel
                 {
                     Id = profile.Id,
                     Name = profile.Name,
@@ -690,7 +804,8 @@ namespace Kroira.App.ViewModels
                             : StatusPillKind.Warning,
                     ImportWarningCount = snapshot.ImportWarningCount,
                     GuideWarningCount = snapshot.GuideWarningCount
-                });
+                };
+                loadedSources.Add(ReuseOrCreateSourceItem(existingById, snapshotItem));
             }
 
             _allSources = loadedSources;
@@ -765,8 +880,6 @@ namespace Kroira.App.ViewModels
 
         private void ApplySourceFilter()
         {
-            Sources.Clear();
-
             IEnumerable<SourceItemViewModel> filtered = _allSources;
             if (!string.IsNullOrWhiteSpace(SearchText))
             {
@@ -794,10 +907,9 @@ namespace Kroira.App.ViewModels
                     ContainsSearch(source.GuideUrlText, search));
             }
 
-            foreach (var source in filtered)
-            {
-                Sources.Add(source);
-            }
+            Sources.PatchToMatch(
+                filtered.ToList(),
+                static (existing, incoming) => existing.Id == incoming.Id);
 
             var noConfiguredSources = _allSources.Count == 0;
             IsEmpty = Sources.Count == 0;
@@ -807,6 +919,19 @@ namespace Kroira.App.ViewModels
             EmptyStateMessage = noConfiguredSources
                 ? "Add an M3U playlist, Xtream provider, or Stalker portal to start importing live channels, movies, series, and guide data."
                 : "Try a different source name, type, or guide status.";
+        }
+
+        private static SourceItemViewModel ReuseOrCreateSourceItem(
+            IReadOnlyDictionary<int, SourceItemViewModel> existingById,
+            SourceItemViewModel snapshotItem)
+        {
+            if (!existingById.TryGetValue(snapshotItem.Id, out var existing))
+            {
+                return snapshotItem;
+            }
+
+            existing.ApplyFrom(snapshotItem);
+            return existing;
         }
 
         private static IEnumerable<SourceRecentActivityItemViewModel> BuildRecentActivities(

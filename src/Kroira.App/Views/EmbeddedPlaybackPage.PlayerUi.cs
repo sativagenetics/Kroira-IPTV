@@ -106,6 +106,32 @@ namespace Kroira.App.Views
             RefreshInfoPanel();
         }
 
+        private void ResetResolvedPlaybackUiState()
+        {
+            _resolvedSourceName = string.Empty;
+            _resolvedGuideSummary = string.Empty;
+            _resolvedRoutingSummary = string.Empty;
+            _resolvedSourceProfileId = 0;
+            _favoriteType = null;
+            _favoriteContentId = 0;
+            _isFavorite = false;
+            _lastChannelCandidateId = 0;
+            _allChannelSwitchItems.Clear();
+            _channelSwitchItems.Clear();
+            _allEpisodeSwitchItems.Clear();
+            _episodeSwitchItems.Clear();
+            EpisodePanelHeaderText.Text = string.Empty;
+            EpisodePanelStatusText.Text = string.Empty;
+            BottomLiveTitleText.Text = string.Empty;
+            BottomLiveMetaText.Text = string.Empty;
+            ClearGuidePanel();
+            UpdateFavoriteUi();
+            UpdateResolvedContextText();
+            UpdateEnhancedControlState();
+            UpdatePlaybackHint();
+            RefreshInfoPanel();
+        }
+
         private async Task LoadEnhancedPlayerStateAsync(CancellationToken cancellationToken)
         {
             if (_context == null || _playerPreferencesService == null)
@@ -113,6 +139,8 @@ namespace Kroira.App.Views
                 return;
             }
 
+            var playbackSessionId = _playbackSessionId;
+            var switchGeneration = _switchGeneration;
             using var scope = ((App)Application.Current).Services.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             var profileService = scope.ServiceProvider.GetRequiredService<IProfileStateService>();
@@ -123,12 +151,17 @@ namespace Kroira.App.Views
             var providerStreamResolverService = scope.ServiceProvider.GetRequiredService<IProviderStreamResolverService>();
             var access = await profileService.GetAccessSnapshotAsync(db);
 
-            if (cancellationToken.IsCancellationRequested)
+            if (!IsPlaybackContextOperationActive(playbackSessionId, switchGeneration, cancellationToken) || _context == null)
             {
                 return;
             }
 
             _playerPreferences = await _playerPreferencesService.LoadAsync(db, _context.ProfileId);
+            if (!IsPlaybackContextOperationActive(playbackSessionId, switchGeneration, cancellationToken) || _context == null)
+            {
+                return;
+            }
+
             ApplyEnhancedPreferencesToContext();
             if (string.IsNullOrWhiteSpace(_context.CatalogStreamUrl) && !string.IsNullOrWhiteSpace(_context.StreamUrl))
             {
@@ -136,12 +169,27 @@ namespace Kroira.App.Views
             }
 
             await logicalCatalogStateService.EnsureLaunchContextLogicalStateAsync(db, _context);
+            if (!IsPlaybackContextOperationActive(playbackSessionId, switchGeneration, cancellationToken) || _context == null)
+            {
+                return;
+            }
+
             await contentOperationalService.ResolvePlaybackContextAsync(db, _context);
+            if (!IsPlaybackContextOperationActive(playbackSessionId, switchGeneration, cancellationToken) || _context == null)
+            {
+                return;
+            }
+
             var providerResolution = await providerStreamResolverService.ResolvePlaybackContextAsync(
                 db,
                 _context,
                 SourceNetworkPurpose.Playback,
                 cancellationToken);
+            if (!IsPlaybackContextOperationActive(playbackSessionId, switchGeneration, cancellationToken) || _context == null)
+            {
+                return;
+            }
+
             if (!providerResolution.Success && string.IsNullOrWhiteSpace(_context.StreamUrl))
             {
                 throw new InvalidOperationException(providerResolution.Message);
@@ -153,17 +201,8 @@ namespace Kroira.App.Views
                 _context.LiveStreamUrl = _context.StreamUrl;
             }
 
-            _resolvedSourceName = string.Empty;
-            _resolvedGuideSummary = string.Empty;
+            ResetResolvedPlaybackUiState();
             _resolvedRoutingSummary = _context.RoutingSummary;
-            _resolvedSourceProfileId = 0;
-            _favoriteType = null;
-            _favoriteContentId = 0;
-            _allChannelSwitchItems.Clear();
-            _channelSwitchItems.Clear();
-            _allEpisodeSwitchItems.Clear();
-            _episodeSwitchItems.Clear();
-            _lastChannelCandidateId = 0;
 
             switch (_context.ContentType)
             {
@@ -178,7 +217,7 @@ namespace Kroira.App.Views
                     break;
             }
 
-            if (cancellationToken.IsCancellationRequested)
+            if (!IsPlaybackContextOperationActive(playbackSessionId, switchGeneration, cancellationToken))
             {
                 return;
             }

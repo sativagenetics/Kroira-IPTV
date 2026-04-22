@@ -349,6 +349,16 @@ internal sealed class RegressionRunner
             db.ChangeTracker.Clear();
         }
 
+        List<IncrementalPatchRegressionSnapshot>? incrementalPatches = null;
+        if (definition.IncrementalPatchRequests.Count > 0)
+        {
+            incrementalPatches = await ExecuteIncrementalPatchRequestsAsync(
+                bootstrapScope.ServiceProvider,
+                definition.IncrementalPatchRequests,
+                serverBaseUrl);
+            db.ChangeTracker.Clear();
+        }
+
         RegressionSurfaceSnapshotBundle? surfaces = null;
         if (definition.SurfaceLoads != null)
         {
@@ -394,6 +404,11 @@ internal sealed class RegressionRunner
         if (sourceActivities is { Count: > 0 })
         {
             snapshot.SourceActivities = sourceActivities;
+        }
+
+        if (incrementalPatches is { Count: > 0 })
+        {
+            snapshot.IncrementalPatches = incrementalPatches;
         }
 
         if (setupValidations is { Count: > 0 })
@@ -516,6 +531,203 @@ internal sealed class RegressionRunner
         }
 
         return snapshots;
+    }
+
+    private static async Task<List<IncrementalPatchRegressionSnapshot>> ExecuteIncrementalPatchRequestsAsync(
+        IServiceProvider services,
+        IReadOnlyList<RegressionIncrementalPatchRequestDefinition> requests,
+        string serverBaseUrl)
+    {
+        var snapshots = new List<IncrementalPatchRegressionSnapshot>(requests.Count);
+        foreach (var request in requests)
+        {
+            var surface = request.Surface.Trim().ToLowerInvariant();
+            switch (surface)
+            {
+                case "live":
+                    snapshots.Add(await CaptureLiveIncrementalPatchSnapshotAsync(services, request, serverBaseUrl));
+                    break;
+                case "movies":
+                    snapshots.Add(await CaptureMovieIncrementalPatchSnapshotAsync(services, request, serverBaseUrl));
+                    break;
+                case "series":
+                    snapshots.Add(await CaptureSeriesIncrementalPatchSnapshotAsync(services, request, serverBaseUrl));
+                    break;
+                case "sources":
+                    snapshots.Add(await CaptureSourceListIncrementalPatchSnapshotAsync(services, request, serverBaseUrl));
+                    break;
+                default:
+                    throw new InvalidOperationException($"Unsupported incremental patch surface '{request.Surface}'.");
+            }
+        }
+
+        return snapshots;
+    }
+
+    private static async Task<IncrementalPatchRegressionSnapshot> CaptureLiveIncrementalPatchSnapshotAsync(
+        IServiceProvider services,
+        RegressionIncrementalPatchRequestDefinition request,
+        string serverBaseUrl)
+    {
+        var viewModel = new ChannelsPageViewModel(services);
+        await viewModel.LoadChannelsAsync();
+        await WaitForConditionAsync(() => viewModel.FilteredChannels.Count > 0 || viewModel.IsEmpty, TimeSpan.FromSeconds(1));
+
+        var initialChannelsById = viewModel.FilteredChannels.ToDictionary(channel => channel.Id);
+        var initialSourceOptionsById = viewModel.SourceOptions.ToDictionary(option => option.Id);
+        var initialSourceVisibilityById = viewModel.SourceVisibilityOptions.ToDictionary(option => option.Id);
+        var firstTitle = NormalizeText(viewModel.FilteredChannels.FirstOrDefault()?.Name, serverBaseUrl);
+        var initialCount = viewModel.FilteredChannels.Count;
+
+        await viewModel.LoadChannelsAsync();
+
+        return new IncrementalPatchRegressionSnapshot
+        {
+            Id = string.IsNullOrWhiteSpace(request.Id) ? "live" : request.Id.Trim(),
+            Surface = "Live",
+            InitialCount = initialCount,
+            ReloadedCount = viewModel.FilteredChannels.Count,
+            ReusedItemCount = viewModel.FilteredChannels.Count(channel =>
+                initialChannelsById.TryGetValue(channel.Id, out var existing) &&
+                ReferenceEquals(existing, channel)),
+            ReusedSourceOptionCount = viewModel.SourceOptions.Count(option =>
+                initialSourceOptionsById.TryGetValue(option.Id, out var existing) &&
+                ReferenceEquals(existing, option)),
+            ReusedSourceVisibilityCount = viewModel.SourceVisibilityOptions.Count(option =>
+                initialSourceVisibilityById.TryGetValue(option.Id, out var existing) &&
+                ReferenceEquals(existing, option)),
+            FirstTitle = firstTitle
+        };
+    }
+
+    private static async Task<IncrementalPatchRegressionSnapshot> CaptureMovieIncrementalPatchSnapshotAsync(
+        IServiceProvider services,
+        RegressionIncrementalPatchRequestDefinition request,
+        string serverBaseUrl)
+    {
+        var viewModel = new MoviesViewModel(services);
+        await viewModel.LoadMoviesAsync();
+
+        var initialItemsByGroupKey = viewModel.FilteredMovies
+            .Where(item => !string.IsNullOrWhiteSpace(item.GroupKey))
+            .ToDictionary(item => item.GroupKey, StringComparer.OrdinalIgnoreCase);
+        var initialSlotsByGroupKey = viewModel.DisplayMovieSlots
+            .Where(slot => slot.Movie != null && !string.IsNullOrWhiteSpace(slot.Movie.GroupKey))
+            .ToDictionary(slot => slot.Movie!.GroupKey, StringComparer.OrdinalIgnoreCase);
+        var initialSourceOptionsById = viewModel.SourceOptions.ToDictionary(option => option.Id);
+        var initialSourceVisibilityById = viewModel.SourceVisibilityOptions.ToDictionary(option => option.Id);
+        var firstTitle = NormalizeText(viewModel.FilteredMovies.FirstOrDefault()?.Title, serverBaseUrl);
+        var initialCount = viewModel.FilteredMovieCount;
+
+        await viewModel.LoadMoviesAsync();
+
+        return new IncrementalPatchRegressionSnapshot
+        {
+            Id = string.IsNullOrWhiteSpace(request.Id) ? "movies" : request.Id.Trim(),
+            Surface = "Movies",
+            InitialCount = initialCount,
+            ReloadedCount = viewModel.FilteredMovieCount,
+            ReusedItemCount = viewModel.FilteredMovies.Count(item =>
+                initialItemsByGroupKey.TryGetValue(item.GroupKey, out var existing) &&
+                ReferenceEquals(existing, item)),
+            ReusedSlotCount = viewModel.DisplayMovieSlots.Count(slot =>
+                slot.Movie != null &&
+                initialSlotsByGroupKey.TryGetValue(slot.Movie.GroupKey, out var existing) &&
+                ReferenceEquals(existing, slot)),
+            ReusedSourceOptionCount = viewModel.SourceOptions.Count(option =>
+                initialSourceOptionsById.TryGetValue(option.Id, out var existing) &&
+                ReferenceEquals(existing, option)),
+            ReusedSourceVisibilityCount = viewModel.SourceVisibilityOptions.Count(option =>
+                initialSourceVisibilityById.TryGetValue(option.Id, out var existing) &&
+                ReferenceEquals(existing, option)),
+            FirstTitle = firstTitle
+        };
+    }
+
+    private static async Task<IncrementalPatchRegressionSnapshot> CaptureSeriesIncrementalPatchSnapshotAsync(
+        IServiceProvider services,
+        RegressionIncrementalPatchRequestDefinition request,
+        string serverBaseUrl)
+    {
+        var viewModel = new SeriesViewModel(services);
+        await viewModel.LoadSeriesAsync();
+
+        var initialItemsByGroupKey = viewModel.FilteredSeries
+            .Where(item => !string.IsNullOrWhiteSpace(item.GroupKey))
+            .ToDictionary(item => item.GroupKey, StringComparer.OrdinalIgnoreCase);
+        var initialSlotsByGroupKey = viewModel.DisplaySeriesSlots
+            .Where(slot => slot.Series != null && !string.IsNullOrWhiteSpace(slot.Series.GroupKey))
+            .ToDictionary(slot => slot.Series!.GroupKey, StringComparer.OrdinalIgnoreCase);
+        var initialSourceOptionsById = viewModel.SourceOptions.ToDictionary(option => option.Id);
+        var initialSourceVisibilityById = viewModel.SourceVisibilityOptions.ToDictionary(option => option.Id);
+        var firstTitle = NormalizeText(viewModel.FilteredSeries.FirstOrDefault()?.Title, serverBaseUrl);
+        var initialCount = viewModel.FilteredSeriesCount;
+
+        await viewModel.LoadSeriesAsync();
+
+        return new IncrementalPatchRegressionSnapshot
+        {
+            Id = string.IsNullOrWhiteSpace(request.Id) ? "series" : request.Id.Trim(),
+            Surface = "Series",
+            InitialCount = initialCount,
+            ReloadedCount = viewModel.FilteredSeriesCount,
+            ReusedItemCount = viewModel.FilteredSeries.Count(item =>
+                initialItemsByGroupKey.TryGetValue(item.GroupKey, out var existing) &&
+                ReferenceEquals(existing, item)),
+            ReusedSlotCount = viewModel.DisplaySeriesSlots.Count(slot =>
+                slot.Series != null &&
+                initialSlotsByGroupKey.TryGetValue(slot.Series.GroupKey, out var existing) &&
+                ReferenceEquals(existing, slot)),
+            ReusedSourceOptionCount = viewModel.SourceOptions.Count(option =>
+                initialSourceOptionsById.TryGetValue(option.Id, out var existing) &&
+                ReferenceEquals(existing, option)),
+            ReusedSourceVisibilityCount = viewModel.SourceVisibilityOptions.Count(option =>
+                initialSourceVisibilityById.TryGetValue(option.Id, out var existing) &&
+                ReferenceEquals(existing, option)),
+            FirstTitle = firstTitle
+        };
+    }
+
+    private static async Task<IncrementalPatchRegressionSnapshot> CaptureSourceListIncrementalPatchSnapshotAsync(
+        IServiceProvider services,
+        RegressionIncrementalPatchRequestDefinition request,
+        string serverBaseUrl)
+    {
+        var viewModel = new SourceListViewModel(services);
+        await viewModel.LoadSourcesAsync();
+
+        var initialSourcesById = viewModel.Sources.ToDictionary(source => source.Id);
+        var firstSource = viewModel.Sources.FirstOrDefault();
+        if (firstSource != null)
+        {
+            firstSource.IsHealthDetailsExpanded = true;
+            firstSource.IsRepairAssistantExpanded = true;
+            firstSource.IsActivityCenterExpanded = true;
+        }
+
+        var firstTitle = NormalizeText(firstSource?.Name, serverBaseUrl);
+        var initialCount = viewModel.Sources.Count;
+
+        await viewModel.LoadSourcesAsync();
+
+        var reloadedFirstSource = firstSource == null
+            ? null
+            : viewModel.Sources.FirstOrDefault(source => source.Id == firstSource.Id);
+
+        return new IncrementalPatchRegressionSnapshot
+        {
+            Id = string.IsNullOrWhiteSpace(request.Id) ? "sources" : request.Id.Trim(),
+            Surface = "Sources",
+            InitialCount = initialCount,
+            ReloadedCount = viewModel.Sources.Count,
+            ReusedItemCount = viewModel.Sources.Count(source =>
+                initialSourcesById.TryGetValue(source.Id, out var existing) &&
+                ReferenceEquals(existing, source)),
+            FirstTitle = firstTitle,
+            HealthExpandedPreserved = reloadedFirstSource?.IsHealthDetailsExpanded == true,
+            RepairExpandedPreserved = reloadedFirstSource?.IsRepairAssistantExpanded == true,
+            ActivityExpandedPreserved = reloadedFirstSource?.IsActivityCenterExpanded == true
+        };
     }
 
     private static async Task<List<SourceSetupValidationRegressionSnapshot>> ExecuteSetupValidationRequestsAsync(
@@ -1559,6 +1771,16 @@ internal sealed class RegressionRunner
             snapshot.LiveTv = await LoadLiveTvSnapshotAsync(services, serverBaseUrl);
         }
 
+        if (loads.Movies)
+        {
+            snapshot.Movies = await LoadMoviesSnapshotAsync(services, serverBaseUrl);
+        }
+
+        if (loads.Series)
+        {
+            snapshot.Series = await LoadSeriesSnapshotAsync(services, serverBaseUrl);
+        }
+
         if (loads.ContinueWatching)
         {
             snapshot.ContinueWatching = await LoadContinueWatchingSnapshotAsync(services, serverBaseUrl);
@@ -1618,6 +1840,51 @@ internal sealed class RegressionRunner
             ChannelTitles = viewModel.FilteredChannels
                 .Take(8)
                 .Select(item => NormalizeText(item.Name, serverBaseUrl))
+                .ToList()
+        };
+    }
+
+    private static async Task<MovieSurfaceSnapshot> LoadMoviesSnapshotAsync(IServiceProvider services, string serverBaseUrl)
+    {
+        var viewModel = new MoviesViewModel(services);
+        await viewModel.LoadMoviesAsync();
+        await WaitForConditionAsync(() => viewModel.DisplayMovieSlots.Count > 0 || viewModel.IsEmpty, TimeSpan.FromSeconds(1));
+
+        return new MovieSurfaceSnapshot
+        {
+            State = viewModel.SurfaceState.State.ToString(),
+            Title = NormalizeText(viewModel.SurfaceState.Title, serverBaseUrl),
+            Message = NormalizeText(viewModel.SurfaceState.Message, serverBaseUrl),
+            MovieCount = viewModel.FilteredMovieCount,
+            DisplaySlotCount = viewModel.DisplayMovieSlots.Count,
+            SelectedSourceLabel = NormalizeText(viewModel.SelectedSourceOption?.Name, serverBaseUrl),
+            DiscoverySummary = NormalizeText(viewModel.DiscoverySummaryText, serverBaseUrl),
+            Titles = viewModel.FilteredMovies
+                .Take(8)
+                .Select(item => NormalizeText(item.Title, serverBaseUrl))
+                .ToList()
+        };
+    }
+
+    private static async Task<SeriesSurfaceSnapshot> LoadSeriesSnapshotAsync(IServiceProvider services, string serverBaseUrl)
+    {
+        var viewModel = new SeriesViewModel(services);
+        await viewModel.LoadSeriesAsync();
+        await WaitForConditionAsync(() => viewModel.DisplaySeriesSlots.Count > 0 || viewModel.IsEmpty, TimeSpan.FromSeconds(1));
+
+        return new SeriesSurfaceSnapshot
+        {
+            State = viewModel.SurfaceState.State.ToString(),
+            Title = NormalizeText(viewModel.SurfaceState.Title, serverBaseUrl),
+            Message = NormalizeText(viewModel.SurfaceState.Message, serverBaseUrl),
+            SeriesCount = viewModel.FilteredSeriesCount,
+            DisplaySlotCount = viewModel.DisplaySeriesSlots.Count,
+            SelectedSourceLabel = NormalizeText(viewModel.SelectedSourceOption?.Name, serverBaseUrl),
+            SelectedSeriesTitle = NormalizeText(viewModel.SelectedSeries?.Title, serverBaseUrl),
+            DiscoverySummary = NormalizeText(viewModel.DiscoverySummaryText, serverBaseUrl),
+            Titles = viewModel.FilteredSeries
+                .Take(8)
+                .Select(item => NormalizeText(item.Title, serverBaseUrl))
                 .ToList()
         };
     }
@@ -2202,6 +2469,8 @@ internal sealed class RegressionRunner
         {
             snapshot.Home = surfaces.Home;
             snapshot.LiveTv = surfaces.LiveTv;
+            snapshot.Movies = surfaces.Movies;
+            snapshot.Series = surfaces.Series;
             snapshot.ContinueWatching = surfaces.ContinueWatching;
         }
 
@@ -2683,6 +2952,8 @@ internal sealed class RegressionRunner
     {
         public HomeSurfaceSnapshot? Home { get; set; }
         public LiveTvSurfaceSnapshot? LiveTv { get; set; }
+        public MovieSurfaceSnapshot? Movies { get; set; }
+        public SeriesSurfaceSnapshot? Series { get; set; }
         public ContinueWatchingSurfaceSnapshot? ContinueWatching { get; set; }
     }
 

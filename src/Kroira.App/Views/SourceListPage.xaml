@@ -551,7 +551,9 @@
                                         </Border>
                                     </Grid>
 
-                                    <Expander Grid.Row="3" Header="Health and guide details">
+                                    <Expander Grid.Row="3"
+                                              Header="Health and guide details"
+                                              IsExpanded="{Binding IsHealthDetailsExpanded, Mode=TwoWay}">
                                         <Grid Margin="0,12,0,0" ColumnSpacing="16">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*" />
@@ -721,7 +723,9 @@
                                         </Grid>
                                     </Expander>
 
-                                    <Expander Grid.Row="4" Header="Repair assistant">
+                                    <Expander Grid.Row="4"
+                                              Header="Repair assistant"
+                                              IsExpanded="{Binding IsRepairAssistantExpanded, Mode=TwoWay}">
                                         <Grid Margin="0,12,0,0" RowSpacing="14">
                                             <Grid.RowDefinitions>
                                                 <RowDefinition Height="Auto" />
@@ -921,7 +925,9 @@
                                         </Grid>
                                     </Expander>
 
-                                    <Expander Grid.Row="5" Header="Activity center">
+                                    <Expander Grid.Row="5"
+                                              Header="Activity center"
+                                              IsExpanded="{Binding IsActivityCenterExpanded, Mode=TwoWay}">
                                         <Grid Margin="0,12,0,0" RowSpacing="14">
                                             <Grid.RowDefinitions>
                                                 <RowDefinition Height="Auto" />

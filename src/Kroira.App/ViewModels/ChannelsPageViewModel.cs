@@ -64,12 +64,12 @@ namespace Kroira.App.ViewModels
         private bool _lastDiscoveryFacetFiltersActive;
         private bool _isInitializing;
 
-        public ObservableCollection<BrowserChannelViewModel> FilteredChannels { get; } = new();
+        public BulkObservableCollection<BrowserChannelViewModel> FilteredChannels { get; } = new();
         public ObservableCollection<LiveChannelSectionViewModel> SpotlightSections { get; } = new();
         public ObservableCollection<BrowserCategoryViewModel> Categories { get; } = new();
         public ObservableCollection<BrowseSortOptionViewModel> SortOptions { get; } = new();
-        public ObservableCollection<BrowseSourceFilterOptionViewModel> SourceOptions { get; } = new();
-        public ObservableCollection<BrowseSourceVisibilityViewModel> SourceVisibilityOptions { get; } = new();
+        public BulkObservableCollection<BrowseSourceFilterOptionViewModel> SourceOptions { get; } = new();
+        public BulkObservableCollection<BrowseSourceVisibilityViewModel> SourceVisibilityOptions { get; } = new();
         public ObservableCollection<BrowseCategoryManagerOptionViewModel> ManageCategoryOptions { get; } = new();
         public BulkObservableCollection<BrowseFacetOptionViewModel> DiscoverySignalOptions { get; } = new();
         public BulkObservableCollection<BrowseFacetOptionViewModel> DiscoverySourceTypeOptions { get; } = new();
@@ -305,8 +305,6 @@ namespace Kroira.App.ViewModels
             _categoryNames.Clear();
             Categories.Clear();
             ClearSpotlightSections();
-            SourceOptions.Clear();
-            SourceVisibilityOptions.Clear();
             ManageCategoryOptions.Clear();
 
             try
@@ -318,6 +316,9 @@ namespace Kroira.App.ViewModels
                 var sourceAvailability = await surfaceStateService.GetSourceAvailabilityAsync(db);
                 if (sourceAvailability.SourceCount == 0)
                 {
+                    SourceOptions.Clear();
+                    SourceVisibilityOptions.Clear();
+                    ManageCategoryOptions.Clear();
                     SurfaceState = surfaceStateService.ResolveSourceBackedState(sourceAvailability, 0, SurfaceStateCopies.LiveTv);
                     return;
                 }
@@ -1252,10 +1253,11 @@ namespace Kroira.App.ViewModels
         private void BuildSourceOptions()
         {
             var existingSelection = SelectedSourceOption?.Id ?? _preferences.SelectedSourceId;
-            SourceOptions.Clear();
-            SourceVisibilityOptions.Clear();
-
-            SourceOptions.Add(new BrowseSourceFilterOptionViewModel(0, "All providers", _allChannels.Count));
+            var sourceOptions = new List<BrowseSourceFilterOptionViewModel>
+            {
+                new BrowseSourceFilterOptionViewModel(0, "All providers", _allChannels.Count)
+            };
+            var sourceVisibilityOptions = new List<BrowseSourceVisibilityViewModel>();
 
             foreach (var group in _allChannels
                          .GroupBy(channel => channel.SourceProfileId)
@@ -1268,8 +1270,8 @@ namespace Kroira.App.ViewModels
                          .OrderBy(group => group.Name))
             {
                 var isVisible = !_preferences.HiddenSourceIds.Contains(group.Id);
-                SourceOptions.Add(new BrowseSourceFilterOptionViewModel(group.Id, group.Name, group.Count));
-                SourceVisibilityOptions.Add(new BrowseSourceVisibilityViewModel(
+                sourceOptions.Add(new BrowseSourceFilterOptionViewModel(group.Id, group.Name, group.Count));
+                sourceVisibilityOptions.Add(new BrowseSourceVisibilityViewModel(
                     group.Id,
                     group.Name,
                     $"{group.Count:N0} channels",
@@ -1277,19 +1279,31 @@ namespace Kroira.App.ViewModels
                     OnSourceVisibilityChanged));
             }
 
-            var targetSelection = SourceOptions.FirstOrDefault(option => option.Id == existingSelection) ?? SourceOptions.FirstOrDefault();
-            if (!ReferenceEquals(SelectedSourceOption, targetSelection))
+            var wasInitializing = _isInitializing;
+            _isInitializing = true;
+            try
             {
-                var wasInitializing = _isInitializing;
-                _isInitializing = true;
-                try
+                var sourcePatch = SourceOptions.PatchToMatch(
+                    sourceOptions,
+                    static (existing, incoming) => existing.Id == incoming.Id,
+                    static (existing, incoming) => existing.UpdateFrom(incoming));
+                var visibilityPatch = SourceVisibilityOptions.PatchToMatch(
+                    sourceVisibilityOptions,
+                    static (existing, incoming) => existing.Id == incoming.Id,
+                    static (existing, incoming) => existing.UpdateFrom(incoming));
+
+                var targetSelection = SourceOptions.FirstOrDefault(option => option.Id == existingSelection) ?? SourceOptions.FirstOrDefault();
+                if (!ReferenceEquals(SelectedSourceOption, targetSelection))
                 {
                     SelectedSourceOption = targetSelection;
                 }
-                finally
-                {
-                    _isInitializing = wasInitializing;
-                }
+
+                Log(
+                    $"SEL: source options patched reused={sourcePatch.ReusedCount} inserted={sourcePatch.InsertedCount} removed={sourcePatch.RemovedCount}; visibility_reused={visibilityPatch.ReusedCount} visibility_inserted={visibilityPatch.InsertedCount} visibility_removed={visibilityPatch.RemovedCount}");
+            }
+            finally
+            {
+                _isInitializing = wasInitializing;
             }
         }
 
@@ -1558,11 +1572,9 @@ namespace Kroira.App.ViewModels
 
             EnsureSelectedSourceOption();
 
-            FilteredChannels.Clear();
-            foreach (var channel in visibleChannels)
-            {
-                FilteredChannels.Add(channel);
-            }
+            var patch = FilteredChannels.PatchToMatch(
+                visibleChannels,
+                static (existing, incoming) => existing.Id == incoming.Id);
 
             HasAdvancedFilters = FavoritesOnly ||
                                  GuideMatchedOnly ||
@@ -1575,7 +1587,7 @@ namespace Kroira.App.ViewModels
             IsEmpty = FilteredChannels.Count == 0;
             UpdateEmptyState(_lastPreDiscoveryCount, _lastDiscoveryFacetFiltersActive);
             NotifyBrowseResultChanged();
-            Log($"{phaseLogMessage}; visible channels={FilteredChannels.Count}");
+            Log($"{phaseLogMessage}; visible channels={FilteredChannels.Count}; reused={patch.ReusedCount}; inserted={patch.InsertedCount}; removed={patch.RemovedCount}; moved={patch.MovedCount}");
         }
 
         private bool HasDiscoveryFilters()

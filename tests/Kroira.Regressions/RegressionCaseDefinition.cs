@@ -18,6 +18,7 @@ internal sealed class RegressionCaseDefinition
     public List<RegressionSourceRepairRequestDefinition> RepairRequests { get; set; } = [];
     public List<RegressionSourceRepairActionRequestDefinition> RepairActionRequests { get; set; } = [];
     public List<RegressionSourceActivityRequestDefinition> ActivityRequests { get; set; } = [];
+    public List<RegressionIncrementalPatchRequestDefinition> IncrementalPatchRequests { get; set; } = [];
     public RegressionRemoteNavigationDefinition? RemoteNavigation { get; set; }
     public List<RegressionPlaybackRemoteCommandRequestDefinition> PlaybackRemoteCommands { get; set; } = [];
     public List<RegressionMutationDefinition> Mutations { get; set; } = [];
@@ -125,6 +126,12 @@ internal sealed class RegressionSourceActivityRequestDefinition
 {
     public string Id { get; set; } = string.Empty;
     public string SourceKey { get; set; } = string.Empty;
+}
+
+internal sealed class RegressionIncrementalPatchRequestDefinition
+{
+    public string Id { get; set; } = string.Empty;
+    public string Surface { get; set; } = string.Empty;
 }
 
 internal sealed class RegressionSetupValidationRequestDefinition
@@ -243,6 +250,8 @@ internal sealed class RegressionSurfaceLoadDefinition
 {
     public bool Home { get; set; }
     public bool LiveTv { get; set; }
+    public bool Movies { get; set; }
+    public bool Series { get; set; }
     public bool ContinueWatching { get; set; }
 }
 

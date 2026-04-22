@@ -16,19 +16,45 @@ namespace Kroira.App.ViewModels
         public string Label { get; }
     }
 
-    public sealed class BrowseSourceFilterOptionViewModel
+    public sealed class BrowseSourceFilterOptionViewModel : ObservableObject
     {
+        private string _name;
+        private int _itemCount;
+
         public BrowseSourceFilterOptionViewModel(int id, string name, int itemCount)
         {
             Id = id;
-            Name = name;
-            ItemCount = itemCount;
+            _name = name;
+            _itemCount = itemCount;
         }
 
         public int Id { get; }
-        public string Name { get; }
-        public int ItemCount { get; }
+        public string Name => _name;
+        public int ItemCount => _itemCount;
         public string DisplayName => ItemCount > 0 ? $"{Name} ({ItemCount:N0})" : Name;
+
+        public void UpdateFrom(BrowseSourceFilterOptionViewModel incoming)
+        {
+            var changed = false;
+            if (!string.Equals(_name, incoming.Name, StringComparison.Ordinal))
+            {
+                _name = incoming.Name;
+                OnPropertyChanged(nameof(Name));
+                changed = true;
+            }
+
+            if (_itemCount != incoming.ItemCount)
+            {
+                _itemCount = incoming.ItemCount;
+                OnPropertyChanged(nameof(ItemCount));
+                changed = true;
+            }
+
+            if (changed)
+            {
+                OnPropertyChanged(nameof(DisplayName));
+            }
+        }
     }
 
     public sealed class BrowseFacetOptionViewModel
@@ -49,19 +75,21 @@ namespace Kroira.App.ViewModels
     public sealed partial class BrowseSourceVisibilityViewModel : ObservableObject
     {
         private readonly Action<BrowseSourceVisibilityViewModel, bool>? _onChanged;
+        private string _name;
+        private string _detail;
 
         public BrowseSourceVisibilityViewModel(int id, string name, string detail, bool isVisible, Action<BrowseSourceVisibilityViewModel, bool>? onChanged)
         {
             Id = id;
-            Name = name;
-            Detail = detail;
+            _name = name;
+            _detail = detail;
             _isVisible = isVisible;
             _onChanged = onChanged;
         }
 
         public int Id { get; }
-        public string Name { get; }
-        public string Detail { get; }
+        public string Name => _name;
+        public string Detail => _detail;
 
         [ObservableProperty]
         private bool _isVisible;
@@ -69,6 +97,26 @@ namespace Kroira.App.ViewModels
         partial void OnIsVisibleChanged(bool value)
         {
             _onChanged?.Invoke(this, value);
+        }
+
+        public void UpdateFrom(BrowseSourceVisibilityViewModel incoming)
+        {
+            if (!string.Equals(_name, incoming.Name, StringComparison.Ordinal))
+            {
+                _name = incoming.Name;
+                OnPropertyChanged(nameof(Name));
+            }
+
+            if (!string.Equals(_detail, incoming.Detail, StringComparison.Ordinal))
+            {
+                _detail = incoming.Detail;
+                OnPropertyChanged(nameof(Detail));
+            }
+
+            if (IsVisible != incoming.IsVisible)
+            {
+                IsVisible = incoming.IsVisible;
+            }
         }
     }
 

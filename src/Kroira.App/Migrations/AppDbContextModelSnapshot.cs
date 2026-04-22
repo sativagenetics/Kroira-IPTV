@@ -57,6 +57,80 @@ namespace Kroira.App.Migrations
                     b.ToTable("AppSettings");
                 });
 
+            modelBuilder.Entity("Kroira.App.Models.CatchupPlaybackAttempt", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("ChannelId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("LogicalContentKey")
+                        .IsRequired()
+                        .HasMaxLength(220)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasMaxLength(320)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("ProgramEndTimeUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("ProgramStartTimeUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ProgramTitle")
+                        .IsRequired()
+                        .HasMaxLength(220)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ProviderMode")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ProviderSource")
+                        .IsRequired()
+                        .HasMaxLength(600)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("RequestKind")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("RequestedAtUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ResolvedStreamUrl")
+                        .IsRequired()
+                        .HasMaxLength(1200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("RoutingSummary")
+                        .IsRequired()
+                        .HasMaxLength(240)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("SourceProfileId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("WindowHours")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ChannelId", "RequestedAtUtc");
+
+                    b.HasIndex("SourceProfileId", "RequestedAtUtc");
+
+                    b.ToTable("CatchupPlaybackAttempts");
+                });
+
             modelBuilder.Entity("Kroira.App.Models.Channel", b =>
                 {
                     b.Property<int>("Id")
@@ -532,80 +606,6 @@ namespace Kroira.App.Migrations
                         .IsUnique();
 
                     b.ToTable("LogicalOperationalCandidates");
-                });
-
-            modelBuilder.Entity("Kroira.App.Models.CatchupPlaybackAttempt", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("ChannelId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("LogicalContentKey")
-                        .IsRequired()
-                        .HasMaxLength(220)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Message")
-                        .IsRequired()
-                        .HasMaxLength(320)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("ProgramTitle")
-                        .IsRequired()
-                        .HasMaxLength(220)
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime?>("ProgramEndTimeUtc")
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime?>("ProgramStartTimeUtc")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("ProviderMode")
-                        .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("ProviderSource")
-                        .IsRequired()
-                        .HasMaxLength(600)
-                        .HasColumnType("TEXT");
-
-                    b.Property<int>("RequestKind")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<DateTime>("RequestedAtUtc")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("ResolvedStreamUrl")
-                        .IsRequired()
-                        .HasMaxLength(1200)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("RoutingSummary")
-                        .IsRequired()
-                        .HasMaxLength(240)
-                        .HasColumnType("TEXT");
-
-                    b.Property<int>("SourceProfileId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("WindowHours")
-                        .HasColumnType("INTEGER");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChannelId", "RequestedAtUtc");
-
-                    b.HasIndex("SourceProfileId", "RequestedAtUtc");
-
-                    b.ToTable("CatchupPlaybackAttempts");
                 });
 
             modelBuilder.Entity("Kroira.App.Models.LogicalOperationalState", b =>
@@ -1457,16 +1457,16 @@ namespace Kroira.App.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("CompanionUrl")
-                        .IsRequired()
-                        .HasMaxLength(600)
-                        .HasColumnType("TEXT");
-
                     b.Property<int>("CompanionMode")
                         .HasColumnType("INTEGER");
 
                     b.Property<int>("CompanionScope")
                         .HasColumnType("INTEGER");
+
+                    b.Property<string>("CompanionUrl")
+                        .IsRequired()
+                        .HasMaxLength(600)
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("DetectedEpgUrl")
                         .HasColumnType("TEXT");
@@ -1490,6 +1490,9 @@ namespace Kroira.App.Migrations
                         .IsRequired()
                         .HasMaxLength(600)
                         .HasColumnType("TEXT");
+
+                    b.Property<int>("SourceProfileId")
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("StalkerApiUrl")
                         .IsRequired()
@@ -1521,9 +1524,6 @@ namespace Kroira.App.Migrations
                         .HasMaxLength(96)
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("SourceProfileId")
-                        .HasColumnType("INTEGER");
-
                     b.Property<string>("Url")
                         .HasColumnType("TEXT");
 
@@ -1536,107 +1536,6 @@ namespace Kroira.App.Migrations
                         .IsUnique();
 
                     b.ToTable("SourceCredentials");
-                });
-
-            modelBuilder.Entity("Kroira.App.Models.StalkerPortalSnapshot", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("DeviceId")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("DiscoveredApiUrl")
-                        .IsRequired()
-                        .HasMaxLength(600)
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime?>("LastHandshakeAtUtc")
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime?>("LastProfileSyncAtUtc")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("LastError")
-                        .IsRequired()
-                        .HasMaxLength(320)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("LastSummary")
-                        .IsRequired()
-                        .HasMaxLength(320)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Locale")
-                        .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("TEXT");
-
-                    b.Property<int>("LiveCategoryCount")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("MacAddress")
-                        .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("TEXT");
-
-                    b.Property<int>("MovieCategoryCount")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("PortalName")
-                        .IsRequired()
-                        .HasMaxLength(180)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("PortalVersion")
-                        .IsRequired()
-                        .HasMaxLength(96)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("ProfileId")
-                        .IsRequired()
-                        .HasMaxLength(96)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("ProfileName")
-                        .IsRequired()
-                        .HasMaxLength(180)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("SerialNumber")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("TEXT");
-
-                    b.Property<int>("SeriesCategoryCount")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("SourceProfileId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<bool>("SupportsLive")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<bool>("SupportsMovies")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<bool>("SupportsSeries")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("Timezone")
-                        .IsRequired()
-                        .HasMaxLength(96)
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("SourceProfileId")
-                        .IsUnique();
-
-                    b.ToTable("StalkerPortalSnapshots");
                 });
 
             modelBuilder.Entity("Kroira.App.Models.SourceHealthComponent", b =>
@@ -1938,6 +1837,116 @@ namespace Kroira.App.Migrations
                     b.ToTable("SourceSyncStates");
                 });
 
+            modelBuilder.Entity("Kroira.App.Models.StalkerPortalSnapshot", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("DeviceId")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("DiscoveredApiUrl")
+                        .IsRequired()
+                        .HasMaxLength(600)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("LastError")
+                        .IsRequired()
+                        .HasMaxLength(320)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("LastHandshakeAtUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("LastProfileSyncAtUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("LastSummary")
+                        .IsRequired()
+                        .HasMaxLength(320)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("LiveCategoryCount")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Locale")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("MacAddress")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("MovieCategoryCount")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("PortalName")
+                        .IsRequired()
+                        .HasMaxLength(180)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("PortalVersion")
+                        .IsRequired()
+                        .HasMaxLength(96)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ProfileId")
+                        .IsRequired()
+                        .HasMaxLength(96)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ProfileName")
+                        .IsRequired()
+                        .HasMaxLength(180)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("SerialNumber")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("SeriesCategoryCount")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("SourceProfileId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("SupportsLive")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("SupportsMovies")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("SupportsSeries")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Timezone")
+                        .IsRequired()
+                        .HasMaxLength(96)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SourceProfileId")
+                        .IsUnique();
+
+                    b.ToTable("StalkerPortalSnapshots");
+                });
+
+            modelBuilder.Entity("Kroira.App.Models.CatchupPlaybackAttempt", b =>
+                {
+                    b.HasOne("Kroira.App.Models.SourceProfile", null)
+                        .WithMany()
+                        .HasForeignKey("SourceProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Kroira.App.Models.Channel", b =>
                 {
                     b.HasOne("Kroira.App.Models.ChannelCategory", null)
@@ -2032,29 +2041,11 @@ namespace Kroira.App.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Kroira.App.Models.CatchupPlaybackAttempt", b =>
-                {
-                    b.HasOne("Kroira.App.Models.SourceProfile", null)
-                        .WithMany()
-                        .HasForeignKey("SourceProfileId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
             modelBuilder.Entity("Kroira.App.Models.SourceCredential", b =>
                 {
                     b.HasOne("Kroira.App.Models.SourceProfile", null)
                         .WithOne()
                         .HasForeignKey("Kroira.App.Models.SourceCredential", "SourceProfileId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("Kroira.App.Models.StalkerPortalSnapshot", b =>
-                {
-                    b.HasOne("Kroira.App.Models.SourceProfile", null)
-                        .WithOne()
-                        .HasForeignKey("Kroira.App.Models.StalkerPortalSnapshot", "SourceProfileId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
@@ -2106,6 +2097,15 @@ namespace Kroira.App.Migrations
                     b.HasOne("Kroira.App.Models.SourceProfile", null)
                         .WithOne()
                         .HasForeignKey("Kroira.App.Models.SourceSyncState", "SourceProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Kroira.App.Models.StalkerPortalSnapshot", b =>
+                {
+                    b.HasOne("Kroira.App.Models.SourceProfile", null)
+                        .WithOne()
+                        .HasForeignKey("Kroira.App.Models.StalkerPortalSnapshot", "SourceProfileId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

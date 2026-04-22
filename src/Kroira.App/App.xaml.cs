@@ -1,3 +1,5 @@
+#nullable enable
+
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -20,12 +22,13 @@ namespace Kroira.App
         private static readonly TimeSpan DeferredRuntimeMaintenanceDelay = TimeSpan.FromSeconds(3);
         private static readonly TimeSpan StartupMetadataDelay = TimeSpan.FromSeconds(6);
         private static readonly TimeSpan StartupMetadataBudget = TimeSpan.FromSeconds(15);
+        private readonly IServiceProvider _services;
         private Window? _window;
         private readonly CancellationTokenSource _startupMetadataCts = new();
         private readonly CancellationTokenSource _startupMaintenanceCts = new();
         public Window? MainWindow => _window;
 
-        public IServiceProvider Services { get; private set; } = null!;
+        public IServiceProvider Services => _services;
 
         private static readonly string ErrorDirectory =
             Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Kroira");
@@ -50,7 +53,7 @@ namespace Kroira.App
                 SafeAppendLog("APP 03: after InitializeComponent");
 
                 SafeAppendLog("APP 04: before ConfigureServices");
-                Services = ConfigureServices();
+                _services = ConfigureServices();
                 SafeAppendLog("APP 05: after ConfigureServices");
             }
             catch (Exception ex)

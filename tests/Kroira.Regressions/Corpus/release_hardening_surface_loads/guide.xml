@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tv>
+  <channel id="bein1.tr">
+    <display-name>beIN SPORTS 1</display-name>
+    <icon src="{{server}}/logos/xmltv/bein1.png" />
+  </channel>
+  <channel id="trt1.tr">
+    <display-name>TRT 1</display-name>
+    <icon src="{{server}}/logos/xmltv/trt1.png" />
+  </channel>
+  <programme start="20260422090000 +0000" stop="20260422100000 +0000" channel="bein1.tr">
+    <title>Morning Match</title>
+    <desc>Fixture sports programme.</desc>
+  </programme>
+  <programme start="20260422100000 +0000" stop="20260422110000 +0000" channel="bein1.tr">
+    <title>Match Preview</title>
+    <desc>Fixture next sports programme.</desc>
+  </programme>
+  <programme start="20260422090000 +0000" stop="20260422103000 +0000" channel="trt1.tr">
+    <title>National News</title>
+    <desc>Fixture news programme.</desc>
+  </programme>
+  <programme start="20260422103000 +0000" stop="20260422113000 +0000" channel="trt1.tr">
+    <title>Late Morning</title>
+    <desc>Fixture late morning programme.</desc>
+  </programme>
+</tv>

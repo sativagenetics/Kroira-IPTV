@@ -18,8 +18,8 @@
     <GenerateTestArtifacts>False</GenerateTestArtifacts>
     <AppxBundle>Never</AppxBundle>
     <HoursBetweenUpdateChecks>0</HoursBetweenUpdateChecks>
-    <WindowsAppSdkBootstrapInitialize Condition="'$(KroiraHeadlessHarness)' == 'true'">false</WindowsAppSdkBootstrapInitialize>
-    <WindowsAppSdkDeploymentManagerInitialize Condition="'$(KroiraHeadlessHarness)' == 'true'">false</WindowsAppSdkDeploymentManagerInitialize>
+    <WindowsAppSdkBootstrapInitialize>false</WindowsAppSdkBootstrapInitialize>
+    <WindowsAppSdkDeploymentManagerInitialize>false</WindowsAppSdkDeploymentManagerInitialize>
     <WindowsAppSdkAutoInitialize Condition="'$(KroiraHeadlessHarness)' == 'true'">false</WindowsAppSdkAutoInitialize>
   </PropertyGroup>
 

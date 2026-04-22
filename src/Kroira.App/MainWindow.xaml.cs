@@ -1,3 +1,5 @@
+#nullable enable
+
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -42,15 +44,16 @@ namespace Kroira.App
 
                 ContentFrame.NavigationFailed += ContentFrame_NavigationFailed;
                 ContentFrame.Navigated += ContentFrame_Navigated;
+                var app = RequireApp();
 
                 LogStartupCheckpoint("MW 04: before resolving MainViewModel");
-                ViewModel = ((App)Application.Current).Services.GetRequiredService<MainViewModel>();
+                ViewModel = app.Services.GetRequiredService<MainViewModel>();
                 LogStartupCheckpoint("MW 05: after resolving MainViewModel");
 
                 LogStartupCheckpoint("MW 06: before resolving IWindowManagerService");
-                _windowManager = ((App)Application.Current).Services.GetRequiredService<IWindowManagerService>();
+                _windowManager = app.Services.GetRequiredService<IWindowManagerService>();
                 LogStartupCheckpoint("MW 07: after resolving IWindowManagerService");
-                _remoteNavigationService = ((App)Application.Current).Services.GetRequiredService<IRemoteNavigationService>();
+                _remoteNavigationService = app.Services.GetRequiredService<IRemoteNavigationService>();
 
                 Title = "Kroira IPTV";
                 LogStartupCheckpoint("MW 08: title set");
@@ -406,6 +409,12 @@ namespace Kroira.App
             catch
             {
             }
+        }
+
+        private static App RequireApp()
+        {
+            return Application.Current as App
+                ?? throw new InvalidOperationException("Kroira application services are unavailable.");
         }
     }
 }
