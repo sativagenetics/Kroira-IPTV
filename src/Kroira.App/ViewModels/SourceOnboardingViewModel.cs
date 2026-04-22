@@ -181,6 +181,7 @@ namespace Kroira.App.ViewModels
                         {
                             var xtreamParser = importScope.ServiceProvider.GetRequiredService<Kroira.App.Services.Parsing.IXtreamParserService>();
                             await xtreamParser.ParseAndImportXtreamAsync(importDb, savedId);
+                            await xtreamParser.ParseAndImportXtreamVodAsync(importDb, savedId);
                         }
 
                         try

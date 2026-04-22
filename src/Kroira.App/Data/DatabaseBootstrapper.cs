@@ -160,6 +160,58 @@ namespace Kroira.App.Data
             BumpLegacyM3uImportMode(conn);
             BackfillLegacyEpgMode(conn);
 
+            EnsureSourceHealthTables(conn);
+            EnsureColumn(conn, "SourceHealthReports", "EvaluatedAtUtc", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "SourceHealthReports", "LastSyncAttemptAtUtc", "TEXT");
+            EnsureColumn(conn, "SourceHealthReports", "LastSuccessfulSyncAtUtc", "TEXT");
+            EnsureColumn(conn, "SourceHealthReports", "HealthScore", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "SourceHealthReports", "HealthState", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "SourceHealthReports", "StatusSummary", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "SourceHealthReports", "ImportResultSummary", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "SourceHealthReports", "ValidationSummary", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "SourceHealthReports", "TopIssueSummary", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "SourceHealthReports", "TotalChannelCount", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "SourceHealthReports", "TotalMovieCount", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "SourceHealthReports", "TotalSeriesCount", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "SourceHealthReports", "DuplicateCount", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "SourceHealthReports", "InvalidStreamCount", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "SourceHealthReports", "ChannelsWithEpgMatchCount", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "SourceHealthReports", "ChannelsWithCurrentProgramCount", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "SourceHealthReports", "ChannelsWithNextProgramCount", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "SourceHealthReports", "ChannelsWithLogoCount", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "SourceHealthReports", "SuspiciousEntryCount", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "SourceHealthReports", "WarningCount", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "SourceHealthReports", "ErrorCount", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "SourceHealthIssues", "Severity", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "SourceHealthIssues", "Code", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "SourceHealthIssues", "Title", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "SourceHealthIssues", "Message", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "SourceHealthIssues", "AffectedCount", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "SourceHealthIssues", "SampleItems", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "SourceHealthIssues", "SortOrder", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "SourceHealthComponents", "SourceHealthReportId", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "SourceHealthComponents", "ComponentType", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "SourceHealthComponents", "State", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "SourceHealthComponents", "Score", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "SourceHealthComponents", "Summary", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "SourceHealthComponents", "RelevantCount", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "SourceHealthComponents", "HealthyCount", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "SourceHealthComponents", "IssueCount", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "SourceHealthComponents", "SortOrder", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "SourceHealthProbes", "SourceHealthReportId", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "SourceHealthProbes", "ProbeType", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "SourceHealthProbes", "Status", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "SourceHealthProbes", "ProbedAtUtc", "TEXT");
+            EnsureColumn(conn, "SourceHealthProbes", "CandidateCount", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "SourceHealthProbes", "SampleSize", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "SourceHealthProbes", "SuccessCount", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "SourceHealthProbes", "FailureCount", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "SourceHealthProbes", "TimeoutCount", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "SourceHealthProbes", "HttpErrorCount", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "SourceHealthProbes", "TransportErrorCount", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "SourceHealthProbes", "Summary", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "SourceHealthProbes", "SortOrder", "INTEGER NOT NULL DEFAULT 0");
+
             // EPG pass: per-source sync health log (CREATE TABLE IF NOT EXISTS is safe to repeat)
             EnsureEpgSyncLogsTable(conn);
             EnsureColumn(conn, "EpgSyncLogs", "LastSuccessAtUtc", "TEXT");
@@ -185,6 +237,12 @@ namespace Kroira.App.Data
             EnsureIndex(conn, "IX_Series_DedupFingerprint", "Series", "DedupFingerprint");
             EnsureIndex(conn, "IX_Series_TmdbId", "Series", "TmdbId");
             EnsureIndex(conn, "IX_Channels_EpgChannelId", "Channels", "EpgChannelId");
+            EnsureIndex(conn, "IX_SourceHealthReports_SourceProfileId", "SourceHealthReports", "SourceProfileId", unique: true);
+            EnsureIndex(conn, "IX_SourceHealthIssues_SourceHealthReportId", "SourceHealthIssues", "SourceHealthReportId");
+            EnsureIndex(conn, "IX_SourceHealthComponents_SourceHealthReportId", "SourceHealthComponents", "SourceHealthReportId");
+            EnsureUniqueCompositeIndex(conn, "IX_SourceHealthComponents_SourceHealthReportId_ComponentType", "SourceHealthComponents", "SourceHealthReportId", "ComponentType");
+            EnsureIndex(conn, "IX_SourceHealthProbes_SourceHealthReportId", "SourceHealthProbes", "SourceHealthReportId");
+            EnsureUniqueCompositeIndex(conn, "IX_SourceHealthProbes_SourceHealthReportId_ProbeType", "SourceHealthProbes", "SourceHealthReportId", "ProbeType");
             EnsureIndex(conn, "IX_ParentalControlSettings_ProfileId", "ParentalControlSettings", "ProfileId", unique: true);
             EnsureTripleCompositeIndex(conn, "IX_Favorites_ProfileId_ContentType_ContentId", "Favorites", "ProfileId", "ContentType", "ContentId");
             EnsureTripleCompositeIndex(conn, "IX_PlaybackProgresses_ProfileId_ContentType_ContentId", "PlaybackProgresses", "ProfileId", "ContentType", "ContentId");
@@ -392,6 +450,132 @@ namespace Kroira.App.Data
             cmd.ExecuteNonQuery();
         }
 
+        private static void EnsureSourceHealthTables(SqliteConnection conn)
+        {
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = @"
+                CREATE TABLE IF NOT EXISTS ""SourceHealthReports"" (
+                    ""Id""                            INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                    ""SourceProfileId""               INTEGER NOT NULL,
+                    ""EvaluatedAtUtc""                TEXT    NOT NULL DEFAULT '',
+                    ""LastSyncAttemptAtUtc""          TEXT,
+                    ""LastSuccessfulSyncAtUtc""       TEXT,
+                    ""HealthScore""                   INTEGER NOT NULL DEFAULT 0,
+                    ""HealthState""                   INTEGER NOT NULL DEFAULT 0,
+                    ""StatusSummary""                 TEXT    NOT NULL DEFAULT '',
+                    ""ImportResultSummary""           TEXT    NOT NULL DEFAULT '',
+                    ""ValidationSummary""             TEXT    NOT NULL DEFAULT '',
+                    ""TopIssueSummary""               TEXT    NOT NULL DEFAULT '',
+                    ""TotalChannelCount""             INTEGER NOT NULL DEFAULT 0,
+                    ""TotalMovieCount""               INTEGER NOT NULL DEFAULT 0,
+                    ""TotalSeriesCount""              INTEGER NOT NULL DEFAULT 0,
+                    ""DuplicateCount""                INTEGER NOT NULL DEFAULT 0,
+                    ""InvalidStreamCount""            INTEGER NOT NULL DEFAULT 0,
+                    ""ChannelsWithEpgMatchCount""     INTEGER NOT NULL DEFAULT 0,
+                    ""ChannelsWithCurrentProgramCount"" INTEGER NOT NULL DEFAULT 0,
+                    ""ChannelsWithNextProgramCount""  INTEGER NOT NULL DEFAULT 0,
+                    ""ChannelsWithLogoCount""         INTEGER NOT NULL DEFAULT 0,
+                    ""SuspiciousEntryCount""          INTEGER NOT NULL DEFAULT 0,
+                    ""WarningCount""                  INTEGER NOT NULL DEFAULT 0,
+                    ""ErrorCount""                    INTEGER NOT NULL DEFAULT 0,
+                    CONSTRAINT ""FK_SourceHealthReports_SourceProfiles_SourceProfileId""
+                        FOREIGN KEY (""SourceProfileId"")
+                        REFERENCES ""SourceProfiles"" (""Id"")
+                        ON DELETE CASCADE
+                );";
+            cmd.ExecuteNonQuery();
+
+            cmd.CommandText = @"
+                CREATE UNIQUE INDEX IF NOT EXISTS ""IX_SourceHealthReports_SourceProfileId""
+                ON ""SourceHealthReports"" (""SourceProfileId"");";
+            cmd.ExecuteNonQuery();
+
+            cmd.CommandText = @"
+                CREATE TABLE IF NOT EXISTS ""SourceHealthIssues"" (
+                    ""Id""                     INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                    ""SourceHealthReportId""   INTEGER NOT NULL,
+                    ""Severity""               INTEGER NOT NULL DEFAULT 0,
+                    ""Code""                   TEXT    NOT NULL DEFAULT '',
+                    ""Title""                  TEXT    NOT NULL DEFAULT '',
+                    ""Message""                TEXT    NOT NULL DEFAULT '',
+                    ""AffectedCount""          INTEGER NOT NULL DEFAULT 0,
+                    ""SampleItems""            TEXT    NOT NULL DEFAULT '',
+                    ""SortOrder""              INTEGER NOT NULL DEFAULT 0,
+                    CONSTRAINT ""FK_SourceHealthIssues_SourceHealthReports_SourceHealthReportId""
+                        FOREIGN KEY (""SourceHealthReportId"")
+                        REFERENCES ""SourceHealthReports"" (""Id"")
+                        ON DELETE CASCADE
+                );";
+            cmd.ExecuteNonQuery();
+
+            cmd.CommandText = @"
+                CREATE INDEX IF NOT EXISTS ""IX_SourceHealthIssues_SourceHealthReportId""
+                ON ""SourceHealthIssues"" (""SourceHealthReportId"");";
+            cmd.ExecuteNonQuery();
+
+            cmd.CommandText = @"
+                CREATE TABLE IF NOT EXISTS ""SourceHealthComponents"" (
+                    ""Id""                     INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                    ""SourceHealthReportId""   INTEGER NOT NULL,
+                    ""ComponentType""          INTEGER NOT NULL DEFAULT 0,
+                    ""State""                  INTEGER NOT NULL DEFAULT 0,
+                    ""Score""                  INTEGER NOT NULL DEFAULT 0,
+                    ""Summary""                TEXT    NOT NULL DEFAULT '',
+                    ""RelevantCount""          INTEGER NOT NULL DEFAULT 0,
+                    ""HealthyCount""           INTEGER NOT NULL DEFAULT 0,
+                    ""IssueCount""             INTEGER NOT NULL DEFAULT 0,
+                    ""SortOrder""              INTEGER NOT NULL DEFAULT 0,
+                    CONSTRAINT ""FK_SourceHealthComponents_SourceHealthReports_SourceHealthReportId""
+                        FOREIGN KEY (""SourceHealthReportId"")
+                        REFERENCES ""SourceHealthReports"" (""Id"")
+                        ON DELETE CASCADE
+                );";
+            cmd.ExecuteNonQuery();
+
+            cmd.CommandText = @"
+                CREATE INDEX IF NOT EXISTS ""IX_SourceHealthComponents_SourceHealthReportId""
+                ON ""SourceHealthComponents"" (""SourceHealthReportId"");";
+            cmd.ExecuteNonQuery();
+
+            cmd.CommandText = @"
+                CREATE UNIQUE INDEX IF NOT EXISTS ""IX_SourceHealthComponents_SourceHealthReportId_ComponentType""
+                ON ""SourceHealthComponents"" (""SourceHealthReportId"", ""ComponentType"");";
+            cmd.ExecuteNonQuery();
+
+            cmd.CommandText = @"
+                CREATE TABLE IF NOT EXISTS ""SourceHealthProbes"" (
+                    ""Id""                     INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                    ""SourceHealthReportId""   INTEGER NOT NULL,
+                    ""ProbeType""              INTEGER NOT NULL DEFAULT 0,
+                    ""Status""                 INTEGER NOT NULL DEFAULT 0,
+                    ""ProbedAtUtc""            TEXT,
+                    ""CandidateCount""         INTEGER NOT NULL DEFAULT 0,
+                    ""SampleSize""             INTEGER NOT NULL DEFAULT 0,
+                    ""SuccessCount""           INTEGER NOT NULL DEFAULT 0,
+                    ""FailureCount""           INTEGER NOT NULL DEFAULT 0,
+                    ""TimeoutCount""           INTEGER NOT NULL DEFAULT 0,
+                    ""HttpErrorCount""         INTEGER NOT NULL DEFAULT 0,
+                    ""TransportErrorCount""    INTEGER NOT NULL DEFAULT 0,
+                    ""Summary""                TEXT    NOT NULL DEFAULT '',
+                    ""SortOrder""              INTEGER NOT NULL DEFAULT 0,
+                    CONSTRAINT ""FK_SourceHealthProbes_SourceHealthReports_SourceHealthReportId""
+                        FOREIGN KEY (""SourceHealthReportId"")
+                        REFERENCES ""SourceHealthReports"" (""Id"")
+                        ON DELETE CASCADE
+                );";
+            cmd.ExecuteNonQuery();
+
+            cmd.CommandText = @"
+                CREATE INDEX IF NOT EXISTS ""IX_SourceHealthProbes_SourceHealthReportId""
+                ON ""SourceHealthProbes"" (""SourceHealthReportId"");";
+            cmd.ExecuteNonQuery();
+
+            cmd.CommandText = @"
+                CREATE UNIQUE INDEX IF NOT EXISTS ""IX_SourceHealthProbes_SourceHealthReportId_ProbeType""
+                ON ""SourceHealthProbes"" (""SourceHealthReportId"", ""ProbeType"");";
+            cmd.ExecuteNonQuery();
+        }
+
         private static void EnsureColumn(SqliteConnection conn, string tableName, string columnName, string definition)
         {
             if (!TableExists(conn, tableName) || ColumnExists(conn, tableName, columnName))
@@ -454,6 +638,23 @@ namespace Kroira.App.Data
 
             using var cmd = conn.CreateCommand();
             cmd.CommandText = $"CREATE INDEX \"{indexName}\" ON \"{tableName}\" (\"{col1}\", \"{col2}\");";
+            cmd.ExecuteNonQuery();
+        }
+
+        private static void EnsureUniqueCompositeIndex(SqliteConnection conn, string indexName, string tableName, string col1, string col2)
+        {
+            if (!TableExists(conn, tableName) || IndexExists(conn, indexName))
+            {
+                return;
+            }
+
+            if (!ColumnExists(conn, tableName, col1) || !ColumnExists(conn, tableName, col2))
+            {
+                return;
+            }
+
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = $"CREATE UNIQUE INDEX \"{indexName}\" ON \"{tableName}\" (\"{col1}\", \"{col2}\");";
             cmd.ExecuteNonQuery();
         }
 

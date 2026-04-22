@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -20,10 +21,12 @@ namespace Kroira.App.Services.Parsing
     public class XtreamParserService : IXtreamParserService
     {
         private readonly ICatalogNormalizationService _catalogNormalizationService;
+        private readonly ISourceHealthService _sourceHealthService;
 
-        public XtreamParserService(ICatalogNormalizationService catalogNormalizationService)
+        public XtreamParserService(ICatalogNormalizationService catalogNormalizationService, ISourceHealthService sourceHealthService)
         {
             _catalogNormalizationService = catalogNormalizationService;
+            _sourceHealthService = sourceHealthService;
         }
 
         public async Task ParseAndImportXtreamAsync(AppDbContext db, int sourceProfileId)
@@ -159,6 +162,7 @@ namespace Kroira.App.Services.Parsing
 
                     await db.SaveChangesAsync();
                     await transaction.CommitAsync();
+                    await _sourceHealthService.RefreshSourceHealthAsync(db, sourceProfileId);
                 }
                 catch
                 {
@@ -172,10 +176,11 @@ namespace Kroira.App.Services.Parsing
                 if (syncState != null)
                 {
                     syncState.LastAttempt = DateTime.UtcNow;
-                    syncState.HttpStatusCode = 500;
+                    syncState.HttpStatusCode = ResolveFailureStatusCode(ex);
                     syncState.ErrorLog = $"Xtream Live sync failed: {ex.Message}";
                     await db.SaveChangesAsync();
                 }
+                await _sourceHealthService.RefreshSourceHealthAsync(db, sourceProfileId);
                 throw;
             }
         }
@@ -642,6 +647,7 @@ namespace Kroira.App.Services.Parsing
 
                     await db.SaveChangesAsync();
                     await transaction.CommitAsync();
+                    await _sourceHealthService.RefreshSourceHealthAsync(db, sourceProfileId);
                 }
                 catch
                 {
@@ -655,10 +661,11 @@ namespace Kroira.App.Services.Parsing
                 if (syncState != null)
                 {
                     syncState.LastAttempt = DateTime.UtcNow;
-                    syncState.HttpStatusCode = 500;
+                    syncState.HttpStatusCode = ResolveFailureStatusCode(ex);
                     syncState.ErrorLog = $"Xtream VOD parsing failed: {ex.Message}";
                     await db.SaveChangesAsync();
                 }
+                await _sourceHealthService.RefreshSourceHealthAsync(db, sourceProfileId);
                 throw;
             }
         }
@@ -690,6 +697,17 @@ namespace Kroira.App.Services.Parsing
             }
 
             return string.Empty;
+        }
+
+        private static int ResolveFailureStatusCode(Exception ex)
+        {
+            return ex switch
+            {
+                HttpRequestException httpEx when httpEx.StatusCode.HasValue => (int)httpEx.StatusCode.Value,
+                TaskCanceledException => (int)HttpStatusCode.RequestTimeout,
+                TimeoutException => (int)HttpStatusCode.RequestTimeout,
+                _ => (int)HttpStatusCode.InternalServerError
+            };
         }
 
     }

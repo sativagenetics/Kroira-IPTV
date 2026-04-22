@@ -28,10 +28,17 @@ namespace Kroira.App.ViewModels
         public StatusPillKind HealthPillKind { get; set; } = StatusPillKind.Neutral;
         public StatusPillKind GuidePillKind { get; set; } = StatusPillKind.Neutral;
         public string LastSyncText { get; set; } = "Never";
+        public string LastAttemptText { get; set; } = "Never";
         public int ChannelCount { get; set; }
         public int MovieCount { get; set; }
         public int SeriesCount { get; set; }
+        public int DuplicateCount { get; set; }
+        public int InvalidStreamCount { get; set; }
+        public int ChannelsWithLogoCount { get; set; }
+        public int SuspiciousEntryCount { get; set; }
+        public int HealthScore { get; set; }
         public string ImportResultText { get; set; } = string.Empty;
+        public string ValidationResultText { get; set; } = string.Empty;
         public string EpgCoverageText { get; set; } = string.Empty;
         public string ParseWarningsText { get; set; } = string.Empty;
         public string NetworkFailureText { get; set; } = string.Empty;
@@ -41,6 +48,8 @@ namespace Kroira.App.ViewModels
         public string GuideModeText { get; set; } = string.Empty;
         public string GuideUrlText { get; set; } = string.Empty;
         public string GuideMatchText { get; set; } = string.Empty;
+        public IReadOnlyList<SourceHealthComponentItemViewModel> HealthComponents { get; set; } = Array.Empty<SourceHealthComponentItemViewModel>();
+        public IReadOnlyList<SourceIssueItemViewModel> HealthIssues { get; set; } = Array.Empty<SourceIssueItemViewModel>();
         public int ImportWarningCount { get; set; }
         public int GuideWarningCount { get; set; }
 
@@ -158,7 +167,31 @@ namespace Kroira.App.ViewModels
             ? Status
             : SourcePanelSummaryText;
 
+        public string QualitySnapshotText => $"Duplicates {DuplicateCount:N0} · Invalid {InvalidStreamCount:N0} · Suspicious {SuspiciousEntryCount:N0}";
+
+        public string LogoCoverageText => ChannelCount > 0
+            ? $"{ChannelsWithLogoCount:N0} / {ChannelCount:N0} live channels with logos"
+            : "No live channels available";
+
+        public string ValidationScoreText => HealthScore > 0
+            ? $"{HealthScore}/100 confidence"
+            : LastSyncText == "Never"
+                ? "Validation pending"
+                : "0/100 confidence";
+
         public Microsoft.UI.Xaml.Visibility GuideCoverageVisibility => ChannelCount > 0
+            ? Microsoft.UI.Xaml.Visibility.Visible
+            : Microsoft.UI.Xaml.Visibility.Collapsed;
+
+        public Microsoft.UI.Xaml.Visibility ValidationVisibility => string.IsNullOrWhiteSpace(ValidationResultText)
+            ? Microsoft.UI.Xaml.Visibility.Collapsed
+            : Microsoft.UI.Xaml.Visibility.Visible;
+
+        public Microsoft.UI.Xaml.Visibility HealthComponentsVisibility => HealthComponents.Count > 0
+            ? Microsoft.UI.Xaml.Visibility.Visible
+            : Microsoft.UI.Xaml.Visibility.Collapsed;
+
+        public Microsoft.UI.Xaml.Visibility HealthIssuesVisibility => HealthIssues.Count > 0
             ? Microsoft.UI.Xaml.Visibility.Visible
             : Microsoft.UI.Xaml.Visibility.Collapsed;
 
@@ -170,6 +203,21 @@ namespace Kroira.App.ViewModels
             OnPropertyChanged(nameof(WorkingVisibility));
             OnPropertyChanged(nameof(IdleVisibility));
         }
+    }
+
+    public sealed class SourceIssueItemViewModel
+    {
+        public string Title { get; set; } = string.Empty;
+        public string Message { get; set; } = string.Empty;
+        public StatusPillKind SeverityKind { get; set; } = StatusPillKind.Info;
+    }
+
+    public sealed class SourceHealthComponentItemViewModel
+    {
+        public string Label { get; set; } = string.Empty;
+        public string Summary { get; set; } = string.Empty;
+        public string PillLabel { get; set; } = string.Empty;
+        public StatusPillKind PillKind { get; set; } = StatusPillKind.Standby;
     }
 
     public sealed class SourceRecentActivityItemViewModel
@@ -435,15 +483,19 @@ namespace Kroira.App.ViewModels
                     ImportResultText = profile.LastSync.HasValue
                         ? $"Imported at {profile.LastSync.Value.ToLocalTime():g}"
                         : "No successful import recorded.",
+                    ValidationResultText = "Validation will appear after the first completed sync.",
                     EpgCoverageText = "Guide not synced.",
                     EpgStatusText = "Guide not synced",
                     EpgStatusSummary = "Guide has not synced yet.",
                     LastSuccessfulSyncText = $"Import {(profile.LastSync.HasValue ? profile.LastSync.Value.ToLocalTime().ToString("g") : "Never")} - Guide Never",
+                    LastSyncAttemptText = "Never",
                     LastImportSuccessText = profile.LastSync?.ToLocalTime().ToString("g") ?? "Never",
                     LastEpgSuccessText = "Never",
                     ActiveEpgModeText = "Detected from provider",
                     EpgStatus = EpgStatus.Unknown,
-                    EpgResultCode = EpgSyncResultCode.None
+                    EpgResultCode = EpgSyncResultCode.None,
+                    HealthComponents = Array.Empty<SourceDiagnosticsComponentSnapshot>(),
+                    HealthProbes = Array.Empty<SourceDiagnosticsProbeSnapshot>()
                 };
 
                 loadedSources.Add(new SourceItemViewModel
@@ -460,9 +512,15 @@ namespace Kroira.App.ViewModels
                     HealthPillKind = MapHealthPillKind(snapshot.HealthLabel),
                     GuidePillKind = MapGuidePillKind(snapshot),
                     LastSyncText = snapshot.LastImportSuccessText,
+                    LastAttemptText = snapshot.LastSyncAttemptText,
                     ChannelCount = snapshot.LiveChannelCount,
                     MovieCount = snapshot.MovieCount,
                     SeriesCount = snapshot.SeriesCount,
+                    DuplicateCount = snapshot.DuplicateCount,
+                    InvalidStreamCount = snapshot.InvalidStreamCount,
+                    ChannelsWithLogoCount = snapshot.ChannelsWithLogoCount,
+                    SuspiciousEntryCount = snapshot.SuspiciousEntryCount,
+                    HealthScore = snapshot.HealthScore,
                     HealthLabel = snapshot.HealthLabel,
                     Status = snapshot.StatusSummary,
                     HasEpgUrl = snapshot.HasEpgUrl,
@@ -474,6 +532,7 @@ namespace Kroira.App.ViewModels
                     EpgSummaryText = snapshot.EpgStatusText,
                     EpgSyncSuccess = snapshot.EpgSyncSuccess,
                     ImportResultText = snapshot.ImportResultText,
+                    ValidationResultText = snapshot.ValidationResultText,
                     EpgCoverageText = snapshot.EpgCoverageText,
                     ParseWarningsText = snapshot.WarningSummaryText,
                     NetworkFailureText = snapshot.FailureSummaryText,
@@ -483,6 +542,24 @@ namespace Kroira.App.ViewModels
                     GuideModeText = snapshot.ActiveEpgModeText,
                     GuideUrlText = snapshot.EpgUrlSummaryText,
                     GuideMatchText = snapshot.MatchBreakdownText,
+                    HealthComponents = snapshot.HealthComponents
+                        .Select(component => new SourceHealthComponentItemViewModel
+                        {
+                            Label = SourceHealthDisplay.GetComponentLabel(component.ComponentType),
+                            Summary = component.Summary,
+                            PillLabel = BuildComponentPillLabel(component, snapshot.HealthProbes),
+                            PillKind = MapComponentPillKind(component.State)
+                        })
+                        .ToList(),
+                    HealthIssues = snapshot.Issues
+                        .Take(3)
+                        .Select(issue => new SourceIssueItemViewModel
+                        {
+                            Title = issue.Title,
+                            Message = issue.Message,
+                            SeverityKind = MapIssuePillKind(issue.Severity)
+                        })
+                        .ToList(),
                     ImportWarningCount = snapshot.ImportWarningCount,
                     GuideWarningCount = snapshot.GuideWarningCount
                 });
@@ -573,6 +650,8 @@ namespace Kroira.App.ViewModels
                     ContainsSearch(source.HealthLabel, search) ||
                     ContainsSearch(source.GuideStatusText, search) ||
                     ContainsSearch(source.Status, search) ||
+                    ContainsSearch(source.ValidationResultText, search) ||
+                    source.HealthComponents.Any(component => ContainsSearch(component.Label, search) || ContainsSearch(component.Summary, search)) ||
                     ContainsSearch(source.GuideModeText, search) ||
                     ContainsSearch(source.GuideUrlText, search));
             }
@@ -607,12 +686,16 @@ namespace Kroira.App.ViewModels
 
                 if (profile.LastSync.HasValue)
                 {
-                    var importStatusText = snapshot.HealthLabel is "Failing" or "Attention"
+                    var importStatusText = snapshot.HealthLabel is "Failing" or "Attention" or "Weak" or "Incomplete" or "Outdated" or "Problematic"
                         ? "Review"
                         : "Complete";
-                    var importKind = snapshot.HealthLabel is "Failing" or "Attention"
-                        ? StatusPillKind.Warning
-                        : StatusPillKind.Healthy;
+                    var importKind = snapshot.HealthLabel is "Failing" or "Problematic"
+                        ? StatusPillKind.Failed
+                        : snapshot.HealthLabel is "Attention"
+                            ? StatusPillKind.Warning
+                        : snapshot.HealthLabel is "Weak" or "Incomplete" or "Outdated"
+                            ? StatusPillKind.Warning
+                            : StatusPillKind.Healthy;
 
                     activities.Add((profile.LastSync.Value.ToUniversalTime(), new SourceRecentActivityItemViewModel
                     {
@@ -674,6 +757,11 @@ namespace Kroira.App.ViewModels
                 return snapshot.WarningSummaryText;
             }
 
+            if (!string.IsNullOrWhiteSpace(snapshot.ValidationResultText))
+            {
+                return snapshot.ValidationResultText;
+            }
+
             if (!string.IsNullOrWhiteSpace(snapshot.EpgCoverageText))
             {
                 return snapshot.EpgCoverageText;
@@ -701,9 +789,51 @@ namespace Kroira.App.ViewModels
             return healthLabel switch
             {
                 "Healthy" or "Ready" => StatusPillKind.Healthy,
+                "Weak" or "Incomplete" or "Outdated" => StatusPillKind.Warning,
                 "Working" => StatusPillKind.Syncing,
                 "Attention" or "Degraded" => StatusPillKind.Warning,
-                "Failing" => StatusPillKind.Failed,
+                "Failing" or "Problematic" => StatusPillKind.Failed,
+                _ => StatusPillKind.Standby
+            };
+        }
+
+        private static StatusPillKind MapIssuePillKind(SourceHealthIssueSeverity severity)
+        {
+            return severity switch
+            {
+                SourceHealthIssueSeverity.Error => StatusPillKind.Failed,
+                SourceHealthIssueSeverity.Warning => StatusPillKind.Warning,
+                _ => StatusPillKind.Info
+            };
+        }
+
+        private static string BuildComponentPillLabel(
+            SourceDiagnosticsComponentSnapshot component,
+            IReadOnlyList<SourceDiagnosticsProbeSnapshot> probes)
+        {
+            var baseLabel = SourceHealthDisplay.GetComponentShortLabel(component.ComponentType).ToUpperInvariant();
+            if (component.ComponentType is not SourceHealthComponentType.Live and not SourceHealthComponentType.Vod)
+            {
+                return $"{baseLabel} {SourceHealthDisplay.GetComponentBadgeText(component.State)}";
+            }
+
+            var probeType = component.ComponentType == SourceHealthComponentType.Live
+                ? SourceHealthProbeType.Live
+                : SourceHealthProbeType.Vod;
+            var probe = probes.FirstOrDefault(item => item.ProbeType == probeType);
+            return probe != null && probe.Status == SourceHealthProbeStatus.Completed && probe.SampleSize > 0
+                ? $"{baseLabel} {probe.SuccessCount}/{probe.SampleSize}"
+                : $"{baseLabel} {SourceHealthDisplay.GetComponentBadgeText(component.State)}";
+        }
+
+        private static StatusPillKind MapComponentPillKind(SourceHealthComponentState state)
+        {
+            return state switch
+            {
+                SourceHealthComponentState.Healthy => StatusPillKind.Healthy,
+                SourceHealthComponentState.Weak or SourceHealthComponentState.Incomplete or SourceHealthComponentState.Outdated => StatusPillKind.Warning,
+                SourceHealthComponentState.Problematic => StatusPillKind.Failed,
+                SourceHealthComponentState.NotApplicable => StatusPillKind.Info,
                 _ => StatusPillKind.Standby
             };
         }
@@ -976,6 +1106,31 @@ namespace Kroira.App.ViewModels
 
                     var epgLog = await db.EpgSyncLogs.FirstOrDefaultAsync(log => log.SourceProfileId == id);
                     if (epgLog != null) db.EpgSyncLogs.Remove(epgLog);
+
+                    var healthReport = await db.SourceHealthReports
+                        .Include(report => report.Components)
+                        .Include(report => report.Probes)
+                        .Include(report => report.Issues)
+                        .FirstOrDefaultAsync(report => report.SourceProfileId == id);
+                    if (healthReport != null)
+                    {
+                        if (healthReport.Components.Count > 0)
+                        {
+                            db.SourceHealthComponents.RemoveRange(healthReport.Components);
+                        }
+
+                        if (healthReport.Probes.Count > 0)
+                        {
+                            db.SourceHealthProbes.RemoveRange(healthReport.Probes);
+                        }
+
+                        if (healthReport.Issues.Count > 0)
+                        {
+                            db.SourceHealthIssues.RemoveRange(healthReport.Issues);
+                        }
+
+                        db.SourceHealthReports.Remove(healthReport);
+                    }
 
                     db.SourceProfiles.Remove(profile);
 

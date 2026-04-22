@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Kroira.App.Data;
@@ -19,10 +21,12 @@ namespace Kroira.App.Services.Parsing
     {
         private const string DefaultGroupName = "Uncategorized";
         private readonly ICatalogNormalizationService _catalogNormalizationService;
+        private readonly ISourceHealthService _sourceHealthService;
 
-        public M3uParserService(ICatalogNormalizationService catalogNormalizationService)
+        public M3uParserService(ICatalogNormalizationService catalogNormalizationService, ISourceHealthService sourceHealthService)
         {
             _catalogNormalizationService = catalogNormalizationService;
+            _sourceHealthService = sourceHealthService;
         }
 
         public async Task ParseAndImportM3uAsync(AppDbContext db, int sourceProfileId)
@@ -33,112 +37,114 @@ namespace Kroira.App.Services.Parsing
                 throw new Exception("Source URL or Path is empty.");
             }
 
-            var importMode = cred.M3uImportMode;
-            var content = await ReadPlaylistAsync(cred.Url);
-            var headerMetadata = M3uMetadataParser.ParseHeaderMetadata(content, cred.Url);
-            cred.DetectedEpgUrl = headerMetadata.XmltvUrls.FirstOrDefault() ?? string.Empty;
-            var diagnostics = new M3uImportDiagnostics
+            try
             {
-                XmltvUrlFound = headerMetadata.XmltvUrls.Count > 0,
-                XmltvUrlValue = string.Join(" | ", headerMetadata.XmltvUrls)
-            };
-
-            LogHeaderDiagnostics(sourceProfileId, headerMetadata);
-
-            var lines = content.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
-            var parsedEntries = new List<M3uEntry>();
-
-            var currentCategoryContext = string.Empty;
-            PendingExtinf pending = null;
-
-            foreach (var rawLine in lines)
-            {
-                var line = rawLine.Trim();
-                if (string.IsNullOrWhiteSpace(line))
+                var importMode = cred.M3uImportMode;
+                var content = await ReadPlaylistAsync(cred.Url);
+                var headerMetadata = M3uMetadataParser.ParseHeaderMetadata(content, cred.Url);
+                cred.DetectedEpgUrl = headerMetadata.XmltvUrls.FirstOrDefault() ?? string.Empty;
+                var diagnostics = new M3uImportDiagnostics
                 {
-                    continue;
-                }
+                    XmltvUrlFound = headerMetadata.XmltvUrls.Count > 0,
+                    XmltvUrlValue = string.Join(" | ", headerMetadata.XmltvUrls)
+                };
 
-                if (line.StartsWith("#EXTINF:", StringComparison.OrdinalIgnoreCase))
+                LogHeaderDiagnostics(sourceProfileId, headerMetadata);
+
+                var lines = content.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+                var parsedEntries = new List<M3uEntry>();
+
+                var currentCategoryContext = string.Empty;
+                PendingExtinf pending = null;
+
+                foreach (var rawLine in lines)
                 {
-                    var extinf = M3uMetadataParser.ParseExtinf(line);
-                    var explicitGroup = NormalizeGroupName(M3uMetadataParser.GetFirstAttributeValue(
-                        extinf.Attributes,
-                        "group-title"));
-
-                    if (!string.IsNullOrWhiteSpace(explicitGroup) &&
-                        !string.Equals(explicitGroup, DefaultGroupName, StringComparison.OrdinalIgnoreCase))
+                    var line = rawLine.Trim();
+                    if (string.IsNullOrWhiteSpace(line))
                     {
-                        currentCategoryContext = explicitGroup;
-                    }
-
-                    pending = new PendingExtinf
-                    {
-                        Name = ResolveEntryName(extinf),
-                        GroupName = !string.IsNullOrWhiteSpace(explicitGroup) &&
-                                    !string.Equals(explicitGroup, DefaultGroupName, StringComparison.OrdinalIgnoreCase)
-                            ? explicitGroup
-                            : NormalizeGroupName(currentCategoryContext),
-                        LogoUrl = M3uMetadataParser.GetFirstAttributeValue(extinf.Attributes, "tvg-logo"),
-                        TvgType = M3uMetadataParser.GetFirstAttributeValue(extinf.Attributes, "tvg-type"),
-                        TvgId = M3uMetadataParser.GetFirstAttributeValue(extinf.Attributes, "tvg-id"),
-                        TvgName = M3uMetadataParser.GetFirstAttributeValue(extinf.Attributes, "tvg-name"),
-                        HadExplicitGroupTitle = !string.IsNullOrWhiteSpace(explicitGroup) &&
-                                                !string.Equals(explicitGroup, DefaultGroupName, StringComparison.OrdinalIgnoreCase)
-                    };
-
-                    continue;
-                }
-
-                if (pending != null && !line.StartsWith("#", StringComparison.Ordinal))
-                {
-                    if (ContentClassifier.TryExtractM3uPseudoCategoryHeader(pending.Name, out var pseudoCategory))
-                    {
-                        currentCategoryContext = NormalizeGroupName(pseudoCategory);
-                        diagnostics.PseudoItemRejectedCount++;
-                        pending = null;
                         continue;
                     }
 
-                    parsedEntries.Add(new M3uEntry
+                    if (line.StartsWith("#EXTINF:", StringComparison.OrdinalIgnoreCase))
                     {
-                        GroupName = NormalizeGroupName(pending.GroupName),
-                        Name = pending.Name,
-                        Url = line,
-                        LogoUrl = pending.LogoUrl,
-                        TvgType = pending.TvgType,
-                        TvgId = pending.TvgId,
-                        TvgName = pending.TvgName,
-                        HadExplicitGroupTitle = pending.HadExplicitGroupTitle
-                    });
+                        var extinf = M3uMetadataParser.ParseExtinf(line);
+                        var explicitGroup = NormalizeGroupName(M3uMetadataParser.GetFirstAttributeValue(
+                            extinf.Attributes,
+                            "group-title"));
 
-                    if (pending.HadExplicitGroupTitle)
-                    {
-                        diagnostics.WithGroupTitleCount++;
+                        if (!string.IsNullOrWhiteSpace(explicitGroup) &&
+                            !string.Equals(explicitGroup, DefaultGroupName, StringComparison.OrdinalIgnoreCase))
+                        {
+                            currentCategoryContext = explicitGroup;
+                        }
+
+                        pending = new PendingExtinf
+                        {
+                            Name = ResolveEntryName(extinf),
+                            GroupName = !string.IsNullOrWhiteSpace(explicitGroup) &&
+                                        !string.Equals(explicitGroup, DefaultGroupName, StringComparison.OrdinalIgnoreCase)
+                                ? explicitGroup
+                                : NormalizeGroupName(currentCategoryContext),
+                            LogoUrl = M3uMetadataParser.GetFirstAttributeValue(extinf.Attributes, "tvg-logo"),
+                            TvgType = M3uMetadataParser.GetFirstAttributeValue(extinf.Attributes, "tvg-type"),
+                            TvgId = M3uMetadataParser.GetFirstAttributeValue(extinf.Attributes, "tvg-id"),
+                            TvgName = M3uMetadataParser.GetFirstAttributeValue(extinf.Attributes, "tvg-name"),
+                            HadExplicitGroupTitle = !string.IsNullOrWhiteSpace(explicitGroup) &&
+                                                    !string.Equals(explicitGroup, DefaultGroupName, StringComparison.OrdinalIgnoreCase)
+                        };
+
+                        continue;
                     }
 
-                    if (!string.IsNullOrWhiteSpace(pending.LogoUrl))
+                    if (pending != null && !line.StartsWith("#", StringComparison.Ordinal))
                     {
-                        diagnostics.WithTvgLogoCount++;
-                    }
+                        if (ContentClassifier.TryExtractM3uPseudoCategoryHeader(pending.Name, out var pseudoCategory))
+                        {
+                            currentCategoryContext = NormalizeGroupName(pseudoCategory);
+                            diagnostics.PseudoItemRejectedCount++;
+                            pending = null;
+                            continue;
+                        }
 
-                    if (!string.IsNullOrWhiteSpace(pending.TvgId))
-                    {
-                        diagnostics.WithTvgIdCount++;
-                    }
+                        parsedEntries.Add(new M3uEntry
+                        {
+                            GroupName = NormalizeGroupName(pending.GroupName),
+                            Name = pending.Name,
+                            Url = line,
+                            LogoUrl = pending.LogoUrl,
+                            TvgType = pending.TvgType,
+                            TvgId = pending.TvgId,
+                            TvgName = pending.TvgName,
+                            HadExplicitGroupTitle = pending.HadExplicitGroupTitle
+                        });
 
-                    pending = null;
+                        if (pending.HadExplicitGroupTitle)
+                        {
+                            diagnostics.WithGroupTitleCount++;
+                        }
+
+                        if (!string.IsNullOrWhiteSpace(pending.LogoUrl))
+                        {
+                            diagnostics.WithTvgLogoCount++;
+                        }
+
+                        if (!string.IsNullOrWhiteSpace(pending.TvgId))
+                        {
+                            diagnostics.WithTvgIdCount++;
+                        }
+
+                        pending = null;
+                    }
                 }
-            }
 
-            var categoryLabels = ContentClassifier.BuildCategoryLabelSet(parsedEntries.Select(e => e.GroupName));
-            var explicitCategoryLabels = ContentClassifier.BuildCategoryLabelSet(
-                parsedEntries
-                    .Where(entry => entry.HadExplicitGroupTitle)
-                    .Select(entry => entry.GroupName));
-            var normalizedExplicitCategoryLabels = explicitCategoryLabels
-                .Select(label => label.Trim().ToLowerInvariant())
-                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+                var categoryLabels = ContentClassifier.BuildCategoryLabelSet(parsedEntries.Select(e => e.GroupName));
+                var explicitCategoryLabels = ContentClassifier.BuildCategoryLabelSet(
+                    parsedEntries
+                        .Where(entry => entry.HadExplicitGroupTitle)
+                        .Select(entry => entry.GroupName));
+                var normalizedExplicitCategoryLabels = explicitCategoryLabels
+                    .Select(label => label.Trim().ToLowerInvariant())
+                    .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
             var categoriesDict = new Dictionary<string, ChannelCategory>(StringComparer.OrdinalIgnoreCase);
             var movieList = new List<Movie>();
@@ -289,65 +295,81 @@ namespace Kroira.App.Services.Parsing
             diagnostics.UncategorizedCount = uncategorizedCount;
             LogImportDiagnostics(sourceProfileId, diagnostics);
 
-            using var transaction = await db.Database.BeginTransactionAsync();
-            try
+                using var transaction = await db.Database.BeginTransactionAsync();
+                try
+                {
+                    var existingCats = await db.ChannelCategories
+                        .Where(category => category.SourceProfileId == sourceProfileId)
+                        .ToListAsync();
+                    var catIds = existingCats.Select(category => category.Id).ToList();
+                    var existingChannels = await db.Channels
+                        .Where(channel => catIds.Contains(channel.ChannelCategoryId))
+                        .ToListAsync();
+                    db.Channels.RemoveRange(existingChannels);
+                    db.ChannelCategories.RemoveRange(existingCats);
+
+                    var existingMovies = await db.Movies
+                        .Where(movie => movie.SourceProfileId == sourceProfileId)
+                        .ToListAsync();
+                    db.Movies.RemoveRange(existingMovies);
+
+                    var existingSeries = await db.Series
+                        .Include(series => series.Seasons!)
+                        .ThenInclude(season => season.Episodes!)
+                        .Where(series => series.SourceProfileId == sourceProfileId)
+                        .ToListAsync();
+                    db.Series.RemoveRange(existingSeries);
+
+                    await db.SaveChangesAsync();
+
+                    db.ChannelCategories.AddRange(categoriesDict.Values);
+                    db.Movies.AddRange(movieList);
+                    db.Series.AddRange(seriesList);
+
+                    var syncState = await db.SourceSyncStates.FirstOrDefaultAsync(state => state.SourceProfileId == sourceProfileId);
+                    if (syncState != null)
+                    {
+                        syncState.LastAttempt = DateTime.UtcNow;
+                        syncState.HttpStatusCode = 200;
+                        syncState.ErrorLog = BuildImportSummary(
+                            importMode,
+                            totalChannels,
+                            totalMovies,
+                            totalEpisodes,
+                            totalSeries,
+                            diagnostics);
+                    }
+
+                    var profile = await db.SourceProfiles.FirstOrDefaultAsync(source => source.Id == sourceProfileId);
+                    if (profile != null)
+                    {
+                        profile.LastSync = DateTime.UtcNow;
+                    }
+
+                    await db.SaveChangesAsync();
+                    await transaction.CommitAsync();
+
+                    await LogPersistedDiagnosticsAsync(sourceProfileId, db, totalChannels, totalMovies, totalSeries);
+                    await _sourceHealthService.RefreshSourceHealthAsync(db, sourceProfileId);
+                }
+                catch
+                {
+                    await transaction.RollbackAsync();
+                    throw;
+                }
+            }
+            catch (Exception ex)
             {
-                var existingCats = await db.ChannelCategories
-                    .Where(category => category.SourceProfileId == sourceProfileId)
-                    .ToListAsync();
-                var catIds = existingCats.Select(category => category.Id).ToList();
-                var existingChannels = await db.Channels
-                    .Where(channel => catIds.Contains(channel.ChannelCategoryId))
-                    .ToListAsync();
-                db.Channels.RemoveRange(existingChannels);
-                db.ChannelCategories.RemoveRange(existingCats);
-
-                var existingMovies = await db.Movies
-                    .Where(movie => movie.SourceProfileId == sourceProfileId)
-                    .ToListAsync();
-                db.Movies.RemoveRange(existingMovies);
-
-                var existingSeries = await db.Series
-                    .Include(series => series.Seasons!)
-                    .ThenInclude(season => season.Episodes!)
-                    .Where(series => series.SourceProfileId == sourceProfileId)
-                    .ToListAsync();
-                db.Series.RemoveRange(existingSeries);
-
-                await db.SaveChangesAsync();
-
-                db.ChannelCategories.AddRange(categoriesDict.Values);
-                db.Movies.AddRange(movieList);
-                db.Series.AddRange(seriesList);
-
                 var syncState = await db.SourceSyncStates.FirstOrDefaultAsync(state => state.SourceProfileId == sourceProfileId);
                 if (syncState != null)
                 {
                     syncState.LastAttempt = DateTime.UtcNow;
-                    syncState.HttpStatusCode = 200;
-                    syncState.ErrorLog = BuildImportSummary(
-                        importMode,
-                        totalChannels,
-                        totalMovies,
-                        totalEpisodes,
-                        totalSeries,
-                        diagnostics);
+                    syncState.HttpStatusCode = ResolveFailureStatusCode(ex);
+                    syncState.ErrorLog = $"M3U import failed: {ex.Message}";
+                    await db.SaveChangesAsync();
                 }
 
-                var profile = await db.SourceProfiles.FirstOrDefaultAsync(source => source.Id == sourceProfileId);
-                if (profile != null)
-                {
-                    profile.LastSync = DateTime.UtcNow;
-                }
-
-                await db.SaveChangesAsync();
-                await transaction.CommitAsync();
-
-                await LogPersistedDiagnosticsAsync(sourceProfileId, db, totalChannels, totalMovies, totalSeries);
-            }
-            catch
-            {
-                await transaction.RollbackAsync();
+                await _sourceHealthService.RefreshSourceHealthAsync(db, sourceProfileId);
                 throw;
             }
         }
@@ -752,6 +774,19 @@ namespace Kroira.App.Services.Parsing
             }
 
             return $"\"{value.Replace("\"", "'")}\"";
+        }
+
+        private static int ResolveFailureStatusCode(Exception ex)
+        {
+            return ex switch
+            {
+                HttpRequestException httpEx when httpEx.StatusCode.HasValue => (int)httpEx.StatusCode.Value,
+                TaskCanceledException => (int)HttpStatusCode.RequestTimeout,
+                TimeoutException => (int)HttpStatusCode.RequestTimeout,
+                FileNotFoundException => (int)HttpStatusCode.NotFound,
+                UnauthorizedAccessException => (int)HttpStatusCode.Forbidden,
+                _ => (int)HttpStatusCode.InternalServerError
+            };
         }
 
         private sealed class M3uEntry

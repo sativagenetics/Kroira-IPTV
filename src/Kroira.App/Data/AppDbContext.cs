@@ -19,6 +19,10 @@ namespace Kroira.App.Data
         public DbSet<SourceProfile> SourceProfiles { get; set; } = null!;
         public DbSet<SourceCredential> SourceCredentials { get; set; } = null!;
         public DbSet<SourceSyncState> SourceSyncStates { get; set; } = null!;
+        public DbSet<SourceHealthReport> SourceHealthReports { get; set; } = null!;
+        public DbSet<SourceHealthComponent> SourceHealthComponents { get; set; } = null!;
+        public DbSet<SourceHealthProbe> SourceHealthProbes { get; set; } = null!;
+        public DbSet<SourceHealthIssue> SourceHealthIssues { get; set; } = null!;
         public DbSet<ChannelCategory> ChannelCategories { get; set; } = null!;
         public DbSet<Channel> Channels { get; set; } = null!;
         public DbSet<EpgProgram> EpgPrograms { get; set; } = null!;
@@ -67,6 +71,92 @@ namespace Kroira.App.Data
                 .HasOne<SourceProfile>()
                 .WithOne()
                 .HasForeignKey<SourceSyncState>(e => e.SourceProfileId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<SourceHealthReport>()
+                .HasIndex(e => e.SourceProfileId)
+                .IsUnique();
+
+            modelBuilder.Entity<SourceHealthReport>()
+                .HasOne<SourceProfile>()
+                .WithOne()
+                .HasForeignKey<SourceHealthReport>(e => e.SourceProfileId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<SourceHealthReport>()
+                .Property(e => e.StatusSummary)
+                .IsRequired()
+                .HasMaxLength(280);
+
+            modelBuilder.Entity<SourceHealthReport>()
+                .Property(e => e.ImportResultSummary)
+                .IsRequired()
+                .HasMaxLength(280);
+
+            modelBuilder.Entity<SourceHealthReport>()
+                .Property(e => e.ValidationSummary)
+                .IsRequired()
+                .HasMaxLength(280);
+
+            modelBuilder.Entity<SourceHealthReport>()
+                .Property(e => e.TopIssueSummary)
+                .IsRequired()
+                .HasMaxLength(360);
+
+            modelBuilder.Entity<SourceHealthComponent>()
+                .HasIndex(e => new { e.SourceHealthReportId, e.ComponentType })
+                .IsUnique();
+
+            modelBuilder.Entity<SourceHealthComponent>()
+                .Property(e => e.Summary)
+                .IsRequired()
+                .HasMaxLength(220);
+
+            modelBuilder.Entity<SourceHealthComponent>()
+                .HasOne(component => component.Report)
+                .WithMany(report => report.Components)
+                .HasForeignKey(component => component.SourceHealthReportId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<SourceHealthProbe>()
+                .HasIndex(e => new { e.SourceHealthReportId, e.ProbeType })
+                .IsUnique();
+
+            modelBuilder.Entity<SourceHealthProbe>()
+                .Property(e => e.Summary)
+                .IsRequired()
+                .HasMaxLength(220);
+
+            modelBuilder.Entity<SourceHealthProbe>()
+                .HasOne(probe => probe.Report)
+                .WithMany(report => report.Probes)
+                .HasForeignKey(probe => probe.SourceHealthReportId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<SourceHealthIssue>()
+                .Property(e => e.Code)
+                .IsRequired()
+                .HasMaxLength(64);
+
+            modelBuilder.Entity<SourceHealthIssue>()
+                .Property(e => e.Title)
+                .IsRequired()
+                .HasMaxLength(120);
+
+            modelBuilder.Entity<SourceHealthIssue>()
+                .Property(e => e.Message)
+                .IsRequired()
+                .HasMaxLength(280);
+
+            modelBuilder.Entity<SourceHealthIssue>()
+                .Property(e => e.SampleItems)
+                .IsRequired()
+                .HasMaxLength(280);
+
+            modelBuilder.Entity<SourceHealthIssue>()
+                .HasOne(issue => issue.Report)
+                .WithMany(report => report.Issues)
+                .HasForeignKey(issue => issue.SourceHealthReportId)
                 .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<EpgSyncLog>()

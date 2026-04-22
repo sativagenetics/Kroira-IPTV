@@ -22,10 +22,12 @@ namespace Kroira.App.Services.Parsing
     public class XmltvParserService : IXmltvParserService
     {
         private readonly IReadOnlyDictionary<SourceType, IEpgSourceDiscoveryService> _discoveryServices;
+        private readonly ISourceHealthService _sourceHealthService;
 
-        public XmltvParserService(IEnumerable<IEpgSourceDiscoveryService> discoveryServices)
+        public XmltvParserService(IEnumerable<IEpgSourceDiscoveryService> discoveryServices, ISourceHealthService sourceHealthService)
         {
             _discoveryServices = discoveryServices.ToDictionary(service => service.SourceType);
+            _sourceHealthService = sourceHealthService;
         }
 
         public async Task ParseAndImportEpgAsync(AppDbContext db, int sourceProfileId)
@@ -50,6 +52,7 @@ namespace Kroira.App.Services.Parsing
             if (activeMode == EpgActiveMode.None)
             {
                 await ClearGuideDataAsync(db, sourceProfileId, activeMode, "Guide mode is set to none for this source.");
+                await _sourceHealthService.RefreshSourceHealthAsync(db, sourceProfileId);
                 return;
             }
 
@@ -77,10 +80,12 @@ namespace Kroira.App.Services.Parsing
                     $"source_profile_id={sourceProfileId}; stage=discovery_complete; mode={discovered.ActiveMode}; active_xmltv_url={FormatDiagnosticValue(discovered.ActiveXmltvUrl)}; detected_xmltv_url={FormatDiagnosticValue(discovered.DetectedXmltvUrl)}; description={FormatDiagnosticValue(discovered.Description)}");
 
                 await ParseAndPersistXmltvAsync(db, sourceProfileId, discovered);
+                await _sourceHealthService.RefreshSourceHealthAsync(db, sourceProfileId);
             }
             catch (EpgUnavailableException ex)
             {
                 await MarkEpgUnavailableAsync(db, sourceProfileId, activeMode, ex.Message);
+                await _sourceHealthService.RefreshSourceHealthAsync(db, sourceProfileId);
             }
             catch (EpgFetchException ex)
             {
@@ -93,6 +98,7 @@ namespace Kroira.App.Services.Parsing
                     ex.Message,
                     ex.XmltvUrl);
 
+                await _sourceHealthService.RefreshSourceHealthAsync(db, sourceProfileId);
                 throw new Exception($"Failed to sync XMLTV EPG: {ex.Message}");
             }
             catch (EpgSyncFailureException ex)
@@ -106,6 +112,7 @@ namespace Kroira.App.Services.Parsing
                     ex.Message,
                     ex.ActiveXmltvUrl);
 
+                await _sourceHealthService.RefreshSourceHealthAsync(db, sourceProfileId);
                 throw new Exception($"Failed to sync XMLTV EPG: {ex.Message}");
             }
             catch (Exception ex)
@@ -119,6 +126,7 @@ namespace Kroira.App.Services.Parsing
                     ex.Message,
                     string.Empty);
 
+                await _sourceHealthService.RefreshSourceHealthAsync(db, sourceProfileId);
                 throw new Exception($"Failed to sync XMLTV EPG: {ex.Message}");
             }
         }

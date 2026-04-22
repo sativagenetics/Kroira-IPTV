@@ -466,6 +466,10 @@
                                             <StackPanel Spacing="5">
                                                 <TextBlock Text="LAST SUCCESS" Style="{StaticResource SourceMiniLabelStyle}" />
                                                 <TextBlock Text="{Binding LastSyncText}" Style="{StaticResource SourceMiniValueStyle}" />
+                                                <TextBlock Style="{StaticResource KroiraBodyStyle}" MaxLines="1" TextTrimming="CharacterEllipsis">
+                                                    <Run Text="Last attempt " />
+                                                    <Run Text="{Binding LastAttemptText}" />
+                                                </TextBlock>
                                                 <TextBlock Text="{Binding LastSuccessfulSyncText}" Style="{StaticResource KroiraBodyStyle}" MaxLines="2" TextTrimming="CharacterEllipsis" TextWrapping="WrapWholeWords" />
                                             </StackPanel>
                                         </Border>
@@ -498,6 +502,20 @@
                                             <StackPanel Spacing="6">
                                                 <TextBlock Text="HEALTH SUMMARY" Style="{StaticResource SourceMiniLabelStyle}" />
                                                 <TextBlock Text="{Binding Status}" Style="{StaticResource KroiraBodyStyle}" MaxLines="3" TextWrapping="WrapWholeWords" TextTrimming="CharacterEllipsis" />
+                                                <TextBlock Text="{Binding ValidationResultText}" Visibility="{Binding ValidationVisibility}" Style="{StaticResource KroiraBodyStyle}" MaxLines="3" TextWrapping="WrapWholeWords" TextTrimming="CharacterEllipsis" />
+                                                <ItemsControl ItemsSource="{Binding HealthComponents}" Visibility="{Binding HealthComponentsVisibility}">
+                                                    <ItemsControl.ItemsPanel>
+                                                        <ItemsPanelTemplate>
+                                                            <ItemsWrapGrid Orientation="Horizontal" MaximumRowsOrColumns="3" />
+                                                        </ItemsPanelTemplate>
+                                                    </ItemsControl.ItemsPanel>
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <controls:StatusPill Label="{Binding PillLabel}" Kind="{Binding PillKind}" Margin="0,0,8,8" />
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                                <TextBlock Text="{Binding ValidationScoreText}" Style="{StaticResource KroiraBodyStyle}" Foreground="{StaticResource KroiraTextSecondaryBrush}" MaxLines="1" TextTrimming="CharacterEllipsis" />
                                             </StackPanel>
                                         </Border>
 
@@ -510,7 +528,7 @@
                                         </Border>
                                     </Grid>
 
-                                    <Expander Grid.Row="3" Header="Guide and sync details">
+                                    <Expander Grid.Row="3" Header="Health and guide details">
                                         <Grid Margin="0,12,0,0" ColumnSpacing="16">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*" />
@@ -518,11 +536,38 @@
                                             </Grid.ColumnDefinitions>
 
                                             <StackPanel Spacing="7">
-                                                <TextBlock Text="Operational details" Style="{StaticResource SourceMiniLabelStyle}" />
+                                                <TextBlock Text="Sync and validation" Style="{StaticResource SourceMiniLabelStyle}" />
                                                 <TextBlock Text="{Binding ImportResultText}" Style="{StaticResource KroiraBodyStyle}" MaxLines="2" TextWrapping="WrapWholeWords" TextTrimming="CharacterEllipsis" />
+                                                <TextBlock Text="{Binding ValidationResultText}" Visibility="{Binding ValidationVisibility}" Style="{StaticResource KroiraBodyStyle}" MaxLines="3" TextWrapping="WrapWholeWords" TextTrimming="CharacterEllipsis" />
+                                                <ItemsControl ItemsSource="{Binding HealthComponents}" Visibility="{Binding HealthComponentsVisibility}">
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <StackPanel Spacing="4">
+                                                                <controls:StatusPill Label="{Binding PillLabel}" Kind="{Binding PillKind}" />
+                                                                <TextBlock Text="{Binding Summary}" Style="{StaticResource KroiraBodyStyle}" MaxLines="2" TextWrapping="WrapWholeWords" TextTrimming="CharacterEllipsis" />
+                                                            </StackPanel>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                                <TextBlock Style="{StaticResource KroiraBodyStyle}">
+                                                    <Run Text="Last attempt " />
+                                                    <Run Text="{Binding LastAttemptText}" />
+                                                </TextBlock>
                                                 <TextBlock Text="{Binding LastSuccessfulSyncText}" Style="{StaticResource KroiraBodyStyle}" MaxLines="2" TextWrapping="WrapWholeWords" TextTrimming="CharacterEllipsis" />
                                                 <TextBlock Text="{Binding ParseWarningsText}" Visibility="{Binding ParseWarningsVisibility}" Foreground="{StaticResource KroiraGoldBrush}" FontSize="11" MaxLines="2" TextWrapping="WrapWholeWords" />
                                                 <TextBlock Text="{Binding NetworkFailureText}" Visibility="{Binding NetworkFailureVisibility}" Foreground="{StaticResource KroiraLiveDotBrush}" FontSize="11" MaxLines="2" TextWrapping="WrapWholeWords" />
+                                                <ItemsControl ItemsSource="{Binding HealthIssues}" Visibility="{Binding HealthIssuesVisibility}">
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <StackPanel Spacing="4">
+                                                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                                                    <controls:StatusPill Label="{Binding Title}" Kind="{Binding SeverityKind}" />
+                                                                </StackPanel>
+                                                                <TextBlock Text="{Binding Message}" Style="{StaticResource KroiraBodyStyle}" MaxLines="2" TextWrapping="WrapWholeWords" TextTrimming="CharacterEllipsis" />
+                                                            </StackPanel>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
                                             </StackPanel>
 
                                             <StackPanel Grid.Column="1" Spacing="7">

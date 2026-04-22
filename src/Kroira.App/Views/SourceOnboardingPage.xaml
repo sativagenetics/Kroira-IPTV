@@ -24,7 +24,7 @@
 
                     <RadioButtons Header="Source Format" SelectedIndex="{x:Bind ViewModel.SelectedFormatIndex, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
                         <RadioButton Content="M3U (URL or Local File)" />
-                        <RadioButton Content="Xtream Codes (Live TV Only)" />
+                        <RadioButton Content="Xtream Codes" />
                     </RadioButtons>
 
                     <StackPanel Visibility="{x:Bind ViewModel.M3UVisibility, Mode=OneWay}" Spacing="8">

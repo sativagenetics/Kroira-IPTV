@@ -18,6 +18,13 @@ namespace Kroira.App.Services
 
     public sealed class SourceDiagnosticsService : ISourceDiagnosticsService
     {
+        private readonly ISourceHealthService _sourceHealthService;
+
+        public SourceDiagnosticsService(ISourceHealthService sourceHealthService)
+        {
+            _sourceHealthService = sourceHealthService;
+        }
+
         public async Task<IReadOnlyDictionary<int, SourceDiagnosticsSnapshot>> GetSnapshotsAsync(
             AppDbContext db,
             IReadOnlyCollection<int> sourceIds)
@@ -26,6 +33,54 @@ namespace Kroira.App.Services
             if (ids.Count == 0)
             {
                 return new Dictionary<int, SourceDiagnosticsSnapshot>();
+            }
+
+            var reportSourceIds = await db.SourceHealthReports
+                .AsNoTracking()
+                .Where(report => ids.Contains(report.SourceProfileId))
+                .Select(report => report.SourceProfileId)
+                .ToListAsync();
+            if (reportSourceIds.Count > 0)
+            {
+                var componentSourceIds = await db.SourceHealthComponents
+                    .AsNoTracking()
+                    .Join(
+                        db.SourceHealthReports
+                            .AsNoTracking()
+                            .Where(report => ids.Contains(report.SourceProfileId)),
+                        component => component.SourceHealthReportId,
+                        report => report.Id,
+                        (component, report) => report.SourceProfileId)
+                    .Distinct()
+                    .ToListAsync();
+
+                var probeSourceIds = await db.SourceHealthProbes
+                    .AsNoTracking()
+                    .Join(
+                        db.SourceHealthReports
+                            .AsNoTracking()
+                            .Where(report => ids.Contains(report.SourceProfileId)),
+                        probe => probe.SourceHealthReportId,
+                        report => report.Id,
+                        (probe, report) => report.SourceProfileId)
+                    .Distinct()
+                    .ToListAsync();
+
+                var sourcesToRefresh = reportSourceIds
+                    .Except(componentSourceIds)
+                    .Concat(reportSourceIds.Except(probeSourceIds))
+                    .Distinct()
+                    .ToList();
+
+                foreach (var sourceId in sourcesToRefresh)
+                {
+                    await _sourceHealthService.RefreshSourceHealthAsync(db, sourceId);
+                }
+
+                if (sourcesToRefresh.Count > 0)
+                {
+                    db.ChangeTracker.Clear();
+                }
             }
 
             var nowUtc = DateTime.UtcNow;
@@ -48,6 +103,106 @@ namespace Kroira.App.Services
                     EpgMode = credential.EpgMode
                 })
                 .ToDictionaryAsync(credential => credential.SourceProfileId);
+            var healthReports = await db.SourceHealthReports
+                .AsNoTracking()
+                .Where(report => ids.Contains(report.SourceProfileId))
+                .ToDictionaryAsync(report => report.SourceProfileId);
+            var healthComponents = await db.SourceHealthComponents
+                .AsNoTracking()
+                .Join(
+                    db.SourceHealthReports
+                        .AsNoTracking()
+                        .Where(report => ids.Contains(report.SourceProfileId)),
+                    component => component.SourceHealthReportId,
+                    report => report.Id,
+                    (component, report) => new
+                    {
+                        report.SourceProfileId,
+                        Component = component
+                    })
+                .ToListAsync();
+            var componentLookup = healthComponents
+                .GroupBy(item => item.SourceProfileId)
+                .ToDictionary(
+                    group => group.Key,
+                    group => (IReadOnlyList<SourceDiagnosticsComponentSnapshot>)group
+                        .OrderBy(item => item.Component.SortOrder)
+                        .Select(item => new SourceDiagnosticsComponentSnapshot
+                        {
+                            ComponentType = item.Component.ComponentType,
+                            State = item.Component.State,
+                            Score = item.Component.Score,
+                            Summary = item.Component.Summary,
+                            RelevantCount = item.Component.RelevantCount,
+                            HealthyCount = item.Component.HealthyCount,
+                            IssueCount = item.Component.IssueCount
+                        })
+                        .ToList());
+            var healthProbes = await db.SourceHealthProbes
+                .AsNoTracking()
+                .Join(
+                    db.SourceHealthReports
+                        .AsNoTracking()
+                        .Where(report => ids.Contains(report.SourceProfileId)),
+                    probe => probe.SourceHealthReportId,
+                    report => report.Id,
+                    (probe, report) => new
+                    {
+                        report.SourceProfileId,
+                        Probe = probe
+                    })
+                .ToListAsync();
+            var probeLookup = healthProbes
+                .GroupBy(item => item.SourceProfileId)
+                .ToDictionary(
+                    group => group.Key,
+                    group => (IReadOnlyList<SourceDiagnosticsProbeSnapshot>)group
+                        .OrderBy(item => item.Probe.SortOrder)
+                        .Select(item => new SourceDiagnosticsProbeSnapshot
+                        {
+                            ProbeType = item.Probe.ProbeType,
+                            Status = item.Probe.Status,
+                            ProbedAtUtc = item.Probe.ProbedAtUtc,
+                            CandidateCount = item.Probe.CandidateCount,
+                            SampleSize = item.Probe.SampleSize,
+                            SuccessCount = item.Probe.SuccessCount,
+                            FailureCount = item.Probe.FailureCount,
+                            TimeoutCount = item.Probe.TimeoutCount,
+                            HttpErrorCount = item.Probe.HttpErrorCount,
+                            TransportErrorCount = item.Probe.TransportErrorCount,
+                            Summary = item.Probe.Summary
+                        })
+                        .ToList());
+            var healthIssues = await db.SourceHealthIssues
+                .AsNoTracking()
+                .Join(
+                    db.SourceHealthReports
+                        .AsNoTracking()
+                        .Where(report => ids.Contains(report.SourceProfileId)),
+                    issue => issue.SourceHealthReportId,
+                    report => report.Id,
+                    (issue, report) => new
+                    {
+                        report.SourceProfileId,
+                        Issue = issue
+                    })
+                .ToListAsync();
+            var issueLookup = healthIssues
+                .GroupBy(item => item.SourceProfileId)
+                .ToDictionary(
+                    group => group.Key,
+                    group => (IReadOnlyList<SourceDiagnosticsIssueSnapshot>)group
+                        .OrderByDescending(item => item.Issue.Severity)
+                        .ThenBy(item => item.Issue.SortOrder)
+                        .Select(item => new SourceDiagnosticsIssueSnapshot
+                        {
+                            Severity = item.Issue.Severity,
+                            Title = item.Issue.Title,
+                            Message = item.Issue.Message,
+                            AffectedCount = item.Issue.AffectedCount,
+                            SampleItems = item.Issue.SampleItems
+                        })
+                        .ToList());
 
             var epgLogs = new Dictionary<int, EpgSyncLog>();
             try
@@ -98,14 +253,18 @@ namespace Kroira.App.Services
                 syncStates.TryGetValue(sourceId, out var syncState);
                 credentials.TryGetValue(sourceId, out var credential);
                 epgLogs.TryGetValue(sourceId, out var epgLog);
+                healthReports.TryGetValue(sourceId, out var healthReport);
+                componentLookup.TryGetValue(sourceId, out var sourceComponents);
+                probeLookup.TryGetValue(sourceId, out var sourceProbes);
+                issueLookup.TryGetValue(sourceId, out var sourceIssues);
 
                 var sourceType = profile?.Type ?? SourceType.M3U;
-                var liveCount = liveCounts.TryGetValue(sourceId, out var live) ? live : 0;
-                var movieCount = movieCounts.TryGetValue(sourceId, out var movies) ? movies : 0;
-                var seriesCount = seriesCounts.TryGetValue(sourceId, out var series) ? series : 0;
-                var matchedCount = Math.Min(matchedCounts.TryGetValue(sourceId, out var matched) ? matched : 0, liveCount);
-                var currentCoverageCount = Math.Min(currentCoverageCounts.TryGetValue(sourceId, out var current) ? current : 0, liveCount);
-                var nextCoverageCount = Math.Min(nextCoverageCounts.TryGetValue(sourceId, out var next) ? next : 0, liveCount);
+                var liveCount = healthReport?.TotalChannelCount ?? (liveCounts.TryGetValue(sourceId, out var live) ? live : 0);
+                var movieCount = healthReport?.TotalMovieCount ?? (movieCounts.TryGetValue(sourceId, out var movies) ? movies : 0);
+                var seriesCount = healthReport?.TotalSeriesCount ?? (seriesCounts.TryGetValue(sourceId, out var series) ? series : 0);
+                var matchedCount = Math.Min(healthReport?.ChannelsWithEpgMatchCount ?? (matchedCounts.TryGetValue(sourceId, out var matched) ? matched : 0), liveCount);
+                var currentCoverageCount = Math.Min(healthReport?.ChannelsWithCurrentProgramCount ?? (currentCoverageCounts.TryGetValue(sourceId, out var current) ? current : 0), liveCount);
+                var nextCoverageCount = Math.Min(healthReport?.ChannelsWithNextProgramCount ?? (nextCoverageCounts.TryGetValue(sourceId, out var next) ? next : 0), liveCount);
                 var unmatchedCount = Math.Max(0, liveCount - matchedCount);
 
                 var activeMode = credential?.EpgMode ?? EpgActiveMode.Detected;
@@ -121,6 +280,14 @@ namespace Kroira.App.Services
                 var guideWarnings = BuildGuideWarnings(sourceType, liveCount, activeMode, status, resultCode, matchedCount, unmatchedCount, currentCoverageCount, nextCoverageCount, !string.IsNullOrWhiteSpace(detectedEpgUrl), !string.IsNullOrWhiteSpace(manualEpgUrl), hasPersistedGuideData);
                 var importWarnings = BuildImportWarnings(hasCatalog, liveCount, sourceType, syncState);
                 var failureSummary = BuildFailureSummary(syncState, status, resultCode, failureStage, epgLog);
+                var healthLabel = healthReport != null
+                    ? BuildHealthLabel(healthReport.HealthState)
+                    : ComputeHealthLabel(profile?.LastSync, hasCatalog, importFailure, status, resultCode, guideWarnings.Count);
+                var validationResult = healthReport?.ValidationSummary
+                    ?? BuildValidationSummaryFallback(liveCount, matchedCount, currentCoverageCount, nextCoverageCount, guideWarnings.Count);
+                var warningSummary = healthReport?.TopIssueSummary
+                    ?? string.Join(" ", importWarnings.Concat(guideWarnings).Distinct(StringComparer.OrdinalIgnoreCase).Take(3));
+                var lastSyncAttemptText = FormatTimestamp(healthReport?.LastSyncAttemptAtUtc ?? syncState?.LastAttempt);
 
                 snapshots[sourceId] = new SourceDiagnosticsSnapshot
                 {
@@ -138,20 +305,27 @@ namespace Kroira.App.Services
                     UnmatchedLiveChannelCount = unmatchedCount,
                     CurrentCoverageCount = currentCoverageCount,
                     NextCoverageCount = nextCoverageCount,
+                    DuplicateCount = healthReport?.DuplicateCount ?? 0,
+                    InvalidStreamCount = healthReport?.InvalidStreamCount ?? 0,
+                    ChannelsWithLogoCount = healthReport?.ChannelsWithLogoCount ?? 0,
+                    SuspiciousEntryCount = healthReport?.SuspiciousEntryCount ?? 0,
+                    HealthScore = healthReport?.HealthScore ?? 0,
                     EpgProgramCount = epgLog?.ProgrammeCount ?? 0,
                     ImportWarningCount = importWarnings.Count,
                     GuideWarningCount = guideWarnings.Count,
-                    HealthLabel = ComputeHealthLabel(profile?.LastSync, hasCatalog, importFailure, status, resultCode, guideWarnings.Count),
-                    StatusSummary = BuildSourceSummary(profile?.LastSync, hasCatalog, importFailure, status, failureSummary, liveCount, matchedCount, currentCoverageCount, nextCoverageCount),
-                    ImportResultText = BuildImportResult(syncState, profile?.LastSync, liveCount, movieCount, seriesCount, hasCatalog),
+                    HealthLabel = healthLabel,
+                    StatusSummary = healthReport?.StatusSummary ?? BuildSourceSummary(profile?.LastSync, hasCatalog, importFailure, status, failureSummary, liveCount, matchedCount, currentCoverageCount, nextCoverageCount),
+                    ImportResultText = healthReport?.ImportResultSummary ?? BuildImportResult(syncState, profile?.LastSync, liveCount, movieCount, seriesCount, hasCatalog),
+                    ValidationResultText = validationResult,
                     EpgCoverageText = BuildCoverageSummary(liveCount, activeMode, status, resultCode, matchedCount, unmatchedCount, currentCoverageCount, nextCoverageCount, hasPersistedGuideData),
                     EpgStatusText = BuildGuideStatusLabel(status, resultCode, activeMode),
                     EpgStatusSummary = BuildGuideStatusSummary(status, resultCode, failureStage, activeMode, liveCount, matchedCount, unmatchedCount, currentCoverageCount, nextCoverageCount, epgLog),
                     EpgUrlSummaryText = BuildUrlSummary(sourceType, activeMode, detectedEpgUrl, manualEpgUrl, activeXmltvUrl),
                     MatchBreakdownText = FormatMatchBreakdown(epgLog?.MatchBreakdown, matchedCount, unmatchedCount, currentCoverageCount, nextCoverageCount, liveCount),
-                    WarningSummaryText = string.Join(" ", importWarnings.Concat(guideWarnings).Distinct(StringComparer.OrdinalIgnoreCase).Take(3)),
+                    WarningSummaryText = warningSummary,
                     FailureSummaryText = failureSummary,
                     LastSuccessfulSyncText = $"Import {FormatTimestamp(profile?.LastSync)} - Guide {FormatTimestamp(epgLog?.LastSuccessAtUtc)}",
+                    LastSyncAttemptText = lastSyncAttemptText,
                     LastImportSuccessText = FormatTimestamp(profile?.LastSync),
                     LastEpgSuccessText = FormatTimestamp(epgLog?.LastSuccessAtUtc),
                     EpgSyncSuccess = epgLog?.IsSuccess ?? false,
@@ -164,7 +338,10 @@ namespace Kroira.App.Services
                     ManualEpgUrl = manualEpgUrl,
                     ActiveXmltvUrl = activeXmltvUrl,
                     GuideAvailableForLive = liveCount == 0 || status is EpgStatus.Ready or EpgStatus.ManualOverride,
-                    IsPartialGuideMatch = resultCode == EpgSyncResultCode.PartialMatch
+                    IsPartialGuideMatch = resultCode == EpgSyncResultCode.PartialMatch,
+                    HealthComponents = sourceComponents ?? Array.Empty<SourceDiagnosticsComponentSnapshot>(),
+                    HealthProbes = sourceProbes ?? Array.Empty<SourceDiagnosticsProbeSnapshot>(),
+                    Issues = sourceIssues ?? Array.Empty<SourceDiagnosticsIssueSnapshot>()
                 };
             }
 
@@ -367,6 +544,28 @@ namespace Kroira.App.Services
             }
 
             return "Healthy";
+        }
+
+        private static string BuildHealthLabel(SourceHealthState healthState) => healthState switch
+        {
+            SourceHealthState.Healthy => "Healthy",
+            SourceHealthState.Weak => "Weak",
+            SourceHealthState.Incomplete => "Incomplete",
+            SourceHealthState.Outdated => "Outdated",
+            SourceHealthState.Problematic => "Problematic",
+            _ => "Not synced"
+        };
+
+        private static string BuildValidationSummaryFallback(int liveCount, int matchedCount, int currentCoverageCount, int nextCoverageCount, int guideWarningCount)
+        {
+            if (liveCount == 0)
+            {
+                return guideWarningCount > 0
+                    ? "Validation is pending richer catalog quality data."
+                    : "No live-channel validation metrics are available yet.";
+            }
+
+            return $"Guide match {matchedCount}/{liveCount}, current {currentCoverageCount}/{liveCount}, next {nextCoverageCount}/{liveCount}.";
         }
 
         private static string BuildSourceSummary(DateTime? lastImportSuccessUtc, bool hasCatalog, bool importFailure, EpgStatus status, string failureSummary, int liveCount, int matchedCount, int currentCoverageCount, int nextCoverageCount)
@@ -593,12 +792,18 @@ namespace Kroira.App.Services
         public int UnmatchedLiveChannelCount { get; set; }
         public int CurrentCoverageCount { get; set; }
         public int NextCoverageCount { get; set; }
+        public int DuplicateCount { get; set; }
+        public int InvalidStreamCount { get; set; }
+        public int ChannelsWithLogoCount { get; set; }
+        public int SuspiciousEntryCount { get; set; }
+        public int HealthScore { get; set; }
         public int EpgProgramCount { get; set; }
         public int ImportWarningCount { get; set; }
         public int GuideWarningCount { get; set; }
         public string HealthLabel { get; set; } = "Saved";
         public string StatusSummary { get; set; } = "Saved source. No successful import recorded yet.";
         public string ImportResultText { get; set; } = "No successful import recorded.";
+        public string ValidationResultText { get; set; } = string.Empty;
         public string EpgCoverageText { get; set; } = "Guide not synced.";
         public string EpgStatusText { get; set; } = "Guide not synced";
         public string EpgStatusSummary { get; set; } = "Guide has not synced yet.";
@@ -607,6 +812,7 @@ namespace Kroira.App.Services
         public string WarningSummaryText { get; set; } = string.Empty;
         public string FailureSummaryText { get; set; } = string.Empty;
         public string LastSuccessfulSyncText { get; set; } = "Import Never - Guide Never";
+        public string LastSyncAttemptText { get; set; } = "Never";
         public string LastImportSuccessText { get; set; } = "Never";
         public string LastEpgSuccessText { get; set; } = "Never";
         public bool EpgSyncSuccess { get; set; }
@@ -620,5 +826,43 @@ namespace Kroira.App.Services
         public string DetectedEpgUrl { get; set; } = string.Empty;
         public string ManualEpgUrl { get; set; } = string.Empty;
         public string ActiveXmltvUrl { get; set; } = string.Empty;
+        public IReadOnlyList<SourceDiagnosticsComponentSnapshot> HealthComponents { get; set; } = Array.Empty<SourceDiagnosticsComponentSnapshot>();
+        public IReadOnlyList<SourceDiagnosticsProbeSnapshot> HealthProbes { get; set; } = Array.Empty<SourceDiagnosticsProbeSnapshot>();
+        public IReadOnlyList<SourceDiagnosticsIssueSnapshot> Issues { get; set; } = Array.Empty<SourceDiagnosticsIssueSnapshot>();
+    }
+
+    public sealed class SourceDiagnosticsComponentSnapshot
+    {
+        public SourceHealthComponentType ComponentType { get; set; }
+        public SourceHealthComponentState State { get; set; }
+        public int Score { get; set; }
+        public string Summary { get; set; } = string.Empty;
+        public int RelevantCount { get; set; }
+        public int HealthyCount { get; set; }
+        public int IssueCount { get; set; }
+    }
+
+    public sealed class SourceDiagnosticsProbeSnapshot
+    {
+        public SourceHealthProbeType ProbeType { get; set; }
+        public SourceHealthProbeStatus Status { get; set; }
+        public DateTime? ProbedAtUtc { get; set; }
+        public int CandidateCount { get; set; }
+        public int SampleSize { get; set; }
+        public int SuccessCount { get; set; }
+        public int FailureCount { get; set; }
+        public int TimeoutCount { get; set; }
+        public int HttpErrorCount { get; set; }
+        public int TransportErrorCount { get; set; }
+        public string Summary { get; set; } = string.Empty;
+    }
+
+    public sealed class SourceDiagnosticsIssueSnapshot
+    {
+        public SourceHealthIssueSeverity Severity { get; set; }
+        public string Title { get; set; } = string.Empty;
+        public string Message { get; set; } = string.Empty;
+        public int AffectedCount { get; set; }
+        public string SampleItems { get; set; } = string.Empty;
     }
 }

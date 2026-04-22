@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git stash *)",
+      "Bash(echo \"stash exit: $?\")",
+      "Bash(git checkout *)",
+      "Bash(dotnet build *)"
+    ]
+  }
+}
