@@ -10,6 +10,8 @@ using Kroira.App.Models;
 using Kroira.App.Services;
 using Microsoft.EntityFrameworkCore;
 
+#nullable enable
+
 namespace Kroira.App.Services.Parsing
 {
     public interface IM3uParserService
@@ -74,7 +76,7 @@ namespace Kroira.App.Services.Parsing
                 var parsedEntries = new List<M3uEntry>();
 
                 var currentCategoryContext = string.Empty;
-                PendingExtinf pending = null;
+                PendingExtinf? pending = null;
 
                 foreach (var rawLine in lines)
                 {

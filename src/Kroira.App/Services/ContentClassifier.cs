@@ -4,6 +4,8 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using Kroira.App.Models;
 
+#nullable enable
+
 namespace Kroira.App.Services
 {
     /// <summary>
@@ -501,7 +503,7 @@ namespace Kroira.App.Services
                    lower.Contains("clip", StringComparison.Ordinal);
         }
 
-        public static bool IsGarbageCategoryName(string categoryName)
+        public static bool IsGarbageCategoryName(string? categoryName)
         {
             if (string.IsNullOrWhiteSpace(categoryName)) return false;
             var lower = categoryName.Trim().ToLowerInvariant();

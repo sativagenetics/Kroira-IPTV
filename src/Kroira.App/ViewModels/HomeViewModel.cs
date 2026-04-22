@@ -14,6 +14,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 
+#nullable enable
+
 namespace Kroira.App.ViewModels
 {
     public sealed class HomeSummaryItem
@@ -170,7 +172,7 @@ namespace Kroira.App.ViewModels
         private string _heroSubtitle = "Fast access to live TV, VOD, source health, and saved playback progress from one desktop-first hub.";
 
         [ObservableProperty]
-        private HomeFeaturedItem _featuredItem;
+        private HomeFeaturedItem _featuredItem = new();
 
         [ObservableProperty]
         private SurfaceStatePresentation _surfaceState = SurfaceStateCopies.Home.Create(SurfaceViewState.Loading);
@@ -1093,7 +1095,7 @@ namespace Kroira.App.ViewModels
             };
         }
 
-        private static bool ShouldUseMovieFeature(Movie movie, Series series)
+        private static bool ShouldUseMovieFeature(Movie movie, Series? series)
         {
             if (series == null)
             {

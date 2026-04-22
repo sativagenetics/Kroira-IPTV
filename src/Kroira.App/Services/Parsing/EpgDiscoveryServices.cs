@@ -9,6 +9,8 @@ using Kroira.App.Models;
 using Kroira.App.Services;
 using Microsoft.EntityFrameworkCore;
 
+#nullable enable
+
 namespace Kroira.App.Services.Parsing
 {
     public sealed class EpgUnavailableException : Exception

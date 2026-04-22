@@ -8,6 +8,8 @@ using Kroira.App.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
+#nullable enable
+
 namespace Kroira.App.Services.Playback
 {
     internal sealed class PlaybackProgressCoordinator
@@ -24,7 +26,7 @@ namespace Kroira.App.Services.Playback
             _services = services;
         }
 
-        public async Task<long> ResolveResumePositionAsync(PlaybackLaunchContext context)
+        public async Task<long> ResolveResumePositionAsync(PlaybackLaunchContext? context)
         {
             if (context == null || context.ContentType == PlaybackContentType.Channel || context.StartPositionMs > 0)
             {
@@ -62,9 +64,14 @@ namespace Kroira.App.Services.Playback
             return context.StartPositionMs;
         }
 
-        public async Task PersistAsync(PlaybackLaunchContext context, long positionMs, long durationMs, bool force)
+        public async Task PersistAsync(PlaybackLaunchContext? context, long positionMs, long durationMs, bool force)
         {
             if (!ShouldPersist(context, positionMs, durationMs, force, out var normalizedPositionMs, out var normalizedDurationMs, out var isCompleted))
+            {
+                return;
+            }
+
+            if (context == null)
             {
                 return;
             }
@@ -84,7 +91,7 @@ namespace Kroira.App.Services.Playback
         }
 
         private bool ShouldPersist(
-            PlaybackLaunchContext context,
+            PlaybackLaunchContext? context,
             long positionMs,
             long durationMs,
             bool force,
@@ -138,7 +145,7 @@ namespace Kroira.App.Services.Playback
 
         private static void ApplyProgress(
             AppDbContext db,
-            PlaybackProgress existing,
+            PlaybackProgress? existing,
             int profileId,
             PlaybackLaunchContext context,
             long positionMs,

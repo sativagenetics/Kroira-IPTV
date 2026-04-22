@@ -10,6 +10,8 @@ using Kroira.App.Models;
 using Kroira.App.Services;
 using Microsoft.EntityFrameworkCore;
 
+#nullable enable
+
 namespace Kroira.App.Services.Parsing
 {
     public interface IXtreamParserService
@@ -108,7 +110,7 @@ namespace Kroira.App.Services.Parsing
                     {
                         foreach (var element in catsDoc.RootElement.EnumerateArray())
                         {
-                            string id = null;
+                            string? id = null;
                             if (element.TryGetProperty("category_id", out var idProp))
                             {
                                 id = idProp.ValueKind == JsonValueKind.Number ? idProp.GetInt32().ToString() : idProp.GetString();
@@ -137,13 +139,13 @@ namespace Kroira.App.Services.Parsing
                         var liveCategoryLabels = ContentClassifier.BuildCategoryLabelSet(categoryMap.Values.Select(c => c.Name));
                         foreach (var element in streamsDoc.RootElement.EnumerateArray())
                         {
-                            string catId = null;
+                            string? catId = null;
                             if (element.TryGetProperty("category_id", out var cIdProp))
                             {
                                 catId = cIdProp.ValueKind == JsonValueKind.Number ? cIdProp.GetInt32().ToString() : cIdProp.GetString();
                             }
 
-                            string streamId = null;
+                            string? streamId = null;
                             if (element.TryGetProperty("stream_id", out var sProp))
                             {
                                 streamId = sProp.ValueKind == JsonValueKind.Number ? sProp.GetInt32().ToString() : sProp.GetString();
@@ -282,7 +284,7 @@ namespace Kroira.App.Services.Parsing
                 {
                     foreach (var element in movCatsDoc.RootElement.EnumerateArray())
                     {
-                        string id = element.TryGetProperty("category_id", out var idProp) ? (idProp.ValueKind == JsonValueKind.Number ? idProp.GetInt32().ToString() : idProp.GetString()) : null;
+                        string? id = element.TryGetProperty("category_id", out var idProp) ? (idProp.ValueKind == JsonValueKind.Number ? idProp.GetInt32().ToString() : idProp.GetString()) : null;
                         if (!string.IsNullOrEmpty(id) && element.TryGetProperty("category_name", out var nameProp))
                         {
                             md[id] = nameProp.GetString() ?? "Unknown";
@@ -297,7 +299,7 @@ namespace Kroira.App.Services.Parsing
                 {
                     foreach (var element in serCatsDoc.RootElement.EnumerateArray())
                     {
-                        string id = element.TryGetProperty("category_id", out var idProp) ? (idProp.ValueKind == JsonValueKind.Number ? idProp.GetInt32().ToString() : idProp.GetString()) : null;
+                        string? id = element.TryGetProperty("category_id", out var idProp) ? (idProp.ValueKind == JsonValueKind.Number ? idProp.GetInt32().ToString() : idProp.GetString()) : null;
                         if (!string.IsNullOrEmpty(id) && element.TryGetProperty("category_name", out var nameProp))
                         {
                             sd[id] = nameProp.GetString() ?? "Unknown";
@@ -317,8 +319,8 @@ namespace Kroira.App.Services.Parsing
                 {
                     foreach (var element in moviesDoc.RootElement.EnumerateArray())
                     {
-                        string streamId = element.TryGetProperty("stream_id", out var sProp) ? (sProp.ValueKind == JsonValueKind.Number ? sProp.GetInt32().ToString() : sProp.GetString()) : null;
-                        string catId = element.TryGetProperty("category_id", out var cProp) ? (cProp.ValueKind == JsonValueKind.Number ? cProp.GetInt32().ToString() : cProp.GetString()) : null;
+                        string? streamId = element.TryGetProperty("stream_id", out var sProp) ? (sProp.ValueKind == JsonValueKind.Number ? sProp.GetInt32().ToString() : sProp.GetString()) : null;
+                        string? catId = element.TryGetProperty("category_id", out var cProp) ? (cProp.ValueKind == JsonValueKind.Number ? cProp.GetInt32().ToString() : cProp.GetString()) : null;
 
                         if (string.IsNullOrEmpty(streamId))
                         {
@@ -409,8 +411,8 @@ namespace Kroira.App.Services.Parsing
                 {
                     foreach (var element in seriesDoc.RootElement.EnumerateArray())
                     {
-                        string seriesId = element.TryGetProperty("series_id", out var sProp) ? (sProp.ValueKind == JsonValueKind.Number ? sProp.GetInt32().ToString() : sProp.GetString()) : null;
-                        string catId = element.TryGetProperty("category_id", out var cProp) ? (cProp.ValueKind == JsonValueKind.Number ? cProp.GetInt32().ToString() : cProp.GetString()) : null;
+                        string? seriesId = element.TryGetProperty("series_id", out var sProp) ? (sProp.ValueKind == JsonValueKind.Number ? sProp.GetInt32().ToString() : sProp.GetString()) : null;
+                        string? catId = element.TryGetProperty("category_id", out var cProp) ? (cProp.ValueKind == JsonValueKind.Number ? cProp.GetInt32().ToString() : cProp.GetString()) : null;
 
                         if (string.IsNullOrEmpty(seriesId))
                         {
@@ -505,14 +507,14 @@ namespace Kroira.App.Services.Parsing
                                     {
                                         foreach (var epElement in seasonProp.Value.EnumerateArray())
                                         {
-                                            string epId = epElement.TryGetProperty("id", out var epProp) ? (epProp.ValueKind == JsonValueKind.Number ? epProp.GetInt32().ToString() : epProp.GetString()) : null;
+                                            string? epId = epElement.TryGetProperty("id", out var epProp) ? (epProp.ValueKind == JsonValueKind.Number ? epProp.GetInt32().ToString() : epProp.GetString()) : null;
                                             if (string.IsNullOrEmpty(epId)) continue;
 
                                             var epName = epElement.TryGetProperty("title", out var titleProp) ? titleProp.GetString() : "";
                                             var ext = epElement.TryGetProperty("container_extension", out var exProp) ? exProp.GetString() : "mp4";
                                             var epNum = epElement.TryGetProperty("episode_num", out var enumProp) ? (enumProp.ValueKind == JsonValueKind.Number ? enumProp.GetInt32() : (int.TryParse(enumProp.GetString(), out var ev) ? ev : 0)) : 0;
 
-                                            seasonObj.Episodes.Add(new Episode
+                                            (seasonObj.Episodes ??= new List<Episode>()).Add(new Episode
                                             {
                                                 ExternalId = epId,
                                                 Title = string.IsNullOrWhiteSpace(epName) ? $"Episode {epNum}" : epName,
@@ -521,7 +523,7 @@ namespace Kroira.App.Services.Parsing
                                             });
                                         }
                                     }
-                                    sInfo.BaseObj.Seasons.Add(seasonObj);
+                                    (sInfo.BaseObj.Seasons ??= new List<Season>()).Add(seasonObj);
                                 }
                             }
                         }

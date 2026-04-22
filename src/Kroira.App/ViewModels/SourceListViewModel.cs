@@ -13,6 +13,8 @@ using Kroira.App.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
+#nullable enable
+
 namespace Kroira.App.ViewModels
 {
     public partial class SourceItemViewModel : ObservableObject
@@ -691,7 +693,7 @@ namespace Kroira.App.ViewModels
                     },
                     SourcePanelSummaryText = BuildSourcePanelSummary(snapshot),
                     ConnectionLabelText = BuildConnectionLabel(snapshot),
-                    HealthPillKind = MapHealthPillKind(snapshot.HealthLabel),
+                    HealthPillKind = MapHealthPillKind(snapshot.HealthLabel ?? "Saved"),
                     GuidePillKind = MapGuidePillKind(snapshot),
                     LastSyncText = snapshot.LastImportSuccessText,
                     LastAttemptText = snapshot.LastSyncAttemptText,
@@ -703,7 +705,7 @@ namespace Kroira.App.ViewModels
                     ChannelsWithLogoCount = snapshot.ChannelsWithLogoCount,
                     SuspiciousEntryCount = snapshot.SuspiciousEntryCount,
                     HealthScore = snapshot.HealthScore,
-                    HealthLabel = snapshot.HealthLabel,
+                    HealthLabel = snapshot.HealthLabel ?? "Saved",
                     Status = snapshot.StatusSummary,
                     HasEpgUrl = snapshot.HasEpgUrl,
                     CanSyncEpg = true,
