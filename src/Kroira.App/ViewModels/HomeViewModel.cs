@@ -269,19 +269,19 @@ namespace Kroira.App.ViewModels
                 await RunLoadSectionAsync(HomeLoadSection.BuildRecommendations, enabledSections, async () =>
                 {
                     context.Recommendations = await BuildRecommendationsAsync(context);
-                });
+                }, continueOnFailure: true);
 
                 await RunLoadSectionAsync(HomeLoadSection.ApplyRecommendations, enabledSections, () =>
                 {
                     ApplyRecommendationSnapshot(context.Recommendations ?? EmptyRecommendationSnapshot);
                     return Task.CompletedTask;
-                });
+                }, continueOnFailure: true);
 
                 await RunLoadSectionAsync(HomeLoadSection.LoadContinue, enabledSections, () =>
-                    LoadContinueItemsAsync(context.Db, RequireAccess(context.Access)));
+                    LoadContinueItemsAsync(context.Db, RequireAccess(context.Access)), continueOnFailure: true);
 
                 await RunLoadSectionAsync(HomeLoadSection.LoadLive, enabledSections, () =>
-                    LoadLiveItemsAsync(context.Db, RequireAccess(context.Access)));
+                    LoadLiveItemsAsync(context.Db, RequireAccess(context.Access)), continueOnFailure: true);
 
                 SurfaceState = resolvedState;
                 LogLoadCheckpoint("HOMEVM 99: LoadAsync completed");
@@ -401,7 +401,8 @@ namespace Kroira.App.ViewModels
         private async Task RunLoadSectionAsync(
             HomeLoadSection section,
             ISet<HomeLoadSection> enabledSections,
-            Func<Task> action)
+            Func<Task> action,
+            bool continueOnFailure = false)
         {
             if (!enabledSections.Contains(section))
             {
@@ -427,7 +428,10 @@ namespace Kroira.App.ViewModels
             {
                 stopwatch.Stop();
                 LogLoadCheckpoint($"HOMEVM STEP {section}: error after {stopwatch.ElapsedMilliseconds} ms - {ex.GetType().Name}: {ex.Message}");
-                throw;
+                if (!continueOnFailure)
+                {
+                    throw;
+                }
             }
         }
 
@@ -782,7 +786,14 @@ namespace Kroira.App.ViewModels
             ContinueItems.Clear();
             var watchStateService = _serviceProvider.GetRequiredService<ILibraryWatchStateService>();
             var logicalCatalogStateService = _serviceProvider.GetRequiredService<ILogicalCatalogStateService>();
-            await logicalCatalogStateService.ReconcilePlaybackProgressAsync(db, access.ProfileId);
+            try
+            {
+                await logicalCatalogStateService.ReconcilePlaybackProgressAsync(db, access.ProfileId);
+            }
+            catch (Exception ex)
+            {
+                LogLoadCheckpoint($"HOMEVM CONTINUE: reconciliation skipped - {ex.GetType().Name}: {ex.Message}");
+            }
             var hideWatched = await watchStateService.GetHideWatchedInContinueAsync(db, access.ProfileId);
 
             var continueItems = new List<(HomeContinueItem Item, DateTime SortAtUtc)>();

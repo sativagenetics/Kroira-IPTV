@@ -106,7 +106,14 @@ namespace Kroira.App.ViewModels
                 var logicalCatalogStateService = scope.ServiceProvider.GetRequiredService<ILogicalCatalogStateService>();
                 var surfaceStateService = scope.ServiceProvider.GetRequiredService<ISurfaceStateService>();
                 var access = await profileService.GetAccessSnapshotAsync(db);
-                await logicalCatalogStateService.ReconcilePlaybackProgressAsync(db, access.ProfileId);
+                try
+                {
+                    await logicalCatalogStateService.ReconcilePlaybackProgressAsync(db, access.ProfileId);
+                }
+                catch (Exception ex)
+                {
+                    BrowseRuntimeLogger.Log("CONTINUE", $"playback reconcile skipped {ex}; thread={Environment.CurrentManagedThreadId}");
+                }
 
                 _isLoadingPreferences = true;
                 try

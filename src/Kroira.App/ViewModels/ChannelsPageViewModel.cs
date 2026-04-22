@@ -265,7 +265,14 @@ namespace Kroira.App.ViewModels
 
                 var access = await profileService.GetAccessSnapshotAsync(db);
                 _activeProfileId = access.ProfileId;
-                await _logicalCatalogStateService.ReconcilePersistentStateAsync(db, _activeProfileId);
+                try
+                {
+                    await _logicalCatalogStateService.ReconcilePersistentStateAsync(db, _activeProfileId);
+                }
+                catch (Exception ex)
+                {
+                    Log($"02a: state reconciliation skipped - {ex.GetType().Name}: {ex.Message}");
+                }
                 _preferences = await _browsePreferencesService.GetAsync(db, Domain, _activeProfileId);
                 Log("02: resolved services and preferences");
 

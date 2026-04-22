@@ -223,6 +223,8 @@ namespace Kroira.App.Services
 
         public async Task ReconcileFavoritesAsync(AppDbContext db, int? profileId = null)
         {
+            await BackfillChannelLogicalStateAsync(db);
+
             var favorites = await db.Favorites
                 .Where(favorite => !profileId.HasValue || favorite.ProfileId == profileId.Value)
                 .OrderBy(favorite => favorite.ProfileId)
@@ -296,6 +298,8 @@ namespace Kroira.App.Services
 
         public async Task ReconcilePlaybackProgressAsync(AppDbContext db, int? profileId = null)
         {
+            await BackfillChannelLogicalStateAsync(db);
+
             var progressRows = await db.PlaybackProgresses
                 .Where(progress => !profileId.HasValue || progress.ProfileId == profileId.Value)
                 .OrderBy(progress => progress.ProfileId)
@@ -310,13 +314,21 @@ namespace Kroira.App.Services
             var changed = false;
             foreach (var progress in progressRows)
             {
-                var target = await ResolvePlaybackTargetAsync(
-                    db,
-                    progress.ContentType,
-                    progress.ContentId,
-                    progress.LogicalContentKey,
-                    progress.PreferredSourceProfileId,
-                    progress.ContentId);
+                ResolvedLogicalTarget? target;
+                try
+                {
+                    target = await ResolvePlaybackTargetAsync(
+                        db,
+                        progress.ContentType,
+                        progress.ContentId,
+                        progress.LogicalContentKey,
+                        progress.PreferredSourceProfileId,
+                        progress.ContentId);
+                }
+                catch
+                {
+                    continue;
+                }
 
                 if (target == null)
                 {
@@ -376,6 +388,7 @@ namespace Kroira.App.Services
 
         public async Task ReconcilePersistentStateAsync(AppDbContext db, int? profileId = null)
         {
+            await BackfillChannelLogicalStateAsync(db);
             await ReconcileFavoritesAsync(db, profileId);
             await ReconcilePlaybackProgressAsync(db, profileId);
         }
@@ -512,20 +525,24 @@ namespace Kroira.App.Services
             int preferredSourceProfileId,
             int currentContentId)
         {
-            var current = await db.Channels
-                .AsNoTracking()
-                .Join(
-                    db.ChannelCategories.AsNoTracking(),
-                    item => item.ChannelCategoryId,
-                    category => category.Id,
-                    (item, category) => new ChannelCandidate(
-                        item.Id,
-                        category.SourceProfileId,
-                        BuildChannelLogicalKey(item),
-                        !string.IsNullOrWhiteSpace(item.LogoUrl),
-                        !string.IsNullOrWhiteSpace(item.EpgChannelId),
-                        item.SupportsCatchup))
-                .FirstOrDefaultAsync(item => item.Id == contentId);
+            var currentRow = contentId > 0
+                ? await db.Channels
+                    .AsNoTracking()
+                    .Join(
+                        db.ChannelCategories.AsNoTracking(),
+                        item => item.ChannelCategoryId,
+                        category => category.Id,
+                        (item, category) => new
+                        {
+                            Channel = item,
+                            category.SourceProfileId
+                        })
+                    .FirstOrDefaultAsync(item => item.Channel.Id == contentId)
+                : null;
+
+            var current = currentRow == null
+                ? null
+                : BuildChannelCandidate(currentRow.Channel, currentRow.SourceProfileId);
 
             var resolvedKey = !string.IsNullOrWhiteSpace(logicalKey)
                 ? logicalKey.Trim()
@@ -542,21 +559,24 @@ namespace Kroira.App.Services
                 return new ResolvedLogicalTarget(current.Id, resolvedKey, current.SourceProfileId);
             }
 
-            var candidates = await db.Channels
+            var candidateRows = await db.Channels
                 .AsNoTracking()
                 .Join(
                     db.ChannelCategories.AsNoTracking(),
                     item => item.ChannelCategoryId,
                     category => category.Id,
-                    (item, category) => new ChannelCandidate(
-                        item.Id,
-                        category.SourceProfileId,
-                        BuildChannelLogicalKey(item),
-                        !string.IsNullOrWhiteSpace(item.LogoUrl),
-                        !string.IsNullOrWhiteSpace(item.EpgChannelId),
-                        item.SupportsCatchup))
-                .Where(item => item.LogicalKey == resolvedKey)
+                    (item, category) => new
+                    {
+                        Channel = item,
+                        category.SourceProfileId
+                    })
+                .Where(item => item.Channel.NormalizedIdentityKey == resolvedKey)
                 .ToListAsync();
+
+            var candidates = candidateRows
+                .Select(item => BuildChannelCandidate(item.Channel, item.SourceProfileId))
+                .Where(item => string.Equals(item.LogicalKey, resolvedKey, StringComparison.OrdinalIgnoreCase))
+                .ToList();
 
             var best = candidates
                 .OrderByDescending(item => item.Id == currentContentId)
@@ -745,7 +765,42 @@ namespace Kroira.App.Services
 
         private async Task<List<EpisodeCandidate>> QueryEpisodeCandidatesAsync(AppDbContext db, string logicalKey)
         {
-            return await db.Episodes
+            const string externalPrefix = "episode:external:";
+            if (logicalKey.StartsWith(externalPrefix, StringComparison.OrdinalIgnoreCase))
+            {
+                var externalId = logicalKey[externalPrefix.Length..];
+                return await db.Episodes
+                    .AsNoTracking()
+                    .Where(item => item.ExternalId == externalId)
+                    .Join(
+                        db.Seasons.AsNoTracking(),
+                        item => item.SeasonId,
+                        season => season.Id,
+                        (item, season) => new { Episode = item, Season = season })
+                    .Join(
+                        db.Series.AsNoTracking(),
+                        item => item.Season.SeriesId,
+                        series => series.Id,
+                        (item, series) => new EpisodeCandidate(
+                            item.Episode.Id,
+                            series.SourceProfileId,
+                            logicalKey))
+                    .ToListAsync();
+            }
+
+            if (!TryParseEpisodeLogicalKey(logicalKey, out var seriesKey, out var seasonNumber, out var episodeNumber, out var episodeTitleKey))
+            {
+                return new List<EpisodeCandidate>();
+            }
+
+            var candidateSeries = await QuerySeriesCandidatesAsync(db, seriesKey);
+            if (candidateSeries.Count == 0)
+            {
+                return new List<EpisodeCandidate>();
+            }
+
+            var seriesIds = candidateSeries.Select(item => item.Id).ToHashSet();
+            var rows = await db.Episodes
                 .AsNoTracking()
                 .Join(
                     db.Seasons.AsNoTracking(),
@@ -756,12 +811,72 @@ namespace Kroira.App.Services
                     db.Series.AsNoTracking(),
                     item => item.Season.SeriesId,
                     series => series.Id,
-                    (item, series) => new EpisodeCandidate(
-                        item.Episode.Id,
-                        series.SourceProfileId,
-                        BuildEpisodeLogicalKey(series, item.Season, item.Episode)))
-                .Where(item => item.LogicalKey == logicalKey)
+                    (item, series) => new
+                    {
+                        item.Episode,
+                        item.Season,
+                        Series = series
+                    })
+                .Where(item => seriesIds.Contains(item.Series.Id))
                 .ToListAsync();
+
+            return rows
+                .Where(item =>
+                    seasonNumber.HasValue && episodeNumber.HasValue
+                        ? item.Season.SeasonNumber == seasonNumber.Value && item.Episode.EpisodeNumber == episodeNumber.Value
+                        : string.Equals(NormalizeToken(item.Episode.Title), episodeTitleKey, StringComparison.OrdinalIgnoreCase))
+                .Select(item => new EpisodeCandidate(
+                    item.Episode.Id,
+                    item.Series.SourceProfileId,
+                    BuildEpisodeLogicalKey(item.Series, item.Season, item.Episode)))
+                .Where(item => string.Equals(item.LogicalKey, logicalKey, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+        }
+
+        private async Task BackfillChannelLogicalStateAsync(AppDbContext db)
+        {
+            var channelsNeedingBackfill = await db.Channels
+                .Where(item =>
+                    string.IsNullOrWhiteSpace(item.NormalizedIdentityKey) ||
+                    string.IsNullOrWhiteSpace(item.NormalizedName) ||
+                    string.IsNullOrWhiteSpace(item.AliasKeys))
+                .ToListAsync();
+
+            if (channelsNeedingBackfill.Count == 0)
+            {
+                return;
+            }
+
+            var changed = false;
+            foreach (var channel in channelsNeedingBackfill)
+            {
+                var identity = _liveChannelIdentityService.Build(
+                    channel.Name,
+                    string.IsNullOrWhiteSpace(channel.ProviderEpgChannelId) ? channel.EpgChannelId : channel.ProviderEpgChannelId);
+
+                if (string.IsNullOrWhiteSpace(channel.NormalizedIdentityKey) && !string.IsNullOrWhiteSpace(identity.IdentityKey))
+                {
+                    channel.NormalizedIdentityKey = identity.IdentityKey;
+                    changed = true;
+                }
+
+                if (string.IsNullOrWhiteSpace(channel.NormalizedName) && !string.IsNullOrWhiteSpace(identity.NormalizedName))
+                {
+                    channel.NormalizedName = identity.NormalizedName;
+                    changed = true;
+                }
+
+                if (string.IsNullOrWhiteSpace(channel.AliasKeys) && identity.AliasKeys.Count > 0)
+                {
+                    channel.AliasKeys = string.Join("\n", identity.AliasKeys);
+                    changed = true;
+                }
+            }
+
+            if (changed)
+            {
+                await db.SaveChangesAsync();
+            }
         }
 
         private string BuildEpisodeLogicalKey(Series series, Season season, Episode episode)
@@ -844,6 +959,69 @@ namespace Kroira.App.Services
             return string.IsNullOrWhiteSpace(value)
                 ? "unknown"
                 : ContentClassifier.NormalizeLabel(value).Trim().ToLowerInvariant().Replace(' ', '_');
+        }
+
+        private ChannelCandidate BuildChannelCandidate(Channel channel, int sourceProfileId)
+        {
+            return new ChannelCandidate(
+                channel.Id,
+                sourceProfileId,
+                BuildChannelLogicalKey(channel),
+                !string.IsNullOrWhiteSpace(channel.LogoUrl),
+                !string.IsNullOrWhiteSpace(channel.EpgChannelId),
+                channel.SupportsCatchup);
+        }
+
+        private static bool TryParseEpisodeLogicalKey(
+            string logicalKey,
+            out string seriesKey,
+            out int? seasonNumber,
+            out int? episodeNumber,
+            out string episodeTitleKey)
+        {
+            const string prefix = "episode:";
+            seriesKey = string.Empty;
+            seasonNumber = null;
+            episodeNumber = null;
+            episodeTitleKey = string.Empty;
+
+            if (!logicalKey.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            var remainder = logicalKey[prefix.Length..];
+            var titleMarker = remainder.LastIndexOf(":t:", StringComparison.OrdinalIgnoreCase);
+            if (titleMarker >= 0)
+            {
+                seriesKey = remainder[..titleMarker];
+                episodeTitleKey = remainder[(titleMarker + 3)..];
+                return !string.IsNullOrWhiteSpace(seriesKey) && !string.IsNullOrWhiteSpace(episodeTitleKey);
+            }
+
+            var seasonMarker = remainder.LastIndexOf(":s", StringComparison.OrdinalIgnoreCase);
+            if (seasonMarker < 0)
+            {
+                return false;
+            }
+
+            var episodeMarker = remainder.IndexOf(":e", seasonMarker, StringComparison.OrdinalIgnoreCase);
+            if (episodeMarker < 0)
+            {
+                return false;
+            }
+
+            seriesKey = remainder[..seasonMarker];
+            var seasonValue = remainder[(seasonMarker + 2)..episodeMarker];
+            var episodeValue = remainder[(episodeMarker + 2)..];
+            if (!int.TryParse(seasonValue, out var parsedSeason) || !int.TryParse(episodeValue, out var parsedEpisode))
+            {
+                return false;
+            }
+
+            seasonNumber = parsedSeason;
+            episodeNumber = parsedEpisode;
+            return !string.IsNullOrWhiteSpace(seriesKey);
         }
 
         private sealed record ResolvedLogicalTarget(

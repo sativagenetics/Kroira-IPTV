@@ -322,7 +322,13 @@ namespace Kroira.App.ViewModels
             var profileService = scope.ServiceProvider.GetRequiredService<IProfileStateService>();
             var access = await profileService.GetAccessSnapshotAsync(db);
             var activeProfileId = access.ProfileId;
-            await _logicalCatalogStateService.ReconcilePersistentStateAsync(db, activeProfileId);
+            try
+            {
+                await _logicalCatalogStateService.ReconcilePersistentStateAsync(db, activeProfileId);
+            }
+            catch
+            {
+            }
 
             var cats = await db.ChannelCategories
                 .Where(c => c.SourceProfileId == sourceProfileId)
