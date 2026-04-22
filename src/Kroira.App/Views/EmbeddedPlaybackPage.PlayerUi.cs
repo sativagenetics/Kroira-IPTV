@@ -45,8 +45,23 @@ namespace Kroira.App.Views
             public long ResumePositionMs { get; init; }
         }
 
+        private sealed class PlayerGuideProgramItem
+        {
+            public string Title { get; init; } = string.Empty;
+            public string TimeText { get; init; } = string.Empty;
+            public string StatusText { get; init; } = string.Empty;
+            public bool IsCurrent { get; init; }
+            public CatchupRequestKind RequestKind { get; init; }
+            public DateTime StartTimeUtc { get; init; }
+            public DateTime EndTimeUtc { get; init; }
+            public string ActionLabel { get; init; } = string.Empty;
+            public Visibility ActionVisibility { get; init; }
+            public Visibility StatusVisibility { get; init; }
+        }
+
         private readonly ObservableCollection<PlayerChannelSwitchItem> _channelSwitchItems = new();
         private readonly ObservableCollection<PlayerEpisodeSwitchItem> _episodeSwitchItems = new();
+        private readonly ObservableCollection<PlayerGuideProgramItem> _guideProgramItems = new();
         private readonly List<PlayerChannelSwitchItem> _allChannelSwitchItems = new();
         private readonly List<PlayerEpisodeSwitchItem> _allEpisodeSwitchItems = new();
         private readonly List<(double Speed, ToggleMenuFlyoutItem Item)> _speedItems = new();
@@ -81,6 +96,7 @@ namespace Kroira.App.Views
             _playerPreferencesService = services.GetRequiredService<IPlayerPreferencesService>();
             ChannelSwitchList.ItemsSource = _channelSwitchItems;
             EpisodeSwitchList.ItemsSource = _episodeSwitchItems;
+            GuideProgramList.ItemsSource = _guideProgramItems;
             BuildSpeedFlyout();
             BuildToolsFlyout();
             UpdateFavoriteUi();
@@ -104,6 +120,7 @@ namespace Kroira.App.Views
             var browsePreferencesService = scope.ServiceProvider.GetRequiredService<IBrowsePreferencesService>();
             var logicalCatalogStateService = scope.ServiceProvider.GetRequiredService<ILogicalCatalogStateService>();
             var contentOperationalService = scope.ServiceProvider.GetRequiredService<IContentOperationalService>();
+            var providerStreamResolverService = scope.ServiceProvider.GetRequiredService<IProviderStreamResolverService>();
             var access = await profileService.GetAccessSnapshotAsync(db);
 
             if (cancellationToken.IsCancellationRequested)
@@ -113,8 +130,28 @@ namespace Kroira.App.Views
 
             _playerPreferences = await _playerPreferencesService.LoadAsync(db, _context.ProfileId);
             ApplyEnhancedPreferencesToContext();
+            if (string.IsNullOrWhiteSpace(_context.CatalogStreamUrl) && !string.IsNullOrWhiteSpace(_context.StreamUrl))
+            {
+                _context.CatalogStreamUrl = _context.StreamUrl;
+            }
+
             await logicalCatalogStateService.EnsureLaunchContextLogicalStateAsync(db, _context);
             await contentOperationalService.ResolvePlaybackContextAsync(db, _context);
+            var providerResolution = await providerStreamResolverService.ResolvePlaybackContextAsync(
+                db,
+                _context,
+                SourceNetworkPurpose.Playback,
+                cancellationToken);
+            if (!providerResolution.Success && string.IsNullOrWhiteSpace(_context.StreamUrl))
+            {
+                throw new InvalidOperationException(providerResolution.Message);
+            }
+
+            if (_context.ContentType == PlaybackContentType.Channel &&
+                string.IsNullOrWhiteSpace(_context.LiveStreamUrl))
+            {
+                _context.LiveStreamUrl = _context.StreamUrl;
+            }
 
             _resolvedSourceName = string.Empty;
             _resolvedGuideSummary = string.Empty;
@@ -432,6 +469,7 @@ namespace Kroira.App.Views
         private void UpdateEnhancedControlState()
         {
             var isLive = IsLivePlayback();
+            var isChannel = IsChannelPlayback();
             var canSeek = IsTimelineSeekAllowed() && _stateMachine.State != PlaybackSessionState.Opening;
             var hasEpisodeNavigation = _allEpisodeSwitchItems.Count > 1;
             var useLiveControlLayout = isLive && !canSeek;
@@ -443,8 +481,8 @@ namespace Kroira.App.Views
             PreviousChannelButton.Visibility = useLiveControlLayout ? Visibility.Visible : Visibility.Collapsed;
             LastChannelButton.Visibility = Visibility.Collapsed;
             NextChannelButton.Visibility = useLiveControlLayout ? Visibility.Visible : Visibility.Collapsed;
-            GuidePanelButton.Visibility = isLive ? Visibility.Visible : Visibility.Collapsed;
-            ChannelPanelButton.Visibility = isLive ? Visibility.Visible : Visibility.Collapsed;
+            GuidePanelButton.Visibility = isChannel ? Visibility.Visible : Visibility.Collapsed;
+            ChannelPanelButton.Visibility = isChannel ? Visibility.Visible : Visibility.Collapsed;
             EpisodePanelButton.Visibility = hasEpisodeNavigation ? Visibility.Visible : Visibility.Collapsed;
 
             Back10Button.Visibility = useSeekControlLayout && canSeek ? Visibility.Visible : Visibility.Collapsed;
@@ -454,13 +492,13 @@ namespace Kroira.App.Views
             RestartButton.Visibility = Visibility.Collapsed;
             StopButton.Visibility = Visibility.Collapsed;
             SpeedButton.Visibility = useSeekControlLayout && canSeek ? Visibility.Visible : Visibility.Collapsed;
-            GoLiveButton.Visibility = isLive && canSeek ? Visibility.Visible : Visibility.Collapsed;
-            BottomGuideButton.Visibility = useLiveControlLayout ? Visibility.Visible : Visibility.Collapsed;
-            BottomChannelListButton.Visibility = useLiveControlLayout ? Visibility.Visible : Visibility.Collapsed;
+            GoLiveButton.Visibility = IsCatchupPlayback() || (isLive && canSeek) ? Visibility.Visible : Visibility.Collapsed;
+            BottomGuideButton.Visibility = isChannel ? Visibility.Visible : Visibility.Collapsed;
+            BottomChannelListButton.Visibility = isChannel ? Visibility.Visible : Visibility.Collapsed;
 
             PreviousChannelButton.IsEnabled = useLiveControlLayout && _allChannelSwitchItems.Count > 1;
             NextChannelButton.IsEnabled = useLiveControlLayout && _allChannelSwitchItems.Count > 1;
-            LastChannelButton.IsEnabled = isLive && _lastChannelCandidateId > 0;
+            LastChannelButton.IsEnabled = isChannel && _lastChannelCandidateId > 0;
             EpisodePanelButton.IsEnabled = hasEpisodeNavigation;
             FavoriteButton.Visibility = _favoriteType.HasValue ? Visibility.Visible : Visibility.Collapsed;
             BuildToolsFlyout();
@@ -469,12 +507,15 @@ namespace Kroira.App.Views
 
         private void UpdateResolvedContextText()
         {
-            if (IsLivePlayback())
+            if (IsChannelPlayback())
             {
                 BottomLiveTitleText.Text = TitleText.Text;
+                var secondaryText = IsCatchupPlayback()
+                    ? BuildCatchupContextText()
+                    : _resolvedGuideSummary;
                 ContextText.Text = string.IsNullOrWhiteSpace(_resolvedSourceName)
-                    ? _resolvedGuideSummary
-                    : string.IsNullOrWhiteSpace(_resolvedGuideSummary)
+                    ? secondaryText
+                    : string.IsNullOrWhiteSpace(secondaryText)
                         ? _resolvedSourceName
                         : $"{_resolvedSourceName}  •  {_resolvedGuideSummary}";
             }
@@ -493,9 +534,33 @@ namespace Kroira.App.Views
                 ? $"{summary.NextProgram.StartTimeUtc.ToLocalTime():HH:mm}"
                 : string.Empty;
             GuideConfidenceText.Text = summary.SourceStatusSummary;
-            _resolvedGuideSummary = summary.SourceStatusSummary;
+            GuideCatchupStatusText.Text = summary.CatchupStatusSummary;
+            _resolvedGuideSummary = string.IsNullOrWhiteSpace(summary.CatchupStatusSummary)
+                ? summary.SourceStatusSummary
+                : $"{summary.SourceStatusSummary}  â€¢  {summary.CatchupStatusSummary}";
             BottomLiveTitleText.Text = TitleText.Text;
             BottomLiveMetaText.Text = BuildChannelMeta(summary);
+            _guideProgramItems.Clear();
+            foreach (var program in summary.TimelinePrograms)
+            {
+                _guideProgramItems.Add(new PlayerGuideProgramItem
+                {
+                    Title = program.IsCurrent ? $"Now · {program.Title}" : program.Title,
+                    TimeText = $"{program.StartTimeUtc.ToLocalTime():HH:mm} - {program.EndTimeUtc.ToLocalTime():HH:mm}",
+                    StatusText = program.CatchupStatusText,
+                    IsCurrent = program.IsCurrent,
+                    RequestKind = program.CatchupRequestKind,
+                    StartTimeUtc = program.StartTimeUtc,
+                    EndTimeUtc = program.EndTimeUtc,
+                    ActionLabel = program.CatchupActionLabel,
+                    ActionVisibility = program.CatchupRequestKind == CatchupRequestKind.None
+                        ? Visibility.Collapsed
+                        : Visibility.Visible,
+                    StatusVisibility = string.IsNullOrWhiteSpace(program.CatchupStatusText)
+                        ? Visibility.Collapsed
+                        : Visibility.Visible
+                });
+            }
         }
 
         private void ClearGuidePanel()
@@ -505,13 +570,22 @@ namespace Kroira.App.Views
             GuideNextTitleText.Text = string.Empty;
             GuideNextTimeText.Text = string.Empty;
             GuideConfidenceText.Text = string.Empty;
+            GuideCatchupStatusText.Text = string.Empty;
+            _guideProgramItems.Clear();
             _resolvedGuideSummary = string.Empty;
             BottomLiveTitleText.Text = TitleText.Text;
-            BottomLiveMetaText.Text = IsLivePlayback() ? "Guide not available." : string.Empty;
+            BottomLiveMetaText.Text = IsCatchupPlayback()
+                ? BuildCatchupContextText()
+                : IsChannelPlayback() ? "Guide not available." : string.Empty;
         }
 
         private string BuildChannelMeta(ChannelGuideSummary? summary)
         {
+            if (IsCatchupPlayback())
+            {
+                return BuildCatchupContextText();
+            }
+
             if (summary?.CurrentProgram != null && summary.NextProgram != null)
             {
                 return $"Now: {summary.CurrentProgram.Title} • Next: {summary.NextProgram.Title}";
@@ -523,6 +597,34 @@ namespace Kroira.App.Views
             }
 
             return summary?.SourceStatusSummary ?? "Guide not available.";
+        }
+
+        private string BuildCatchupContextText()
+        {
+            if (_context == null || !IsCatchupPlayback())
+            {
+                return string.Empty;
+            }
+
+            var parts = new List<string>();
+            if (!string.IsNullOrWhiteSpace(_context.CatchupProgramTitle))
+            {
+                parts.Add(_context.CatchupProgramTitle);
+            }
+
+            if (_context.CatchupProgramStartTimeUtc.HasValue && _context.CatchupProgramEndTimeUtc.HasValue)
+            {
+                parts.Add($"{_context.CatchupProgramStartTimeUtc.Value.ToLocalTime():HH:mm} - {_context.CatchupProgramEndTimeUtc.Value.ToLocalTime():HH:mm}");
+            }
+
+            parts.Add("Catchup playback");
+
+            if (!string.IsNullOrWhiteSpace(_context.CatchupStatusText))
+            {
+                parts.Add(_context.CatchupStatusText);
+            }
+
+            return string.Join("  â€¢  ", parts.Where(value => !string.IsNullOrWhiteSpace(value)));
         }
     }
 }

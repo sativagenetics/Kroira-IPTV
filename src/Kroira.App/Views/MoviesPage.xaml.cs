@@ -161,13 +161,7 @@ namespace Kroira.App.Views
                 return;
             }
 
-            this.Frame.Navigate(typeof(EmbeddedPlaybackPage), new PlaybackLaunchContext
-            {
-                ContentId = variant.Movie.Id,
-                ContentType = PlaybackContentType.Movie,
-                StreamUrl = variant.Movie.StreamUrl,
-                StartPositionMs = 0
-            });
+            this.Frame.Navigate(typeof(EmbeddedPlaybackPage), CreateMovieLaunchContext(variant));
         }
 
         private async void FeaturedDownload_Click(object sender, RoutedEventArgs e)
@@ -194,15 +188,42 @@ namespace Kroira.App.Views
                 var variant = await ChooseMovieVariantAsync(movie, "Play");
                 if (variant != null && !string.IsNullOrWhiteSpace(variant.Movie.StreamUrl))
                 {
-                    this.Frame.Navigate(typeof(EmbeddedPlaybackPage), new PlaybackLaunchContext
-                    {
-                        ContentId = variant.Movie.Id,
-                        ContentType = PlaybackContentType.Movie,
-                        StreamUrl = variant.Movie.StreamUrl,
-                        StartPositionMs = 0
-                    });
+                    this.Frame.Navigate(typeof(EmbeddedPlaybackPage), CreateMovieLaunchContext(variant));
                 }
             }
+        }
+
+        private async void FeaturedInspect_Click(object sender, RoutedEventArgs e)
+        {
+            var movie = ViewModel.FeaturedMovie;
+            if (movie == null)
+            {
+                return;
+            }
+
+            var variant = await ChooseMovieVariantAsync(movie, "Inspect");
+            if (variant == null)
+            {
+                return;
+            }
+
+            await ItemInspectorDialog.ShowAsync(XamlRoot, CreateMovieLaunchContext(variant));
+        }
+
+        private async void MovieInspect_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not FrameworkElement { DataContext: MovieBrowseSlotViewModel { HasMovie: true, Movie: { } movie } })
+            {
+                return;
+            }
+
+            var variant = await ChooseMovieVariantAsync(movie, "Inspect");
+            if (variant == null)
+            {
+                return;
+            }
+
+            await ItemInspectorDialog.ShowAsync(XamlRoot, CreateMovieLaunchContext(variant));
         }
 
         private async void MovieDownload_Click(object sender, RoutedEventArgs e)
@@ -280,7 +301,11 @@ namespace Kroira.App.Views
                     {
                         new TextBlock
                         {
-                            Text = actionLabel == "Play" ? "Choose a source for playback." : "Choose a source to download.",
+                            Text = actionLabel == "Play"
+                                ? "Choose a source for playback."
+                                : actionLabel == "Download"
+                                    ? "Choose a source to download."
+                                    : "Choose a source to inspect.",
                             TextWrapping = TextWrapping.Wrap
                         },
                         comboBox
@@ -295,6 +320,19 @@ namespace Kroira.App.Views
             }
 
             return (comboBox.SelectedItem as ComboBoxItem)?.Tag as CatalogMovieVariant;
+        }
+
+        private static PlaybackLaunchContext CreateMovieLaunchContext(CatalogMovieVariant variant, long startPositionMs = 0)
+        {
+            return new PlaybackLaunchContext
+            {
+                ContentId = variant.Movie.Id,
+                ContentType = PlaybackContentType.Movie,
+                PreferredSourceProfileId = variant.SourceProfile.Id,
+                CatalogStreamUrl = variant.Movie.StreamUrl,
+                StreamUrl = variant.Movie.StreamUrl,
+                StartPositionMs = startPositionMs
+            };
         }
 
         private static Task<ContentDialogResult> ShowContentDialogAsync(ContentDialog dialog)

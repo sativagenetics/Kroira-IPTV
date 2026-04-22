@@ -22,6 +22,8 @@ namespace Kroira.App.Services
     {
         public string Name { get; set; } = string.Empty;
         public string StreamUrl { get; set; } = string.Empty;
+        public SourceRoutingDecision? Routing { get; set; }
+        public string RouteSummary { get; set; } = string.Empty;
     }
 
     public sealed class SourceProbeRunResult
@@ -49,7 +51,9 @@ namespace Kroira.App.Services
         {
             var probeable = candidates
                 .Where(candidate => TryCreateHttpUri(candidate.StreamUrl, out _))
-                .GroupBy(candidate => NormalizeUrl(candidate.StreamUrl), StringComparer.OrdinalIgnoreCase)
+                .GroupBy(
+                    candidate => $"{NormalizeUrl(candidate.StreamUrl)}|{BuildRoutingKey(candidate.Routing ?? routing)}",
+                    StringComparer.OrdinalIgnoreCase)
                 .Select(group => group.First())
                 .OrderBy(candidate => candidate.Name, StringComparer.OrdinalIgnoreCase)
                 .ThenBy(candidate => candidate.StreamUrl, StringComparer.OrdinalIgnoreCase)
@@ -68,28 +72,58 @@ namespace Kroira.App.Services
             }
 
             var sample = SelectSample(probeable, MaxSampleSize);
-            using var httpClient = CreateHttpClient(routing);
-            var results = await Task.WhenAll(sample.Select(candidate => ProbeCandidateAsync(httpClient, candidate)));
-
-            var successCount = results.Count(result => result.Kind == ProbeResultKind.Success);
-            var timeoutCount = results.Count(result => result.Kind == ProbeResultKind.Timeout);
-            var httpErrorCount = results.Count(result => result.Kind == ProbeResultKind.HttpError);
-            var transportErrorCount = results.Count(result => result.Kind == ProbeResultKind.TransportError);
-            var failureCount = sample.Count - successCount;
-
-            return new SourceProbeRunResult
+            var clients = new Dictionary<string, HttpClient>(StringComparer.OrdinalIgnoreCase);
+            try
             {
-                Status = SourceHealthProbeStatus.Completed,
-                ProbedAtUtc = DateTime.UtcNow,
-                CandidateCount = probeable.Count,
-                SampleSize = sample.Count,
-                SuccessCount = successCount,
-                FailureCount = failureCount,
-                TimeoutCount = timeoutCount,
-                HttpErrorCount = httpErrorCount,
-                TransportErrorCount = transportErrorCount,
-                Summary = BuildSummary(probeType, probeable.Count, sample.Count, successCount, failureCount, timeoutCount, httpErrorCount, transportErrorCount)
-            };
+                var results = await Task.WhenAll(sample.Select(candidate =>
+                {
+                    var effectiveRouting = candidate.Routing ?? routing;
+                    var routeKey = BuildRoutingKey(effectiveRouting);
+                    if (!clients.TryGetValue(routeKey, out var httpClient))
+                    {
+                        httpClient = CreateHttpClient(effectiveRouting);
+                        clients[routeKey] = httpClient;
+                    }
+
+                    return ProbeCandidateAsync(httpClient, candidate);
+                }));
+
+                var successCount = results.Count(result => result.Kind == ProbeResultKind.Success);
+                var timeoutCount = results.Count(result => result.Kind == ProbeResultKind.Timeout);
+                var httpErrorCount = results.Count(result => result.Kind == ProbeResultKind.HttpError);
+                var transportErrorCount = results.Count(result => result.Kind == ProbeResultKind.TransportError);
+                var failureCount = sample.Count - successCount;
+
+                return new SourceProbeRunResult
+                {
+                    Status = SourceHealthProbeStatus.Completed,
+                    ProbedAtUtc = DateTime.UtcNow,
+                    CandidateCount = probeable.Count,
+                    SampleSize = sample.Count,
+                    SuccessCount = successCount,
+                    FailureCount = failureCount,
+                    TimeoutCount = timeoutCount,
+                    HttpErrorCount = httpErrorCount,
+                    TransportErrorCount = transportErrorCount,
+                    Summary = BuildSummary(
+                        probeType,
+                        probeable.Count,
+                        sample.Count,
+                        successCount,
+                        failureCount,
+                        timeoutCount,
+                        httpErrorCount,
+                        transportErrorCount,
+                        BuildRouteSummaries(sample, routing))
+                };
+            }
+            finally
+            {
+                foreach (var client in clients.Values)
+                {
+                    client.Dispose();
+                }
+            }
         }
 
         private async Task<ProbeAttemptResult> ProbeCandidateAsync(HttpClient httpClient, SourceProbeCandidate candidate)
@@ -173,7 +207,8 @@ namespace Kroira.App.Services
             int failureCount,
             int timeoutCount,
             int httpErrorCount,
-            int transportErrorCount)
+            int transportErrorCount,
+            IReadOnlyList<string> routeSummaries)
         {
             var layer = probeType == SourceHealthProbeType.Live ? "Live" : "VOD";
             if (sampleSize <= 0)
@@ -200,7 +235,50 @@ namespace Kroira.App.Services
                 summary += $" {string.Join(", ", detailParts)}.";
             }
 
+            if (routeSummaries.Count > 0)
+            {
+                summary += routeSummaries.Count == 1
+                    ? $" Route: {TrimSentence(routeSummaries[0])}."
+                    : $" Routes: {string.Join(" | ", routeSummaries.Select(TrimSentence))}.";
+            }
+
             return summary;
+        }
+
+        private static IReadOnlyList<string> BuildRouteSummaries(
+            IReadOnlyList<SourceProbeCandidate> sample,
+            SourceRoutingDecision? fallbackRouting)
+        {
+            return sample
+                .Select(candidate => FirstNonEmpty(candidate.RouteSummary, candidate.Routing?.Summary, fallbackRouting?.Summary))
+                .Where(summary => !string.IsNullOrWhiteSpace(summary) &&
+                                  !string.Equals(summary, "Direct routing", StringComparison.OrdinalIgnoreCase))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .Take(2)
+                .ToList();
+        }
+
+        private static string BuildRoutingKey(SourceRoutingDecision? routing)
+        {
+            if (routing is not { UseProxy: true })
+            {
+                return "direct";
+            }
+
+            return string.IsNullOrWhiteSpace(routing.ProxyUrl)
+                ? "proxy"
+                : routing.ProxyUrl.Trim();
+        }
+
+        private static string TrimSentence(string value)
+        {
+            var trimmed = value?.Trim() ?? string.Empty;
+            return trimmed.TrimEnd('.', ' ');
+        }
+
+        private static string FirstNonEmpty(params string?[] values)
+        {
+            return values.FirstOrDefault(value => !string.IsNullOrWhiteSpace(value))?.Trim() ?? string.Empty;
         }
 
         private static HttpClient CreateHttpClient(SourceRoutingDecision? routing)

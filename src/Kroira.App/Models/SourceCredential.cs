@@ -66,6 +66,15 @@ namespace Kroira.App.Models
         public M3uImportMode M3uImportMode { get; set; } = M3uImportMode.LiveMoviesAndSeries;
         public SourceProxyScope ProxyScope { get; set; } = SourceProxyScope.Disabled;
         public string ProxyUrl { get; set; } = string.Empty;
+        public SourceCompanionScope CompanionScope { get; set; } = SourceCompanionScope.Disabled;
+        public SourceCompanionRelayMode CompanionMode { get; set; } = SourceCompanionRelayMode.Buffered;
+        public string CompanionUrl { get; set; } = string.Empty;
+        public string StalkerMacAddress { get; set; } = string.Empty;
+        public string StalkerDeviceId { get; set; } = string.Empty;
+        public string StalkerSerialNumber { get; set; } = string.Empty;
+        public string StalkerTimezone { get; set; } = string.Empty;
+        public string StalkerLocale { get; set; } = string.Empty;
+        public string StalkerApiUrl { get; set; } = string.Empty;
 
         [NotMapped]
         public string ManualEpgUrl

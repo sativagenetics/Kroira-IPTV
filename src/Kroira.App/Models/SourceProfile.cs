@@ -2,7 +2,7 @@ using System;
 
 namespace Kroira.App.Models
 {
-    public enum SourceType { M3U, Xtream }
+    public enum SourceType { M3U, Xtream, Stalker }
 
     public class SourceProfile
     {

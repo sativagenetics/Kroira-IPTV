@@ -616,6 +616,10 @@
                                                 Click="PlaySelectedEpisode_Click"
                                                 Style="{StaticResource KroiraPrimaryButtonStyle}"
                                                 Padding="18,11" />
+                                        <Button Content="Inspect"
+                                                Click="InspectSelectedEpisode_Click"
+                                                Style="{StaticResource KroiraGhostButtonStyle}"
+                                                Padding="18,11" />
                                         <Button Content="Download"
                                                 Click="DownloadSelectedEpisode_Click"
                                                 Visibility="{x:Bind DownloadActionsVisibility, Mode=OneWay}"
@@ -719,6 +723,10 @@
                                                     </StackPanel>
 
                                                     <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                                        <Button Content="Inspect"
+                                                                Click="InspectEpisode_Click"
+                                                                Style="{StaticResource KroiraGhostButtonStyle}"
+                                                                FontSize="11" />
                                                         <Button Content="Download"
                                                                 Click="DownloadEpisode_Click"
                                                                 Visibility="{Binding ElementName=SeriesPageRoot, Path=DownloadActionsVisibility}"

@@ -1,0 +1,79 @@
+{
+  "routes": [
+    {
+      "path": "/stalker/c/portal.php",
+      "query": { "type": "stb", "action": "handshake" },
+      "bodyFile": "handshake.json"
+    },
+    {
+      "path": "/stalker/c/portal.php",
+      "query": { "type": "stb", "action": "get_profile" },
+      "bodyFile": "profile.json"
+    },
+    {
+      "path": "/stalker/c/portal.php",
+      "query": { "type": "itv", "action": "get_genres" },
+      "bodyFile": "live_genres.json"
+    },
+    {
+      "path": "/stalker/c/portal.php",
+      "query": { "type": "itv", "action": "get_all_channels" },
+      "bodyFile": "live_channels.json"
+    },
+    {
+      "path": "/stalker/c/portal.php",
+      "query": { "type": "vod", "action": "get_genres" },
+      "bodyFile": "vod_genres.json"
+    },
+    {
+      "path": "/stalker/c/portal.php",
+      "query": { "type": "vod", "action": "get_ordered_list", "genre": "20" },
+      "bodyFile": "vod_ordered_list.json"
+    },
+    {
+      "path": "/stalker/c/portal.php",
+      "query": { "type": "series", "action": "get_genres" },
+      "bodyFile": "series_genres.json"
+    },
+    {
+      "path": "/stalker/c/portal.php",
+      "query": { "type": "series", "action": "get_ordered_list", "genre": "30" },
+      "bodyFile": "series_ordered_list.json"
+    },
+    {
+      "path": "/stalker/c/portal.php",
+      "query": { "type": "series", "action": "get_short_info", "movie_id": "701" },
+      "bodyFile": "series_info_701.json"
+    },
+    {
+      "path": "/stalker/c/portal.php",
+      "query": { "type": "itv", "action": "create_link", "cmd": "ffmpeg /stalker/live/501.ts", "series": "0" },
+      "bodyFile": "create_link_live_501.json"
+    },
+    {
+      "path": "/stalker/c/portal.php",
+      "query": { "type": "vod", "action": "create_link", "cmd": "ffmpeg /stalker/vod/601.mp4", "series": "0" },
+      "bodyFile": "create_link_movie_601.json"
+    },
+    {
+      "path": "/stalker/c/portal.php",
+      "query": { "type": "series", "action": "create_link", "cmd": "ffmpeg /stalker/series/70101.mp4", "series": "1" },
+      "bodyFile": "create_link_episode_70101.json"
+    },
+    {
+      "path": "/stalker/play/live/501.ts",
+      "statusCode": 200,
+      "body": "ok"
+    },
+    {
+      "path": "/stalker/play/vod/601.mp4",
+      "statusCode": 200,
+      "body": "ok"
+    },
+    {
+      "path": "/stalker/play/series/70101.mp4",
+      "statusCode": 200,
+      "body": "ok"
+    }
+  ]
+}

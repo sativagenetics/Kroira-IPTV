@@ -1,0 +1,18 @@
+[
+  {
+    "stream_id": "1001",
+    "category_id": "10",
+    "name": "beIN Sports 1 Turkey",
+    "stream_icon": "",
+    "epg_channel_id": "bein1.tr",
+    "tv_archive": "1",
+    "tv_archive_duration": "72"
+  },
+  {
+    "stream_id": "1002",
+    "category_id": "20",
+    "name": "TRT 1 HD",
+    "stream_icon": "",
+    "tv_archive": "0"
+  }
+]

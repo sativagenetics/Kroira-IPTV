@@ -44,6 +44,7 @@ namespace Kroira.App.Services
             var db = scopeServices.ServiceProvider.GetRequiredService<AppDbContext>();
             var parserM3u = scopeServices.ServiceProvider.GetRequiredService<IM3uParserService>();
             var parserXtream = scopeServices.ServiceProvider.GetRequiredService<IXtreamParserService>();
+            var parserStalker = scopeServices.ServiceProvider.GetRequiredService<IStalkerParserService>();
             var parserXmltv = scopeServices.ServiceProvider.GetRequiredService<IXmltvParserService>();
             var acquisitionService = scopeServices.ServiceProvider.GetRequiredService<ISourceAcquisitionService>();
             var browsePreferencesService = scopeServices.ServiceProvider.GetRequiredService<IBrowsePreferencesService>();
@@ -80,6 +81,7 @@ namespace Kroira.App.Services
 
             var credential = await db.SourceCredentials.FirstOrDefaultAsync(item => item.SourceProfileId == sourceProfileId);
             var acquisitionSession = await acquisitionService.BeginSessionAsync(db, profile, credential, trigger, scope);
+            var shouldAttemptGuideSync = ShouldAttemptGuideSync(profile, credential);
 
             var guideAttempted = false;
             var guideSucceeded = false;
@@ -91,6 +93,12 @@ namespace Kroira.App.Services
                 switch (scope)
                 {
                     case SourceRefreshScope.EpgOnly:
+                        if (!shouldAttemptGuideSync)
+                        {
+                            guideSummary = "Guide sync is not applicable for this source configuration.";
+                            break;
+                        }
+
                         guideAttempted = true;
                         await parserXmltv.ParseAndImportEpgAsync(db, sourceProfileId, acquisitionSession, refreshHealth: false);
                         guideSucceeded = true;
@@ -98,12 +106,22 @@ namespace Kroira.App.Services
                         break;
 
                     case SourceRefreshScope.VodOnly:
-                        if (profile.Type != SourceType.Xtream)
+                        if (profile.Type == SourceType.Xtream)
                         {
-                            throw new InvalidOperationException("VOD-only refresh is only supported for Xtream sources.");
+                            await parserXtream.ParseAndImportXtreamVodAsync(db, sourceProfileId, acquisitionSession, refreshHealth: false);
+                            break;
                         }
 
-                        await parserXtream.ParseAndImportXtreamVodAsync(db, sourceProfileId, acquisitionSession, refreshHealth: false);
+                        if (profile.Type == SourceType.Stalker)
+                        {
+                            await parserStalker.ParseAndImportStalkerVodAsync(db, sourceProfileId, acquisitionSession, refreshHealth: false);
+                            break;
+                        }
+
+                        if (profile.Type != SourceType.Xtream)
+                        {
+                            throw new InvalidOperationException("VOD-only refresh is only supported for Xtream or Stalker sources.");
+                        }
                         break;
 
                     case SourceRefreshScope.LiveOnly:
@@ -111,21 +129,28 @@ namespace Kroira.App.Services
                         {
                             await parserM3u.ParseAndImportM3uAsync(db, sourceProfileId, acquisitionSession, refreshHealth: false);
                         }
+                        else if (profile.Type == SourceType.Stalker)
+                        {
+                            await parserStalker.ParseAndImportStalkerAsync(db, sourceProfileId, acquisitionSession, refreshHealth: false);
+                        }
                         else
                         {
                             await parserXtream.ParseAndImportXtreamAsync(db, sourceProfileId, acquisitionSession, refreshHealth: false);
                         }
 
-                        guideAttempted = true;
-                        try
+                        if (shouldAttemptGuideSync)
                         {
-                            await parserXmltv.ParseAndImportEpgAsync(db, sourceProfileId, acquisitionSession, refreshHealth: false);
-                            guideSucceeded = true;
-                            guideSummary = "Guide sync completed.";
-                        }
-                        catch (Exception ex)
-                        {
-                            guideSummary = $"Guide sync failed: {ex.Message}";
+                            guideAttempted = true;
+                            try
+                            {
+                                await parserXmltv.ParseAndImportEpgAsync(db, sourceProfileId, acquisitionSession, refreshHealth: false);
+                                guideSucceeded = true;
+                                guideSummary = "Guide sync completed.";
+                            }
+                            catch (Exception ex)
+                            {
+                                guideSummary = $"Guide sync failed: {ex.Message}";
+                            }
                         }
                         break;
 
@@ -134,22 +159,29 @@ namespace Kroira.App.Services
                         {
                             await parserM3u.ParseAndImportM3uAsync(db, sourceProfileId, acquisitionSession, refreshHealth: false);
                         }
-                        else
+                        else if (profile.Type == SourceType.Xtream)
                         {
                             await parserXtream.ParseAndImportXtreamAsync(db, sourceProfileId, acquisitionSession, refreshHealth: false);
                             await parserXtream.ParseAndImportXtreamVodAsync(db, sourceProfileId, acquisitionSession, refreshHealth: false);
                         }
-
-                        guideAttempted = true;
-                        try
+                        else
                         {
-                            await parserXmltv.ParseAndImportEpgAsync(db, sourceProfileId, acquisitionSession, refreshHealth: false);
-                            guideSucceeded = true;
-                            guideSummary = "Guide sync completed.";
+                            await parserStalker.ParseAndImportStalkerAsync(db, sourceProfileId, acquisitionSession, refreshHealth: false);
                         }
-                        catch (Exception ex)
+
+                        if (shouldAttemptGuideSync)
                         {
-                            guideSummary = $"Guide sync failed: {ex.Message}";
+                            guideAttempted = true;
+                            try
+                            {
+                                await parserXmltv.ParseAndImportEpgAsync(db, sourceProfileId, acquisitionSession, refreshHealth: false);
+                                guideSucceeded = true;
+                                guideSummary = "Guide sync completed.";
+                            }
+                            catch (Exception ex)
+                            {
+                                guideSummary = $"Guide sync failed: {ex.Message}";
+                            }
                         }
                         break;
                 }
@@ -169,8 +201,10 @@ namespace Kroira.App.Services
                 {
                     SourceRefreshScope.EpgOnly => "Guide-only refresh completed.",
                     SourceRefreshScope.VodOnly => "VOD refresh completed.",
+                    SourceRefreshScope.LiveOnly when profile.Type == SourceType.Stalker => "Stalker portal refresh completed.",
                     SourceRefreshScope.LiveOnly when profile.Type == SourceType.Xtream => "Xtream live refresh completed.",
                     SourceRefreshScope.LiveOnly => "Playlist import completed.",
+                    _ when profile.Type == SourceType.Stalker => "Stalker catalog refresh completed.",
                     _ when profile.Type == SourceType.Xtream => "Xtream catalog refresh completed.",
                     _ => "Playlist import completed."
                 };
@@ -319,6 +353,22 @@ namespace Kroira.App.Services
                 segments
                     .Where(segment => !string.IsNullOrWhiteSpace(segment))
                     .Select(segment => segment.Trim()));
+        }
+
+        private static bool ShouldAttemptGuideSync(SourceProfile profile, SourceCredential? credential)
+        {
+            if (credential == null || credential.EpgMode == EpgActiveMode.None)
+            {
+                return false;
+            }
+
+            if (profile.Type == SourceType.Stalker)
+            {
+                return !string.IsNullOrWhiteSpace(credential.ManualEpgUrl) ||
+                       !string.IsNullOrWhiteSpace(credential.DetectedEpgUrl);
+            }
+
+            return true;
         }
     }
 }

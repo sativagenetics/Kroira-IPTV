@@ -42,6 +42,7 @@ namespace Kroira.App.Views
 
         private readonly PlaybackSessionStateMachine _stateMachine = new();
         private readonly PlaybackProgressCoordinator _progressCoordinator;
+        private readonly ICatchupPlaybackService _catchupPlaybackService;
         private readonly IEntitlementService _entitlementService;
         private readonly IPictureInPictureService _pictureInPictureService;
 
@@ -129,6 +130,7 @@ namespace Kroira.App.Views
             InitializeComponent();
             var services = ((App)Application.Current).Services;
             _progressCoordinator = new PlaybackProgressCoordinator(services);
+            _catchupPlaybackService = services.GetRequiredService<ICatchupPlaybackService>();
             _entitlementService = services.GetRequiredService<IEntitlementService>();
             _pictureInPictureService = services.GetRequiredService<IPictureInPictureService>();
             _stateMachine.StateChanged += OnPlaybackStateChanged;
@@ -321,6 +323,11 @@ namespace Kroira.App.Views
 
                 await LoadEnhancedPlayerStateAsync(cancellationToken);
                 if (!IsPlaybackSessionActive(playbackSessionId, cancellationToken) || _context == null)
+                {
+                    return;
+                }
+
+                if (!await ResolveCatchupContextIfNeededAsync(cancellationToken))
                 {
                     return;
                 }
@@ -809,9 +816,38 @@ namespace Kroira.App.Views
             _context.RoutingSummary = fallback.Routing.Summary;
             _context.MirrorCandidateCount = fallback.CandidateCount;
             _context.OperationalSummary = fallback.RecoverySummary;
+            _context.LiveStreamUrl = fallback.StreamUrl;
             _resolvedRoutingSummary = fallback.Routing.Summary;
 
+            if (IsCatchupPlayback())
+            {
+                var catchupContext = _context.Clone();
+                catchupContext.CatalogStreamUrl = fallback.CatalogStreamUrl;
+                catchupContext.StreamUrl = fallback.StreamUrl;
+                catchupContext.LiveStreamUrl = fallback.StreamUrl;
+                var resolution = await ResolveCatchupContextAsync(catchupContext, cancellationToken);
+                if (!resolution.Success)
+                {
+                    _context = catchupContext;
+                    RefreshInfoPanel();
+                    UpdatePlaybackHint();
+                    ShowFatalError(resolution.Message);
+                    return true;
+                }
+
+                _context = catchupContext;
+            }
+            else if (IsChannelPlayback())
+            {
+                ResetCatchupContext(_context, fallback.StreamUrl);
+            }
+
             await LoadEnhancedPlayerStateAsync(cancellationToken);
+            if (IsCatchupPlayback() && !await ResolveCatchupContextIfNeededAsync(cancellationToken))
+            {
+                return true;
+            }
+
             if (!IsPlaybackSessionActive(playbackSessionId, cancellationToken))
             {
                 return true;
@@ -1154,10 +1190,18 @@ namespace Kroira.App.Views
             ResetInactivityTimer("click");
         }
 
-        private void GoLive_Click(object sender, RoutedEventArgs e)
+        private async void GoLive_Click(object sender, RoutedEventArgs e)
         {
             if (_teardownStarted) return;
-            GoToLiveEdge("button");
+            if (IsCatchupPlayback())
+            {
+                await ReturnToLivePlaybackAsync("button");
+            }
+            else
+            {
+                GoToLiveEdge("button");
+            }
+
             ShowControls(cause: "click");
             ResetInactivityTimer("click");
         }
@@ -1634,9 +1678,19 @@ namespace Kroira.App.Views
             UpdateLiveAndSeekUi();
         }
 
-        private bool IsLivePlayback()
+        private bool IsChannelPlayback()
         {
             return _context?.ContentType == PlaybackContentType.Channel;
+        }
+
+        private bool IsCatchupPlayback()
+        {
+            return IsChannelPlayback() && _context?.PlaybackMode == CatchupPlaybackMode.Catchup;
+        }
+
+        private bool IsLivePlayback()
+        {
+            return IsChannelPlayback() && !IsCatchupPlayback();
         }
 
         private bool IsTimelineSeekAllowed()
@@ -1655,7 +1709,8 @@ namespace Kroira.App.Views
 
             TimelineSlider.IsEnabled = canSeek;
             LivePill.Visibility = isLive ? Visibility.Visible : Visibility.Collapsed;
-            GoLiveButton.IsEnabled = isLive && _player != null;
+            CatchupPill.Visibility = IsCatchupPlayback() ? Visibility.Visible : Visibility.Collapsed;
+            GoLiveButton.IsEnabled = IsChannelPlayback() && _player != null;
 
             ToolTipService.SetToolTip(
                 TimelineSlider,
@@ -1691,8 +1746,8 @@ namespace Kroira.App.Views
             TracksButton.IsEnabled = trackSwitchEnabled && (canUseAudioTracks || canUseSubtitles);
             AspectButton.IsEnabled = isReady && canUseAspectControls;
             AspectButton.Visibility = canUseAspectControls ? Visibility.Visible : Visibility.Collapsed;
-            BottomGuideButton.IsEnabled = isReady && IsLivePlayback();
-            BottomChannelListButton.IsEnabled = isReady && IsLivePlayback();
+            BottomGuideButton.IsEnabled = isReady && IsChannelPlayback();
+            BottomChannelListButton.IsEnabled = isReady && IsChannelPlayback();
             UpdateLiveAndSeekUi();
             UpdateEnhancedControlState();
         }
@@ -2094,7 +2149,9 @@ namespace Kroira.App.Views
                 ContentType = _context?.ContentType ?? PlaybackContentType.Channel,
                 LogicalContentKey = _context?.LogicalContentKey ?? string.Empty,
                 PreferredSourceProfileId = _context?.PreferredSourceProfileId ?? 0,
+                CatalogStreamUrl = _context?.CatalogStreamUrl ?? string.Empty,
                 StreamUrl = _context?.StreamUrl ?? string.Empty,
+                LiveStreamUrl = _context?.LiveStreamUrl ?? string.Empty,
                 ProxyScope = _context?.ProxyScope ?? SourceProxyScope.Disabled,
                 ProxyUrl = _context?.ProxyUrl ?? string.Empty,
                 RoutingSummary = _context?.RoutingSummary ?? string.Empty,
@@ -2747,7 +2804,7 @@ namespace Kroira.App.Views
         {
             var player = _player;
             Log(
-                $"playback_session_id={_playbackSessionId}; channel_id={_context?.ContentId ?? 0}; switch_generation={_switchGeneration}; {message}; mode={(IsLivePlayback() ? "live" : "vod")}; state={_stateMachine.State}; paused={(player?.IsPaused.ToString() ?? "null")}; buffering={(player?.IsBuffering.ToString() ?? "null")}; seekable={(player?.IsSeekable.ToString() ?? "null")}; pos_ms={_lastPositionMs}; dur_ms={_lastDurationMs}; timeshift={_isLiveTimeshiftActive}; overlay_visible={_isOverlayVisible}; cursor_visible={!_isCursorHidden}; hide_timer_running={(_controlsHideTimer?.IsEnabled == true)}; pointer_over_controls={_isPointerOverControls}; menu_open={IsMenuOpen}; window_active={_isWindowActive}; interacting={IsUserInteractingWithControls}");
+                $"playback_session_id={_playbackSessionId}; channel_id={_context?.ContentId ?? 0}; switch_generation={_switchGeneration}; {message}; mode={ResolvePlaybackModeLabel()}; state={_stateMachine.State}; paused={(player?.IsPaused.ToString() ?? "null")}; buffering={(player?.IsBuffering.ToString() ?? "null")}; seekable={(player?.IsSeekable.ToString() ?? "null")}; pos_ms={_lastPositionMs}; dur_ms={_lastDurationMs}; timeshift={_isLiveTimeshiftActive}; overlay_visible={_isOverlayVisible}; cursor_visible={!_isCursorHidden}; hide_timer_running={(_controlsHideTimer?.IsEnabled == true)}; pointer_over_controls={_isPointerOverControls}; menu_open={IsMenuOpen}; window_active={_isWindowActive}; interacting={IsUserInteractingWithControls}");
         }
 
         private void LogStructuredPlayback(string eventName, string details)
@@ -2899,6 +2956,117 @@ namespace Kroira.App.Views
                 PlaybackContentType.Episode => "Episode",
                 _ => string.Empty,
             };
+        }
+
+        private string ResolvePlaybackModeLabel()
+        {
+            if (IsCatchupPlayback())
+            {
+                return "catchup";
+            }
+
+            return IsLivePlayback() ? "live" : "vod";
+        }
+
+        private async Task<bool> ResolveCatchupContextIfNeededAsync(CancellationToken cancellationToken)
+        {
+            if (_context == null || !IsCatchupRequested(_context))
+            {
+                return true;
+            }
+
+            var resolution = await ResolveCatchupContextAsync(_context, cancellationToken);
+            if (resolution.Success)
+            {
+                _resolvedRoutingSummary = _context.RoutingSummary;
+                return true;
+            }
+
+            RefreshInfoPanel();
+            UpdatePlaybackHint();
+            ShowFatalError(resolution.Message);
+            return false;
+        }
+
+        private async Task<CatchupPlaybackResolution> ResolveCatchupContextAsync(
+            PlaybackLaunchContext context,
+            CancellationToken cancellationToken)
+        {
+            using var scope = ((App)Application.Current).Services.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            return await _catchupPlaybackService.ResolveForContextAsync(db, context, cancellationToken);
+        }
+
+        private async Task ReturnToLivePlaybackAsync(string reason)
+        {
+            if (_context == null || !IsChannelPlayback())
+            {
+                return;
+            }
+
+            var playbackSessionId = _playbackSessionId;
+            var cancellationToken = CurrentPlaybackSessionToken;
+
+            if (string.IsNullOrWhiteSpace(_context.LiveStreamUrl))
+            {
+                try
+                {
+                    using var scope = ((App)Application.Current).Services.CreateScope();
+                    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                    var operationalService = scope.ServiceProvider.GetRequiredService<IContentOperationalService>();
+                    await operationalService.ResolvePlaybackContextAsync(db, _context);
+                    if (string.IsNullOrWhiteSpace(_context.LiveStreamUrl))
+                    {
+                        _context.LiveStreamUrl = _context.StreamUrl;
+                    }
+                }
+                catch
+                {
+                }
+            }
+
+            var liveStreamUrl = string.IsNullOrWhiteSpace(_context.LiveStreamUrl)
+                ? _context.StreamUrl
+                : _context.LiveStreamUrl;
+            if (string.IsNullOrWhiteSpace(liveStreamUrl))
+            {
+                ShowZapBanner("Live unavailable", "The live stream could not be resolved for this channel.");
+                return;
+            }
+
+            ResetCatchupContext(_context, liveStreamUrl);
+            await LoadEnhancedPlayerStateAsync(cancellationToken);
+            if (!IsPlaybackSessionActive(playbackSessionId, cancellationToken))
+            {
+                return;
+            }
+
+            ShowZapBanner(TitleText.Text, "Returned to live playback.");
+            RestartPlayerSession($"go_live:{reason}", 0);
+        }
+
+        private static bool IsCatchupRequested(PlaybackLaunchContext context)
+        {
+            return context.ContentType == PlaybackContentType.Channel &&
+                   context.CatchupRequestKind != CatchupRequestKind.None &&
+                   context.CatchupProgramStartTimeUtc.HasValue &&
+                   context.CatchupProgramEndTimeUtc.HasValue;
+        }
+
+        private static void ResetCatchupContext(PlaybackLaunchContext context, string liveStreamUrl)
+        {
+            context.PlaybackMode = CatchupPlaybackMode.Live;
+            context.CatchupRequestKind = CatchupRequestKind.None;
+            context.CatchupResolutionStatus = CatchupResolutionStatus.None;
+            context.CatchupStatusText = string.Empty;
+            context.CatchupProgramTitle = string.Empty;
+            context.CatchupProgramStartTimeUtc = null;
+            context.CatchupProgramEndTimeUtc = null;
+            context.CatchupRequestedAtUtc = null;
+            context.CatalogStreamUrl = liveStreamUrl;
+            context.LiveStreamUrl = liveStreamUrl;
+            context.StreamUrl = liveStreamUrl;
+            context.StartPositionMs = 0;
         }
     }
 }

@@ -35,6 +35,28 @@ namespace Kroira.App.Models
         Guide = 3
     }
 
+    public enum SourceCompanionScope
+    {
+        Disabled = 0,
+        PlaybackOnly = 1,
+        PlaybackAndProbing = 2
+    }
+
+    public enum SourceCompanionRelayMode
+    {
+        Relay = 0,
+        Buffered = 1
+    }
+
+    public enum CompanionRelayStatus
+    {
+        None = 0,
+        Skipped = 1,
+        Applied = 2,
+        FallbackDirect = 3,
+        Failed = 4
+    }
+
     public class LogicalOperationalState
     {
         public int Id { get; set; }
@@ -87,12 +109,86 @@ namespace Kroira.App.Models
         public string Summary { get; init; } = "Direct routing";
     }
 
+    public sealed class CompanionRelayDecision
+    {
+        public SourceCompanionScope Scope { get; init; }
+        public SourceCompanionRelayMode Mode { get; init; }
+        public CompanionRelayStatus Status { get; init; }
+        public string CompanionUrl { get; init; } = string.Empty;
+        public string UpstreamUrl { get; init; } = string.Empty;
+        public string RelayUrl { get; init; } = string.Empty;
+        public string Summary { get; init; } = "Direct provider path";
+        public string StatusText { get; init; } = string.Empty;
+        public bool UseCompanion => Status == CompanionRelayStatus.Applied && !string.IsNullOrWhiteSpace(RelayUrl);
+
+        public static CompanionRelayDecision Skipped(
+            SourceCompanionScope scope,
+            SourceCompanionRelayMode mode,
+            string upstreamUrl,
+            string summary,
+            string statusText = "")
+        {
+            return new CompanionRelayDecision
+            {
+                Scope = scope,
+                Mode = mode,
+                Status = CompanionRelayStatus.Skipped,
+                UpstreamUrl = upstreamUrl,
+                Summary = string.IsNullOrWhiteSpace(summary) ? "Direct provider path" : summary.Trim(),
+                StatusText = statusText?.Trim() ?? string.Empty
+            };
+        }
+
+        public static CompanionRelayDecision Applied(
+            SourceCompanionScope scope,
+            SourceCompanionRelayMode mode,
+            string companionUrl,
+            string upstreamUrl,
+            string relayUrl,
+            string summary,
+            string statusText)
+        {
+            return new CompanionRelayDecision
+            {
+                Scope = scope,
+                Mode = mode,
+                Status = CompanionRelayStatus.Applied,
+                CompanionUrl = companionUrl,
+                UpstreamUrl = upstreamUrl,
+                RelayUrl = relayUrl,
+                Summary = string.IsNullOrWhiteSpace(summary) ? "Companion relay" : summary.Trim(),
+                StatusText = statusText?.Trim() ?? string.Empty
+            };
+        }
+
+        public static CompanionRelayDecision FallbackDirect(
+            SourceCompanionScope scope,
+            SourceCompanionRelayMode mode,
+            string companionUrl,
+            string upstreamUrl,
+            string summary,
+            string statusText)
+        {
+            return new CompanionRelayDecision
+            {
+                Scope = scope,
+                Mode = mode,
+                Status = CompanionRelayStatus.FallbackDirect,
+                CompanionUrl = companionUrl,
+                UpstreamUrl = upstreamUrl,
+                Summary = string.IsNullOrWhiteSpace(summary) ? "Direct provider path" : summary.Trim(),
+                StatusText = statusText?.Trim() ?? string.Empty
+            };
+        }
+    }
+
     public sealed class OperationalPlaybackResolution
     {
         public OperationalContentType ContentType { get; init; }
         public int ContentId { get; init; }
         public int SourceProfileId { get; init; }
         public string LogicalContentKey { get; init; } = string.Empty;
+        public string CatalogStreamUrl { get; init; } = string.Empty;
         public string StreamUrl { get; init; } = string.Empty;
         public string SourceName { get; init; } = string.Empty;
         public int CandidateCount { get; init; }

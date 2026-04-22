@@ -35,7 +35,11 @@ namespace Kroira.App.Views
                     {
                         ContentId = channel.Id,
                         ContentType = Kroira.App.Models.PlaybackContentType.Channel,
+                        LogicalContentKey = channel.LogicalContentKey,
+                        PreferredSourceProfileId = channel.PreferredSourceProfileId,
+                        CatalogStreamUrl = channel.StreamUrl,
                         StreamUrl = channel.StreamUrl,
+                        LiveStreamUrl = channel.StreamUrl,
                         StartPositionMs = 0
                     });
                 }
@@ -58,6 +62,27 @@ namespace Kroira.App.Views
             {
                 ViewModel.ToggleFavoriteCommand.Execute(id);
             }
+        }
+
+        private async void InspectChannel_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not FrameworkElement { DataContext: BrowserChannelViewModel channel })
+            {
+                return;
+            }
+
+            await ItemInspectorDialog.ShowAsync(
+                XamlRoot,
+                new Kroira.App.Models.PlaybackLaunchContext
+                {
+                    ContentId = channel.Id,
+                    ContentType = Kroira.App.Models.PlaybackContentType.Channel,
+                    LogicalContentKey = channel.LogicalContentKey,
+                    PreferredSourceProfileId = channel.PreferredSourceProfileId,
+                    CatalogStreamUrl = channel.StreamUrl,
+                    StreamUrl = channel.StreamUrl,
+                    LiveStreamUrl = channel.StreamUrl
+                });
         }
     }
 }

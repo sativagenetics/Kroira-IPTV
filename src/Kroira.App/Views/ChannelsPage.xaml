@@ -545,6 +545,13 @@
                                                    MaxLines="1"
                                                    TextTrimming="CharacterEllipsis"
                                                    Visibility="{Binding CatchupVisibility}" />
+                                        <TextBlock Text="{Binding CatchupStatusText}"
+                                                   Foreground="{StaticResource KroiraTextTertiaryBrush}"
+                                                   FontSize="10"
+                                                   MaxLines="2"
+                                                   TextWrapping="WrapWholeWords"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   Visibility="{Binding CatchupStatusVisibility}" />
                                     </StackPanel>
 
                                     <Grid Grid.Row="4" ColumnSpacing="8">
@@ -572,6 +579,18 @@
                                                     Foreground="#FF7B6A"
                                                     AutomationProperties.Name="Schedule recording"
                                                     ToolTipService.ToolTip="Schedule recording" />
+                                            <Button Content="{Binding CatchupActionLabel}"
+                                                    Click="StartCatchup_Click"
+                                                    Visibility="{Binding CatchupActionVisibility}"
+                                                    Style="{StaticResource LiveQuickOverlayButtonStyle}"
+                                                    Foreground="{StaticResource KroiraAccentBrush}"
+                                                    AutomationProperties.Name="Start over"
+                                                    ToolTipService.ToolTip="{Binding CatchupStatusText}" />
+                                            <Button Content="Inspect"
+                                                    Click="InspectChannel_Click"
+                                                    Style="{StaticResource LiveQuickOverlayButtonStyle}"
+                                                    AutomationProperties.Name="Inspect channel"
+                                                    ToolTipService.ToolTip="Inspect source, routing, and playback details" />
                                             <Button Content="{Binding FavoriteIcon}"
                                                     Tag="{Binding Id}"
                                                     Click="FavoriteToggle_Click"

@@ -1,0 +1,102 @@
+{
+  "id": "companion_relay_matrix",
+  "description": "Optional companion relay keeps direct playback primary while supporting proxied playback, catchup, bounded probing, and clean fallback to direct.",
+  "sources": [
+    {
+      "key": "direct",
+      "name": "Fixture Direct Source",
+      "type": "M3U",
+      "url": "{{server}}/playlist.m3u",
+      "epgMode": "Detected",
+      "m3uImportMode": "LiveMoviesAndSeries",
+      "refreshTrigger": "InitialImport",
+      "refreshScope": "Full"
+    },
+    {
+      "key": "companion",
+      "name": "Fixture Companion Source",
+      "type": "M3U",
+      "url": "{{server}}/playlist.m3u",
+      "epgMode": "Detected",
+      "m3uImportMode": "LiveMoviesAndSeries",
+      "companionScope": "PlaybackAndProbing",
+      "companionMode": "Buffered",
+      "companionUrl": "{{server}}/companion-ok",
+      "refreshTrigger": "InitialImport",
+      "refreshScope": "Full"
+    },
+    {
+      "key": "fallback",
+      "name": "Fixture Companion Fallback",
+      "type": "M3U",
+      "url": "{{server}}/playlist.m3u",
+      "epgMode": "Detected",
+      "m3uImportMode": "LiveMoviesAndSeries",
+      "companionScope": "PlaybackOnly",
+      "companionMode": "Buffered",
+      "companionUrl": "{{server}}/companion-down",
+      "refreshTrigger": "InitialImport",
+      "refreshScope": "Full"
+    }
+  ],
+  "playbackRequests": [
+    {
+      "id": "direct_live",
+      "sourceKey": "direct",
+      "contentType": "Channel",
+      "matchName": "Plain News HD"
+    },
+    {
+      "id": "companion_live",
+      "sourceKey": "companion",
+      "contentType": "Channel",
+      "matchName": "Plain News HD"
+    },
+    {
+      "id": "companion_fallback_live",
+      "sourceKey": "fallback",
+      "contentType": "Channel",
+      "matchName": "Plain News HD"
+    }
+  ],
+  "catchupRequests": [
+    {
+      "id": "companion_start_over",
+      "sourceKey": "companion",
+      "matchName": "Archive Sports HD",
+      "requestKind": "StartOver",
+      "requestedAtUtc": "2026-04-22T10:30:00Z"
+    }
+  ],
+  "inspectionRequests": [
+    {
+      "id": "companion_live_inspect",
+      "sourceKey": "companion",
+      "contentType": "Channel",
+      "matchName": "Plain News HD",
+      "resolveBeforeInspect": true
+    },
+    {
+      "id": "companion_catchup_inspect",
+      "sourceKey": "companion",
+      "contentType": "Channel",
+      "matchName": "Archive Sports HD",
+      "catchupRequestKind": "StartOver",
+      "requestedAtUtc": "2026-04-22T10:30:00Z"
+    }
+  ],
+  "externalLaunchRequests": [
+    {
+      "id": "companion_live_external",
+      "sourceKey": "companion",
+      "contentType": "Channel",
+      "matchName": "Plain News HD"
+    },
+    {
+      "id": "fallback_live_external",
+      "sourceKey": "fallback",
+      "contentType": "Channel",
+      "matchName": "Plain News HD"
+    }
+  ]
+}

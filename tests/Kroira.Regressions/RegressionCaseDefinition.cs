@@ -9,9 +9,75 @@ internal sealed class RegressionCaseDefinition
     public string Id { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
     public List<RegressionSourceDefinition> Sources { get; set; } = [];
+    public List<RegressionPlaybackRequestDefinition> PlaybackRequests { get; set; } = [];
+    public List<RegressionCatchupRequestDefinition> CatchupRequests { get; set; } = [];
+    public List<RegressionInspectionRequestDefinition> InspectionRequests { get; set; } = [];
+    public List<RegressionExternalLaunchRequestDefinition> ExternalLaunchRequests { get; set; } = [];
     public List<RegressionMutationDefinition> Mutations { get; set; } = [];
     public RegressionRuntimeMaintenanceDefinition? RuntimeMaintenance { get; set; }
     public RegressionSurfaceLoadDefinition? SurfaceLoads { get; set; }
+}
+
+internal sealed class RegressionPlaybackRequestDefinition
+{
+    public string Id { get; set; } = string.Empty;
+    public string SourceKey { get; set; } = string.Empty;
+    public PlaybackContentType ContentType { get; set; } = PlaybackContentType.Channel;
+    public string MatchName { get; set; } = string.Empty;
+}
+
+internal sealed class RegressionCatchupRequestDefinition
+{
+    public string Id { get; set; } = string.Empty;
+    public string SourceKey { get; set; } = string.Empty;
+    public string MatchName { get; set; } = string.Empty;
+    public CatchupRequestKind RequestKind { get; set; } = CatchupRequestKind.None;
+    public string ProgramTitle { get; set; } = string.Empty;
+    public string RequestedAtUtc { get; set; } = string.Empty;
+}
+
+internal sealed class RegressionInspectionRequestDefinition
+{
+    public string Id { get; set; } = string.Empty;
+    public string SourceKey { get; set; } = string.Empty;
+    public PlaybackContentType ContentType { get; set; } = PlaybackContentType.Channel;
+    public string MatchName { get; set; } = string.Empty;
+    public bool ResolveBeforeInspect { get; set; }
+    public CatchupRequestKind CatchupRequestKind { get; set; } = CatchupRequestKind.None;
+    public string ProgramTitle { get; set; } = string.Empty;
+    public string RequestedAtUtc { get; set; } = string.Empty;
+    public RegressionInspectionRuntimeStateDefinition? RuntimeState { get; set; }
+}
+
+internal sealed class RegressionExternalLaunchRequestDefinition
+{
+    public string Id { get; set; } = string.Empty;
+    public string SourceKey { get; set; } = string.Empty;
+    public PlaybackContentType ContentType { get; set; } = PlaybackContentType.Channel;
+    public string MatchName { get; set; } = string.Empty;
+    public bool ResolveBeforeLaunch { get; set; }
+    public bool PreferCurrentResolvedStream { get; set; }
+    public CatchupRequestKind CatchupRequestKind { get; set; } = CatchupRequestKind.None;
+    public string ProgramTitle { get; set; } = string.Empty;
+    public string RequestedAtUtc { get; set; } = string.Empty;
+}
+
+internal sealed class RegressionInspectionRuntimeStateDefinition
+{
+    public bool IsCurrentPlayback { get; set; }
+    public string SessionState { get; set; } = string.Empty;
+    public string SessionMessage { get; set; } = string.Empty;
+    public int Width { get; set; }
+    public int Height { get; set; }
+    public double FramesPerSecond { get; set; }
+    public string VideoCodec { get; set; } = string.Empty;
+    public string AudioCodec { get; set; } = string.Empty;
+    public string ContainerFormat { get; set; } = string.Empty;
+    public string PixelFormat { get; set; } = string.Empty;
+    public bool IsHardwareDecodingActive { get; set; }
+    public long PositionMs { get; set; }
+    public long DurationMs { get; set; }
+    public bool IsSeekable { get; set; }
 }
 
 internal sealed class RegressionSourceDefinition
@@ -27,6 +93,14 @@ internal sealed class RegressionSourceDefinition
     public M3uImportMode M3uImportMode { get; set; } = M3uImportMode.LiveMoviesAndSeries;
     public SourceProxyScope ProxyScope { get; set; } = SourceProxyScope.Disabled;
     public string ProxyUrl { get; set; } = string.Empty;
+    public SourceCompanionScope CompanionScope { get; set; } = SourceCompanionScope.Disabled;
+    public SourceCompanionRelayMode CompanionMode { get; set; } = SourceCompanionRelayMode.Buffered;
+    public string CompanionUrl { get; set; } = string.Empty;
+    public string StalkerMacAddress { get; set; } = string.Empty;
+    public string StalkerDeviceId { get; set; } = string.Empty;
+    public string StalkerSerialNumber { get; set; } = string.Empty;
+    public string StalkerTimezone { get; set; } = string.Empty;
+    public string StalkerLocale { get; set; } = string.Empty;
     public SourceRefreshTrigger RefreshTrigger { get; set; } = SourceRefreshTrigger.InitialImport;
     public SourceRefreshScope RefreshScope { get; set; } = SourceRefreshScope.Full;
 }
@@ -43,6 +117,9 @@ internal sealed class RegressionMutationDefinition
     public string ManualEpgUrl { get; set; } = string.Empty;
     public SourceProxyScope ProxyScope { get; set; } = SourceProxyScope.Disabled;
     public string ProxyUrl { get; set; } = string.Empty;
+    public SourceCompanionScope CompanionScope { get; set; } = SourceCompanionScope.Disabled;
+    public SourceCompanionRelayMode CompanionMode { get; set; } = SourceCompanionRelayMode.Buffered;
+    public string CompanionUrl { get; set; } = string.Empty;
     public bool SyncNow { get; set; }
     public int ContentIdOverride { get; set; }
     public int PreferredSourceProfileIdOverride { get; set; }

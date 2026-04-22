@@ -53,20 +53,23 @@ namespace Kroira.App.Views
         private void BuildToolsFlyout()
         {
             var isLive = IsLivePlayback();
+            var isChannel = IsChannelPlayback();
             var canSeek = IsTimelineSeekAllowed();
             var hasEpisodeNavigation = _allEpisodeSwitchItems.Count > 1;
             var canUsePictureInPicture = CanUseFeature(EntitlementFeatureKeys.PlaybackPictureInPicture);
-            ToolsGuideButton.Visibility = isLive ? Visibility.Visible : Visibility.Collapsed;
-            ToolsChannelsButton.Visibility = isLive ? Visibility.Visible : Visibility.Collapsed;
+            ToolsGuideButton.Visibility = isChannel ? Visibility.Visible : Visibility.Collapsed;
+            ToolsChannelsButton.Visibility = isChannel ? Visibility.Visible : Visibility.Collapsed;
             ToolsEpisodesButton.Visibility = hasEpisodeNavigation ? Visibility.Visible : Visibility.Collapsed;
-            ToolsJumpLiveButton.Visibility = isLive && canSeek ? Visibility.Visible : Visibility.Collapsed;
+            ToolsJumpLiveButton.Visibility = IsCatchupPlayback() || (isLive && canSeek) ? Visibility.Visible : Visibility.Collapsed;
             ToolsRestartButton.Visibility = !isLive && canSeek ? Visibility.Visible : Visibility.Collapsed;
             ToolsPictureInPictureButton.Visibility = canUsePictureInPicture ? Visibility.Visible : Visibility.Collapsed;
             ToolsPictureInPictureButton.Content = IsPictureInPictureMode() ? "Exit PiP" : "PiP";
             ToolsAlwaysOnTopButton.Visibility = IsPictureInPictureMode() ? Visibility.Collapsed : Visibility.Visible;
-            ToolsPanelSummaryText.Text = isLive
-                ? "Live tools stay interactive while channel, subtitle, and display controls remain in frame."
-                : "Compact playback tuning for display, subtitles, recovery, and session tools.";
+            ToolsPanelSummaryText.Text = IsCatchupPlayback()
+                ? "Catchup replay stays on the live-channel path so you can jump back to live instantly."
+                : isLive
+                    ? "Live tools stay interactive while channel, subtitle, and display controls remain in frame."
+                    : "Compact playback tuning for display, subtitles, recovery, and session tools.";
 
             RefreshToolToggleStates();
             UpdateToolsPanelVisibility();
@@ -515,6 +518,11 @@ namespace Kroira.App.Views
                 hints.Add("Seek unavailable on this live stream.");
             }
 
+            if (IsCatchupPlayback() && !string.IsNullOrWhiteSpace(_context?.CatchupStatusText))
+            {
+                hints.Add(_context.CatchupStatusText);
+            }
+
             if (!string.IsNullOrWhiteSpace(_context?.OperationalSummary))
             {
                 hints.Add(_context.OperationalSummary);
@@ -544,7 +552,9 @@ namespace Kroira.App.Views
                 ? _lastStateMessage
                 : !string.IsNullOrWhiteSpace(_context?.OperationalSummary)
                     ? _context.OperationalSummary
-                    : IsLivePlayback() ? "Live playback tools reflect real stream state and guide confidence." : "Seekable playback controls are active for this title.";
+                    : IsCatchupPlayback()
+                        ? "Catchup replay is active on the live channel path."
+                        : IsLivePlayback() ? "Live playback tools reflect real stream state and guide confidence." : "Seekable playback controls are active for this title.";
             InfoResolutionText.Text = info.HasVideo ? $"{info.Width}x{info.Height}" : "Unknown";
             InfoFpsText.Text = info.FramesPerSecond > 0 ? $"{info.FramesPerSecond:0.##}" : "Unknown";
             InfoVideoCodecText.Text = string.IsNullOrWhiteSpace(info.VideoCodec) ? "Unknown" : info.VideoCodec;
@@ -555,8 +565,85 @@ namespace Kroira.App.Views
                     ? _resolvedSourceName
                     : $"{_resolvedSourceName} · {_resolvedRoutingSummary}";
             InfoSpeedText.Text = $"{(_player?.PlaybackSpeed > 0 ? _player.PlaybackSpeed : _playerPreferences.PlaybackSpeed):0.##}x";
-            InfoSeekText.Text = IsTimelineSeekAllowed() ? "Seekable" : "Not seekable";
-            InfoGuideText.Text = string.IsNullOrWhiteSpace(_resolvedGuideSummary) ? "No guide status" : _resolvedGuideSummary;
+            InfoSeekText.Text = IsCatchupPlayback()
+                ? IsTimelineSeekAllowed() ? "Catchup replay" : "Catchup not seekable"
+                : IsTimelineSeekAllowed() ? "Seekable" : "Not seekable";
+            InfoGuideText.Text = IsCatchupPlayback() && !string.IsNullOrWhiteSpace(_context?.CatchupStatusText)
+                ? _context.CatchupStatusText
+                : string.IsNullOrWhiteSpace(_resolvedGuideSummary) ? "No guide status" : _resolvedGuideSummary;
+        }
+
+        private async void InspectCurrentItem_Click(object sender, RoutedEventArgs e)
+        {
+            if (_context == null || XamlRoot == null)
+            {
+                return;
+            }
+
+            await ItemInspectorDialog.ShowAsync(
+                XamlRoot,
+                _context.Clone(),
+                BuildInspectionRuntimeState());
+        }
+
+        private async void OpenInExternalPlayer_Click(object sender, RoutedEventArgs e)
+        {
+            if (_context == null)
+            {
+                return;
+            }
+
+            if (sender is Control control)
+            {
+                control.IsEnabled = false;
+                try
+                {
+                    var service = ((App)Application.Current).Services.GetRequiredService<IExternalPlayerLaunchService>();
+                    var result = await service.LaunchAsync(_context.Clone(), preferCurrentResolvedStream: true);
+                    if (result.Success)
+                    {
+                        ShowZapBanner(TitleText.Text, result.Message);
+                    }
+                    else
+                    {
+                        ShowZapBanner("External player unavailable", result.Message);
+                    }
+                }
+                finally
+                {
+                    control.IsEnabled = true;
+                }
+
+                return;
+            }
+
+            var externalPlayerLaunchService = ((App)Application.Current).Services.GetRequiredService<IExternalPlayerLaunchService>();
+            var launchResult = await externalPlayerLaunchService.LaunchAsync(_context.Clone(), preferCurrentResolvedStream: true);
+            ShowZapBanner(
+                launchResult.Success ? TitleText.Text : "External player unavailable",
+                launchResult.Message);
+        }
+
+        private PlayableItemInspectionRuntimeState BuildInspectionRuntimeState()
+        {
+            var info = _player?.GetPlaybackInfoSnapshot() ?? new Services.Playback.MpvPlaybackInfoSnapshot();
+            return new PlayableItemInspectionRuntimeState
+            {
+                IsCurrentPlayback = true,
+                SessionState = _stateMachine.State.ToString(),
+                SessionMessage = _lastStateMessage,
+                Width = info.Width,
+                Height = info.Height,
+                FramesPerSecond = info.FramesPerSecond,
+                VideoCodec = info.VideoCodec,
+                AudioCodec = info.AudioCodec,
+                ContainerFormat = info.ContainerFormat,
+                PixelFormat = info.PixelFormat,
+                IsHardwareDecodingActive = info.IsHardwareDecodingActive,
+                PositionMs = _lastPositionMs,
+                DurationMs = _lastDurationMs,
+                IsSeekable = IsTimelineSeekAllowed()
+            };
         }
 
         private void RetryCurrentPlayback()
@@ -618,8 +705,7 @@ namespace Kroira.App.Views
             _context.ContentType = PlaybackContentType.Channel;
             _context.LogicalContentKey = nextItem.LogicalContentKey;
             _context.PreferredSourceProfileId = nextItem.PreferredSourceProfileId;
-            _context.StreamUrl = nextItem.StreamUrl;
-            _context.StartPositionMs = 0;
+            ResetCatchupContext(_context, nextItem.StreamUrl);
             _context.RestoreAudioTrackSelection = false;
             _context.RestoreSubtitleTrackSelection = false;
             _context.PreferredAudioTrackId = string.Empty;
@@ -644,11 +730,62 @@ namespace Kroira.App.Views
             _context.ContentType = PlaybackContentType.Episode;
             _context.LogicalContentKey = string.Empty;
             _context.PreferredSourceProfileId = 0;
+            _context.CatalogStreamUrl = nextItem.StreamUrl;
             _context.StreamUrl = nextItem.StreamUrl;
             _context.StartPositionMs = nextItem.ResumePositionMs;
             TitleText.Text = nextItem.Title;
             await LoadEnhancedPlayerStateAsync(CurrentPlaybackSessionToken);
             RestartPlayerSession("episode_switch", nextItem.ResumePositionMs);
+        }
+
+        private async Task PlayGuideProgramAsync(PlayerGuideProgramItem item)
+        {
+            if (_context == null || !IsChannelPlayback())
+            {
+                return;
+            }
+
+            if (item.RequestKind == CatchupRequestKind.None)
+            {
+                if (!string.IsNullOrWhiteSpace(item.StatusText))
+                {
+                    ShowZapBanner(item.Title, item.StatusText);
+                }
+
+                return;
+            }
+
+            var nextContext = _context.Clone();
+            nextContext.PlaybackMode = CatchupPlaybackMode.Catchup;
+            nextContext.CatchupRequestKind = item.RequestKind;
+            nextContext.CatchupProgramTitle = item.Title.Replace("Now · ", string.Empty, StringComparison.Ordinal);
+            nextContext.CatchupProgramStartTimeUtc = item.StartTimeUtc;
+            nextContext.CatchupProgramEndTimeUtc = item.EndTimeUtc;
+            nextContext.CatchupRequestedAtUtc = DateTime.UtcNow;
+            if (string.IsNullOrWhiteSpace(nextContext.LiveStreamUrl))
+            {
+                nextContext.LiveStreamUrl = IsCatchupPlayback() ? _context.LiveStreamUrl : _context.StreamUrl;
+            }
+
+            var resolution = await ResolveCatchupContextAsync(nextContext, CurrentPlaybackSessionToken);
+            if (!resolution.Success)
+            {
+                ShowZapBanner(item.Title, resolution.Message);
+                RefreshInfoPanel();
+                UpdatePlaybackHint();
+                return;
+            }
+
+            _failedMirrorContentIds.Clear();
+            _context = nextContext;
+            ShowZapBanner(item.Title, resolution.Message);
+            await LoadEnhancedPlayerStateAsync(CurrentPlaybackSessionToken);
+            if (!await ResolveCatchupContextIfNeededAsync(CurrentPlaybackSessionToken))
+            {
+                return;
+            }
+
+            RestartPlayerSession(item.RequestKind == CatchupRequestKind.StartOver ? "catchup_start_over" : "catchup_replay", 0);
         }
 
         private void ShowZapBanner(string title, string message)
@@ -852,7 +989,7 @@ namespace Kroira.App.Views
                 case VirtualKey.I:
                     TogglePanel(nameof(InfoPanel));
                     break;
-                case VirtualKey.G when IsLivePlayback():
+                case VirtualKey.G when IsChannelPlayback():
                     TogglePanel(nameof(MiniGuidePanel));
                     break;
                 case VirtualKey.Escape:
@@ -1315,6 +1452,25 @@ namespace Kroira.App.Views
             if (e.ClickedItem is PlayerEpisodeSwitchItem item)
             {
                 await SwitchToEpisodeAsync(item.Id);
+            }
+        }
+
+        private async void GuideProgramAction_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not Button button ||
+                button.DataContext is not PlayerGuideProgramItem item)
+            {
+                return;
+            }
+
+            button.IsEnabled = false;
+            try
+            {
+                await PlayGuideProgramAsync(item);
+            }
+            finally
+            {
+                button.IsEnabled = true;
             }
         }
 

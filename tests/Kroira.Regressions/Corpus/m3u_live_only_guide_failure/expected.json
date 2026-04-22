@@ -21,7 +21,16 @@
         "EpgMode": "Detected",
         "M3uImportMode": "LiveOnly",
         "ProxyScope": "Disabled",
-        "ProxyUrl": ""
+        "ProxyUrl": "",
+        "CompanionScope": "Disabled",
+        "CompanionMode": "Buffered",
+        "CompanionUrl": "",
+        "StalkerMacAddress": "",
+        "StalkerDeviceId": "",
+        "StalkerSerialNumber": "",
+        "StalkerTimezone": "",
+        "StalkerLocale": "",
+        "StalkerApiUrl": ""
       },
       "SyncState": {
         "HttpStatusCode": 200,

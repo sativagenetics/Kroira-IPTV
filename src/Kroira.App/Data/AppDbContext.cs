@@ -19,6 +19,7 @@ namespace Kroira.App.Data
         public DbSet<SourceProfile> SourceProfiles { get; set; } = null!;
         public DbSet<SourceCredential> SourceCredentials { get; set; } = null!;
         public DbSet<SourceSyncState> SourceSyncStates { get; set; } = null!;
+        public DbSet<StalkerPortalSnapshot> StalkerPortalSnapshots { get; set; } = null!;
         public DbSet<SourceAcquisitionProfile> SourceAcquisitionProfiles { get; set; } = null!;
         public DbSet<SourceAcquisitionRun> SourceAcquisitionRuns { get; set; } = null!;
         public DbSet<SourceAcquisitionEvidence> SourceAcquisitionEvidence { get; set; } = null!;
@@ -29,6 +30,7 @@ namespace Kroira.App.Data
         public DbSet<SourceChannelEnrichmentRecord> SourceChannelEnrichmentRecords { get; set; } = null!;
         public DbSet<LogicalOperationalState> LogicalOperationalStates { get; set; } = null!;
         public DbSet<LogicalOperationalCandidate> LogicalOperationalCandidates { get; set; } = null!;
+        public DbSet<CatchupPlaybackAttempt> CatchupPlaybackAttempts { get; set; } = null!;
         public DbSet<ChannelCategory> ChannelCategories { get; set; } = null!;
         public DbSet<Channel> Channels { get; set; } = null!;
         public DbSet<EpgProgram> EpgPrograms { get; set; } = null!;
@@ -78,11 +80,116 @@ namespace Kroira.App.Data
                 .IsRequired()
                 .HasMaxLength(600);
 
+            modelBuilder.Entity<SourceCredential>()
+                .Property(e => e.CompanionUrl)
+                .IsRequired()
+                .HasMaxLength(600);
+
+            modelBuilder.Entity<SourceCredential>()
+                .Property(e => e.StalkerMacAddress)
+                .IsRequired()
+                .HasMaxLength(64);
+
+            modelBuilder.Entity<SourceCredential>()
+                .Property(e => e.StalkerDeviceId)
+                .IsRequired()
+                .HasMaxLength(128);
+
+            modelBuilder.Entity<SourceCredential>()
+                .Property(e => e.StalkerSerialNumber)
+                .IsRequired()
+                .HasMaxLength(128);
+
+            modelBuilder.Entity<SourceCredential>()
+                .Property(e => e.StalkerTimezone)
+                .IsRequired()
+                .HasMaxLength(96);
+
+            modelBuilder.Entity<SourceCredential>()
+                .Property(e => e.StalkerLocale)
+                .IsRequired()
+                .HasMaxLength(64);
+
+            modelBuilder.Entity<SourceCredential>()
+                .Property(e => e.StalkerApiUrl)
+                .IsRequired()
+                .HasMaxLength(600);
+
             modelBuilder.Entity<SourceSyncState>()
                 .HasOne<SourceProfile>()
                 .WithOne()
                 .HasForeignKey<SourceSyncState>(e => e.SourceProfileId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<StalkerPortalSnapshot>()
+                .HasIndex(e => e.SourceProfileId)
+                .IsUnique();
+
+            modelBuilder.Entity<StalkerPortalSnapshot>()
+                .HasOne<SourceProfile>()
+                .WithOne()
+                .HasForeignKey<StalkerPortalSnapshot>(e => e.SourceProfileId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<StalkerPortalSnapshot>()
+                .Property(e => e.PortalName)
+                .IsRequired()
+                .HasMaxLength(180);
+
+            modelBuilder.Entity<StalkerPortalSnapshot>()
+                .Property(e => e.PortalVersion)
+                .IsRequired()
+                .HasMaxLength(96);
+
+            modelBuilder.Entity<StalkerPortalSnapshot>()
+                .Property(e => e.ProfileName)
+                .IsRequired()
+                .HasMaxLength(180);
+
+            modelBuilder.Entity<StalkerPortalSnapshot>()
+                .Property(e => e.ProfileId)
+                .IsRequired()
+                .HasMaxLength(96);
+
+            modelBuilder.Entity<StalkerPortalSnapshot>()
+                .Property(e => e.MacAddress)
+                .IsRequired()
+                .HasMaxLength(64);
+
+            modelBuilder.Entity<StalkerPortalSnapshot>()
+                .Property(e => e.DeviceId)
+                .IsRequired()
+                .HasMaxLength(128);
+
+            modelBuilder.Entity<StalkerPortalSnapshot>()
+                .Property(e => e.SerialNumber)
+                .IsRequired()
+                .HasMaxLength(128);
+
+            modelBuilder.Entity<StalkerPortalSnapshot>()
+                .Property(e => e.Locale)
+                .IsRequired()
+                .HasMaxLength(64);
+
+            modelBuilder.Entity<StalkerPortalSnapshot>()
+                .Property(e => e.Timezone)
+                .IsRequired()
+                .HasMaxLength(96);
+
+            modelBuilder.Entity<StalkerPortalSnapshot>()
+                .Property(e => e.DiscoveredApiUrl)
+                .IsRequired()
+                .HasMaxLength(600);
+
+            modelBuilder.Entity<StalkerPortalSnapshot>()
+                .Property(e => e.LastSummary)
+                .IsRequired()
+                .HasMaxLength(320);
+
+            modelBuilder.Entity<StalkerPortalSnapshot>()
+                .Property(e => e.LastError)
+                .IsRequired()
+                .HasMaxLength(320);
 
             modelBuilder.Entity<SourceAcquisitionProfile>()
                 .HasIndex(e => e.SourceProfileId)
@@ -443,6 +550,53 @@ namespace Kroira.App.Data
                 .HasOne(candidate => candidate.State)
                 .WithMany(state => state.Candidates)
                 .HasForeignKey(candidate => candidate.LogicalOperationalStateId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<CatchupPlaybackAttempt>()
+                .HasIndex(e => new { e.SourceProfileId, e.RequestedAtUtc });
+
+            modelBuilder.Entity<CatchupPlaybackAttempt>()
+                .HasIndex(e => new { e.ChannelId, e.RequestedAtUtc });
+
+            modelBuilder.Entity<CatchupPlaybackAttempt>()
+                .Property(e => e.LogicalContentKey)
+                .IsRequired()
+                .HasMaxLength(220);
+
+            modelBuilder.Entity<CatchupPlaybackAttempt>()
+                .Property(e => e.ProgramTitle)
+                .IsRequired()
+                .HasMaxLength(220);
+
+            modelBuilder.Entity<CatchupPlaybackAttempt>()
+                .Property(e => e.Message)
+                .IsRequired()
+                .HasMaxLength(320);
+
+            modelBuilder.Entity<CatchupPlaybackAttempt>()
+                .Property(e => e.RoutingSummary)
+                .IsRequired()
+                .HasMaxLength(240);
+
+            modelBuilder.Entity<CatchupPlaybackAttempt>()
+                .Property(e => e.ResolvedStreamUrl)
+                .IsRequired()
+                .HasMaxLength(1200);
+
+            modelBuilder.Entity<CatchupPlaybackAttempt>()
+                .Property(e => e.ProviderMode)
+                .IsRequired()
+                .HasMaxLength(64);
+
+            modelBuilder.Entity<CatchupPlaybackAttempt>()
+                .Property(e => e.ProviderSource)
+                .IsRequired()
+                .HasMaxLength(600);
+
+            modelBuilder.Entity<CatchupPlaybackAttempt>()
+                .HasOne<SourceProfile>()
+                .WithMany()
+                .HasForeignKey(e => e.SourceProfileId)
                 .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<EpgSyncLog>()

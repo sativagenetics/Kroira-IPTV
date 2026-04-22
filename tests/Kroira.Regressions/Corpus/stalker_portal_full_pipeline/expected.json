@@ -1,0 +1,458 @@
+{
+  "Sources": [
+    {
+      "Key": "stalker-main",
+      "Name": "Fixture Stalker Main",
+      "Type": "Stalker",
+      "Refresh": {
+        "Success": true,
+        "Trigger": "InitialImport",
+        "Scope": "Full",
+        "Message": "Stalker catalog refresh completed.",
+        "CatalogSummary": "Stalker catalog refresh completed.",
+        "GuideSummary": "",
+        "GuideAttempted": false,
+        "GuideSucceeded": false
+      },
+      "Credential": {
+        "Url": "[fixture-server]/stalker/c",
+        "DetectedEpgUrl": "",
+        "ManualEpgUrl": "",
+        "EpgMode": "Detected",
+        "M3uImportMode": "LiveMoviesAndSeries",
+        "ProxyScope": "Disabled",
+        "ProxyUrl": "",
+        "CompanionScope": "Disabled",
+        "CompanionMode": "Buffered",
+        "CompanionUrl": "",
+        "StalkerMacAddress": "00:1A:79:10:00:01",
+        "StalkerDeviceId": "",
+        "StalkerSerialNumber": "",
+        "StalkerTimezone": "Europe/Istanbul",
+        "StalkerLocale": "en",
+        "StalkerApiUrl": ""
+      },
+      "SyncState": {
+        "HttpStatusCode": 200,
+        "ErrorLog": "Stalker sync imported 1 live, 1 movies, and 1 series.",
+        "AutoRefreshState": "Disabled",
+        "AutoRefreshSummary": "Automatic refresh is turned off.",
+        "AutoRefreshFailureCount": 0
+      },
+      "Counts": {
+        "Channels": 1,
+        "Movies": 1,
+        "Series": 1,
+        "Seasons": 1,
+        "Episodes": 1,
+        "EpgPrograms": 0
+      },
+      "AcquisitionProfile": {
+        "ProfileKey": "kroira.stalker.portal",
+        "ProfileLabel": "KROIRA Stalker Portal",
+        "ProviderKey": "127.0.0.1",
+        "NormalizationSummary": "Portal titles, genre ids, and command locators normalize into stable catalog identities while keeping provider fields intact.",
+        "MatchingSummary": "Portal item ids stay durable while live channels reuse normalized aliases, regex-safe guide matching, and bounded fuzzy fallback.",
+        "SuppressionSummary": "Broken portal rows, unsafe categories, missing commands, and series without usable episodes are suppressed without poisoning the source.",
+        "ValidationSummary": "Bounded live and VOD probing stays routing-aware and preserves last-known-good operational recovery paths.",
+        "SupportsRegexMatching": true,
+        "PreferProxyDuringValidation": false,
+        "PreferLastKnownGoodRollback": true
+      },
+      "AcquisitionRun": {
+        "Trigger": "InitialImport",
+        "Scope": "Full",
+        "Status": "Succeeded",
+        "ProfileKey": "kroira.stalker.portal",
+        "ProfileLabel": "KROIRA Stalker Portal",
+        "ProviderKey": "127.0.0.1",
+        "RoutingSummary": "Direct routing",
+        "ValidationRoutingSummary": "Direct routing",
+        "Message": "Stalker catalog refresh completed.",
+        "CatalogSummary": "Stalker catalog refresh completed.",
+        "GuideSummary": "",
+        "ValidationSummary": "Component health is usable but uneven (84/100). Many live channels are still missing logos (0/1).",
+        "RawItemCount": 3,
+        "AcceptedCount": 4,
+        "SuppressedCount": 0,
+        "DemotedCount": 0,
+        "MatchedCount": 0,
+        "UnmatchedCount": 0,
+        "LiveCount": 1,
+        "MovieCount": 1,
+        "SeriesCount": 1,
+        "EpisodeCount": 1,
+        "AliasMatchCount": 0,
+        "RegexMatchCount": 0,
+        "FuzzyMatchCount": 0,
+        "ProbeSuccessCount": 3,
+        "ProbeFailureCount": 0,
+        "WarningCount": 2,
+        "ErrorCount": 0
+      },
+      "Health": {
+        "State": "Weak",
+        "Score": 84,
+        "StatusSummary": "Source works, but quality is uneven. Many live channels are still missing logos (0/1).",
+        "ImportResultSummary": "Stalker sync imported 1 live, 1 movies, and 1 series.",
+        "ValidationSummary": "Component health is usable but uneven (84/100). Many live channels are still missing logos (0/1).",
+        "TopIssueSummary": "Live channels imported successfully, but none of them match persisted guide data. 0 of 1 live channels currently have logos.",
+        "DuplicateCount": 0,
+        "InvalidStreamCount": 0,
+        "ChannelsWithEpgMatchCount": 0,
+        "ChannelsWithLogoCount": 0,
+        "SuspiciousEntryCount": 0,
+        "WarningCount": 2,
+        "ErrorCount": 0,
+        "Components": [
+          {
+            "Type": "Catalog",
+            "State": "Healthy",
+            "Score": 100,
+            "Summary": "Catalog looks coherent across 3 items.",
+            "RelevantCount": 3,
+            "HealthyCount": 3,
+            "IssueCount": 0
+          },
+          {
+            "Type": "Live",
+            "State": "Healthy",
+            "Score": 100,
+            "Summary": "Live catalog is present across 1 channels. Live probe reached 1/1 sampled items.",
+            "RelevantCount": 1,
+            "HealthyCount": 1,
+            "IssueCount": 0
+          },
+          {
+            "Type": "Vod",
+            "State": "Healthy",
+            "Score": 100,
+            "Summary": "VOD catalog is present across 1 movies and 1 series. VOD probe reached 2/2 sampled items.",
+            "RelevantCount": 2,
+            "HealthyCount": 2,
+            "IssueCount": 0
+          },
+          {
+            "Type": "Epg",
+            "State": "NotApplicable",
+            "Score": 0,
+            "Summary": "Guide is optional for this Stalker source until you add a manual XMLTV feed.",
+            "RelevantCount": 1,
+            "HealthyCount": 0,
+            "IssueCount": 0
+          },
+          {
+            "Type": "Logos",
+            "State": "Incomplete",
+            "Score": 64,
+            "Summary": "Many live channels are still missing logos (0/1).",
+            "RelevantCount": 1,
+            "HealthyCount": 0,
+            "IssueCount": 1
+          },
+          {
+            "Type": "Freshness",
+            "State": "Healthy",
+            "Score": 100,
+            "Summary": "Last successful sync was [timestamp].",
+            "RelevantCount": 1,
+            "HealthyCount": 1,
+            "IssueCount": 0
+          }
+        ],
+        "Probes": [
+          {
+            "Type": "Live",
+            "Status": "Completed",
+            "CandidateCount": 1,
+            "SampleSize": 1,
+            "SuccessCount": 1,
+            "FailureCount": 0,
+            "TimeoutCount": 0,
+            "HttpErrorCount": 0,
+            "TransportErrorCount": 0,
+            "Summary": "Live probe reached 1/1 sampled items."
+          },
+          {
+            "Type": "Vod",
+            "Status": "Completed",
+            "CandidateCount": 2,
+            "SampleSize": 2,
+            "SuccessCount": 2,
+            "FailureCount": 0,
+            "TimeoutCount": 0,
+            "HttpErrorCount": 0,
+            "TransportErrorCount": 0,
+            "Summary": "VOD probe reached 2/2 sampled items."
+          }
+        ],
+        "Issues": [
+          {
+            "Severity": "Warning",
+            "Code": "guide_zero_coverage",
+            "Title": "Guide coverage is empty",
+            "AffectedCount": 1,
+            "SampleItems": ""
+          },
+          {
+            "Severity": "Warning",
+            "Code": "missing_logos",
+            "Title": "Channel branding is thin",
+            "AffectedCount": 1,
+            "SampleItems": ""
+          }
+        ]
+      },
+      "Epg": {
+        "IsPresent": false,
+        "IsSuccess": false,
+        "Status": "",
+        "ResultCode": "",
+        "FailureStage": "",
+        "ActiveMode": "",
+        "ActiveXmltvUrl": "",
+        "MatchedChannelCount": 0,
+        "UnmatchedChannelCount": 0,
+        "CurrentCoverageCount": 0,
+        "NextCoverageCount": 0,
+        "TotalLiveChannelCount": 0,
+        "ProgrammeCount": 0,
+        "MatchBreakdown": "",
+        "FailureReason": ""
+      },
+      "StalkerPortal": {
+        "PortalName": "Fixture Portal",
+        "PortalVersion": "5.6.2",
+        "ProfileName": "Living Room",
+        "ProfileId": "42",
+        "MacAddress": "00:1A:79:10:00:01",
+        "DeviceId": "aac7dc2c1a8340c94320ca6f5b1b8c1b",
+        "SerialNumber": "001A79100001",
+        "Locale": "en",
+        "Timezone": "Europe/Istanbul",
+        "DiscoveredApiUrl": "[fixture-server]/stalker/c/portal.php",
+        "SupportsLive": true,
+        "SupportsMovies": true,
+        "SupportsSeries": true,
+        "LiveCategoryCount": 1,
+        "MovieCategoryCount": 1,
+        "SeriesCategoryCount": 1,
+        "Summary": "Portal Fixture Portal at [fixture-server]/stalker/c/portal.php exposed 1 live, 1 movies, and 1 series.",
+        "Error": ""
+      },
+      "Channels": [
+        {
+          "Category": "News",
+          "Name": "Fixture News HD",
+          "StreamUrl": "stalker://live/501?source=1\u0026cmd=ffmpeg%20%2Fstalker%2Flive%2F501.ts",
+          "ProviderEpgChannelId": "fixture.news",
+          "EpgChannelId": "fixture.news",
+          "ProviderLogoUrl": "/stalker/assets/news.png",
+          "LogoUrl": "",
+          "NormalizedIdentityKey": "id:fixturenews",
+          "AliasKeys": "fixture.news\nfixturenews",
+          "EpgMatchSource": "Provider",
+          "EpgMatchConfidence": 70,
+          "EpgMatchSummary": "Using provider guide metadata until XMLTV confirms a better match.",
+          "LogoSource": "None",
+          "LogoConfidence": 0,
+          "LogoSummary": "",
+          "SupportsCatchup": false,
+          "CatchupWindowHours": 0,
+          "CatchupSource": "None",
+          "CatchupConfidence": 0,
+          "CatchupSummary": "Catchup is not currently advertised by this Stalker source."
+        }
+      ],
+      "Movies": [
+        {
+          "Title": "Fixture Movie 2024",
+          "RawTitle": "Fixture Movie 2024",
+          "CategoryName": "Movies",
+          "ContentKind": "Primary",
+          "CanonicalTitleKey": "fixture movie 2024",
+          "DedupFingerprint": "movie:source:Primary:1:ext:601",
+          "StreamUrl": "stalker://movie/601?source=1\u0026cmd=ffmpeg%20%2Fstalker%2Fvod%2F601.mp4"
+        }
+      ],
+      "Series": [
+        {
+          "Title": "Fixture Mystery",
+          "RawTitle": "Fixture Mystery",
+          "CategoryName": "Series",
+          "ContentKind": "Primary",
+          "CanonicalTitleKey": "fixture mystery",
+          "DedupFingerprint": "series:source:Primary:1:ext:701",
+          "Seasons": [
+            {
+              "SeasonNumber": 1,
+              "Episodes": [
+                {
+                  "ExternalId": "70101",
+                  "Title": "Pilot",
+                  "EpisodeNumber": 1,
+                  "StreamUrl": "stalker://episode/70101?source=1\u0026cmd=ffmpeg%20%2Fstalker%2Fseries%2F70101.mp4\u0026series=701\u0026season=1\u0026episode=1"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "Enrichment": [
+        {
+          "IdentityKey": "id:fixturenews",
+          "NormalizedName": "fixture news",
+          "AliasKeys": "fixture.news\nfixturenews",
+          "MatchedXmltvChannelId": "",
+          "MatchedXmltvDisplayName": "",
+          "ResolvedLogoUrl": "",
+          "EpgMatchSource": "None",
+          "EpgMatchConfidence": 0,
+          "LogoSource": "None",
+          "LogoConfidence": 0
+        }
+      ],
+      "AcquisitionEvidence": [
+        {
+          "Stage": "Validation",
+          "Outcome": "Matched",
+          "ItemKind": "Probe",
+          "RuleCode": "validation.probe.live",
+          "Reason": "Live probe reached 1/1 sampled items.",
+          "RawName": "Live",
+          "NormalizedName": "",
+          "MatchedTarget": "",
+          "Confidence": 100
+        },
+        {
+          "Stage": "Validation",
+          "Outcome": "Matched",
+          "ItemKind": "Probe",
+          "RuleCode": "validation.probe.vod",
+          "Reason": "VOD probe reached 2/2 sampled items.",
+          "RawName": "Vod",
+          "NormalizedName": "",
+          "MatchedTarget": "",
+          "Confidence": 100
+        },
+        {
+          "Stage": "Validation",
+          "Outcome": "Warning",
+          "ItemKind": "Source",
+          "RuleCode": "guide_zero_coverage",
+          "Reason": "Live channels imported successfully, but none of them match persisted guide data.",
+          "RawName": "Guide coverage is empty",
+          "NormalizedName": "",
+          "MatchedTarget": "",
+          "Confidence": 0
+        },
+        {
+          "Stage": "Validation",
+          "Outcome": "Warning",
+          "ItemKind": "Source",
+          "RuleCode": "missing_logos",
+          "Reason": "0 of 1 live channels currently have logos.",
+          "RawName": "Channel branding is thin",
+          "NormalizedName": "",
+          "MatchedTarget": "",
+          "Confidence": 0
+        }
+      ]
+    }
+  ],
+  "OperationalStates": [
+    {
+      "ContentType": "Channel",
+      "LogicalContentKey": "id:fixturenews",
+      "CandidateCount": 1,
+      "PreferredSourceName": "Fixture Stalker Main",
+      "PreferredTitle": "Fixture News HD",
+      "PreferredScore": 93,
+      "SelectionSummary": "Using Fixture Stalker Main. Probe-backed, guide mapped.",
+      "RecoveryAction": "None",
+      "RecoverySummary": "",
+      "Candidates": [
+        {
+          "Rank": 1,
+          "SourceName": "Fixture Stalker Main",
+          "Title": "Fixture News HD",
+          "Score": 93,
+          "IsSelected": true,
+          "IsLastKnownGood": true,
+          "SupportsProxy": false,
+          "Summary": "Probe-backed, guide mapped."
+        }
+      ]
+    },
+    {
+      "ContentType": "Movie",
+      "LogicalContentKey": "movie:source:Primary:1:ext:601",
+      "CandidateCount": 1,
+      "PreferredSourceName": "Fixture Stalker Main",
+      "PreferredTitle": "Fixture Movie 2024",
+      "PreferredScore": 93,
+      "SelectionSummary": "Using Fixture Stalker Main. Probe-backed, poster, overview.",
+      "RecoveryAction": "None",
+      "RecoverySummary": "",
+      "Candidates": [
+        {
+          "Rank": 1,
+          "SourceName": "Fixture Stalker Main",
+          "Title": "Fixture Movie 2024",
+          "Score": 93,
+          "IsSelected": true,
+          "IsLastKnownGood": true,
+          "SupportsProxy": false,
+          "Summary": "Probe-backed, poster, overview."
+        }
+      ]
+    }
+  ],
+  "PlaybackResolutions": [
+    {
+      "Id": "stalker-live-playback",
+      "SourceKey": "stalker-main",
+      "ContentType": "Channel",
+      "Title": "Fixture News HD",
+      "Success": true,
+      "CatalogStreamUrl": "stalker://live/501?source=1\u0026cmd=ffmpeg%20%2Fstalker%2Flive%2F501.ts",
+      "StreamUrl": "[fixture-server]/stalker/play/live/501.ts",
+      "UpstreamStreamUrl": "[fixture-server]/stalker/play/live/501.ts",
+      "Message": "",
+      "ProviderSummary": "Stalker live link",
+      "RoutingSummary": "Direct routing",
+      "CompanionStatus": "Skipped",
+      "CompanionStatusText": "Companion relay is disabled for this source or for this request type."
+    },
+    {
+      "Id": "stalker-movie-playback",
+      "SourceKey": "stalker-main",
+      "ContentType": "Movie",
+      "Title": "Fixture Movie 2024",
+      "Success": true,
+      "CatalogStreamUrl": "stalker://movie/601?source=1\u0026cmd=ffmpeg%20%2Fstalker%2Fvod%2F601.mp4",
+      "StreamUrl": "[fixture-server]/stalker/play/vod/601.mp4",
+      "UpstreamStreamUrl": "[fixture-server]/stalker/play/vod/601.mp4",
+      "Message": "",
+      "ProviderSummary": "Stalker movie link",
+      "RoutingSummary": "Direct routing",
+      "CompanionStatus": "Skipped",
+      "CompanionStatusText": "Companion relay is disabled for this source or for this request type."
+    },
+    {
+      "Id": "stalker-episode-playback",
+      "SourceKey": "stalker-main",
+      "ContentType": "Episode",
+      "Title": "Pilot",
+      "Success": true,
+      "CatalogStreamUrl": "stalker://episode/70101?source=1\u0026cmd=ffmpeg%20%2Fstalker%2Fseries%2F70101.mp4\u0026series=701\u0026season=1\u0026episode=1",
+      "StreamUrl": "[fixture-server]/stalker/play/series/70101.mp4",
+      "UpstreamStreamUrl": "[fixture-server]/stalker/play/series/70101.mp4",
+      "Message": "",
+      "ProviderSummary": "Stalker episode link",
+      "RoutingSummary": "Direct routing",
+      "CompanionStatus": "Skipped",
+      "CompanionStatusText": "Companion relay is disabled for this source or for this request type."
+    }
+  ]
+}

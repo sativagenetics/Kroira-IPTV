@@ -127,6 +127,9 @@
                         <Border Grid.Column="2" x:Name="LivePill" Visibility="Collapsed" Background="#D6E1FF" CornerRadius="10" Padding="8,3" VerticalAlignment="Center">
                             <TextBlock Text="LIVE" FontSize="10" FontWeight="Bold" Foreground="#090B13" />
                         </Border>
+                        <Border Grid.Column="2" x:Name="CatchupPill" Visibility="Collapsed" Background="#E7C46E" CornerRadius="10" Padding="8,3" VerticalAlignment="Center">
+                            <TextBlock Text="CATCHUP" FontSize="10" FontWeight="Bold" Foreground="#090B13" />
+                        </Border>
                     </StackPanel>
                 </Grid>
 
@@ -138,13 +141,51 @@
                 </Border>
 
                 <Border x:Name="MiniGuidePanel" Visibility="Collapsed" Background="#141A29" BorderBrush="#2F344E" BorderThickness="1" CornerRadius="12" Padding="14,12">
-                    <StackPanel Spacing="6">
+                    <StackPanel Spacing="8">
                         <TextBlock Text="Now / Next" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource KroiraTextSecondaryBrush}" />
                         <TextBlock x:Name="GuideCurrentTitleText" FontSize="16" FontWeight="SemiBold" Foreground="{StaticResource KroiraTextPrimaryBrush}" TextWrapping="Wrap" />
                         <TextBlock x:Name="GuideCurrentTimeText" FontSize="12" Foreground="{StaticResource KroiraTextSecondaryBrush}" />
                         <TextBlock x:Name="GuideNextTitleText" FontSize="13" Foreground="{StaticResource KroiraTextPrimaryBrush}" TextWrapping="Wrap" />
                         <TextBlock x:Name="GuideNextTimeText" FontSize="12" Foreground="{StaticResource KroiraTextSecondaryBrush}" />
+                        <TextBlock x:Name="GuideCatchupStatusText" FontSize="12" Foreground="{StaticResource KroiraAccentBrush}" TextWrapping="Wrap" />
                         <TextBlock x:Name="GuideConfidenceText" FontSize="12" Foreground="{StaticResource KroiraTextSecondaryBrush}" TextWrapping="Wrap" />
+                        <Border Height="1" Background="#24FFFFFF" />
+                        <ListView x:Name="GuideProgramList"
+                                  MaxHeight="260"
+                                  SelectionMode="None"
+                                  IsItemClickEnabled="False">
+                            <ListView.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Padding="0,6" ColumnSpacing="12">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0" Spacing="2">
+                                            <TextBlock Text="{Binding Title}"
+                                                       Foreground="{StaticResource KroiraTextPrimaryBrush}"
+                                                       FontWeight="SemiBold"
+                                                       TextWrapping="Wrap" />
+                                            <TextBlock Text="{Binding TimeText}"
+                                                       Foreground="{StaticResource KroiraTextSecondaryBrush}"
+                                                       FontSize="12" />
+                                            <TextBlock Text="{Binding StatusText}"
+                                                       Visibility="{Binding StatusVisibility}"
+                                                       Foreground="{StaticResource KroiraTextTertiaryBrush}"
+                                                       FontSize="12"
+                                                       TextWrapping="Wrap" />
+                                        </StackPanel>
+                                        <Button Grid.Column="1"
+                                                Content="{Binding ActionLabel}"
+                                                Click="GuideProgramAction_Click"
+                                                Visibility="{Binding ActionVisibility}"
+                                                Style="{StaticResource PlayerToolsChipButtonStyle}"
+                                                VerticalAlignment="Center"
+                                                MinWidth="96" />
+                                    </Grid>
+                                </DataTemplate>
+                            </ListView.ItemTemplate>
+                        </ListView>
                     </StackPanel>
                 </Border>
 
@@ -224,6 +265,14 @@
                             <TextBlock Grid.Row="3" Grid.Column="2" Text="Guide" Foreground="{StaticResource KroiraTextSecondaryBrush}" />
                             <TextBlock x:Name="InfoGuideText" Grid.Row="3" Grid.Column="3" Foreground="{StaticResource KroiraTextPrimaryBrush}" TextWrapping="Wrap" />
                         </Grid>
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <Button Content="Inspect item"
+                                    Click="InspectCurrentItem_Click"
+                                    Style="{StaticResource PlayerToolsChipButtonStyle}" />
+                            <Button Content="Open external"
+                                    Click="OpenInExternalPlayer_Click"
+                                    Style="{StaticResource PlayerToolsChipButtonStyle}" />
+                        </StackPanel>
                     </StackPanel>
                 </Border>
             </StackPanel>

@@ -21,7 +21,16 @@
         "EpgMode": "Manual",
         "M3uImportMode": "LiveMoviesAndSeries",
         "ProxyScope": "Disabled",
-        "ProxyUrl": ""
+        "ProxyUrl": "",
+        "CompanionScope": "Disabled",
+        "CompanionMode": "Buffered",
+        "CompanionUrl": "",
+        "StalkerMacAddress": "",
+        "StalkerDeviceId": "",
+        "StalkerSerialNumber": "",
+        "StalkerTimezone": "",
+        "StalkerLocale": "",
+        "StalkerApiUrl": ""
       },
       "SyncState": {
         "HttpStatusCode": 200,
@@ -126,7 +135,7 @@
           {
             "Type": "Epg",
             "State": "Outdated",
-            "Score": 74,
+            "Score": 70,
             "Summary": "Guide data is stale after a failed refresh.",
             "RelevantCount": 4,
             "HealthyCount": 3,
@@ -246,7 +255,7 @@
         "ActiveXmltvUrl": "[fixture-server]/guide-alt.xml",
         "MatchedChannelCount": 3,
         "UnmatchedChannelCount": 1,
-        "CurrentCoverageCount": 3,
+        "CurrentCoverageCount": 0,
         "NextCoverageCount": 0,
         "TotalLiveChannelCount": 4,
         "ProgrammeCount": 6,

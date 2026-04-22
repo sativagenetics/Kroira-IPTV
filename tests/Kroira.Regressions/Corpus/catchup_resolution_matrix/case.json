@@ -1,0 +1,55 @@
+{
+  "id": "catchup_resolution_matrix",
+  "description": "Catchup resolution covers start-over, valid replay, expired replay, unsupported channels, and invalid provider templates.",
+  "sources": [
+    {
+      "key": "m3u-catchup",
+      "name": "Fixture Catchup Matrix",
+      "type": "M3U",
+      "url": "{{server}}/playlist.m3u",
+      "epgMode": "Detected",
+      "m3uImportMode": "LiveMoviesAndSeries",
+      "refreshTrigger": "InitialImport",
+      "refreshScope": "Full"
+    }
+  ],
+  "catchupRequests": [
+    {
+      "id": "start_over_current",
+      "sourceKey": "m3u-catchup",
+      "matchName": "Archive Sports HD",
+      "requestKind": "StartOver",
+      "requestedAtUtc": "2026-04-22T10:30:00Z"
+    },
+    {
+      "id": "replay_past",
+      "sourceKey": "m3u-catchup",
+      "matchName": "Archive Sports HD",
+      "requestKind": "ReplayProgram",
+      "programTitle": "Morning Replay",
+      "requestedAtUtc": "2026-04-22T10:30:00Z"
+    },
+    {
+      "id": "expired",
+      "sourceKey": "m3u-catchup",
+      "matchName": "Archive Sports HD",
+      "requestKind": "ReplayProgram",
+      "programTitle": "Yesterday Review",
+      "requestedAtUtc": "2026-04-22T10:30:00Z"
+    },
+    {
+      "id": "unsupported",
+      "sourceKey": "m3u-catchup",
+      "matchName": "Plain News HD",
+      "requestKind": "StartOver",
+      "requestedAtUtc": "2026-04-22T10:30:00Z"
+    },
+    {
+      "id": "invalid_template",
+      "sourceKey": "m3u-catchup",
+      "matchName": "Broken Replay HD",
+      "requestKind": "StartOver",
+      "requestedAtUtc": "2026-04-22T10:30:00Z"
+    }
+  ]
+}

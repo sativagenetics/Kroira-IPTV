@@ -23,6 +23,7 @@ namespace Kroira.App.Services
     {
         private readonly ISourceProbeService _sourceProbeService;
         private readonly ISourceRoutingService _sourceRoutingService;
+        private readonly IProviderStreamResolverService _providerStreamResolverService;
 
         private static readonly HashSet<string> ValidStreamSchemes = new(StringComparer.OrdinalIgnoreCase)
         {
@@ -33,7 +34,8 @@ namespace Kroira.App.Services
             "rtmps",
             "rtsp",
             "udp",
-            "mms"
+            "mms",
+            "stalker"
         };
 
         private static readonly IReadOnlyDictionary<SourceHealthComponentType, int> ComponentWeights =
@@ -47,10 +49,14 @@ namespace Kroira.App.Services
                 [SourceHealthComponentType.Freshness] = 16
             };
 
-        public SourceHealthService(ISourceProbeService sourceProbeService, ISourceRoutingService sourceRoutingService)
+        public SourceHealthService(
+            ISourceProbeService sourceProbeService,
+            ISourceRoutingService sourceRoutingService,
+            IProviderStreamResolverService providerStreamResolverService)
         {
             _sourceProbeService = sourceProbeService;
             _sourceRoutingService = sourceRoutingService;
+            _providerStreamResolverService = providerStreamResolverService;
         }
 
         public async Task RefreshSourceHealthAsync(
@@ -148,7 +154,7 @@ namespace Kroira.App.Services
                 .FirstOrDefaultAsync(item => item.SourceProfileId == sourceProfileId);
 
             var guideMetrics = await BuildGuideMetricsAsync(db, liveChannels.Select(channel => channel.Id).ToList());
-            var probes = await ResolveProbesAsync(profile, credential, liveChannels, movies, episodes, report);
+            var probes = await ResolveProbesAsync(db, profile, credential, liveChannels, movies, episodes, report);
             var evaluation = Evaluate(profile, syncState, credential, epgLog, liveChannels, movies, series, guideMetrics, probes);
             if (acquisitionSession != null)
             {
@@ -303,6 +309,7 @@ namespace Kroira.App.Services
         }
 
         private async Task<IReadOnlyList<SourceHealthProbeDraft>> ResolveProbesAsync(
+            AppDbContext db,
             SourceProfile profile,
             SourceCredential? credential,
             IReadOnlyList<LiveChannelRecord> liveChannels,
@@ -319,8 +326,8 @@ namespace Kroira.App.Services
                     .ToList();
             }
 
-            var liveProbeTask = BuildLiveProbeAsync(credential, liveChannels);
-            var vodProbeTask = BuildVodProbeAsync(profile, credential, movies, episodes);
+            var liveProbeTask = BuildLiveProbeAsync(db, profile, credential, liveChannels);
+            var vodProbeTask = BuildVodProbeAsync(db, profile, credential, movies, episodes);
             await Task.WhenAll(liveProbeTask, vodProbeTask);
 
             return new List<SourceHealthProbeDraft>
@@ -369,7 +376,7 @@ namespace Kroira.App.Services
             var guideReuseCount = liveChannels.Count(channel => channel.EpgMatchSource == ChannelEpgMatchSource.Previous);
             var logoFallbackCount = liveChannels.Count(channel => channel.LogoSource is ChannelLogoSource.Previous or ChannelLogoSource.Xmltv);
             var providerLogoCount = liveChannels.Count(channel => channel.LogoSource == ChannelLogoSource.Provider);
-            var hasGuideConfigured = HasGuideConfigured(credential, epgLog);
+            var hasGuideConfigured = HasGuideConfigured(profile.Type, credential, epgLog);
             var hasPersistedGuideData = guideMetrics.MatchedChannelCount > 0 || (epgLog?.ProgrammeCount ?? 0) > 0;
             var guideIsStale = epgLog?.Status == EpgStatus.Stale;
             var probeMap = probes.ToDictionary(item => item.ProbeType);
@@ -379,7 +386,7 @@ namespace Kroira.App.Services
                 EvaluateCatalogComponent(hasSuccessfulSync, hasLatestImportFailure, totalCatalogItems, totalPlayableItems, duplicateCount, invalidStreams.TotalCount, suspiciousEntryCount),
                 EvaluateLiveComponent(totalChannels, liveDuplicates.Count, invalidStreams.LiveCount, suspiciousLive.Count, GetProbe(probeMap, SourceHealthProbeType.Live)),
                 EvaluateVodComponent(profile.Type, credential, totalVodItems, totalMovies, totalSeries, vodDuplicateCount, invalidStreams.VodCount, suspiciousVod.Count, GetProbe(probeMap, SourceHealthProbeType.Vod)),
-                EvaluateEpgComponent(totalChannels, hasSuccessfulSync, guideMode, hasGuideConfigured, guideMetrics, epgLog, hasPersistedGuideData, guideFallbackCount, guideReuseCount),
+                EvaluateEpgComponent(profile.Type, totalChannels, hasSuccessfulSync, guideMode, hasGuideConfigured, guideMetrics, epgLog, hasPersistedGuideData, guideFallbackCount, guideReuseCount),
                 EvaluateLogosComponent(totalChannels, logoCount, providerLogoCount, logoFallbackCount),
                 EvaluateFreshnessComponent(hasSuccessfulSync, hasLatestImportFailure, lastSuccessfulSyncAtUtc, evaluatedAtUtc, guideIsStale)
             };
@@ -608,6 +615,7 @@ namespace Kroira.App.Services
         }
 
         private static SourceHealthComponentDraft EvaluateEpgComponent(
+            SourceType sourceType,
             int totalChannels,
             bool hasSuccessfulSync,
             EpgActiveMode guideMode,
@@ -637,6 +645,19 @@ namespace Kroira.App.Services
             var currentRatio = CalculateRatio(guideMetrics.CurrentCoverageCount, totalChannels);
             var nextRatio = CalculateRatio(guideMetrics.NextCoverageCount, totalChannels);
             var status = epgLog?.Status ?? EpgStatus.Unknown;
+
+            if (sourceType == SourceType.Stalker && !hasGuideConfigured && !hasPersistedGuideData)
+            {
+                return CreateComponent(
+                    SourceHealthComponentType.Epg,
+                    SourceHealthComponentState.NotApplicable,
+                    0,
+                    "Guide is optional for this Stalker source until you add a manual XMLTV feed.",
+                    totalChannels,
+                    0,
+                    0,
+                    3);
+            }
 
             var rawScore = 100;
             if (!hasGuideConfigured)
@@ -956,7 +977,7 @@ namespace Kroira.App.Services
 
             if (totalChannels > 0 && guideMode != EpgActiveMode.None)
             {
-                if (!hasGuideConfigured)
+                if (!hasGuideConfigured && profile.Type != SourceType.Stalker)
                 {
                     issues.Add(new SourceHealthIssueDraft(SourceHealthIssueSeverity.Warning, "guide_missing", "Guide source is missing", "Live channels are present, but no active XMLTV source is available for guide matching.", totalChannels, string.Empty, 6));
                 }
@@ -1011,7 +1032,7 @@ namespace Kroira.App.Services
             return issues;
         }
 
-        private static bool HasGuideConfigured(SourceCredential? credential, EpgSyncLog? epgLog)
+        private static bool HasGuideConfigured(SourceType sourceType, SourceCredential? credential, EpgSyncLog? epgLog)
         {
             if (credential == null)
             {
@@ -1028,29 +1049,40 @@ namespace Kroira.App.Services
                 return !string.IsNullOrWhiteSpace(credential.ManualEpgUrl);
             }
 
-            return !string.IsNullOrWhiteSpace(epgLog?.ActiveXmltvUrl) || !string.IsNullOrWhiteSpace(credential.DetectedEpgUrl);
+            return !string.IsNullOrWhiteSpace(epgLog?.ActiveXmltvUrl) ||
+                   !string.IsNullOrWhiteSpace(credential.DetectedEpgUrl) ||
+                   (sourceType == SourceType.Stalker && !string.IsNullOrWhiteSpace(credential.ManualEpgUrl));
         }
 
-        private async Task<SourceHealthProbeDraft> BuildLiveProbeAsync(SourceCredential? credential, IReadOnlyList<LiveChannelRecord> liveChannels)
+        private async Task<SourceHealthProbeDraft> BuildLiveProbeAsync(
+            AppDbContext db,
+            SourceProfile profile,
+            SourceCredential? credential,
+            IReadOnlyList<LiveChannelRecord> liveChannels)
         {
             if (liveChannels.Count == 0)
             {
                 return CreateSkippedProbe(SourceHealthProbeType.Live, "Live probing is not applicable because the source has no live catalog.", 0);
             }
 
-            var result = await _sourceProbeService.ProbeAsync(
-                SourceHealthProbeType.Live,
+            var resolvedCandidates = await ResolveProbeCandidatesAsync(
+                db,
+                profile.Id,
                 liveChannels.Select(channel => new SourceProbeCandidate
                 {
                     Name = channel.Name,
                     StreamUrl = channel.StreamUrl
-                }).ToList(),
+                }).ToList());
+            var result = await _sourceProbeService.ProbeAsync(
+                SourceHealthProbeType.Live,
+                resolvedCandidates,
                 _sourceRoutingService.Resolve(credential, SourceNetworkPurpose.Probe));
 
             return CreateProbeDraft(SourceHealthProbeType.Live, result, 0);
         }
 
         private async Task<SourceHealthProbeDraft> BuildVodProbeAsync(
+            AppDbContext db,
             SourceProfile profile,
             SourceCredential? credential,
             IReadOnlyList<MovieRecord> movies,
@@ -1078,11 +1110,48 @@ namespace Kroira.App.Services
                 return CreateSkippedProbe(SourceHealthProbeType.Vod, "VOD probing is not applicable because the source has no playable VOD sample.", 1);
             }
 
+            var resolvedCandidates = await ResolveProbeCandidatesAsync(db, profile.Id, candidates);
             var result = await _sourceProbeService.ProbeAsync(
                 SourceHealthProbeType.Vod,
-                candidates,
+                resolvedCandidates,
                 _sourceRoutingService.Resolve(credential, SourceNetworkPurpose.Probe));
             return CreateProbeDraft(SourceHealthProbeType.Vod, result, 1);
+        }
+
+        private async Task<List<SourceProbeCandidate>> ResolveProbeCandidatesAsync(
+            AppDbContext db,
+            int sourceProfileId,
+            IReadOnlyList<SourceProbeCandidate> candidates)
+        {
+            var resolved = new List<SourceProbeCandidate>(Math.Min(candidates.Count, 12));
+            foreach (var candidate in candidates
+                         .Where(item => !string.IsNullOrWhiteSpace(item.StreamUrl))
+                         .GroupBy(item => item.StreamUrl.Trim(), StringComparer.OrdinalIgnoreCase)
+                         .Select(group => group.First())
+                         .Take(12))
+            {
+                var resolution = await _providerStreamResolverService.ResolveAsync(
+                    db,
+                    sourceProfileId,
+                    candidate.StreamUrl,
+                    SourceNetworkPurpose.Probe);
+                if (!resolution.Success || string.IsNullOrWhiteSpace(resolution.StreamUrl))
+                {
+                    continue;
+                }
+
+                resolved.Add(new SourceProbeCandidate
+                {
+                    Name = candidate.Name,
+                    StreamUrl = resolution.StreamUrl,
+                    Routing = resolution.EffectiveRouting,
+                    RouteSummary = string.IsNullOrWhiteSpace(resolution.RoutingSummary)
+                        ? resolution.EffectiveRouting.Summary
+                        : resolution.RoutingSummary
+                });
+            }
+
+            return resolved.Count == 0 ? candidates.ToList() : resolved;
         }
 
         private static bool CanReuseProbeEvidence(SourceHealthReport? report, DateTime? currentLastSuccessfulSyncAtUtc)

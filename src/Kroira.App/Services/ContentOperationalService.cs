@@ -190,6 +190,7 @@ namespace Kroira.App.Services
             context.ContentId = preferred.ContentId;
             context.LogicalContentKey = logicalKey;
             context.PreferredSourceProfileId = preferred.SourceProfileId;
+            context.CatalogStreamUrl = preferred.StreamUrl;
             context.StreamUrl = preferred.StreamUrl;
             context.ProxyScope = routing.Scope;
             context.ProxyUrl = routing.UseProxy ? routing.ProxyUrl : string.Empty;
@@ -205,6 +206,7 @@ namespace Kroira.App.Services
                 ContentId = preferred.ContentId,
                 SourceProfileId = preferred.SourceProfileId,
                 LogicalContentKey = logicalKey,
+                CatalogStreamUrl = preferred.StreamUrl,
                 StreamUrl = preferred.StreamUrl,
                 SourceName = preferred.SourceName,
                 CandidateCount = state.CandidateCount,
@@ -325,6 +327,7 @@ namespace Kroira.App.Services
                     ContentId = fallback.ContentId,
                     SourceProfileId = fallback.SourceProfileId,
                     LogicalContentKey = state.LogicalContentKey,
+                    CatalogStreamUrl = fallback.StreamUrl,
                     StreamUrl = fallback.StreamUrl,
                     SourceName = fallback.SourceName,
                     CandidateCount = state.CandidateCount,

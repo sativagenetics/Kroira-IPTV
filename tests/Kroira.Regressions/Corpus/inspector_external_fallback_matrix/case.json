@@ -1,0 +1,125 @@
+{
+  "id": "inspector_external_fallback_matrix",
+  "description": "Redacted item inspection and external player fallback cover Xtream, Stalker, and catchup-backed M3U launch paths.",
+  "sources": [
+    {
+      "key": "xtream-proxy",
+      "name": "Fixture Xtream Proxy",
+      "type": "Xtream",
+      "url": "{{server}}/xtream",
+      "username": "demo",
+      "password": "demo",
+      "proxyScope": "PlaybackOnly",
+      "proxyUrl": "http://proxy-user:proxy-pass@proxy.local:8080/relay?token=proxy-secret",
+      "epgMode": "Detected",
+      "refreshTrigger": "InitialImport",
+      "refreshScope": "Full"
+    },
+    {
+      "key": "stalker-portal",
+      "name": "Fixture Stalker Portal",
+      "type": "Stalker",
+      "url": "{{server}}/stalker/c?portal_token=portal-source-secret",
+      "stalkerMacAddress": "00:1A:79:10:00:01",
+      "stalkerTimezone": "Europe/Istanbul",
+      "stalkerLocale": "en",
+      "epgMode": "Detected",
+      "refreshTrigger": "InitialImport",
+      "refreshScope": "Full"
+    },
+    {
+      "key": "m3u-catchup",
+      "name": "Fixture Inspector Catchup",
+      "type": "M3U",
+      "url": "{{server}}/m3u/playlist.m3u?playlist_token=playlist-secret",
+      "epgMode": "Detected",
+      "m3uImportMode": "LiveMoviesAndSeries",
+      "refreshTrigger": "InitialImport",
+      "refreshScope": "Full"
+    }
+  ],
+  "inspectionRequests": [
+    {
+      "id": "xtream_live_inspect",
+      "sourceKey": "xtream-proxy",
+      "contentType": "Channel",
+      "matchName": "TRT 1 HD"
+    },
+    {
+      "id": "stalker_current_inspect",
+      "sourceKey": "stalker-portal",
+      "contentType": "Channel",
+      "matchName": "Fixture News HD",
+      "resolveBeforeInspect": true,
+      "runtimeState": {
+        "isCurrentPlayback": true,
+        "sessionState": "Error",
+        "sessionMessage": "Playback failed after resolving {{server}}/stalker/play/live/501.ts?play_token=portal-stream-secret&mac=00:1A:79:10:00:01",
+        "width": 1920,
+        "height": 1080,
+        "framesPerSecond": 50,
+        "videoCodec": "h264",
+        "audioCodec": "aac",
+        "containerFormat": "mpegts",
+        "pixelFormat": "yuv420p",
+        "isHardwareDecodingActive": true,
+        "positionMs": 42000,
+        "durationMs": 0,
+        "isSeekable": false
+      }
+    },
+    {
+      "id": "stalker_episode_inspect",
+      "sourceKey": "stalker-portal",
+      "contentType": "Episode",
+      "matchName": "Pilot"
+    },
+    {
+      "id": "m3u_catchup_inspect",
+      "sourceKey": "m3u-catchup",
+      "contentType": "Channel",
+      "matchName": "Archive Sports HD",
+      "catchupRequestKind": "ReplayProgram",
+      "programTitle": "Morning Replay",
+      "requestedAtUtc": "2026-04-22T10:30:00Z"
+    }
+  ],
+  "externalLaunchRequests": [
+    {
+      "id": "xtream_live_external",
+      "sourceKey": "xtream-proxy",
+      "contentType": "Channel",
+      "matchName": "TRT 1 HD"
+    },
+    {
+      "id": "stalker_current_external",
+      "sourceKey": "stalker-portal",
+      "contentType": "Channel",
+      "matchName": "Fixture News HD",
+      "resolveBeforeLaunch": true,
+      "preferCurrentResolvedStream": true
+    },
+    {
+      "id": "stalker_movie_external",
+      "sourceKey": "stalker-portal",
+      "contentType": "Movie",
+      "matchName": "Fixture Movie 2024"
+    },
+    {
+      "id": "m3u_start_over_external",
+      "sourceKey": "m3u-catchup",
+      "contentType": "Channel",
+      "matchName": "Archive Sports HD",
+      "catchupRequestKind": "StartOver",
+      "requestedAtUtc": "2026-04-22T10:30:00Z"
+    },
+    {
+      "id": "m3u_broken_catchup_external",
+      "sourceKey": "m3u-catchup",
+      "contentType": "Channel",
+      "matchName": "Broken Replay HD",
+      "catchupRequestKind": "StartOver",
+      "requestedAtUtc": "2026-04-22T10:30:00Z"
+    }
+  ]
+}

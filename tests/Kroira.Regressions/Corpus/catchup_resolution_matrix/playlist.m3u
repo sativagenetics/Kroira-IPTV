@@ -1,0 +1,7 @@
+#EXTM3U x-tvg-url="{{server}}/guide.xml"
+#EXTINF:-1 tvg-id="archive-sports.tr" group-title="Sports" catchup="append" catchup-days="2" catchup-source="{{server}}/archive/play?channel=archive-sports&utc={utc}&duration={duration}",Archive Sports HD
+{{server}}/probe/live/archive-sports.m3u8
+#EXTINF:-1 tvg-id="plain-news.tr" group-title="News",Plain News HD
+{{server}}/probe/live/plain-news.m3u8
+#EXTINF:-1 tvg-id="broken-replay.tr" group-title="Sports" catchup="append" catchup-days="2" catchup-source="{{server}}/archive/broken?utc={missing}",Broken Replay HD
+{{server}}/probe/live/broken-replay.m3u8

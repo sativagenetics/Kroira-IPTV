@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tv>
+  <channel id="archive-sports.tr">
+    <display-name>Archive Sports HD</display-name>
+  </channel>
+  <channel id="plain-news.tr">
+    <display-name>Plain News HD</display-name>
+  </channel>
+  <channel id="broken-replay.tr">
+    <display-name>Broken Replay HD</display-name>
+  </channel>
+
+  <programme start="20260422080000 +0000" stop="20260422090000 +0000" channel="archive-sports.tr">
+    <title>Morning Replay</title>
+    <desc>Valid archive replay inside the active window.</desc>
+  </programme>
+  <programme start="20260422100000 +0000" stop="20260422120000 +0000" channel="archive-sports.tr">
+    <title>Live Match</title>
+    <desc>Current match with start-over support.</desc>
+  </programme>
+  <programme start="20260422100000 +0000" stop="20260422110000 +0000" channel="plain-news.tr">
+    <title>Daily News</title>
+    <desc>Current news without archive support.</desc>
+  </programme>
+  <programme start="20260422100000 +0000" stop="20260422110000 +0000" channel="broken-replay.tr">
+    <title>Broken Window</title>
+    <desc>Catchup resolves through an invalid template.</desc>
+  </programme>
+</tv>

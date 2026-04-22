@@ -55,6 +55,11 @@ namespace Kroira.App.ViewModels
         public bool SupportsCatchup { get; set; }
         public int CatchupWindowHours { get; set; }
         public string CatchupSummary { get; set; } = string.Empty;
+        public string CatchupStatusText { get; set; } = string.Empty;
+        public string CatchupActionLabel { get; set; } = string.Empty;
+        public CatchupRequestKind CatchupRequestKind { get; set; }
+        public DateTime? CatchupProgramStartTimeUtc { get; set; }
+        public DateTime? CatchupProgramEndTimeUtc { get; set; }
         public string CurrentProgramTitle { get; set; } = string.Empty;
         public string CurrentProgramSubtitle { get; set; } = string.Empty;
         public string CurrentProgramTimeText { get; set; } = string.Empty;
@@ -85,6 +90,8 @@ namespace Kroira.App.ViewModels
         public string QuickAccessBadgeText { get; set; } = string.Empty;
         public Visibility CatchupVisibility => SupportsCatchup ? Visibility.Visible : Visibility.Collapsed;
         public string CatchupBadgeText => CatchupWindowHours > 0 ? $"Catchup {CatchupWindowHours}h" : "Catchup";
+        public Visibility CatchupStatusVisibility => string.IsNullOrWhiteSpace(CatchupStatusText) ? Visibility.Collapsed : Visibility.Visible;
+        public Visibility CatchupActionVisibility => CatchupRequestKind == CatchupRequestKind.None ? Visibility.Collapsed : Visibility.Visible;
 
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(FavoriteIcon))]
@@ -125,30 +132,35 @@ namespace Kroira.App.ViewModels
             var normalizedNowUtc = NormalizeUtc(nowUtc);
             if (summary == null)
             {
+                ResetCatchupState(channel);
                 ApplyGuideState(channel, "Guide unavailable", "Guide status could not be loaded.");
                 return;
             }
 
             if (summary.SourceMode == EpgActiveMode.None)
             {
+                ResetCatchupState(channel);
                 ApplyGuideState(channel, "Guide disabled", summary.SourceStatusSummary);
                 return;
             }
 
             if (summary.SourceStatus == EpgStatus.UnavailableNoXmltv)
             {
+                ResetCatchupState(channel);
                 ApplyGuideState(channel, "Guide unavailable from provider", summary.SourceStatusSummary);
                 return;
             }
 
             if (summary.SourceStatus == EpgStatus.FailedFetchOrParse)
             {
+                ResetCatchupState(channel);
                 ApplyGuideState(channel, "Guide sync failed", summary.SourceStatusSummary);
                 return;
             }
 
             if (!summary.HasGuideData)
             {
+                ApplyCatchupState(channel, null, summary.CatchupStatusSummary);
                 var title = summary.SourceResultCode switch
                 {
                     EpgSyncResultCode.PartialMatch => "No listing for this channel",
@@ -161,6 +173,7 @@ namespace Kroira.App.ViewModels
 
             var current = summary.CurrentProgram;
             var next = summary.NextProgram;
+            ApplyCatchupState(channel, current, summary.CatchupStatusSummary);
 
             if (current == null)
             {
@@ -260,6 +273,43 @@ namespace Kroira.App.ViewModels
             channel.DescriptionVisibility = string.IsNullOrWhiteSpace(detail) ? Visibility.Collapsed : Visibility.Visible;
             channel.SubtitleVisibility = Visibility.Collapsed;
             channel.CategoryVisibility = Visibility.Collapsed;
+        }
+
+        private static void ResetCatchupState(BrowserChannelViewModel channel)
+        {
+            channel.CatchupRequestKind = CatchupRequestKind.None;
+            channel.CatchupActionLabel = string.Empty;
+            channel.CatchupProgramStartTimeUtc = null;
+            channel.CatchupProgramEndTimeUtc = null;
+            channel.CatchupStatusText = string.Empty;
+        }
+
+        private static void ApplyCatchupState(
+            BrowserChannelViewModel channel,
+            ChannelGuideProgram? currentProgram,
+            string summaryText)
+        {
+            channel.CatchupStatusText = string.IsNullOrWhiteSpace(summaryText)
+                ? channel.CatchupSummary
+                : summaryText;
+
+            if (currentProgram != null &&
+                currentProgram.CatchupRequestKind != CatchupRequestKind.None &&
+                currentProgram.CatchupAvailability == CatchupAvailabilityState.Available)
+            {
+                channel.CatchupRequestKind = currentProgram.CatchupRequestKind;
+                channel.CatchupActionLabel = string.IsNullOrWhiteSpace(currentProgram.CatchupActionLabel)
+                    ? "Start over"
+                    : currentProgram.CatchupActionLabel;
+                channel.CatchupProgramStartTimeUtc = currentProgram.StartTimeUtc;
+                channel.CatchupProgramEndTimeUtc = currentProgram.EndTimeUtc;
+                return;
+            }
+
+            channel.CatchupRequestKind = CatchupRequestKind.None;
+            channel.CatchupActionLabel = string.Empty;
+            channel.CatchupProgramStartTimeUtc = null;
+            channel.CatchupProgramEndTimeUtc = null;
         }
 
         private static double CalculateProgress(DateTime startUtc, DateTime endUtc, DateTime nowUtc)

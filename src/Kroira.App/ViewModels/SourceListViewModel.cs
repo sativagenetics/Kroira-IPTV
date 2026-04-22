@@ -48,6 +48,8 @@ namespace Kroira.App.ViewModels
         public string GuideModeText { get; set; } = string.Empty;
         public string GuideUrlText { get; set; } = string.Empty;
         public string GuideMatchText { get; set; } = string.Empty;
+        public string CatchupStatusText { get; set; } = string.Empty;
+        public string CatchupLatestAttemptText { get; set; } = string.Empty;
         public string AutoRefreshStatusText { get; set; } = string.Empty;
         public string AutoRefreshSummaryText { get; set; } = string.Empty;
         public string NextAutoRefreshText { get; set; } = string.Empty;
@@ -63,6 +65,7 @@ namespace Kroira.App.ViewModels
         public string AcquisitionLastRunText { get; set; } = string.Empty;
         public string OperationalStatusText { get; set; } = string.Empty;
         public string ProxyStatusText { get; set; } = "Direct routing";
+        public string CompanionStatusText { get; set; } = string.Empty;
         public IReadOnlyList<SourceHealthComponentItemViewModel> HealthComponents { get; set; } = Array.Empty<SourceHealthComponentItemViewModel>();
         public IReadOnlyList<SourceIssueItemViewModel> HealthIssues { get; set; } = Array.Empty<SourceIssueItemViewModel>();
         public IReadOnlyList<SourceAcquisitionEvidenceItemViewModel> AcquisitionEvidence { get; set; } = Array.Empty<SourceAcquisitionEvidenceItemViewModel>();
@@ -85,7 +88,7 @@ namespace Kroira.App.ViewModels
 
         public string EpgSyncButtonText => IsEpgSyncing ? "Syncing..." : "EPG";
         public bool IsEpgSyncEnabled => CanSyncEpg && !IsEpgSyncing;
-        public bool CanRunXtreamVodOnly => Type == "Xtream";
+        public bool CanRunXtreamVodOnly => Type is "Xtream" or "Stalker";
 
         [ObservableProperty]
         private string _status = string.Empty;
@@ -101,19 +104,19 @@ namespace Kroira.App.ViewModels
             ? Microsoft.UI.Xaml.Visibility.Visible
             : Microsoft.UI.Xaml.Visibility.Collapsed;
 
-        public Microsoft.UI.Xaml.Visibility SyncXtreamVisibility => Type == "Xtream"
+        public Microsoft.UI.Xaml.Visibility SyncXtreamVisibility => Type is "Xtream" or "Stalker"
             ? Microsoft.UI.Xaml.Visibility.Visible
             : Microsoft.UI.Xaml.Visibility.Collapsed;
 
-        public Microsoft.UI.Xaml.Visibility BrowseVisibility => (Type == "M3U" || Type == "Xtream")
+        public Microsoft.UI.Xaml.Visibility BrowseVisibility => (Type == "M3U" || Type == "Xtream" || Type == "Stalker")
             ? Microsoft.UI.Xaml.Visibility.Visible
             : Microsoft.UI.Xaml.Visibility.Collapsed;
 
-        public Microsoft.UI.Xaml.Visibility PrimarySyncVisibility => (Type == "M3U" || Type == "Xtream")
+        public Microsoft.UI.Xaml.Visibility PrimarySyncVisibility => (Type == "M3U" || Type == "Xtream" || Type == "Stalker")
             ? Microsoft.UI.Xaml.Visibility.Visible
             : Microsoft.UI.Xaml.Visibility.Collapsed;
 
-        public Microsoft.UI.Xaml.Visibility XtreamVodOnlyVisibility => Type == "Xtream"
+        public Microsoft.UI.Xaml.Visibility XtreamVodOnlyVisibility => Type is "Xtream" or "Stalker"
             ? Microsoft.UI.Xaml.Visibility.Visible
             : Microsoft.UI.Xaml.Visibility.Collapsed;
 
@@ -153,6 +156,14 @@ namespace Kroira.App.ViewModels
             ? Microsoft.UI.Xaml.Visibility.Collapsed
             : Microsoft.UI.Xaml.Visibility.Visible;
 
+        public Microsoft.UI.Xaml.Visibility CatchupStatusVisibility => string.IsNullOrWhiteSpace(CatchupStatusText)
+            ? Microsoft.UI.Xaml.Visibility.Collapsed
+            : Microsoft.UI.Xaml.Visibility.Visible;
+
+        public Microsoft.UI.Xaml.Visibility CatchupLatestAttemptVisibility => string.IsNullOrWhiteSpace(CatchupLatestAttemptText)
+            ? Microsoft.UI.Xaml.Visibility.Collapsed
+            : Microsoft.UI.Xaml.Visibility.Visible;
+
         public Microsoft.UI.Xaml.Visibility GuideStatusSummaryVisibility => string.IsNullOrWhiteSpace(GuideStatusSummaryText)
             ? Microsoft.UI.Xaml.Visibility.Collapsed
             : Microsoft.UI.Xaml.Visibility.Visible;
@@ -166,6 +177,10 @@ namespace Kroira.App.ViewModels
             : Microsoft.UI.Xaml.Visibility.Visible;
 
         public Microsoft.UI.Xaml.Visibility ProxyStatusVisibility => string.IsNullOrWhiteSpace(ProxyStatusText)
+            ? Microsoft.UI.Xaml.Visibility.Collapsed
+            : Microsoft.UI.Xaml.Visibility.Visible;
+
+        public Microsoft.UI.Xaml.Visibility CompanionStatusVisibility => string.IsNullOrWhiteSpace(CompanionStatusText)
             ? Microsoft.UI.Xaml.Visibility.Collapsed
             : Microsoft.UI.Xaml.Visibility.Visible;
 
@@ -304,6 +319,9 @@ namespace Kroira.App.ViewModels
         public string DetectedEpgUrl { get; set; } = string.Empty;
         public SourceProxyScope ProxyScope { get; set; } = SourceProxyScope.Disabled;
         public string ProxyUrl { get; set; } = string.Empty;
+        public SourceCompanionScope CompanionScope { get; set; } = SourceCompanionScope.Disabled;
+        public SourceCompanionRelayMode CompanionMode { get; set; } = SourceCompanionRelayMode.Buffered;
+        public string CompanionUrl { get; set; } = string.Empty;
     }
 
     public partial class SourceListViewModel : ObservableObject
@@ -321,7 +339,7 @@ namespace Kroira.App.ViewModels
         private string _emptyStateTitle = "No sources configured";
 
         [ObservableProperty]
-        private string _emptyStateMessage = "Add an M3U playlist or Xtream provider to start importing live channels, movies, series, and guide data.";
+        private string _emptyStateMessage = "Add an M3U playlist, Xtream provider, or Stalker portal to start importing live channels, movies, series, and guide data.";
 
         [ObservableProperty]
         private int _sourceCount;
@@ -416,7 +434,10 @@ namespace Kroira.App.ViewModels
                 ManualEpgUrl = credential.ManualEpgUrl,
                 DetectedEpgUrl = credential.DetectedEpgUrl,
                 ProxyScope = credential.ProxyScope,
-                ProxyUrl = credential.ProxyUrl
+                ProxyUrl = credential.ProxyUrl,
+                CompanionScope = credential.CompanionScope,
+                CompanionMode = credential.CompanionMode,
+                CompanionUrl = credential.CompanionUrl
             };
         }
 
@@ -431,7 +452,10 @@ namespace Kroira.App.ViewModels
                     ActiveMode = draft.ActiveMode,
                     ManualEpgUrl = draft.ManualEpgUrl,
                     ProxyScope = draft.ProxyScope,
-                    ProxyUrl = draft.ProxyUrl
+                    ProxyUrl = draft.ProxyUrl,
+                    CompanionScope = draft.CompanionScope,
+                    CompanionMode = draft.CompanionMode,
+                    CompanionUrl = draft.CompanionUrl
                 },
                 syncNow);
 
@@ -516,10 +540,20 @@ namespace Kroira.App.ViewModels
                     Id = profile.Id,
                     Name = profile.Name,
                     Type = profile.Type.ToString(),
-                    SourceKindText = profile.Type == SourceType.Xtream ? "XTREAM API" : "M3U PLAYLIST",
+                    SourceKindText = profile.Type switch
+                    {
+                        SourceType.Xtream => "XTREAM API",
+                        SourceType.Stalker => "STALKER PORTAL",
+                        _ => "M3U PLAYLIST"
+                    },
                     HealthBadgeText = (snapshot.HealthLabel ?? "Saved").ToUpperInvariant(),
                     GuideBadgeText = BuildGuideBadgeText(snapshot),
-                    PrimarySyncText = profile.Type == SourceType.Xtream ? "Sync Now" : "Import Now",
+                    PrimarySyncText = profile.Type switch
+                    {
+                        SourceType.Xtream => "Sync Now",
+                        SourceType.Stalker => "Sync Portal",
+                        _ => "Import Now"
+                    },
                     SourcePanelSummaryText = BuildSourcePanelSummary(snapshot),
                     ConnectionLabelText = BuildConnectionLabel(snapshot),
                     HealthPillKind = MapHealthPillKind(snapshot.HealthLabel),
@@ -537,7 +571,7 @@ namespace Kroira.App.ViewModels
                     HealthLabel = snapshot.HealthLabel,
                     Status = snapshot.StatusSummary,
                     HasEpgUrl = snapshot.HasEpgUrl,
-                    CanSyncEpg = profile.Type is SourceType.M3U or SourceType.Xtream,
+                    CanSyncEpg = true,
                     HasEpgData = snapshot.HasPersistedGuideData,
                     EpgLastSyncText = snapshot.LastEpgSuccessText,
                     EpgMatchedChannels = snapshot.MatchedLiveChannelCount,
@@ -548,13 +582,20 @@ namespace Kroira.App.ViewModels
                     ValidationResultText = snapshot.ValidationResultText,
                     EpgCoverageText = snapshot.EpgCoverageText,
                     ParseWarningsText = snapshot.WarningSummaryText,
-                    NetworkFailureText = snapshot.FailureSummaryText,
+                    NetworkFailureText = string.IsNullOrWhiteSpace(snapshot.FailureSummaryText)
+                        ? snapshot.StalkerPortalErrorText
+                        : snapshot.FailureSummaryText,
                     LastSuccessfulSyncText = snapshot.LastSuccessfulSyncText,
                     GuideStatusText = snapshot.EpgStatusText,
-                    GuideStatusSummaryText = snapshot.EpgStatusSummary,
+                    GuideStatusSummaryText = snapshot.SourceType == SourceType.Stalker &&
+                                             !string.IsNullOrWhiteSpace(snapshot.StalkerPortalSummaryText)
+                        ? snapshot.StalkerPortalSummaryText
+                        : snapshot.EpgStatusSummary,
                     GuideModeText = snapshot.ActiveEpgModeText,
                     GuideUrlText = snapshot.EpgUrlSummaryText,
                     GuideMatchText = snapshot.MatchBreakdownText,
+                    CatchupStatusText = snapshot.CatchupStatusText,
+                    CatchupLatestAttemptText = snapshot.CatchupLatestAttemptText,
                     AutoRefreshStatusText = snapshot.AutoRefreshStatusText,
                     AutoRefreshSummaryText = snapshot.AutoRefreshSummaryText,
                     NextAutoRefreshText = snapshot.NextAutoRefreshText,
@@ -570,6 +611,7 @@ namespace Kroira.App.ViewModels
                     AcquisitionLastRunText = snapshot.AcquisitionLastRunText,
                     OperationalStatusText = snapshot.OperationalStatusText,
                     ProxyStatusText = snapshot.ProxyStatusText,
+                    CompanionStatusText = snapshot.CompanionStatusText,
                     HealthComponents = snapshot.HealthComponents
                         .Select(component => new SourceHealthComponentItemViewModel
                         {
@@ -706,7 +748,7 @@ namespace Kroira.App.ViewModels
                 ? "No sources configured"
                 : "No matching sources";
             EmptyStateMessage = noConfiguredSources
-                ? "Add an M3U playlist or Xtream provider to start importing live channels, movies, series, and guide data."
+                ? "Add an M3U playlist, Xtream provider, or Stalker portal to start importing live channels, movies, series, and guide data."
                 : "Try a different source name, type, or guide status.";
         }
 
@@ -740,7 +782,12 @@ namespace Kroira.App.ViewModels
                     {
                         TimestampText = profile.LastSync.Value.ToLocalTime().ToString("MMM d, HH:mm"),
                         SourceName = profile.Name,
-                        ActionText = profile.Type == SourceType.Xtream ? "Source Sync" : "Playlist Import",
+                        ActionText = profile.Type switch
+                        {
+                            SourceType.Xtream => "Source Sync",
+                            SourceType.Stalker => "Portal Sync",
+                            _ => "Playlist Import"
+                        },
                         StatusText = importStatusText,
                         StatusKind = importKind,
                         PayloadText = $"{snapshot.LiveChannelCount:N0} live, {snapshot.MovieCount + snapshot.SeriesCount:N0} VOD/series"
@@ -811,6 +858,13 @@ namespace Kroira.App.ViewModels
 
         private static string BuildConnectionLabel(SourceDiagnosticsSnapshot snapshot)
         {
+            if (snapshot.SourceType == SourceType.Stalker)
+            {
+                return string.IsNullOrWhiteSpace(snapshot.StalkerPortalErrorText)
+                    ? "Portal active"
+                    : "Portal needs review";
+            }
+
             return snapshot.EpgStatus switch
             {
                 EpgStatus.Syncing => "Connection syncing",
@@ -908,6 +962,7 @@ namespace Kroira.App.ViewModels
         {
             var parts = new[]
             {
+                snapshot.StalkerPortalSummaryText,
                 snapshot.AcquisitionNormalizationSummary,
                 snapshot.AcquisitionMatchingSummary,
                 snapshot.AcquisitionSuppressionSummary,

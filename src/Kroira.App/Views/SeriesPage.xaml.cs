@@ -202,6 +202,16 @@ namespace Kroira.App.Views
             }
         }
 
+        private async void InspectSelectedEpisode_Click(object sender, RoutedEventArgs e)
+        {
+            if (ViewModel.SelectedEpisode == null)
+            {
+                return;
+            }
+
+            await ItemInspectorDialog.ShowAsync(XamlRoot, CreateEpisodeLaunchContext(ViewModel.SelectedEpisode));
+        }
+
         private async void DownloadSelectedEpisode_Click(object sender, RoutedEventArgs e)
         {
             if (ViewModel.SelectedEpisode != null)
@@ -242,17 +252,21 @@ namespace Kroira.App.Views
             }
         }
 
+        private async void InspectEpisode_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not FrameworkElement { DataContext: SeriesEpisodeItemViewModel item })
+            {
+                return;
+            }
+
+            await ItemInspectorDialog.ShowAsync(XamlRoot, CreateEpisodeLaunchContext(item));
+        }
+
         private void PlayEpisode(SeriesEpisodeItemViewModel item)
         {
             if (!string.IsNullOrWhiteSpace(item.StreamUrl))
             {
-                this.Frame.Navigate(typeof(EmbeddedPlaybackPage), new PlaybackLaunchContext
-                {
-                    ContentId = item.Id,
-                    ContentType = PlaybackContentType.Episode,
-                    StreamUrl = item.StreamUrl,
-                    StartPositionMs = item.ResumePositionMs
-                });
+                this.Frame.Navigate(typeof(EmbeddedPlaybackPage), CreateEpisodeLaunchContext(item));
             }
         }
 
@@ -284,6 +298,18 @@ namespace Kroira.App.Views
                 };
                 await dialog.ShowAsync();
             }
+        }
+
+        private static PlaybackLaunchContext CreateEpisodeLaunchContext(SeriesEpisodeItemViewModel item)
+        {
+            return new PlaybackLaunchContext
+            {
+                ContentId = item.Id,
+                ContentType = PlaybackContentType.Episode,
+                CatalogStreamUrl = item.StreamUrl,
+                StreamUrl = item.StreamUrl,
+                StartPositionMs = item.ResumePositionMs
+            };
         }
     }
 }

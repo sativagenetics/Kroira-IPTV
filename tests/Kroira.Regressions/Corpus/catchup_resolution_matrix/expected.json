@@ -1,0 +1,571 @@
+{
+  "Sources": [
+    {
+      "Key": "m3u-catchup",
+      "Name": "Fixture Catchup Matrix",
+      "Type": "M3U",
+      "Refresh": {
+        "Success": true,
+        "Trigger": "InitialImport",
+        "Scope": "Full",
+        "Message": "Playlist import completed. Guide sync completed.",
+        "CatalogSummary": "Playlist import completed.",
+        "GuideSummary": "Guide sync completed.",
+        "GuideAttempted": true,
+        "GuideSucceeded": true
+      },
+      "Credential": {
+        "Url": "[fixture-server]/playlist.m3u",
+        "DetectedEpgUrl": "[fixture-server]/guide.xml",
+        "ManualEpgUrl": "",
+        "EpgMode": "Detected",
+        "M3uImportMode": "LiveMoviesAndSeries",
+        "ProxyScope": "Disabled",
+        "ProxyUrl": "",
+        "CompanionScope": "Disabled",
+        "CompanionMode": "Buffered",
+        "CompanionUrl": "",
+        "StalkerMacAddress": "",
+        "StalkerDeviceId": "",
+        "StalkerSerialNumber": "",
+        "StalkerTimezone": "",
+        "StalkerLocale": "",
+        "StalkerApiUrl": ""
+      },
+      "SyncState": {
+        "HttpStatusCode": 200,
+        "ErrorLog": "Parsed 3 channels, 0 movies, 0 episodes across 0 series. Mode: LiveMoviesAndSeries. Uncategorized=0, pseudo_rejected=0, xmltv_found=yes.",
+        "AutoRefreshState": "Disabled",
+        "AutoRefreshSummary": "Automatic refresh is turned off.",
+        "AutoRefreshFailureCount": 0
+      },
+      "Counts": {
+        "Channels": 3,
+        "Movies": 0,
+        "Series": 0,
+        "Seasons": 0,
+        "Episodes": 0,
+        "EpgPrograms": 5
+      },
+      "AcquisitionProfile": {
+        "ProfileKey": "kroira.m3u.balanced",
+        "ProfileLabel": "KROIRA M3U Balanced",
+        "ProviderKey": "127.0.0.1",
+        "NormalizationSummary": "Playlist titles, ids, and group labels normalize into stable identities while keeping provider values intact.",
+        "MatchingSummary": "Guide matching prefers provider ids, then normalized aliases, regex-safe aliases, and bounded fuzzy fallback.",
+        "SuppressionSummary": "Provider buckets, promotional rows, garbage labels, and unsafe adult or bundle groups are suppressed.",
+        "ValidationSummary": "Bounded live and VOD probing stays routing-aware and preserves last-known-good operational recovery paths.",
+        "SupportsRegexMatching": true,
+        "PreferProxyDuringValidation": false,
+        "PreferLastKnownGoodRollback": true
+      },
+      "AcquisitionRun": {
+        "Trigger": "InitialImport",
+        "Scope": "Full",
+        "Status": "Succeeded",
+        "ProfileKey": "kroira.m3u.balanced",
+        "ProfileLabel": "KROIRA M3U Balanced",
+        "ProviderKey": "127.0.0.1",
+        "RoutingSummary": "Direct routing",
+        "ValidationRoutingSummary": "Direct routing",
+        "Message": "Playlist import completed. Guide sync completed.",
+        "CatalogSummary": "Playlist import completed.",
+        "GuideSummary": "Guide sync completed.",
+        "ValidationSummary": "Component health shows missing core coverage (64/100). Guide coverage is too thin across the 3 live channels. Many live channels are still missing logos (0/3).",
+        "RawItemCount": 3,
+        "AcceptedCount": 3,
+        "SuppressedCount": 0,
+        "DemotedCount": 0,
+        "MatchedCount": 3,
+        "UnmatchedCount": 0,
+        "LiveCount": 3,
+        "MovieCount": 0,
+        "SeriesCount": 0,
+        "EpisodeCount": 0,
+        "AliasMatchCount": 0,
+        "RegexMatchCount": 0,
+        "FuzzyMatchCount": 0,
+        "ProbeSuccessCount": 3,
+        "ProbeFailureCount": 0,
+        "WarningCount": 1,
+        "ErrorCount": 0
+      },
+      "Health": {
+        "State": "Incomplete",
+        "Score": 64,
+        "StatusSummary": "Source synced, but important parts are still incomplete. Guide coverage is too thin across the 3 live channels. Many live channels are still missing logos (0/3).",
+        "ImportResultSummary": "Parsed 3 channels, 0 movies, 0 episodes across 0 series. Mode: LiveMoviesAndSeries. Uncategorized=0, pseudo_rejected=0, xmltv_found=yes.",
+        "ValidationSummary": "Component health shows missing core coverage (64/100). Guide coverage is too thin across the 3 live channels. Many live channels are still missing logos (0/3).",
+        "TopIssueSummary": "0 of 3 live channels currently have logos.",
+        "DuplicateCount": 0,
+        "InvalidStreamCount": 0,
+        "ChannelsWithEpgMatchCount": 3,
+        "ChannelsWithLogoCount": 0,
+        "SuspiciousEntryCount": 0,
+        "WarningCount": 1,
+        "ErrorCount": 0,
+        "Components": [
+          {
+            "Type": "Catalog",
+            "State": "Healthy",
+            "Score": 100,
+            "Summary": "Catalog looks coherent across 3 items.",
+            "RelevantCount": 3,
+            "HealthyCount": 3,
+            "IssueCount": 0
+          },
+          {
+            "Type": "Live",
+            "State": "Healthy",
+            "Score": 100,
+            "Summary": "Live catalog is present across 3 channels. Live probe reached 3/3 sampled items.",
+            "RelevantCount": 3,
+            "HealthyCount": 3,
+            "IssueCount": 0
+          },
+          {
+            "Type": "Vod",
+            "State": "NotApplicable",
+            "Score": 0,
+            "Summary": "No VOD catalog is present for this source.",
+            "RelevantCount": 0,
+            "HealthyCount": 0,
+            "IssueCount": 0
+          },
+          {
+            "Type": "Epg",
+            "State": "Incomplete",
+            "Score": 64,
+            "Summary": "Guide coverage is too thin across the 3 live channels.",
+            "RelevantCount": 3,
+            "HealthyCount": 3,
+            "IssueCount": 0
+          },
+          {
+            "Type": "Logos",
+            "State": "Incomplete",
+            "Score": 64,
+            "Summary": "Many live channels are still missing logos (0/3).",
+            "RelevantCount": 3,
+            "HealthyCount": 0,
+            "IssueCount": 3
+          },
+          {
+            "Type": "Freshness",
+            "State": "Healthy",
+            "Score": 100,
+            "Summary": "Last successful sync was [timestamp].",
+            "RelevantCount": 1,
+            "HealthyCount": 1,
+            "IssueCount": 0
+          }
+        ],
+        "Probes": [
+          {
+            "Type": "Live",
+            "Status": "Completed",
+            "CandidateCount": 3,
+            "SampleSize": 3,
+            "SuccessCount": 3,
+            "FailureCount": 0,
+            "TimeoutCount": 0,
+            "HttpErrorCount": 0,
+            "TransportErrorCount": 0,
+            "Summary": "Live probe reached 3/3 sampled items."
+          },
+          {
+            "Type": "Vod",
+            "Status": "Skipped",
+            "CandidateCount": 0,
+            "SampleSize": 0,
+            "SuccessCount": 0,
+            "FailureCount": 0,
+            "TimeoutCount": 0,
+            "HttpErrorCount": 0,
+            "TransportErrorCount": 0,
+            "Summary": "VOD probing is not applicable because the source has no playable VOD sample."
+          }
+        ],
+        "Issues": [
+          {
+            "Severity": "Warning",
+            "Code": "missing_logos",
+            "Title": "Channel branding is thin",
+            "AffectedCount": 3,
+            "SampleItems": ""
+          }
+        ]
+      },
+      "Epg": {
+        "IsPresent": true,
+        "IsSuccess": true,
+        "Status": "Ready",
+        "ResultCode": "Ready",
+        "FailureStage": "None",
+        "ActiveMode": "Detected",
+        "ActiveXmltvUrl": "[fixture-server]/guide.xml",
+        "MatchedChannelCount": 3,
+        "UnmatchedChannelCount": 0,
+        "CurrentCoverageCount": 0,
+        "NextCoverageCount": 0,
+        "TotalLiveChannelCount": 3,
+        "ProgrammeCount": 5,
+        "MatchBreakdown": "provider_id=3; reused=0; normalized=0; alias=0; regex=0; fuzzy=0; unmatched=0",
+        "FailureReason": ""
+      },
+      "Channels": [
+        {
+          "Category": "News",
+          "Name": "Plain News HD",
+          "StreamUrl": "[fixture-server]/probe/live/plain-news.m3u8",
+          "ProviderEpgChannelId": "plain-news.tr",
+          "EpgChannelId": "plain-news.tr",
+          "ProviderLogoUrl": "",
+          "LogoUrl": "",
+          "NormalizedIdentityKey": "id:plainnews",
+          "AliasKeys": "plain-news.tr\nplainnews",
+          "EpgMatchSource": "Provider",
+          "EpgMatchConfidence": 97,
+          "EpgMatchSummary": "Provider guide metadata matched XMLTV channel Plain News HD.",
+          "LogoSource": "None",
+          "LogoConfidence": 0,
+          "LogoSummary": "",
+          "SupportsCatchup": false,
+          "CatchupWindowHours": 0,
+          "CatchupSource": "None",
+          "CatchupConfidence": 0,
+          "CatchupSummary": "No clear provider catchup signal was detected."
+        },
+        {
+          "Category": "Sports",
+          "Name": "Archive Sports HD",
+          "StreamUrl": "[fixture-server]/probe/live/archive-sports.m3u8",
+          "ProviderEpgChannelId": "archive-sports.tr",
+          "EpgChannelId": "archive-sports.tr",
+          "ProviderLogoUrl": "",
+          "LogoUrl": "",
+          "NormalizedIdentityKey": "id:archivesports",
+          "AliasKeys": "archive-sports.tr\narchivesports",
+          "EpgMatchSource": "Provider",
+          "EpgMatchConfidence": 97,
+          "EpgMatchSummary": "Provider guide metadata matched XMLTV channel Archive Sports HD.",
+          "LogoSource": "None",
+          "LogoConfidence": 0,
+          "LogoSummary": "",
+          "SupportsCatchup": true,
+          "CatchupWindowHours": 48,
+          "CatchupSource": "M3uAttributes",
+          "CatchupConfidence": 84,
+          "CatchupSummary": "Catchup available for about 2 days."
+        },
+        {
+          "Category": "Sports",
+          "Name": "Broken Replay HD",
+          "StreamUrl": "[fixture-server]/probe/live/broken-replay.m3u8",
+          "ProviderEpgChannelId": "broken-replay.tr",
+          "EpgChannelId": "broken-replay.tr",
+          "ProviderLogoUrl": "",
+          "LogoUrl": "",
+          "NormalizedIdentityKey": "id:brokenreplay",
+          "AliasKeys": "broken-replay.tr\nbrokenreplay",
+          "EpgMatchSource": "Provider",
+          "EpgMatchConfidence": 97,
+          "EpgMatchSummary": "Provider guide metadata matched XMLTV channel Broken Replay HD.",
+          "LogoSource": "None",
+          "LogoConfidence": 0,
+          "LogoSummary": "",
+          "SupportsCatchup": true,
+          "CatchupWindowHours": 48,
+          "CatchupSource": "M3uAttributes",
+          "CatchupConfidence": 84,
+          "CatchupSummary": "Catchup available for about 2 days."
+        }
+      ],
+      "Movies": [],
+      "Series": [],
+      "Enrichment": [
+        {
+          "IdentityKey": "id:archivesports",
+          "NormalizedName": "archive sports",
+          "AliasKeys": "archive-sports.tr\narchivesports",
+          "MatchedXmltvChannelId": "archive-sports.tr",
+          "MatchedXmltvDisplayName": "Archive Sports HD",
+          "ResolvedLogoUrl": "",
+          "EpgMatchSource": "Provider",
+          "EpgMatchConfidence": 97,
+          "LogoSource": "None",
+          "LogoConfidence": 0
+        },
+        {
+          "IdentityKey": "id:brokenreplay",
+          "NormalizedName": "broken replay",
+          "AliasKeys": "broken-replay.tr\nbrokenreplay",
+          "MatchedXmltvChannelId": "broken-replay.tr",
+          "MatchedXmltvDisplayName": "Broken Replay HD",
+          "ResolvedLogoUrl": "",
+          "EpgMatchSource": "Provider",
+          "EpgMatchConfidence": 97,
+          "LogoSource": "None",
+          "LogoConfidence": 0
+        },
+        {
+          "IdentityKey": "id:plainnews",
+          "NormalizedName": "plain news",
+          "AliasKeys": "plain-news.tr\nplainnews",
+          "MatchedXmltvChannelId": "plain-news.tr",
+          "MatchedXmltvDisplayName": "Plain News HD",
+          "ResolvedLogoUrl": "",
+          "EpgMatchSource": "Provider",
+          "EpgMatchConfidence": 97,
+          "LogoSource": "None",
+          "LogoConfidence": 0
+        }
+      ],
+      "AcquisitionEvidence": [
+        {
+          "Stage": "Validation",
+          "Outcome": "Matched",
+          "ItemKind": "Probe",
+          "RuleCode": "validation.probe.live",
+          "Reason": "Live probe reached 3/3 sampled items.",
+          "RawName": "Live",
+          "NormalizedName": "",
+          "MatchedTarget": "",
+          "Confidence": 100
+        },
+        {
+          "Stage": "Validation",
+          "Outcome": "Matched",
+          "ItemKind": "Probe",
+          "RuleCode": "validation.probe.vod",
+          "Reason": "VOD probing is not applicable because the source has no playable VOD sample.",
+          "RawName": "Vod",
+          "NormalizedName": "",
+          "MatchedTarget": "",
+          "Confidence": 100
+        },
+        {
+          "Stage": "Validation",
+          "Outcome": "Warning",
+          "ItemKind": "Source",
+          "RuleCode": "missing_logos",
+          "Reason": "0 of 3 live channels currently have logos.",
+          "RawName": "Channel branding is thin",
+          "NormalizedName": "",
+          "MatchedTarget": "",
+          "Confidence": 0
+        }
+      ],
+      "CatchupAttempts": [
+        {
+          "ChannelName": "Archive Sports HD",
+          "LogicalContentKey": "id:archivesports",
+          "RequestKind": "StartOver",
+          "Status": "Resolved",
+          "ProgramTitle": "Live Match",
+          "WindowHours": 48,
+          "Message": "Start over resolved through the provider catchup template.",
+          "RoutingSummary": "Direct routing",
+          "ProviderMode": "append",
+          "ProviderSource": "[fixture-server]/archive/play?channel=archive-sports\u0026utc={utc}\u0026duration={duration}",
+          "ResolvedStreamUrl": "[fixture-server]/archive/play?channel=archive-sports\u0026utc=2026-04-22:10-00\u0026duration=30"
+        },
+        {
+          "ChannelName": "Archive Sports HD",
+          "LogicalContentKey": "id:archivesports",
+          "RequestKind": "ReplayProgram",
+          "Status": "Resolved",
+          "ProgramTitle": "Morning Replay",
+          "WindowHours": 48,
+          "Message": "Catchup playback resolved through the provider catchup template.",
+          "RoutingSummary": "Direct routing",
+          "ProviderMode": "append",
+          "ProviderSource": "[fixture-server]/archive/play?channel=archive-sports\u0026utc={utc}\u0026duration={duration}",
+          "ResolvedStreamUrl": "[fixture-server]/archive/play?channel=archive-sports\u0026utc=2026-04-22:08-00\u0026duration=60"
+        },
+        {
+          "ChannelName": "Archive Sports HD",
+          "LogicalContentKey": "id:archivesports",
+          "RequestKind": "ReplayProgram",
+          "Status": "Expired",
+          "ProgramTitle": "Yesterday Review",
+          "WindowHours": 48,
+          "Message": "This programme is outside the 2 day catchup window.",
+          "RoutingSummary": "Direct routing",
+          "ProviderMode": "append",
+          "ProviderSource": "[fixture-server]/archive/play?channel=archive-sports\u0026utc={utc}\u0026duration={duration}",
+          "ResolvedStreamUrl": ""
+        },
+        {
+          "ChannelName": "Plain News HD",
+          "LogicalContentKey": "id:plainnews",
+          "RequestKind": "StartOver",
+          "Status": "Unsupported",
+          "ProgramTitle": "Daily News",
+          "WindowHours": 0,
+          "Message": "No clear provider catchup signal was detected.",
+          "RoutingSummary": "Direct routing",
+          "ProviderMode": "",
+          "ProviderSource": "",
+          "ResolvedStreamUrl": ""
+        },
+        {
+          "ChannelName": "Broken Replay HD",
+          "LogicalContentKey": "id:brokenreplay",
+          "RequestKind": "StartOver",
+          "Status": "InvalidTemplate",
+          "ProgramTitle": "Broken Window",
+          "WindowHours": 48,
+          "Message": "The catchup template still contains unresolved placeholders.",
+          "RoutingSummary": "Direct routing",
+          "ProviderMode": "append",
+          "ProviderSource": "[fixture-server]/archive/broken?utc={missing}",
+          "ResolvedStreamUrl": ""
+        }
+      ]
+    }
+  ],
+  "OperationalStates": [
+    {
+      "ContentType": "Channel",
+      "LogicalContentKey": "id:archivesports",
+      "CandidateCount": 1,
+      "PreferredSourceName": "Fixture Catchup Matrix",
+      "PreferredTitle": "Archive Sports HD",
+      "PreferredScore": 89,
+      "SelectionSummary": "Using Fixture Catchup Matrix. Probe-backed, guide mapped, catchup.",
+      "RecoveryAction": "None",
+      "RecoverySummary": "",
+      "Candidates": [
+        {
+          "Rank": 1,
+          "SourceName": "Fixture Catchup Matrix",
+          "Title": "Archive Sports HD",
+          "Score": 89,
+          "IsSelected": true,
+          "IsLastKnownGood": true,
+          "SupportsProxy": false,
+          "Summary": "Probe-backed, guide mapped, catchup."
+        }
+      ]
+    },
+    {
+      "ContentType": "Channel",
+      "LogicalContentKey": "id:brokenreplay",
+      "CandidateCount": 1,
+      "PreferredSourceName": "Fixture Catchup Matrix",
+      "PreferredTitle": "Broken Replay HD",
+      "PreferredScore": 89,
+      "SelectionSummary": "Using Fixture Catchup Matrix. Probe-backed, guide mapped, catchup.",
+      "RecoveryAction": "None",
+      "RecoverySummary": "",
+      "Candidates": [
+        {
+          "Rank": 1,
+          "SourceName": "Fixture Catchup Matrix",
+          "Title": "Broken Replay HD",
+          "Score": 89,
+          "IsSelected": true,
+          "IsLastKnownGood": true,
+          "SupportsProxy": false,
+          "Summary": "Probe-backed, guide mapped, catchup."
+        }
+      ]
+    },
+    {
+      "ContentType": "Channel",
+      "LogicalContentKey": "id:plainnews",
+      "CandidateCount": 1,
+      "PreferredSourceName": "Fixture Catchup Matrix",
+      "PreferredTitle": "Plain News HD",
+      "PreferredScore": 88,
+      "SelectionSummary": "Using Fixture Catchup Matrix. Probe-backed, guide mapped.",
+      "RecoveryAction": "None",
+      "RecoverySummary": "",
+      "Candidates": [
+        {
+          "Rank": 1,
+          "SourceName": "Fixture Catchup Matrix",
+          "Title": "Plain News HD",
+          "Score": 88,
+          "IsSelected": true,
+          "IsLastKnownGood": true,
+          "SupportsProxy": false,
+          "Summary": "Probe-backed, guide mapped."
+        }
+      ]
+    }
+  ],
+  "CatchupResolutions": [
+    {
+      "Id": "start_over_current",
+      "SourceKey": "m3u-catchup",
+      "ChannelName": "Archive Sports HD",
+      "RequestKind": "StartOver",
+      "ProgramTitle": "Live Match",
+      "RequestedAtUtc": "2026-04-22T10:30:00.0000000Z",
+      "Status": "Resolved",
+      "Message": "Start over resolved through the provider catchup template.",
+      "StreamUrl": "[fixture-server]/archive/play?channel=archive-sports\u0026utc=2026-04-22%3A10-00\u0026duration=30",
+      "UpstreamStreamUrl": "[fixture-server]/archive/play?channel=archive-sports\u0026utc=2026-04-22%3A10-00\u0026duration=30",
+      "LiveStreamUrl": "[fixture-server]/probe/live/archive-sports.m3u8",
+      "RoutingSummary": "Direct routing"
+    },
+    {
+      "Id": "replay_past",
+      "SourceKey": "m3u-catchup",
+      "ChannelName": "Archive Sports HD",
+      "RequestKind": "ReplayProgram",
+      "ProgramTitle": "Morning Replay",
+      "RequestedAtUtc": "2026-04-22T10:30:00.0000000Z",
+      "Status": "Resolved",
+      "Message": "Catchup playback resolved through the provider catchup template.",
+      "StreamUrl": "[fixture-server]/archive/play?channel=archive-sports\u0026utc=2026-04-22%3A08-00\u0026duration=60",
+      "UpstreamStreamUrl": "[fixture-server]/archive/play?channel=archive-sports\u0026utc=2026-04-22%3A08-00\u0026duration=60",
+      "LiveStreamUrl": "[fixture-server]/probe/live/archive-sports.m3u8",
+      "RoutingSummary": "Direct routing"
+    },
+    {
+      "Id": "expired",
+      "SourceKey": "m3u-catchup",
+      "ChannelName": "Archive Sports HD",
+      "RequestKind": "ReplayProgram",
+      "ProgramTitle": "Yesterday Review",
+      "RequestedAtUtc": "2026-04-22T10:30:00.0000000Z",
+      "Status": "Expired",
+      "Message": "This programme is outside the 2 day catchup window.",
+      "StreamUrl": "",
+      "UpstreamStreamUrl": "",
+      "LiveStreamUrl": "[fixture-server]/probe/live/archive-sports.m3u8",
+      "RoutingSummary": "Direct routing"
+    },
+    {
+      "Id": "unsupported",
+      "SourceKey": "m3u-catchup",
+      "ChannelName": "Plain News HD",
+      "RequestKind": "StartOver",
+      "ProgramTitle": "Daily News",
+      "RequestedAtUtc": "2026-04-22T10:30:00.0000000Z",
+      "Status": "Unsupported",
+      "Message": "No clear provider catchup signal was detected.",
+      "StreamUrl": "",
+      "UpstreamStreamUrl": "",
+      "LiveStreamUrl": "[fixture-server]/probe/live/plain-news.m3u8",
+      "RoutingSummary": "Direct routing"
+    },
+    {
+      "Id": "invalid_template",
+      "SourceKey": "m3u-catchup",
+      "ChannelName": "Broken Replay HD",
+      "RequestKind": "StartOver",
+      "ProgramTitle": "Broken Window",
+      "RequestedAtUtc": "2026-04-22T10:30:00.0000000Z",
+      "Status": "InvalidTemplate",
+      "Message": "The catchup template still contains unresolved placeholders.",
+      "StreamUrl": "",
+      "UpstreamStreamUrl": "",
+      "LiveStreamUrl": "[fixture-server]/probe/live/broken-replay.m3u8",
+      "RoutingSummary": "Direct routing"
+    }
+  ]
+}

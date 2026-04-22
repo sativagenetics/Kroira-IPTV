@@ -274,7 +274,7 @@ namespace Kroira.App.Services
                 var acquisitionProfile = await EnsureProfileAsync(db, profile, credential);
                 var routingSummary = _sourceRoutingService.Resolve(
                     credential,
-                    profile.Type == SourceType.M3U ? SourceNetworkPurpose.Import : SourceNetworkPurpose.Import).Summary;
+                    SourceNetworkPurpose.Import).Summary;
                 var validationRoutingSummary = _sourceRoutingService.Resolve(credential, SourceNetworkPurpose.Probe).Summary;
                 syncStates.TryGetValue(profile.Id, out var syncState);
                 healthReports.TryGetValue(profile.Id, out var healthReport);
@@ -342,21 +342,36 @@ namespace Kroira.App.Services
             SourceCredential? credential)
         {
             var providerKey = DeriveProviderKey(profile, credential);
-            var profileKey = profile.Type == SourceType.Xtream
-                ? "kroira.xtream.structured"
-                : "kroira.m3u.balanced";
-            var profileLabel = profile.Type == SourceType.Xtream
-                ? "KROIRA Xtream Structured"
-                : "KROIRA M3U Balanced";
-            var normalizationSummary = profile.Type == SourceType.Xtream
-                ? "Structured API titles and categories normalize through title cleanup while keeping provider values intact."
-                : "Playlist titles, ids, and group labels normalize into stable identities while keeping provider values intact.";
-            var matchingSummary = profile.Type == SourceType.Xtream
-                ? "Identifier-first upserts use normalized aliases, regex-safe guide matching, and bounded fuzzy fallback."
-                : "Guide matching prefers provider ids, then normalized aliases, regex-safe aliases, and bounded fuzzy fallback.";
-            var suppressionSummary = profile.Type == SourceType.Xtream
-                ? "Garbage titles, unsafe categories, missing live category bindings, and invalid stream extensions are suppressed."
-                : "Provider buckets, promotional rows, garbage labels, and unsafe adult or bundle groups are suppressed.";
+            var profileKey = profile.Type switch
+            {
+                SourceType.Xtream => "kroira.xtream.structured",
+                SourceType.Stalker => "kroira.stalker.portal",
+                _ => "kroira.m3u.balanced"
+            };
+            var profileLabel = profile.Type switch
+            {
+                SourceType.Xtream => "KROIRA Xtream Structured",
+                SourceType.Stalker => "KROIRA Stalker Portal",
+                _ => "KROIRA M3U Balanced"
+            };
+            var normalizationSummary = profile.Type switch
+            {
+                SourceType.Xtream => "Structured API titles and categories normalize through title cleanup while keeping provider values intact.",
+                SourceType.Stalker => "Portal titles, genre ids, and command locators normalize into stable catalog identities while keeping provider fields intact.",
+                _ => "Playlist titles, ids, and group labels normalize into stable identities while keeping provider values intact."
+            };
+            var matchingSummary = profile.Type switch
+            {
+                SourceType.Xtream => "Identifier-first upserts use normalized aliases, regex-safe guide matching, and bounded fuzzy fallback.",
+                SourceType.Stalker => "Portal item ids stay durable while live channels reuse normalized aliases, regex-safe guide matching, and bounded fuzzy fallback.",
+                _ => "Guide matching prefers provider ids, then normalized aliases, regex-safe aliases, and bounded fuzzy fallback."
+            };
+            var suppressionSummary = profile.Type switch
+            {
+                SourceType.Xtream => "Garbage titles, unsafe categories, missing live category bindings, and invalid stream extensions are suppressed.",
+                SourceType.Stalker => "Broken portal rows, unsafe categories, missing commands, and series without usable episodes are suppressed without poisoning the source.",
+                _ => "Provider buckets, promotional rows, garbage labels, and unsafe adult or bundle groups are suppressed."
+            };
             var validationSummary = "Bounded live and VOD probing stays routing-aware and preserves last-known-good operational recovery paths.";
             var preferProxyDuringValidation = credential != null &&
                                               _sourceRoutingService.Resolve(credential, SourceNetworkPurpose.Probe).UseProxy;
@@ -438,9 +453,12 @@ namespace Kroira.App.Services
 
         private static string BuildCatalogSummary(SourceType sourceType, int liveCount, int movieCount, int seriesCount)
         {
-            return sourceType == SourceType.Xtream
-                ? $"Xtream catalog state: {liveCount} live, {movieCount} movies, {seriesCount} series."
-                : $"Playlist catalog state: {liveCount} live, {movieCount} movies, {seriesCount} series.";
+            return sourceType switch
+            {
+                SourceType.Xtream => $"Xtream catalog state: {liveCount} live, {movieCount} movies, {seriesCount} series.",
+                SourceType.Stalker => $"Stalker catalog state: {liveCount} live, {movieCount} movies, {seriesCount} series.",
+                _ => $"Playlist catalog state: {liveCount} live, {movieCount} movies, {seriesCount} series."
+            };
         }
 
         private static string Trim(string value, int maxLength)

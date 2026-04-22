@@ -19,6 +19,13 @@ namespace Kroira.App.Services
 
     public sealed class LiveGuideService : ILiveGuideService
     {
+        private readonly ICatchupPlaybackService _catchupPlaybackService;
+
+        public LiveGuideService(ICatchupPlaybackService catchupPlaybackService)
+        {
+            _catchupPlaybackService = catchupPlaybackService;
+        }
+
         public async Task<IReadOnlyDictionary<int, ChannelGuideSummary>> GetGuideSummariesAsync(
             AppDbContext db,
             IReadOnlyCollection<int> channelIds,
@@ -39,6 +46,7 @@ namespace Kroira.App.Services
             }
 
             var normalizedNowUtc = NormalizeUtc(nowUtc);
+            var windowStartUtc = normalizedNowUtc.AddHours(-ResolveCatchupLookbackHours());
             var windowEndUtc = normalizedNowUtc.AddHours(24);
 
             var channelContexts = await db.Channels
@@ -50,6 +58,7 @@ namespace Kroira.App.Services
                     category => category.Id,
                     (channel, category) => new
                     {
+                        Channel = channel,
                         ChannelId = channel.Id,
                         category.SourceProfileId
                     })
@@ -58,7 +67,7 @@ namespace Kroira.App.Services
                     item => item.SourceProfileId,
                     profile => profile.Id,
                     (item, profile) => new ChannelGuideContext(
-                        item.ChannelId,
+                        item.Channel,
                         item.SourceProfileId,
                         profile.Type))
                 .ToListAsync();
@@ -100,7 +109,7 @@ namespace Kroira.App.Services
             var candidatePrograms = await db.EpgPrograms
                 .AsNoTracking()
                 .Where(program => ids.Contains(program.ChannelId)
-                               && program.EndTimeUtc > normalizedNowUtc
+                               && program.EndTimeUtc > windowStartUtc
                                && program.StartTimeUtc < windowEndUtc)
                 .OrderBy(program => program.ChannelId)
                 .ThenBy(program => program.StartTimeUtc)
@@ -111,7 +120,12 @@ namespace Kroira.App.Services
                     program.Subtitle,
                     program.Category,
                     program.StartTimeUtc,
-                    program.EndTimeUtc))
+                    program.EndTimeUtc,
+                    false,
+                    CatchupAvailabilityState.None,
+                    string.Empty,
+                    string.Empty,
+                    CatchupRequestKind.None))
                 .ToListAsync();
 
             var programsByChannel = candidatePrograms
@@ -131,21 +145,62 @@ namespace Kroira.App.Services
                 var sourceStatus = ResolveSourceStatus(channelContext?.SourceType ?? Models.SourceType.M3U, credential, epgLog);
                 var sourceResultCode = epgLog?.ResultCode ?? EpgSyncResultCode.None;
                 var sourceMode = epgLog?.ActiveMode ?? credential?.Mode ?? EpgActiveMode.Detected;
-                var sourceStatusSummary = BuildSourceStatusSummary(sourceStatus, sourceResultCode, sourceMode, epgLog);
+                var sourceStatusSummary = BuildSourceStatusSummary(
+                    channelContext?.SourceType ?? Models.SourceType.M3U,
+                    sourceStatus,
+                    sourceResultCode,
+                    sourceMode,
+                    credential,
+                    epgLog);
                 var hasGuideData = matchedSet.Contains(channelId);
                 var channelPrograms = programsByChannel.TryGetValue(channelId, out var programs)
                     ? programs
                     : new List<ChannelGuideProgram>();
 
-                var current = channelPrograms
+                var currentBase = channelPrograms
                     .Where(program => program.StartTimeUtc <= normalizedNowUtc && program.EndTimeUtc > normalizedNowUtc)
                     .OrderByDescending(program => program.StartTimeUtc)
                     .FirstOrDefault();
 
-                var next = channelPrograms
+                var nextBase = channelPrograms
                     .Where(program => program.StartTimeUtc > normalizedNowUtc)
                     .OrderBy(program => program.StartTimeUtc)
                     .FirstOrDefault();
+
+                var evaluatedPrograms = channelPrograms
+                    .OrderByDescending(program => program.StartTimeUtc <= normalizedNowUtc && program.EndTimeUtc > normalizedNowUtc)
+                    .ThenByDescending(program => program.StartTimeUtc <= normalizedNowUtc)
+                    .ThenByDescending(program => program.StartTimeUtc)
+                    .Take(6)
+                    .Select(program =>
+                    {
+                        var availability = channelContext != null
+                            ? _catchupPlaybackService.EvaluateProgramAvailability(
+                                channelContext.Channel,
+                                channelContext.SourceType,
+                                program,
+                                normalizedNowUtc)
+                            : new CatchupProgramAvailability();
+                        var isCurrent = program.StartTimeUtc <= normalizedNowUtc && program.EndTimeUtc > normalizedNowUtc;
+                        return program with
+                        {
+                            IsCurrent = isCurrent,
+                            CatchupAvailability = availability.State,
+                            CatchupStatusText = availability.Message,
+                            CatchupActionLabel = availability.ActionLabel,
+                            CatchupRequestKind = availability.RequestKind
+                        };
+                    })
+                    .ToList();
+
+                var current = evaluatedPrograms.FirstOrDefault(program => program.IsCurrent) ?? currentBase;
+                var next = evaluatedPrograms
+                    .Where(program => program.StartTimeUtc > normalizedNowUtc)
+                    .OrderBy(program => program.StartTimeUtc)
+                    .FirstOrDefault() ?? nextBase;
+                var catchupStatusSummary = channelContext == null
+                    ? string.Empty
+                    : BuildCatchupStatusSummary(channelContext.Channel, current, evaluatedPrograms, normalizedNowUtc);
 
                 result[channelId] = new ChannelGuideSummary(
                     hasGuideData,
@@ -153,11 +208,20 @@ namespace Kroira.App.Services
                     sourceResultCode,
                     sourceMode,
                     sourceStatusSummary,
+                    channelContext?.Channel.SupportsCatchup ?? false,
+                    channelContext?.Channel.CatchupWindowHours ?? 0,
+                    catchupStatusSummary,
                     current,
-                    next);
+                    next,
+                    evaluatedPrograms);
             }
 
             return result;
+        }
+
+        private static int ResolveCatchupLookbackHours()
+        {
+            return 96;
         }
 
         private static EpgStatus ResolveSourceStatus(Models.SourceType sourceType, GuideCredentialSnapshot? credential, EpgSyncLog? epgLog)
@@ -182,6 +246,13 @@ namespace Kroira.App.Services
                 return EpgStatus.UnavailableNoXmltv;
             }
 
+            if (sourceType == Models.SourceType.Stalker &&
+                string.IsNullOrWhiteSpace(credential.DetectedEpgUrl) &&
+                string.IsNullOrWhiteSpace(credential.ManualEpgUrl))
+            {
+                return EpgStatus.Unknown;
+            }
+
             if (sourceType == Models.SourceType.M3U &&
                 string.IsNullOrWhiteSpace(credential.DetectedEpgUrl) &&
                 string.IsNullOrWhiteSpace(credential.ManualEpgUrl))
@@ -192,11 +263,27 @@ namespace Kroira.App.Services
             return EpgStatus.Unknown;
         }
 
-        private static string BuildSourceStatusSummary(EpgStatus status, EpgSyncResultCode resultCode, EpgActiveMode mode, EpgSyncLog? epgLog)
+        private static string BuildSourceStatusSummary(
+            Models.SourceType sourceType,
+            EpgStatus status,
+            EpgSyncResultCode resultCode,
+            EpgActiveMode mode,
+            GuideCredentialSnapshot? credential,
+            EpgSyncLog? epgLog)
         {
             if (mode == EpgActiveMode.None)
             {
-                return "Guide is disabled for this source.";
+                return sourceType == Models.SourceType.Stalker
+                    ? "Guide is optional for this Stalker source until you add a manual XMLTV feed."
+                    : "Guide is disabled for this source.";
+            }
+
+            if (sourceType == Models.SourceType.Stalker &&
+                string.IsNullOrWhiteSpace(credential?.DetectedEpgUrl) &&
+                string.IsNullOrWhiteSpace(credential?.ManualEpgUrl) &&
+                status == EpgStatus.Unknown)
+            {
+                return "Guide is optional for this Stalker source until you add a manual XMLTV feed.";
             }
 
             return status switch
@@ -232,6 +319,55 @@ namespace Kroira.App.Services
                 ? value
                 : DateTime.SpecifyKind(value, DateTimeKind.Utc);
         }
+
+        private static string BuildCatchupStatusSummary(
+            Channel channel,
+            ChannelGuideProgram? currentProgram,
+            IReadOnlyCollection<ChannelGuideProgram> timelinePrograms,
+            DateTime nowUtc)
+        {
+            if (!channel.SupportsCatchup)
+            {
+                return string.IsNullOrWhiteSpace(channel.CatchupSummary)
+                    ? "Catchup is not available on this channel."
+                    : channel.CatchupSummary;
+            }
+
+            if (currentProgram != null && currentProgram.CatchupAvailability == CatchupAvailabilityState.Available)
+            {
+                return currentProgram.CatchupStatusText;
+            }
+
+            var normalizedNowUtc = NormalizeUtc(nowUtc);
+            var replayablePastProgram = timelinePrograms.FirstOrDefault(program =>
+                !program.IsCurrent &&
+                program.StartTimeUtc <= normalizedNowUtc &&
+                program.CatchupAvailability == CatchupAvailabilityState.Available);
+            if (replayablePastProgram != null)
+            {
+                return replayablePastProgram.CatchupStatusText;
+            }
+
+            if (channel.CatchupWindowHours > 0)
+            {
+                return $"Catchup window: {FormatWindow(channel.CatchupWindowHours)}.";
+            }
+
+            return string.IsNullOrWhiteSpace(channel.CatchupSummary)
+                ? "Catchup is advertised, but the provider did not expose a valid archive window."
+                : channel.CatchupSummary;
+        }
+
+        private static string FormatWindow(int hours)
+        {
+            if (hours >= 48 && hours % 24 == 0)
+            {
+                var days = hours / 24;
+                return $"{days} day{(days == 1 ? string.Empty : "s")}";
+            }
+
+            return $"{hours} hour{(hours == 1 ? string.Empty : "s")}";
+        }
     }
 
     public sealed record ChannelGuideSummary(
@@ -240,8 +376,12 @@ namespace Kroira.App.Services
         EpgSyncResultCode SourceResultCode,
         EpgActiveMode SourceMode,
         string SourceStatusSummary,
+        bool SupportsCatchup,
+        int CatchupWindowHours,
+        string CatchupStatusSummary,
         ChannelGuideProgram? CurrentProgram,
-        ChannelGuideProgram? NextProgram);
+        ChannelGuideProgram? NextProgram,
+        IReadOnlyList<ChannelGuideProgram> TimelinePrograms);
 
     public sealed record ChannelGuideProgram(
         int ChannelId,
@@ -250,7 +390,12 @@ namespace Kroira.App.Services
         string? Subtitle,
         string? Category,
         DateTime StartTimeUtc,
-        DateTime EndTimeUtc);
+        DateTime EndTimeUtc,
+        bool IsCurrent,
+        CatchupAvailabilityState CatchupAvailability,
+        string CatchupStatusText,
+        string CatchupActionLabel,
+        CatchupRequestKind CatchupRequestKind);
 
     internal sealed record GuideCredentialSnapshot(
         int SourceProfileId,
@@ -259,7 +404,10 @@ namespace Kroira.App.Services
         string ManualEpgUrl);
 
     internal sealed record ChannelGuideContext(
-        int ChannelId,
+        Channel Channel,
         int SourceProfileId,
-        Models.SourceType SourceType);
+        Models.SourceType SourceType)
+    {
+        public int ChannelId => Channel.Id;
+    }
 }

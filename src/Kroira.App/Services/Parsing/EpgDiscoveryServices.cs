@@ -271,6 +271,59 @@ namespace Kroira.App.Services.Parsing
         }
     }
 
+    public sealed class StalkerEpgDiscoveryService : IEpgSourceDiscoveryService
+    {
+        private readonly ISourceRoutingService _sourceRoutingService;
+
+        public StalkerEpgDiscoveryService(ISourceRoutingService sourceRoutingService)
+        {
+            _sourceRoutingService = sourceRoutingService;
+        }
+
+        public SourceType SourceType => SourceType.Stalker;
+
+        public async Task<EpgDiscoveryResult> DiscoverAsync(AppDbContext db, int sourceProfileId)
+        {
+            var cred = await db.SourceCredentials.FirstOrDefaultAsync(c => c.SourceProfileId == sourceProfileId);
+            if (cred == null || string.IsNullOrWhiteSpace(cred.Url))
+            {
+                throw new Exception("Stalker source credentials are incomplete.");
+            }
+
+            var activeMode = EpgDiscoveryHelpers.ResolveActiveMode(cred);
+            if (activeMode == EpgActiveMode.Manual)
+            {
+                var manualUrl = cred.ManualEpgUrl;
+                if (string.IsNullOrWhiteSpace(manualUrl))
+                {
+                    throw new EpgUnavailableException("Manual XMLTV URL is not configured.");
+                }
+
+                var xml = await EpgDiscoveryHelpers.ReadXmltvAsync(manualUrl, activeMode, cred, _sourceRoutingService);
+                return new EpgDiscoveryResult(
+                    xml,
+                    "Manual XMLTV override",
+                    cred.DetectedEpgUrl,
+                    manualUrl,
+                    activeMode);
+            }
+
+            if (string.IsNullOrWhiteSpace(cred.DetectedEpgUrl))
+            {
+                throw new EpgUnavailableException("The Stalker portal does not currently advertise an XMLTV guide URL.");
+            }
+
+            var detectedUrl = cred.DetectedEpgUrl.Trim();
+            var xmlContent = await EpgDiscoveryHelpers.ReadXmltvAsync(detectedUrl, EpgActiveMode.Detected, cred, _sourceRoutingService);
+            return new EpgDiscoveryResult(
+                xmlContent,
+                "Stalker portal XMLTV guide",
+                detectedUrl,
+                detectedUrl,
+                EpgActiveMode.Detected);
+        }
+    }
+
     internal static class EpgDiscoveryHelpers
     {
         internal static EpgActiveMode ResolveActiveMode(SourceCredential credential)

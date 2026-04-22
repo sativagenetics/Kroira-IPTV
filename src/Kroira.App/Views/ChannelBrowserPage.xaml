@@ -64,6 +64,8 @@
                             <TextBlock Text="{Binding GuideMetaText}" Visibility="{Binding GuideMetaVisibility}" Foreground="{StaticResource KroiraTextTertiaryBrush}" FontSize="11" MaxLines="2" TextTrimming="CharacterEllipsis" />
                             <TextBlock Text="{Binding CurrentProgramSubtitle}" Visibility="{Binding SubtitleVisibility}" Foreground="{StaticResource KroiraTextTertiaryBrush}" FontSize="11" MaxLines="1" TextTrimming="CharacterEllipsis" />
                             <TextBlock Text="{Binding CurrentProgramDescription}" Visibility="{Binding DescriptionVisibility}" Foreground="{StaticResource KroiraTextTertiaryBrush}" FontSize="11" MaxLines="1" TextTrimming="CharacterEllipsis" />
+                            <TextBlock Text="{Binding CatchupBadgeText}" Visibility="{Binding CatchupVisibility}" Foreground="{StaticResource KroiraAccentBrush}" FontSize="11" FontWeight="SemiBold" MaxLines="1" TextTrimming="CharacterEllipsis" />
+                            <TextBlock Text="{Binding CatchupStatusText}" Visibility="{Binding CatchupStatusVisibility}" Foreground="{StaticResource KroiraTextTertiaryBrush}" FontSize="11" MaxLines="2" TextWrapping="Wrap" TextTrimming="CharacterEllipsis" />
                             <Grid Visibility="{Binding EpgVisibility}" ColumnSpacing="8">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto" />
@@ -82,7 +84,28 @@
                                 <TextBlock Grid.Column="1" Text="{Binding NextProgramTimeText}" Foreground="{StaticResource KroiraTextTertiaryBrush}" FontSize="11" />
                             </Grid>
                         </StackPanel>
-                        <Button Grid.Column="2" Content="{Binding FavoriteIcon}" Tag="{Binding Id}" Click="FavoriteToggle_Click" Background="#141A29" Foreground="{StaticResource KroiraGoldBrush}" BorderBrush="{StaticResource KroiraBorderBrush}" BorderThickness="1" CornerRadius="10" FontSize="17" Padding="5,1" VerticalAlignment="Top" />
+                        <StackPanel Grid.Column="2" Spacing="8" VerticalAlignment="Top">
+                            <Button Content="Inspect"
+                                    Click="InspectChannel_Click"
+                                    Background="#141A29"
+                                    Foreground="{StaticResource KroiraTextPrimaryBrush}"
+                                    BorderBrush="{StaticResource KroiraBorderBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="10"
+                                    FontSize="11"
+                                    Padding="8,4" />
+                            <Button Content="{Binding FavoriteIcon}"
+                                    Tag="{Binding Id}"
+                                    Click="FavoriteToggle_Click"
+                                    Background="#141A29"
+                                    Foreground="{StaticResource KroiraGoldBrush}"
+                                    BorderBrush="{StaticResource KroiraBorderBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="10"
+                                    FontSize="17"
+                                    Padding="5,1"
+                                    VerticalAlignment="Top" />
+                        </StackPanel>
                     </Grid>
                 </DataTemplate>
             </GridView.ItemTemplate>

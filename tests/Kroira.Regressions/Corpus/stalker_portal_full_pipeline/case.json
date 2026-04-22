@@ -1,0 +1,38 @@
+{
+  "id": "stalker_portal_full_pipeline",
+  "description": "Stalker portal discovery, live/movie/series import, locator-based playback resolution, and portal diagnostics.",
+  "sources": [
+    {
+      "key": "stalker-main",
+      "name": "Fixture Stalker Main",
+      "type": "Stalker",
+      "url": "{{server}}/stalker/c",
+      "stalkerMacAddress": "00:1A:79:10:00:01",
+      "stalkerTimezone": "Europe/Istanbul",
+      "stalkerLocale": "en",
+      "epgMode": "Detected",
+      "refreshTrigger": "InitialImport",
+      "refreshScope": "Full"
+    }
+  ],
+  "playbackRequests": [
+    {
+      "id": "stalker-live-playback",
+      "sourceKey": "stalker-main",
+      "contentType": "Channel",
+      "matchName": "Fixture News HD"
+    },
+    {
+      "id": "stalker-movie-playback",
+      "sourceKey": "stalker-main",
+      "contentType": "Movie",
+      "matchName": "Fixture Movie 2024"
+    },
+    {
+      "id": "stalker-episode-playback",
+      "sourceKey": "stalker-main",
+      "contentType": "Episode",
+      "matchName": "Pilot"
+    }
+  ]
+}

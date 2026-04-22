@@ -146,12 +146,14 @@ namespace Kroira.App.Services
                 var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
                 var m3uParser = scope.ServiceProvider.GetRequiredService<IM3uParserService>();
                 var xtreamParser = scope.ServiceProvider.GetRequiredService<IXtreamParserService>();
+                var stalkerParser = scope.ServiceProvider.GetRequiredService<IStalkerParserService>();
                 var xmltvParser = scope.ServiceProvider.GetRequiredService<IXmltvParserService>();
                 sourceSyncFailureCount = await ReimportRestoredSourcesAsync(
                     db,
                     package.Sources,
                     m3uParser,
                     xtreamParser,
+                    stalkerParser,
                     xmltvParser,
                     warnings);
             }
@@ -244,7 +246,18 @@ namespace Kroira.App.Services
                             EpgUrl = credential.EpgUrl,
                             DetectedEpgUrl = credential.DetectedEpgUrl,
                             EpgMode = credential.EpgMode,
-                            M3uImportMode = credential.M3uImportMode
+                            M3uImportMode = credential.M3uImportMode,
+                            ProxyScope = credential.ProxyScope,
+                            ProxyUrl = credential.ProxyUrl,
+                            CompanionScope = credential.CompanionScope,
+                            CompanionMode = credential.CompanionMode,
+                            CompanionUrl = credential.CompanionUrl,
+                            StalkerMacAddress = credential.StalkerMacAddress,
+                            StalkerDeviceId = credential.StalkerDeviceId,
+                            StalkerSerialNumber = credential.StalkerSerialNumber,
+                            StalkerTimezone = credential.StalkerTimezone,
+                            StalkerLocale = credential.StalkerLocale,
+                            StalkerApiUrl = credential.StalkerApiUrl
                         },
                     SyncState = syncState == null
                         ? null
@@ -382,6 +395,12 @@ namespace Kroira.App.Services
                 {
                     throw new InvalidDataException($"Xtream source '{source.Name}' is missing a username.");
                 }
+
+                if (source.Type == SourceType.Stalker &&
+                    string.IsNullOrWhiteSpace(source.Credential.StalkerMacAddress))
+                {
+                    throw new InvalidDataException($"Stalker source '{source.Name}' is missing a MAC address.");
+                }
             }
 
             var profileIds = new HashSet<int>();
@@ -456,6 +475,7 @@ namespace Kroira.App.Services
             await db.Movies.ExecuteDeleteAsync();
             await db.Channels.ExecuteDeleteAsync();
             await db.ChannelCategories.ExecuteDeleteAsync();
+            await db.StalkerPortalSnapshots.ExecuteDeleteAsync();
             await db.ParentalControlSettings.ExecuteDeleteAsync();
             await db.SourceSyncStates.ExecuteDeleteAsync();
             await db.SourceCredentials.ExecuteDeleteAsync();
@@ -520,7 +540,18 @@ namespace Kroira.App.Services
                 EpgUrl = source.Credential?.EpgUrl ?? string.Empty,
                 DetectedEpgUrl = source.Credential?.DetectedEpgUrl ?? string.Empty,
                 EpgMode = source.Credential?.EpgMode ?? (string.IsNullOrWhiteSpace(source.Credential?.EpgUrl) ? EpgActiveMode.Detected : EpgActiveMode.Manual),
-                M3uImportMode = source.Credential?.M3uImportMode ?? M3uImportMode.LiveMoviesAndSeries
+                M3uImportMode = source.Credential?.M3uImportMode ?? M3uImportMode.LiveMoviesAndSeries,
+                ProxyScope = source.Credential?.ProxyScope ?? SourceProxyScope.Disabled,
+                ProxyUrl = source.Credential?.ProxyUrl ?? string.Empty,
+                CompanionScope = source.Credential?.CompanionScope ?? SourceCompanionScope.Disabled,
+                CompanionMode = source.Credential?.CompanionMode ?? SourceCompanionRelayMode.Buffered,
+                CompanionUrl = source.Credential?.CompanionUrl ?? string.Empty,
+                StalkerMacAddress = source.Credential?.StalkerMacAddress ?? string.Empty,
+                StalkerDeviceId = source.Credential?.StalkerDeviceId ?? string.Empty,
+                StalkerSerialNumber = source.Credential?.StalkerSerialNumber ?? string.Empty,
+                StalkerTimezone = source.Credential?.StalkerTimezone ?? string.Empty,
+                StalkerLocale = source.Credential?.StalkerLocale ?? string.Empty,
+                StalkerApiUrl = source.Credential?.StalkerApiUrl ?? string.Empty
             }));
 
             db.SourceSyncStates.AddRange(sources.Select(source => new SourceSyncState
@@ -552,6 +583,7 @@ namespace Kroira.App.Services
             IReadOnlyList<BackupSourceRecord> sources,
             IM3uParserService m3uParser,
             IXtreamParserService xtreamParser,
+            IStalkerParserService stalkerParser,
             IXmltvParserService xmltvParser,
             ICollection<string> warnings)
         {
@@ -564,6 +596,10 @@ namespace Kroira.App.Services
                     if (source.Type == SourceType.M3U)
                     {
                         await m3uParser.ParseAndImportM3uAsync(db, source.Id);
+                    }
+                    else if (source.Type == SourceType.Stalker)
+                    {
+                        await stalkerParser.ParseAndImportStalkerAsync(db, source.Id);
                     }
                     else
                     {

@@ -60,7 +60,8 @@ namespace Kroira.App.Views
                 return;
             }
 
-            if (string.Equals(source.Type, SourceType.Xtream.ToString(), StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(source.Type, SourceType.Xtream.ToString(), StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(source.Type, SourceType.Stalker.ToString(), StringComparison.OrdinalIgnoreCase))
             {
                 ViewModel.SyncXtreamCommand.Execute(id);
                 return;
@@ -130,6 +131,19 @@ namespace Kroira.App.Views
                 new ProxyModeOption(SourceProxyScope.AllRequests, "All requests", "Route import, guide, probe, and playback traffic through the proxy.")
             };
 
+            var companionOptions = new[]
+            {
+                new CompanionScopeOption(SourceCompanionScope.Disabled, "Disabled", "Keep direct playback as the only path for this source."),
+                new CompanionScopeOption(SourceCompanionScope.PlaybackOnly, "Playback only", "Resolve the provider stream first, then hand playback to the local companion relay."),
+                new CompanionScopeOption(SourceCompanionScope.PlaybackAndProbing, "Playback + probes", "Resolve the provider stream first, then use the local companion relay for playback and bounded health probes.")
+            };
+
+            var companionModeOptions = new[]
+            {
+                new CompanionModeOption(SourceCompanionRelayMode.Relay, "Pass-through relay", "Ask the companion to relay the already resolved upstream stream without buffering hints."),
+                new CompanionModeOption(SourceCompanionRelayMode.Buffered, "Buffered relay", "Ask the companion to stabilize the already resolved upstream stream through a buffered relay.")
+            };
+
             var modeComboBox = new ComboBox
             {
                 ItemsSource = modeOptions,
@@ -159,6 +173,29 @@ namespace Kroira.App.Views
                 Text = draft.ProxyUrl
             };
 
+            var companionComboBox = new ComboBox
+            {
+                Header = "Local companion relay",
+                ItemsSource = companionOptions,
+                DisplayMemberPath = nameof(CompanionScopeOption.Label),
+                SelectedItem = companionOptions.FirstOrDefault(option => option.Scope == draft.CompanionScope) ?? companionOptions[0]
+            };
+
+            var companionModeComboBox = new ComboBox
+            {
+                Header = "Companion behavior",
+                ItemsSource = companionModeOptions,
+                DisplayMemberPath = nameof(CompanionModeOption.Label),
+                SelectedItem = companionModeOptions.FirstOrDefault(option => option.Mode == draft.CompanionMode) ?? companionModeOptions[1]
+            };
+
+            var companionUrlBox = new TextBox
+            {
+                Header = "Companion endpoint",
+                PlaceholderText = "http://127.0.0.1:9318/kroira-companion",
+                Text = draft.CompanionUrl
+            };
+
             var modeDescription = new TextBlock
             {
                 TextWrapping = TextWrapping.Wrap,
@@ -166,6 +203,18 @@ namespace Kroira.App.Views
             };
 
             var proxyDescription = new TextBlock
+            {
+                TextWrapping = TextWrapping.Wrap,
+                Foreground = (Application.Current.Resources["KroiraTextSecondaryBrush"] as Microsoft.UI.Xaml.Media.Brush)
+            };
+
+            var companionDescription = new TextBlock
+            {
+                TextWrapping = TextWrapping.Wrap,
+                Foreground = (Application.Current.Resources["KroiraTextSecondaryBrush"] as Microsoft.UI.Xaml.Media.Brush)
+            };
+
+            var companionModeDescription = new TextBlock
             {
                 TextWrapping = TextWrapping.Wrap,
                 Foreground = (Application.Current.Resources["KroiraTextSecondaryBrush"] as Microsoft.UI.Xaml.Media.Brush)
@@ -189,10 +238,32 @@ namespace Kroira.App.Views
                 }
             }
 
+            void RefreshCompanionInputs()
+            {
+                if (companionComboBox.SelectedItem is CompanionScopeOption option)
+                {
+                    var enabled = option.Scope != SourceCompanionScope.Disabled;
+                    companionModeComboBox.IsEnabled = enabled;
+                    companionUrlBox.IsEnabled = enabled;
+                    companionModeComboBox.Visibility = enabled ? Visibility.Visible : Visibility.Collapsed;
+                    companionModeDescription.Visibility = enabled ? Visibility.Visible : Visibility.Collapsed;
+                    companionUrlBox.Visibility = enabled ? Visibility.Visible : Visibility.Collapsed;
+                    companionDescription.Text = option.Description;
+                }
+
+                if (companionModeComboBox.SelectedItem is CompanionModeOption modeOption)
+                {
+                    companionModeDescription.Text = modeOption.Description;
+                }
+            }
+
             modeComboBox.SelectionChanged += (_, _) => RefreshGuideInputs();
             proxyComboBox.SelectionChanged += (_, _) => RefreshProxyInputs();
+            companionComboBox.SelectionChanged += (_, _) => RefreshCompanionInputs();
+            companionModeComboBox.SelectionChanged += (_, _) => RefreshCompanionInputs();
             RefreshGuideInputs();
             RefreshProxyInputs();
+            RefreshCompanionInputs();
 
             var dialog = new ContentDialog
             {
@@ -211,6 +282,8 @@ namespace Kroira.App.Views
                         {
                             Text = draft.SourceType == SourceType.M3U
                                 ? "Choose how this playlist should resolve XMLTV guide data and how the source should be routed operationally."
+                                : draft.SourceType == SourceType.Stalker
+                                    ? "Choose whether this Stalker portal should use a manual XMLTV feed and how its requests should be routed operationally."
                                 : "Choose whether guide data should come from the provider or a manual XMLTV override, then decide how routing should behave.",
                             TextWrapping = TextWrapping.Wrap
                         },
@@ -232,11 +305,23 @@ namespace Kroira.App.Views
                         },
                         proxyComboBox,
                         proxyDescription,
-                        proxyUrlBox
+                        proxyUrlBox,
+                        new Border
+                        {
+                            Height = 1,
+                            Margin = new Thickness(0, 4, 0, 4),
+                            Background = Application.Current.Resources["KroiraBorderBrush"] as Microsoft.UI.Xaml.Media.Brush
+                        },
+                        companionComboBox,
+                        companionDescription,
+                        companionModeComboBox,
+                        companionModeDescription,
+                        companionUrlBox
                     }
                 }
             };
 
+            dialog.Title = $"Guide settings - {draft.SourceName}";
             var result = await ShowContentDialogAsync(dialog);
             if (result is not ContentDialogResult.Primary and not ContentDialogResult.Secondary)
             {
@@ -247,6 +332,9 @@ namespace Kroira.App.Views
             draft.ManualEpgUrl = manualUrlBox.Text?.Trim() ?? string.Empty;
             draft.ProxyScope = (proxyComboBox.SelectedItem as ProxyModeOption)?.Scope ?? SourceProxyScope.Disabled;
             draft.ProxyUrl = proxyUrlBox.Text?.Trim() ?? string.Empty;
+            draft.CompanionScope = (companionComboBox.SelectedItem as CompanionScopeOption)?.Scope ?? SourceCompanionScope.Disabled;
+            draft.CompanionMode = (companionModeComboBox.SelectedItem as CompanionModeOption)?.Mode ?? SourceCompanionRelayMode.Buffered;
+            draft.CompanionUrl = companionUrlBox.Text?.Trim() ?? string.Empty;
 
             try
             {
@@ -316,6 +404,34 @@ namespace Kroira.App.Views
             }
 
             public SourceProxyScope Scope { get; }
+            public string Label { get; }
+            public string Description { get; }
+        }
+
+        private sealed class CompanionScopeOption
+        {
+            public CompanionScopeOption(SourceCompanionScope scope, string label, string description)
+            {
+                Scope = scope;
+                Label = label;
+                Description = description;
+            }
+
+            public SourceCompanionScope Scope { get; }
+            public string Label { get; }
+            public string Description { get; }
+        }
+
+        private sealed class CompanionModeOption
+        {
+            public CompanionModeOption(SourceCompanionRelayMode mode, string label, string description)
+            {
+                Mode = mode;
+                Label = label;
+                Description = description;
+            }
+
+            public SourceCompanionRelayMode Mode { get; }
             public string Label { get; }
             public string Description { get; }
         }

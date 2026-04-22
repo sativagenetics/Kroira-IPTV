@@ -1,0 +1,34 @@
+{
+  "routes": [
+    {
+      "path": "/probe/live/archive-sports.m3u8",
+      "statusCode": 200,
+      "body": "#EXTM3U\n#EXTINF:2,\nsegment.ts"
+    },
+    {
+      "path": "/probe/live/plain-news.m3u8",
+      "statusCode": 200,
+      "body": "#EXTM3U\n#EXTINF:2,\nsegment.ts"
+    },
+    {
+      "path": "/archive/play",
+      "statusCode": 200,
+      "body": "archive-ok"
+    },
+    {
+      "path": "/companion-ok/ping",
+      "statusCode": 200,
+      "body": "ok"
+    },
+    {
+      "path": "/companion-ok/relay",
+      "statusCode": 200,
+      "body": "#EXTM3U\n#EXTINF:2,\nrelay-segment.ts"
+    },
+    {
+      "path": "/companion-down/ping",
+      "statusCode": 503,
+      "body": "down"
+    }
+  ]
+}

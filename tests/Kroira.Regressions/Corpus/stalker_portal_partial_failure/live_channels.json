@@ -1,0 +1,12 @@
+{
+  "js": [
+    {
+      "id": "551",
+      "name": "Fixture Sports HD",
+      "tv_genre_id": "11",
+      "logo": "/stalker/assets/sports.png",
+      "xmltv_id": "fixture.sports",
+      "cmd": "ffmpeg /stalker/live/551.ts"
+    }
+  ]
+}

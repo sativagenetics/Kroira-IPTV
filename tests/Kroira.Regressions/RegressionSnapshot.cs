@@ -8,6 +8,18 @@ internal sealed class RegressionSnapshot
     public List<OperationalStateSnapshot> OperationalStates { get; set; } = [];
 
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public List<PlaybackResolutionSnapshot>? PlaybackResolutions { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public List<CatchupResolutionSnapshot>? CatchupResolutions { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public List<ItemInspectionSnapshot>? ItemInspections { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public List<ExternalLaunchSnapshot>? ExternalLaunches { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public List<PlaybackProgressSnapshot>? PlaybackProgresses { get; set; }
 
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
@@ -36,11 +48,18 @@ internal sealed class SourceSnapshot
     public SourceAcquisitionRunSnapshot AcquisitionRun { get; set; } = new();
     public SourceHealthSnapshot Health { get; set; } = new();
     public SourceEpgSnapshot Epg { get; set; } = new();
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public StalkerPortalStateSnapshot? StalkerPortal { get; set; }
+
     public List<ChannelSnapshot> Channels { get; set; } = [];
     public List<MovieSnapshot> Movies { get; set; } = [];
     public List<SeriesSnapshot> Series { get; set; } = [];
     public List<EnrichmentRecordSnapshot> Enrichment { get; set; } = [];
     public List<SourceAcquisitionEvidenceSnapshot> AcquisitionEvidence { get; set; } = [];
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public List<CatchupAttemptSnapshot>? CatchupAttempts { get; set; }
 }
 
 internal sealed class SourceRefreshSnapshot
@@ -64,6 +83,37 @@ internal sealed class SourceCredentialSnapshot
     public string M3uImportMode { get; set; } = string.Empty;
     public string ProxyScope { get; set; } = string.Empty;
     public string ProxyUrl { get; set; } = string.Empty;
+    public string CompanionScope { get; set; } = string.Empty;
+    public string CompanionMode { get; set; } = string.Empty;
+    public string CompanionUrl { get; set; } = string.Empty;
+    public string StalkerMacAddress { get; set; } = string.Empty;
+    public string StalkerDeviceId { get; set; } = string.Empty;
+    public string StalkerSerialNumber { get; set; } = string.Empty;
+    public string StalkerTimezone { get; set; } = string.Empty;
+    public string StalkerLocale { get; set; } = string.Empty;
+    public string StalkerApiUrl { get; set; } = string.Empty;
+}
+
+internal sealed class StalkerPortalStateSnapshot
+{
+    public string PortalName { get; set; } = string.Empty;
+    public string PortalVersion { get; set; } = string.Empty;
+    public string ProfileName { get; set; } = string.Empty;
+    public string ProfileId { get; set; } = string.Empty;
+    public string MacAddress { get; set; } = string.Empty;
+    public string DeviceId { get; set; } = string.Empty;
+    public string SerialNumber { get; set; } = string.Empty;
+    public string Locale { get; set; } = string.Empty;
+    public string Timezone { get; set; } = string.Empty;
+    public string DiscoveredApiUrl { get; set; } = string.Empty;
+    public bool SupportsLive { get; set; }
+    public bool SupportsMovies { get; set; }
+    public bool SupportsSeries { get; set; }
+    public int LiveCategoryCount { get; set; }
+    public int MovieCategoryCount { get; set; }
+    public int SeriesCategoryCount { get; set; }
+    public string Summary { get; set; } = string.Empty;
+    public string Error { get; set; } = string.Empty;
 }
 
 internal sealed class SourceSyncStateSnapshot
@@ -290,6 +340,97 @@ internal sealed class SourceAcquisitionEvidenceSnapshot
     public string NormalizedName { get; set; } = string.Empty;
     public string MatchedTarget { get; set; } = string.Empty;
     public int Confidence { get; set; }
+}
+
+internal sealed class CatchupResolutionSnapshot
+{
+    public string Id { get; set; } = string.Empty;
+    public string SourceKey { get; set; } = string.Empty;
+    public string ChannelName { get; set; } = string.Empty;
+    public string RequestKind { get; set; } = string.Empty;
+    public string ProgramTitle { get; set; } = string.Empty;
+    public string RequestedAtUtc { get; set; } = string.Empty;
+    public string Status { get; set; } = string.Empty;
+    public string Message { get; set; } = string.Empty;
+    public string StreamUrl { get; set; } = string.Empty;
+    public string UpstreamStreamUrl { get; set; } = string.Empty;
+    public string LiveStreamUrl { get; set; } = string.Empty;
+    public string RoutingSummary { get; set; } = string.Empty;
+}
+
+internal sealed class ItemInspectionSnapshot
+{
+    public string Id { get; set; } = string.Empty;
+    public string SourceKey { get; set; } = string.Empty;
+    public string ContentType { get; set; } = string.Empty;
+    public string Title { get; set; } = string.Empty;
+    public string Subtitle { get; set; } = string.Empty;
+    public bool IsCurrentPlayback { get; set; }
+    public bool SupportsExternalLaunch { get; set; }
+    public string StatusText { get; set; } = string.Empty;
+    public string FailureText { get; set; } = string.Empty;
+    public string SafetyText { get; set; } = string.Empty;
+    public string SafeReportText { get; set; } = string.Empty;
+    public List<ItemInspectionSectionSnapshot> Sections { get; set; } = [];
+}
+
+internal sealed class ItemInspectionSectionSnapshot
+{
+    public string Title { get; set; } = string.Empty;
+    public List<ItemInspectionFieldSnapshot> Fields { get; set; } = [];
+}
+
+internal sealed class ItemInspectionFieldSnapshot
+{
+    public string Label { get; set; } = string.Empty;
+    public string Value { get; set; } = string.Empty;
+}
+
+internal sealed class ExternalLaunchSnapshot
+{
+    public string Id { get; set; } = string.Empty;
+    public string SourceKey { get; set; } = string.Empty;
+    public string ContentType { get; set; } = string.Empty;
+    public string Title { get; set; } = string.Empty;
+    public bool Success { get; set; }
+    public string Message { get; set; } = string.Empty;
+    public string ProviderSummary { get; set; } = string.Empty;
+    public string RoutingSummary { get; set; } = string.Empty;
+    public string ResolvedUrlText { get; set; } = string.Empty;
+    public string LaunchedUrl { get; set; } = string.Empty;
+    public bool UsedApplicationPicker { get; set; }
+}
+
+internal sealed class PlaybackResolutionSnapshot
+{
+    public string Id { get; set; } = string.Empty;
+    public string SourceKey { get; set; } = string.Empty;
+    public string ContentType { get; set; } = string.Empty;
+    public string Title { get; set; } = string.Empty;
+    public bool Success { get; set; }
+    public string CatalogStreamUrl { get; set; } = string.Empty;
+    public string StreamUrl { get; set; } = string.Empty;
+    public string UpstreamStreamUrl { get; set; } = string.Empty;
+    public string Message { get; set; } = string.Empty;
+    public string ProviderSummary { get; set; } = string.Empty;
+    public string RoutingSummary { get; set; } = string.Empty;
+    public string CompanionStatus { get; set; } = string.Empty;
+    public string CompanionStatusText { get; set; } = string.Empty;
+}
+
+internal sealed class CatchupAttemptSnapshot
+{
+    public string ChannelName { get; set; } = string.Empty;
+    public string LogicalContentKey { get; set; } = string.Empty;
+    public string RequestKind { get; set; } = string.Empty;
+    public string Status { get; set; } = string.Empty;
+    public string ProgramTitle { get; set; } = string.Empty;
+    public int WindowHours { get; set; }
+    public string Message { get; set; } = string.Empty;
+    public string RoutingSummary { get; set; } = string.Empty;
+    public string ProviderMode { get; set; } = string.Empty;
+    public string ProviderSource { get; set; } = string.Empty;
+    public string ResolvedStreamUrl { get; set; } = string.Empty;
 }
 
 internal sealed class OperationalStateSnapshot

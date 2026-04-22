@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -23,6 +24,14 @@ namespace Kroira.App.Services
         public M3uImportMode M3uImportMode { get; set; } = M3uImportMode.LiveMoviesAndSeries;
         public SourceProxyScope ProxyScope { get; set; } = SourceProxyScope.Disabled;
         public string ProxyUrl { get; set; } = string.Empty;
+        public SourceCompanionScope CompanionScope { get; set; } = SourceCompanionScope.Disabled;
+        public SourceCompanionRelayMode CompanionMode { get; set; } = SourceCompanionRelayMode.Buffered;
+        public string CompanionUrl { get; set; } = string.Empty;
+        public string StalkerMacAddress { get; set; } = string.Empty;
+        public string StalkerDeviceId { get; set; } = string.Empty;
+        public string StalkerSerialNumber { get; set; } = string.Empty;
+        public string StalkerTimezone { get; set; } = string.Empty;
+        public string StalkerLocale { get; set; } = string.Empty;
     }
 
     public sealed class SourceCreateResult
@@ -42,6 +51,9 @@ namespace Kroira.App.Services
         public string ManualEpgUrl { get; set; } = string.Empty;
         public SourceProxyScope ProxyScope { get; set; } = SourceProxyScope.Disabled;
         public string ProxyUrl { get; set; } = string.Empty;
+        public SourceCompanionScope CompanionScope { get; set; } = SourceCompanionScope.Disabled;
+        public SourceCompanionRelayMode CompanionMode { get; set; } = SourceCompanionRelayMode.Buffered;
+        public string CompanionUrl { get; set; } = string.Empty;
     }
 
     public sealed class SourceGuideSettingsUpdateResult
@@ -113,7 +125,15 @@ namespace Kroira.App.Services
                     EpgMode = normalized.EpgMode,
                     M3uImportMode = normalized.M3uImportMode,
                     ProxyScope = normalized.ProxyScope,
-                    ProxyUrl = normalized.ProxyUrl
+                    ProxyUrl = normalized.ProxyUrl,
+                    CompanionScope = normalized.CompanionScope,
+                    CompanionMode = normalized.CompanionMode,
+                    CompanionUrl = normalized.CompanionUrl,
+                    StalkerMacAddress = normalized.StalkerMacAddress,
+                    StalkerDeviceId = normalized.StalkerDeviceId,
+                    StalkerSerialNumber = normalized.StalkerSerialNumber,
+                    StalkerTimezone = normalized.StalkerTimezone,
+                    StalkerLocale = normalized.StalkerLocale
                 });
 
                 db.SourceSyncStates.Add(new SourceSyncState
@@ -199,17 +219,26 @@ namespace Kroira.App.Services
             var previousManualUrl = credential.ManualEpgUrl ?? string.Empty;
             var previousProxyScope = credential.ProxyScope;
             var previousProxyUrl = credential.ProxyUrl ?? string.Empty;
+            var previousCompanionScope = credential.CompanionScope;
+            var previousCompanionMode = credential.CompanionMode;
+            var previousCompanionUrl = credential.CompanionUrl ?? string.Empty;
 
             credential.EpgMode = normalized.ActiveMode;
             credential.ManualEpgUrl = normalized.ManualEpgUrl;
             credential.ProxyScope = normalized.ProxyScope;
             credential.ProxyUrl = normalized.ProxyUrl;
+            credential.CompanionScope = normalized.CompanionScope;
+            credential.CompanionMode = normalized.CompanionMode;
+            credential.CompanionUrl = normalized.CompanionUrl;
             await db.SaveChangesAsync();
 
             var guideBindingChanged = previousMode != credential.EpgMode ||
                                       !string.Equals(previousManualUrl, credential.ManualEpgUrl, StringComparison.OrdinalIgnoreCase);
             var routingChanged = previousProxyScope != credential.ProxyScope ||
-                                 !string.Equals(previousProxyUrl, credential.ProxyUrl, StringComparison.OrdinalIgnoreCase);
+                                 !string.Equals(previousProxyUrl, credential.ProxyUrl, StringComparison.OrdinalIgnoreCase) ||
+                                 previousCompanionScope != credential.CompanionScope ||
+                                 previousCompanionMode != credential.CompanionMode ||
+                                 !string.Equals(previousCompanionUrl, credential.CompanionUrl, StringComparison.OrdinalIgnoreCase);
 
             if (syncNow || normalized.ActiveMode == EpgActiveMode.None)
             {
@@ -365,7 +394,15 @@ namespace Kroira.App.Services
                     .ToListAsync();
                 if (syncStates.Count > 0)
                 {
-                    db.SourceSyncStates.RemoveRange(syncStates);
+                db.SourceSyncStates.RemoveRange(syncStates);
+                }
+
+                var stalkerSnapshots = await db.StalkerPortalSnapshots
+                    .Where(item => item.SourceProfileId == sourceProfileId)
+                    .ToListAsync();
+                if (stalkerSnapshots.Count > 0)
+                {
+                    db.StalkerPortalSnapshots.RemoveRange(stalkerSnapshots);
                 }
 
                 var epgLogs = await db.EpgSyncLogs
@@ -486,13 +523,31 @@ namespace Kroira.App.Services
                 Name = resolvedName,
                 Type = request.Type,
                 Url = url,
-                Username = request.Type == SourceType.M3U ? string.Empty : (request.Username?.Trim() ?? string.Empty),
-                Password = request.Type == SourceType.M3U ? string.Empty : (request.Password ?? string.Empty),
+                Username = request.Type == SourceType.Xtream ? (request.Username?.Trim() ?? string.Empty) : string.Empty,
+                Password = request.Type == SourceType.Xtream ? (request.Password ?? string.Empty) : string.Empty,
                 ManualEpgUrl = NormalizeOptionalUrl(request.ManualEpgUrl),
                 EpgMode = request.EpgMode,
                 M3uImportMode = request.M3uImportMode,
                 ProxyScope = request.ProxyScope,
-                ProxyUrl = NormalizeOptionalUrl(request.ProxyUrl)
+                ProxyUrl = NormalizeOptionalUrl(request.ProxyUrl),
+                CompanionScope = request.CompanionScope,
+                CompanionMode = request.CompanionMode,
+                CompanionUrl = NormalizeCompanionUrl(request.CompanionUrl),
+                StalkerMacAddress = request.Type == SourceType.Stalker
+                    ? NormalizeMacAddress(request.StalkerMacAddress)
+                    : string.Empty,
+                StalkerDeviceId = request.Type == SourceType.Stalker
+                    ? NormalizeOptionalToken(request.StalkerDeviceId)
+                    : string.Empty,
+                StalkerSerialNumber = request.Type == SourceType.Stalker
+                    ? NormalizeOptionalToken(request.StalkerSerialNumber)
+                    : string.Empty,
+                StalkerTimezone = request.Type == SourceType.Stalker
+                    ? NormalizeOptionalToken(request.StalkerTimezone, ResolveDefaultTimezone())
+                    : string.Empty,
+                StalkerLocale = request.Type == SourceType.Stalker
+                    ? NormalizeOptionalToken(request.StalkerLocale, CultureInfo.CurrentCulture.Name)
+                    : string.Empty
             };
         }
 
@@ -504,7 +559,10 @@ namespace Kroira.App.Services
                 ActiveMode = request.ActiveMode,
                 ManualEpgUrl = NormalizeOptionalUrl(request.ManualEpgUrl),
                 ProxyScope = request.ProxyScope,
-                ProxyUrl = NormalizeOptionalUrl(request.ProxyUrl)
+                ProxyUrl = NormalizeOptionalUrl(request.ProxyUrl),
+                CompanionScope = request.CompanionScope,
+                CompanionMode = request.CompanionMode,
+                CompanionUrl = NormalizeCompanionUrl(request.CompanionUrl)
             };
         }
 
@@ -528,12 +586,21 @@ namespace Kroira.App.Services
                 throw new InvalidOperationException("Server URL, username, and password are required for Xtream.");
             }
 
+            if (request.Type == SourceType.Stalker &&
+                (string.IsNullOrWhiteSpace(request.Url) || string.IsNullOrWhiteSpace(request.StalkerMacAddress)))
+            {
+                throw new InvalidOperationException("Portal URL and MAC address are required for Stalker.");
+            }
+
             ValidateGuideRequest(new SourceGuideSettingsUpdateRequest
             {
                 ActiveMode = request.EpgMode,
                 ManualEpgUrl = request.ManualEpgUrl,
                 ProxyScope = request.ProxyScope,
-                ProxyUrl = request.ProxyUrl
+                ProxyUrl = request.ProxyUrl,
+                CompanionScope = request.CompanionScope,
+                CompanionMode = request.CompanionMode,
+                CompanionUrl = request.CompanionUrl
             });
         }
 
@@ -548,6 +615,11 @@ namespace Kroira.App.Services
             {
                 throw new InvalidOperationException("Proxy routing requires a proxy URL.");
             }
+
+            if (request.CompanionScope != SourceCompanionScope.Disabled && string.IsNullOrWhiteSpace(request.CompanionUrl))
+            {
+                throw new InvalidOperationException("Companion relay mode requires a companion endpoint URL.");
+            }
         }
 
         private static string NormalizeUrl(string value, SourceType type)
@@ -558,7 +630,8 @@ namespace Kroira.App.Services
                 return string.Empty;
             }
 
-            if (type == SourceType.Xtream && Uri.TryCreate(trimmed, UriKind.Absolute, out var uri))
+            if ((type == SourceType.Xtream || type == SourceType.Stalker) &&
+                Uri.TryCreate(trimmed, UriKind.Absolute, out var uri))
             {
                 var builder = new UriBuilder(uri)
                 {
@@ -576,6 +649,45 @@ namespace Kroira.App.Services
         private static string NormalizeOptionalUrl(string value)
         {
             return string.IsNullOrWhiteSpace(value) ? string.Empty : value.Trim();
+        }
+
+        private static string NormalizeCompanionUrl(string value)
+        {
+            var trimmed = value?.Trim() ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(trimmed))
+            {
+                return string.Empty;
+            }
+
+            if (!Uri.TryCreate(trimmed, UriKind.Absolute, out var uri))
+            {
+                return trimmed;
+            }
+
+            var builder = new UriBuilder(uri)
+            {
+                Query = string.Empty,
+                Fragment = string.Empty,
+                Path = uri.AbsolutePath.TrimEnd('/')
+            };
+
+            return builder.Uri.ToString().TrimEnd('/');
+        }
+
+        private static string NormalizeOptionalToken(string? value, string fallback = "")
+        {
+            return string.IsNullOrWhiteSpace(value) ? fallback : value.Trim();
+        }
+
+        private static string NormalizeMacAddress(string? value)
+        {
+            var raw = new string((value ?? string.Empty).Where(Uri.IsHexDigit).ToArray()).ToUpperInvariant();
+            if (raw.Length != 12)
+            {
+                return string.IsNullOrWhiteSpace(value) ? string.Empty : value.Trim().ToUpperInvariant();
+            }
+
+            return string.Join(":", Enumerable.Range(0, 6).Select(index => raw.Substring(index * 2, 2)));
         }
 
         private static string DeriveSourceName(SourceType type, string primaryUrl)
@@ -604,12 +716,20 @@ namespace Kroira.App.Services
                 }
             }
 
-            return type == SourceType.M3U ? "M3U Source" : "Xtream Source";
+            return type switch
+            {
+                SourceType.M3U => "M3U Source",
+                SourceType.Stalker => "Stalker Source",
+                _ => "Xtream Source"
+            };
         }
 
         private static async Task<string> DetectDuplicateHintAsync(AppDbContext db, SourceCreateRequest request)
         {
-            var normalizedEndpoint = BuildDuplicateEndpointKey(request.Type, request.Url, request.Username);
+            var duplicateIdentity = request.Type == SourceType.Stalker
+                ? request.StalkerMacAddress
+                : request.Username;
+            var normalizedEndpoint = BuildDuplicateEndpointKey(request.Type, request.Url, duplicateIdentity);
             if (string.IsNullOrWhiteSpace(normalizedEndpoint))
             {
                 return string.Empty;
@@ -627,13 +747,15 @@ namespace Kroira.App.Services
                         profile.Name,
                         profile.Type,
                         credential.Url,
-                        credential.Username
+                        Identity = profile.Type == SourceType.Stalker
+                            ? credential.StalkerMacAddress
+                            : credential.Username
                     })
                 .ToListAsync();
 
             var hasSimilarSource = existing.Any(item =>
                 string.Equals(
-                    BuildDuplicateEndpointKey(item.Type, item.Url, item.Username),
+                    BuildDuplicateEndpointKey(item.Type, item.Url, item.Identity),
                     normalizedEndpoint,
                     StringComparison.OrdinalIgnoreCase));
 
@@ -642,7 +764,7 @@ namespace Kroira.App.Services
                 : string.Empty;
         }
 
-        private static string BuildDuplicateEndpointKey(SourceType type, string? url, string? username)
+        private static string BuildDuplicateEndpointKey(SourceType type, string? url, string? identity)
         {
             var normalizedUrl = NormalizeUrl(url ?? string.Empty, type);
             if (string.IsNullOrWhiteSpace(normalizedUrl))
@@ -651,8 +773,22 @@ namespace Kroira.App.Services
             }
 
             return type == SourceType.Xtream
-                ? $"{normalizedUrl}|{username?.Trim().ToLowerInvariant() ?? string.Empty}"
-                : normalizedUrl.ToLowerInvariant();
+                ? $"{normalizedUrl}|{identity?.Trim().ToLowerInvariant() ?? string.Empty}"
+                : type == SourceType.Stalker
+                    ? $"{normalizedUrl}|{NormalizeMacAddress(identity)}"
+                    : normalizedUrl.ToLowerInvariant();
+        }
+
+        private static string ResolveDefaultTimezone()
+        {
+            try
+            {
+                return TimeZoneInfo.Local.Id;
+            }
+            catch
+            {
+                return "UTC";
+            }
         }
 
         private static async Task<bool> MarkGuideSettingsPendingAsync(

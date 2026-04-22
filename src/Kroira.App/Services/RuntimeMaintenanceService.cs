@@ -267,6 +267,9 @@ namespace Kroira.App.Services
             var orphanSyncStates = await db.SourceSyncStates
                 .Where(state => !sourceIds.Contains(state.SourceProfileId))
                 .ToListAsync(cancellationToken);
+            var orphanStalkerSnapshots = await db.StalkerPortalSnapshots
+                .Where(item => !sourceIds.Contains(item.SourceProfileId))
+                .ToListAsync(cancellationToken);
             var orphanAcquisitionProfiles = await db.SourceAcquisitionProfiles
                 .Where(profile => !sourceIds.Contains(profile.SourceProfileId))
                 .ToListAsync(cancellationToken);
@@ -325,6 +328,7 @@ namespace Kroira.App.Services
                 orphanProgress.Count == 0 &&
                 orphanControls.Count == 0 &&
                 orphanSyncStates.Count == 0 &&
+                orphanStalkerSnapshots.Count == 0 &&
                 orphanAcquisitionProfiles.Count == 0 &&
                 orphanAcquisitionRuns.Count == 0 &&
                 orphanCredentials.Count == 0 &&
@@ -345,6 +349,7 @@ namespace Kroira.App.Services
             db.PlaybackProgresses.RemoveRange(orphanProgress);
             db.ParentalControlSettings.RemoveRange(orphanControls);
             db.SourceSyncStates.RemoveRange(orphanSyncStates);
+            db.StalkerPortalSnapshots.RemoveRange(orphanStalkerSnapshots);
             db.SourceAcquisitionEvidence.RemoveRange(orphanAcquisitionEvidence);
             db.SourceAcquisitionRuns.RemoveRange(orphanAcquisitionRuns);
             db.SourceAcquisitionProfiles.RemoveRange(orphanAcquisitionProfiles);
@@ -361,7 +366,7 @@ namespace Kroira.App.Services
             await db.SaveChangesAsync(cancellationToken);
             RuntimeEventLogger.Log(
                 "RUNTIME-MAINT",
-                $"removed orphaned rows: favorites={orphanFavorites.Count}, progress={orphanProgress.Count}, sync={orphanSyncStates.Count}, acquisition={orphanAcquisitionProfiles.Count + orphanAcquisitionRuns.Count + orphanAcquisitionEvidence.Count}, operational={orphanOperationalCandidates.Count + orphanOperationalStates.Count}");
+                $"removed orphaned rows: favorites={orphanFavorites.Count}, progress={orphanProgress.Count}, sync={orphanSyncStates.Count + orphanStalkerSnapshots.Count}, acquisition={orphanAcquisitionProfiles.Count + orphanAcquisitionRuns.Count + orphanAcquisitionEvidence.Count}, operational={orphanOperationalCandidates.Count + orphanOperationalStates.Count}");
         }
     }
 }

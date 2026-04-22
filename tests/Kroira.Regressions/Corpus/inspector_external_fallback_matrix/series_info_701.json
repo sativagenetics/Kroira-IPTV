@@ -1,0 +1,14 @@
+{
+  "js": {
+    "episodes": {
+      "1": [
+        {
+          "id": "70101",
+          "title": "Pilot",
+          "episode_num": "1",
+          "cmd": "ffmpeg /stalker/series/70101.mp4"
+        }
+      ]
+    }
+  }
+}

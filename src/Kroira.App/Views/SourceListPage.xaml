@@ -597,6 +597,8 @@
                                                 <TextBlock Text="{Binding GuideStatusSummaryText}" Visibility="{Binding GuideStatusSummaryVisibility}" Style="{StaticResource KroiraBodyStyle}" MaxLines="2" TextWrapping="WrapWholeWords" TextTrimming="CharacterEllipsis" />
                                                 <TextBlock Text="{Binding GuideUrlText}" Visibility="{Binding GuideUrlVisibility}" Style="{StaticResource KroiraBodyStyle}" MaxLines="2" TextWrapping="WrapWholeWords" TextTrimming="CharacterEllipsis" />
                                                 <TextBlock Text="{Binding GuideMatchText}" Visibility="{Binding GuideMatchVisibility}" Style="{StaticResource KroiraBodyStyle}" MaxLines="2" TextWrapping="WrapWholeWords" TextTrimming="CharacterEllipsis" />
+                                                <TextBlock Text="{Binding CatchupStatusText}" Visibility="{Binding CatchupStatusVisibility}" Style="{StaticResource KroiraBodyStyle}" MaxLines="2" TextWrapping="WrapWholeWords" TextTrimming="CharacterEllipsis" />
+                                                <TextBlock Text="{Binding CatchupLatestAttemptText}" Visibility="{Binding CatchupLatestAttemptVisibility}" Style="{StaticResource KroiraBodyStyle}" Foreground="{StaticResource KroiraTextSecondaryBrush}" MaxLines="3" TextWrapping="WrapWholeWords" TextTrimming="CharacterEllipsis" />
                                                 <Border Height="1" Background="{StaticResource KroiraBorderBrush}" Opacity="0.3" Margin="0,4,0,4" />
                                                 <TextBlock Text="Acquisition profile"
                                                            Visibility="{Binding AcquisitionProfileVisibility}"
@@ -704,6 +706,13 @@
                                                            Style="{StaticResource KroiraBodyStyle}"
                                                            Foreground="{StaticResource KroiraTextSecondaryBrush}"
                                                            MaxLines="2"
+                                                           TextWrapping="WrapWholeWords"
+                                                           TextTrimming="CharacterEllipsis" />
+                                                <TextBlock Text="{Binding CompanionStatusText}"
+                                                           Visibility="{Binding CompanionStatusVisibility}"
+                                                           Style="{StaticResource KroiraBodyStyle}"
+                                                           Foreground="{StaticResource KroiraTextSecondaryBrush}"
+                                                           MaxLines="3"
                                                            TextWrapping="WrapWholeWords"
                                                            TextTrimming="CharacterEllipsis" />
                                             </StackPanel>

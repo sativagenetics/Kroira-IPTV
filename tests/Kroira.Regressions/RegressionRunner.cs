@@ -16,6 +16,10 @@ internal sealed class RegressionRunner
         @"(?<=\b(?:Last successful sync was|Using data from|The last successful source sync was|Last sync attempt was) )\d{1,2}[./-]\d{1,2}[./-]\d{4} \d{1,2}:\d{2}",
         RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
+    private static readonly Regex GenericLocalTimestampPattern = new(
+        @"\b\d{1,2}[./-]\d{1,2}[./-]\d{4} \d{1,2}:\d{2}\b",
+        RegexOptions.Compiled | RegexOptions.CultureInvariant);
+
     public async Task<RegressionRunResult> RunAsync(RegressionRunnerOptions options)
     {
         var repoRoot = ResolveRepoRoot();
@@ -150,6 +154,8 @@ internal sealed class RegressionRunner
         services.AddSingleton<ICatalogSurfaceCountService, CatalogSurfaceCountService>();
         services.AddSingleton<IHomeRecommendationService, HomeRecommendationService>();
         services.AddSingleton<ISurfaceStateService, SurfaceStateService>();
+        services.AddSingleton<RegressionExternalUriLauncher>();
+        services.AddSingleton<IExternalUriLauncher>(provider => provider.GetRequiredService<RegressionExternalUriLauncher>());
         return services.BuildServiceProvider();
     }
 
@@ -195,7 +201,15 @@ internal sealed class RegressionRunner
                 EpgMode = source.EpgMode,
                 M3uImportMode = source.M3uImportMode,
                 ProxyScope = source.ProxyScope,
-                ProxyUrl = ResolveTokens(source.ProxyUrl, serverBaseUrl)
+                ProxyUrl = ResolveTokens(source.ProxyUrl, serverBaseUrl),
+                CompanionScope = source.CompanionScope,
+                CompanionMode = source.CompanionMode,
+                CompanionUrl = ResolveTokens(source.CompanionUrl, serverBaseUrl),
+                StalkerMacAddress = ResolveTokens(source.StalkerMacAddress, serverBaseUrl),
+                StalkerDeviceId = ResolveTokens(source.StalkerDeviceId, serverBaseUrl),
+                StalkerSerialNumber = ResolveTokens(source.StalkerSerialNumber, serverBaseUrl),
+                StalkerTimezone = ResolveTokens(source.StalkerTimezone, serverBaseUrl),
+                StalkerLocale = ResolveTokens(source.StalkerLocale, serverBaseUrl)
             });
             await db.SaveChangesAsync();
 
@@ -220,13 +234,82 @@ internal sealed class RegressionRunner
         await RunRuntimeMaintenanceAsync(provider, definition.RuntimeMaintenance);
         db.ChangeTracker.Clear();
 
+        List<PlaybackResolutionSnapshot>? playbackResolutions = null;
+        if (definition.PlaybackRequests.Count > 0)
+        {
+            playbackResolutions = await ExecutePlaybackRequestsAsync(
+                db,
+                bootstrapScope.ServiceProvider,
+                definition,
+                runtimeSources,
+                serverBaseUrl);
+            db.ChangeTracker.Clear();
+        }
+
+        List<CatchupResolutionSnapshot>? catchupResolutions = null;
+        if (definition.CatchupRequests.Count > 0)
+        {
+            catchupResolutions = await ExecuteCatchupRequestsAsync(
+                db,
+                bootstrapScope.ServiceProvider,
+                definition,
+                runtimeSources,
+                serverBaseUrl);
+            db.ChangeTracker.Clear();
+        }
+
+        List<ItemInspectionSnapshot>? itemInspections = null;
+        if (definition.InspectionRequests.Count > 0)
+        {
+            itemInspections = await ExecuteInspectionRequestsAsync(
+                db,
+                bootstrapScope.ServiceProvider,
+                definition,
+                runtimeSources,
+                serverBaseUrl);
+            db.ChangeTracker.Clear();
+        }
+
+        List<ExternalLaunchSnapshot>? externalLaunches = null;
+        if (definition.ExternalLaunchRequests.Count > 0)
+        {
+            externalLaunches = await ExecuteExternalLaunchRequestsAsync(
+                db,
+                bootstrapScope.ServiceProvider,
+                definition,
+                runtimeSources,
+                serverBaseUrl);
+            db.ChangeTracker.Clear();
+        }
+
         RegressionSurfaceSnapshotBundle? surfaces = null;
         if (definition.SurfaceLoads != null)
         {
             surfaces = await CaptureSurfaceSnapshotsAsync(bootstrapScope.ServiceProvider, definition.SurfaceLoads, serverBaseUrl);
         }
 
-        return await CaptureSnapshotAsync(db, runtimeSources, surfaces, definition, serverBaseUrl);
+        var snapshot = await CaptureSnapshotAsync(db, runtimeSources, surfaces, definition, serverBaseUrl);
+        if (playbackResolutions is { Count: > 0 })
+        {
+            snapshot.PlaybackResolutions = playbackResolutions;
+        }
+
+        if (catchupResolutions is { Count: > 0 })
+        {
+            snapshot.CatchupResolutions = catchupResolutions;
+        }
+
+        if (itemInspections is { Count: > 0 })
+        {
+            snapshot.ItemInspections = itemInspections;
+        }
+
+        if (externalLaunches is { Count: > 0 })
+        {
+            snapshot.ExternalLaunches = externalLaunches;
+        }
+
+        return snapshot;
     }
 
     private static async Task SeedDeterministicSettingsAsync(AppDbContext db)
@@ -321,7 +404,10 @@ internal sealed class RegressionRunner
                             ActiveMode = mutation.ActiveMode,
                             ManualEpgUrl = ResolveTokens(mutation.ManualEpgUrl, serverBaseUrl),
                             ProxyScope = mutation.ProxyScope,
-                            ProxyUrl = ResolveTokens(mutation.ProxyUrl, serverBaseUrl)
+                            ProxyUrl = ResolveTokens(mutation.ProxyUrl, serverBaseUrl),
+                            CompanionScope = mutation.CompanionScope,
+                            CompanionMode = mutation.CompanionMode,
+                            CompanionUrl = ResolveTokens(mutation.CompanionUrl, serverBaseUrl)
                         },
                         mutation.SyncNow);
                     db.ChangeTracker.Clear();
@@ -423,6 +509,478 @@ internal sealed class RegressionRunner
         {
             await maintenanceService.RunDeferredRepairAsync();
         }
+    }
+
+    private static async Task<List<PlaybackResolutionSnapshot>> ExecutePlaybackRequestsAsync(
+        AppDbContext db,
+        IServiceProvider services,
+        RegressionCaseDefinition definition,
+        IReadOnlyList<RuntimeSource> runtimeSources,
+        string serverBaseUrl)
+    {
+        var snapshots = new List<PlaybackResolutionSnapshot>(definition.PlaybackRequests.Count);
+        if (definition.PlaybackRequests.Count == 0)
+        {
+            return snapshots;
+        }
+
+        var sourceIdsByKey = runtimeSources.ToDictionary(item => item.Definition.Key, item => item.SourceProfileId, StringComparer.OrdinalIgnoreCase);
+        var providerStreamResolverService = services.GetRequiredService<IProviderStreamResolverService>();
+
+        foreach (var requestDefinition in definition.PlaybackRequests)
+        {
+            var sourceProfileId = ResolveSourceProfileId(sourceIdsByKey, requestDefinition.SourceKey);
+            var requestId = string.IsNullOrWhiteSpace(requestDefinition.Id)
+                ? $"{requestDefinition.SourceKey}:{requestDefinition.ContentType}:{requestDefinition.MatchName}"
+                : requestDefinition.Id.Trim();
+
+            string title;
+            string catalogStreamUrl;
+            switch (requestDefinition.ContentType)
+            {
+                case PlaybackContentType.Channel:
+                {
+                    var channel = await FindChannelAsync(
+                        db,
+                        sourceProfileId,
+                        requestDefinition.MatchName,
+                        $"playback request '{requestId}'");
+                    title = channel.Name;
+                    catalogStreamUrl = channel.StreamUrl;
+                    break;
+                }
+
+                case PlaybackContentType.Movie:
+                {
+                    var movie = await FindMovieAsync(
+                        db,
+                        sourceProfileId,
+                        requestDefinition.MatchName,
+                        $"playback request '{requestId}'");
+                    title = movie.Title;
+                    catalogStreamUrl = movie.StreamUrl;
+                    break;
+                }
+
+                case PlaybackContentType.Episode:
+                {
+                    var (episode, _) = await FindEpisodeAsync(
+                        db,
+                        sourceProfileId,
+                        requestDefinition.MatchName,
+                        $"playback request '{requestId}'");
+                    title = episode.Title;
+                    catalogStreamUrl = episode.StreamUrl;
+                    break;
+                }
+
+                default:
+                    throw new InvalidOperationException($"Unsupported playback request content type '{requestDefinition.ContentType}'.");
+            }
+
+            var resolution = await providerStreamResolverService.ResolveAsync(
+                db,
+                sourceProfileId,
+                catalogStreamUrl,
+                SourceNetworkPurpose.Playback);
+
+            snapshots.Add(new PlaybackResolutionSnapshot
+            {
+                Id = requestId,
+                SourceKey = requestDefinition.SourceKey,
+                ContentType = requestDefinition.ContentType.ToString(),
+                Title = NormalizeText(title, serverBaseUrl),
+                Success = resolution.Success,
+                CatalogStreamUrl = NormalizeText(resolution.CatalogStreamUrl, serverBaseUrl),
+                StreamUrl = NormalizeRedactedUrl(services, resolution.StreamUrl, serverBaseUrl),
+                UpstreamStreamUrl = NormalizeRedactedUrl(services, resolution.UpstreamStreamUrl, serverBaseUrl),
+                Message = NormalizeText(resolution.Message, serverBaseUrl),
+                ProviderSummary = NormalizeText(resolution.ProviderSummary, serverBaseUrl),
+                RoutingSummary = NormalizeText(resolution.RoutingSummary, serverBaseUrl),
+                CompanionStatus = resolution.Companion.Status.ToString(),
+                CompanionStatusText = NormalizeText(resolution.Companion.StatusText, serverBaseUrl)
+            });
+        }
+
+        return snapshots;
+    }
+
+    private static async Task<List<CatchupResolutionSnapshot>> ExecuteCatchupRequestsAsync(
+        AppDbContext db,
+        IServiceProvider services,
+        RegressionCaseDefinition definition,
+        IReadOnlyList<RuntimeSource> runtimeSources,
+        string serverBaseUrl)
+    {
+        var snapshots = new List<CatchupResolutionSnapshot>(definition.CatchupRequests.Count);
+        if (definition.CatchupRequests.Count == 0)
+        {
+            return snapshots;
+        }
+
+        var sourceIdsByKey = runtimeSources.ToDictionary(item => item.Definition.Key, item => item.SourceProfileId, StringComparer.OrdinalIgnoreCase);
+        var catchupService = services.GetRequiredService<ICatchupPlaybackService>();
+        var logicalCatalogStateService = services.GetRequiredService<ILogicalCatalogStateService>();
+        var profileService = services.GetRequiredService<IProfileStateService>();
+        var activeProfileId = await profileService.GetActiveProfileIdAsync(db);
+
+        foreach (var requestDefinition in definition.CatchupRequests)
+        {
+            var sourceProfileId = ResolveSourceProfileId(sourceIdsByKey, requestDefinition.SourceKey);
+            var channel = await FindChannelAsync(
+                db,
+                sourceProfileId,
+                requestDefinition.MatchName,
+                $"catchup request '{requestDefinition.Id}'");
+            var requestedAtUtc = ParseTimestampOrDefault(requestDefinition.RequestedAtUtc);
+            var program = await ResolveCatchupProgramAsync(db, requestDefinition, channel.Id, requestedAtUtc);
+            var logicalKey = logicalCatalogStateService.BuildChannelLogicalKey(channel);
+
+            var resolution = await catchupService.ResolveAsync(
+                db,
+                new CatchupPlaybackRequest
+                {
+                    ProfileId = activeProfileId,
+                    ChannelId = channel.Id,
+                    LogicalContentKey = logicalKey,
+                    PreferredSourceProfileId = sourceProfileId,
+                    RequestKind = requestDefinition.RequestKind,
+                    ProgramTitle = program.Title,
+                    ProgramStartTimeUtc = program.StartTimeUtc,
+                    ProgramEndTimeUtc = program.EndTimeUtc,
+                    RequestedAtUtc = requestedAtUtc
+                });
+
+            snapshots.Add(new CatchupResolutionSnapshot
+            {
+                Id = string.IsNullOrWhiteSpace(requestDefinition.Id)
+                    ? $"{requestDefinition.SourceKey}:{requestDefinition.MatchName}:{requestDefinition.RequestKind}"
+                    : requestDefinition.Id,
+                SourceKey = requestDefinition.SourceKey,
+                ChannelName = NormalizeText(channel.Name, serverBaseUrl),
+                RequestKind = requestDefinition.RequestKind.ToString(),
+                ProgramTitle = NormalizeText(program.Title, serverBaseUrl),
+                RequestedAtUtc = requestedAtUtc.ToString("O"),
+                Status = resolution.Status.ToString(),
+                Message = NormalizeText(resolution.Message, serverBaseUrl),
+                StreamUrl = NormalizeRedactedUrl(services, resolution.StreamUrl, serverBaseUrl),
+                UpstreamStreamUrl = NormalizeRedactedUrl(services, resolution.UpstreamStreamUrl, serverBaseUrl),
+                LiveStreamUrl = NormalizeRedactedUrl(services, resolution.LiveStreamUrl, serverBaseUrl),
+                RoutingSummary = NormalizeText(resolution.RoutingSummary, serverBaseUrl)
+            });
+        }
+
+        return snapshots;
+    }
+
+    private static async Task<List<ItemInspectionSnapshot>> ExecuteInspectionRequestsAsync(
+        AppDbContext db,
+        IServiceProvider services,
+        RegressionCaseDefinition definition,
+        IReadOnlyList<RuntimeSource> runtimeSources,
+        string serverBaseUrl)
+    {
+        var snapshots = new List<ItemInspectionSnapshot>(definition.InspectionRequests.Count);
+        if (definition.InspectionRequests.Count == 0)
+        {
+            return snapshots;
+        }
+
+        var sourceIdsByKey = runtimeSources.ToDictionary(item => item.Definition.Key, item => item.SourceProfileId, StringComparer.OrdinalIgnoreCase);
+        var inspectionService = services.GetRequiredService<IPlayableItemInspectionService>();
+
+        foreach (var requestDefinition in definition.InspectionRequests)
+        {
+            var requestId = string.IsNullOrWhiteSpace(requestDefinition.Id)
+                ? $"{requestDefinition.SourceKey}:{requestDefinition.ContentType}:{requestDefinition.MatchName}"
+                : requestDefinition.Id.Trim();
+            var requestContext = await BuildPlaybackRequestContextAsync(
+                db,
+                services,
+                sourceIdsByKey,
+                requestDefinition.SourceKey,
+                requestDefinition.ContentType,
+                requestDefinition.MatchName,
+                requestDefinition.CatchupRequestKind,
+                requestDefinition.ProgramTitle,
+                requestDefinition.RequestedAtUtc,
+                requestDefinition.ResolveBeforeInspect,
+                $"inspection request '{requestId}'");
+            var runtimeState = BuildInspectionRuntimeState(requestDefinition.RuntimeState, serverBaseUrl);
+            var inspection = await inspectionService.BuildAsync(requestContext.Context, runtimeState);
+
+            snapshots.Add(new ItemInspectionSnapshot
+            {
+                Id = requestId,
+                SourceKey = requestDefinition.SourceKey,
+                ContentType = requestDefinition.ContentType.ToString(),
+                Title = NormalizeText(inspection.Title, serverBaseUrl),
+                Subtitle = NormalizeText(inspection.Subtitle, serverBaseUrl),
+                IsCurrentPlayback = inspection.IsCurrentPlayback,
+                SupportsExternalLaunch = inspection.SupportsExternalLaunch,
+                StatusText = NormalizeText(inspection.StatusText, serverBaseUrl),
+                FailureText = NormalizeText(inspection.FailureText, serverBaseUrl),
+                SafetyText = NormalizeText(inspection.SafetyText, serverBaseUrl),
+                SafeReportText = NormalizeText(inspection.SafeReportText, serverBaseUrl),
+                Sections = inspection.Sections
+                    .Select(section => new ItemInspectionSectionSnapshot
+                    {
+                        Title = NormalizeText(section.Title, serverBaseUrl),
+                        Fields = section.Fields
+                            .Select(field => new ItemInspectionFieldSnapshot
+                            {
+                                Label = NormalizeText(field.Label, serverBaseUrl),
+                                Value = NormalizeText(field.Value, serverBaseUrl)
+                            })
+                            .ToList()
+                    })
+                    .ToList()
+            });
+        }
+
+        return snapshots;
+    }
+
+    private static async Task<List<ExternalLaunchSnapshot>> ExecuteExternalLaunchRequestsAsync(
+        AppDbContext db,
+        IServiceProvider services,
+        RegressionCaseDefinition definition,
+        IReadOnlyList<RuntimeSource> runtimeSources,
+        string serverBaseUrl)
+    {
+        var snapshots = new List<ExternalLaunchSnapshot>(definition.ExternalLaunchRequests.Count);
+        if (definition.ExternalLaunchRequests.Count == 0)
+        {
+            return snapshots;
+        }
+
+        var sourceIdsByKey = runtimeSources.ToDictionary(item => item.Definition.Key, item => item.SourceProfileId, StringComparer.OrdinalIgnoreCase);
+        var externalLaunchService = services.GetRequiredService<IExternalPlayerLaunchService>();
+        var externalUriLauncher = services.GetRequiredService<RegressionExternalUriLauncher>();
+        var redactionService = services.GetRequiredService<ISensitiveDataRedactionService>();
+
+        foreach (var requestDefinition in definition.ExternalLaunchRequests)
+        {
+            var requestId = string.IsNullOrWhiteSpace(requestDefinition.Id)
+                ? $"{requestDefinition.SourceKey}:{requestDefinition.ContentType}:{requestDefinition.MatchName}"
+                : requestDefinition.Id.Trim();
+            var requestContext = await BuildPlaybackRequestContextAsync(
+                db,
+                services,
+                sourceIdsByKey,
+                requestDefinition.SourceKey,
+                requestDefinition.ContentType,
+                requestDefinition.MatchName,
+                requestDefinition.CatchupRequestKind,
+                requestDefinition.ProgramTitle,
+                requestDefinition.RequestedAtUtc,
+                requestDefinition.ResolveBeforeLaunch,
+                $"external launch request '{requestId}'");
+            var launchCount = externalUriLauncher.Launches.Count;
+            var result = await externalLaunchService.LaunchAsync(
+                requestContext.Context,
+                requestDefinition.PreferCurrentResolvedStream);
+            var launch = externalUriLauncher.Launches.Count > launchCount
+                ? externalUriLauncher.Launches[^1]
+                : null;
+
+            snapshots.Add(new ExternalLaunchSnapshot
+            {
+                Id = requestId,
+                SourceKey = requestDefinition.SourceKey,
+                ContentType = requestDefinition.ContentType.ToString(),
+                Title = NormalizeText(requestContext.Title, serverBaseUrl),
+                Success = result.Success,
+                Message = NormalizeText(result.Message, serverBaseUrl),
+                ProviderSummary = NormalizeText(result.ProviderSummary, serverBaseUrl),
+                RoutingSummary = NormalizeText(result.RoutingSummary, serverBaseUrl),
+                ResolvedUrlText = NormalizeText(result.ResolvedUrlText, serverBaseUrl),
+                LaunchedUrl = launch == null
+                    ? string.Empty
+                    : NormalizeText(redactionService.RedactUrl(launch.Uri.ToString()), serverBaseUrl),
+                UsedApplicationPicker = launch?.ShowApplicationPicker ?? result.UsedApplicationPicker
+            });
+        }
+
+        return snapshots;
+    }
+
+    private static async Task<ResolvedPlaybackRequestContext> BuildPlaybackRequestContextAsync(
+        AppDbContext db,
+        IServiceProvider services,
+        IReadOnlyDictionary<string, int> sourceIdsByKey,
+        string sourceKey,
+        PlaybackContentType contentType,
+        string matchName,
+        CatchupRequestKind catchupRequestKind,
+        string programTitle,
+        string requestedAtUtcText,
+        bool resolveForPlayback,
+        string operationLabel)
+    {
+        var sourceProfileId = ResolveSourceProfileId(sourceIdsByKey, sourceKey);
+        var profileService = services.GetRequiredService<IProfileStateService>();
+        var logicalCatalogStateService = services.GetRequiredService<ILogicalCatalogStateService>();
+        var contentOperationalService = services.GetRequiredService<IContentOperationalService>();
+        var providerStreamResolverService = services.GetRequiredService<IProviderStreamResolverService>();
+        var catchupPlaybackService = services.GetRequiredService<ICatchupPlaybackService>();
+        var activeProfileId = await profileService.GetActiveProfileIdAsync(db);
+
+        string title;
+        var context = new PlaybackLaunchContext
+        {
+            ProfileId = activeProfileId,
+            ContentType = contentType,
+            PreferredSourceProfileId = sourceProfileId
+        };
+
+        switch (contentType)
+        {
+            case PlaybackContentType.Channel:
+            {
+                var channel = await FindChannelAsync(db, sourceProfileId, matchName, operationLabel);
+                title = channel.Name;
+                context.ContentId = channel.Id;
+                context.CatalogStreamUrl = channel.StreamUrl;
+                context.StreamUrl = channel.StreamUrl;
+                context.LiveStreamUrl = channel.StreamUrl;
+                break;
+            }
+
+            case PlaybackContentType.Movie:
+            {
+                var movie = await FindMovieAsync(db, sourceProfileId, matchName, operationLabel);
+                title = movie.Title;
+                context.ContentId = movie.Id;
+                context.CatalogStreamUrl = movie.StreamUrl;
+                context.StreamUrl = movie.StreamUrl;
+                break;
+            }
+
+            case PlaybackContentType.Episode:
+            {
+                var (episode, series) = await FindEpisodeAsync(db, sourceProfileId, matchName, operationLabel);
+                title = $"{series.Title} - {episode.Title}";
+                context.ContentId = episode.Id;
+                context.CatalogStreamUrl = episode.StreamUrl;
+                context.StreamUrl = episode.StreamUrl;
+                break;
+            }
+
+            default:
+                throw new InvalidOperationException($"Unsupported playback content type '{contentType}'.");
+        }
+
+        await logicalCatalogStateService.EnsureLaunchContextLogicalStateAsync(db, context);
+        if (catchupRequestKind != CatchupRequestKind.None)
+        {
+            if (contentType != PlaybackContentType.Channel)
+            {
+                throw new InvalidOperationException($"{operationLabel} cannot request catchup for content type '{contentType}'.");
+            }
+
+            var requestedAtUtc = ParseTimestampOrDefault(requestedAtUtcText);
+            var program = await ResolveCatchupProgramAsync(
+                db,
+                new RegressionCatchupRequestDefinition
+                {
+                    ProgramTitle = programTitle,
+                    RequestedAtUtc = requestedAtUtcText,
+                    RequestKind = catchupRequestKind
+                },
+                context.ContentId,
+                requestedAtUtc);
+
+            context.PlaybackMode = CatchupPlaybackMode.Catchup;
+            context.CatchupRequestKind = catchupRequestKind;
+            context.CatchupProgramTitle = program.Title;
+            context.CatchupProgramStartTimeUtc = program.StartTimeUtc;
+            context.CatchupProgramEndTimeUtc = program.EndTimeUtc;
+            context.CatchupRequestedAtUtc = requestedAtUtc;
+        }
+
+        if (resolveForPlayback)
+        {
+            if (catchupRequestKind != CatchupRequestKind.None)
+            {
+                await catchupPlaybackService.ResolveForContextAsync(db, context);
+            }
+            else
+            {
+                await contentOperationalService.ResolvePlaybackContextAsync(db, context);
+                await providerStreamResolverService.ResolvePlaybackContextAsync(
+                    db,
+                    context,
+                    SourceNetworkPurpose.Playback);
+            }
+        }
+
+        return new ResolvedPlaybackRequestContext(context, title);
+    }
+
+    private static PlayableItemInspectionRuntimeState? BuildInspectionRuntimeState(
+        RegressionInspectionRuntimeStateDefinition? definition,
+        string serverBaseUrl)
+    {
+        if (definition == null)
+        {
+            return null;
+        }
+
+        return new PlayableItemInspectionRuntimeState
+        {
+            IsCurrentPlayback = definition.IsCurrentPlayback,
+            SessionState = ResolveTokens(definition.SessionState, serverBaseUrl),
+            SessionMessage = ResolveTokens(definition.SessionMessage, serverBaseUrl),
+            Width = definition.Width,
+            Height = definition.Height,
+            FramesPerSecond = definition.FramesPerSecond,
+            VideoCodec = ResolveTokens(definition.VideoCodec, serverBaseUrl),
+            AudioCodec = ResolveTokens(definition.AudioCodec, serverBaseUrl),
+            ContainerFormat = ResolveTokens(definition.ContainerFormat, serverBaseUrl),
+            PixelFormat = ResolveTokens(definition.PixelFormat, serverBaseUrl),
+            IsHardwareDecodingActive = definition.IsHardwareDecodingActive,
+            PositionMs = definition.PositionMs,
+            DurationMs = definition.DurationMs,
+            IsSeekable = definition.IsSeekable
+        };
+    }
+
+    private static async Task<EpgProgram> ResolveCatchupProgramAsync(
+        AppDbContext db,
+        RegressionCatchupRequestDefinition request,
+        int channelId,
+        DateTime requestedAtUtc)
+    {
+        var programs = db.EpgPrograms
+            .AsNoTracking()
+            .Where(item => item.ChannelId == channelId);
+
+        EpgProgram? program;
+        if (!string.IsNullOrWhiteSpace(request.ProgramTitle))
+        {
+            program = await programs
+                .Where(item => item.Title == request.ProgramTitle)
+                .OrderBy(item => item.StartTimeUtc)
+                .FirstOrDefaultAsync();
+        }
+        else if (request.RequestKind == CatchupRequestKind.StartOver)
+        {
+            program = await programs
+                .Where(item => item.StartTimeUtc <= requestedAtUtc && item.EndTimeUtc > requestedAtUtc)
+                .OrderByDescending(item => item.StartTimeUtc)
+                .FirstOrDefaultAsync();
+        }
+        else
+        {
+            program = await programs
+                .Where(item => item.StartTimeUtc <= requestedAtUtc)
+                .OrderByDescending(item => item.StartTimeUtc)
+                .FirstOrDefaultAsync();
+        }
+
+        return program ?? throw new InvalidOperationException(
+            $"Catchup request '{request.Id}' could not resolve a guide programme for channel id {channelId}.");
     }
 
     private static async Task<RegressionSurfaceSnapshotBundle> CaptureSurfaceSnapshotsAsync(
@@ -544,6 +1102,19 @@ internal sealed class RegressionRunner
         RegressionMutationDefinition mutation)
     {
         var sourceProfileId = ResolveSourceProfileId(sourceIdsByKey, mutation.SourceKey);
+        return await FindChannelAsync(
+            db,
+            sourceProfileId,
+            mutation.MatchName,
+            $"mutation '{mutation.Kind}'");
+    }
+
+    private static async Task<Channel> FindChannelAsync(
+        AppDbContext db,
+        int sourceProfileId,
+        string matchName,
+        string operationLabel)
+    {
         var channel = await db.Channels
             .Join(
                 db.ChannelCategories,
@@ -555,12 +1126,12 @@ internal sealed class RegressionRunner
                     category.SourceProfileId
                 })
             .Where(item => item.SourceProfileId == sourceProfileId &&
-                           item.Channel.Name == mutation.MatchName)
+                           item.Channel.Name == matchName)
             .Select(item => item.Channel)
             .FirstOrDefaultAsync();
 
         return channel ?? throw new InvalidOperationException(
-            $"Regression mutation could not find channel '{mutation.MatchName}' in source '{mutation.SourceKey}'.");
+            $"Regression {operationLabel} could not find channel '{matchName}' in source id {sourceProfileId}.");
     }
 
     private static async Task<Movie> FindMovieAsync(
@@ -569,11 +1140,24 @@ internal sealed class RegressionRunner
         RegressionMutationDefinition mutation)
     {
         var sourceProfileId = ResolveSourceProfileId(sourceIdsByKey, mutation.SourceKey);
+        return await FindMovieAsync(
+            db,
+            sourceProfileId,
+            mutation.MatchName,
+            $"mutation '{mutation.Kind}'");
+    }
+
+    private static async Task<Movie> FindMovieAsync(
+        AppDbContext db,
+        int sourceProfileId,
+        string matchName,
+        string operationLabel)
+    {
         var movie = await db.Movies
-            .FirstOrDefaultAsync(item => item.SourceProfileId == sourceProfileId && item.Title == mutation.MatchName);
+            .FirstOrDefaultAsync(item => item.SourceProfileId == sourceProfileId && item.Title == matchName);
 
         return movie ?? throw new InvalidOperationException(
-            $"Regression mutation could not find movie '{mutation.MatchName}' in source '{mutation.SourceKey}'.");
+            $"Regression {operationLabel} could not find movie '{matchName}' in source id {sourceProfileId}.");
     }
 
     private static async Task<(Episode Episode, Series Series)> FindEpisodeAsync(
@@ -582,6 +1166,19 @@ internal sealed class RegressionRunner
         RegressionMutationDefinition mutation)
     {
         var sourceProfileId = ResolveSourceProfileId(sourceIdsByKey, mutation.SourceKey);
+        return await FindEpisodeAsync(
+            db,
+            sourceProfileId,
+            mutation.MatchName,
+            $"mutation '{mutation.Kind}'");
+    }
+
+    private static async Task<(Episode Episode, Series Series)> FindEpisodeAsync(
+        AppDbContext db,
+        int sourceProfileId,
+        string matchName,
+        string operationLabel)
+    {
         var row = await db.Episodes
             .Join(
                 db.Seasons,
@@ -598,11 +1195,11 @@ internal sealed class RegressionRunner
                     Series = series
                 })
             .FirstOrDefaultAsync(item => item.Series.SourceProfileId == sourceProfileId &&
-                                         item.Episode.Title == mutation.MatchName);
+                                         item.Episode.Title == matchName);
 
         return row == null
             ? throw new InvalidOperationException(
-                $"Regression mutation could not find episode '{mutation.MatchName}' in source '{mutation.SourceKey}'.")
+                $"Regression {operationLabel} could not find episode '{matchName}' in source id {sourceProfileId}.")
             : (row.Episode, row.Series);
     }
 
@@ -819,6 +1416,11 @@ internal sealed class RegressionRunner
             .Where(item => sourceIds.Contains(item.SourceProfileId))
             .ToDictionaryAsync(item => item.SourceProfileId);
 
+        var stalkerSnapshots = await db.StalkerPortalSnapshots
+            .AsNoTracking()
+            .Where(item => sourceIds.Contains(item.SourceProfileId))
+            .ToDictionaryAsync(item => item.SourceProfileId);
+
         var acquisitionProfiles = await db.SourceAcquisitionProfiles
             .AsNoTracking()
             .Where(item => sourceIds.Contains(item.SourceProfileId))
@@ -887,8 +1489,18 @@ internal sealed class RegressionRunner
             .AsNoTracking()
             .Where(item => channelIds.Contains(item.ChannelId))
             .ToListAsync();
+        var catchupAttempts = await db.CatchupPlaybackAttempts
+            .AsNoTracking()
+            .Where(item => sourceIds.Contains(item.SourceProfileId))
+            .OrderBy(item => item.SourceProfileId)
+            .ThenBy(item => item.RequestedAtUtc)
+            .ThenBy(item => item.Id)
+            .ToListAsync();
 
         var contentNames = BuildContentNameLookup(channelsBySource.Select(item => item.Channel).ToList(), moviesBySource);
+        var channelNameLookup = channelsBySource
+            .GroupBy(item => item.Channel.Id)
+            .ToDictionary(group => group.Key, group => group.First().Channel.Name);
 
         var operationalStates = await db.LogicalOperationalStates
             .AsNoTracking()
@@ -902,6 +1514,7 @@ internal sealed class RegressionRunner
             sourceProfiles.TryGetValue(sourceId, out var profile);
             credentials.TryGetValue(sourceId, out var credential);
             syncStates.TryGetValue(sourceId, out var syncState);
+            stalkerSnapshots.TryGetValue(sourceId, out var stalkerSnapshot);
             acquisitionProfiles.TryGetValue(sourceId, out var acquisitionProfile);
             acquisitionRunLookup.TryGetValue(sourceId, out var acquisitionRun);
             healthReports.TryGetValue(sourceId, out var health);
@@ -947,6 +1560,7 @@ internal sealed class RegressionRunner
                 AcquisitionRun = BuildAcquisitionRunSnapshot(acquisitionRun, serverBaseUrl),
                 Health = BuildHealthSnapshot(health, serverBaseUrl),
                 Epg = BuildEpgSnapshot(epg, serverBaseUrl),
+                StalkerPortal = BuildStalkerPortalSnapshot(stalkerSnapshot, serverBaseUrl),
                 Channels = sourceChannels.Select(item => BuildChannelSnapshot(item, serverBaseUrl)).ToList(),
                 Movies = sourceMovies.Select(item => BuildMovieSnapshot(item, serverBaseUrl)).ToList(),
                 Series = sourceSeries.Select(item => BuildSeriesSnapshot(item, serverBaseUrl)).ToList(),
@@ -958,7 +1572,15 @@ internal sealed class RegressionRunner
                 AcquisitionEvidence = acquisitionEvidence
                     .Where(item => item.SourceProfileId == sourceId)
                     .Select(item => BuildAcquisitionEvidenceSnapshot(item, serverBaseUrl))
-                    .ToList()
+                    .ToList(),
+                CatchupAttempts = catchupAttempts
+                    .Where(item => item.SourceProfileId == sourceId)
+                    .Select(item => BuildCatchupAttemptSnapshot(item, channelNameLookup, serverBaseUrl))
+                    .ToList() switch
+                    {
+                        { Count: > 0 } items => items,
+                        _ => null
+                    }
             });
         }
 
@@ -1056,7 +1678,46 @@ internal sealed class RegressionRunner
             EpgMode = credential?.EpgMode.ToString() ?? string.Empty,
             M3uImportMode = credential?.M3uImportMode.ToString() ?? string.Empty,
             ProxyScope = credential?.ProxyScope.ToString() ?? string.Empty,
-            ProxyUrl = NormalizeText(credential?.ProxyUrl, serverBaseUrl)
+            ProxyUrl = NormalizeText(credential?.ProxyUrl, serverBaseUrl),
+            CompanionScope = credential?.CompanionScope.ToString() ?? string.Empty,
+            CompanionMode = credential?.CompanionMode.ToString() ?? string.Empty,
+            CompanionUrl = NormalizeText(credential?.CompanionUrl, serverBaseUrl),
+            StalkerMacAddress = NormalizeText(credential?.StalkerMacAddress, serverBaseUrl),
+            StalkerDeviceId = NormalizeText(credential?.StalkerDeviceId, serverBaseUrl),
+            StalkerSerialNumber = NormalizeText(credential?.StalkerSerialNumber, serverBaseUrl),
+            StalkerTimezone = NormalizeText(credential?.StalkerTimezone, serverBaseUrl),
+            StalkerLocale = NormalizeText(credential?.StalkerLocale, serverBaseUrl),
+            StalkerApiUrl = NormalizeText(credential?.StalkerApiUrl, serverBaseUrl)
+        };
+    }
+
+    private static StalkerPortalStateSnapshot? BuildStalkerPortalSnapshot(Kroira.App.Models.StalkerPortalSnapshot? snapshot, string serverBaseUrl)
+    {
+        if (snapshot == null)
+        {
+            return null;
+        }
+
+        return new StalkerPortalStateSnapshot
+        {
+            PortalName = NormalizeText(snapshot.PortalName, serverBaseUrl),
+            PortalVersion = NormalizeText(snapshot.PortalVersion, serverBaseUrl),
+            ProfileName = NormalizeText(snapshot.ProfileName, serverBaseUrl),
+            ProfileId = NormalizeText(snapshot.ProfileId, serverBaseUrl),
+            MacAddress = NormalizeText(snapshot.MacAddress, serverBaseUrl),
+            DeviceId = NormalizeText(snapshot.DeviceId, serverBaseUrl),
+            SerialNumber = NormalizeText(snapshot.SerialNumber, serverBaseUrl),
+            Locale = NormalizeText(snapshot.Locale, serverBaseUrl),
+            Timezone = NormalizeText(snapshot.Timezone, serverBaseUrl),
+            DiscoveredApiUrl = NormalizeText(snapshot.DiscoveredApiUrl, serverBaseUrl),
+            SupportsLive = snapshot.SupportsLive,
+            SupportsMovies = snapshot.SupportsMovies,
+            SupportsSeries = snapshot.SupportsSeries,
+            LiveCategoryCount = snapshot.LiveCategoryCount,
+            MovieCategoryCount = snapshot.MovieCategoryCount,
+            SeriesCategoryCount = snapshot.SeriesCategoryCount,
+            Summary = NormalizeText(snapshot.LastSummary, serverBaseUrl),
+            Error = NormalizeText(snapshot.LastError, serverBaseUrl)
         };
     }
 
@@ -1240,6 +1901,29 @@ internal sealed class RegressionRunner
         };
     }
 
+    private static CatchupAttemptSnapshot BuildCatchupAttemptSnapshot(
+        CatchupPlaybackAttempt item,
+        IReadOnlyDictionary<int, string> channelNameLookup,
+        string serverBaseUrl)
+    {
+        return new CatchupAttemptSnapshot
+        {
+            ChannelName = channelNameLookup.TryGetValue(item.ChannelId, out var channelName)
+                ? NormalizeText(channelName, serverBaseUrl)
+                : string.Empty,
+            LogicalContentKey = NormalizeText(item.LogicalContentKey, serverBaseUrl),
+            RequestKind = item.RequestKind.ToString(),
+            Status = item.Status.ToString(),
+            ProgramTitle = NormalizeText(item.ProgramTitle, serverBaseUrl),
+            WindowHours = item.WindowHours,
+            Message = NormalizeText(item.Message, serverBaseUrl),
+            RoutingSummary = NormalizeText(item.RoutingSummary, serverBaseUrl),
+            ProviderMode = NormalizeText(item.ProviderMode, serverBaseUrl),
+            ProviderSource = NormalizeText(item.ProviderSource, serverBaseUrl),
+            ResolvedStreamUrl = NormalizeText(item.ResolvedStreamUrl, serverBaseUrl)
+        };
+    }
+
     private static Dictionary<(OperationalContentType, int), string> BuildContentNameLookup(IReadOnlyCollection<Channel> channels, IReadOnlyCollection<Movie> movies)
     {
         var lookup = new Dictionary<(OperationalContentType, int), string>();
@@ -1374,7 +2058,19 @@ internal sealed class RegressionRunner
         }
 
         var normalized = value.Trim().Replace(serverBaseUrl, "[fixture-server]", StringComparison.OrdinalIgnoreCase);
-        return AbsoluteSyncTimestampPattern.Replace(normalized, "[timestamp]");
+        normalized = AbsoluteSyncTimestampPattern.Replace(normalized, "[timestamp]");
+        return GenericLocalTimestampPattern.Replace(normalized, "[timestamp]");
+    }
+
+    private static string NormalizeRedactedUrl(IServiceProvider services, string? value, string serverBaseUrl)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return string.Empty;
+        }
+
+        var redactionService = services.GetRequiredService<ISensitiveDataRedactionService>();
+        return NormalizeText(redactionService.RedactUrl(value), serverBaseUrl);
     }
 
     private static string ResolveRepoRoot()
@@ -1413,6 +2109,20 @@ internal sealed class RegressionRunner
         public HomeSurfaceSnapshot? Home { get; set; }
         public LiveTvSurfaceSnapshot? LiveTv { get; set; }
         public ContinueWatchingSurfaceSnapshot? ContinueWatching { get; set; }
+    }
+
+    private sealed record ResolvedPlaybackRequestContext(PlaybackLaunchContext Context, string Title);
+    private sealed record RegressionExternalLaunchRecord(Uri Uri, bool ShowApplicationPicker);
+
+    private sealed class RegressionExternalUriLauncher : IExternalUriLauncher
+    {
+        public List<RegressionExternalLaunchRecord> Launches { get; } = [];
+
+        public Task<bool> LaunchAsync(Uri uri, bool showApplicationPicker)
+        {
+            Launches.Add(new RegressionExternalLaunchRecord(uri, showApplicationPicker));
+            return Task.FromResult(true);
+        }
     }
 
     private sealed record ChannelFixtureRow(int SourceProfileId, string CategoryName, Channel Channel);

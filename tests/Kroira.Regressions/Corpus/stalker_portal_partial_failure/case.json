@@ -1,0 +1,32 @@
+{
+  "id": "stalker_portal_partial_failure",
+  "description": "Stalker portal with live and movie import still succeeds when the series layer is broken.",
+  "sources": [
+    {
+      "key": "stalker-partial",
+      "name": "Fixture Stalker Partial",
+      "type": "Stalker",
+      "url": "{{server}}/stalker/c",
+      "stalkerMacAddress": "00:1A:79:10:00:02",
+      "stalkerTimezone": "Europe/Istanbul",
+      "stalkerLocale": "en",
+      "epgMode": "Detected",
+      "refreshTrigger": "InitialImport",
+      "refreshScope": "Full"
+    }
+  ],
+  "playbackRequests": [
+    {
+      "id": "stalker-partial-live-playback",
+      "sourceKey": "stalker-partial",
+      "contentType": "Channel",
+      "matchName": "Fixture Sports HD"
+    },
+    {
+      "id": "stalker-partial-movie-playback",
+      "sourceKey": "stalker-partial",
+      "contentType": "Movie",
+      "matchName": "Fixture Sports Movie"
+    }
+  ]
+}

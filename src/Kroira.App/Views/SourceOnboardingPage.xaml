@@ -14,7 +14,7 @@
             <Border Grid.Row="0" Style="{StaticResource KroiraPanelStyle}">
                 <StackPanel>
                     <TextBlock Text="Add Source" Style="{StaticResource KroiraPageTitleStyle}" />
-                    <TextBlock Text="Connect your own M3U playlist or Xtream provider for live TV, movies, series, and guide data." Style="{StaticResource KroiraPageSubtitleStyle}" Margin="0,4,0,0" />
+                    <TextBlock Text="Connect your own M3U playlist, Xtream provider, or Stalker portal for live TV, movies, series, and guide data." Style="{StaticResource KroiraPageSubtitleStyle}" Margin="0,4,0,0" />
                 </StackPanel>
             </Border>
 
@@ -25,6 +25,7 @@
                     <RadioButtons Header="Source Format" SelectedIndex="{x:Bind ViewModel.SelectedFormatIndex, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
                         <RadioButton Content="M3U (URL or Local File)" />
                         <RadioButton Content="Xtream Codes" />
+                        <RadioButton Content="Stalker Portal" />
                     </RadioButtons>
 
                     <StackPanel Visibility="{x:Bind ViewModel.M3UVisibility, Mode=OneWay}" Spacing="8">
@@ -45,6 +46,22 @@
                         <TextBox Header="Server URL" Style="{StaticResource KroiraTextBoxStyle}" Text="{x:Bind ViewModel.XtreamUrl, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="http://domain.com:8080" />
                         <TextBox Header="Username" Style="{StaticResource KroiraTextBoxStyle}" Text="{x:Bind ViewModel.XtreamUsername, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                         <PasswordBox Header="Password" Password="{x:Bind ViewModel.XtreamPassword, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                    </StackPanel>
+
+                    <StackPanel Visibility="{x:Bind ViewModel.StalkerVisibility, Mode=OneWay}" Spacing="8">
+                        <TextBlock Text="Stalker portal" Style="{StaticResource KroiraSectionTitleStyle}" />
+                        <TextBox Header="Portal URL" Style="{StaticResource KroiraTextBoxStyle}" Text="{x:Bind ViewModel.StalkerPortalUrl, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="http://portal.example.com/c/" />
+                        <TextBox Header="MAC Address" Style="{StaticResource KroiraTextBoxStyle}" Text="{x:Bind ViewModel.StalkerMacAddress, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="00:1A:79:00:00:01" />
+                        <TextBox Header="Device ID (Optional)" Style="{StaticResource KroiraTextBoxStyle}" Text="{x:Bind ViewModel.StalkerDeviceId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="Leave blank to derive from the MAC address" />
+                        <TextBox Header="Serial Number (Optional)" Style="{StaticResource KroiraTextBoxStyle}" Text="{x:Bind ViewModel.StalkerSerialNumber, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="Leave blank to derive from the MAC address" />
+                        <Grid ColumnSpacing="12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBox Grid.Column="0" Header="Timezone" Style="{StaticResource KroiraTextBoxStyle}" Text="{x:Bind ViewModel.StalkerTimezone, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                            <TextBox Grid.Column="1" Header="Locale" Style="{StaticResource KroiraTextBoxStyle}" Text="{x:Bind ViewModel.StalkerLocale, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                        </Grid>
                     </StackPanel>
 
                     <StackPanel Spacing="8">
@@ -80,6 +97,28 @@
                                  Style="{StaticResource KroiraTextBoxStyle}"
                                  Text="{x:Bind ViewModel.ProxyUrl, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                  PlaceholderText="http://proxy-host:port or socks5://proxy-host:port" />
+                    </StackPanel>
+
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="Local companion relay" Style="{StaticResource KroiraSectionTitleStyle}" />
+                        <RadioButtons SelectedIndex="{x:Bind ViewModel.SelectedCompanionScopeIndex, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                            <RadioButton Content="Disabled" />
+                            <RadioButton Content="Playback only" />
+                            <RadioButton Content="Playback + probes" />
+                        </RadioButtons>
+                        <TextBlock Text="{x:Bind ViewModel.CompanionSummaryText, Mode=OneWay}"
+                                   Foreground="{StaticResource KroiraTextSecondaryBrush}"
+                                   TextWrapping="WrapWholeWords" />
+                        <RadioButtons Visibility="{x:Bind ViewModel.CompanionModeVisibility, Mode=OneWay}"
+                                      SelectedIndex="{x:Bind ViewModel.SelectedCompanionModeIndex, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                            <RadioButton Content="Pass-through relay" />
+                            <RadioButton Content="Buffered relay" />
+                        </RadioButtons>
+                        <TextBox Visibility="{x:Bind ViewModel.CompanionUrlVisibility, Mode=OneWay}"
+                                 Header="Companion endpoint"
+                                 Style="{StaticResource KroiraTextBoxStyle}"
+                                 Text="{x:Bind ViewModel.CompanionUrl, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                 PlaceholderText="http://127.0.0.1:9318/kroira-companion" />
                     </StackPanel>
 
                     <Button Content="Save and sync"

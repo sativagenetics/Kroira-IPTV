@@ -1,0 +1,12 @@
+{
+  "js": [
+    {
+      "id": "501",
+      "name": "Fixture News HD",
+      "tv_genre_id": "10",
+      "logo": "/stalker/assets/news.png",
+      "xmltv_id": "fixture.news",
+      "cmd": "ffmpeg /stalker/live/501.ts"
+    }
+  ]
+}

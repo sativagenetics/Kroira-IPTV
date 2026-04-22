@@ -109,17 +109,33 @@ namespace Kroira.App.Services
                     ManualEpgUrl = credential.EpgUrl,
                     EpgMode = credential.EpgMode,
                     ProxyScope = credential.ProxyScope,
-                    ProxyUrl = credential.ProxyUrl
+                    ProxyUrl = credential.ProxyUrl,
+                    CompanionScope = credential.CompanionScope,
+                    CompanionMode = credential.CompanionMode,
+                    CompanionUrl = credential.CompanionUrl
                 })
                 .ToDictionaryAsync(credential => credential.SourceProfileId);
             var healthReports = await db.SourceHealthReports
                 .AsNoTracking()
                 .Where(report => ids.Contains(report.SourceProfileId))
                 .ToDictionaryAsync(report => report.SourceProfileId);
+            var catchupAttempts = await db.CatchupPlaybackAttempts
+                .AsNoTracking()
+                .Where(item => ids.Contains(item.SourceProfileId))
+                .OrderByDescending(item => item.RequestedAtUtc)
+                .ThenByDescending(item => item.Id)
+                .ToListAsync();
+            var latestCatchupAttemptLookup = catchupAttempts
+                .GroupBy(item => item.SourceProfileId)
+                .ToDictionary(group => group.Key, group => group.First());
             var acquisitionProfiles = await db.SourceAcquisitionProfiles
                 .AsNoTracking()
                 .Where(profile => ids.Contains(profile.SourceProfileId))
                 .ToDictionaryAsync(profile => profile.SourceProfileId);
+            var stalkerSnapshots = await db.StalkerPortalSnapshots
+                .AsNoTracking()
+                .Where(item => ids.Contains(item.SourceProfileId))
+                .ToDictionaryAsync(item => item.SourceProfileId);
             var acquisitionRuns = await db.SourceAcquisitionRuns
                 .AsNoTracking()
                 .Where(run => ids.Contains(run.SourceProfileId))
@@ -300,6 +316,15 @@ namespace Kroira.App.Services
                         category => category.Id,
                         channel => channel.ChannelCategoryId,
                         (category, channel) => category.SourceProfileId));
+            var catchupCounts = await CountBySourceAsync(
+                db.ChannelCategories
+                    .AsNoTracking()
+                    .Where(category => ids.Contains(category.SourceProfileId))
+                    .Join(
+                        db.Channels.AsNoTracking().Where(channel => channel.SupportsCatchup),
+                        category => category.Id,
+                        channel => channel.ChannelCategoryId,
+                        (category, channel) => category.SourceProfileId));
             var movieCounts = await CountBySourceAsync(
                 db.Movies
                     .AsNoTracking()
@@ -329,6 +354,7 @@ namespace Kroira.App.Services
                 credentials.TryGetValue(sourceId, out var credential);
                 epgLogs.TryGetValue(sourceId, out var epgLog);
                 healthReports.TryGetValue(sourceId, out var healthReport);
+                latestCatchupAttemptLookup.TryGetValue(sourceId, out var catchupAttempt);
                 acquisitionProfiles.TryGetValue(sourceId, out var acquisitionProfile);
                 latestRunLookup.TryGetValue(sourceId, out var acquisitionRun);
                 componentLookup.TryGetValue(sourceId, out var sourceComponents);
@@ -336,9 +362,11 @@ namespace Kroira.App.Services
                 issueLookup.TryGetValue(sourceId, out var sourceIssues);
                 acquisitionEvidenceLookup.TryGetValue(sourceId, out var sourceEvidence);
                 operationalLookup.TryGetValue(sourceId, out var operationalView);
+                stalkerSnapshots.TryGetValue(sourceId, out var stalkerSnapshot);
 
                 var sourceType = profile?.Type ?? SourceType.M3U;
                 var liveCount = healthReport?.TotalChannelCount ?? (liveCounts.TryGetValue(sourceId, out var live) ? live : 0);
+                var catchupCount = catchupCounts.TryGetValue(sourceId, out var catchup) ? catchup : 0;
                 var movieCount = healthReport?.TotalMovieCount ?? (movieCounts.TryGetValue(sourceId, out var movies) ? movies : 0);
                 var seriesCount = healthReport?.TotalSeriesCount ?? (seriesCounts.TryGetValue(sourceId, out var series) ? series : 0);
                 var matchedCount = Math.Min(healthReport?.ChannelsWithEpgMatchCount ?? (matchedCounts.TryGetValue(sourceId, out var matched) ? matched : 0), liveCount);
@@ -424,6 +452,11 @@ namespace Kroira.App.Services
                         : syncState!.AutoRefreshSummary,
                     NextAutoRefreshText = FormatTimestamp(syncState?.NextAutoRefreshDueAtUtc),
                     LastAutoRefreshText = FormatTimestamp(syncState?.LastAutoRefreshSuccessAtUtc),
+                    CatchupChannelCount = catchupCount,
+                    CatchupStatusText = BuildCatchupStatusText(catchupCount),
+                    CatchupLatestAttemptText = BuildCatchupAttemptText(catchupAttempt),
+                    StalkerPortalSummaryText = BuildStalkerPortalSummary(stalkerSnapshot),
+                    StalkerPortalErrorText = stalkerSnapshot?.LastError ?? string.Empty,
                     AcquisitionProfileKey = acquisitionProfile?.ProfileKey ?? string.Empty,
                     AcquisitionProfileLabel = acquisitionProfile?.ProfileLabel ?? string.Empty,
                     AcquisitionProviderKey = acquisitionProfile?.ProviderKey ?? string.Empty,
@@ -440,7 +473,8 @@ namespace Kroira.App.Services
                     AcquisitionLastRunText = FormatTimestamp(acquisitionRun?.CompletedAtUtc ?? acquisitionRun?.StartedAtUtc),
                     OperationalStatusText = BuildOperationalStatusText(operationalView),
                     ProxyStatusText = BuildProxyStatusText(credential),
-                    GuideAvailableForLive = liveCount == 0 || status is EpgStatus.Ready or EpgStatus.ManualOverride,
+                    CompanionStatusText = BuildCompanionStatusText(credential),
+                    GuideAvailableForLive = liveCount == 0 || sourceType == SourceType.Stalker || status is EpgStatus.Ready or EpgStatus.ManualOverride,
                     IsPartialGuideMatch = resultCode == EpgSyncResultCode.PartialMatch,
                     HealthComponents = sourceComponents ?? Array.Empty<SourceDiagnosticsComponentSnapshot>(),
                     HealthProbes = sourceProbes ?? Array.Empty<SourceDiagnosticsProbeSnapshot>(),
@@ -519,6 +553,13 @@ namespace Kroira.App.Services
                 return EpgStatus.UnavailableNoXmltv;
             }
 
+            if (sourceType == SourceType.Stalker)
+            {
+                return string.IsNullOrWhiteSpace(detectedEpgUrl) && string.IsNullOrWhiteSpace(manualEpgUrl)
+                    ? EpgStatus.Unknown
+                    : EpgStatus.Unknown;
+            }
+
             if (sourceType == SourceType.M3U && liveCount > 0 && string.IsNullOrWhiteSpace(detectedEpgUrl) && string.IsNullOrWhiteSpace(manualEpgUrl))
             {
                 return EpgStatus.UnavailableNoXmltv;
@@ -576,13 +617,19 @@ namespace Kroira.App.Services
 
             if (activeMode == EpgActiveMode.None)
             {
-                warnings.Add("Guide mode is disabled for this source.");
+                if (sourceType != SourceType.Stalker)
+                {
+                    warnings.Add("Guide mode is disabled for this source.");
+                }
+
                 return warnings;
             }
 
             if (status == EpgStatus.UnavailableNoXmltv)
             {
-                warnings.Add("Provider does not advertise an XMLTV guide URL.");
+                warnings.Add(sourceType == SourceType.Stalker
+                    ? "Manual XMLTV is not configured for this Stalker source."
+                    : "Provider does not advertise an XMLTV guide URL.");
             }
 
             if (status == EpgStatus.FailedFetchOrParse)
@@ -806,9 +853,12 @@ namespace Kroira.App.Services
             }
 
             if (!string.IsNullOrWhiteSpace(activeXmltvUrl)) return $"Detected XMLTV active. {Trim(activeXmltvUrl, 120)}";
-            return sourceType == SourceType.M3U
-                ? "No XMLTV URL was detected from the playlist header."
-                : "Xtream XMLTV will be derived from provider credentials on the next sync.";
+            return sourceType switch
+            {
+                SourceType.M3U => "No XMLTV URL was detected from the playlist header.",
+                SourceType.Stalker => "No XMLTV feed is active. Add a manual XMLTV URL if this portal has guide data.",
+                _ => "Xtream XMLTV will be derived from provider credentials on the next sync."
+            };
         }
 
         private static string FormatMatchBreakdown(string? matchBreakdown, int matchedCount, int unmatchedCount, int currentCoverageCount, int nextCoverageCount, int liveCount)
@@ -922,6 +972,25 @@ namespace Kroira.App.Services
                 : $"{scopeText}: {credential.ProxyUrl}";
         }
 
+        private static string BuildCompanionStatusText(SourceCredentialView? credential)
+        {
+            if (credential == null || credential.CompanionScope == SourceCompanionScope.Disabled)
+            {
+                return "Local companion relay off";
+            }
+
+            var scopeText = credential.CompanionScope == SourceCompanionScope.PlaybackAndProbing
+                ? "Playback + probe companion"
+                : "Playback companion";
+            var modeText = credential.CompanionMode == SourceCompanionRelayMode.Buffered
+                ? "buffered relay"
+                : "pass-through relay";
+
+            return string.IsNullOrWhiteSpace(credential.CompanionUrl)
+                ? $"{scopeText}: {modeText}"
+                : $"{scopeText}: {modeText} via {credential.CompanionUrl}";
+        }
+
         private static string BuildAcquisitionRunStatus(SourceAcquisitionRun? run)
         {
             if (run == null)
@@ -959,6 +1028,40 @@ namespace Kroira.App.Services
             return $"raw {run.RawItemCount:N0} | live {run.LiveCount:N0} | movies {run.MovieCount:N0} | series {run.SeriesCount:N0} | episodes {run.EpisodeCount:N0} | alias {run.AliasMatchCount:N0} | regex {run.RegexMatchCount:N0} | fuzzy {run.FuzzyMatchCount:N0} | probes ok {run.ProbeSuccessCount:N0} | probes fail {run.ProbeFailureCount:N0}";
         }
 
+        private static string BuildCatchupStatusText(int catchupCount)
+        {
+            return catchupCount <= 0
+                ? "No live channels advertise catchup on this source."
+                : $"{catchupCount:N0} live channel(s) advertise catchup or start-over support.";
+        }
+
+        private static string BuildCatchupAttemptText(CatchupPlaybackAttempt? attempt)
+        {
+            if (attempt == null)
+            {
+                return "No catchup playback attempts recorded yet.";
+            }
+
+            var normalizedTimestamp = attempt.RequestedAtUtc.Kind == DateTimeKind.Utc
+                ? attempt.RequestedAtUtc
+                : DateTime.SpecifyKind(attempt.RequestedAtUtc, DateTimeKind.Utc);
+            var requestedAtText = normalizedTimestamp.ToLocalTime().ToString("g");
+            return $"Last catchup attempt {requestedAtText}: {attempt.Status}. {attempt.Message}";
+        }
+
+        private static string BuildStalkerPortalSummary(StalkerPortalSnapshot? snapshot)
+        {
+            if (snapshot == null)
+            {
+                return string.Empty;
+            }
+
+            var portalName = string.IsNullOrWhiteSpace(snapshot.PortalName) ? "Stalker portal" : snapshot.PortalName;
+            var profileName = string.IsNullOrWhiteSpace(snapshot.ProfileName) ? "profile pending" : snapshot.ProfileName;
+            var apiUrl = string.IsNullOrWhiteSpace(snapshot.DiscoveredApiUrl) ? "endpoint pending" : snapshot.DiscoveredApiUrl;
+            return $"{portalName} / {profileName} / {apiUrl}";
+        }
+
         private static string FormatTimestamp(DateTime? timestampUtc)
         {
             if (!timestampUtc.HasValue) return "Never";
@@ -983,6 +1086,9 @@ namespace Kroira.App.Services
             public EpgActiveMode EpgMode { get; set; } = EpgActiveMode.Detected;
             public SourceProxyScope ProxyScope { get; set; } = SourceProxyScope.Disabled;
             public string ProxyUrl { get; set; } = string.Empty;
+            public SourceCompanionScope CompanionScope { get; set; } = SourceCompanionScope.Disabled;
+            public SourceCompanionRelayMode CompanionMode { get; set; } = SourceCompanionRelayMode.Buffered;
+            public string CompanionUrl { get; set; } = string.Empty;
         }
 
         private sealed class SourceOperationalSnapshotView
@@ -1048,6 +1154,11 @@ namespace Kroira.App.Services
         public string AutoRefreshSummaryText { get; set; } = string.Empty;
         public string NextAutoRefreshText { get; set; } = "Never";
         public string LastAutoRefreshText { get; set; } = "Never";
+        public int CatchupChannelCount { get; set; }
+        public string CatchupStatusText { get; set; } = string.Empty;
+        public string CatchupLatestAttemptText { get; set; } = string.Empty;
+        public string StalkerPortalSummaryText { get; set; } = string.Empty;
+        public string StalkerPortalErrorText { get; set; } = string.Empty;
         public string AcquisitionProfileKey { get; set; } = string.Empty;
         public string AcquisitionProfileLabel { get; set; } = string.Empty;
         public string AcquisitionProviderKey { get; set; } = string.Empty;
@@ -1064,6 +1175,7 @@ namespace Kroira.App.Services
         public string AcquisitionLastRunText { get; set; } = "Never";
         public string OperationalStatusText { get; set; } = string.Empty;
         public string ProxyStatusText { get; set; } = "Direct routing";
+        public string CompanionStatusText { get; set; } = "Local companion relay off";
         public IReadOnlyList<SourceDiagnosticsComponentSnapshot> HealthComponents { get; set; } = Array.Empty<SourceDiagnosticsComponentSnapshot>();
         public IReadOnlyList<SourceDiagnosticsProbeSnapshot> HealthProbes { get; set; } = Array.Empty<SourceDiagnosticsProbeSnapshot>();
         public IReadOnlyList<SourceDiagnosticsIssueSnapshot> Issues { get; set; } = Array.Empty<SourceDiagnosticsIssueSnapshot>();

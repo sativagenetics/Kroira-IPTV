@@ -135,6 +135,35 @@ namespace Kroira.App.Views
             }
         }
 
+        private async void StartCatchup_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not Button button ||
+                button.DataContext is not BrowserChannelViewModel channel)
+            {
+                return;
+            }
+
+            button.IsEnabled = false;
+            try
+            {
+                await LaunchCatchupAsync(channel);
+            }
+            finally
+            {
+                button.IsEnabled = true;
+            }
+        }
+
+        private async void InspectChannel_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not FrameworkElement { DataContext: BrowserChannelViewModel channel })
+            {
+                return;
+            }
+
+            await ItemInspectorDialog.ShowAsync(XamlRoot, CreateChannelLaunchContext(channel));
+        }
+
         private async Task LaunchChannelAsync(BrowserChannelViewModel channel)
         {
             if (string.IsNullOrWhiteSpace(channel.StreamUrl))
@@ -144,16 +173,50 @@ namespace Kroira.App.Views
 
             Log($"06: LaunchChannelAsync channelId={channel.Id} name='{channel.Name}'");
             await ViewModel.RecordChannelLaunchAsync(channel.Id);
+            Frame.Navigate(typeof(EmbeddedPlaybackPage), CreateChannelLaunchContext(channel));
+        }
 
-            Frame.Navigate(typeof(EmbeddedPlaybackPage), new PlaybackLaunchContext
+        private async Task LaunchCatchupAsync(BrowserChannelViewModel channel)
+        {
+            if (channel.CatchupRequestKind == CatchupRequestKind.None ||
+                !channel.CatchupProgramStartTimeUtc.HasValue ||
+                !channel.CatchupProgramEndTimeUtc.HasValue)
+            {
+                if (!string.IsNullOrWhiteSpace(channel.CatchupStatusText))
+                {
+                    await ShowMessageAsync("Catchup unavailable", channel.CatchupStatusText);
+                }
+
+                return;
+            }
+
+            Log($"06a: LaunchCatchupAsync channelId={channel.Id} name='{channel.Name}' kind={channel.CatchupRequestKind}");
+            await ViewModel.RecordChannelLaunchAsync(channel.Id);
+
+            var context = CreateChannelLaunchContext(channel);
+            context.PlaybackMode = CatchupPlaybackMode.Catchup;
+            context.CatchupRequestKind = channel.CatchupRequestKind;
+            context.CatchupStatusText = channel.CatchupStatusText;
+            context.CatchupProgramTitle = channel.CurrentProgramTitle;
+            context.CatchupProgramStartTimeUtc = channel.CatchupProgramStartTimeUtc;
+            context.CatchupProgramEndTimeUtc = channel.CatchupProgramEndTimeUtc;
+            context.CatchupRequestedAtUtc = DateTime.UtcNow;
+            Frame.Navigate(typeof(EmbeddedPlaybackPage), context);
+        }
+
+        private static PlaybackLaunchContext CreateChannelLaunchContext(BrowserChannelViewModel channel)
+        {
+            return new PlaybackLaunchContext
             {
                 ContentId = channel.Id,
                 ContentType = PlaybackContentType.Channel,
                 LogicalContentKey = channel.LogicalContentKey,
                 PreferredSourceProfileId = channel.PreferredSourceProfileId,
+                CatalogStreamUrl = channel.StreamUrl,
                 StreamUrl = channel.StreamUrl,
+                LiveStreamUrl = channel.StreamUrl,
                 StartPositionMs = 0
-            });
+            };
         }
 
         private void ChannelsPage_Loaded(object sender, RoutedEventArgs e)

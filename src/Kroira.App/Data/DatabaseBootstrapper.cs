@@ -193,12 +193,43 @@ namespace Kroira.App.Data
             EnsureColumn(conn, "SourceCredentials", "EpgMode", "INTEGER NOT NULL DEFAULT 1");
             EnsureColumn(conn, "SourceCredentials", "ProxyScope", "INTEGER NOT NULL DEFAULT 0");
             EnsureColumn(conn, "SourceCredentials", "ProxyUrl", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "SourceCredentials", "CompanionScope", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "SourceCredentials", "CompanionMode", "INTEGER NOT NULL DEFAULT 1");
+            EnsureColumn(conn, "SourceCredentials", "CompanionUrl", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "SourceCredentials", "StalkerMacAddress", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "SourceCredentials", "StalkerDeviceId", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "SourceCredentials", "StalkerSerialNumber", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "SourceCredentials", "StalkerTimezone", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "SourceCredentials", "StalkerLocale", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "SourceCredentials", "StalkerApiUrl", "TEXT NOT NULL DEFAULT ''");
             EnsureColumn(conn, "SourceSyncStates", "LastAutoRefreshAttemptAtUtc", "TEXT");
             EnsureColumn(conn, "SourceSyncStates", "LastAutoRefreshSuccessAtUtc", "TEXT");
             EnsureColumn(conn, "SourceSyncStates", "NextAutoRefreshDueAtUtc", "TEXT");
             EnsureColumn(conn, "SourceSyncStates", "AutoRefreshState", "INTEGER NOT NULL DEFAULT 0");
             EnsureColumn(conn, "SourceSyncStates", "AutoRefreshSummary", "TEXT NOT NULL DEFAULT ''");
             EnsureColumn(conn, "SourceSyncStates", "AutoRefreshFailureCount", "INTEGER NOT NULL DEFAULT 0");
+            EnsureStalkerPortalTables(conn);
+            EnsureColumn(conn, "StalkerPortalSnapshots", "SourceProfileId", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "StalkerPortalSnapshots", "PortalName", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "StalkerPortalSnapshots", "PortalVersion", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "StalkerPortalSnapshots", "ProfileName", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "StalkerPortalSnapshots", "ProfileId", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "StalkerPortalSnapshots", "MacAddress", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "StalkerPortalSnapshots", "DeviceId", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "StalkerPortalSnapshots", "SerialNumber", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "StalkerPortalSnapshots", "Locale", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "StalkerPortalSnapshots", "Timezone", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "StalkerPortalSnapshots", "DiscoveredApiUrl", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "StalkerPortalSnapshots", "SupportsLive", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "StalkerPortalSnapshots", "SupportsMovies", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "StalkerPortalSnapshots", "SupportsSeries", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "StalkerPortalSnapshots", "LiveCategoryCount", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "StalkerPortalSnapshots", "MovieCategoryCount", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "StalkerPortalSnapshots", "SeriesCategoryCount", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "StalkerPortalSnapshots", "LastHandshakeAtUtc", "TEXT");
+            EnsureColumn(conn, "StalkerPortalSnapshots", "LastProfileSyncAtUtc", "TEXT");
+            EnsureColumn(conn, "StalkerPortalSnapshots", "LastSummary", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "StalkerPortalSnapshots", "LastError", "TEXT NOT NULL DEFAULT ''");
             EnsureSourceAcquisitionTables(conn);
             EnsureColumn(conn, "SourceAcquisitionProfiles", "SourceProfileId", "INTEGER NOT NULL DEFAULT 0");
             EnsureColumn(conn, "SourceAcquisitionProfiles", "ProfileKey", "TEXT NOT NULL DEFAULT ''");
@@ -261,6 +292,24 @@ namespace Kroira.App.Data
             EnsureColumn(conn, "SourceAcquisitionEvidence", "MatchedTarget", "TEXT NOT NULL DEFAULT ''");
             EnsureColumn(conn, "SourceAcquisitionEvidence", "Confidence", "INTEGER NOT NULL DEFAULT 0");
             EnsureColumn(conn, "SourceAcquisitionEvidence", "SortOrder", "INTEGER NOT NULL DEFAULT 0");
+            EnsureCatchupPlaybackTables(conn);
+            EnsureColumn(conn, "CatchupPlaybackAttempts", "SourceProfileId", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "CatchupPlaybackAttempts", "ChannelId", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "CatchupPlaybackAttempts", "LogicalContentKey", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "CatchupPlaybackAttempts", "RequestKind", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "CatchupPlaybackAttempts", "Status", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "CatchupPlaybackAttempts", "RequestedAtUtc", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "CatchupPlaybackAttempts", "ProgramTitle", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "CatchupPlaybackAttempts", "ProgramStartTimeUtc", "TEXT");
+            EnsureColumn(conn, "CatchupPlaybackAttempts", "ProgramEndTimeUtc", "TEXT");
+            EnsureColumn(conn, "CatchupPlaybackAttempts", "WindowHours", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "CatchupPlaybackAttempts", "Message", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "CatchupPlaybackAttempts", "RoutingSummary", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "CatchupPlaybackAttempts", "ResolvedStreamUrl", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "CatchupPlaybackAttempts", "ProviderMode", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "CatchupPlaybackAttempts", "ProviderSource", "TEXT NOT NULL DEFAULT ''");
+            EnsureCompositeIndex(conn, "IX_CatchupPlaybackAttempts_SourceProfileId_RequestedAtUtc", "CatchupPlaybackAttempts", "SourceProfileId", "RequestedAtUtc");
+            EnsureCompositeIndex(conn, "IX_CatchupPlaybackAttempts_ChannelId_RequestedAtUtc", "CatchupPlaybackAttempts", "ChannelId", "RequestedAtUtc");
 
             // M3U import mode for SourceCredentials.
             //  • New-column default = 2 (LiveMoviesAndSeries) — matches the
@@ -900,6 +949,85 @@ namespace Kroira.App.Data
             cmd.CommandText = @"
                 CREATE UNIQUE INDEX IF NOT EXISTS ""IX_SourceChannelEnrichmentRecords_SourceProfileId_IdentityKey""
                 ON ""SourceChannelEnrichmentRecords"" (""SourceProfileId"", ""IdentityKey"");";
+            cmd.ExecuteNonQuery();
+        }
+
+        private static void EnsureStalkerPortalTables(SqliteConnection conn)
+        {
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = @"
+                CREATE TABLE IF NOT EXISTS ""StalkerPortalSnapshots"" (
+                    ""Id""                  INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                    ""SourceProfileId""     INTEGER NOT NULL,
+                    ""PortalName""          TEXT    NOT NULL DEFAULT '',
+                    ""PortalVersion""       TEXT    NOT NULL DEFAULT '',
+                    ""ProfileName""         TEXT    NOT NULL DEFAULT '',
+                    ""ProfileId""           TEXT    NOT NULL DEFAULT '',
+                    ""MacAddress""          TEXT    NOT NULL DEFAULT '',
+                    ""DeviceId""            TEXT    NOT NULL DEFAULT '',
+                    ""SerialNumber""        TEXT    NOT NULL DEFAULT '',
+                    ""Locale""              TEXT    NOT NULL DEFAULT '',
+                    ""Timezone""            TEXT    NOT NULL DEFAULT '',
+                    ""DiscoveredApiUrl""    TEXT    NOT NULL DEFAULT '',
+                    ""SupportsLive""        INTEGER NOT NULL DEFAULT 0,
+                    ""SupportsMovies""      INTEGER NOT NULL DEFAULT 0,
+                    ""SupportsSeries""      INTEGER NOT NULL DEFAULT 0,
+                    ""LiveCategoryCount""   INTEGER NOT NULL DEFAULT 0,
+                    ""MovieCategoryCount""  INTEGER NOT NULL DEFAULT 0,
+                    ""SeriesCategoryCount"" INTEGER NOT NULL DEFAULT 0,
+                    ""LastHandshakeAtUtc""  TEXT,
+                    ""LastProfileSyncAtUtc"" TEXT,
+                    ""LastSummary""         TEXT    NOT NULL DEFAULT '',
+                    ""LastError""           TEXT    NOT NULL DEFAULT '',
+                    CONSTRAINT ""FK_StalkerPortalSnapshots_SourceProfiles_SourceProfileId""
+                        FOREIGN KEY (""SourceProfileId"")
+                        REFERENCES ""SourceProfiles"" (""Id"")
+                        ON DELETE CASCADE
+                );";
+            cmd.ExecuteNonQuery();
+
+            cmd.CommandText = @"
+                CREATE UNIQUE INDEX IF NOT EXISTS ""IX_StalkerPortalSnapshots_SourceProfileId""
+                ON ""StalkerPortalSnapshots"" (""SourceProfileId"");";
+            cmd.ExecuteNonQuery();
+        }
+
+        private static void EnsureCatchupPlaybackTables(SqliteConnection conn)
+        {
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = @"
+                CREATE TABLE IF NOT EXISTS ""CatchupPlaybackAttempts"" (
+                    ""Id""                 INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                    ""SourceProfileId""    INTEGER NOT NULL,
+                    ""ChannelId""          INTEGER NOT NULL DEFAULT 0,
+                    ""LogicalContentKey""  TEXT    NOT NULL DEFAULT '',
+                    ""RequestKind""        INTEGER NOT NULL DEFAULT 0,
+                    ""Status""             INTEGER NOT NULL DEFAULT 0,
+                    ""RequestedAtUtc""     TEXT    NOT NULL DEFAULT '',
+                    ""ProgramTitle""       TEXT    NOT NULL DEFAULT '',
+                    ""ProgramStartTimeUtc"" TEXT,
+                    ""ProgramEndTimeUtc""  TEXT,
+                    ""WindowHours""        INTEGER NOT NULL DEFAULT 0,
+                    ""Message""            TEXT    NOT NULL DEFAULT '',
+                    ""RoutingSummary""     TEXT    NOT NULL DEFAULT '',
+                    ""ResolvedStreamUrl""  TEXT    NOT NULL DEFAULT '',
+                    ""ProviderMode""       TEXT    NOT NULL DEFAULT '',
+                    ""ProviderSource""     TEXT    NOT NULL DEFAULT '',
+                    CONSTRAINT ""FK_CatchupPlaybackAttempts_SourceProfiles_SourceProfileId""
+                        FOREIGN KEY (""SourceProfileId"")
+                        REFERENCES ""SourceProfiles"" (""Id"")
+                        ON DELETE CASCADE
+                );";
+            cmd.ExecuteNonQuery();
+
+            cmd.CommandText = @"
+                CREATE INDEX IF NOT EXISTS ""IX_CatchupPlaybackAttempts_SourceProfileId_RequestedAtUtc""
+                ON ""CatchupPlaybackAttempts"" (""SourceProfileId"", ""RequestedAtUtc"");";
+            cmd.ExecuteNonQuery();
+
+            cmd.CommandText = @"
+                CREATE INDEX IF NOT EXISTS ""IX_CatchupPlaybackAttempts_ChannelId_RequestedAtUtc""
+                ON ""CatchupPlaybackAttempts"" (""ChannelId"", ""RequestedAtUtc"");";
             cmd.ExecuteNonQuery();
         }
 

@@ -21,7 +21,16 @@
         "EpgMode": "Detected",
         "M3uImportMode": "LiveMoviesAndSeries",
         "ProxyScope": "Disabled",
-        "ProxyUrl": ""
+        "ProxyUrl": "",
+        "CompanionScope": "Disabled",
+        "CompanionMode": "Buffered",
+        "CompanionUrl": "",
+        "StalkerMacAddress": "",
+        "StalkerDeviceId": "",
+        "StalkerSerialNumber": "",
+        "StalkerTimezone": "",
+        "StalkerLocale": "",
+        "StalkerApiUrl": ""
       },
       "SyncState": {
         "HttpStatusCode": 0,
@@ -125,9 +134,9 @@
           },
           {
             "Type": "Epg",
-            "State": "Weak",
-            "Score": 82,
-            "Summary": "Guide covers 3 of 4 live channels, but coverage is still uneven. 2 channels rely on fallback matching.",
+            "State": "Incomplete",
+            "Score": 64,
+            "Summary": "Guide coverage is too thin across the 4 live channels. 2 channels rely on fallback matching.",
             "RelevantCount": 4,
             "HealthyCount": 3,
             "IssueCount": 1
@@ -239,7 +248,7 @@
         "ActiveXmltvUrl": "[fixture-server]/guide.xml",
         "MatchedChannelCount": 3,
         "UnmatchedChannelCount": 1,
-        "CurrentCoverageCount": 3,
+        "CurrentCoverageCount": 0,
         "NextCoverageCount": 0,
         "TotalLiveChannelCount": 4,
         "ProgrammeCount": 6,

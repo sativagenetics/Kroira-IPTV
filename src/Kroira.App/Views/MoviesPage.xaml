@@ -172,6 +172,15 @@
                                     <TextBlock Text="Play movie" />
                                 </StackPanel>
                             </Button>
+                            <Button Click="FeaturedInspect_Click"
+                                    Style="{StaticResource FavoritePillButtonStyle}">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <FontIcon Glyph="&#xE946;"
+                                              FontSize="13"
+                                              Foreground="{StaticResource KroiraAccentBrush}" />
+                                    <TextBlock Text="Inspect" />
+                                </StackPanel>
+                            </Button>
                             <Button Click="FavoriteToggle_Click"
                                     Tag="{x:Bind ViewModel.FeaturedMovie.Id, Mode=OneWay}"
                                     Style="{StaticResource FavoritePillButtonStyle}">
@@ -592,6 +601,12 @@
                                                                Foreground="{StaticResource KroiraAccentBrush}" />
                                                 </StackPanel>
                                             </Border>
+                                            <Button Content="Inspect"
+                                                    Click="MovieInspect_Click"
+                                                    HorizontalAlignment="Left"
+                                                    Padding="10,4"
+                                                    FontSize="11"
+                                                    Style="{StaticResource KroiraGhostButtonStyle}" />
                                             <Button Content="Download"
                                                     Click="MovieDownload_Click"
                                                     Visibility="{Binding ElementName=MoviesPageRoot, Path=DownloadActionsVisibility}"

@@ -21,7 +21,16 @@
         "EpgMode": "Detected",
         "M3uImportMode": "LiveOnly",
         "ProxyScope": "PlaybackOnly",
-        "ProxyUrl": "http://127.0.0.1:65500"
+        "ProxyUrl": "http://127.0.0.1:65500",
+        "CompanionScope": "Disabled",
+        "CompanionMode": "Buffered",
+        "CompanionUrl": "",
+        "StalkerMacAddress": "",
+        "StalkerDeviceId": "",
+        "StalkerSerialNumber": "",
+        "StalkerTimezone": "",
+        "StalkerLocale": "",
+        "StalkerApiUrl": ""
       },
       "SyncState": {
         "HttpStatusCode": 200,
@@ -62,7 +71,7 @@
         "Message": "Playlist import completed. Guide sync completed.",
         "CatalogSummary": "Playlist import completed.",
         "GuideSummary": "Guide sync completed.",
-        "ValidationSummary": "Component health is usable but uneven (84/100). Guide covers 1 of 1 live channels, but coverage is still uneven.",
+        "ValidationSummary": "Component health shows missing core coverage (64/100). Guide coverage is too thin across the 1 live channels.",
         "RawItemCount": 1,
         "AcceptedCount": 1,
         "SuppressedCount": 0,
@@ -82,11 +91,11 @@
         "ErrorCount": 0
       },
       "Health": {
-        "State": "Weak",
-        "Score": 84,
-        "StatusSummary": "Source works, but quality is uneven. Guide covers 1 of 1 live channels, but coverage is still uneven.",
+        "State": "Incomplete",
+        "Score": 64,
+        "StatusSummary": "Source synced, but important parts are still incomplete. Guide coverage is too thin across the 1 live channels.",
         "ImportResultSummary": "Parsed 1 channels (LiveOnly mode - VOD suppressed). Uncategorized=0, pseudo_rejected=0, xmltv_found=yes.",
-        "ValidationSummary": "Component health is usable but uneven (84/100). Guide covers 1 of 1 live channels, but coverage is still uneven.",
+        "ValidationSummary": "Component health shows missing core coverage (64/100). Guide coverage is too thin across the 1 live channels.",
         "TopIssueSummary": "No obvious source-quality issues were flagged in the latest validation run.",
         "DuplicateCount": 0,
         "InvalidStreamCount": 0,
@@ -109,7 +118,7 @@
             "Type": "Live",
             "State": "Healthy",
             "Score": 100,
-            "Summary": "Live catalog is present across 1 channels. Live probe reached 1/1 sampled items.",
+            "Summary": "Live catalog is present across 1 channels. Live probe reached 1/1 sampled items. Route: Proxy configured but inactive.",
             "RelevantCount": 1,
             "HealthyCount": 1,
             "IssueCount": 0
@@ -125,9 +134,9 @@
           },
           {
             "Type": "Epg",
-            "State": "Weak",
-            "Score": 84,
-            "Summary": "Guide covers 1 of 1 live channels, but coverage is still uneven.",
+            "State": "Incomplete",
+            "Score": 64,
+            "Summary": "Guide coverage is too thin across the 1 live channels.",
             "RelevantCount": 1,
             "HealthyCount": 1,
             "IssueCount": 0
@@ -162,7 +171,7 @@
             "TimeoutCount": 0,
             "HttpErrorCount": 0,
             "TransportErrorCount": 0,
-            "Summary": "Live probe reached 1/1 sampled items."
+            "Summary": "Live probe reached 1/1 sampled items. Route: Proxy configured but inactive."
           },
           {
             "Type": "Vod",
@@ -189,7 +198,7 @@
         "ActiveXmltvUrl": "[fixture-server]/good-guide.xml",
         "MatchedChannelCount": 1,
         "UnmatchedChannelCount": 0,
-        "CurrentCoverageCount": 1,
+        "CurrentCoverageCount": 0,
         "NextCoverageCount": 0,
         "TotalLiveChannelCount": 1,
         "ProgrammeCount": 2,
@@ -242,7 +251,7 @@
           "Outcome": "Matched",
           "ItemKind": "Probe",
           "RuleCode": "validation.probe.live",
-          "Reason": "Live probe reached 1/1 sampled items.",
+          "Reason": "Live probe reached 1/1 sampled items. Route: Proxy configured but inactive.",
           "RawName": "Live",
           "NormalizedName": "",
           "MatchedTarget": "",
@@ -282,7 +291,16 @@
         "EpgMode": "Detected",
         "M3uImportMode": "LiveOnly",
         "ProxyScope": "Disabled",
-        "ProxyUrl": ""
+        "ProxyUrl": "",
+        "CompanionScope": "Disabled",
+        "CompanionMode": "Buffered",
+        "CompanionUrl": "",
+        "StalkerMacAddress": "",
+        "StalkerDeviceId": "",
+        "StalkerSerialNumber": "",
+        "StalkerTimezone": "",
+        "StalkerLocale": "",
+        "StalkerApiUrl": ""
       },
       "SyncState": {
         "HttpStatusCode": 200,
@@ -585,7 +603,7 @@
       "CandidateCount": 2,
       "PreferredSourceName": "Mirror Good",
       "PreferredTitle": "Global News HD",
-      "PreferredScore": 94,
+      "PreferredScore": 89,
       "SelectionSummary": "Preferred Mirror Good from 2 mirrored candidates. Probe-backed, guide mapped, logo ready, proxy routed.",
       "RecoveryAction": "None",
       "RecoverySummary": "",
@@ -594,7 +612,7 @@
           "Rank": 1,
           "SourceName": "Mirror Good",
           "Title": "Global News HD",
-          "Score": 94,
+          "Score": 89,
           "IsSelected": true,
           "IsLastKnownGood": true,
           "SupportsProxy": true,
