@@ -5,6 +5,8 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using Microsoft.UI.Dispatching;
 
+#nullable enable
+
 namespace Kroira.App.Services.Playback
 {
     public enum PlaybackAspectMode
@@ -86,7 +88,7 @@ namespace Kroira.App.Services.Playback
         private readonly object _lifecycleLock = new();
         private readonly object _apiLock = new();
         private IntPtr _ctx;
-        private Thread _eventThread;
+        private Thread? _eventThread;
         private bool _disposed;
 
         private static string LogPath => System.IO.Path.Combine(
@@ -94,16 +96,16 @@ namespace Kroira.App.Services.Playback
             "Kroira",
             "startup-log.txt");
 
-        public event Action<TimeSpan> PositionChanged;
-        public event Action<TimeSpan> DurationChanged;
-        public event Action<bool> PauseChanged;
-        public event Action<bool> SeekableChanged;
-        public event Action<bool> BufferingChanged;
-        public event Action FileLoaded;
-        public event Action OutputReady;
-        internal event Action<MpvPlaybackEndedInfo> PlaybackEnded;
-        public event Action TrackListChanged;
-        public event Action<string> WarningMessage;
+        public event Action<TimeSpan>? PositionChanged;
+        public event Action<TimeSpan>? DurationChanged;
+        public event Action<bool>? PauseChanged;
+        public event Action<bool>? SeekableChanged;
+        public event Action<bool>? BufferingChanged;
+        public event Action? FileLoaded;
+        public event Action? OutputReady;
+        internal event Action<MpvPlaybackEndedInfo>? PlaybackEnded;
+        public event Action? TrackListChanged;
+        public event Action<string>? WarningMessage;
 
         public TimeSpan Position { get; private set; }
         public TimeSpan Duration { get; private set; }
@@ -389,12 +391,12 @@ namespace Kroira.App.Services.Playback
             return GetTracks("sub");
         }
 
-        public void SelectAudioTrack(string trackId)
+        public void SelectAudioTrack(string? trackId)
         {
             SetTrackProperty("aid", string.IsNullOrWhiteSpace(trackId) ? "auto" : trackId);
         }
 
-        public void SelectSubtitleTrack(string trackId)
+        public void SelectSubtitleTrack(string? trackId)
         {
             SetTrackProperty("sid", string.IsNullOrWhiteSpace(trackId) ? "no" : trackId);
         }
@@ -566,9 +568,13 @@ namespace Kroira.App.Services.Playback
             }
         }
 
-        private void EventLoop(object ctxBoxed)
+        private void EventLoop(object? ctxBoxed)
         {
-            var ctx = (IntPtr)ctxBoxed;
+            if (ctxBoxed is not IntPtr ctx || ctx == IntPtr.Zero)
+            {
+                return;
+            }
+
             while (true)
             {
                 if (IsDisposed) break;
@@ -817,7 +823,7 @@ namespace Kroira.App.Services.Playback
         public void Dispose()
         {
             IntPtr ctx;
-            Thread thread;
+            Thread? thread;
             lock (_lifecycleLock)
             {
                 if (_disposed) return;

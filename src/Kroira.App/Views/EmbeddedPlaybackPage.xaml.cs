@@ -19,6 +19,8 @@ using Microsoft.UI.Xaml.Navigation;
 using Windows.Foundation;
 using WinRT.Interop;
 
+#nullable enable
+
 namespace Kroira.App.Views
 {
     // Self-contained, page-scoped playback host. Each navigation constructs a fresh
@@ -46,14 +48,14 @@ namespace Kroira.App.Views
         private readonly IEntitlementService _entitlementService;
         private readonly IPictureInPictureService _pictureInPictureService;
 
-        private PlaybackLaunchContext _context;
-        private MpvPlayer _player;
-        private VideoSurface _surface;
-        private IWindowManagerService _windowManager;
-        private DispatcherTimer _controlsHideTimer;
-        private DispatcherTimer _loadTimeoutTimer;
-        private DispatcherTimer _bufferTimeoutTimer;
-        private DispatcherTimer _progressPersistTimer;
+        private PlaybackLaunchContext? _context;
+        private MpvPlayer? _player;
+        private VideoSurface? _surface;
+        private IWindowManagerService? _windowManager;
+        private DispatcherTimer? _controlsHideTimer;
+        private DispatcherTimer? _loadTimeoutTimer;
+        private DispatcherTimer? _bufferTimeoutTimer;
+        private DispatcherTimer? _progressPersistTimer;
         private bool _isUserSeeking;
         private bool _isUserAdjustingVolume;
         private bool _isOverlayPointerInteractionActive;
@@ -103,13 +105,17 @@ namespace Kroira.App.Views
         private CancellationTokenSource? _playbackSessionCancellation = new();
         private readonly List<FlyoutBase> _openOverlayFlyouts = new();
         private readonly HashSet<int> _failedMirrorContentIds = new();
-        private FlyoutBase _activeUtilityFlyout;
-        private FlyoutBase _pendingUtilityFlyout;
+        private FlyoutBase? _activeUtilityFlyout;
+        private FlyoutBase? _pendingUtilityFlyout;
 
         private static string LogPath => System.IO.Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "Kroira",
             "startup-log.txt");
+
+        private IServiceProvider AppServices =>
+            ((App?)Application.Current)?.Services
+            ?? throw new InvalidOperationException("App services are unavailable.");
 
         private static void Log(string message)
         {
@@ -128,7 +134,7 @@ namespace Kroira.App.Views
         public EmbeddedPlaybackPage()
         {
             InitializeComponent();
-            var services = ((App)Application.Current).Services;
+            var services = AppServices;
             _progressCoordinator = new PlaybackProgressCoordinator(services);
             _catchupPlaybackService = services.GetRequiredService<ICatchupPlaybackService>();
             _entitlementService = services.GetRequiredService<IEntitlementService>();
@@ -170,24 +176,26 @@ namespace Kroira.App.Views
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
-            _context = e.Parameter as PlaybackLaunchContext;
-            if (_context == null)
+            if (e.Parameter is not PlaybackLaunchContext context)
             {
+                _context = null;
                 ShowFatalError("Missing playback context.");
                 return;
             }
 
-            TitleText.Text = TitleForContext(_context);
+            _context = context;
+            TitleText.Text = TitleForContext(context);
             StartNewPlaybackSession();
-            _windowManager = ((App)Application.Current).Services.GetRequiredService<IWindowManagerService>();
-            _isWindowActive = _windowManager?.IsWindowActive ?? true;
+            var windowManager = AppServices.GetRequiredService<IWindowManagerService>();
+            _windowManager = windowManager;
+            _isWindowActive = windowManager.IsWindowActive;
             ApplyLaunchOptions();
 
             if (!IsPictureInPictureMode())
             {
-                _wasFullscreenOnEnter = _windowManager.IsFullscreen;
-                _windowManager.FullscreenStateChanged += WindowManager_FullscreenStateChanged;
-                _windowManager.WindowActivationChanged += WindowManager_WindowActivationChanged;
+                _wasFullscreenOnEnter = windowManager.IsFullscreen;
+                windowManager.FullscreenStateChanged += WindowManager_FullscreenStateChanged;
+                windowManager.WindowActivationChanged += WindowManager_WindowActivationChanged;
                 _fullscreenSubscribed = true;
                 _windowActivationSubscribed = true;
             }
@@ -298,7 +306,7 @@ namespace Kroira.App.Views
 
             try
             {
-                using var scope = ((App)Application.Current).Services.CreateScope();
+            using var scope = AppServices.CreateScope();
                 var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
                 var profileService = scope.ServiceProvider.GetRequiredService<IProfileStateService>();
                 var profileId = await profileService.GetActiveProfileIdAsync(db);
@@ -413,7 +421,7 @@ namespace Kroira.App.Views
             }
         }
 
-        private void OnPageUnloaded(object sender, RoutedEventArgs e)
+        private void OnPageUnloaded(object? sender, RoutedEventArgs e)
         {
             LogPlaybackState("PAGE: unloaded");
             TeardownPlayback();
@@ -616,7 +624,7 @@ namespace Kroira.App.Views
             LogStructuredPlayback("page_timers_disposed", "reason=unloaded");
         }
 
-        private void ControlsHideTimer_Tick(object sender, object e)
+        private void ControlsHideTimer_Tick(object? sender, object e)
         {
             var allowHide = EvaluateAutoHideEligibility("timer_elapsed", out var denyReason);
             _controlsHideTimer?.Stop();
@@ -637,7 +645,7 @@ namespace Kroira.App.Views
             UpdateOverlayVisibility("timer_elapsed_denied");
         }
 
-        private void LoadTimeoutTimer_Tick(object sender, object e)
+        private void LoadTimeoutTimer_Tick(object? sender, object e)
         {
             _loadTimeoutTimer?.Stop();
             if (_teardownStarted || _player == null) return;
@@ -647,7 +655,7 @@ namespace Kroira.App.Views
             _ = AttemptRecoveryAsync("Stream timed out while starting.", _activeAttemptId);
         }
 
-        private void BufferTimeoutTimer_Tick(object sender, object e)
+        private void BufferTimeoutTimer_Tick(object? sender, object e)
         {
             _bufferTimeoutTimer?.Stop();
             if (_teardownStarted || _player == null) return;
@@ -657,12 +665,12 @@ namespace Kroira.App.Views
             _ = AttemptRecoveryAsync("Stream stalled while buffering.", _activeAttemptId);
         }
 
-        private async void ProgressPersistTimer_Tick(object sender, object e)
+        private async void ProgressPersistTimer_Tick(object? sender, object e)
         {
             await PersistProgressAsync(force: false);
         }
 
-        private void BeginPlaybackAttempt(bool isRetry, string retryReason, long startPositionMs)
+        private void BeginPlaybackAttempt(bool isRetry, string? retryReason, long startPositionMs)
         {
             if (_player == null || _context == null || _teardownStarted)
             {
@@ -1021,7 +1029,7 @@ namespace Kroira.App.Views
 
             try
             {
-                using var scope = ((App)Application.Current).Services.CreateScope();
+                using var scope = AppServices.CreateScope();
                 var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
                 var contentOperationalService = scope.ServiceProvider.GetRequiredService<IContentOperationalService>();
                 await contentOperationalService.MarkPlaybackSucceededAsync(db, _context);
@@ -1040,7 +1048,7 @@ namespace Kroira.App.Views
 
             try
             {
-                using var scope = ((App)Application.Current).Services.CreateScope();
+                using var scope = AppServices.CreateScope();
                 var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
                 var contentOperationalService = scope.ServiceProvider.GetRequiredService<IContentOperationalService>();
                 return await contentOperationalService.MarkPlaybackFailedAsync(
@@ -1604,7 +1612,7 @@ namespace Kroira.App.Views
             RefreshInfoPanel();
         }
 
-        private void WindowManager_FullscreenStateChanged(object sender, EventArgs e)
+        private void WindowManager_FullscreenStateChanged(object? sender, EventArgs e)
         {
             if (_teardownStarted) return;
             Interlocked.Increment(ref _fullscreenTransitionGeneration);
@@ -1614,7 +1622,7 @@ namespace Kroira.App.Views
             UpdateFullscreenUi();
         }
 
-        private void WindowManager_WindowActivationChanged(object sender, EventArgs e)
+        private void WindowManager_WindowActivationChanged(object? sender, EventArgs e)
         {
             if (_teardownStarted || _windowManager == null)
             {
@@ -2118,7 +2126,7 @@ namespace Kroira.App.Views
             ToolTipService.SetToolTip(TracksButton, tooltip);
         }
 
-        private static MpvTrackInfo FindSelectedTrack(IReadOnlyList<MpvTrackInfo> tracks)
+        private static MpvTrackInfo? FindSelectedTrack(IReadOnlyList<MpvTrackInfo> tracks)
         {
             foreach (var track in tracks)
             {
@@ -2330,10 +2338,12 @@ namespace Kroira.App.Views
                 return new IntPtr(_context.HostWindowHandle);
             }
 
-            return WindowNative.GetWindowHandle(((App)Application.Current).MainWindow);
+            var mainWindow = ((App?)Application.Current)?.MainWindow
+                ?? throw new InvalidOperationException("Main window is unavailable.");
+            return WindowNative.GetWindowHandle(mainWindow);
         }
 
-        private static string GetSelectedTrackId(IReadOnlyList<MpvTrackInfo> tracks)
+        private static string? GetSelectedTrackId(IReadOnlyList<MpvTrackInfo> tracks)
         {
             foreach (var track in tracks)
             {
@@ -2639,7 +2649,7 @@ namespace Kroira.App.Views
             flyout.Closed += OverlayFlyout_Closed;
         }
 
-        private void OverlayFlyout_Opened(object sender, object e)
+        private void OverlayFlyout_Opened(object? sender, object e)
         {
             if (sender is not FlyoutBase flyout)
             {
@@ -2666,7 +2676,7 @@ namespace Kroira.App.Views
             ShowControls(persist: true, cause: "menu_opened");
         }
 
-        private void OverlayFlyout_Closed(object sender, object e)
+        private void OverlayFlyout_Closed(object? sender, object e)
         {
             if (sender is FlyoutBase flyout)
             {
@@ -2975,7 +2985,7 @@ namespace Kroira.App.Views
             LogPlaybackState($"event={eventName}; {details}");
         }
 
-        private static string SanitizeForLog(string value)
+        private static string SanitizeForLog(string? value)
         {
             if (string.IsNullOrWhiteSpace(value))
             {
@@ -2991,7 +3001,7 @@ namespace Kroira.App.Views
 
         // --- Helpers ---
 
-        private void ShowStatusOverlay(string title, string message)
+        private void ShowStatusOverlay(string title, string? message)
         {
             StatusTitle.Text = title;
             StatusMessage.Text = string.IsNullOrWhiteSpace(message) ? title : message;
@@ -3008,7 +3018,7 @@ namespace Kroira.App.Views
             UpdateOverlayVisibility("status_hidden");
         }
 
-        private void ShowError(string message)
+        private void ShowError(string? message)
         {
             ErrorMessage.Text = string.IsNullOrWhiteSpace(message) ? "Unable to start playback." : message;
             ErrorOverlay.Visibility = Visibility.Visible;
@@ -3021,7 +3031,7 @@ namespace Kroira.App.Views
             UpdateOverlayVisibility("error_cleared");
         }
 
-        private void ShowFatalError(string message)
+        private void ShowFatalError(string? message)
         {
             if (_lastOpenFailedAttemptId != _activeAttemptId)
             {
@@ -3032,11 +3042,14 @@ namespace Kroira.App.Views
             _stateMachine.SetError(BuildFailureMessage(message));
         }
 
-        private string BuildFailureMessage(string fallbackMessage)
+        private string BuildFailureMessage(string? fallbackMessage)
         {
+            var baseMessage = string.IsNullOrWhiteSpace(fallbackMessage)
+                ? "Unable to start playback."
+                : fallbackMessage.Trim();
             return string.IsNullOrWhiteSpace(_lastPlayerWarning)
-                ? fallbackMessage
-                : $"{fallbackMessage} {_lastPlayerWarning}";
+                ? baseMessage
+                : $"{baseMessage} {_lastPlayerWarning}";
         }
 
         private bool IsPlaybackComplete()
@@ -3070,7 +3083,7 @@ namespace Kroira.App.Views
             if (Frame != null && Frame.CanGoBack) Frame.GoBack();
         }
 
-        private static void StopTimer(ref DispatcherTimer timer)
+        private static void StopTimer(ref DispatcherTimer? timer)
         {
             timer?.Stop();
         }
@@ -3162,7 +3175,7 @@ namespace Kroira.App.Views
             PlaybackLaunchContext context,
             CancellationToken cancellationToken)
         {
-            using var scope = ((App)Application.Current).Services.CreateScope();
+                using var scope = AppServices.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             return await _catchupPlaybackService.ResolveForContextAsync(db, context, cancellationToken);
         }
@@ -3182,7 +3195,7 @@ namespace Kroira.App.Views
             {
                 try
                 {
-                    using var scope = ((App)Application.Current).Services.CreateScope();
+                    using var scope = AppServices.CreateScope();
                     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
                     var operationalService = scope.ServiceProvider.GetRequiredService<IContentOperationalService>();
                     await operationalService.ResolvePlaybackContextAsync(db, _context);
