@@ -1,0 +1,21 @@
+#EXTM3U x-tvg-url="{{server}}/guide.xml"
+#EXTINF:-1 group-title="Headers",=== SPORTS ===
+{{server}}/ignored/header-row
+#EXTINF:-1 tvg-id="bein1.tr" tvg-name="beIN SPORTS 1" group-title="Sports" tvg-logo="{{server}}/logos/provider/bein1.png",beIN Sports 1 TR
+{{server}}/probe/live/bein1-ok.m3u8
+#EXTINF:-1 tvg-name="TRT 1" group-title="National" catchup="append" catchup-days="3" catchup-source="{{server}}/archive/{utc}/trt1",TRT 1 HD
+{{server}}/probe/live/trt1-ok.m3u8
+#EXTINF:-1 tvg-name="TRT 1" group-title="National",TRT 1 HD
+{{server}}/probe/live/trt1-backup.m3u8
+#EXTINF:-1 group-title="News",Broken News
+not-a-valid-url
+#EXTINF:-1 group-title="Movies | Provider" tvg-type="movie",The Matrix 1999 [1080p] [TR]
+{{server}}/probe/vod/matrix-ok.mp4
+#EXTINF:-1 group-title="Movies | Provider" tvg-type="movie",The Matrix 1999 [Trailer]
+{{server}}/probe/vod/matrix-trailer.mp4
+#EXTINF:-1 group-title="Series" tvg-type="series",The Office S01E01 Pilot
+{{server}}/probe/vod/office-s01e01.mp4
+#EXTINF:-1 group-title="Series",The Office S01E02 Diversity Day
+{{server}}/probe/vod/office-s01e02.mp4
+#EXTINF:-1 group-title="Movies",Provider Package
+{{server}}/probe/vod/garbage.m3u8

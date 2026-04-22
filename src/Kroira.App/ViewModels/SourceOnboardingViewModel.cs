@@ -98,37 +98,31 @@ namespace Kroira.App.ViewModels
         {
             if (!CanSaveSource)
             {
-                StatusMessage = "Adding sources is unavailable for this entitlement.";
-                return;
-            }
-
-            if (string.IsNullOrWhiteSpace(SourceName))
-            {
-                StatusMessage = "Name is required.";
+                StatusMessage = "Adding sources is not available on this tier.";
                 return;
             }
 
             if (IsM3U && string.IsNullOrWhiteSpace(M3uUrlOrPath))
             {
-                StatusMessage = "M3U URL or File Path is required.";
+                StatusMessage = "Add an M3U URL or choose a local playlist file.";
                 return;
             }
 
             if (!IsM3U && (string.IsNullOrWhiteSpace(XtreamUrl) || string.IsNullOrWhiteSpace(XtreamUsername) || string.IsNullOrWhiteSpace(XtreamPassword)))
             {
-                StatusMessage = "Server URL, Username, and Password are required for Xtream.";
+                StatusMessage = "Enter the Xtream server URL, username, and password.";
                 return;
             }
 
             if (SelectedGuideMode == EpgActiveMode.Manual && string.IsNullOrWhiteSpace(ManualEpgUrl))
             {
-                StatusMessage = "Manual guide mode requires a manual XMLTV URL.";
+                StatusMessage = "Add a manual XMLTV URL to use manual guide mode.";
                 return;
             }
 
             if (SelectedProxyMode != SourceProxyScope.Disabled && string.IsNullOrWhiteSpace(ProxyUrl))
             {
-                StatusMessage = "Proxy routing requires a proxy URL.";
+                StatusMessage = "Add a proxy URL to use this routing policy.";
                 return;
             }
 
@@ -142,87 +136,42 @@ namespace Kroira.App.ViewModels
                     var existingSourceCount = await db.SourceProfiles.CountAsync();
                     if (existingSourceCount >= sourceLimit.Value)
                     {
-                        StatusMessage = $"This entitlement supports up to {sourceLimit.Value} source{(sourceLimit.Value == 1 ? string.Empty : "s")}.";
+                        StatusMessage = $"This tier supports up to {sourceLimit.Value} source{(sourceLimit.Value == 1 ? string.Empty : "s")}.";
                         return;
                     }
                 }
 
-                using var transaction = await db.Database.BeginTransactionAsync();
+                var lifecycleService = scope.ServiceProvider.GetRequiredService<ISourceLifecycleService>();
+                StatusMessage = "Saving your source and starting the first sync...";
 
-                try
+                var result = await lifecycleService.CreateSourceAsync(new SourceCreateRequest
                 {
-                    var profile = new SourceProfile
-                    {
-                        Name = SourceName,
-                        Type = IsM3U ? SourceType.M3U : SourceType.Xtream,
-                        LastSync = null
-                    };
+                    Name = SourceName,
+                    Type = IsM3U ? SourceType.M3U : SourceType.Xtream,
+                    Url = IsM3U ? M3uUrlOrPath : XtreamUrl,
+                    Username = IsM3U ? string.Empty : XtreamUsername,
+                    Password = IsM3U ? string.Empty : XtreamPassword,
+                    ManualEpgUrl = ManualEpgUrl,
+                    EpgMode = SelectedGuideMode,
+                    M3uImportMode = M3uImportMode.LiveMoviesAndSeries,
+                    ProxyScope = SelectedProxyMode,
+                    ProxyUrl = ProxyUrl
+                });
 
-                    db.SourceProfiles.Add(profile);
-                    await db.SaveChangesAsync();
-
-                    var creds = new SourceCredential
-                    {
-                        SourceProfileId = profile.Id,
-                        Url = IsM3U ? M3uUrlOrPath : XtreamUrl,
-                        Username = IsM3U ? string.Empty : XtreamUsername,
-                        Password = IsM3U ? string.Empty : XtreamPassword,
-                        EpgUrl = ManualEpgUrl,
-                        EpgMode = SelectedGuideMode,
-                        ProxyScope = SelectedProxyMode,
-                        ProxyUrl = ProxyUrl?.Trim() ?? string.Empty
-                    };
-                    db.SourceCredentials.Add(creds);
-
-                    var sync = new SourceSyncState
-                    {
-                        SourceProfileId = profile.Id,
-                        LastAttempt = DateTime.UtcNow,
-                        HttpStatusCode = 0,
-                        ErrorLog = string.Empty
-                    };
-                    db.SourceSyncStates.Add(sync);
-
-                    await db.SaveChangesAsync();
-                    await transaction.CommitAsync();
-
-                    int savedId = profile.Id;
-                    bool isM3u = profile.Type == SourceType.M3U;
-
-                    StatusMessage = "Source saved. Importing...";
-
-                    try
-                    {
-                        var refreshService = scope.ServiceProvider.GetRequiredService<ISourceRefreshService>();
-                        var result = await refreshService.RefreshSourceAsync(savedId, SourceRefreshTrigger.InitialImport, SourceRefreshScope.Full);
-                        StatusMessage = result.Success
-                            ? result.Message
-                            : $"Source saved, but import failed: {result.Message}";
-                    }
-                    catch (Exception importEx)
-                    {
-                        StatusMessage = $"Source saved, but import failed: {importEx.Message}";
-                    }
-
-                    SourceName = string.Empty;
-                    M3uUrlOrPath = string.Empty;
-                    ManualEpgUrl = string.Empty;
-                    SelectedEpgModeIndex = 0;
-                    SelectedProxyModeIndex = 0;
-                    ProxyUrl = string.Empty;
-                    XtreamUrl = string.Empty;
-                    XtreamUsername = string.Empty;
-                    XtreamPassword = string.Empty;
-                }
-                catch
-                {
-                    await transaction.RollbackAsync();
-                    throw;
-                }
+                StatusMessage = result.Message;
+                SourceName = string.Empty;
+                M3uUrlOrPath = string.Empty;
+                ManualEpgUrl = string.Empty;
+                SelectedEpgModeIndex = 0;
+                SelectedProxyModeIndex = 0;
+                ProxyUrl = string.Empty;
+                XtreamUrl = string.Empty;
+                XtreamUsername = string.Empty;
+                XtreamPassword = string.Empty;
             }
             catch (Exception ex)
             {
-                StatusMessage = $"Error saving: {ex.Message}";
+                StatusMessage = $"Could not save this source: {ex.Message}";
             }
         }
 

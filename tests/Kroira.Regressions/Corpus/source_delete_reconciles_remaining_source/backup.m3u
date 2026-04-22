@@ -1,0 +1,5 @@
+#EXTM3U x-tvg-url="{{server}}/guide.xml"
+#EXTINF:-1 tvg-id="trt1.tr" tvg-name="TRT 1" group-title="National",TRT 1 HD
+{{server}}/probe/live/trt1-backup.m3u8
+#EXTINF:-1 tvg-id="cartoon.tr" tvg-name="Cartoon Network" group-title="Kids",Cartoon Network TR
+{{server}}/probe/live/cartoon-backup.m3u8

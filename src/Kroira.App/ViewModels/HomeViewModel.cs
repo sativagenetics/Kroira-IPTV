@@ -328,10 +328,11 @@ namespace Kroira.App.ViewModels
         private async Task<HomeSummarySnapshot> LoadSummaryAsync(AppDbContext db, ProfileAccessSnapshot access)
         {
             var catalogSurfaceCountService = _serviceProvider.GetRequiredService<ICatalogSurfaceCountService>();
+            var surfaceStateService = _serviceProvider.GetRequiredService<ISurfaceStateService>();
             var catalogCounts = await catalogSurfaceCountService.BuildAsync(db, access);
             var favoritesCount = await db.Favorites.CountAsync(favorite => favorite.ProfileId == access.ProfileId);
             var sourcesCount = await db.SourceProfiles.CountAsync();
-            var sourceIssuesCount = await db.SourceSyncStates.CountAsync(s => s.ErrorLog != string.Empty || s.HttpStatusCode >= 400);
+            var sourceIssuesCount = await surfaceStateService.GetCurrentSourceIssueCountAsync(db);
 
             LogCatalogCounts(catalogCounts, access);
 

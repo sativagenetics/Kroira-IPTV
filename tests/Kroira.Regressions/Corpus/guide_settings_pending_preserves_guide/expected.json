@@ -1,8 +1,8 @@
 {
   "Sources": [
     {
-      "Key": "repair-source",
-      "Name": "Fixture Repair Source",
+      "Key": "guide-source",
+      "Name": "Guide Pending Fixture",
       "Type": "M3U",
       "Refresh": {
         "Success": true,
@@ -17,8 +17,8 @@
       "Credential": {
         "Url": "[fixture-server]/playlist.m3u",
         "DetectedEpgUrl": "[fixture-server]/guide.xml",
-        "ManualEpgUrl": "",
-        "EpgMode": "Detected",
+        "ManualEpgUrl": "[fixture-server]/guide-alt.xml",
+        "EpgMode": "Manual",
         "M3uImportMode": "LiveMoviesAndSeries",
         "ProxyScope": "Disabled",
         "ProxyUrl": ""
@@ -50,7 +50,7 @@
         "ChannelsWithEpgMatchCount": 3,
         "ChannelsWithLogoCount": 3,
         "SuspiciousEntryCount": 1,
-        "WarningCount": 1,
+        "WarningCount": 2,
         "ErrorCount": 3,
         "Components": [
           {
@@ -82,9 +82,9 @@
           },
           {
             "Type": "Epg",
-            "State": "Weak",
-            "Score": 80,
-            "Summary": "Guide covers 3 of 4 live channels, but coverage is still uneven. 2 channels rely on fallback matching.",
+            "State": "Outdated",
+            "Score": 74,
+            "Summary": "Guide data is stale after a failed refresh.",
             "RelevantCount": 4,
             "HealthyCount": 3,
             "IssueCount": 1
@@ -100,12 +100,12 @@
           },
           {
             "Type": "Freshness",
-            "State": "Healthy",
-            "Score": 100,
-            "Summary": "Last successful sync was [timestamp].",
+            "State": "Outdated",
+            "Score": 74,
+            "Summary": "Stored source data is aging and the latest guide refresh failed.",
             "RelevantCount": 1,
-            "HealthyCount": 1,
-            "IssueCount": 0
+            "HealthyCount": 0,
+            "IssueCount": 1
           }
         ],
         "Probes": [
@@ -171,6 +171,13 @@
             "SampleItems": ""
           },
           {
+            "Severity": "Warning",
+            "Code": "outdated_data",
+            "Title": "Source data is outdated",
+            "AffectedCount": 1,
+            "SampleItems": ""
+          },
+          {
             "Severity": "Error",
             "Code": "live_probe",
             "Title": "Live probe found weak reachability",
@@ -188,12 +195,12 @@
       },
       "Epg": {
         "IsPresent": true,
-        "IsSuccess": true,
-        "Status": "Ready",
+        "IsSuccess": false,
+        "Status": "Stale",
         "ResultCode": "PartialMatch",
         "FailureStage": "None",
-        "ActiveMode": "Detected",
-        "ActiveXmltvUrl": "[fixture-server]/guide.xml",
+        "ActiveMode": "Manual",
+        "ActiveXmltvUrl": "[fixture-server]/guide-alt.xml",
         "MatchedChannelCount": 3,
         "UnmatchedChannelCount": 1,
         "CurrentCoverageCount": 0,
@@ -201,7 +208,7 @@
         "TotalLiveChannelCount": 4,
         "ProgrammeCount": 6,
         "MatchBreakdown": "provider_id=1; reused=0; normalized=1; alias=0; fuzzy=0; unmatched=1",
-        "FailureReason": ""
+        "FailureReason": "Guide settings changed. Sync pending; last successful guide data is still available."
       },
       "Channels": [
         {
@@ -368,16 +375,16 @@
       "ContentType": "Channel",
       "LogicalContentKey": "id:bein1",
       "CandidateCount": 1,
-      "PreferredSourceName": "Fixture Repair Source",
+      "PreferredSourceName": "Guide Pending Fixture",
       "PreferredTitle": "beIN Sports 1 TR",
       "PreferredScore": 56,
-      "SelectionSummary": "Using Fixture Repair Source. Guide mapped, logo ready.",
+      "SelectionSummary": "Using Guide Pending Fixture. Guide mapped, logo ready.",
       "RecoveryAction": "None",
       "RecoverySummary": "",
       "Candidates": [
         {
           "Rank": 1,
-          "SourceName": "Fixture Repair Source",
+          "SourceName": "Guide Pending Fixture",
           "Title": "beIN Sports 1 TR",
           "Score": 56,
           "IsSelected": true,
@@ -391,16 +398,16 @@
       "ContentType": "Channel",
       "LogicalContentKey": "id:trt1",
       "CandidateCount": 2,
-      "PreferredSourceName": "Fixture Repair Source",
+      "PreferredSourceName": "Guide Pending Fixture",
       "PreferredTitle": "TRT 1 HD",
       "PreferredScore": 57,
-      "SelectionSummary": "Preferred Fixture Repair Source from 2 mirrored candidates. Guide mapped, logo ready, catchup.",
+      "SelectionSummary": "Preferred Guide Pending Fixture from 2 mirrored candidates. Guide mapped, logo ready, catchup.",
       "RecoveryAction": "None",
       "RecoverySummary": "",
       "Candidates": [
         {
           "Rank": 1,
-          "SourceName": "Fixture Repair Source",
+          "SourceName": "Guide Pending Fixture",
           "Title": "TRT 1 HD",
           "Score": 57,
           "IsSelected": true,
@@ -410,7 +417,7 @@
         },
         {
           "Rank": 2,
-          "SourceName": "Fixture Repair Source",
+          "SourceName": "Guide Pending Fixture",
           "Title": "TRT 1 HD",
           "Score": 56,
           "IsSelected": false,
@@ -424,16 +431,16 @@
       "ContentType": "Channel",
       "LogicalContentKey": "name:brokennews",
       "CandidateCount": 1,
-      "PreferredSourceName": "Fixture Repair Source",
+      "PreferredSourceName": "Guide Pending Fixture",
       "PreferredTitle": "Broken News",
       "PreferredScore": 51,
-      "SelectionSummary": "Using Fixture Repair Source. Operationally usable live mirror.",
+      "SelectionSummary": "Using Guide Pending Fixture. Operationally usable live mirror.",
       "RecoveryAction": "None",
       "RecoverySummary": "",
       "Candidates": [
         {
           "Rank": 1,
-          "SourceName": "Fixture Repair Source",
+          "SourceName": "Guide Pending Fixture",
           "Title": "Broken News",
           "Score": 51,
           "IsSelected": true,
@@ -444,22 +451,7 @@
       ]
     }
   ],
-  "PlaybackProgresses": [
-    {
-      "ContentType": "Channel",
-      "ContentId": 2,
-      "LogicalContentKey": "id:trt1",
-      "PreferredSourceProfileId": 1,
-      "IsCompleted": false
-    },
-    {
-      "ContentType": "Channel",
-      "ContentId": 999999,
-      "LogicalContentKey": "channel:identity:ghost-channel",
-      "PreferredSourceProfileId": 999999,
-      "IsCompleted": false
-    }
-  ],
+  "PlaybackProgresses": [],
   "Home": {
     "State": "Ready",
     "Title": "",
@@ -467,11 +459,9 @@
     "LibraryStatusMessage": "5 library items available across live TV and VOD",
     "SourceStatusMessage": "1 source configured",
     "SummaryItemCount": 4,
-    "ContinueCount": 1,
+    "ContinueCount": 0,
     "LiveCount": 0,
-    "ContinueTitles": [
-      "TRT 1 HD"
-    ],
+    "ContinueTitles": [],
     "LiveTitles": []
   },
   "LiveTv": {
@@ -484,21 +474,9 @@
     "SelectedSourceLabel": "All providers",
     "ChannelTitles": [
       "beIN Sports 1 TR",
+      "Broken News",
       "Trt 1",
-      "Trt 1",
-      "Broken News"
-    ]
-  },
-  "ContinueWatching": {
-    "State": "Ready",
-    "Title": "",
-    "Message": "",
-    "TotalCount": 1,
-    "LiveCount": 1,
-    "MovieCount": 0,
-    "SeriesCount": 0,
-    "Titles": [
-      "TRT 1 HD"
+      "Trt 1"
     ]
   },
   "LiveBrowsePreferences": {

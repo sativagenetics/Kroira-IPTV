@@ -185,7 +185,7 @@ namespace Kroira.App.ViewModels
             ? Status
             : SourcePanelSummaryText;
 
-        public string QualitySnapshotText => $"Duplicates {DuplicateCount:N0} · Invalid {InvalidStreamCount:N0} · Suspicious {SuspiciousEntryCount:N0}";
+        public string QualitySnapshotText => $"Duplicates {DuplicateCount:N0}, invalid {InvalidStreamCount:N0}, suspicious {SuspiciousEntryCount:N0}";
 
         public string LogoCoverageText => ChannelCount > 0
             ? $"{ChannelsWithLogoCount:N0} / {ChannelCount:N0} live channels with logos"
@@ -275,7 +275,7 @@ namespace Kroira.App.ViewModels
         private string _emptyStateTitle = "No sources configured";
 
         [ObservableProperty]
-        private string _emptyStateMessage = "Add an M3U playlist or Xtream provider to populate live channels, VOD, and guide data.";
+        private string _emptyStateMessage = "Add an M3U playlist or Xtream provider to start importing live channels, movies, series, and guide data.";
 
         [ObservableProperty]
         private int _sourceCount;
@@ -302,7 +302,7 @@ namespace Kroira.App.ViewModels
         private string _healthStatusHeadline = "Idle";
 
         [ObservableProperty]
-        private string _healthStatusCaption = "No sources loaded yet.";
+        private string _healthStatusCaption = "Add a source to get started.";
 
         [ObservableProperty]
         private StatusPillKind _healthStatusKind = StatusPillKind.Neutral;
@@ -311,7 +311,7 @@ namespace Kroira.App.ViewModels
         private string _guideCoverageHeadline = "0%";
 
         [ObservableProperty]
-        private string _guideCoverageCaption = "No live channels available.";
+        private string _guideCoverageCaption = "Add a live source to see guide coverage.";
 
         [ObservableProperty]
         private double _guideCoveragePercent;
@@ -377,91 +377,17 @@ namespace Kroira.App.ViewModels
         public async Task SaveGuideSettingsAsync(SourceGuideSettingsDraft draft, bool syncNow)
         {
             using var scope = _serviceProvider.CreateScope();
-            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            var credential = await db.SourceCredentials.FirstOrDefaultAsync(item => item.SourceProfileId == draft.SourceId);
-            if (credential == null)
-            {
-                throw new Exception("Source credentials were not found.");
-            }
-
-            if (draft.ActiveMode == EpgActiveMode.Manual && string.IsNullOrWhiteSpace(draft.ManualEpgUrl))
-            {
-                throw new Exception("Manual XMLTV mode requires a manual XMLTV URL.");
-            }
-
-            if (draft.ProxyScope != SourceProxyScope.Disabled && string.IsNullOrWhiteSpace(draft.ProxyUrl))
-            {
-                throw new Exception("Proxy routing requires a proxy URL.");
-            }
-
-            var previousMode = credential.EpgMode;
-            var previousManualUrl = credential.ManualEpgUrl ?? string.Empty;
-            var previousProxyScope = credential.ProxyScope;
-            var previousProxyUrl = credential.ProxyUrl ?? string.Empty;
-            credential.EpgMode = draft.ActiveMode;
-            credential.ManualEpgUrl = draft.ManualEpgUrl?.Trim() ?? string.Empty;
-            credential.ProxyScope = draft.ProxyScope;
-            credential.ProxyUrl = draft.ProxyUrl?.Trim() ?? string.Empty;
-            await db.SaveChangesAsync();
-
-            var settingsChanged = previousMode != draft.ActiveMode ||
-                                  !string.Equals(previousManualUrl, credential.ManualEpgUrl, StringComparison.OrdinalIgnoreCase) ||
-                                  previousProxyScope != credential.ProxyScope ||
-                                  !string.Equals(previousProxyUrl, credential.ProxyUrl, StringComparison.OrdinalIgnoreCase);
-
-            if (syncNow || draft.ActiveMode == EpgActiveMode.None)
-            {
-                var refreshService = scope.ServiceProvider.GetRequiredService<ISourceRefreshService>();
-                await refreshService.RefreshSourceAsync(draft.SourceId, SourceRefreshTrigger.Manual, SourceRefreshScope.EpgOnly);
-            }
-            else if (settingsChanged)
-            {
-                var channelIds = await db.ChannelCategories
-                    .Where(category => category.SourceProfileId == draft.SourceId)
-                    .Join(
-                        db.Channels,
-                        category => category.Id,
-                        channel => channel.ChannelCategoryId,
-                        (category, channel) => channel.Id)
-                    .ToListAsync();
-
-                if (channelIds.Count > 0)
+            var lifecycleService = scope.ServiceProvider.GetRequiredService<ISourceLifecycleService>();
+            await lifecycleService.UpdateGuideSettingsAsync(
+                new SourceGuideSettingsUpdateRequest
                 {
-                    var existingPrograms = await db.EpgPrograms
-                        .Where(program => channelIds.Contains(program.ChannelId))
-                        .ToListAsync();
-                    if (existingPrograms.Count > 0)
-                    {
-                        db.EpgPrograms.RemoveRange(existingPrograms);
-                    }
-                }
-
-                var log = await db.EpgSyncLogs.FirstOrDefaultAsync(item => item.SourceProfileId == draft.SourceId);
-                if (log == null)
-                {
-                    log = new EpgSyncLog { SourceProfileId = draft.SourceId };
-                    db.EpgSyncLogs.Add(log);
-                }
-
-                log.SyncedAtUtc = DateTime.UtcNow;
-                log.LastSuccessAtUtc = null;
-                log.IsSuccess = false;
-                log.Status = EpgStatus.Unknown;
-                log.ResultCode = EpgSyncResultCode.None;
-                log.FailureStage = EpgFailureStage.None;
-                log.ActiveMode = draft.ActiveMode;
-                log.ActiveXmltvUrl = string.Empty;
-                log.MatchedChannelCount = 0;
-                log.UnmatchedChannelCount = channelIds.Count;
-                log.CurrentCoverageCount = 0;
-                log.NextCoverageCount = 0;
-                log.TotalLiveChannelCount = channelIds.Count;
-                log.ProgrammeCount = 0;
-                log.MatchBreakdown = string.Empty;
-                log.FailureReason = "Guide settings updated. Sync pending.";
-
-                await db.SaveChangesAsync();
-            }
+                    SourceId = draft.SourceId,
+                    ActiveMode = draft.ActiveMode,
+                    ManualEpgUrl = draft.ManualEpgUrl,
+                    ProxyScope = draft.ProxyScope,
+                    ProxyUrl = draft.ProxyUrl
+                },
+                syncNow);
 
             await LoadSourcesAsync();
         }
@@ -635,8 +561,8 @@ namespace Kroira.App.ViewModels
                 ? $"{guideCoverage:P0}"
                 : "0%";
             GuideCoverageCaption = totalLiveChannels > 0
-                ? $"{TotalMatchedGuideChannelCount:N0} of {totalLiveChannels:N0} live channels mapped"
-                : "No live channels available yet.";
+                ? $"{TotalMatchedGuideChannelCount:N0} of {totalLiveChannels:N0} live channels matched to guide data"
+                : "Add a live source to see guide coverage.";
 
             var healthySources = loadedSources.Count(source => source.HealthPillKind == StatusPillKind.Healthy);
             var failingSources = loadedSources.Count(source => source.HealthPillKind == StatusPillKind.Failed);
@@ -645,31 +571,31 @@ namespace Kroira.App.ViewModels
             if (workingSources > 0)
             {
                 HealthStatusHeadline = "Syncing";
-                HealthStatusCaption = $"{workingSources} source syncing right now.";
+                HealthStatusCaption = $"{workingSources} source{(workingSources == 1 ? string.Empty : "s")} syncing now.";
                 HealthStatusKind = StatusPillKind.Syncing;
             }
             else if (failingSources > 0)
             {
                 HealthStatusHeadline = "Attention";
-                HealthStatusCaption = $"{failingSources} source requires intervention.";
+                HealthStatusCaption = $"{failingSources} source{(failingSources == 1 ? string.Empty : "s")} need review.";
                 HealthStatusKind = StatusPillKind.Failed;
             }
             else if (healthySources == loadedSources.Count && loadedSources.Count > 0)
             {
                 HealthStatusHeadline = "Optimal";
-                HealthStatusCaption = "All configured sources look operational.";
+                HealthStatusCaption = "All configured sources are ready.";
                 HealthStatusKind = StatusPillKind.Healthy;
             }
             else if (loadedSources.Count > 0)
             {
                 HealthStatusHeadline = "Mixed";
-                HealthStatusCaption = $"{healthySources} healthy, {loadedSources.Count - healthySources} need review.";
+                HealthStatusCaption = $"{healthySources} source{(healthySources == 1 ? string.Empty : "s")} ready, {loadedSources.Count - healthySources} to review.";
                 HealthStatusKind = StatusPillKind.Warning;
             }
             else
             {
                 HealthStatusHeadline = "Idle";
-                HealthStatusCaption = "No configured sources yet.";
+                HealthStatusCaption = "Add a source to get started.";
                 HealthStatusKind = StatusPillKind.Neutral;
             }
 
@@ -716,8 +642,8 @@ namespace Kroira.App.ViewModels
                 ? "No sources configured"
                 : "No matching sources";
             EmptyStateMessage = noConfiguredSources
-                ? "Add an M3U playlist or Xtream provider to populate live channels, VOD, and guide data."
-                : "Try a different provider name, source type, or guide status filter.";
+                ? "Add an M3U playlist or Xtream provider to start importing live channels, movies, series, and guide data."
+                : "Try a different source name, type, or guide status.";
         }
 
         private static IEnumerable<SourceRecentActivityItemViewModel> BuildRecentActivities(
@@ -753,7 +679,7 @@ namespace Kroira.App.ViewModels
                         ActionText = profile.Type == SourceType.Xtream ? "Source Sync" : "Playlist Import",
                         StatusText = importStatusText,
                         StatusKind = importKind,
-                        PayloadText = $"{snapshot.LiveChannelCount:N0} live · {snapshot.MovieCount + snapshot.SeriesCount:N0} VOD/series"
+                        PayloadText = $"{snapshot.LiveChannelCount:N0} live, {snapshot.MovieCount + snapshot.SeriesCount:N0} VOD/series"
                     }));
                 }
 
@@ -766,7 +692,7 @@ namespace Kroira.App.ViewModels
                         ActionText = "Guide Sync",
                         StatusText = snapshot.EpgStatusText,
                         StatusKind = MapGuidePillKind(snapshot),
-                        PayloadText = $"{snapshot.MatchedLiveChannelCount:N0} matched · {snapshot.EpgProgramCount:N0} programmes"
+                        PayloadText = $"{snapshot.MatchedLiveChannelCount:N0} matched, {snapshot.EpgProgramCount:N0} programmes"
                     }));
                 }
             }
@@ -909,7 +835,7 @@ namespace Kroira.App.ViewModels
             if (item != null)
             {
                 item.HealthLabel = "Working";
-                item.Status = "Parsing...";
+                item.Status = "Refreshing live catalog...";
             }
 
             try
@@ -923,7 +849,7 @@ namespace Kroira.App.ViewModels
                     item = Sources.FirstOrDefault(source => source.Id == id);
                     if (item != null)
                     {
-                        item.Status = $"Import failed: {(result.Message.Length > 120 ? result.Message.Substring(0, 120) + "..." : result.Message)}";
+                        item.Status = BuildStatusMessage("Live refresh needs review", result.Message);
                     }
                 }
                 else if (!result.GuideSucceeded && result.GuideAttempted && !string.IsNullOrWhiteSpace(result.GuideSummary))
@@ -940,7 +866,7 @@ namespace Kroira.App.ViewModels
                 if (item != null)
                 {
                     item.HealthLabel = "Failing";
-                    item.Status = $"Parse failed: {ex.Message}";
+                    item.Status = BuildStatusMessage("Live refresh did not finish", ex.Message);
                 }
             }
         }
@@ -953,7 +879,7 @@ namespace Kroira.App.ViewModels
 
             item.IsEpgSyncing = true;
             item.HealthLabel = "Working";
-            item.Status = "Syncing EPG...";
+            item.Status = "Refreshing guide data...";
 
             try
             {
@@ -966,7 +892,7 @@ namespace Kroira.App.ViewModels
             {
                 item.IsEpgSyncing = false;
                 item.HealthLabel = "Failing";
-                item.Status = $"EPG failed: {(ex.Message.Length > 120 ? ex.Message.Substring(0, 120) + "..." : ex.Message)}";
+                item.Status = BuildStatusMessage("Guide refresh needs review", ex.Message);
             }
         }
 
@@ -977,7 +903,7 @@ namespace Kroira.App.ViewModels
             if (item != null)
             {
                 item.HealthLabel = "Working";
-                item.Status = "Syncing Xtream...";
+                item.Status = "Refreshing source...";
             }
 
             try
@@ -991,7 +917,7 @@ namespace Kroira.App.ViewModels
                     item = Sources.FirstOrDefault(source => source.Id == id);
                     if (item != null)
                     {
-                        item.Status = $"Xtream sync failed: {(result.Message.Length > 120 ? result.Message.Substring(0, 120) + "..." : result.Message)}";
+                        item.Status = BuildStatusMessage("Source refresh needs review", result.Message);
                     }
                 }
                 else if (!result.GuideSucceeded && result.GuideAttempted && !string.IsNullOrWhiteSpace(result.GuideSummary))
@@ -1008,7 +934,7 @@ namespace Kroira.App.ViewModels
                 if (item != null)
                 {
                     item.HealthLabel = "Failing";
-                    item.Status = $"Xtream sync failed: {ex.Message}";
+                    item.Status = BuildStatusMessage("Source refresh did not finish", ex.Message);
                 }
             }
         }
@@ -1020,7 +946,7 @@ namespace Kroira.App.ViewModels
             if (item != null)
             {
                 item.HealthLabel = "Working";
-                item.Status = "Syncing Xtream VOD...";
+                item.Status = "Refreshing movie and series catalog...";
             }
 
             try
@@ -1035,7 +961,7 @@ namespace Kroira.App.ViewModels
                 if (item != null)
                 {
                     item.HealthLabel = "Failing";
-                    item.Status = $"Xtream VOD sync failed: {ex.Message}";
+                    item.Status = BuildStatusMessage("Library refresh did not finish", ex.Message);
                 }
             }
         }
@@ -1047,139 +973,56 @@ namespace Kroira.App.ViewModels
             if (uiItem != null)
             {
                 uiItem.HealthLabel = "Working";
-                uiItem.Status = "Deleting...";
+                uiItem.Status = "Removing source...";
             }
 
             try
             {
                 using var scope = _serviceProvider.CreateScope();
-                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-
-                var profile = await db.SourceProfiles.FindAsync(id);
-                if (profile == null)
+                var lifecycleService = scope.ServiceProvider.GetRequiredService<ISourceLifecycleService>();
+                var result = await lifecycleService.DeleteSourceAsync(id);
+                if (!result.Success)
                 {
                     if (uiItem != null)
                     {
                         uiItem.HealthLabel = "Failing";
-                        uiItem.Status = "Source not found.";
+                        uiItem.Status = result.Message;
                     }
+
                     return;
                 }
 
-                using var transaction = await db.Database.BeginTransactionAsync();
-                try
-                {
-                    var catIds = await db.ChannelCategories
-                        .Where(category => category.SourceProfileId == id)
-                        .Select(category => category.Id)
-                        .ToListAsync();
-
-                    if (catIds.Count > 0)
-                    {
-                        var channelIds = await db.Channels
-                            .Where(channel => catIds.Contains(channel.ChannelCategoryId))
-                            .Select(channel => channel.Id)
-                            .ToListAsync();
-
-                        if (channelIds.Count > 0)
-                        {
-                            var epgs = await db.EpgPrograms.Where(program => channelIds.Contains(program.ChannelId)).ToListAsync();
-                            if (epgs.Count > 0) db.EpgPrograms.RemoveRange(epgs);
-
-                            var channels = await db.Channels.Where(channel => channelIds.Contains(channel.Id)).ToListAsync();
-                            db.Channels.RemoveRange(channels);
-                        }
-
-                        var cats = await db.ChannelCategories.Where(category => catIds.Contains(category.Id)).ToListAsync();
-                        db.ChannelCategories.RemoveRange(cats);
-                    }
-
-                    var seriesIds = await db.Series.Where(series => series.SourceProfileId == id).Select(series => series.Id).ToListAsync();
-                    if (seriesIds.Count > 0)
-                    {
-                        var seasonIds = await db.Seasons.Where(season => seriesIds.Contains(season.SeriesId)).Select(season => season.Id).ToListAsync();
-                        if (seasonIds.Count > 0)
-                        {
-                            var episodeIds = await db.Episodes.Where(episode => seasonIds.Contains(episode.SeasonId)).Select(episode => episode.Id).ToListAsync();
-                            var episodes = await db.Episodes.Where(episode => seasonIds.Contains(episode.SeasonId)).ToListAsync();
-                            if (episodes.Count > 0) db.Episodes.RemoveRange(episodes);
-
-                            var seasons = await db.Seasons.Where(season => seasonIds.Contains(season.Id)).ToListAsync();
-                            db.Seasons.RemoveRange(seasons);
-                        }
-
-                        var series = await db.Series.Where(series => seriesIds.Contains(series.Id)).ToListAsync();
-                        db.Series.RemoveRange(series);
-                    }
-
-                    var movieIds = await db.Movies.Where(movie => movie.SourceProfileId == id).Select(movie => movie.Id).ToListAsync();
-                    var movies = await db.Movies.Where(movie => movie.SourceProfileId == id).ToListAsync();
-                    if (movies.Count > 0) db.Movies.RemoveRange(movies);
-
-                    var creds = await db.SourceCredentials.FirstOrDefaultAsync(credential => credential.SourceProfileId == id);
-                    if (creds != null) db.SourceCredentials.Remove(creds);
-
-                    var syncState = await db.SourceSyncStates.FirstOrDefaultAsync(state => state.SourceProfileId == id);
-                    if (syncState != null) db.SourceSyncStates.Remove(syncState);
-
-                    var epgLog = await db.EpgSyncLogs.FirstOrDefaultAsync(log => log.SourceProfileId == id);
-                    if (epgLog != null) db.EpgSyncLogs.Remove(epgLog);
-
-                    var healthReport = await db.SourceHealthReports
-                        .Include(report => report.Components)
-                        .Include(report => report.Probes)
-                        .Include(report => report.Issues)
-                        .FirstOrDefaultAsync(report => report.SourceProfileId == id);
-                    if (healthReport != null)
-                    {
-                        if (healthReport.Components.Count > 0)
-                        {
-                            db.SourceHealthComponents.RemoveRange(healthReport.Components);
-                        }
-
-                        if (healthReport.Probes.Count > 0)
-                        {
-                            db.SourceHealthProbes.RemoveRange(healthReport.Probes);
-                        }
-
-                        if (healthReport.Issues.Count > 0)
-                        {
-                            db.SourceHealthIssues.RemoveRange(healthReport.Issues);
-                        }
-
-                        db.SourceHealthReports.Remove(healthReport);
-                    }
-
-                    db.SourceProfiles.Remove(profile);
-
-                    await db.SaveChangesAsync();
-                    await transaction.CommitAsync();
-
-                    var logicalCatalogStateService = scope.ServiceProvider.GetRequiredService<ILogicalCatalogStateService>();
-                    await logicalCatalogStateService.ReconcilePersistentStateAsync(db);
-                    var contentOperationalService = scope.ServiceProvider.GetRequiredService<IContentOperationalService>();
-                    await contentOperationalService.RefreshOperationalStateAsync(db);
-
-                    await LoadSourcesAsync();
-                }
-                catch (Exception ex)
-                {
-                    try { await transaction.RollbackAsync(); } catch { }
-                    if (uiItem != null)
-                    {
-                        uiItem.HealthLabel = "Failing";
-                        uiItem.Status = $"Delete failed: {ex.Message}";
-                    }
-                }
+                await LoadSourcesAsync();
             }
             catch (Exception ex)
             {
                 if (uiItem != null)
                 {
                     uiItem.HealthLabel = "Failing";
-                    uiItem.Status = $"Delete error: {ex.Message}";
+                    uiItem.Status = BuildStatusMessage("Could not remove this source", ex.Message);
                 }
             }
+        }
+
+        private static string BuildStatusMessage(string prefix, string? detail)
+        {
+            var trimmed = TrimStatusDetail(detail);
+            return string.IsNullOrWhiteSpace(trimmed)
+                ? prefix
+                : $"{prefix}: {trimmed}";
+        }
+
+        private static string TrimStatusDetail(string? detail, int maxLength = 120)
+        {
+            if (string.IsNullOrWhiteSpace(detail))
+            {
+                return string.Empty;
+            }
+
+            var normalized = detail.Trim();
+            return normalized.Length > maxLength
+                ? normalized[..maxLength] + "..."
+                : normalized;
         }
     }
 }

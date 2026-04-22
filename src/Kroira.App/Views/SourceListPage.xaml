@@ -113,7 +113,7 @@
                                    Foreground="{StaticResource KroiraAccentBrush}" />
                         <TextBlock Text="Sources"
                                    Style="{StaticResource KroiraPageTitleStyle}" />
-                        <TextBlock Text="Manage providers, watch source health, and keep guide coverage under control without exposing every diagnostic on the first layer."
+                        <TextBlock Text="Monitor source health, guide coverage, and recent sync activity."
                                    Style="{StaticResource KroiraPageSubtitleStyle}"
                                    MaxWidth="760" />
                     </StackPanel>
@@ -124,7 +124,7 @@
                                 HorizontalAlignment="Right">
                         <Grid>
                             <TextBox Text="{x:Bind ViewModel.SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                     PlaceholderText="Search providers or guide mode"
+                                     PlaceholderText="Search sources, guide mode, or health"
                                      Style="{StaticResource SourceSearchBoxStyle}" />
                             <FontIcon Glyph="&#xE721;"
                                       Foreground="{StaticResource KroiraTextTertiaryBrush}"
@@ -275,7 +275,7 @@
                         <TextBlock Text="MANAGED SOURCES"
                                    Style="{StaticResource KroiraLabelStyle}"
                                    Foreground="{StaticResource KroiraAccentBrush}" />
-                        <TextBlock Text="Operational Overview"
+                        <TextBlock Text="Source Overview"
                                    Style="{StaticResource KroiraSectionTitleStyle}" />
                     </StackPanel>
 
@@ -683,7 +683,7 @@
                                        Foreground="{StaticResource KroiraAccentBrush}" />
                             <TextBlock Text="Recent Sync Activity"
                                        Style="{StaticResource KroiraSectionTitleStyle}" />
-                            <TextBlock Text="Latest source imports, guide updates, and sync outcomes."
+                            <TextBlock Text="Latest source imports, guide updates, and recovery activity."
                                        Style="{StaticResource KroiraBodyStyle}" />
                         </StackPanel>
 

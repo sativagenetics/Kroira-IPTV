@@ -1,5 +1,7 @@
 #nullable enable
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Kroira.App.Data;
 using Kroira.App.Models;
@@ -43,6 +45,7 @@ namespace Kroira.App.Services
             var parserM3u = scopeServices.ServiceProvider.GetRequiredService<IM3uParserService>();
             var parserXtream = scopeServices.ServiceProvider.GetRequiredService<IXtreamParserService>();
             var parserXmltv = scopeServices.ServiceProvider.GetRequiredService<IXmltvParserService>();
+            var browsePreferencesService = scopeServices.ServiceProvider.GetRequiredService<IBrowsePreferencesService>();
             var logicalCatalogStateService = scopeServices.ServiceProvider.GetRequiredService<ILogicalCatalogStateService>();
             var contentOperationalService = scopeServices.ServiceProvider.GetRequiredService<IContentOperationalService>();
             var autoRefreshService = scopeServices.ServiceProvider.GetRequiredService<ISourceAutoRefreshService>();
@@ -76,6 +79,7 @@ namespace Kroira.App.Services
             var guideAttempted = false;
             var guideSucceeded = false;
             var guideSummary = string.Empty;
+            var runtimeRepairSummary = string.Empty;
 
             try
             {
@@ -145,9 +149,14 @@ namespace Kroira.App.Services
                         break;
                 }
 
-                await logicalCatalogStateService.ReconcilePersistentStateAsync(db);
-                await contentOperationalService.RefreshOperationalStateAsync(db);
-                await autoRefreshService.UpdateScheduleAsync(db, sourceProfileId, trigger, success: true, guideSummary);
+                runtimeRepairSummary = await TryFinalizeRuntimeStateAsync(
+                    db,
+                    sourceProfileId,
+                    browsePreferencesService,
+                    logicalCatalogStateService,
+                    contentOperationalService);
+                var scheduleSummary = CombineSummaries(guideSummary, runtimeRepairSummary);
+                await autoRefreshService.UpdateScheduleAsync(db, sourceProfileId, trigger, success: true, scheduleSummary);
 
                 var catalogSummary = scope switch
                 {
@@ -159,11 +168,7 @@ namespace Kroira.App.Services
                     _ => "Playlist import completed."
                 };
 
-                var message = guideAttempted && !guideSucceeded && !string.IsNullOrWhiteSpace(guideSummary)
-                    ? $"{catalogSummary} {guideSummary}"
-                    : string.IsNullOrWhiteSpace(guideSummary)
-                        ? catalogSummary
-                        : $"{catalogSummary} {guideSummary}";
+                var message = CombineSummaries(catalogSummary, guideSummary, runtimeRepairSummary);
 
                 return new SourceRefreshResult
                 {
@@ -180,16 +185,20 @@ namespace Kroira.App.Services
             }
             catch (Exception ex)
             {
-                try
-                {
-                    await logicalCatalogStateService.ReconcilePersistentStateAsync(db);
-                    await contentOperationalService.RefreshOperationalStateAsync(db);
-                }
-                catch
-                {
-                }
+                runtimeRepairSummary = await TryFinalizeRuntimeStateAsync(
+                    db,
+                    sourceProfileId,
+                    browsePreferencesService,
+                    logicalCatalogStateService,
+                    contentOperationalService);
 
-                await autoRefreshService.UpdateScheduleAsync(db, sourceProfileId, trigger, success: false, ex.Message);
+                await autoRefreshService.UpdateScheduleAsync(
+                    db,
+                    sourceProfileId,
+                    trigger,
+                    success: false,
+                    CombineSummaries(ex.Message, runtimeRepairSummary));
+                RuntimeEventLogger.Log("SOURCE-REFRESH", ex, $"source_id={sourceProfileId} refresh failed");
 
                 return new SourceRefreshResult
                 {
@@ -204,6 +213,57 @@ namespace Kroira.App.Services
                     GuideSucceeded = false
                 };
             }
+        }
+
+        private static async Task<string> TryFinalizeRuntimeStateAsync(
+            AppDbContext db,
+            int sourceProfileId,
+            IBrowsePreferencesService browsePreferencesService,
+            ILogicalCatalogStateService logicalCatalogStateService,
+            IContentOperationalService contentOperationalService)
+        {
+            var warnings = new List<string>();
+
+            try
+            {
+                await browsePreferencesService.RepairSourceReferencesAsync(db, sourceProfileId);
+            }
+            catch (Exception ex)
+            {
+                RuntimeEventLogger.Log("SOURCE-REFRESH", ex, $"source_id={sourceProfileId} browse repair skipped");
+                warnings.Add("Some browse state repairs were deferred.");
+            }
+
+            try
+            {
+                await logicalCatalogStateService.ReconcilePersistentStateAsync(db);
+            }
+            catch (Exception ex)
+            {
+                RuntimeEventLogger.Log("SOURCE-REFRESH", ex, $"source_id={sourceProfileId} state reconciliation skipped");
+                warnings.Add("Some saved state repairs were deferred.");
+            }
+
+            try
+            {
+                await contentOperationalService.RefreshOperationalStateAsync(db);
+            }
+            catch (Exception ex)
+            {
+                RuntimeEventLogger.Log("SOURCE-REFRESH", ex, $"source_id={sourceProfileId} operational rebuild skipped");
+                warnings.Add("Operational mirror refresh was deferred.");
+            }
+
+            return CombineSummaries(warnings.ToArray());
+        }
+
+        private static string CombineSummaries(params string[] segments)
+        {
+            return string.Join(
+                " ",
+                segments
+                    .Where(segment => !string.IsNullOrWhiteSpace(segment))
+                    .Select(segment => segment.Trim()));
         }
     }
 }

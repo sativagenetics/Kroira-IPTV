@@ -1,0 +1,30 @@
+{
+  "id": "guide_settings_pending_preserves_guide",
+  "description": "Changing guide settings without syncing immediately preserves usable guide data and keeps live surfaces healthy.",
+  "sources": [
+    {
+      "key": "guide-source",
+      "name": "Guide Pending Fixture",
+      "type": "M3U",
+      "url": "{{server}}/playlist.m3u",
+      "epgMode": "Detected",
+      "m3uImportMode": "LiveMoviesAndSeries",
+      "refreshTrigger": "InitialImport",
+      "refreshScope": "Full"
+    }
+  ],
+  "mutations": [
+    {
+      "kind": "update_guide_settings",
+      "sourceKey": "guide-source",
+      "activeMode": "Manual",
+      "manualEpgUrl": "{{server}}/guide-alt.xml",
+      "syncNow": false
+    }
+  ],
+  "surfaceLoads": {
+    "home": true,
+    "liveTv": true,
+    "continueWatching": false
+  }
+}

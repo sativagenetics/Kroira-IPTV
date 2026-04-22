@@ -18,6 +18,9 @@ internal sealed class RegressionSnapshot
 
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public ContinueWatchingSurfaceSnapshot? ContinueWatching { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public LiveBrowsePreferencesSnapshot? LiveBrowsePreferences { get; set; }
 }
 
 internal sealed class SourceSnapshot
@@ -282,6 +285,8 @@ internal sealed class LiveTvSurfaceSnapshot
     public string Message { get; set; } = string.Empty;
     public int ChannelCount { get; set; }
     public int CategoryCount { get; set; }
+    public int SelectedSourceId { get; set; }
+    public string SelectedSourceLabel { get; set; } = string.Empty;
     public List<string> ChannelTitles { get; set; } = [];
 }
 
@@ -295,4 +300,16 @@ internal sealed class ContinueWatchingSurfaceSnapshot
     public int MovieCount { get; set; }
     public int SeriesCount { get; set; }
     public List<string> Titles { get; set; } = [];
+}
+
+internal sealed class LiveBrowsePreferencesSnapshot
+{
+    public int SelectedSourceId { get; set; }
+    public int LastChannelId { get; set; }
+    public string LastChannelLogicalKey { get; set; } = string.Empty;
+    public int LastChannelPreferredSourceProfileId { get; set; }
+    public List<int> HiddenSourceIds { get; set; } = [];
+    public List<int> RecentChannelIds { get; set; } = [];
+    public List<string> RecentLogicalKeys { get; set; } = [];
+    public List<int> RecentPreferredSourceProfileIds { get; set; } = [];
 }

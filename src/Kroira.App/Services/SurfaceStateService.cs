@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Kroira.App.Data;
+using Kroira.App.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.UI.Xaml;
 
@@ -62,7 +63,10 @@ namespace Kroira.App.Services
         string OfflineMessage,
         string ImportFailedTitle,
         string ImportFailedMessage,
-        string ActionLabel)
+        string NoSourcesActionLabel,
+        string EmptyActionLabel,
+        string OfflineActionLabel,
+        string ImportFailedActionLabel)
     {
         public SurfaceStatePresentation Create(SurfaceViewState state)
         {
@@ -79,25 +83,25 @@ namespace Kroira.App.Services
                     Glyph,
                     NoSourcesTitle,
                     NoSourcesMessage,
-                    ActionLabel),
+                    NoSourcesActionLabel),
                 SurfaceViewState.EmptyContent => new SurfaceStatePresentation(
                     state,
                     Glyph,
                     EmptyTitle,
                     EmptyMessage,
-                    ActionLabel),
+                    EmptyActionLabel),
                 SurfaceViewState.Offline => new SurfaceStatePresentation(
                     state,
                     Glyph,
                     OfflineTitle,
                     OfflineMessage,
-                    ActionLabel),
+                    OfflineActionLabel),
                 SurfaceViewState.ImportFailed => new SurfaceStatePresentation(
                     state,
                     Glyph,
                     ImportFailedTitle,
                     ImportFailedMessage,
-                    ActionLabel),
+                    ImportFailedActionLabel),
                 _ => new SurfaceStatePresentation(
                     SurfaceViewState.Ready,
                     string.Empty,
@@ -113,71 +117,86 @@ namespace Kroira.App.Services
         public static readonly SurfaceStateCopy Home = new(
             "\uE8F1",
             "Loading home",
-            "Preparing your library surface.",
+            "Preparing your library.",
             "Add your first source",
-            "KROIRA needs at least one source before it can build Home.",
-            "Nothing imported yet",
-            "Your configured sources have not returned usable home library items yet.",
-            "Home library is offline",
-            "KROIRA could not reach your configured sources. Check the network or source settings.",
-            "Home library needs attention",
-            "KROIRA could not import usable library data from the configured source.",
-            "Open sources");
+            "Connect an M3U playlist or Xtream provider to start building Home.",
+            "Home is still getting ready",
+            "Your sources are saved, but Home does not have enough imported items yet.",
+            "Sources are temporarily offline",
+            "KROIRA could not reach your sources just now. Check the connection or try again shortly.",
+            "Home needs a refresh",
+            "The latest refresh did not return enough library data for Home. Review the affected source, then try again.",
+            "Open Sources",
+            "Open Sources",
+            "Open Sources",
+            "Open Sources");
 
         public static readonly SurfaceStateCopy LiveTv = new(
             "\uE714",
             "Loading Live TV",
-            "Checking your live channel library.",
+            "Checking your live channels.",
             "Add a live source",
-            "KROIRA needs a configured source before Live TV can be shown.",
+            "Connect a source with live channels to start watching Live TV.",
             "No live channels imported",
-            "Your configured sources did not return any usable live channels yet.",
-            "Live TV is offline",
-            "KROIRA could not reach the configured live source. Check the network or source settings.",
-            "Live import needs attention",
-            "KROIRA could not import usable live channel data from the configured source.",
-            "Open sources");
+            "Your current sources have not returned any usable live channels yet.",
+            "Live TV is temporarily offline",
+            "KROIRA could not reach your live source just now. Check the connection or try again shortly.",
+            "Live TV needs a refresh",
+            "The latest refresh did not return enough live channel data. Review the affected source, then try again.",
+            "Open Sources",
+            "Open Sources",
+            "Open Sources",
+            "Open Sources");
 
         public static readonly SurfaceStateCopy Movies = new(
             "\uE8B2",
             "Loading movies",
             "Checking your movie library.",
             "Add a movie source",
-            "KROIRA needs a configured source before Movies can be shown.",
+            "Connect a source with movie catalog data to start browsing Movies.",
             "No movies imported",
-            "Your configured sources did not return any usable movies yet.",
-            "Movies are offline",
-            "KROIRA could not reach the configured source for movies. Check the network or source settings.",
-            "Movie import needs attention",
-            "KROIRA could not import usable movie data from the configured source.",
-            "Open sources");
+            "Your current sources have not returned any usable movies yet.",
+            "Movies are temporarily offline",
+            "KROIRA could not reach your movie source just now. Check the connection or try again shortly.",
+            "Movies need a refresh",
+            "The latest refresh did not return enough movie data. Review the affected source, then try again.",
+            "Open Sources",
+            "Open Sources",
+            "Open Sources",
+            "Open Sources");
 
         public static readonly SurfaceStateCopy Series = new(
             "\uE8A9",
             "Loading series",
             "Checking your series library.",
             "Add a series source",
-            "KROIRA needs a configured source before Series can be shown.",
+            "Connect a source with series data to start browsing Series.",
             "No series imported",
-            "Your configured sources did not return any usable series yet.",
-            "Series are offline",
-            "KROIRA could not reach the configured source for series. Check the network or source settings.",
-            "Series import needs attention",
-            "KROIRA could not import usable series data from the configured source.",
-            "Open sources");
+            "Your current sources have not returned any usable series yet.",
+            "Series is temporarily offline",
+            "KROIRA could not reach your series source just now. Check the connection or try again shortly.",
+            "Series needs a refresh",
+            "The latest refresh did not return enough series data. Review the affected source, then try again.",
+            "Open Sources",
+            "Open Sources",
+            "Open Sources",
+            "Open Sources");
 
         public static readonly SurfaceStateCopy Favorites = new(
             "\uE734",
             "Loading favorites",
             "Preparing your saved items.",
             "No sources configured",
-            "There are no configured sources in KROIRA yet.",
+            "Add a source first, then save channels, movies, or series to Favorites.",
             "No favorites yet",
             "Save a channel, movie, or series and it will appear here.",
-            "Favorites are unavailable",
-            "KROIRA could not load Favorites right now.",
-            "Favorites are unavailable",
-            "KROIRA could not load Favorites right now.",
+            "Favorites are temporarily unavailable",
+            "Saved items could not be loaded right now. Try again in a moment.",
+            "Favorites are temporarily unavailable",
+            "Saved items could not be loaded right now. Try again in a moment.",
+            "Open Sources",
+            string.Empty,
+            string.Empty,
             string.Empty);
 
         public static readonly SurfaceStateCopy ContinueWatching = new(
@@ -185,24 +204,29 @@ namespace Kroira.App.Services
             "Loading Continue Watching",
             "Preparing your saved playback queue.",
             "No sources configured",
-            "There are no configured sources in KROIRA yet.",
+            "Add a source first, then start watching to build your resume queue.",
             "Nothing to resume yet",
             "Start watching a channel, movie, or episode and it will appear here.",
-            "Continue Watching is unavailable",
-            "KROIRA could not load saved playback right now.",
-            "Continue Watching is unavailable",
-            "KROIRA could not load saved playback right now.",
+            "Continue Watching is temporarily unavailable",
+            "Saved playback could not be loaded right now. Try again in a moment.",
+            "Continue Watching is temporarily unavailable",
+            "Saved playback could not be loaded right now. Try again in a moment.",
+            "Open Sources",
+            string.Empty,
+            string.Empty,
             string.Empty);
     }
 
     public sealed record SourceAvailabilitySnapshot(
         int SourceCount,
         bool HasOfflineFailure,
-        bool HasImportFailure);
+        bool HasImportFailure,
+        bool HasSuccessfulSync);
 
     public interface ISurfaceStateService
     {
         Task<SourceAvailabilitySnapshot> GetSourceAvailabilityAsync(AppDbContext db);
+        Task<int> GetCurrentSourceIssueCountAsync(AppDbContext db);
         SurfaceStatePresentation ResolveSourceBackedState(
             SourceAvailabilitySnapshot sourceAvailability,
             int contentCount,
@@ -215,25 +239,85 @@ namespace Kroira.App.Services
     {
         public async Task<SourceAvailabilitySnapshot> GetSourceAvailabilityAsync(AppDbContext db)
         {
-            var sourceIds = await db.SourceProfiles
+            var sources = await db.SourceProfiles
                 .AsNoTracking()
-                .Select(profile => profile.Id)
+                .Select(profile => new
+                {
+                    profile.Id,
+                    profile.LastSync
+                })
                 .ToListAsync();
 
-            if (sourceIds.Count == 0)
+            if (sources.Count == 0)
             {
-                return new SourceAvailabilitySnapshot(0, false, false);
+                return new SourceAvailabilitySnapshot(0, false, false, false);
             }
 
+            var sourceIds = sources.Select(profile => profile.Id).ToList();
             var syncStates = await db.SourceSyncStates
                 .AsNoTracking()
                 .Where(state => sourceIds.Contains(state.SourceProfileId))
                 .ToListAsync();
+            var syncStateBySource = syncStates
+                .GroupBy(state => state.SourceProfileId)
+                .ToDictionary(group => group.Key, group => group.OrderByDescending(item => item.LastAttempt).First());
 
-            var hasOfflineFailure = syncStates.Any(state => IsOfflineFailure(state.HttpStatusCode, state.ErrorLog));
-            var hasImportFailure = syncStates.Any(state => IsImportFailure(state.HttpStatusCode, state.ErrorLog));
+            var hasOfflineFailure = false;
+            var hasImportFailure = false;
+            var hasSuccessfulSync = false;
 
-            return new SourceAvailabilitySnapshot(sourceIds.Count, hasOfflineFailure, hasImportFailure);
+            foreach (var source in sources)
+            {
+                if (source.LastSync.HasValue)
+                {
+                    hasSuccessfulSync = true;
+                }
+
+                if (!syncStateBySource.TryGetValue(source.Id, out var state))
+                {
+                    continue;
+                }
+
+                var failureIsCurrent = IsCurrentFailure(state, source.LastSync);
+                if (!failureIsCurrent)
+                {
+                    continue;
+                }
+
+                hasOfflineFailure |= IsOfflineFailure(state.HttpStatusCode, state.ErrorLog);
+                hasImportFailure |= IsImportFailure(state.HttpStatusCode, state.ErrorLog);
+            }
+
+            return new SourceAvailabilitySnapshot(sourceIds.Count, hasOfflineFailure, hasImportFailure, hasSuccessfulSync);
+        }
+
+        public async Task<int> GetCurrentSourceIssueCountAsync(AppDbContext db)
+        {
+            var sources = await db.SourceProfiles
+                .AsNoTracking()
+                .Select(profile => new
+                {
+                    profile.Id,
+                    profile.LastSync
+                })
+                .ToListAsync();
+            if (sources.Count == 0)
+            {
+                return 0;
+            }
+
+            var sourceIds = sources.Select(profile => profile.Id).ToList();
+            var syncStates = await db.SourceSyncStates
+                .AsNoTracking()
+                .Where(state => sourceIds.Contains(state.SourceProfileId))
+                .ToListAsync();
+            var syncStateBySource = syncStates
+                .GroupBy(state => state.SourceProfileId)
+                .ToDictionary(group => group.Key, group => group.OrderByDescending(item => item.LastAttempt).First());
+
+            return sources.Count(source =>
+                syncStateBySource.TryGetValue(source.Id, out var state) &&
+                IsCurrentFailure(state, source.LastSync));
         }
 
         public SurfaceStatePresentation ResolveSourceBackedState(
@@ -332,6 +416,36 @@ namespace Kroira.App.Services
                        "response status code does not indicate success: 502",
                        "response status code does not indicate success: 503",
                        "response status code does not indicate success: 504");
+        }
+
+        private static bool IsCurrentFailure(SourceSyncState syncState, DateTime? lastSuccessfulSyncUtc)
+        {
+            if (!IsOfflineFailure(syncState.HttpStatusCode, syncState.ErrorLog) &&
+                !IsImportFailure(syncState.HttpStatusCode, syncState.ErrorLog))
+            {
+                return false;
+            }
+
+            if (!lastSuccessfulSyncUtc.HasValue)
+            {
+                return true;
+            }
+
+            if (syncState.LastAttempt == default)
+            {
+                return false;
+            }
+
+            var lastSuccess = NormalizeUtc(lastSuccessfulSyncUtc.Value);
+            var lastAttempt = NormalizeUtc(syncState.LastAttempt);
+            return lastAttempt > lastSuccess.AddSeconds(1);
+        }
+
+        private static DateTime NormalizeUtc(DateTime value)
+        {
+            return value.Kind == DateTimeKind.Utc
+                ? value
+                : DateTime.SpecifyKind(value, DateTimeKind.Utc);
         }
 
         private static bool ContainsAny(string? details, params string[] tokens)

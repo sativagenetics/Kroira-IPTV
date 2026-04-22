@@ -1,0 +1,49 @@
+name: Validate Regressions
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: validate-regressions-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: windows-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+          cache: true
+          cache-dependency-path: |
+            global.json
+            Directory.Build.props
+            Kroira.sln
+            src/Kroira.App/Kroira.App.csproj
+            tests/Kroira.Regressions/Kroira.Regressions.csproj
+
+      - name: Build and verify deterministic regressions
+        shell: pwsh
+        run: .\scripts\ci-regressions.ps1 -Configuration Release
+
+      - name: Upload regression artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: regression-artifacts
+          path: |
+            tests/Kroira.Regressions/artifacts/*.actual.json
+            tests/Kroira.Regressions/artifacts/*.failure.txt
+            tests/Kroira.Regressions/artifacts/*.patch
+          if-no-files-found: ignore
+          retention-days: 14

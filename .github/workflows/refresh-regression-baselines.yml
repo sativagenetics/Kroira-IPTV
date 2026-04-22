@@ -1,0 +1,56 @@
+name: Refresh Regression Baselines
+
+on:
+  workflow_dispatch:
+    inputs:
+      case-id:
+        description: Optional single regression case id to refresh
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  refresh:
+    runs-on: windows-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+          cache: true
+          cache-dependency-path: |
+            global.json
+            Directory.Build.props
+            Kroira.sln
+            src/Kroira.App/Kroira.App.csproj
+            tests/Kroira.Regressions/Kroira.Regressions.csproj
+
+      - name: Refresh deterministic baselines
+        shell: pwsh
+        run: |
+          $args = @("-Configuration", "Release", "-UpdateBaselines")
+          if ("${{ inputs.case-id }}") {
+            $args += @("-CaseId", "${{ inputs.case-id }}")
+          }
+
+          .\scripts\ci-regressions.ps1 @args
+
+      - name: Upload refreshed baselines
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: refreshed-regression-baselines
+          path: |
+            tests/Kroira.Regressions/Corpus/**/expected.json
+            tests/Kroira.Regressions/artifacts/*.actual.json
+            tests/Kroira.Regressions/artifacts/*.failure.txt
+            tests/Kroira.Regressions/artifacts/*.patch
+          if-no-files-found: ignore
+          retention-days: 14

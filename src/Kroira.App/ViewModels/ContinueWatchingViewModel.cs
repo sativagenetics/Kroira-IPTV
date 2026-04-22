@@ -144,9 +144,9 @@ namespace Kroira.App.ViewModels
                     .OrderByDescending(progress => progress.LastWatched)
                     .ToListAsync();
 
-                await LoadLiveProgressItemsAsync(db, access, liveProgressRows);
-                await LoadMovieProgressItemsAsync(db, access, watchStateService, movieProgressRows);
-                await LoadSeriesProgressItemsAsync(db, access, watchStateService, episodeProgressRows);
+                await TryLoadBucketAsync("live", () => LoadLiveProgressItemsAsync(db, access, liveProgressRows));
+                await TryLoadBucketAsync("movies", () => LoadMovieProgressItemsAsync(db, access, watchStateService, movieProgressRows));
+                await TryLoadBucketAsync("series", () => LoadSeriesProgressItemsAsync(db, access, watchStateService, episodeProgressRows));
 
                 IsEmpty = ProgressItems.Count == 0;
                 NotifyCountsChanged();
@@ -398,6 +398,18 @@ namespace Kroira.App.ViewModels
             var activeProfileId = await profileService.GetActiveProfileIdAsync(db);
             await watchStateService.SetHideWatchedInContinueAsync(db, activeProfileId, value);
             await LoadProgressAsync();
+        }
+
+        private static async Task TryLoadBucketAsync(string bucketName, Func<Task> action)
+        {
+            try
+            {
+                await action();
+            }
+            catch (Exception ex)
+            {
+                BrowseRuntimeLogger.Log("CONTINUE", $"bucket '{bucketName}' skipped {ex}; thread={Environment.CurrentManagedThreadId}");
+            }
         }
 
         private void NotifyCountsChanged()

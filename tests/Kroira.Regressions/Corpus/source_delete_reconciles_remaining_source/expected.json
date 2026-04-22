@@ -1,0 +1,408 @@
+{
+  "Sources": [
+    {
+      "Key": "backup",
+      "Name": "Mirror Backup",
+      "Type": "M3U",
+      "Refresh": {
+        "Success": true,
+        "Trigger": "InitialImport",
+        "Scope": "Full",
+        "Message": "Playlist import completed. Guide sync completed.",
+        "CatalogSummary": "Playlist import completed.",
+        "GuideSummary": "Guide sync completed.",
+        "GuideAttempted": true,
+        "GuideSucceeded": true
+      },
+      "Credential": {
+        "Url": "[fixture-server]/backup.m3u",
+        "DetectedEpgUrl": "[fixture-server]/guide.xml",
+        "ManualEpgUrl": "",
+        "EpgMode": "Detected",
+        "M3uImportMode": "LiveOnly",
+        "ProxyScope": "Disabled",
+        "ProxyUrl": ""
+      },
+      "SyncState": {
+        "HttpStatusCode": 200,
+        "ErrorLog": "Parsed 2 channels (LiveOnly mode - VOD suppressed). Uncategorized=0, pseudo_rejected=0, xmltv_found=yes.",
+        "AutoRefreshState": "Disabled",
+        "AutoRefreshSummary": "Automatic refresh is turned off.",
+        "AutoRefreshFailureCount": 0
+      },
+      "Counts": {
+        "Channels": 2,
+        "Movies": 0,
+        "Series": 0,
+        "Seasons": 0,
+        "Episodes": 0,
+        "EpgPrograms": 3
+      },
+      "Health": {
+        "State": "Weak",
+        "Score": 84,
+        "StatusSummary": "Source works, but quality is uneven. Guide covers 2 of 2 live channels, but coverage is still uneven.",
+        "ImportResultSummary": "Parsed 2 channels (LiveOnly mode - VOD suppressed). Uncategorized=0, pseudo_rejected=0, xmltv_found=yes.",
+        "ValidationSummary": "Component health is usable but uneven (84/100). Guide covers 2 of 2 live channels, but coverage is still uneven.",
+        "TopIssueSummary": "No obvious source-quality issues were flagged in the latest validation run.",
+        "DuplicateCount": 0,
+        "InvalidStreamCount": 0,
+        "ChannelsWithEpgMatchCount": 2,
+        "ChannelsWithLogoCount": 2,
+        "SuspiciousEntryCount": 0,
+        "WarningCount": 0,
+        "ErrorCount": 0,
+        "Components": [
+          {
+            "Type": "Catalog",
+            "State": "Healthy",
+            "Score": 100,
+            "Summary": "Catalog looks coherent across 2 items.",
+            "RelevantCount": 2,
+            "HealthyCount": 2,
+            "IssueCount": 0
+          },
+          {
+            "Type": "Live",
+            "State": "Healthy",
+            "Score": 100,
+            "Summary": "Live catalog is present across 2 channels. Live probe reached 2/2 sampled items.",
+            "RelevantCount": 2,
+            "HealthyCount": 2,
+            "IssueCount": 0
+          },
+          {
+            "Type": "Vod",
+            "State": "NotApplicable",
+            "Score": 0,
+            "Summary": "VOD import is intentionally disabled for this playlist.",
+            "RelevantCount": 0,
+            "HealthyCount": 0,
+            "IssueCount": 0
+          },
+          {
+            "Type": "Epg",
+            "State": "Weak",
+            "Score": 84,
+            "Summary": "Guide covers 2 of 2 live channels, but coverage is still uneven.",
+            "RelevantCount": 2,
+            "HealthyCount": 2,
+            "IssueCount": 0
+          },
+          {
+            "Type": "Logos",
+            "State": "Healthy",
+            "Score": 100,
+            "Summary": "Logos cover 2 of 2 live channels. Coverage is driven by safe fallback logos.",
+            "RelevantCount": 2,
+            "HealthyCount": 2,
+            "IssueCount": 0
+          },
+          {
+            "Type": "Freshness",
+            "State": "Healthy",
+            "Score": 100,
+            "Summary": "Last successful sync was [timestamp].",
+            "RelevantCount": 1,
+            "HealthyCount": 1,
+            "IssueCount": 0
+          }
+        ],
+        "Probes": [
+          {
+            "Type": "Live",
+            "Status": "Completed",
+            "CandidateCount": 2,
+            "SampleSize": 2,
+            "SuccessCount": 2,
+            "FailureCount": 0,
+            "TimeoutCount": 0,
+            "HttpErrorCount": 0,
+            "TransportErrorCount": 0,
+            "Summary": "Live probe reached 2/2 sampled items."
+          },
+          {
+            "Type": "Vod",
+            "Status": "Skipped",
+            "CandidateCount": 0,
+            "SampleSize": 0,
+            "SuccessCount": 0,
+            "FailureCount": 0,
+            "TimeoutCount": 0,
+            "HttpErrorCount": 0,
+            "TransportErrorCount": 0,
+            "Summary": "VOD probing is not applicable because VOD import is disabled for this playlist."
+          }
+        ],
+        "Issues": []
+      },
+      "Epg": {
+        "IsPresent": true,
+        "IsSuccess": true,
+        "Status": "Ready",
+        "ResultCode": "Ready",
+        "FailureStage": "None",
+        "ActiveMode": "Detected",
+        "ActiveXmltvUrl": "[fixture-server]/guide.xml",
+        "MatchedChannelCount": 2,
+        "UnmatchedChannelCount": 0,
+        "CurrentCoverageCount": 0,
+        "NextCoverageCount": 2,
+        "TotalLiveChannelCount": 2,
+        "ProgrammeCount": 3,
+        "MatchBreakdown": "provider_id=2; reused=0; normalized=0; alias=0; fuzzy=0; unmatched=0",
+        "FailureReason": ""
+      },
+      "Channels": [
+        {
+          "Category": "Kids",
+          "Name": "Cartoon Network TR",
+          "StreamUrl": "[fixture-server]/probe/live/cartoon-backup.m3u8",
+          "ProviderEpgChannelId": "cartoon.tr",
+          "EpgChannelId": "cartoon.tr",
+          "ProviderLogoUrl": "",
+          "LogoUrl": "[fixture-server]/logos/xmltv/cartoon.png",
+          "NormalizedIdentityKey": "id:cartoon",
+          "AliasKeys": "cartoon\ncartoon.tr\ncartoonnetwork\ncartoonnetworktr",
+          "EpgMatchSource": "Provider",
+          "EpgMatchConfidence": 97,
+          "EpgMatchSummary": "Provider guide metadata matched XMLTV channel Cartoon Network.",
+          "LogoSource": "Xmltv",
+          "LogoConfidence": 88,
+          "LogoSummary": "Logo recovered from the matched XMLTV channel Cartoon Network.",
+          "SupportsCatchup": false,
+          "CatchupWindowHours": 0,
+          "CatchupSource": "None",
+          "CatchupConfidence": 0,
+          "CatchupSummary": "No clear provider catchup signal was detected."
+        },
+        {
+          "Category": "National",
+          "Name": "TRT 1 HD",
+          "StreamUrl": "[fixture-server]/probe/live/trt1-backup.m3u8",
+          "ProviderEpgChannelId": "trt1.tr",
+          "EpgChannelId": "trt1.tr",
+          "ProviderLogoUrl": "",
+          "LogoUrl": "[fixture-server]/logos/xmltv/trt1.png",
+          "NormalizedIdentityKey": "id:trt1",
+          "AliasKeys": "trt1\ntrt1.tr",
+          "EpgMatchSource": "Provider",
+          "EpgMatchConfidence": 97,
+          "EpgMatchSummary": "Provider guide metadata matched XMLTV channel TRT 1.",
+          "LogoSource": "Xmltv",
+          "LogoConfidence": 88,
+          "LogoSummary": "Logo recovered from the matched XMLTV channel TRT 1.",
+          "SupportsCatchup": false,
+          "CatchupWindowHours": 0,
+          "CatchupSource": "None",
+          "CatchupConfidence": 0,
+          "CatchupSummary": "No clear provider catchup signal was detected."
+        }
+      ],
+      "Movies": [],
+      "Series": [],
+      "Enrichment": [
+        {
+          "IdentityKey": "id:cartoon",
+          "NormalizedName": "cartoon network tr",
+          "AliasKeys": "cartoon\ncartoon.tr\ncartoonnetwork\ncartoonnetworktr",
+          "MatchedXmltvChannelId": "cartoon.tr",
+          "MatchedXmltvDisplayName": "Cartoon Network",
+          "ResolvedLogoUrl": "[fixture-server]/logos/xmltv/cartoon.png",
+          "EpgMatchSource": "Provider",
+          "EpgMatchConfidence": 97,
+          "LogoSource": "Xmltv",
+          "LogoConfidence": 88
+        },
+        {
+          "IdentityKey": "id:trt1",
+          "NormalizedName": "trt 1",
+          "AliasKeys": "trt1\ntrt1.tr",
+          "MatchedXmltvChannelId": "trt1.tr",
+          "MatchedXmltvDisplayName": "TRT 1",
+          "ResolvedLogoUrl": "[fixture-server]/logos/xmltv/trt1.png",
+          "EpgMatchSource": "Provider",
+          "EpgMatchConfidence": 97,
+          "LogoSource": "Xmltv",
+          "LogoConfidence": 88
+        }
+      ]
+    },
+    {
+      "Key": "primary",
+      "Name": "Mirror Primary",
+      "Type": "M3U",
+      "Refresh": {
+        "Success": true,
+        "Trigger": "InitialImport",
+        "Scope": "Full",
+        "Message": "Playlist import completed. Guide sync completed.",
+        "CatalogSummary": "Playlist import completed.",
+        "GuideSummary": "Guide sync completed.",
+        "GuideAttempted": true,
+        "GuideSucceeded": true
+      },
+      "Credential": {
+        "Url": "",
+        "DetectedEpgUrl": "",
+        "ManualEpgUrl": "",
+        "EpgMode": "",
+        "M3uImportMode": "",
+        "ProxyScope": "",
+        "ProxyUrl": ""
+      },
+      "SyncState": {
+        "HttpStatusCode": 0,
+        "ErrorLog": "",
+        "AutoRefreshState": "",
+        "AutoRefreshSummary": "",
+        "AutoRefreshFailureCount": 0
+      },
+      "Counts": {
+        "Channels": 0,
+        "Movies": 0,
+        "Series": 0,
+        "Seasons": 0,
+        "Episodes": 0,
+        "EpgPrograms": 0
+      },
+      "Health": {
+        "State": "",
+        "Score": 0,
+        "StatusSummary": "",
+        "ImportResultSummary": "",
+        "ValidationSummary": "",
+        "TopIssueSummary": "",
+        "DuplicateCount": 0,
+        "InvalidStreamCount": 0,
+        "ChannelsWithEpgMatchCount": 0,
+        "ChannelsWithLogoCount": 0,
+        "SuspiciousEntryCount": 0,
+        "WarningCount": 0,
+        "ErrorCount": 0,
+        "Components": [],
+        "Probes": [],
+        "Issues": []
+      },
+      "Epg": {
+        "IsPresent": false,
+        "IsSuccess": false,
+        "Status": "",
+        "ResultCode": "",
+        "FailureStage": "",
+        "ActiveMode": "",
+        "ActiveXmltvUrl": "",
+        "MatchedChannelCount": 0,
+        "UnmatchedChannelCount": 0,
+        "CurrentCoverageCount": 0,
+        "NextCoverageCount": 0,
+        "TotalLiveChannelCount": 0,
+        "ProgrammeCount": 0,
+        "MatchBreakdown": "",
+        "FailureReason": ""
+      },
+      "Channels": [],
+      "Movies": [],
+      "Series": [],
+      "Enrichment": []
+    }
+  ],
+  "OperationalStates": [
+    {
+      "ContentType": "Channel",
+      "LogicalContentKey": "id:cartoon",
+      "CandidateCount": 1,
+      "PreferredSourceName": "Mirror Backup",
+      "PreferredTitle": "Cartoon Network TR",
+      "PreferredScore": 94,
+      "SelectionSummary": "Using Mirror Backup. Probe-backed, guide mapped, logo ready.",
+      "RecoveryAction": "None",
+      "RecoverySummary": "",
+      "Candidates": [
+        {
+          "Rank": 1,
+          "SourceName": "Mirror Backup",
+          "Title": "Cartoon Network TR",
+          "Score": 94,
+          "IsSelected": true,
+          "IsLastKnownGood": true,
+          "SupportsProxy": false,
+          "Summary": "Probe-backed, guide mapped, logo ready."
+        }
+      ]
+    },
+    {
+      "ContentType": "Channel",
+      "LogicalContentKey": "id:trt1",
+      "CandidateCount": 1,
+      "PreferredSourceName": "Mirror Backup",
+      "PreferredTitle": "TRT 1 HD",
+      "PreferredScore": 94,
+      "SelectionSummary": "Using Mirror Backup. Probe-backed, guide mapped, logo ready.",
+      "RecoveryAction": "None",
+      "RecoverySummary": "",
+      "Candidates": [
+        {
+          "Rank": 1,
+          "SourceName": "Mirror Backup",
+          "Title": "TRT 1 HD",
+          "Score": 94,
+          "IsSelected": true,
+          "IsLastKnownGood": true,
+          "SupportsProxy": false,
+          "Summary": "Probe-backed, guide mapped, logo ready."
+        }
+      ]
+    }
+  ],
+  "PlaybackProgresses": [],
+  "Home": {
+    "State": "Ready",
+    "Title": "",
+    "Message": "",
+    "LibraryStatusMessage": "2 library items available across live TV and VOD",
+    "SourceStatusMessage": "1 source configured",
+    "SummaryItemCount": 4,
+    "ContinueCount": 0,
+    "LiveCount": 0,
+    "ContinueTitles": [],
+    "LiveTitles": []
+  },
+  "LiveTv": {
+    "State": "Ready",
+    "Title": "",
+    "Message": "",
+    "ChannelCount": 2,
+    "CategoryCount": 5,
+    "SelectedSourceId": 0,
+    "SelectedSourceLabel": "All providers",
+    "ChannelTitles": [
+      "Trt 1",
+      "Cartoon Network TR"
+    ]
+  },
+  "ContinueWatching": {
+    "State": "EmptyContent",
+    "Title": "Nothing to resume yet",
+    "Message": "Start watching a channel, movie, or episode and it will appear here.",
+    "TotalCount": 0,
+    "LiveCount": 0,
+    "MovieCount": 0,
+    "SeriesCount": 0,
+    "Titles": []
+  },
+  "LiveBrowsePreferences": {
+    "SelectedSourceId": 0,
+    "LastChannelId": 0,
+    "LastChannelLogicalKey": "id:trt1",
+    "LastChannelPreferredSourceProfileId": 0,
+    "HiddenSourceIds": [],
+    "RecentChannelIds": [],
+    "RecentLogicalKeys": [
+      "id:trt1"
+    ],
+    "RecentPreferredSourceProfileIds": [
+      0
+    ]
+  }
+}

@@ -6,34 +6,34 @@ namespace Kroira.App.Services
     internal static class AppSubmissionInfo
     {
         internal const string AppName = "KROIRA";
-        internal const string ProductDescription = "KROIRA is a local library and playback app for user-provided IPTV sources.";
+        internal const string ProductDescription = "KROIRA is a Windows IPTV library and player for user-provided M3U and Xtream sources.";
 
         // Replace these values before final store submission as needed.
         internal const string PrivacyPolicyUrl = "https://sativagenetics.github.io/KroiraIPTV/privacy.html";
         internal const string SupportPageUrl = "https://sativagenetics.github.io/KroiraIPTV/support.html";
-        internal const string SupportEmail = "";
+        internal const string SupportEmail = "batuhandemirbilek7@gmail.com";
 
-        internal const string HelpStepOne = "1. Add a source.";
-        internal const string HelpStepTwo = "2. Import or sync it.";
-        internal const string HelpStepThree = "3. Browse Live TV, Movies, and Series.";
-        internal const string HelpStepFour = "4. Guide availability depends on provider metadata and XMLTV advertising.";
+        internal const string HelpStepOne = "1. Add an M3U playlist or Xtream provider.";
+        internal const string HelpStepTwo = "2. Let KROIRA complete the first sync and health check.";
+        internal const string HelpStepThree = "3. Browse Live TV, Movies, Series, Favorites, or Continue Watching.";
+        internal const string HelpStepFour = "4. If guide coverage looks weak, review the source in Sources and adjust guide settings there.";
 
-        internal const string PrivacySummary = "Source details plus local favorites, playback history, watch state, and local preferences may be stored on this device.";
-        internal const string SupportSummary = "When reporting issues, include the source type and recent import or guide diagnostics if available.";
-        internal const string LegalDisclaimer = "KROIRA does not provide channels, movies, or series. It works with user-provided M3U and Xtream sources.";
+        internal const string PrivacySummary = "KROIRA stores source settings, favorites, playback progress, and local preferences on this device so your library stays consistent between launches.";
+        internal const string SupportSummary = "When reporting an issue, include the source type, whether it affects Live TV or VOD, and the latest sync status from Sources.";
+        internal const string LegalDisclaimer = "KROIRA is a player for user-provided IPTV sources. It does not include channels, movies, series, playlists, or subscriptions.";
 
         internal static bool HasPrivacyPolicyUrl => TryCreateUri(PrivacyPolicyUrl, out _);
         internal static bool HasSupportPageUrl => TryCreateUri(SupportPageUrl, out _);
         internal static bool HasSupportEmail => !string.IsNullOrWhiteSpace(SupportEmail);
 
         internal static string PrivacyPolicyDisplayText =>
-            HasPrivacyPolicyUrl ? PrivacyPolicyUrl : "Add a privacy policy URL before store submission.";
+            HasPrivacyPolicyUrl ? PrivacyPolicyUrl : "Privacy policy will be published before release.";
 
         internal static string SupportPageDisplayText =>
-            HasSupportPageUrl ? SupportPageUrl : "Add a support page URL before store submission.";
+            HasSupportPageUrl ? SupportPageUrl : "Support page will be published before release.";
 
         internal static string SupportEmailDisplayText =>
-            HasSupportEmail ? SupportEmail : "Add a support email before store submission.";
+            HasSupportEmail ? SupportEmail : "Support email will be published before release.";
 
         internal static bool TryCreatePrivacyPolicyUri(out Uri? uri)
         {

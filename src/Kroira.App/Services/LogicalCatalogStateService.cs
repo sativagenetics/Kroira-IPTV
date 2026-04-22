@@ -249,6 +249,13 @@ namespace Kroira.App.Services
 
                 if (target == null)
                 {
+                    if (string.IsNullOrWhiteSpace(favorite.LogicalContentKey) &&
+                        !await ContentExistsAsync(db, favorite.ContentType, favorite.ContentId))
+                    {
+                        db.Favorites.Remove(favorite);
+                        changed = true;
+                    }
+
                     continue;
                 }
 
@@ -332,6 +339,13 @@ namespace Kroira.App.Services
 
                 if (target == null)
                 {
+                    if (string.IsNullOrWhiteSpace(progress.LogicalContentKey) &&
+                        !await PlaybackContentExistsAsync(db, progress.ContentType, progress.ContentId))
+                    {
+                        db.PlaybackProgresses.Remove(progress);
+                        changed = true;
+                    }
+
                     continue;
                 }
 
@@ -917,6 +931,38 @@ namespace Kroira.App.Services
             keeper.LastWatched = keeper.LastWatched >= duplicate.LastWatched ? keeper.LastWatched : duplicate.LastWatched;
             keeper.CompletedAtUtc = MaxDateTime(keeper.CompletedAtUtc, duplicate.CompletedAtUtc);
             keeper.ResolvedAtUtc = MaxDateTime(keeper.ResolvedAtUtc, duplicate.ResolvedAtUtc);
+        }
+
+        private static async Task<bool> ContentExistsAsync(AppDbContext db, FavoriteType contentType, int contentId)
+        {
+            if (contentId <= 0)
+            {
+                return false;
+            }
+
+            return contentType switch
+            {
+                FavoriteType.Channel => await db.Channels.AsNoTracking().AnyAsync(item => item.Id == contentId),
+                FavoriteType.Movie => await db.Movies.AsNoTracking().AnyAsync(item => item.Id == contentId),
+                FavoriteType.Series => await db.Series.AsNoTracking().AnyAsync(item => item.Id == contentId),
+                _ => false
+            };
+        }
+
+        private static async Task<bool> PlaybackContentExistsAsync(AppDbContext db, PlaybackContentType contentType, int contentId)
+        {
+            if (contentId <= 0)
+            {
+                return false;
+            }
+
+            return contentType switch
+            {
+                PlaybackContentType.Channel => await db.Channels.AsNoTracking().AnyAsync(item => item.Id == contentId),
+                PlaybackContentType.Movie => await db.Movies.AsNoTracking().AnyAsync(item => item.Id == contentId),
+                PlaybackContentType.Episode => await db.Episodes.AsNoTracking().AnyAsync(item => item.Id == contentId),
+                _ => false
+            };
         }
 
         private static DateTime? MaxDateTime(DateTime? left, DateTime? right)

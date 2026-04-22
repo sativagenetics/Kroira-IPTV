@@ -22,8 +22,7 @@ namespace Kroira.App.Data
 
             if (File.Exists(dbPath))
             {
-                string backupPath = dbPath + ".bak";
-                File.Copy(dbPath, backupPath, overwrite: true);
+                CreateRuntimeBackupIfNeeded(dbPath);
 
                 // Real upgrade-path validation before EF migration boots
                 using var conn = new SqliteConnection($"Data Source={dbPath}");
@@ -55,7 +54,15 @@ namespace Kroira.App.Data
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Failed to migrate database securely. App initialization halted. Error: {ex.Message}");
+                if (IsRecoverableMigrationDrift(ex))
+                {
+                    EnsureRuntimeSchemaCore(dbPath);
+                    return;
+                }
+
+                throw new InvalidOperationException(
+                    $"Failed to migrate database securely. App initialization halted. Error: {ex.Message}",
+                    ex);
             }
         }
 
@@ -359,6 +366,16 @@ namespace Kroira.App.Data
             EnsureIndex(conn, "IX_SourceSyncStates_NextAutoRefreshDueAtUtc", "SourceSyncStates", "NextAutoRefreshDueAtUtc");
 
             BackfillLegacyProfileState(conn);
+        }
+
+        private static void CreateRuntimeBackupIfNeeded(string dbPath)
+        {
+            var stamp = File.GetLastWriteTimeUtc(dbPath).ToString("yyyyMMddHHmmss");
+            var backupPath = $"{dbPath}.{stamp}.bak";
+            if (!File.Exists(backupPath))
+            {
+                File.Copy(dbPath, backupPath, overwrite: false);
+            }
         }
 
         private static void BumpLegacyM3uImportMode(SqliteConnection conn)
@@ -882,6 +899,14 @@ namespace Kroira.App.Data
             cmd.CommandText = "SELECT 1 FROM sqlite_master WHERE type='index' AND name=$indexName LIMIT 1;";
             cmd.Parameters.AddWithValue("$indexName", indexName);
             return cmd.ExecuteScalar() != null;
+        }
+
+        private static bool IsRecoverableMigrationDrift(Exception ex)
+        {
+            var message = ex.ToString();
+            return message.Contains("already exists", StringComparison.OrdinalIgnoreCase) ||
+                   message.Contains("duplicate column name", StringComparison.OrdinalIgnoreCase) ||
+                   message.Contains("duplicate index name", StringComparison.OrdinalIgnoreCase);
         }
     }
 }

@@ -33,7 +33,7 @@
                     </Grid.ColumnDefinitions>
                     <StackPanel Spacing="8">
                         <TextBlock Text="Settings" Style="{StaticResource KroiraPageTitleStyle}" />
-                        <TextBlock Text="Application preferences and local behavior."
+                        <TextBlock Text="Playback, library, appearance, and support settings."
                                    Style="{StaticResource KroiraPageSubtitleStyle}"
                                    MaxWidth="680" />
                     </StackPanel>
@@ -63,7 +63,7 @@
                         <StackPanel Spacing="16">
                             <StackPanel Spacing="3">
                                 <TextBlock Text="Application" Style="{StaticResource KroiraSectionTitleStyle}" />
-                                <TextBlock Text="Preferences that affect local catalog presentation."
+                                <TextBlock Text="Preferences that shape your local library experience."
                                            Style="{StaticResource KroiraBodyStyle}" />
                             </StackPanel>
 
@@ -99,7 +99,7 @@
                         <StackPanel Spacing="16">
                             <StackPanel Spacing="3">
                                 <TextBlock Text="Appearance" Style="{StaticResource KroiraSectionTitleStyle}" />
-                                <TextBlock Text="Runtime theme presets and accent packs that can be gated centrally later without changing page layouts."
+                                <TextBlock Text="Choose the visual preset and accent combination that fits your setup."
                                            Style="{StaticResource KroiraBodyStyle}"
                                            TextWrapping="Wrap" />
                             </StackPanel>
@@ -173,7 +173,7 @@
                                            Style="{StaticResource KroiraBodyStyle}"
                                            TextWrapping="Wrap" />
                                 <Border Height="1" Background="{StaticResource KroiraBorderBrush}" Opacity="0.45" />
-                                <TextBlock Text="Provider-first"
+                                <TextBlock Text="Provider metadata first"
                                            Foreground="{StaticResource KroiraAccentBrush}"
                                            FontSize="12"
                                            FontWeight="SemiBold" />
@@ -187,7 +187,7 @@
                                            Style="{StaticResource KroiraBodyStyle}"
                                            TextWrapping="Wrap" />
                                 <Border Height="1" Background="{StaticResource KroiraBorderBrush}" Opacity="0.45" />
-                                <TextBlock Text="Runtime secrets only"
+                                <TextBlock Text="Fallback enrichment"
                                            Foreground="{StaticResource KroiraAccentBrush}"
                                            FontSize="12"
                                            FontWeight="SemiBold" />
@@ -261,7 +261,7 @@
                         <StackPanel Spacing="16">
                             <StackPanel Spacing="3">
                                 <TextBlock Text="About" Style="{StaticResource KroiraSectionTitleStyle}" />
-                                <TextBlock Text="Installed build and product summary."
+                                <TextBlock Text="Installed build and release information."
                                            Style="{StaticResource KroiraBodyStyle}" />
                             </StackPanel>
 
@@ -318,7 +318,7 @@
 
                             <Border Height="1" Background="{StaticResource KroiraBorderBrush}" Opacity="0.45" />
 
-                            <TextBlock Text="Restore replaces current local setup, then re-imports restored sources to rebuild the library on this install."
+                            <TextBlock Text="Restore replaces the current local setup, then rebuilds the library from the restored sources on this device."
                                        Visibility="{x:Bind RestoreBackupVisibility, Mode=OneWay}"
                                        Style="{StaticResource KroiraBodyStyle}"
                                        TextWrapping="Wrap" />
@@ -351,7 +351,7 @@
                         <StackPanel Spacing="14">
                             <StackPanel Spacing="3">
                                 <TextBlock Text="Help" Style="{StaticResource KroiraSectionTitleStyle}" />
-                                <TextBlock Text="Quick start for first-time use."
+                                <TextBlock Text="Quick start for bringing your own sources."
                                            Style="{StaticResource KroiraBodyStyle}"
                                            TextWrapping="Wrap" />
                             </StackPanel>
@@ -379,7 +379,7 @@
                         <StackPanel Spacing="14">
                             <StackPanel Spacing="3">
                                 <TextBlock Text="Privacy &amp; Support" Style="{StaticResource KroiraSectionTitleStyle}" />
-                                <TextBlock Text="Store-readiness information and external resources."
+                                <TextBlock Text="Release support, privacy, and contact details."
                                            Style="{StaticResource KroiraBodyStyle}"
                                            TextWrapping="Wrap" />
                             </StackPanel>
@@ -476,7 +476,7 @@
                         </StackPanel>
                     </Border>
 
-                    <TextBlock Text="2026 KROIRA. All rights reserved."
+                    <TextBlock Text="Copyright 2026 KROIRA."
                                Foreground="{StaticResource KroiraTextTertiaryBrush}"
                                FontSize="12"
                                Margin="2,0,0,0" />

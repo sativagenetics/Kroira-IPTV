@@ -1,0 +1,51 @@
+{
+  "id": "source_delete_reconciles_remaining_source",
+  "description": "Deleting one mirrored live source preserves the surviving source, playback continuity, and browse state repair.",
+  "sources": [
+    {
+      "key": "primary",
+      "name": "Mirror Primary",
+      "type": "M3U",
+      "url": "{{server}}/primary.m3u",
+      "epgMode": "Detected",
+      "m3uImportMode": "LiveOnly",
+      "refreshTrigger": "InitialImport",
+      "refreshScope": "Full"
+    },
+    {
+      "key": "backup",
+      "name": "Mirror Backup",
+      "type": "M3U",
+      "url": "{{server}}/backup.m3u",
+      "epgMode": "Detected",
+      "m3uImportMode": "LiveOnly",
+      "refreshTrigger": "InitialImport",
+      "refreshScope": "Full"
+    }
+  ],
+  "mutations": [
+    {
+      "kind": "record_live_browse_state",
+      "sourceKey": "primary",
+      "matchName": "TRT 1 HD"
+    },
+    {
+      "kind": "insert_playback_progress",
+      "contentType": "Channel",
+      "sourceKey": "primary",
+      "matchName": "TRT 1 HD",
+      "positionMs": 90000,
+      "durationMs": 0,
+      "lastWatchedUtc": "2026-04-22T08:30:00Z"
+    },
+    {
+      "kind": "delete_source",
+      "sourceKey": "primary"
+    }
+  ],
+  "surfaceLoads": {
+    "home": true,
+    "liveTv": true,
+    "continueWatching": true
+  }
+}

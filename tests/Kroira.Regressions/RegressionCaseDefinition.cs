@@ -10,6 +10,7 @@ internal sealed class RegressionCaseDefinition
     public string Description { get; set; } = string.Empty;
     public List<RegressionSourceDefinition> Sources { get; set; } = [];
     public List<RegressionMutationDefinition> Mutations { get; set; } = [];
+    public RegressionRuntimeMaintenanceDefinition? RuntimeMaintenance { get; set; }
     public RegressionSurfaceLoadDefinition? SurfaceLoads { get; set; }
 }
 
@@ -38,6 +39,11 @@ internal sealed class RegressionMutationDefinition
     public string MatchName { get; set; } = string.Empty;
     public string LogicalContentKey { get; set; } = string.Empty;
     public string PreferredSourceKey { get; set; } = string.Empty;
+    public EpgActiveMode ActiveMode { get; set; } = EpgActiveMode.Detected;
+    public string ManualEpgUrl { get; set; } = string.Empty;
+    public SourceProxyScope ProxyScope { get; set; } = SourceProxyScope.Disabled;
+    public string ProxyUrl { get; set; } = string.Empty;
+    public bool SyncNow { get; set; }
     public int ContentIdOverride { get; set; }
     public int PreferredSourceProfileIdOverride { get; set; }
     public long PositionMs { get; set; }
@@ -52,6 +58,12 @@ internal sealed class RegressionSurfaceLoadDefinition
     public bool Home { get; set; }
     public bool LiveTv { get; set; }
     public bool ContinueWatching { get; set; }
+}
+
+internal sealed class RegressionRuntimeMaintenanceDefinition
+{
+    public bool Startup { get; set; }
+    public bool Deferred { get; set; }
 }
 
 internal sealed class FixtureServerManifest

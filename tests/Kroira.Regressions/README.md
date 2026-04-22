@@ -56,11 +56,25 @@ If you prefer the PowerShell script directly, run it with execution-policy bypas
 powershell -ExecutionPolicy Bypass -File .\scripts\run-regressions.ps1 --case xtream_full_pipeline
 ```
 
+For the same full validation flow CI uses, run:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\ci-regressions.ps1 -Configuration Release
+```
+
 ## Baseline workflow
 
 - Run in verify mode by default. The runner compares each case against `expected.json`.
 - When behavior changes intentionally, rerun with `--update`.
 - Review the updated `expected.json` diff before committing. The runner keeps the last actual output in `artifacts/` to make failures readable.
+- Normal CI never passes `--update`; it only verifies committed baselines.
+- The manual GitHub Actions workflow `Refresh Regression Baselines` runs with `--update` and uploads refreshed baselines plus a patch artifact for review. It does not auto-commit.
+
+## CI
+
+- `Validate Regressions` builds the app solution, builds the standalone regression runner, and executes the deterministic corpus in verify mode.
+- When a case fails, CI logs keep the failing case id in the console output and upload `*.actual.json` plus `*.failure.txt` artifacts from `tests/Kroira.Regressions/artifacts/`.
+- `Refresh Regression Baselines` is manual-only and exists to refresh baselines intentionally without changing normal validation behavior.
 
 ## Adding a new case
 

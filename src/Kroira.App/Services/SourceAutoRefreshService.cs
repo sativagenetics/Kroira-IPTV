@@ -16,6 +16,7 @@ namespace Kroira.App.Services
         Task<SourceAutoRefreshSettings> LoadSettingsAsync(AppDbContext db);
         Task SaveSettingsAsync(AppDbContext db, SourceAutoRefreshSettings settings);
         Task UpdateScheduleAsync(AppDbContext db, int sourceProfileId, SourceRefreshTrigger trigger, bool success, string summary);
+        Task RepairRuntimeStateAsync(AppDbContext db);
         Task RefreshDueSourcesAsync(bool runOverdueOnly);
         void Start();
         void Stop();
@@ -56,6 +57,8 @@ namespace Kroira.App.Services
                 _cts = new CancellationTokenSource();
                 _backgroundTask = RunAsync(_cts.Token);
             }
+
+            RuntimeEventLogger.Log("AUTOREFRESH", "background loop started");
         }
 
         public void Stop()
@@ -74,14 +77,17 @@ namespace Kroira.App.Services
             {
                 cts?.Cancel();
             }
-            catch
+            catch (Exception ex)
             {
+                RuntimeEventLogger.Log("AUTOREFRESH", ex, "failed while cancelling background loop");
             }
 
             if (backgroundTask != null)
             {
                 _ = backgroundTask.ContinueWith(_ => { }, TaskScheduler.Default);
             }
+
+            RuntimeEventLogger.Log("AUTOREFRESH", "background loop stopped");
         }
 
         public async Task<SourceAutoRefreshSettings> LoadSettingsAsync(AppDbContext db)
@@ -167,6 +173,69 @@ namespace Kroira.App.Services
             await db.SaveChangesAsync();
         }
 
+        public async Task RepairRuntimeStateAsync(AppDbContext db)
+        {
+            var settings = await LoadSettingsAsync(db);
+            var profiles = await db.SourceProfiles
+                .AsNoTracking()
+                .OrderBy(profile => profile.Name)
+                .ThenBy(profile => profile.Id)
+                .ToListAsync();
+            var syncStates = await db.SourceSyncStates.ToListAsync();
+            var profileIds = profiles.Select(profile => profile.Id).ToHashSet();
+
+            var orphanStates = syncStates
+                .Where(state => !profileIds.Contains(state.SourceProfileId))
+                .ToList();
+            if (orphanStates.Count > 0)
+            {
+                db.SourceSyncStates.RemoveRange(orphanStates);
+            }
+
+            var stateBySourceId = syncStates
+                .Except(orphanStates)
+                .GroupBy(state => state.SourceProfileId)
+                .ToDictionary(group => group.Key, group => group.First());
+
+            var nowUtc = DateTime.UtcNow;
+            foreach (var profile in profiles)
+            {
+                if (!stateBySourceId.TryGetValue(profile.Id, out var state))
+                {
+                    state = new SourceSyncState
+                    {
+                        SourceProfileId = profile.Id
+                    };
+                    db.SourceSyncStates.Add(state);
+                    stateBySourceId[profile.Id] = state;
+                }
+
+                if (!settings.IsEnabled)
+                {
+                    state.AutoRefreshState = SourceAutoRefreshState.Disabled;
+                    state.NextAutoRefreshDueAtUtc = null;
+                    state.AutoRefreshSummary = "Automatic refresh is turned off.";
+                    continue;
+                }
+
+                if (state.AutoRefreshState == SourceAutoRefreshState.Running)
+                {
+                    state.AutoRefreshState = SourceAutoRefreshState.Scheduled;
+                }
+
+                var nextDue = ComputeNextDue(state, profile.LastSync, settings, nowUtc);
+                state.NextAutoRefreshDueAtUtc = nextDue;
+                state.AutoRefreshSummary = BuildSummary(
+                    settings,
+                    state,
+                    nextDue,
+                    success: state.AutoRefreshState != SourceAutoRefreshState.Failed,
+                    state.AutoRefreshState == SourceAutoRefreshState.Failed ? state.AutoRefreshSummary : string.Empty);
+            }
+
+            await db.SaveChangesAsync();
+        }
+
         public async Task RefreshDueSourcesAsync(bool runOverdueOnly)
         {
             if (!await _pollLock.WaitAsync(0))
@@ -249,7 +318,15 @@ namespace Kroira.App.Services
 
                     try
                     {
-                        await _sourceRefreshService.RefreshSourceAsync(sourceId, SourceRefreshTrigger.Auto, SourceRefreshScope.Full);
+                        var result = await _sourceRefreshService.RefreshSourceAsync(sourceId, SourceRefreshTrigger.Auto, SourceRefreshScope.Full);
+                        if (!result.Success)
+                        {
+                            RuntimeEventLogger.Log("AUTOREFRESH", $"source_id={sourceId} failed - {result.Message}");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        RuntimeEventLogger.Log("AUTOREFRESH", ex, $"source_id={sourceId} refresh threw");
                     }
                     finally
                     {
@@ -300,6 +377,11 @@ namespace Kroira.App.Services
             }
             catch (OperationCanceledException)
             {
+                RuntimeEventLogger.Log("AUTOREFRESH", "background loop cancelled");
+            }
+            catch (Exception ex)
+            {
+                RuntimeEventLogger.Log("AUTOREFRESH", ex, "background loop failed");
             }
         }
 

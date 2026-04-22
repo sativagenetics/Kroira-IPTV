@@ -18,8 +18,10 @@ namespace Kroira.App.Composition
             services.AddSingleton<ISourceEnrichmentService, SourceEnrichmentService>();
             services.AddSingleton<ISourceHealthService, SourceHealthService>();
             services.AddSingleton<ISourceProbeService, SourceProbeService>();
+            services.AddSingleton<ISourceLifecycleService, SourceLifecycleService>();
             services.AddSingleton<ISourceRefreshService, SourceRefreshService>();
             services.AddSingleton<ISourceAutoRefreshService, SourceAutoRefreshService>();
+            services.AddSingleton<IRuntimeMaintenanceService, RuntimeMaintenanceService>();
             services.AddSingleton<ICatalogNormalizationService, CatalogNormalizationService>();
             services.AddSingleton<IM3uParserService, M3uParserService>();
             services.AddSingleton<IEpgSourceDiscoveryService, M3uEpgDiscoveryService>();

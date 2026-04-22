@@ -1,0 +1,24 @@
+{
+  "routes": [
+    {
+      "path": "/probe/live/trt1-primary.m3u8",
+      "statusCode": 200,
+      "body": "#EXTM3U\n#EXTINF:2,\nsegment.ts"
+    },
+    {
+      "path": "/probe/live/bein1-primary.m3u8",
+      "statusCode": 200,
+      "body": "#EXTM3U\n#EXTINF:2,\nsegment.ts"
+    },
+    {
+      "path": "/probe/live/trt1-backup.m3u8",
+      "statusCode": 200,
+      "body": "#EXTM3U\n#EXTINF:2,\nsegment.ts"
+    },
+    {
+      "path": "/probe/live/cartoon-backup.m3u8",
+      "statusCode": 200,
+      "body": "#EXTM3U\n#EXTINF:2,\nsegment.ts"
+    }
+  ]
+}

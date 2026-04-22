@@ -67,7 +67,9 @@ internal sealed class RegressionRunner
             Console.WriteLine($"[{caseDefinition.Id}] running");
 
             var actualPath = Path.Combine(artifactRoot, $"{caseDefinition.Id}.actual.json");
+            var failurePath = Path.Combine(artifactRoot, $"{caseDefinition.Id}.failure.txt");
             var expectedPath = Path.Combine(caseDirectory, "expected.json");
+            DeleteIfExists(failurePath);
 
             await using var server = await FixtureHttpServer.StartAsync(caseDirectory);
             var dbPath = Path.Combine(artifactRoot, $"{caseDefinition.Id}.db");
@@ -78,32 +80,46 @@ internal sealed class RegressionRunner
             var provider = BuildServices(dbPath);
             try
             {
-                var snapshot = await ExecuteCaseAsync(provider, caseDefinition, server.BaseUrl);
-                var actualJson = JsonSerializer.Serialize(snapshot, RegressionJson.Options);
-                await File.WriteAllTextAsync(actualPath, actualJson);
-
-                if (options.UpdateBaselines || !File.Exists(expectedPath))
+                try
                 {
-                    await File.WriteAllTextAsync(expectedPath, actualJson);
-                    result.UpdatedBaselineCount++;
-                    Console.WriteLine($"[{caseDefinition.Id}] baseline updated");
-                    continue;
-                }
+                    var snapshot = await ExecuteCaseAsync(provider, caseDefinition, server.BaseUrl);
+                    var actualJson = JsonSerializer.Serialize(snapshot, RegressionJson.Options);
+                    await File.WriteAllTextAsync(actualPath, actualJson);
 
-                var expectedJson = await File.ReadAllTextAsync(expectedPath);
-                if (string.Equals(expectedJson, actualJson, StringComparison.Ordinal))
+                    if (options.UpdateBaselines || !File.Exists(expectedPath))
+                    {
+                        await File.WriteAllTextAsync(expectedPath, actualJson);
+                        result.UpdatedBaselineCount++;
+                        Console.WriteLine($"[{caseDefinition.Id}] baseline updated");
+                        continue;
+                    }
+
+                    var expectedJson = await File.ReadAllTextAsync(expectedPath);
+                    if (string.Equals(expectedJson, actualJson, StringComparison.Ordinal))
+                    {
+                        result.PassedCount++;
+                        Console.WriteLine($"[{caseDefinition.Id}] passed");
+                        continue;
+                    }
+
+                    result.FailedCount++;
+                    var diff = JsonDiffWriter.CreateDiff(expectedJson, actualJson);
+                    await File.WriteAllTextAsync(failurePath, diff);
+                    Console.WriteLine($"[{caseDefinition.Id}] failed");
+                    Console.WriteLine(diff);
+                    Console.WriteLine($"Expected: {expectedPath}");
+                    Console.WriteLine($"Actual:   {actualPath}");
+                    Console.WriteLine($"Failure:  {failurePath}");
+                }
+                catch (Exception ex)
                 {
-                    result.PassedCount++;
-                    Console.WriteLine($"[{caseDefinition.Id}] passed");
-                    continue;
+                    result.FailedCount++;
+                    var failureText = $"Unhandled regression failure for case '{caseDefinition.Id}'.{Environment.NewLine}{Environment.NewLine}{ex}";
+                    await File.WriteAllTextAsync(failurePath, failureText);
+                    Console.WriteLine($"[{caseDefinition.Id}] failed with exception");
+                    Console.WriteLine(failureText);
+                    Console.WriteLine($"Failure:  {failurePath}");
                 }
-
-                result.FailedCount++;
-                var diff = JsonDiffWriter.CreateDiff(expectedJson, actualJson);
-                Console.WriteLine($"[{caseDefinition.Id}] failed");
-                Console.WriteLine(diff);
-                Console.WriteLine($"Expected: {expectedPath}");
-                Console.WriteLine($"Actual:   {actualPath}");
             }
             finally
             {
@@ -200,7 +216,9 @@ internal sealed class RegressionRunner
         }
 
         await bootstrapScope.ServiceProvider.GetRequiredService<IContentOperationalService>().RefreshOperationalStateAsync(db);
-        await ApplyMutationsAsync(db, bootstrapScope.ServiceProvider, definition, runtimeSources);
+        await ApplyMutationsAsync(db, bootstrapScope.ServiceProvider, definition, runtimeSources, serverBaseUrl);
+        await RunRuntimeMaintenanceAsync(provider, definition.RuntimeMaintenance);
+        db.ChangeTracker.Clear();
 
         RegressionSurfaceSnapshotBundle? surfaces = null;
         if (definition.SurfaceLoads != null)
@@ -241,7 +259,8 @@ internal sealed class RegressionRunner
         AppDbContext db,
         IServiceProvider services,
         RegressionCaseDefinition definition,
-        IReadOnlyList<RuntimeSource> runtimeSources)
+        IReadOnlyList<RuntimeSource> runtimeSources,
+        string serverBaseUrl)
     {
         if (definition.Mutations.Count == 0)
         {
@@ -250,7 +269,9 @@ internal sealed class RegressionRunner
 
         var sourceIdsByKey = runtimeSources.ToDictionary(item => item.Definition.Key, item => item.SourceProfileId, StringComparer.OrdinalIgnoreCase);
         var profileService = services.GetRequiredService<IProfileStateService>();
+        var browsePreferencesService = services.GetRequiredService<IBrowsePreferencesService>();
         var logicalCatalogStateService = services.GetRequiredService<ILogicalCatalogStateService>();
+        var lifecycleService = services.GetRequiredService<ISourceLifecycleService>();
         var activeProfileId = await profileService.GetActiveProfileIdAsync(db);
 
         foreach (var mutation in definition.Mutations)
@@ -278,12 +299,130 @@ internal sealed class RegressionRunner
                     break;
                 }
 
+                case "record_live_browse_state":
+                {
+                    await RecordLiveBrowseStateAsync(
+                        db,
+                        browsePreferencesService,
+                        logicalCatalogStateService,
+                        sourceIdsByKey,
+                        activeProfileId,
+                        mutation);
+                    break;
+                }
+
+                case "update_guide_settings":
+                {
+                    var sourceProfileId = ResolveSourceProfileId(sourceIdsByKey, mutation.SourceKey);
+                    await lifecycleService.UpdateGuideSettingsAsync(
+                        new SourceGuideSettingsUpdateRequest
+                        {
+                            SourceId = sourceProfileId,
+                            ActiveMode = mutation.ActiveMode,
+                            ManualEpgUrl = ResolveTokens(mutation.ManualEpgUrl, serverBaseUrl),
+                            ProxyScope = mutation.ProxyScope,
+                            ProxyUrl = ResolveTokens(mutation.ProxyUrl, serverBaseUrl)
+                        },
+                        mutation.SyncNow);
+                    db.ChangeTracker.Clear();
+                    break;
+                }
+
+                case "delete_source":
+                {
+                    var sourceProfileId = ResolveSourceProfileId(sourceIdsByKey, mutation.SourceKey);
+                    await lifecycleService.DeleteSourceAsync(sourceProfileId);
+                    db.ChangeTracker.Clear();
+                    break;
+                }
+
+                case "delete_source_sync_state":
+                {
+                    var sourceProfileId = ResolveSourceProfileId(sourceIdsByKey, mutation.SourceKey);
+                    var syncStates = await db.SourceSyncStates
+                        .Where(state => state.SourceProfileId == sourceProfileId)
+                        .ToListAsync();
+                    db.SourceSyncStates.RemoveRange(syncStates);
+                    break;
+                }
+
+                case "delete_source_health_components":
+                {
+                    var sourceProfileId = ResolveSourceProfileId(sourceIdsByKey, mutation.SourceKey);
+                    var reportIds = await db.SourceHealthReports
+                        .Where(report => report.SourceProfileId == sourceProfileId)
+                        .Select(report => report.Id)
+                        .ToListAsync();
+                    var components = await db.SourceHealthComponents
+                        .Where(component => reportIds.Contains(component.SourceHealthReportId))
+                        .ToListAsync();
+                    db.SourceHealthComponents.RemoveRange(components);
+                    break;
+                }
+
+                case "delete_source_health_probes":
+                {
+                    var sourceProfileId = ResolveSourceProfileId(sourceIdsByKey, mutation.SourceKey);
+                    var reportIds = await db.SourceHealthReports
+                        .Where(report => report.SourceProfileId == sourceProfileId)
+                        .Select(report => report.Id)
+                        .ToListAsync();
+                    var probes = await db.SourceHealthProbes
+                        .Where(probe => reportIds.Contains(probe.SourceHealthReportId))
+                        .ToListAsync();
+                    db.SourceHealthProbes.RemoveRange(probes);
+                    break;
+                }
+
+                case "delete_operational_states":
+                {
+                    List<LogicalOperationalState> states;
+                    if (string.IsNullOrWhiteSpace(mutation.SourceKey))
+                    {
+                        states = await db.LogicalOperationalStates
+                            .Include(state => state.Candidates)
+                            .ToListAsync();
+                    }
+                    else
+                    {
+                        var sourceProfileId = ResolveSourceProfileId(sourceIdsByKey, mutation.SourceKey);
+                        states = await db.LogicalOperationalStates
+                            .Include(state => state.Candidates)
+                            .Where(state => state.Candidates.Any(candidate => candidate.SourceProfileId == sourceProfileId))
+                            .ToListAsync();
+                    }
+
+                    db.LogicalOperationalStates.RemoveRange(states);
+                    break;
+                }
+
                 default:
                     throw new InvalidOperationException($"Unsupported regression mutation kind '{mutation.Kind}'.");
             }
         }
 
         await db.SaveChangesAsync();
+    }
+
+    private static async Task RunRuntimeMaintenanceAsync(
+        IServiceProvider services,
+        RegressionRuntimeMaintenanceDefinition? runtimeMaintenance)
+    {
+        if (runtimeMaintenance == null)
+        {
+            return;
+        }
+
+        var maintenanceService = services.GetRequiredService<IRuntimeMaintenanceService>();
+        if (runtimeMaintenance.Startup)
+        {
+            await maintenanceService.RunStartupRepairAsync();
+        }
+
+        if (runtimeMaintenance.Deferred)
+        {
+            await maintenanceService.RunDeferredRepairAsync();
+        }
     }
 
     private static async Task<RegressionSurfaceSnapshotBundle> CaptureSurfaceSnapshotsAsync(
@@ -356,6 +495,8 @@ internal sealed class RegressionRunner
             Message = NormalizeText(viewModel.SurfaceState.Message, serverBaseUrl),
             ChannelCount = viewModel.FilteredChannels.Count,
             CategoryCount = viewModel.Categories.Count,
+            SelectedSourceId = viewModel.SelectedSourceOption?.Id ?? 0,
+            SelectedSourceLabel = NormalizeText(viewModel.SelectedSourceOption?.Name, serverBaseUrl),
             ChannelTitles = viewModel.FilteredChannels
                 .Take(8)
                 .Select(item => NormalizeText(item.Name, serverBaseUrl))
@@ -540,6 +681,35 @@ internal sealed class RegressionRunner
         };
     }
 
+    private static async Task RecordLiveBrowseStateAsync(
+        AppDbContext db,
+        IBrowsePreferencesService browsePreferencesService,
+        ILogicalCatalogStateService logicalCatalogStateService,
+        IReadOnlyDictionary<string, int> sourceIdsByKey,
+        int profileId,
+        RegressionMutationDefinition mutation)
+    {
+        var channel = await FindChannelAsync(db, sourceIdsByKey, mutation);
+        var sourceProfileId = await ResolveChannelSourceProfileIdAsync(db, channel.Id);
+        var logicalKey = logicalCatalogStateService.BuildChannelLogicalKey(channel);
+        var preferences = await browsePreferencesService.GetAsync(db, ProfileDomains.Live, profileId);
+        var reference = new BrowseChannelReference
+        {
+            LogicalKey = logicalKey,
+            PreferredSourceProfileId = sourceProfileId
+        };
+
+        preferences.SelectedSourceId = sourceProfileId;
+        preferences.LastChannel = reference;
+        preferences.LastChannelId = channel.Id;
+        preferences.RecentChannels = [reference];
+        preferences.RecentChannelIds = [channel.Id];
+        preferences.LiveChannelWatchCountsByKey[logicalKey] = 4;
+        preferences.LiveChannelWatchCounts[channel.Id] = 4;
+
+        await browsePreferencesService.SaveAsync(db, ProfileDomains.Live, profileId, preferences);
+    }
+
     private static async Task<int> ResolveChannelSourceProfileIdAsync(AppDbContext db, int channelId)
     {
         var sourceProfileId = await db.Channels
@@ -575,6 +745,54 @@ internal sealed class RegressionRunner
             out var parsed)
             ? parsed
             : new DateTime(2026, 4, 22, 9, 15, 0, DateTimeKind.Utc);
+    }
+
+    private static async Task<LiveBrowsePreferencesSnapshot> CaptureLiveBrowsePreferencesAsync(AppDbContext db, string serverBaseUrl)
+    {
+        var profileId = await db.AppProfiles
+            .AsNoTracking()
+            .OrderBy(profile => profile.Id)
+            .Select(profile => profile.Id)
+            .FirstOrDefaultAsync();
+        if (profileId <= 0)
+        {
+            return new LiveBrowsePreferencesSnapshot();
+        }
+
+        var key = $"BrowsePrefs.{ProfileDomains.Live}.Profile.{profileId}";
+        var json = await db.AppSettings
+            .AsNoTracking()
+            .Where(setting => setting.Key == key)
+            .Select(setting => setting.Value)
+            .FirstOrDefaultAsync();
+        if (string.IsNullOrWhiteSpace(json))
+        {
+            return new LiveBrowsePreferencesSnapshot();
+        }
+
+        try
+        {
+            var preferences = JsonSerializer.Deserialize<BrowsePreferences>(json, RegressionJson.Options) ?? new BrowsePreferences();
+            return new LiveBrowsePreferencesSnapshot
+            {
+                SelectedSourceId = preferences.SelectedSourceId,
+                LastChannelId = preferences.LastChannelId,
+                LastChannelLogicalKey = NormalizeText(preferences.LastChannel?.LogicalKey, serverBaseUrl),
+                LastChannelPreferredSourceProfileId = preferences.LastChannel?.PreferredSourceProfileId ?? 0,
+                HiddenSourceIds = preferences.HiddenSourceIds.OrderBy(id => id).ToList(),
+                RecentChannelIds = preferences.RecentChannelIds.OrderBy(id => id).ToList(),
+                RecentLogicalKeys = preferences.RecentChannels
+                    .Select(reference => NormalizeText(reference.LogicalKey, serverBaseUrl))
+                    .ToList(),
+                RecentPreferredSourceProfileIds = preferences.RecentChannels
+                    .Select(reference => reference.PreferredSourceProfileId)
+                    .ToList()
+            };
+        }
+        catch
+        {
+            return new LiveBrowsePreferencesSnapshot();
+        }
     }
 
     private static async Task<RegressionSnapshot> CaptureSnapshotAsync(
@@ -774,6 +992,11 @@ internal sealed class RegressionRunner
             snapshot.Home = surfaces.Home;
             snapshot.LiveTv = surfaces.LiveTv;
             snapshot.ContinueWatching = surfaces.ContinueWatching;
+        }
+
+        if (definition.Mutations.Count > 0 || definition.SurfaceLoads != null)
+        {
+            snapshot.LiveBrowsePreferences = await CaptureLiveBrowsePreferencesAsync(db, serverBaseUrl);
         }
 
         return snapshot;

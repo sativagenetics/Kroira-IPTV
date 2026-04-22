@@ -30,20 +30,34 @@ namespace Kroira.App.Services
         public async Task PrepareLiveCatalogAsync(AppDbContext db, int sourceProfileId)
         {
             var channels = await LoadSourceChannelsAsync(db, sourceProfileId);
-            if (channels.Count == 0)
-            {
-                return;
-            }
-
             var records = await db.SourceChannelEnrichmentRecords
                 .Where(record => record.SourceProfileId == sourceProfileId)
                 .ToListAsync();
+            if (channels.Count == 0)
+            {
+                if (records.Count > 0)
+                {
+                    db.SourceChannelEnrichmentRecords.RemoveRange(records);
+                    await db.SaveChangesAsync();
+                }
+
+                return;
+            }
+
             var lookup = BuildLookup(records);
             var nowUtc = DateTime.UtcNow;
 
             foreach (var channel in channels)
             {
                 PrepareChannel(db, channel, lookup, records, sourceProfileId, nowUtc);
+            }
+
+            var staleRecords = records
+                .Where(record => record.LastSeenAtUtc != nowUtc)
+                .ToList();
+            if (staleRecords.Count > 0)
+            {
+                db.SourceChannelEnrichmentRecords.RemoveRange(staleRecords);
             }
 
             await db.SaveChangesAsync();

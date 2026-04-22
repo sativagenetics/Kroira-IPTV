@@ -17,10 +17,12 @@ namespace Kroira.App
 {
     public partial class App : Application
     {
+        private static readonly TimeSpan DeferredRuntimeMaintenanceDelay = TimeSpan.FromSeconds(3);
         private static readonly TimeSpan StartupMetadataDelay = TimeSpan.FromSeconds(6);
         private static readonly TimeSpan StartupMetadataBudget = TimeSpan.FromSeconds(15);
         private Window? _window;
         private readonly CancellationTokenSource _startupMetadataCts = new();
+        private readonly CancellationTokenSource _startupMaintenanceCts = new();
         public Window? MainWindow => _window;
 
         public IServiceProvider Services { get; private set; } = null!;
@@ -65,53 +67,73 @@ namespace Kroira.App
 
             try
             {
-                SafeAppendLog("APP 07: before database bootstrap");
-                using (var scope = Services.CreateScope())
+                RunFatalStartupStep("APP 07: database bootstrap", () =>
                 {
+                    using var scope = Services.CreateScope();
                     var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
                     DatabaseBootstrapper.Initialize(dbContext);
-                }
-                SafeAppendLog("APP 08: after database bootstrap");
-                Services.GetRequiredService<IAppAppearanceService>().InitializeAsync().GetAwaiter().GetResult();
-                Services.GetRequiredService<IMediaJobService>().Start();
-                Services.GetRequiredService<ISourceAutoRefreshService>().Start();
+                });
+
+                RunRecoverableStartupStep("APP 08: runtime startup repair", () =>
+                {
+                    Services.GetRequiredService<IRuntimeMaintenanceService>()
+                        .RunStartupRepairAsync(_startupMaintenanceCts.Token)
+                        .GetAwaiter()
+                        .GetResult();
+                });
 
                 SafeAppendLog("APP 09: before MainWindow ctor");
                 _window = new MainWindow();
                 SafeAppendLog("APP 10: after MainWindow ctor");
                 _window.Closed += (_, _) =>
                 {
+                    CancelStartupMaintenance("window closed");
                     CancelStartupMetadataBackfill("window closed");
                     try
                     {
                         Services.GetRequiredService<ISourceAutoRefreshService>().Stop();
                     }
-                    catch
+                    catch (Exception ex)
                     {
+                        SafeLogException("APP AUTORF STOP ERROR", ex);
                     }
                 };
 
-                SafeAppendLog("APP 11: before IWindowManagerService.Initialize");
-                var winManager = Services.GetRequiredService<IWindowManagerService>();
-                winManager.Initialize(_window);
-                SafeAppendLog("APP 12: after IWindowManagerService.Initialize");
+                RunRecoverableStartupStep("APP 11: appearance init", () =>
+                {
+                    Services.GetRequiredService<IAppAppearanceService>().InitializeAsync().GetAwaiter().GetResult();
+                });
+                RunRecoverableStartupStep("APP 12: media jobs start", () =>
+                {
+                    Services.GetRequiredService<IMediaJobService>().Start();
+                });
+                RunRecoverableStartupStep("APP 13: auto refresh start", () =>
+                {
+                    Services.GetRequiredService<ISourceAutoRefreshService>().Start();
+                });
+                RunRecoverableStartupStep("APP 14: window manager init", () =>
+                {
+                    var winManager = Services.GetRequiredService<IWindowManagerService>();
+                    winManager.Initialize(_window);
+                });
+                RunRecoverableStartupStep("APP 15: input interceptor init", () =>
+                {
+                    var inputManager = Services.GetRequiredService<IInputInterceptorService>();
+                    inputManager.Initialize(_window);
+                });
 
-                SafeAppendLog("APP 13: before IInputInterceptorService.Initialize");
-                var inputManager = Services.GetRequiredService<IInputInterceptorService>();
-                inputManager.Initialize(_window);
-                SafeAppendLog("APP 14: after IInputInterceptorService.Initialize");
-
-                SafeAppendLog("APP 15: before window.Activate");
+                SafeAppendLog("APP 16: before window.Activate");
                 _window.Activate();
-                SafeAppendLog("APP 16: after window.Activate");
+                SafeAppendLog("APP 17: after window.Activate");
 
                 if (_window is MainWindow mainWindow)
                 {
-                    SafeAppendLog("APP 17: before queue initial navigation");
+                    SafeAppendLog("APP 18: before queue initial navigation");
                     mainWindow.QueueInitialNavigation();
-                    SafeAppendLog("APP 18: after queue initial navigation");
+                    SafeAppendLog("APP 19: after queue initial navigation");
                 }
 
+                ScheduleDeferredRuntimeMaintenance();
                 ScheduleMetadataBackfillAfterShellVisible();
             }
             catch (Exception ex)
@@ -119,6 +141,31 @@ namespace Kroira.App
                 SafeAppendLog("APP FATAL: exception in OnLaunched");
                 SafeLogException("APP ONLAUNCHED EXCEPTION", ex);
                 ShowStartupErrorWindow(ex);
+            }
+        }
+
+        private void ScheduleDeferredRuntimeMaintenance()
+        {
+            SafeAppendLog("APP RM 00: scheduling deferred runtime maintenance after shell is visible");
+            _ = RunDeferredRuntimeMaintenanceAsync(_startupMaintenanceCts.Token);
+        }
+
+        private async Task RunDeferredRuntimeMaintenanceAsync(CancellationToken cancellationToken)
+        {
+            try
+            {
+                SafeAppendLog($"APP RM 01: delaying runtime maintenance by {DeferredRuntimeMaintenanceDelay.TotalSeconds:0}s");
+                await Task.Delay(DeferredRuntimeMaintenanceDelay, cancellationToken);
+                await Services.GetRequiredService<IRuntimeMaintenanceService>().RunDeferredRepairAsync(cancellationToken);
+                SafeAppendLog("APP RM 02: deferred runtime maintenance completed");
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                SafeAppendLog("APP RM 03: deferred runtime maintenance cancelled");
+            }
+            catch (Exception ex)
+            {
+                SafeLogException("APP RUNTIME MAINTENANCE ERROR", ex);
             }
         }
 
@@ -175,6 +222,17 @@ namespace Kroira.App
 
             SafeAppendLog($"APP TMDB 07: cancelling metadata backfill ({reason})");
             _startupMetadataCts.Cancel();
+        }
+
+        private void CancelStartupMaintenance(string reason)
+        {
+            if (_startupMaintenanceCts.IsCancellationRequested)
+            {
+                return;
+            }
+
+            SafeAppendLog($"APP RM 04: cancelling runtime maintenance ({reason})");
+            _startupMaintenanceCts.Cancel();
         }
 
         private void RegisterGlobalExceptionHandlers()
@@ -269,6 +327,27 @@ namespace Kroira.App
         internal void LogStartupException(string title, Exception ex)
         {
             SafeLogException(title, ex);
+        }
+
+        private void RunFatalStartupStep(string checkpoint, Action action)
+        {
+            SafeAppendLog($"{checkpoint} start");
+            action();
+            SafeAppendLog($"{checkpoint} end");
+        }
+
+        private void RunRecoverableStartupStep(string checkpoint, Action action)
+        {
+            SafeAppendLog($"{checkpoint} start");
+            try
+            {
+                action();
+                SafeAppendLog($"{checkpoint} end");
+            }
+            catch (Exception ex)
+            {
+                SafeLogException($"{checkpoint} failed", ex);
+            }
         }
 
         private void ShowStartupErrorWindow(Exception ex)

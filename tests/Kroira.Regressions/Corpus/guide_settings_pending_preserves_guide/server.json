@@ -1,0 +1,40 @@
+{
+  "routes": [
+    {
+      "path": "/probe/live/bein1-ok.m3u8",
+      "statusCode": 200,
+      "body": "#EXTM3U\n#EXTINF:2,\nsegment.ts"
+    },
+    {
+      "path": "/probe/live/trt1-ok.m3u8",
+      "statusCode": 200,
+      "body": "#EXTM3U\n#EXTINF:2,\nsegment.ts"
+    },
+    {
+      "path": "/probe/live/trt1-backup.m3u8",
+      "statusCode": 503,
+      "body": "backup unavailable"
+    },
+    {
+      "path": "/probe/vod/matrix-ok.mp4",
+      "statusCode": 200,
+      "body": "ok"
+    },
+    {
+      "path": "/probe/vod/matrix-trailer.mp4",
+      "statusCode": 200,
+      "body": "ok"
+    },
+    {
+      "path": "/probe/vod/office-s01e01.mp4",
+      "statusCode": 200,
+      "delayMs": 4500,
+      "body": "slow"
+    },
+    {
+      "path": "/probe/vod/office-s01e02.mp4",
+      "statusCode": 200,
+      "body": "ok"
+    }
+  ]
+}

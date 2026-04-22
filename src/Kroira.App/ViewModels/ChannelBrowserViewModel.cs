@@ -355,32 +355,40 @@ namespace Kroira.App.ViewModels
             // Populate category list
             Categories.Add(new BrowserCategoryViewModel { Id = 0, FilterKey = string.Empty, Name = "All Categories", OrderIndex = -1 });
             // Build channel view models first — always succeeds regardless of EPG state
-            var channelVMs = chans.Select(ch =>
-            {
-                var category = categoryById[ch.ChannelCategoryId];
+            var channelVMs = chans
+                .Select(ch =>
+                {
+                    if (!categoryById.TryGetValue(ch.ChannelCategoryId, out var category))
+                    {
+                        return null;
+                    }
+
                 var presentation = _taxonomyService.ResolveLiveChannelPresentation(ch.Name);
                 var taxonomy = _taxonomyService.ResolveLiveCategory(category.Name, presentation.DisplayName);
                 var logicalKey = _logicalCatalogStateService.BuildChannelLogicalKey(ch);
 
-                return new BrowserChannelViewModel
-                {
-                    Id = ch.Id,
-                    CategoryId = ch.ChannelCategoryId,
-                    SourceProfileId = category.SourceProfileId,
-                    PreferredSourceProfileId = category.SourceProfileId,
-                    LogicalContentKey = logicalKey,
-                    RawName = ch.Name,
-                    Name = string.IsNullOrWhiteSpace(presentation.DisplayName) ? ch.Name : presentation.DisplayName,
-                    CategoryName = category.Name,
-                    DisplayCategoryName = taxonomy.DisplayCategoryName,
-                    StreamUrl = ch.StreamUrl,
-                    LogoUrl = ch.LogoUrl ?? string.Empty,
-                    IsFavorite = _favoriteLogicalKeys.Contains(logicalKey),
-                    SupportsCatchup = ch.SupportsCatchup,
-                    CatchupWindowHours = ch.CatchupWindowHours,
-                    CatchupSummary = ch.CatchupSummary ?? string.Empty
-                };
-            }).ToList();
+                    return new BrowserChannelViewModel
+                    {
+                        Id = ch.Id,
+                        CategoryId = ch.ChannelCategoryId,
+                        SourceProfileId = category.SourceProfileId,
+                        PreferredSourceProfileId = category.SourceProfileId,
+                        LogicalContentKey = logicalKey,
+                        RawName = ch.Name,
+                        Name = string.IsNullOrWhiteSpace(presentation.DisplayName) ? ch.Name : presentation.DisplayName,
+                        CategoryName = category.Name,
+                        DisplayCategoryName = taxonomy.DisplayCategoryName,
+                        StreamUrl = ch.StreamUrl,
+                        LogoUrl = ch.LogoUrl ?? string.Empty,
+                        IsFavorite = _favoriteLogicalKeys.Contains(logicalKey),
+                        SupportsCatchup = ch.SupportsCatchup,
+                        CatchupWindowHours = ch.CatchupWindowHours,
+                        CatchupSummary = ch.CatchupSummary ?? string.Empty
+                    };
+                })
+                .Where(item => item != null)
+                .Cast<BrowserChannelViewModel>()
+                .ToList();
 
             var categoryIndex = 1;
             foreach (var category in channelVMs

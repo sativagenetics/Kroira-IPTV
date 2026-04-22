@@ -46,7 +46,7 @@ namespace Kroira.App.ViewModels
         private LanguageOptionViewModel _selectedLanguage = new LanguageOptionViewModel(AppLanguageService.DefaultLanguageCode, "English");
 
         [ObservableProperty]
-        private string _languageStatusText = "English is selected. This stable option uses the working catalog language pipeline.";
+        private string _languageStatusText = "English is selected for the current profile.";
 
         [ObservableProperty]
         private AppAppearanceOptionViewModel? _selectedThemeOption;
@@ -55,7 +55,7 @@ namespace Kroira.App.ViewModels
         private AppAppearanceOptionViewModel? _selectedAccentOption;
 
         [ObservableProperty]
-        private string _appearanceStatusText = "Choose an appearance preset and accent pack. Entitlement gating can be added centrally later.";
+        private string _appearanceStatusText = "Choose the theme and accent combination you want KROIRA to use.";
 
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(IsBackupIdle))]
@@ -64,10 +64,10 @@ namespace Kroira.App.ViewModels
 
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(HasBackupStatus))]
-        private string _backupStatusText = "Export or restore a versioned local package for sources, profiles, favorites, watch state, and local preferences.";
+        private string _backupStatusText = "Export or restore a local package with sources, profiles, favorites, playback progress, and preferences.";
 
         [ObservableProperty]
-        private string _resourceStatusText = "External links open in your default browser or mail app when configured.";
+        private string _resourceStatusText = "Links open in your default browser or mail app.";
 
         [ObservableProperty]
         private bool _autoRefreshEnabled = true;
@@ -79,7 +79,7 @@ namespace Kroira.App.ViewModels
         private AutoRefreshIntervalOptionViewModel? _selectedAutoRefreshInterval;
 
         [ObservableProperty]
-        private string _autoRefreshStatusText = "Automatic refresh keeps sources current on a bounded cadence while the app is open.";
+        private string _autoRefreshStatusText = "Automatic refresh checks for source updates while the app is open.";
 
         public bool IsBackupIdle => !IsBackupBusy;
         public bool CanUseBackupRestore => _entitlementService.IsFeatureEnabled(EntitlementFeatureKeys.LibraryBackupRestore);
@@ -192,7 +192,7 @@ namespace Kroira.App.ViewModels
             SelectedLanguage = Languages.FirstOrDefault(language => language.Code == languageCode)
                 ?? Languages.First(language => language.Code == AppLanguageService.DefaultLanguageCode);
             _isLoadingLanguage = false;
-            LanguageStatusText = $"{activeProfile.Name} uses the current language preference.";
+            LanguageStatusText = $"{activeProfile.Name} uses the selected language.";
 
             _isLoadingAppearance = true;
             SelectedThemeOption = ThemeOptions.FirstOrDefault(option => option.Key == appearance.ThemePresetKey) ?? ThemeOptions.FirstOrDefault();
@@ -207,7 +207,7 @@ namespace Kroira.App.ViewModels
                 ?? AutoRefreshIntervalOptions.FirstOrDefault();
             _isLoadingAutoRefresh = false;
             AutoRefreshStatusText = autoRefresh.IsEnabled
-                ? $"Automatic refresh runs every {autoRefresh.IntervalHours} hour{(autoRefresh.IntervalHours == 1 ? string.Empty : "s")} while the app is open."
+                ? $"Automatic refresh runs every {autoRefresh.IntervalHours} hour{(autoRefresh.IntervalHours == 1 ? string.Empty : "s")} while KROIRA stays open."
                 : "Automatic refresh is turned off.";
         }
 
@@ -218,7 +218,7 @@ namespace Kroira.App.ViewModels
             var profileService = scope.ServiceProvider.GetRequiredService<IProfileStateService>();
             var activeProfile = await profileService.GetActiveProfileAsync(db);
             await AppLanguageService.SetLanguageAsync(db, languageCode, activeProfile.Id);
-            LanguageStatusText = $"{activeProfile.Name} now uses the selected language preference.";
+            LanguageStatusText = $"{activeProfile.Name} now uses the selected language.";
         }
 
         private async Task SaveAppearanceAsync()
@@ -253,7 +253,7 @@ namespace Kroira.App.ViewModels
             };
             await autoRefreshService.SaveSettingsAsync(db, settings);
             AutoRefreshStatusText = settings.IsEnabled
-                ? $"Automatic refresh runs every {settings.IntervalHours} hour{(settings.IntervalHours == 1 ? string.Empty : "s")} while the app is open."
+                ? $"Automatic refresh runs every {settings.IntervalHours} hour{(settings.IntervalHours == 1 ? string.Empty : "s")} while KROIRA stays open."
                 : "Automatic refresh is turned off.";
         }
 
@@ -273,9 +273,9 @@ namespace Kroira.App.ViewModels
             ProTierVisibility = isPro ? Visibility.Visible : Visibility.Collapsed;
             FreeTierVisibility = !isPro ? Visibility.Visible : Visibility.Collapsed;
 
-            var backupRestoreState = CanUseBackupRestore ? "enabled" : "disabled";
-            var appearanceState = CanUseThemePresets || CanUseAccentPacks ? "ready" : "disabled";
-            LicenseStatusDescription = $"{_entitlementService.CurrentTierDisplayName} tier is active. Central entitlement routing is ready; backup/restore is currently {backupRestoreState} and appearance presets are {appearanceState}.";
+            var backupRestoreState = CanUseBackupRestore ? "available" : "not available";
+            var appearanceState = CanUseThemePresets || CanUseAccentPacks ? "available" : "not available";
+            LicenseStatusDescription = $"{_entitlementService.CurrentTierDisplayName} tier is active. Backup and restore are {backupRestoreState}, and appearance presets are {appearanceState}.";
         }
 
         public async Task ExportBackupAsync(string filePath)
@@ -284,7 +284,7 @@ namespace Kroira.App.ViewModels
 
             if (!CanUseBackupRestore)
             {
-                BackupStatusText = "Backup export is unavailable for this entitlement.";
+                BackupStatusText = "Backup export is not available on this tier.";
                 LogBackup("export command denied by entitlement");
                 return;
             }
@@ -333,7 +333,7 @@ namespace Kroira.App.ViewModels
         {
             if (!CanUseBackupRestore)
             {
-                BackupStatusText = "Backup restore is unavailable for this entitlement.";
+                BackupStatusText = "Backup restore is not available on this tier.";
                 return;
             }
 
@@ -403,7 +403,7 @@ namespace Kroira.App.ViewModels
         {
             await OpenExternalUriAsync(
                 AppSubmissionInfo.TryCreatePrivacyPolicyUri(out var uri) ? uri : null,
-                "Privacy policy URL is not configured.",
+                "Privacy policy details are not available in this build.",
                 "Unable to open the privacy policy link on this device.");
         }
 
@@ -412,7 +412,7 @@ namespace Kroira.App.ViewModels
         {
             await OpenExternalUriAsync(
                 AppSubmissionInfo.TryCreateSupportPageUri(out var uri) ? uri : null,
-                "Support page URL is not configured.",
+                "Support details are not available in this build.",
                 "Unable to open the support link on this device.");
         }
 
@@ -421,7 +421,7 @@ namespace Kroira.App.ViewModels
         {
             await OpenExternalUriAsync(
                 AppSubmissionInfo.TryCreateSupportEmailUri(out var uri) ? uri : null,
-                "Support email is not configured.",
+                "Support email is not available in this build.",
                 "Unable to open the support email action on this device.");
         }
 
@@ -442,7 +442,7 @@ namespace Kroira.App.ViewModels
             {
                 var launched = await Windows.System.Launcher.LaunchUriAsync(uri);
                 ResourceStatusText = launched
-                    ? "External links open in your default browser or mail app when configured."
+                    ? "Links open in your default browser or mail app."
                     : failureMessage;
             }
             catch

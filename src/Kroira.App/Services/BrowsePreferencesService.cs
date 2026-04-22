@@ -41,6 +41,7 @@ namespace Kroira.App.Services
     {
         Task<BrowsePreferences> GetAsync(AppDbContext db, string domain, int profileId);
         Task SaveAsync(AppDbContext db, string domain, int profileId, BrowsePreferences preferences);
+        Task RepairSourceReferencesAsync(AppDbContext db, int? sourceProfileId = null);
         string NormalizeCategoryKey(string? categoryName);
         string GetEffectiveCategoryName(BrowsePreferences preferences, string? categoryName);
         string GetEffectiveCategoryName(BrowsePreferences preferences, string? categoryName, string? defaultDisplayCategoryName);
@@ -144,6 +145,55 @@ namespace Kroira.App.Services
             await db.SaveChangesAsync();
         }
 
+        public async Task RepairSourceReferencesAsync(AppDbContext db, int? sourceProfileId = null)
+        {
+            var validSourceIds = (await db.SourceProfiles
+                .AsNoTracking()
+                .Select(profile => profile.Id)
+                .ToListAsync())
+                .ToHashSet();
+            var validChannelIds = (await db.Channels
+                .AsNoTracking()
+                .Select(channel => channel.Id)
+                .ToListAsync())
+                .ToHashSet();
+            var settings = await db.AppSettings
+                .Where(setting => setting.Key.StartsWith(KeyPrefix))
+                .ToListAsync();
+
+            var changed = false;
+            foreach (var setting in settings)
+            {
+                if (string.IsNullOrWhiteSpace(setting.Value))
+                {
+                    continue;
+                }
+
+                BrowsePreferences preferences;
+                try
+                {
+                    preferences = JsonSerializer.Deserialize<BrowsePreferences>(setting.Value, JsonOptions) ?? new BrowsePreferences();
+                }
+                catch
+                {
+                    continue;
+                }
+
+                if (!RepairSourceReferences(preferences, validSourceIds, validChannelIds, sourceProfileId))
+                {
+                    continue;
+                }
+
+                setting.Value = JsonSerializer.Serialize(Normalize(preferences), JsonOptions);
+                changed = true;
+            }
+
+            if (changed)
+            {
+                await db.SaveChangesAsync();
+            }
+        }
+
         public string NormalizeCategoryKey(string? categoryName)
         {
             return string.IsNullOrWhiteSpace(categoryName)
@@ -245,6 +295,118 @@ namespace Kroira.App.Services
                 .ToDictionary(group => group.Key, group => group.Last().Value, StringComparer.OrdinalIgnoreCase);
 
             return normalized;
+        }
+
+        private static bool RepairSourceReferences(
+            BrowsePreferences preferences,
+            IReadOnlySet<int> validSourceIds,
+            IReadOnlySet<int> validChannelIds,
+            int? sourceProfileId)
+        {
+            var changed = false;
+            if (preferences.SelectedSourceId > 0 &&
+                (!validSourceIds.Contains(preferences.SelectedSourceId) ||
+                 sourceProfileId.HasValue && preferences.SelectedSourceId == sourceProfileId.Value))
+            {
+                preferences.SelectedSourceId = 0;
+                changed = true;
+            }
+
+            var hiddenSourceIds = preferences.HiddenSourceIds
+                .Where(id => id > 0 &&
+                             validSourceIds.Contains(id) &&
+                             (!sourceProfileId.HasValue || id != sourceProfileId.Value))
+                .Distinct()
+                .OrderBy(id => id)
+                .ToList();
+            if (!preferences.HiddenSourceIds.SequenceEqual(hiddenSourceIds))
+            {
+                preferences.HiddenSourceIds = hiddenSourceIds;
+                changed = true;
+            }
+
+            if (RepairChannelReference(preferences.LastChannel, validSourceIds, sourceProfileId))
+            {
+                changed = true;
+            }
+
+            foreach (var reference in preferences.RecentChannels)
+            {
+                if (RepairChannelReference(reference, validSourceIds, sourceProfileId))
+                {
+                    changed = true;
+                }
+            }
+
+            if (preferences.LastChannelId > 0 && !validChannelIds.Contains(preferences.LastChannelId))
+            {
+                preferences.LastChannelId = 0;
+                changed = true;
+            }
+
+            var recentChannelIds = preferences.RecentChannelIds
+                .Where(id => id > 0 && validChannelIds.Contains(id))
+                .Distinct()
+                .Take(12)
+                .ToList();
+            if (!preferences.RecentChannelIds.SequenceEqual(recentChannelIds))
+            {
+                preferences.RecentChannelIds = recentChannelIds;
+                changed = true;
+            }
+
+            var liveChannelWatchCounts = preferences.LiveChannelWatchCounts
+                .Where(pair => pair.Key > 0 && pair.Value > 0 && validChannelIds.Contains(pair.Key))
+                .GroupBy(pair => pair.Key)
+                .ToDictionary(group => group.Key, group => group.Max(pair => pair.Value));
+            if (!DictionariesEqual(preferences.LiveChannelWatchCounts, liveChannelWatchCounts))
+            {
+                preferences.LiveChannelWatchCounts = liveChannelWatchCounts;
+                changed = true;
+            }
+
+            return changed;
+        }
+
+        private static bool RepairChannelReference(
+            BrowseChannelReference? reference,
+            IReadOnlySet<int> validSourceIds,
+            int? sourceProfileId)
+        {
+            if (reference == null || reference.PreferredSourceProfileId <= 0)
+            {
+                return false;
+            }
+
+            if (validSourceIds.Contains(reference.PreferredSourceProfileId) &&
+                (!sourceProfileId.HasValue || reference.PreferredSourceProfileId != sourceProfileId.Value))
+            {
+                return false;
+            }
+
+            reference.PreferredSourceProfileId = 0;
+            return true;
+        }
+
+        private static bool DictionariesEqual<TKey>(
+            IReadOnlyDictionary<TKey, int> left,
+            IReadOnlyDictionary<TKey, int> right)
+            where TKey : notnull
+        {
+            if (left.Count != right.Count)
+            {
+                return false;
+            }
+
+            foreach (var pair in left)
+            {
+                if (!right.TryGetValue(pair.Key, out var value) || value != pair.Value)
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         private static string BuildKey(string domain, int profileId)
