@@ -1,196 +1,186 @@
 # KROIRA IPTV
 
-KROIRA IPTV is a modern Windows IPTV player built with C# / .NET 8 / WinUI 3.
+KROIRA IPTV is a packaged WinUI 3 desktop app for Windows that lets users connect their own IPTV sources, browse live TV and VOD, and play content through an embedded `mpv/libmpv` pipeline.
 
-The app is designed as a **player-only** product. It does not provide playlists, channels, or credentials. Users bring their own sources and use the app to browse and watch content through a polished desktop experience.
+It is a player-only product. The repository contains the Windows client, deterministic regression coverage for the ingestion pipeline, and the supporting documentation used to keep the product surface honest and maintainable.
 
-## Overview
+[Contributing](CONTRIBUTING.md) | [Code of Conduct](CODE_OF_CONDUCT.md) | [Security](SECURITY.md) | [Support](SUPPORT.md)
 
-KROIRA IPTV focuses on three core content types:
+## Product Summary
 
-- **Live TV**
-- **Movies**
-- **Series**
+KROIRA focuses on three primary content surfaces:
 
-The app supports user-provided IPTV sources such as:
+- Live TV
+- Movies
+- Series
 
-- **M3U**
-- **Xtream**
+The current restored codebase includes source onboarding, source health and guide controls, favorites, continue watching, embedded playback, and local configuration/state persistence.
 
-The current playback system is built around a rebuilt **mpv/libmpv-based embedded player** for Windows.
+## What KROIRA Is
 
-## Current Status
+- A Windows desktop IPTV library and player for user-provided sources
+- A packaged WinUI 3 application built on .NET 8
+- A local-first client that stores source configuration, playback progress, favorites, and settings on the device
+- A single-path embedded playback app based on `mpv/libmpv`
 
-The project is now past the early scaffold stage and has a working core experience for:
+## What KROIRA Is Not
 
-- source onboarding for M3U / Xtream
-- live TV browsing
-- movie browsing
-- series browsing
-- favorites
-- continue watching
-- XMLTV / EPG foundation
-- embedded playback inside the app window
+- Not a content service, IPTV reseller, or subscription provider
+- Not a source directory or playlist distributor
+- Not a repository of channels, stream URLs, or user credentials
+- Not a guarantee that third-party providers or streams are lawful, stable, or compatible
 
-The playback system has recently been rebuilt and stabilized around **mpv/libmpv**.
+## Feature Overview
 
-### Playback features currently working
+### Source Management
 
-- Live TV playback
-- VOD movie playback
-- Series episode playback
-- Embedded in-app playback
-- Back / Stop behavior
-- Fullscreen
-- Double-click fullscreen
-- VOD seek
-- Continue Watching / resume playback
-- Volume controls
-- Improved playback chrome auto-hide
-- LIVE button / live-edge behavior for live streams
+- Add and manage M3U playlists, Xtream providers, and Stalker portals
+- Configure guide mode per source with detected, manual XMLTV override, or no-guide behavior
+- Review source health, diagnostics, repair guidance, and safe-to-share activity summaries
+- Re-sync sources and guide data from the app surface
+
+### Library Surfaces
+
+- Browse live TV with categories and focus-friendly navigation
+- Browse movies and series with provider metadata plus enrichment/fallback handling
+- Save and revisit favorites
+- Resume VOD content through Continue Watching
+
+### Playback
+
+- Embedded in-app playback for live TV, movies, and episodes
+- Fullscreen support and double-click fullscreen toggle
+- Live-edge behavior for live streams and seek behavior for VOD
+- Auto-hiding playback chrome and keyboard/remote-friendly navigation
+- Item inspection and external handoff support where applicable
+
+### Guides, Metadata, and State
+
+- XMLTV guide support with provider-detected and manual override flows
+- Playback progress persistence for VOD content
+- Local settings for appearance, remote-friendly navigation, and backup/export behavior
+- TMDb-backed metadata enrichment/fallback when provider metadata is incomplete
+
+## Supported Source Types
+
+| Source type | Current input model | Guide handling |
+| --- | --- | --- |
+| M3U | URL or local file playlist | Detected XMLTV when available, manual XMLTV override, or no guide |
+| Xtream | Server URL, username, password | Provider-derived guide URL, manual XMLTV override, or no guide |
+| Stalker Portal | Portal URL plus MAC address, with optional device metadata | Manual XMLTV override or no guide, with provider-aware routing controls |
 
 ## Playback Architecture
 
-KROIRA IPTV now uses a rebuilt mpv-based playback path.
+The current baseline uses a single embedded playback path:
 
-### Active playback flow
+- `EmbeddedPlaybackPage` hosts the active playback UI
+- `VideoSurface` owns the rendering surface
+- `MpvPlayer` manages player lifecycle and commands
+- `NativeMpv` handles the native interop boundary
 
-- `EmbeddedPlaybackPage`
-- `MpvPlayer`
-- `VideoSurface`
-- `NativeMpv`
+This repository should be treated as `mpv/libmpv`-based. Older mixed or transitional playback approaches are not part of the active product baseline.
 
-### Design goals
+## Screenshots
 
-- stable embedded playback inside the app window
-- no detached external player window
-- safe teardown and re-entry
-- good behavior across live TV, movies, and episodes
-- clear separation between live-stream and VOD behavior
+Curated repository screenshots are not committed yet. Temporary debug captures are intentionally excluded from git.
 
-### Notes
-
-- The player is intentionally single-path and mpv-based.
-- Old mixed or transitional playback paths should not be treated as active architecture.
-- Future playback work should be incremental hardening and UX improvement, not another full rewrite unless absolutely necessary.
-
-## Features
-
-### Sources
-
-- Add M3U sources
-- Add Xtream sources
-- Persist source profiles locally
-- Remove sources safely
-
-### Live TV
-
-- Channel browsing
-- Category filtering
-- Favorites
-- Embedded playback
-- LIVE button / go-to-live behavior
-- Non-seekable live policy where appropriate
-- EPG foundation
-
-### Movies & Series
-
-- Movies page
-- Series page
-- Embedded playback
-- VOD seek
-- Resume support
-- Continue Watching integration
-
-### Continue Watching
-
-- Resume support for movies
-- Resume support for episodes
-- Progress persistence for VOD content
-
-### Playback UX
-
-- Embedded playback inside the app window
-- Fullscreen support
-- Double-click fullscreen
-- Auto-hide playback chrome
-- Volume control
-- Back / Stop flow improvements
-
-### EPG
-
-- XMLTV URL support
-- Current / upcoming program foundation
-- Basic guide-aware channel experience
-
-## Tech Stack
-
-- C#
-- .NET 8
-- WinUI 3
-- Windows App SDK
-- SQLite
-- Entity Framework Core
-- CommunityToolkit.Mvvm
+When stable, sanitized screenshots are ready, place them under [docs/screenshots](docs/screenshots/README.md) and update this section with relative image links.
 
 ## Getting Started
 
 ### Requirements
 
-- Windows 10 / 11
+- Windows 10 or Windows 11
 - .NET 8 SDK
 - Visual Studio 2022 or newer
-- Windows App SDK compatible environment
+- Windows App SDK compatible development environment
 
-### Development Notes
+### Run the App
 
-This is a packaged WinUI 3 desktop app. The recommended way to run and debug it is through **Visual Studio** using the packaged profile.
+1. Open `Kroira.sln` in Visual Studio.
+2. Select the packaged startup profile for `Kroira.App`.
+3. Build for `x64`.
+4. Run or debug from Visual Studio.
 
-For runtime smoke tests, launch through package identity. Directly starting `bin\...\Kroira.App.exe` runs outside package identity and can fail during Windows App SDK bootstrap.
-
-### Typical Development Flow
-
-- open the solution in Visual Studio
-- select the packaged startup profile
-- build for `x64`
-- run/debug from Visual Studio
-
-You can also launch the packaged debug app with:
+For packaged debug launches outside the IDE:
 
 ```powershell
-.\scripts\launch-packaged-debug.ps1
+powershell -ExecutionPolicy Bypass -File .\scripts\launch-packaged-debug.ps1
 ```
 
-## Project Direction
+Do not use `bin\...\Kroira.App.exe` as the primary smoke-test path. This app expects package identity.
 
-Short-term priorities:
+## Development and Build
 
-- playback hardening and polish
-- subtitle / audio track improvements
-- aspect ratio / fit mode controls
-- better playback status and error messaging
-- longer session testing and stress testing
+### Build
 
-Long-term priorities:
+```powershell
+dotnet build Kroira.sln -c Debug -p:Platform=x64
+```
 
-- EPG improvements
-- catalog polish
-- localization improvements
-- search / filter / sort improvements
-- additional quality-of-life features
+### Regression Suite
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\run-regressions.ps1
+```
+
+Full CI-equivalent validation:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\ci-regressions.ps1 -Configuration Release
+```
+
+### Repository Layout
+
+- `src/Kroira.App/` - packaged WinUI 3 application
+- `tests/Kroira.Regressions/` - deterministic ingestion and pipeline regression corpus
+- `scripts/` - local build, launch, and validation helpers
+- `docs/` - public support/privacy pages and product docs
+
+## Current Status
+
+The repository is in active product development, not long-term maintenance mode.
+
+Current baseline:
+
+- Source onboarding and source management are active
+- Live TV, movies, series, favorites, and continue watching are active
+- Embedded playback is active and based on `mpv/libmpv`
+- Guide settings, source health, and repair surfaces are active
+
+Current limitations:
+
+- Curated screenshots and polished public release assets are not yet committed
+- Some capture-library surfaces exist in code, but download, recording, restore, and media-library UI are feature-gated and not part of the default public product surface in the restored baseline
+
+## Roadmap
+
+Near-term priorities:
+
+- Playback hardening and UX polish around the embedded player
+- Source diagnostics, repair flows, and guide-quality improvements
+- Search, filtering, sorting, and metadata-quality improvements across catalog surfaces
+- Better public release assets, contributor docs, and repo presentation
+
+Longer-term areas under evaluation:
+
+- Carefully productizing currently gated recording and download workflows
+- Additional quality-of-life improvements for remote-first and desktop-first usage
 
 ## Disclaimer
 
 KROIRA IPTV is a client application only.
 
-It does **not** include or distribute:
+It does not include, sell, provide, host, curate, or distribute:
+
 - channels
 - playlists
 - stream credentials
+- subscription services
 - copyrighted content
 
-Users are responsible for the sources they add and use.
+Users are responsible for the legality, availability, and safety of the sources they add.
 
 ## License
 
-Add your preferred license here.
+This repository is licensed under the [MIT License](LICENSE).

@@ -6,14 +6,14 @@ namespace Kroira.App.Services
     internal static class AppSubmissionInfo
     {
         internal const string AppName = "KROIRA";
-        internal const string ProductDescription = "KROIRA is a Windows IPTV library and player for user-provided M3U and Xtream sources.";
+        internal const string ProductDescription = "KROIRA is a Windows IPTV library and player for user-provided M3U, Xtream, and Stalker sources.";
 
         // Replace these values before final store submission as needed.
         internal const string PrivacyPolicyUrl = "https://sativagenetics.github.io/KroiraIPTV/privacy.html";
         internal const string SupportPageUrl = "https://sativagenetics.github.io/KroiraIPTV/support.html";
         internal const string SupportEmail = "batuhandemirbilek7@gmail.com";
 
-        internal const string HelpStepOne = "1. Add an M3U playlist or Xtream provider.";
+        internal const string HelpStepOne = "1. Add an M3U playlist, Xtream provider, or Stalker portal.";
         internal const string HelpStepTwo = "2. Let KROIRA complete the first sync and health check.";
         internal const string HelpStepThree = "3. Browse Live TV, Movies, Series, Favorites, or Continue Watching.";
         internal const string HelpStepFour = "4. If guide coverage looks weak, review the source in Sources and adjust guide settings there.";

@@ -6,6 +6,7 @@ This project runs deterministic end-to-end regression coverage against the real 
 
 - M3U import and sync behavior
 - Xtream live/VOD/series sync behavior
+- Stalker portal sync behavior
 - XMLTV parsing and guide attachment
 - live/movie/series classification
 - normalization and logical identity behavior

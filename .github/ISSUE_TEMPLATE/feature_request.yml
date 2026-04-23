@@ -1,0 +1,65 @@
+name: Feature request
+description: Suggest an improvement that fits the current KROIRA IPTV product direction.
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please keep requests grounded in the current product direction and avoid asking for content distribution, playlists, or credentials.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Source onboarding or sync
+        - Source health or repair
+        - Live TV
+        - Movies
+        - Series
+        - Guide or XMLTV
+        - Playback
+        - Favorites or Continue Watching
+        - Settings or backup
+        - Developer tooling or docs
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem to solve
+      description: What user or contributor problem does this request address?
+      placeholder: The current behavior makes it hard to ...
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed change
+      description: Describe the smallest useful improvement.
+      placeholder: KROIRA should ...
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: If relevant, describe current workarounds or alternate ideas.
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope notes
+      description: Mention product constraints, feature gates, or risks if you know them.
+  - type: checkboxes
+    id: confirmations
+    attributes:
+      label: Confirmations
+      options:
+        - label: I searched for existing requests before filing this one.
+          required: true
+        - label: This request is for the current product direction, not a discarded UI or architecture experiment.
+          required: true
+        - label: This request does not ask KROIRA to provide channels, playlists, subscriptions, or credentials.
+          required: true

@@ -1,0 +1,104 @@
+name: Bug report
+description: Report a reproducible problem in the current KROIRA IPTV codebase.
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a bug.
+
+        Please do not include provider credentials, personal playlist URLs, or other sensitive source data in this report.
+  - type: dropdown
+    id: source_type
+    attributes:
+      label: Source type
+      description: Which source type is involved?
+      options:
+        - M3U
+        - Xtream
+        - Stalker
+        - Mixed or not sure
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Affected area
+      options:
+        - Source onboarding or sync
+        - Source health or repair
+        - Live TV
+        - Movies
+        - Series
+        - Guide or XMLTV
+        - Playback
+        - Favorites
+        - Continue Watching
+        - Settings or backup
+        - Build or developer workflow
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: app_version
+    attributes:
+      label: App version or commit
+      description: Include the app build/version if known, or the commit/branch you tested.
+      placeholder: e.g. 0.9.0.0 or main @ abc1234
+  - type: input
+    id: windows_version
+    attributes:
+      label: Windows version
+      placeholder: e.g. Windows 11 24H2
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: Briefly describe the bug.
+      placeholder: What broke?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Provide a clear reproduction sequence.
+      placeholder: |
+        1. Open ...
+        2. Add ...
+        3. Click ...
+        4. Observe ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      placeholder: What should have happened?
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      placeholder: What happened instead?
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Logs, screenshots, and extra notes
+      description: Add sanitized screenshots, stack traces, or notes that help narrow the issue.
+  - type: checkboxes
+    id: confirmations
+    attributes:
+      label: Confirmations
+      options:
+        - label: I searched for existing issues before filing this report.
+          required: true
+        - label: I removed provider credentials, playlist URLs, and other sensitive data from this report.
+          required: true
+        - label: I am describing a problem in the current restored product baseline, not an abandoned experiment.
+          required: true

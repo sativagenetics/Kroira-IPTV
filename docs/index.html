@@ -4,11 +4,97 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>KROIRA IPTV</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #090b0f;
+      --panel: #121821;
+      --border: #2d3743;
+      --text: #f5f2ea;
+      --muted: #c0baaf;
+      --accent: #e7c46e;
+      --link: #8cc8ff;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Arial, sans-serif;
+      background: radial-gradient(circle at top left, #1d2631 0%, var(--bg) 55%);
+      color: var(--text);
+    }
+
+    main {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 48px 24px 64px;
+    }
+
+    .hero,
+    .panel {
+      background: rgba(18, 24, 33, 0.92);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+    }
+
+    .hero {
+      padding: 28px;
+      margin-bottom: 24px;
+    }
+
+    .panel {
+      padding: 22px;
+      margin-bottom: 16px;
+    }
+
+    h1,
+    h2 {
+      margin-top: 0;
+      color: #ffffff;
+    }
+
+    p,
+    li {
+      line-height: 1.7;
+      color: var(--muted);
+    }
+
+    a {
+      color: var(--link);
+    }
+
+    .eyebrow {
+      display: inline-block;
+      margin-bottom: 10px;
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    ul {
+      margin: 0;
+      padding-left: 20px;
+    }
+  </style>
 </head>
 <body>
-  <h1>KROIRA IPTV</h1>
-  <p>KROIRA is a Windows desktop IPTV library and player for user-provided M3U and Xtream sources.</p>
-  <p><a href="./privacy.html">Privacy Policy</a></p>
-  <p><a href="./support.html">Support</a></p>
+  <main>
+    <section class="hero">
+      <div class="eyebrow">KROIRA IPTV</div>
+      <h1>Windows IPTV player for user-provided sources</h1>
+      <p>KROIRA IPTV is a packaged WinUI 3 desktop app for Windows. It supports user-provided M3U playlists, Xtream providers, and Stalker portals, with embedded playback, guide controls, favorites, and continue-watching support.</p>
+      <p>KROIRA is a player-only product. It does not provide channels, playlists, subscriptions, or credentials.</p>
+      <p><a href="https://github.com/sativagenetics/KroiraIPTV">GitHub repository</a></p>
+    </section>
+
+    <section class="panel">
+      <h2>Public pages</h2>
+      <ul>
+        <li><a href="./privacy.html">Privacy Policy</a></li>
+        <li><a href="./support.html">Support</a></li>
+      </ul>
+    </section>
+  </main>
 </body>
 </html>
