@@ -6,7 +6,6 @@ using System.IO;
 using System.Linq;
 using Kroira.App.Models;
 using Kroira.App.Services;
-using Kroira.App.ViewModels;
 using Kroira.App.Views;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Input;
@@ -21,7 +20,6 @@ namespace Kroira.App
 {
     public sealed partial class MainWindow : Window
     {
-        public MainViewModel ViewModel { get; }
         private readonly IWindowManagerService _windowManager;
         private readonly IRemoteNavigationService _remoteNavigationService;
         private static readonly string StartupLogPath =
@@ -45,10 +43,6 @@ namespace Kroira.App
                 ContentFrame.NavigationFailed += ContentFrame_NavigationFailed;
                 ContentFrame.Navigated += ContentFrame_Navigated;
                 var app = RequireApp();
-
-                LogStartupCheckpoint("MW 04: before resolving MainViewModel");
-                ViewModel = app.Services.GetRequiredService<MainViewModel>();
-                LogStartupCheckpoint("MW 05: after resolving MainViewModel");
 
                 LogStartupCheckpoint("MW 06: before resolving IWindowManagerService");
                 _windowManager = app.Services.GetRequiredService<IWindowManagerService>();

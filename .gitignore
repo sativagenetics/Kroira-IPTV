@@ -86,6 +86,14 @@ PublishProfiles/
 *.temp
 ~$*
 
+## Local repo artifacts / packaging outputs
+artifacts/
+**/AppPackages/
+**/bin-headless/
+**/obj-headless/
+kroira-test-signing.cer
+kroira-test-signing.pfx
+
 ## Regression runner artifacts
 tests/Kroira.Regressions/artifacts/
 tests/Kroira.Regressions/**/*.actual.json

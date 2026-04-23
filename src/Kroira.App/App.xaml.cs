@@ -290,7 +290,6 @@ namespace Kroira.App
 
             services.AddDbContext<AppDbContext>();
 
-            services.AddTransient<MainViewModel>();
             services.AddTransient<HomeViewModel>();
             services.AddTransient<ProfileViewModel>();
             services.AddTransient<SettingsViewModel>();

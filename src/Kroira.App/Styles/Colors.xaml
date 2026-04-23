@@ -5,13 +5,11 @@
     <!-- Premium media palette: black glass, warm cinema chrome, cold broadcast accent. -->
 
     <SolidColorBrush x:Key="KroiraPageBackgroundBrush" Color="#090A0D" />
-    <SolidColorBrush x:Key="KroiraShellBackgroundBrush" Color="#050608" />
     <SolidColorBrush x:Key="KroiraGlassBrush" Color="#6613181F" />
     <SolidColorBrush x:Key="KroiraGlassStrongBrush" Color="#8A171C23" />
     <SolidColorBrush x:Key="KroiraSurfaceSoftBrush" Color="#10141A" />
     <SolidColorBrush x:Key="KroiraSurfaceBrush" Color="#151A22" />
     <SolidColorBrush x:Key="KroiraSurfaceElevatedBrush" Color="#1B212A" />
-    <SolidColorBrush x:Key="KroiraSurfaceHighBrush" Color="#242B36" />
 
     <SolidColorBrush x:Key="KroiraBorderBrush" Color="#29313C" />
     <SolidColorBrush x:Key="KroiraBorderStrongBrush" Color="#47515F" />
@@ -39,8 +37,6 @@
     <SolidColorBrush x:Key="KroiraStateInfoSoftBrush" Color="#78D7E8" Opacity="0.16" />
     <SolidColorBrush x:Key="KroiraStateNeutralBrush" Color="#AEB6C3" />
     <SolidColorBrush x:Key="KroiraStateNeutralSoftBrush" Color="#AEB6C3" Opacity="0.10" />
-
-    <SolidColorBrush x:Key="KroiraMagentaBrush" Color="#C18BFF" />
 
     <SolidColorBrush x:Key="KroiraControlBrush" Color="#F6F3EA" Opacity="0.075" />
     <SolidColorBrush x:Key="KroiraControlBorderBrush" Color="#FFFFFF" Opacity="0.16" />
