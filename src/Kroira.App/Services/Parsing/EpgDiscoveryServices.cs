@@ -512,15 +512,23 @@ namespace Kroira.App.Services.Parsing
                 return new EpgDiscoveryResult(sources, description, detectedXmltvUrl, activeMode);
             }
 
-            var lastFailure = sources
+            var lastFailedSource = sources
                 .Where(source => !string.IsNullOrWhiteSpace(source.Message))
                 .OrderByDescending(source => source.Priority)
-                .Select(source => source.Message)
                 .FirstOrDefault();
+            var lastFailure = lastFailedSource?.Message;
+
+            if (activeMode == EpgActiveMode.Manual && lastFailedSource != null)
+            {
+                throw new EpgFetchException(
+                    lastFailure ?? "Manual XMLTV URL did not return usable XMLTV.",
+                    lastFailedSource.Url,
+                    activeMode);
+            }
 
             throw new EpgFetchException(
-                $"Discovered {distinctCandidates.Count} XMLTV candidate(s), but none returned usable XMLTV. last_error={lastFailure ?? "unknown"}",
-                detectedXmltvUrl,
+                $"Discovered {distinctCandidates.Count} XMLTV URL candidate(s) for the {sourceType} source, but none returned usable XMLTV. last_error={lastFailure ?? "unknown"}",
+                lastFailedSource?.Url ?? detectedXmltvUrl,
                 activeMode);
         }
 

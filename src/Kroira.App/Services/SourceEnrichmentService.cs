@@ -304,7 +304,7 @@ namespace Kroira.App.Services
                 return;
             }
 
-            if (!string.IsNullOrWhiteSpace(xmltvIconUrl))
+            if (!string.IsNullOrWhiteSpace(xmltvIconUrl) && IsTrustedLogoSource(outcome.Reason))
             {
                 channel.LogoUrl = xmltvIconUrl;
                 channel.LogoSource = ChannelLogoSource.Xmltv;
@@ -313,10 +313,8 @@ namespace Kroira.App.Services
                     ChannelEpgMatchSource.Provider => 88,
                     ChannelEpgMatchSource.Previous => 82,
                     ChannelEpgMatchSource.Normalized => 84,
+                    ChannelEpgMatchSource.Regex => 0,
                     ChannelEpgMatchSource.UserApproved => 84,
-                    ChannelEpgMatchSource.Alias => 78,
-                    ChannelEpgMatchSource.Regex => 74,
-                    ChannelEpgMatchSource.Fuzzy => 68,
                     _ => 0
                 };
                 channel.LogoSummary = BuildLogoSummary(outcome.Reason, xmltvChannel);
@@ -398,12 +396,17 @@ namespace Kroira.App.Services
 
         private static bool IsTrustedGuideSource(ChannelEpgMatchSource source)
         {
-            return source is ChannelEpgMatchSource.Provider or ChannelEpgMatchSource.Normalized or ChannelEpgMatchSource.UserApproved;
+            return source is ChannelEpgMatchSource.Provider or ChannelEpgMatchSource.Normalized or ChannelEpgMatchSource.Regex or ChannelEpgMatchSource.UserApproved;
         }
 
         private static bool IsWeakGuideSource(ChannelEpgMatchSource source)
         {
-            return source is ChannelEpgMatchSource.Previous or ChannelEpgMatchSource.Alias or ChannelEpgMatchSource.Regex or ChannelEpgMatchSource.Fuzzy;
+            return source is ChannelEpgMatchSource.Previous or ChannelEpgMatchSource.Alias or ChannelEpgMatchSource.Fuzzy;
+        }
+
+        private static bool IsTrustedLogoSource(ChannelEpgMatchSource source)
+        {
+            return source is ChannelEpgMatchSource.Provider or ChannelEpgMatchSource.Previous or ChannelEpgMatchSource.Normalized or ChannelEpgMatchSource.Regex or ChannelEpgMatchSource.UserApproved;
         }
 
         private static string BuildLogoSummary(ChannelEpgMatchSource reason, XmltvChannelDescriptor xmltvChannel)
@@ -1052,7 +1055,7 @@ namespace Kroira.App.Services
                         availableMatches,
                         regexOutcome.Reason,
                         regexOutcome.Confidence,
-                        $"{regexOutcome.Diagnostic} {weakDiagnostic}",
+                        regexOutcome.Diagnostic,
                         regexOutcome.MatchedValue,
                         regexOutcome.MatchedKey);
                 }
@@ -1213,8 +1216,8 @@ namespace Kroira.App.Services
                         {
                             Channels = matches,
                             Reason = ChannelEpgMatchSource.Regex,
-                            Confidence = 64,
-                            Diagnostic = $"Review-needed regex suggestion matched '{candidate}' using pattern '{pattern.Description}'.",
+                            Confidence = 74,
+                            Diagnostic = $"Regex-safe alias matched '{candidate}' using pattern '{pattern.Description}'.",
                             MatchedValue = candidate,
                             MatchedKey = pattern.Description
                         };

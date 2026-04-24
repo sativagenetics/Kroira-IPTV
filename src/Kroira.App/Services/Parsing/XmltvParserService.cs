@@ -28,6 +28,7 @@ namespace Kroira.App.Services.Parsing
     {
         private static readonly TimeSpan DefaultPastProgrammeWindow = TimeSpan.FromHours(6);
         private static readonly TimeSpan DefaultFutureProgrammeWindow = TimeSpan.FromHours(72);
+        private const int SmallGuideUnboundedProgrammeLimit = 500;
 
         private readonly IReadOnlyDictionary<SourceType, IEpgSourceDiscoveryService> _discoveryServices;
         private readonly ISourceEnrichmentService _sourceEnrichmentService;
@@ -266,14 +267,17 @@ namespace Kroira.App.Services.Parsing
 
                 try
                 {
+                    var useDefaultImportWindow = source.ProgrammeCount > SmallGuideUnboundedProgrammeLimit;
                     var sourceImportedProgrammes = AppendMatchedProgrammesFromSource(
                         source,
                         channelMatches,
-                        importWindowStartUtc,
-                        importWindowEndUtc,
+                        useDefaultImportWindow ? importWindowStartUtc : null,
+                        useDefaultImportWindow ? importWindowEndUtc : null,
                         epgItems,
                         epgItemKeys);
-                    source.Message = $"{source.Message} Imported {sourceImportedProgrammes:N0} matched programmes inside the default window.";
+                    source.Message = useDefaultImportWindow
+                        ? $"{source.Message} Imported {sourceImportedProgrammes:N0} matched programmes inside the default window."
+                        : $"{source.Message} Imported {sourceImportedProgrammes:N0} matched programmes from this compact guide.";
                     ImportRuntimeLogger.Log(
                         "EPG SYNC",
                         $"source_profile_id={sourceProfileId}; stage=parse_source_programmes_complete; source_kind={source.Kind}; source_label={FormatDiagnosticValue(source.Label)}; xmltv_url={FormatDiagnosticValue(source.Url)}; imported_programme_count={sourceImportedProgrammes}; import_window_start_utc={importWindowStartUtc:o}; import_window_end_utc={importWindowEndUtc:o}");
@@ -425,8 +429,20 @@ namespace Kroira.App.Services.Parsing
             var programmeCount = 0;
             using var textReader = new StringReader(source.XmlContent);
             using var reader = XmlReader.Create(textReader, CreateXmltvReaderSettings());
+            XmltvChannelAccumulator? activeChannel = null;
+            var activeChannelDepth = -1;
             while (reader.Read())
             {
+                if (reader.NodeType == XmlNodeType.EndElement &&
+                    activeChannel != null &&
+                    reader.Depth == activeChannelDepth &&
+                    string.Equals(reader.LocalName, "channel", StringComparison.OrdinalIgnoreCase))
+                {
+                    activeChannel = null;
+                    activeChannelDepth = -1;
+                    continue;
+                }
+
                 if (reader.NodeType != XmlNodeType.Element)
                 {
                     continue;
@@ -446,36 +462,30 @@ namespace Kroira.App.Services.Parsing
                     }
 
                     sourceXmltvChannelIds.Add(channelId);
-                    var accumulator = GetOrCreateChannelAccumulator(xmltvChannels, channelId, source);
+                    activeChannel = GetOrCreateChannelAccumulator(xmltvChannels, channelId, source);
+                    activeChannelDepth = reader.Depth;
                     if (reader.IsEmptyElement)
                     {
-                        continue;
+                        activeChannel = null;
+                        activeChannelDepth = -1;
                     }
-
-                    using var subtree = reader.ReadSubtree();
-                    while (subtree.Read())
+                }
+                else if (activeChannel != null &&
+                         string.Equals(reader.LocalName, "display-name", StringComparison.OrdinalIgnoreCase))
+                {
+                    var displayName = ReadElementText(reader).Trim();
+                    if (!string.IsNullOrWhiteSpace(displayName))
                     {
-                        if (subtree.NodeType != XmlNodeType.Element)
-                        {
-                            continue;
-                        }
-
-                        if (string.Equals(subtree.LocalName, "display-name", StringComparison.OrdinalIgnoreCase))
-                        {
-                            var displayName = subtree.ReadElementContentAsString()?.Trim();
-                            if (!string.IsNullOrWhiteSpace(displayName))
-                            {
-                                accumulator.DisplayNames.Add(displayName);
-                            }
-                        }
-                        else if (string.Equals(subtree.LocalName, "icon", StringComparison.OrdinalIgnoreCase))
-                        {
-                            var iconUrl = subtree.GetAttribute("src")?.Trim();
-                            if (!string.IsNullOrWhiteSpace(iconUrl))
-                            {
-                                accumulator.IconUrls.Add(iconUrl);
-                            }
-                        }
+                        activeChannel.DisplayNames.Add(displayName);
+                    }
+                }
+                else if (activeChannel != null &&
+                         string.Equals(reader.LocalName, "icon", StringComparison.OrdinalIgnoreCase))
+                {
+                    var iconUrl = reader.GetAttribute("src")?.Trim();
+                    if (!string.IsNullOrWhiteSpace(iconUrl))
+                    {
+                        activeChannel.IconUrls.Add(iconUrl);
                     }
                 }
                 else if (string.Equals(reader.LocalName, "programme", StringComparison.OrdinalIgnoreCase))
@@ -487,11 +497,6 @@ namespace Kroira.App.Services.Parsing
                         sourceXmltvChannelIds.Add(programmeChannelId);
                         GetOrCreateChannelAccumulator(xmltvChannels, programmeChannelId, source);
                     }
-
-                    if (!reader.IsEmptyElement)
-                    {
-                        reader.Skip();
-                    }
                 }
             }
 
@@ -501,92 +506,161 @@ namespace Kroira.App.Services.Parsing
         private static int AppendMatchedProgrammesFromSource(
             EpgDiscoveredGuideSource source,
             IReadOnlyDictionary<string, ChannelEpgMatchOutcome> channelMatches,
-            DateTime importWindowStartUtc,
-            DateTime importWindowEndUtc,
+            DateTime? importWindowStartUtc,
+            DateTime? importWindowEndUtc,
             ICollection<EpgProgram> epgItems,
             ISet<string> epgItemKeys)
         {
             var importedProgrammeCount = 0;
             using var textReader = new StringReader(source.XmlContent);
             using var reader = XmlReader.Create(textReader, CreateXmltvReaderSettings());
+            MatchedProgrammeAccumulator? activeProgramme = null;
+            var activeProgrammeDepth = -1;
             while (reader.Read())
             {
-                if (reader.NodeType != XmlNodeType.Element ||
-                    !string.Equals(reader.LocalName, "programme", StringComparison.OrdinalIgnoreCase))
+                if (reader.NodeType == XmlNodeType.EndElement &&
+                    activeProgramme != null &&
+                    reader.Depth == activeProgrammeDepth &&
+                    string.Equals(reader.LocalName, "programme", StringComparison.OrdinalIgnoreCase))
+                {
+                    importedProgrammeCount += AppendProgramme(activeProgramme, epgItems, epgItemKeys);
+                    activeProgramme = null;
+                    activeProgrammeDepth = -1;
+                    continue;
+                }
+
+                if (reader.NodeType != XmlNodeType.Element)
                 {
                     continue;
                 }
 
-                var xmltvChannelId = reader.GetAttribute("channel")?.Trim();
-                if (string.IsNullOrWhiteSpace(xmltvChannelId) ||
-                    !channelMatches.TryGetValue(xmltvChannelId, out var outcome) ||
-                    outcome.Channels.Count == 0 ||
-                    !IsActiveProgrammeMatch(outcome))
+                if (string.Equals(reader.LocalName, "programme", StringComparison.OrdinalIgnoreCase))
                 {
-                    if (!reader.IsEmptyElement)
+                    activeProgramme = TryCreateMatchedProgramme(reader, channelMatches, importWindowStartUtc, importWindowEndUtc);
+                    activeProgrammeDepth = activeProgramme == null ? -1 : reader.Depth;
+                    if (reader.IsEmptyElement && activeProgramme != null)
                     {
-                        reader.Skip();
+                        importedProgrammeCount += AppendProgramme(activeProgramme, epgItems, epgItemKeys);
+                        activeProgramme = null;
+                        activeProgrammeDepth = -1;
                     }
 
                     continue;
                 }
 
-                var start = ParseXmltvDate(reader.GetAttribute("start") ?? string.Empty);
-                var end = ParseXmltvDate(reader.GetAttribute("stop") ?? string.Empty);
-                if (start == null ||
-                    end == null ||
-                    end <= start ||
-                    end.Value < importWindowStartUtc ||
-                    start.Value > importWindowEndUtc ||
-                    reader.IsEmptyElement)
-                {
-                    if (!reader.IsEmptyElement)
-                    {
-                        reader.Skip();
-                    }
-
-                    continue;
-                }
-
-                if (XElement.ReadFrom(reader) is not XElement programme)
+                if (activeProgramme == null)
                 {
                     continue;
                 }
 
-                var title = programme.Element("title")?.Value?.Trim();
-                var description = programme.Element("desc")?.Value?.Trim() ?? string.Empty;
-                var subtitle = programme.Element("sub-title")?.Value?.Trim();
-                var category = programme.Element("category")?.Value?.Trim();
-
-                foreach (var matchedChannel in outcome.Channels)
+                if (string.Equals(reader.LocalName, "title", StringComparison.OrdinalIgnoreCase))
                 {
-                    var programTitle = string.IsNullOrWhiteSpace(title) ? "Unknown Program" : title;
-                    var duplicateKey = $"{matchedChannel.Id}|{start.Value.Ticks}|{end.Value.Ticks}";
-                    if (!epgItemKeys.Add(duplicateKey))
-                    {
-                        continue;
-                    }
-
-                    epgItems.Add(new EpgProgram
-                    {
-                        ChannelId = matchedChannel.Id,
-                        StartTimeUtc = start.Value,
-                        EndTimeUtc = end.Value,
-                        Title = programTitle,
-                        Description = description,
-                        Subtitle = string.IsNullOrWhiteSpace(subtitle) ? null : subtitle,
-                        Category = string.IsNullOrWhiteSpace(category) ? null : category
-                    });
-                    importedProgrammeCount++;
+                    activeProgramme.Title = ReadElementText(reader).Trim();
+                }
+                else if (string.Equals(reader.LocalName, "desc", StringComparison.OrdinalIgnoreCase))
+                {
+                    activeProgramme.Description = ReadElementText(reader).Trim();
+                }
+                else if (string.Equals(reader.LocalName, "sub-title", StringComparison.OrdinalIgnoreCase))
+                {
+                    activeProgramme.Subtitle = ReadElementText(reader).Trim();
+                }
+                else if (string.Equals(reader.LocalName, "category", StringComparison.OrdinalIgnoreCase))
+                {
+                    activeProgramme.Category = ReadElementText(reader).Trim();
                 }
             }
 
             return importedProgrammeCount;
         }
 
+        private static MatchedProgrammeAccumulator? TryCreateMatchedProgramme(
+            XmlReader reader,
+            IReadOnlyDictionary<string, ChannelEpgMatchOutcome> channelMatches,
+            DateTime? importWindowStartUtc,
+            DateTime? importWindowEndUtc)
+        {
+            var xmltvChannelId = reader.GetAttribute("channel")?.Trim();
+            if (string.IsNullOrWhiteSpace(xmltvChannelId) ||
+                !channelMatches.TryGetValue(xmltvChannelId, out var outcome) ||
+                outcome.Channels.Count == 0 ||
+                !IsActiveProgrammeMatch(outcome))
+            {
+                return null;
+            }
+
+            var start = ParseXmltvDate(reader.GetAttribute("start") ?? string.Empty);
+            var end = ParseXmltvDate(reader.GetAttribute("stop") ?? string.Empty);
+            if (start == null ||
+                end == null ||
+                end <= start ||
+                (importWindowStartUtc.HasValue && end.Value < importWindowStartUtc.Value) ||
+                (importWindowEndUtc.HasValue && start.Value > importWindowEndUtc.Value))
+            {
+                return null;
+            }
+
+            return new MatchedProgrammeAccumulator(outcome, start.Value, end.Value);
+        }
+
+        private static int AppendProgramme(
+            MatchedProgrammeAccumulator programme,
+            ICollection<EpgProgram> epgItems,
+            ISet<string> epgItemKeys)
+        {
+            var importedProgrammeCount = 0;
+            foreach (var matchedChannel in programme.Outcome.Channels)
+            {
+                var programTitle = string.IsNullOrWhiteSpace(programme.Title) ? "Unknown Program" : programme.Title;
+                var duplicateKey = $"{matchedChannel.Id}|{programme.StartTimeUtc.Ticks}|{programme.EndTimeUtc.Ticks}";
+                if (!epgItemKeys.Add(duplicateKey))
+                {
+                    continue;
+                }
+
+                epgItems.Add(new EpgProgram
+                {
+                    ChannelId = matchedChannel.Id,
+                    StartTimeUtc = programme.StartTimeUtc,
+                    EndTimeUtc = programme.EndTimeUtc,
+                    Title = programTitle,
+                    Description = programme.Description,
+                    Subtitle = string.IsNullOrWhiteSpace(programme.Subtitle) ? null : programme.Subtitle,
+                    Category = string.IsNullOrWhiteSpace(programme.Category) ? null : programme.Category
+                });
+                importedProgrammeCount++;
+            }
+
+            return importedProgrammeCount;
+        }
+
+        private static string ReadElementText(XmlReader reader)
+        {
+            if (reader.IsEmptyElement)
+            {
+                return string.Empty;
+            }
+
+            var depth = reader.Depth;
+            var text = string.Empty;
+            while (reader.Read())
+            {
+                if (reader.NodeType is XmlNodeType.Text or XmlNodeType.CDATA or XmlNodeType.SignificantWhitespace)
+                {
+                    text += reader.Value;
+                }
+                else if (reader.NodeType == XmlNodeType.EndElement && reader.Depth == depth)
+                {
+                    break;
+                }
+            }
+
+            return text;
+        }
+
         private static bool IsActiveProgrammeMatch(ChannelEpgMatchOutcome outcome)
         {
-            return outcome.Reason is ChannelEpgMatchSource.Provider or ChannelEpgMatchSource.Normalized or ChannelEpgMatchSource.UserApproved;
+            return outcome.Reason is ChannelEpgMatchSource.Provider or ChannelEpgMatchSource.Normalized or ChannelEpgMatchSource.Regex or ChannelEpgMatchSource.UserApproved;
         }
 
         private static XmlReaderSettings CreateXmltvReaderSettings()
@@ -968,13 +1042,8 @@ namespace Kroira.App.Services.Parsing
 
             var exact = GetCount(counts, ChannelEpgMatchSource.Provider);
             var normalized = GetCount(counts, ChannelEpgMatchSource.Normalized);
-            var approved = GetCount(counts, ChannelEpgMatchSource.UserApproved);
-            var weak = GetCount(counts, ChannelEpgMatchSource.Previous) +
-                       GetCount(counts, ChannelEpgMatchSource.Alias) +
-                       GetCount(counts, ChannelEpgMatchSource.Regex) +
-                       GetCount(counts, ChannelEpgMatchSource.Fuzzy);
 
-            return $"exact={exact}; normalized={normalized}; approved={approved}; weak={weak}; provider_id={exact}; reused={GetCount(counts, ChannelEpgMatchSource.Previous)}; alias={GetCount(counts, ChannelEpgMatchSource.Alias)}; regex={GetCount(counts, ChannelEpgMatchSource.Regex)}; fuzzy={GetCount(counts, ChannelEpgMatchSource.Fuzzy)}; unmatched={unmatchedCount}";
+            return $"provider_id={exact}; reused={GetCount(counts, ChannelEpgMatchSource.Previous)}; normalized={normalized}; alias={GetCount(counts, ChannelEpgMatchSource.Alias)}; regex={GetCount(counts, ChannelEpgMatchSource.Regex)}; fuzzy={GetCount(counts, ChannelEpgMatchSource.Fuzzy)}; unmatched={unmatchedCount}";
         }
 
         private static void LogMatchOutcome(int sourceProfileId, XmltvChannelDescriptor xmltvChannel, ChannelEpgMatchOutcome outcome)
@@ -1171,6 +1240,24 @@ namespace Kroira.App.Services.Parsing
             string MatchBreakdown);
 
         private sealed record XmltvSourceParseSummary(int XmltvChannelCount, int ProgrammeCount);
+
+        private sealed class MatchedProgrammeAccumulator
+        {
+            public MatchedProgrammeAccumulator(ChannelEpgMatchOutcome outcome, DateTime startTimeUtc, DateTime endTimeUtc)
+            {
+                Outcome = outcome;
+                StartTimeUtc = startTimeUtc;
+                EndTimeUtc = endTimeUtc;
+            }
+
+            public ChannelEpgMatchOutcome Outcome { get; }
+            public DateTime StartTimeUtc { get; }
+            public DateTime EndTimeUtc { get; }
+            public string Title { get; set; } = string.Empty;
+            public string Description { get; set; } = string.Empty;
+            public string Subtitle { get; set; } = string.Empty;
+            public string Category { get; set; } = string.Empty;
+        }
 
         private sealed class XmltvChannelAccumulator
         {

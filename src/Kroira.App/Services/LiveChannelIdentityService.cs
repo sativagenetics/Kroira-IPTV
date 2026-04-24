@@ -62,11 +62,13 @@ namespace Kroira.App.Services
                 ? guideAlias
                 : aliasKeys.FirstOrDefault(alias => !string.Equals(alias, guideAlias, StringComparison.OrdinalIgnoreCase)) ?? guideAlias;
 
-            var identityKey = !string.IsNullOrWhiteSpace(playbackIdentity)
-                ? $"name:{playbackIdentity}"
+            var identityKey = !string.IsNullOrWhiteSpace(guideAlias) && IsStrongGuideAlias(guideAlias)
+                ? $"id:{guideAlias}"
                 : !string.IsNullOrWhiteSpace(preferredAlias)
                     ? $"{(string.Equals(preferredAlias, guideAlias, StringComparison.OrdinalIgnoreCase) ? "id" : "name")}:{preferredAlias}"
-                    : "name:unknown";
+                    : !string.IsNullOrWhiteSpace(playbackIdentity)
+                        ? $"name:{playbackIdentity}"
+                        : "name:unknown";
 
             return new LiveChannelIdentity(identityKey, normalizedName, aliasKeys.OrderBy(value => value, StringComparer.OrdinalIgnoreCase).ToList());
         }
@@ -136,18 +138,57 @@ namespace Kroira.App.Services
                 }
 
                 var value = rawValue.Trim();
+                AddAlias(keys, NormalizeDottedAliasKey(value));
                 AddAlias(keys, NormalizeAliasKey(value));
+                AddAlias(keys, NormalizeDottedAliasKey(BracketNoiseRegex.Replace(value, " ")));
                 AddAlias(keys, NormalizeAliasKey(BracketNoiseRegex.Replace(value, " ")));
 
                 var exactKey = NormalizeExactKey(value);
                 if (!string.IsNullOrWhiteSpace(exactKey))
                 {
                     AddAlias(keys, NormalizeAliasKey(exactKey));
-                    AddAlias(keys, exactKey.Replace(" ", string.Empty, StringComparison.Ordinal));
+                    if (!HasDottedRegionSuffix(value))
+                    {
+                        AddAlias(keys, exactKey.Replace(" ", string.Empty, StringComparison.Ordinal));
+                    }
                 }
             }
 
             return keys.OrderBy(value => value, StringComparer.OrdinalIgnoreCase).ToList();
+        }
+
+        private static string NormalizeDottedAliasKey(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return string.Empty;
+            }
+
+            var normalized = RemoveDiacritics(value).ToLowerInvariant();
+            normalized = normalized.Replace("&", " and ", StringComparison.Ordinal);
+            normalized = normalized.Replace("+", " plus ", StringComparison.Ordinal);
+            normalized = LeadingRegionPrefixRegex.Replace(normalized, " ");
+            normalized = BracketNoiseRegex.Replace(normalized, " ");
+            normalized = NormalizeNumberWords(normalized);
+            normalized = QualityRegex.Replace(normalized, " ");
+            normalized = IptvNoiseRegex.Replace(normalized, " ");
+            normalized = AliasNoiseRegex.Replace(normalized, " ");
+            normalized = Regex.Replace(normalized, @"[^a-z0-9\.\-]+", " ", RegexOptions.IgnoreCase);
+            normalized = Regex.Replace(normalized, @"\s*\.\s*", ".", RegexOptions.IgnoreCase);
+            normalized = Regex.Replace(normalized, @"\s*-\s*", "-", RegexOptions.IgnoreCase);
+            normalized = Regex.Replace(normalized, @"\.{2,}", ".", RegexOptions.IgnoreCase);
+            normalized = MultiSpaceRegex.Replace(normalized, " ").Trim(' ', '.', '-');
+            return normalized.Contains('.', StringComparison.Ordinal)
+                ? normalized.Replace(" ", string.Empty, StringComparison.Ordinal)
+                : string.Empty;
+        }
+
+        private static bool HasDottedRegionSuffix(string value)
+        {
+            return Regex.IsMatch(
+                value.Trim(),
+                @"\.(?:tr|turkey|turkiye|us|usa|uk|gb|de|fr|it|es|nl)$",
+                RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
         }
 
         public double ComputeDiceCoefficient(string left, string right)
