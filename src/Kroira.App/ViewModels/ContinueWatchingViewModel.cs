@@ -25,6 +25,8 @@ namespace Kroira.App.ViewModels
         public string Title { get; set; } = string.Empty;
         public string LogoUrl { get; set; } = string.Empty;
         public string StreamUrl { get; set; } = string.Empty;
+        public string LogicalContentKey { get; set; } = string.Empty;
+        public int PreferredSourceProfileId { get; set; }
         public double ProgressPercent { get; set; }
         public string ProgressText { get; set; } = string.Empty;
         public string TypeLabel { get; set; } = string.Empty;
@@ -73,6 +75,7 @@ namespace Kroira.App.ViewModels
         public Visibility LiveEmptyVisibility => LiveProgressItems.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
         public Visibility MovieEmptyVisibility => MovieProgressItems.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
         public Visibility SeriesEmptyVisibility => SeriesProgressItems.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+        public int ActiveProfileId { get; private set; } = 1;
 
         public ContinueWatchingViewModel(IServiceProvider serviceProvider)
         {
@@ -106,6 +109,7 @@ namespace Kroira.App.ViewModels
                 var logicalCatalogStateService = scope.ServiceProvider.GetRequiredService<ILogicalCatalogStateService>();
                 var surfaceStateService = scope.ServiceProvider.GetRequiredService<ISurfaceStateService>();
                 var access = await profileService.GetAccessSnapshotAsync(db);
+                ActiveProfileId = access.ProfileId;
                 try
                 {
                     await logicalCatalogStateService.ReconcilePlaybackProgressAsync(db, access.ProfileId);
@@ -246,6 +250,8 @@ namespace Kroira.App.ViewModels
                     Title = channel.Name,
                     LogoUrl = channel.LogoUrl ?? string.Empty,
                     StreamUrl = channel.StreamUrl,
+                    LogicalContentKey = progress.LogicalContentKey,
+                    PreferredSourceProfileId = progress.PreferredSourceProfileId,
                     ProgressPercent = 0,
                     ProgressText = "LIVE",
                     TypeLabel = "Live channel",
@@ -298,6 +304,8 @@ namespace Kroira.App.ViewModels
                     Title = movie.Title,
                     LogoUrl = movie.DisplayPosterUrl,
                     StreamUrl = movie.StreamUrl,
+                    LogicalContentKey = snapshot.LogicalContentKey,
+                    PreferredSourceProfileId = snapshot.PreferredSourceProfileId,
                     ProgressPercent = snapshot.ProgressPercent,
                     ProgressText = snapshot.IsWatched
                         ? "WATCHED"
@@ -363,6 +371,8 @@ namespace Kroira.App.ViewModels
                     Title = selection.Series.Title,
                     LogoUrl = selection.Series.DisplayPosterUrl,
                     StreamUrl = selection.Episode.StreamUrl,
+                    LogicalContentKey = selection.EpisodeSnapshot?.LogicalContentKey ?? string.Empty,
+                    PreferredSourceProfileId = selection.EpisodeSnapshot?.PreferredSourceProfileId ?? selection.Series.SourceProfileId,
                     ProgressPercent = selection.EpisodeSnapshot?.ProgressPercent ?? (selection.IsWatched ? 100 : 0),
                     ProgressText = selection.IsResumeCandidate
                         ? TimeSpan.FromMilliseconds(selection.ResumePositionMs).ToString(@"hh\:mm\:ss")

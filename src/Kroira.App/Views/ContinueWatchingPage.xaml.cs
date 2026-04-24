@@ -90,9 +90,14 @@ namespace Kroira.App.Views
 
             Frame.Navigate(typeof(EmbeddedPlaybackPage), new PlaybackLaunchContext
             {
+                ProfileId = ViewModel.ActiveProfileId,
                 ContentId = item.ContentId,
                 ContentType = item.ContentType,
+                LogicalContentKey = item.LogicalContentKey,
+                PreferredSourceProfileId = item.PreferredSourceProfileId,
+                CatalogStreamUrl = item.StreamUrl,
                 StreamUrl = item.StreamUrl,
+                LiveStreamUrl = item.ContentType == PlaybackContentType.Channel ? item.StreamUrl : string.Empty,
                 StartPositionMs = item.SavedPositionMs
             });
         }

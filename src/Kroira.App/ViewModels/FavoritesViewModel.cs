@@ -17,6 +17,8 @@ namespace Kroira.App.ViewModels
     public partial class FavoriteMovieViewModel : ObservableObject
     {
         public int Id { get; set; }
+        public int PreferredSourceProfileId { get; set; }
+        public string LogicalContentKey { get; set; } = string.Empty;
         public string Title { get; set; } = string.Empty;
         public string PosterUrl { get; set; } = string.Empty;
         public string StreamUrl { get; set; } = string.Empty;
@@ -27,6 +29,8 @@ namespace Kroira.App.ViewModels
     {
         public Series Series { get; set; } = new Series();
         public int Id { get; set; }
+        public int PreferredSourceProfileId { get; set; }
+        public string LogicalContentKey { get; set; } = string.Empty;
         public string Title { get; set; } = string.Empty;
         public string PosterUrl { get; set; } = string.Empty;
         public string HeroArtworkUrl { get; set; } = string.Empty;
@@ -94,6 +98,7 @@ namespace Kroira.App.ViewModels
         public Visibility SelectedSeriesEpisodesVisibility => SelectedSeason?.Episodes?.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
         public Visibility SelectedSeriesEpisodesEmptyVisibility => SelectedSeries != null && !(SelectedSeason?.Episodes?.Count > 0) ? Visibility.Visible : Visibility.Collapsed;
         public Visibility SelectedEpisodePlayVisibility => SelectedEpisode == null ? Visibility.Collapsed : Visibility.Visible;
+        public int ActiveProfileId { get; private set; } = 1;
 
         public FavoritesViewModel(IServiceProvider serviceProvider)
         {
@@ -118,6 +123,7 @@ namespace Kroira.App.ViewModels
                 var profileService = scope.ServiceProvider.GetRequiredService<IProfileStateService>();
                 var surfaceStateService = scope.ServiceProvider.GetRequiredService<ISurfaceStateService>();
                 var access = await profileService.GetAccessSnapshotAsync(db);
+                ActiveProfileId = access.ProfileId;
                 await _logicalCatalogStateService.ReconcileFavoritesAsync(db, access.ProfileId);
 
                 var channelIds = await db.Favorites
@@ -149,6 +155,9 @@ namespace Kroira.App.ViewModels
                         {
                             Id = ch.Id,
                             CategoryId = ch.ChannelCategoryId,
+                            SourceProfileId = category.SourceProfileId,
+                            PreferredSourceProfileId = category.SourceProfileId,
+                            LogicalContentKey = _logicalCatalogStateService.BuildChannelLogicalKey(ch),
                             RawName = ch.Name,
                             Name = cleanedChannelName,
                             CategoryName = category.Name,
@@ -173,6 +182,8 @@ namespace Kroira.App.ViewModels
                         FavoriteMovies.Add(new FavoriteMovieViewModel
                         {
                             Id = movie.Id,
+                            PreferredSourceProfileId = movie.SourceProfileId,
+                            LogicalContentKey = _logicalCatalogStateService.BuildMovieLogicalKey(movie),
                             Title = movie.Title,
                             PosterUrl = movie.DisplayPosterUrl,
                             StreamUrl = movie.StreamUrl,
@@ -353,12 +364,14 @@ namespace Kroira.App.ViewModels
                 .ResolveLocalState(TotalFavorites, SurfaceStateCopies.Favorites);
         }
 
-        private static FavoriteSeriesViewModel BuildFavoriteSeriesViewModel(Series show)
+        private FavoriteSeriesViewModel BuildFavoriteSeriesViewModel(Series show)
         {
             var favoriteSeries = new FavoriteSeriesViewModel
             {
                 Series = show,
                 Id = show.Id,
+                PreferredSourceProfileId = show.SourceProfileId,
+                LogicalContentKey = _logicalCatalogStateService.BuildSeriesLogicalKey(show),
                 Title = show.Title,
                 PosterUrl = show.DisplayPosterUrl,
                 HeroArtworkUrl = show.DisplayHeroArtworkUrl,
