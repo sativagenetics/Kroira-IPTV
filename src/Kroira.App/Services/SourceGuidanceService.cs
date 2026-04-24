@@ -265,6 +265,7 @@ namespace Kroira.App.Services
                                         SourceId = sourceId,
                                         ActiveMode = credential.EpgMode,
                                         ManualEpgUrl = credential.ManualEpgUrl,
+                                        FallbackEpgUrls = credential.FallbackEpgUrls,
                                         ProxyScope = credential.ProxyScope,
                                         ProxyUrl = credential.ProxyUrl,
                                         CompanionScope = SourceCompanionScope.Disabled,
@@ -1050,6 +1051,7 @@ namespace Kroira.App.Services
                 Username = draft.Type == SourceType.Xtream ? (draft.Username?.Trim() ?? string.Empty) : string.Empty,
                 Password = draft.Type == SourceType.Xtream ? (draft.Password ?? string.Empty) : string.Empty,
                 ManualEpgUrl = NormalizeOptionalUrl(draft.ManualEpgUrl),
+                FallbackEpgUrls = NormalizeGuideUrlList(draft.FallbackEpgUrls),
                 EpgMode = draft.EpgMode,
                 ProxyScope = draft.ProxyScope,
                 ProxyUrl = NormalizeOptionalUrl(draft.ProxyUrl),
@@ -1223,6 +1225,7 @@ namespace Kroira.App.Services
                 Username = draft.Username,
                 Password = draft.Password,
                 ManualEpgUrl = draft.ManualEpgUrl,
+                FallbackEpgUrls = draft.FallbackEpgUrls,
                 EpgMode = draft.EpgMode,
                 ProxyScope = draft.ProxyScope,
                 ProxyUrl = draft.ProxyUrl,
@@ -1698,6 +1701,21 @@ namespace Kroira.App.Services
         private static string NormalizeOptionalUrl(string? value)
         {
             return string.IsNullOrWhiteSpace(value) ? string.Empty : value.Trim();
+        }
+
+        private static string NormalizeGuideUrlList(string? value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return string.Empty;
+            }
+
+            return string.Join(
+                Environment.NewLine,
+                value.Split(new[] { '\r', '\n', ';' }, StringSplitOptions.RemoveEmptyEntries)
+                    .Select(item => item.Trim())
+                    .Where(item => !string.IsNullOrWhiteSpace(item))
+                    .Distinct(StringComparer.OrdinalIgnoreCase));
         }
 
         private static string NormalizeCompanionUrl(string? value)

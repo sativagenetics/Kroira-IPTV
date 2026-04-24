@@ -431,6 +431,7 @@ namespace Kroira.App.ViewModels
         public EpgActiveMode ActiveMode { get; set; } = EpgActiveMode.Detected;
         public string ManualEpgUrl { get; set; } = string.Empty;
         public string DetectedEpgUrl { get; set; } = string.Empty;
+        public string FallbackEpgUrls { get; set; } = string.Empty;
         public SourceProxyScope ProxyScope { get; set; } = SourceProxyScope.Disabled;
         public string ProxyUrl { get; set; } = string.Empty;
         public SourceCompanionScope CompanionScope { get; set; } = SourceCompanionScope.Disabled;
@@ -547,6 +548,7 @@ namespace Kroira.App.ViewModels
                 ActiveMode = credential.EpgMode,
                 ManualEpgUrl = credential.ManualEpgUrl,
                 DetectedEpgUrl = credential.DetectedEpgUrl,
+                FallbackEpgUrls = credential.FallbackEpgUrls,
                 ProxyScope = credential.ProxyScope,
                 ProxyUrl = credential.ProxyUrl,
                 CompanionScope = credential.CompanionScope,
@@ -565,6 +567,7 @@ namespace Kroira.App.ViewModels
                     SourceId = draft.SourceId,
                     ActiveMode = draft.ActiveMode,
                     ManualEpgUrl = draft.ManualEpgUrl,
+                    FallbackEpgUrls = draft.FallbackEpgUrls,
                     ProxyScope = draft.ProxyScope,
                     ProxyUrl = draft.ProxyUrl,
                     CompanionScope = draft.CompanionScope,

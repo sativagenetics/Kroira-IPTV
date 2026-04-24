@@ -190,8 +190,8 @@ namespace Kroira.App.Views
 
             var modeOptions = new[]
             {
-                new GuideModeOption(EpgActiveMode.Detected, "Detected from provider", "Use the provider-advertised or provider-derived XMLTV URL."),
-                new GuideModeOption(EpgActiveMode.Manual, "Manual override", "Use your own XMLTV URL and keep the detected URL on file."),
+                new GuideModeOption(EpgActiveMode.Detected, "Detected from provider", "Use provider XMLTV first, then optional fallback/enrichment URLs."),
+                new GuideModeOption(EpgActiveMode.Manual, "Manual override", "Use your own XMLTV URL first and keep detected provider data on file."),
                 new GuideModeOption(EpgActiveMode.None, "No guide", "Disable guide syncing for this source.")
             };
 
@@ -236,6 +236,16 @@ namespace Kroira.App.Views
                 Header = "Manual XMLTV URL",
                 PlaceholderText = "https://... or C:\\guide.xml",
                 Text = draft.ManualEpgUrl
+            };
+
+            var fallbackUrlBox = new TextBox
+            {
+                Header = "Fallback/enrichment XMLTV URLs",
+                PlaceholderText = "One XMLTV URL per line. Public feeds are optional.",
+                AcceptsReturn = true,
+                TextWrapping = TextWrapping.Wrap,
+                MinHeight = 88,
+                Text = draft.FallbackEpgUrls
             };
 
             var proxyUrlBox = new TextBox
@@ -297,6 +307,7 @@ namespace Kroira.App.Views
                 if (modeComboBox.SelectedItem is GuideModeOption option)
                 {
                     manualUrlBox.IsEnabled = option.Mode == EpgActiveMode.Manual;
+                    fallbackUrlBox.IsEnabled = option.Mode != EpgActiveMode.None;
                     modeDescription.Text = option.Description;
                 }
             }
@@ -369,6 +380,7 @@ namespace Kroira.App.Views
                         modeComboBox,
                         modeDescription,
                         manualUrlBox,
+                        fallbackUrlBox,
                         new Border
                         {
                             Height = 1,
@@ -402,6 +414,7 @@ namespace Kroira.App.Views
 
             draft.ActiveMode = (modeComboBox.SelectedItem as GuideModeOption)?.Mode ?? EpgActiveMode.Detected;
             draft.ManualEpgUrl = manualUrlBox.Text?.Trim() ?? string.Empty;
+            draft.FallbackEpgUrls = fallbackUrlBox.Text?.Trim() ?? string.Empty;
             draft.ProxyScope = (proxyComboBox.SelectedItem as ProxyModeOption)?.Scope ?? SourceProxyScope.Disabled;
             draft.ProxyUrl = proxyUrlBox.Text?.Trim() ?? string.Empty;
             draft.CompanionScope = (companionComboBox.SelectedItem as CompanionScopeOption)?.Scope ?? SourceCompanionScope.Disabled;

@@ -25,10 +25,10 @@ namespace Kroira.App.Services
         private static readonly Regex YearOnlyRegex = new(@"^(?:19|20)\d{2}$", RegexOptions.Compiled);
         private static readonly Regex YearBucketRegex = new(@"^(?:(?:19|20)\d{2})(?:\s*[-/]\s*(?:19|20)\d{2})?$", RegexOptions.Compiled);
         private static readonly Regex LiveSeparatorNoiseRegex =
-            new(@"\s*(?:\||/|-)\s*(?:backup|yedek|cdn\s*\d+|server\s*\d+|line\s*\d+|source\s*\d+|alt|auto|vip(?:\s*\d+)?|hevc|h\.?264|h\.?265|4k|uhd|fhd|hd|sd|50fps|60fps|ott|raw|main)\s*$",
+            new(@"\s*(?:\||/|-)\s*(?:backup|yedek|cdn\s*\d+|server\s*\d+|line\s*\d+|source\s*\d+|alt|auto|vip(?:\s*\d+)?|hevc|h\.?264|h\.?265|50fps|60fps|ott|raw|main)\s*$",
                 RegexOptions.Compiled | RegexOptions.IgnoreCase);
         private static readonly Regex LiveTrailingTokenNoiseRegex =
-            new(@"\s+(?:backup|yedek|vip(?:\s*\d+)?|hevc|h\.?264|h\.?265|4k|uhd|fhd|hd|sd|50fps|60fps|ott|raw|main|cdn\s*\d+|server\s*\d+)\s*$",
+            new(@"\s+(?:backup|yedek|vip(?:\s*\d+)?|hevc|h\.?264|h\.?265|50fps|60fps|ott|raw|main|cdn\s*\d+|server\s*\d+)\s*$",
                 RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
         private static readonly HashSet<string> AdultTokens = new(StringComparer.OrdinalIgnoreCase)

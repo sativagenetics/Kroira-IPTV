@@ -35,6 +35,7 @@ namespace Kroira.App.Data
         public DbSet<Channel> Channels { get; set; } = null!;
         public DbSet<EpgProgram> EpgPrograms { get; set; } = null!;
         public DbSet<EpgSyncLog> EpgSyncLogs { get; set; } = null!;
+        public DbSet<EpgMappingDecision> EpgMappingDecisions { get; set; } = null!;
         public DbSet<Movie> Movies { get; set; } = null!;
         public DbSet<Series> Series { get; set; } = null!;
         public DbSet<Season> Seasons { get; set; } = null!;
@@ -114,6 +115,11 @@ namespace Kroira.App.Data
                 .Property(e => e.StalkerApiUrl)
                 .IsRequired()
                 .HasMaxLength(600);
+
+            modelBuilder.Entity<SourceCredential>()
+                .Property(e => e.FallbackEpgUrls)
+                .IsRequired()
+                .HasMaxLength(4000);
 
             modelBuilder.Entity<SourceSyncState>()
                 .HasOne<SourceProfile>()
@@ -607,6 +613,69 @@ namespace Kroira.App.Data
                 .HasOne<SourceProfile>()
                 .WithOne()
                 .HasForeignKey<EpgSyncLog>(e => e.SourceProfileId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<EpgSyncLog>()
+                .Property(e => e.GuideSourceStatusJson)
+                .IsRequired()
+                .HasMaxLength(8000);
+
+            modelBuilder.Entity<EpgSyncLog>()
+                .Property(e => e.GuideWarningSummary)
+                .IsRequired()
+                .HasMaxLength(800);
+
+            modelBuilder.Entity<EpgMappingDecision>()
+                .HasIndex(e => new { e.SourceProfileId, e.ChannelId, e.XmltvChannelId })
+                .IsUnique();
+
+            modelBuilder.Entity<EpgMappingDecision>()
+                .HasIndex(e => new { e.SourceProfileId, e.StreamUrlHash, e.XmltvChannelId });
+
+            modelBuilder.Entity<EpgMappingDecision>()
+                .Property(e => e.ChannelIdentityKey)
+                .IsRequired()
+                .HasMaxLength(180);
+
+            modelBuilder.Entity<EpgMappingDecision>()
+                .Property(e => e.ChannelName)
+                .IsRequired()
+                .HasMaxLength(220);
+
+            modelBuilder.Entity<EpgMappingDecision>()
+                .Property(e => e.CategoryName)
+                .IsRequired()
+                .HasMaxLength(220);
+
+            modelBuilder.Entity<EpgMappingDecision>()
+                .Property(e => e.ProviderEpgChannelId)
+                .IsRequired()
+                .HasMaxLength(220);
+
+            modelBuilder.Entity<EpgMappingDecision>()
+                .Property(e => e.StreamUrlHash)
+                .IsRequired()
+                .HasMaxLength(96);
+
+            modelBuilder.Entity<EpgMappingDecision>()
+                .Property(e => e.XmltvChannelId)
+                .IsRequired()
+                .HasMaxLength(220);
+
+            modelBuilder.Entity<EpgMappingDecision>()
+                .Property(e => e.XmltvDisplayName)
+                .IsRequired()
+                .HasMaxLength(220);
+
+            modelBuilder.Entity<EpgMappingDecision>()
+                .Property(e => e.ReasonSummary)
+                .IsRequired()
+                .HasMaxLength(500);
+
+            modelBuilder.Entity<EpgMappingDecision>()
+                .HasOne<SourceProfile>()
+                .WithMany()
+                .HasForeignKey(e => e.SourceProfileId)
                 .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<EpgProgram>()

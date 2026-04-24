@@ -2,8 +2,11 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
+using System.Xml;
 using System.Xml.Linq;
 using Kroira.App.Data;
 using Kroira.App.Models;
@@ -23,6 +26,9 @@ namespace Kroira.App.Services.Parsing
 
     public class XmltvParserService : IXmltvParserService
     {
+        private static readonly TimeSpan DefaultPastProgrammeWindow = TimeSpan.FromHours(6);
+        private static readonly TimeSpan DefaultFutureProgrammeWindow = TimeSpan.FromHours(72);
+
         private readonly IReadOnlyDictionary<SourceType, IEpgSourceDiscoveryService> _discoveryServices;
         private readonly ISourceEnrichmentService _sourceEnrichmentService;
         private readonly ISourceHealthService _sourceHealthService;
@@ -92,6 +98,16 @@ namespace Kroira.App.Services.Parsing
                 ImportRuntimeLogger.Log(
                     "EPG SYNC",
                     $"source_profile_id={sourceProfileId}; stage=discovery_complete; mode={discovered.ActiveMode}; active_xmltv_url={FormatDiagnosticValue(discovered.ActiveXmltvUrl)}; detected_xmltv_url={FormatDiagnosticValue(discovered.DetectedXmltvUrl)}; description={FormatDiagnosticValue(discovered.Description)}");
+
+                if (await TryReuseCachedGuideDataAsync(db, sourceProfileId, discovered))
+                {
+                    if (refreshHealth)
+                    {
+                        await _sourceHealthService.RefreshSourceHealthAsync(db, sourceProfileId, acquisitionSession);
+                    }
+
+                    return;
+                }
 
                 await ParseAndPersistXmltvAsync(db, sourceProfileId, discovered, _sourceEnrichmentService, acquisitionSession);
                 if (refreshHealth)
@@ -167,68 +183,62 @@ namespace Kroira.App.Services.Parsing
             ISourceEnrichmentService sourceEnrichmentService,
             SourceAcquisitionSession? acquisitionSession)
         {
-            XDocument doc;
-            try
+            var xmltvChannels = new Dictionary<string, XmltvChannelAccumulator>(StringComparer.OrdinalIgnoreCase);
+            var parseFailures = new List<string>();
+            var nowUtc = DateTime.UtcNow;
+            var importWindowStartUtc = nowUtc.Subtract(DefaultPastProgrammeWindow);
+            var importWindowEndUtc = nowUtc.Add(DefaultFutureProgrammeWindow);
+
+            foreach (var source in discovered.GuideSources.OrderBy(source => source.Priority))
             {
-                doc = XDocument.Parse(discovered.XmlContent);
+                if (source.Status != EpgGuideSourceStatus.Ready || string.IsNullOrWhiteSpace(source.XmlContent))
+                {
+                    continue;
+                }
+
+                try
+                {
+                    var summary = ParseXmltvChannelIndex(source, xmltvChannels);
+                    source.XmltvChannelCount = summary.XmltvChannelCount;
+                    source.ProgrammeCount = summary.ProgrammeCount;
+                    source.Message = $"Parsed {source.XmltvChannelCount:N0} XMLTV channels and found {source.ProgrammeCount:N0} programmes. Programme import waits for matched channels and the active time window.";
+
+                    ImportRuntimeLogger.Log(
+                        "EPG SYNC",
+                        $"source_profile_id={sourceProfileId}; stage=parse_source_channels_complete; source_kind={source.Kind}; source_label={FormatDiagnosticValue(source.Label)}; xmltv_url={FormatDiagnosticValue(source.Url)}; xmltv_channel_count={source.XmltvChannelCount}; programme_count={source.ProgrammeCount}");
+                }
+                catch (Exception ex)
+                {
+                    source.Status = EpgGuideSourceStatus.Failed;
+                    source.Message = TrimSummary($"XMLTV parse failed: {ex.Message}", 260);
+                    parseFailures.Add($"{source.Label}: {ex.Message}");
+                    ImportRuntimeLogger.Log(
+                        "EPG SYNC",
+                        $"source_profile_id={sourceProfileId}; stage=parse_source_failed; source_kind={source.Kind}; source_label={FormatDiagnosticValue(source.Label)}; xmltv_url={FormatDiagnosticValue(source.Url)}; failure_reason={FormatDiagnosticValue(ex.Message)}");
+                }
             }
-            catch (Exception ex)
+
+            if (xmltvChannels.Count == 0)
             {
                 throw new EpgSyncFailureException(
-                    $"XMLTV parse failed: {ex.Message}",
+                    parseFailures.Count == 0
+                        ? "XMLTV parse failed: no usable XMLTV source was available."
+                        : $"XMLTV parse failed: {string.Join(" | ", parseFailures.Take(3))}",
                     discovered.ActiveMode,
                     EpgSyncResultCode.ParseFailed,
                     EpgFailureStage.Parse,
                     discovered.ActiveXmltvUrl,
-                    ex);
-            }
-
-            var programmeNodes = doc.Descendants("programme").ToList();
-            var programmeChannelIds = programmeNodes
-                .Select(programme => programme.Attribute("channel")?.Value?.Trim())
-                .Where(channelId => !string.IsNullOrWhiteSpace(channelId))
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .ToHashSet(StringComparer.OrdinalIgnoreCase);
-            var xmltvChannels = doc.Descendants("channel")
-                .Where(channel => !string.IsNullOrWhiteSpace(channel.Attribute("id")?.Value))
-                .GroupBy(channel => channel.Attribute("id")!.Value.Trim(), StringComparer.OrdinalIgnoreCase)
-                .Select(group => new XmltvChannelDescriptor
-                {
-                    Id = group.Key,
-                    DisplayNames = group.SelectMany(channel => channel.Elements("display-name"))
-                        .Select(element => element.Value.Trim())
-                        .Where(value => !string.IsNullOrWhiteSpace(value))
-                        .Distinct(StringComparer.OrdinalIgnoreCase)
-                        .ToList(),
-                    IconUrls = group.SelectMany(channel => channel.Elements("icon"))
-                        .Select(element => element.Attribute("src")?.Value?.Trim())
-                        .Where(value => !string.IsNullOrWhiteSpace(value))
-                        .Cast<string>()
-                        .Distinct(StringComparer.OrdinalIgnoreCase)
-                        .ToList()
-                })
-                .ToDictionary(channel => channel.Id, StringComparer.OrdinalIgnoreCase);
-
-            foreach (var programmeChannelId in programmeChannelIds)
-            {
-                if (!xmltvChannels.ContainsKey(programmeChannelId!))
-                {
-                    xmltvChannels[programmeChannelId!] = new XmltvChannelDescriptor
-                    {
-                        Id = programmeChannelId!,
-                        DisplayNames = Array.Empty<string>(),
-                        IconUrls = Array.Empty<string>()
-                    };
-                }
+                    new InvalidOperationException("No XMLTV source could be parsed."));
             }
 
             ImportRuntimeLogger.Log(
                 "EPG SYNC",
-                $"source_profile_id={sourceProfileId}; stage=parse_complete; xmltv_channel_count={xmltvChannels.Count}; programme_count={programmeNodes.Count}");
+                $"source_profile_id={sourceProfileId}; stage=parse_channel_index_complete; xmltv_source_count={discovered.GuideSources.Count(source => source.Status == EpgGuideSourceStatus.Ready)}; xmltv_channel_count={xmltvChannels.Count}; programme_count={discovered.GuideSources.Sum(source => source.ProgrammeCount)}; import_window_start_utc={importWindowStartUtc:o}; import_window_end_utc={importWindowEndUtc:o}");
 
             var orderedXmltvChannels = xmltvChannels.Values
-                .OrderByDescending(channel => programmeChannelIds.Contains(channel.Id))
+                .OrderBy(channel => channel.SourcePriority)
                 .ThenBy(channel => channel.Id, StringComparer.OrdinalIgnoreCase)
+                .Select(channel => channel.ToDescriptor())
                 .ToList();
             var enrichmentResult = await sourceEnrichmentService.ApplyXmltvEnrichmentAsync(db, sourceProfileId, orderedXmltvChannels, acquisitionSession);
             var channelMatches = enrichmentResult.Matches;
@@ -246,35 +256,299 @@ namespace Kroira.App.Services.Parsing
             }
 
             var epgItems = new List<EpgProgram>();
-
-            foreach (var programme in programmeNodes)
+            var epgItemKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var source in discovered.GuideSources.OrderBy(source => source.Priority))
             {
-                var xmltvChannelId = programme.Attribute("channel")?.Value?.Trim();
-                if (string.IsNullOrWhiteSpace(xmltvChannelId))
+                if (source.Status != EpgGuideSourceStatus.Ready || string.IsNullOrWhiteSpace(source.XmlContent))
                 {
                     continue;
                 }
 
-                if (!channelMatches.TryGetValue(xmltvChannelId, out var outcome))
+                try
+                {
+                    var sourceImportedProgrammes = AppendMatchedProgrammesFromSource(
+                        source,
+                        channelMatches,
+                        importWindowStartUtc,
+                        importWindowEndUtc,
+                        epgItems,
+                        epgItemKeys);
+                    source.Message = $"{source.Message} Imported {sourceImportedProgrammes:N0} matched programmes inside the default window.";
+                    ImportRuntimeLogger.Log(
+                        "EPG SYNC",
+                        $"source_profile_id={sourceProfileId}; stage=parse_source_programmes_complete; source_kind={source.Kind}; source_label={FormatDiagnosticValue(source.Label)}; xmltv_url={FormatDiagnosticValue(source.Url)}; imported_programme_count={sourceImportedProgrammes}; import_window_start_utc={importWindowStartUtc:o}; import_window_end_utc={importWindowEndUtc:o}");
+                }
+                catch (Exception ex)
+                {
+                    source.Status = EpgGuideSourceStatus.Failed;
+                    source.Message = TrimSummary($"XMLTV programme parse failed: {ex.Message}", 260);
+                    ImportRuntimeLogger.Log(
+                        "EPG SYNC",
+                        $"source_profile_id={sourceProfileId}; stage=parse_source_programmes_failed; source_kind={source.Kind}; source_label={FormatDiagnosticValue(source.Label)}; xmltv_url={FormatDiagnosticValue(source.Url)}; failure_reason={FormatDiagnosticValue(ex.Message)}");
+                }
+            }
+
+            var metrics = BuildSyncMetrics(channels, epgItems, channelMatches.Values, xmltvChannels.Count);
+            ImportRuntimeLogger.Log(
+                "EPG SYNC",
+                $"source_profile_id={sourceProfileId}; stage=match_complete; total_live_channels={metrics.TotalLiveChannelCount}; matched_channels={metrics.MatchedChannelCount}; unmatched_channels={metrics.UnmatchedChannelCount}; exact_matches={metrics.ExactMatchCount}; normalized_matches={metrics.NormalizedMatchCount}; approved_matches={metrics.ApprovedMatchCount}; weak_matches={metrics.WeakMatchCount}; current_coverage={metrics.CurrentCoverageCount}; next_coverage={metrics.NextCoverageCount}; match_breakdown={FormatDiagnosticValue(metrics.MatchBreakdown)}");
+
+            await PersistGuideDataAsync(db, sourceProfileId, discovered, channels, epgItems, metrics);
+        }
+
+        private static async Task<bool> TryReuseCachedGuideDataAsync(
+            AppDbContext db,
+            int sourceProfileId,
+            EpgDiscoveryResult discovered)
+        {
+            var readySources = discovered.GuideSources
+                .Where(source => source.Status == EpgGuideSourceStatus.Ready && !string.IsNullOrWhiteSpace(source.XmlContent))
+                .ToList();
+            if (readySources.Count == 0 ||
+                readySources.Any(source => !source.WasContentUnchanged))
+            {
+                return false;
+            }
+
+            var epgLog = await GetOrCreateEpgLogAsync(db, sourceProfileId);
+            if (!epgLog.LastSuccessAtUtc.HasValue ||
+                epgLog.LastSuccessAtUtc.Value < DateTime.UtcNow.Subtract(TimeSpan.FromHours(6)) ||
+                !await HasPersistedGuideDataAsync(db, sourceProfileId))
+            {
+                return false;
+            }
+
+            if (await HasReviewDecisionChangesAsync(db, sourceProfileId, epgLog.LastSuccessAtUtc.Value))
+            {
+                return false;
+            }
+
+            var nowUtc = DateTime.UtcNow;
+            ApplyPreviousGuideSourceDiagnostics(discovered, epgLog.GuideSourceStatusJson);
+            if (readySources.Any(source => source.XmltvChannelCount == 0 && source.ProgrammeCount == 0))
+            {
+                return false;
+            }
+
+            epgLog.SyncedAtUtc = nowUtc;
+            epgLog.IsSuccess = true;
+            epgLog.Status = discovered.ActiveMode == EpgActiveMode.Manual
+                ? EpgStatus.ManualOverride
+                : EpgStatus.Ready;
+            epgLog.FailureStage = EpgFailureStage.None;
+            epgLog.ActiveMode = discovered.ActiveMode;
+            epgLog.ActiveXmltvUrl = discovered.ActiveXmltvUrl;
+            epgLog.GuideSourceStatusJson = SerializeGuideSourceStatuses(discovered);
+            epgLog.GuideWarningSummary = TrimSummary(
+                CombineCachedReuseWarnings(discovered, epgLog.GuideWarningSummary),
+                500);
+            epgLog.FailureReason = string.Empty;
+
+            await db.SaveChangesAsync();
+            ImportRuntimeLogger.Log(
+                "EPG SYNC",
+                $"source_profile_id={sourceProfileId}; stage=cache_reuse; ready_source_count={readySources.Count}; last_success_utc={epgLog.LastSuccessAtUtc:o}; active_xmltv_url={FormatDiagnosticValue(epgLog.ActiveXmltvUrl)}");
+            return true;
+        }
+
+        private static async Task<bool> HasReviewDecisionChangesAsync(
+            AppDbContext db,
+            int sourceProfileId,
+            DateTime lastSuccessAtUtc)
+        {
+            return await db.EpgMappingDecisions
+                .AsNoTracking()
+                .AnyAsync(decision => decision.SourceProfileId == sourceProfileId &&
+                                      decision.UpdatedAtUtc > lastSuccessAtUtc);
+        }
+
+        private static void ApplyPreviousGuideSourceDiagnostics(EpgDiscoveryResult discovered, string previousStatusJson)
+        {
+            if (string.IsNullOrWhiteSpace(previousStatusJson))
+            {
+                return;
+            }
+
+            try
+            {
+                var previous = JsonSerializer.Deserialize<List<EpgGuideSourceStatusSnapshot>>(previousStatusJson);
+                if (previous == null || previous.Count == 0)
+                {
+                    return;
+                }
+
+                var previousByUrl = previous
+                    .Where(source => !string.IsNullOrWhiteSpace(source.Url))
+                    .GroupBy(source => source.Url.Trim(), StringComparer.OrdinalIgnoreCase)
+                    .ToDictionary(group => group.Key, group => group.First(), StringComparer.OrdinalIgnoreCase);
+                foreach (var source in discovered.GuideSources)
+                {
+                    if (source.XmltvChannelCount > 0 ||
+                        string.IsNullOrWhiteSpace(source.Url) ||
+                        !previousByUrl.TryGetValue(source.Url.Trim(), out var previousSource))
+                    {
+                        continue;
+                    }
+
+                    source.XmltvChannelCount = previousSource.XmltvChannelCount;
+                    source.ProgrammeCount = previousSource.ProgrammeCount;
+                    if (string.IsNullOrWhiteSpace(source.ContentHash))
+                    {
+                        source.ContentHash = previousSource.ContentHash;
+                    }
+                }
+            }
+            catch
+            {
+            }
+        }
+
+        private static string CombineCachedReuseWarnings(EpgDiscoveryResult discovered, string previousWarning)
+        {
+            var warnings = new List<string> { "Guide source content was unchanged; reused the previous import." };
+            warnings.AddRange(discovered.GuideSources
+                .Where(source => source.Status == EpgGuideSourceStatus.Failed)
+                .Select(source => $"{source.Label} failed: {TrimSummary(source.Message, 120)}"));
+            if (!string.IsNullOrWhiteSpace(previousWarning))
+            {
+                warnings.Add(previousWarning);
+            }
+
+            return string.Join(" ", warnings.Distinct(StringComparer.OrdinalIgnoreCase));
+        }
+
+        private static XmltvSourceParseSummary ParseXmltvChannelIndex(
+            EpgDiscoveredGuideSource source,
+            IDictionary<string, XmltvChannelAccumulator> xmltvChannels)
+        {
+            var sourceXmltvChannelIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var programmeCount = 0;
+            using var textReader = new StringReader(source.XmlContent);
+            using var reader = XmlReader.Create(textReader, CreateXmltvReaderSettings());
+            while (reader.Read())
+            {
+                if (reader.NodeType != XmlNodeType.Element)
                 {
                     continue;
                 }
 
-                if (outcome.Channels.Count == 0)
+                if (string.Equals(reader.LocalName, "channel", StringComparison.OrdinalIgnoreCase))
+                {
+                    var channelId = reader.GetAttribute("id")?.Trim();
+                    if (string.IsNullOrWhiteSpace(channelId))
+                    {
+                        if (!reader.IsEmptyElement)
+                        {
+                            reader.Skip();
+                        }
+
+                        continue;
+                    }
+
+                    sourceXmltvChannelIds.Add(channelId);
+                    var accumulator = GetOrCreateChannelAccumulator(xmltvChannels, channelId, source);
+                    if (reader.IsEmptyElement)
+                    {
+                        continue;
+                    }
+
+                    using var subtree = reader.ReadSubtree();
+                    while (subtree.Read())
+                    {
+                        if (subtree.NodeType != XmlNodeType.Element)
+                        {
+                            continue;
+                        }
+
+                        if (string.Equals(subtree.LocalName, "display-name", StringComparison.OrdinalIgnoreCase))
+                        {
+                            var displayName = subtree.ReadElementContentAsString()?.Trim();
+                            if (!string.IsNullOrWhiteSpace(displayName))
+                            {
+                                accumulator.DisplayNames.Add(displayName);
+                            }
+                        }
+                        else if (string.Equals(subtree.LocalName, "icon", StringComparison.OrdinalIgnoreCase))
+                        {
+                            var iconUrl = subtree.GetAttribute("src")?.Trim();
+                            if (!string.IsNullOrWhiteSpace(iconUrl))
+                            {
+                                accumulator.IconUrls.Add(iconUrl);
+                            }
+                        }
+                    }
+                }
+                else if (string.Equals(reader.LocalName, "programme", StringComparison.OrdinalIgnoreCase))
+                {
+                    programmeCount++;
+                    var programmeChannelId = reader.GetAttribute("channel")?.Trim();
+                    if (!string.IsNullOrWhiteSpace(programmeChannelId))
+                    {
+                        sourceXmltvChannelIds.Add(programmeChannelId);
+                        GetOrCreateChannelAccumulator(xmltvChannels, programmeChannelId, source);
+                    }
+
+                    if (!reader.IsEmptyElement)
+                    {
+                        reader.Skip();
+                    }
+                }
+            }
+
+            return new XmltvSourceParseSummary(sourceXmltvChannelIds.Count, programmeCount);
+        }
+
+        private static int AppendMatchedProgrammesFromSource(
+            EpgDiscoveredGuideSource source,
+            IReadOnlyDictionary<string, ChannelEpgMatchOutcome> channelMatches,
+            DateTime importWindowStartUtc,
+            DateTime importWindowEndUtc,
+            ICollection<EpgProgram> epgItems,
+            ISet<string> epgItemKeys)
+        {
+            var importedProgrammeCount = 0;
+            using var textReader = new StringReader(source.XmlContent);
+            using var reader = XmlReader.Create(textReader, CreateXmltvReaderSettings());
+            while (reader.Read())
+            {
+                if (reader.NodeType != XmlNodeType.Element ||
+                    !string.Equals(reader.LocalName, "programme", StringComparison.OrdinalIgnoreCase))
                 {
                     continue;
                 }
 
-                var startString = programme.Attribute("start")?.Value;
-                var stopString = programme.Attribute("stop")?.Value;
-                if (string.IsNullOrWhiteSpace(startString) || string.IsNullOrWhiteSpace(stopString))
+                var xmltvChannelId = reader.GetAttribute("channel")?.Trim();
+                if (string.IsNullOrWhiteSpace(xmltvChannelId) ||
+                    !channelMatches.TryGetValue(xmltvChannelId, out var outcome) ||
+                    outcome.Channels.Count == 0 ||
+                    !IsActiveProgrammeMatch(outcome))
                 {
+                    if (!reader.IsEmptyElement)
+                    {
+                        reader.Skip();
+                    }
+
                     continue;
                 }
 
-                var start = ParseXmltvDate(startString);
-                var end = ParseXmltvDate(stopString);
-                if (start == null || end == null || end <= start)
+                var start = ParseXmltvDate(reader.GetAttribute("start") ?? string.Empty);
+                var end = ParseXmltvDate(reader.GetAttribute("stop") ?? string.Empty);
+                if (start == null ||
+                    end == null ||
+                    end <= start ||
+                    end.Value < importWindowStartUtc ||
+                    start.Value > importWindowEndUtc ||
+                    reader.IsEmptyElement)
+                {
+                    if (!reader.IsEmptyElement)
+                    {
+                        reader.Skip();
+                    }
+
+                    continue;
+                }
+
+                if (XElement.ReadFrom(reader) is not XElement programme)
                 {
                     continue;
                 }
@@ -286,25 +560,43 @@ namespace Kroira.App.Services.Parsing
 
                 foreach (var matchedChannel in outcome.Channels)
                 {
+                    var programTitle = string.IsNullOrWhiteSpace(title) ? "Unknown Program" : title;
+                    var duplicateKey = $"{matchedChannel.Id}|{start.Value.Ticks}|{end.Value.Ticks}";
+                    if (!epgItemKeys.Add(duplicateKey))
+                    {
+                        continue;
+                    }
+
                     epgItems.Add(new EpgProgram
                     {
                         ChannelId = matchedChannel.Id,
                         StartTimeUtc = start.Value,
                         EndTimeUtc = end.Value,
-                        Title = string.IsNullOrWhiteSpace(title) ? "Unknown Program" : title,
+                        Title = programTitle,
                         Description = description,
                         Subtitle = string.IsNullOrWhiteSpace(subtitle) ? null : subtitle,
                         Category = string.IsNullOrWhiteSpace(category) ? null : category
                     });
+                    importedProgrammeCount++;
                 }
             }
 
-            var metrics = BuildSyncMetrics(channels, epgItems, channelMatches.Values);
-            ImportRuntimeLogger.Log(
-                "EPG SYNC",
-                $"source_profile_id={sourceProfileId}; stage=match_complete; total_live_channels={metrics.TotalLiveChannelCount}; matched_channels={metrics.MatchedChannelCount}; unmatched_channels={metrics.UnmatchedChannelCount}; current_coverage={metrics.CurrentCoverageCount}; next_coverage={metrics.NextCoverageCount}; match_breakdown={FormatDiagnosticValue(metrics.MatchBreakdown)}");
+            return importedProgrammeCount;
+        }
 
-            await PersistGuideDataAsync(db, sourceProfileId, discovered, channels, epgItems, metrics);
+        private static bool IsActiveProgrammeMatch(ChannelEpgMatchOutcome outcome)
+        {
+            return outcome.Reason is ChannelEpgMatchSource.Provider or ChannelEpgMatchSource.Normalized or ChannelEpgMatchSource.UserApproved;
+        }
+
+        private static XmlReaderSettings CreateXmltvReaderSettings()
+        {
+            return new XmlReaderSettings
+            {
+                DtdProcessing = DtdProcessing.Ignore,
+                IgnoreComments = true,
+                IgnoreWhitespace = true
+            };
         }
 
         private static async Task PersistGuideDataAsync(
@@ -347,7 +639,14 @@ namespace Kroira.App.Services.Parsing
                 epgLog.NextCoverageCount = metrics.NextCoverageCount;
                 epgLog.TotalLiveChannelCount = metrics.TotalLiveChannelCount;
                 epgLog.ProgrammeCount = epgItems.Count;
+                epgLog.XmltvChannelCount = metrics.XmltvChannelCount;
+                epgLog.ExactMatchCount = metrics.ExactMatchCount;
+                epgLog.NormalizedMatchCount = metrics.NormalizedMatchCount;
+                epgLog.ApprovedMatchCount = metrics.ApprovedMatchCount;
+                epgLog.WeakMatchCount = metrics.WeakMatchCount;
                 epgLog.MatchBreakdown = metrics.MatchBreakdown;
+                epgLog.GuideSourceStatusJson = SerializeGuideSourceStatuses(discovered);
+                epgLog.GuideWarningSummary = BuildGuideWarningSummary(discovered, metrics);
                 epgLog.FailureReason = string.Empty;
 
                 var credential = await db.SourceCredentials.FirstOrDefaultAsync(item => item.SourceProfileId == sourceProfileId);
@@ -411,7 +710,14 @@ namespace Kroira.App.Services.Parsing
                 epgLog.NextCoverageCount = 0;
                 epgLog.TotalLiveChannelCount = channelIds.Count;
                 epgLog.ProgrammeCount = 0;
+                epgLog.XmltvChannelCount = 0;
+                epgLog.ExactMatchCount = 0;
+                epgLog.NormalizedMatchCount = 0;
+                epgLog.ApprovedMatchCount = 0;
+                epgLog.WeakMatchCount = 0;
                 epgLog.MatchBreakdown = string.Empty;
+                epgLog.GuideSourceStatusJson = string.Empty;
+                epgLog.GuideWarningSummary = string.Empty;
                 epgLog.FailureReason = reason;
 
                 await db.SaveChangesAsync();
@@ -474,6 +780,8 @@ namespace Kroira.App.Services.Parsing
             epgLog.FailureStage = EpgFailureStage.Discovery;
             epgLog.ActiveMode = activeMode;
             epgLog.ActiveXmltvUrl = string.Empty;
+            epgLog.GuideSourceStatusJson = string.Empty;
+            epgLog.GuideWarningSummary = shortReason;
             epgLog.FailureReason = shortReason;
 
             try
@@ -510,6 +818,8 @@ namespace Kroira.App.Services.Parsing
             epgLog.FailureStage = failureStage;
             epgLog.ActiveMode = activeMode;
             epgLog.ActiveXmltvUrl = activeXmltvUrl ?? string.Empty;
+            epgLog.GuideSourceStatusJson = BuildFailureGuideSourceStatusJson(activeXmltvUrl ?? string.Empty, resultCode, shortReason);
+            epgLog.GuideWarningSummary = shortReason;
             epgLog.FailureReason = shortReason;
 
             try
@@ -576,7 +886,8 @@ namespace Kroira.App.Services.Parsing
         private static EpgSyncMetrics BuildSyncMetrics(
             IReadOnlyCollection<Channel> sourceChannels,
             IReadOnlyCollection<EpgProgram> epgItems,
-            IEnumerable<ChannelEpgMatchOutcome> matchOutcomes)
+            IEnumerable<ChannelEpgMatchOutcome> matchOutcomes,
+            int xmltvChannelCount)
         {
             var nowUtc = DateTime.UtcNow;
             var matchedChannelIds = epgItems
@@ -594,9 +905,36 @@ namespace Kroira.App.Services.Parsing
                 .Distinct()
                 .Count();
 
-            var matchCounts = matchOutcomes
+            var primaryMatchOutcomes = matchOutcomes
+                .Where(outcome => !outcome.IsSupplemental)
+                .ToList();
+            var matchCounts = primaryMatchOutcomes
                 .GroupBy(outcome => outcome.Reason)
                 .ToDictionary(group => group.Key, group => group.Count());
+            var exactMatchCount = primaryMatchOutcomes
+                .Where(outcome => outcome.Reason == ChannelEpgMatchSource.Provider)
+                .SelectMany(outcome => outcome.Channels)
+                .Select(channel => channel.Id)
+                .Distinct()
+                .Count();
+            var normalizedMatchCount = primaryMatchOutcomes
+                .Where(outcome => outcome.Reason == ChannelEpgMatchSource.Normalized)
+                .SelectMany(outcome => outcome.Channels)
+                .Select(channel => channel.Id)
+                .Distinct()
+                .Count();
+            var approvedMatchCount = primaryMatchOutcomes
+                .Where(outcome => outcome.Reason == ChannelEpgMatchSource.UserApproved)
+                .SelectMany(outcome => outcome.Channels)
+                .Select(channel => channel.Id)
+                .Distinct()
+                .Count();
+            var weakMatchCount = primaryMatchOutcomes
+                .Where(outcome => outcome.Reason is ChannelEpgMatchSource.Previous or ChannelEpgMatchSource.Alias or ChannelEpgMatchSource.Regex or ChannelEpgMatchSource.Fuzzy)
+                .SelectMany(outcome => outcome.Channels)
+                .Select(channel => channel.Id)
+                .Distinct()
+                .Count();
 
             var matchedCount = matchedChannelIds.Count;
             var totalLiveChannelCount = sourceChannels.Count;
@@ -614,6 +952,11 @@ namespace Kroira.App.Services.Parsing
                 unmatchedCount,
                 currentCoverage,
                 nextCoverage,
+                xmltvChannelCount,
+                exactMatchCount,
+                normalizedMatchCount,
+                approvedMatchCount,
+                weakMatchCount,
                 resultCode,
                 BuildMatchBreakdown(matchCounts, unmatchedCount));
         }
@@ -623,7 +966,15 @@ namespace Kroira.App.Services.Parsing
             static int GetCount(IReadOnlyDictionary<ChannelEpgMatchSource, int> map, ChannelEpgMatchSource reason) =>
                 map.TryGetValue(reason, out var count) ? count : 0;
 
-            return $"provider_id={GetCount(counts, ChannelEpgMatchSource.Provider)}; reused={GetCount(counts, ChannelEpgMatchSource.Previous)}; normalized={GetCount(counts, ChannelEpgMatchSource.Normalized)}; alias={GetCount(counts, ChannelEpgMatchSource.Alias)}; regex={GetCount(counts, ChannelEpgMatchSource.Regex)}; fuzzy={GetCount(counts, ChannelEpgMatchSource.Fuzzy)}; unmatched={unmatchedCount}";
+            var exact = GetCount(counts, ChannelEpgMatchSource.Provider);
+            var normalized = GetCount(counts, ChannelEpgMatchSource.Normalized);
+            var approved = GetCount(counts, ChannelEpgMatchSource.UserApproved);
+            var weak = GetCount(counts, ChannelEpgMatchSource.Previous) +
+                       GetCount(counts, ChannelEpgMatchSource.Alias) +
+                       GetCount(counts, ChannelEpgMatchSource.Regex) +
+                       GetCount(counts, ChannelEpgMatchSource.Fuzzy);
+
+            return $"exact={exact}; normalized={normalized}; approved={approved}; weak={weak}; provider_id={exact}; reused={GetCount(counts, ChannelEpgMatchSource.Previous)}; alias={GetCount(counts, ChannelEpgMatchSource.Alias)}; regex={GetCount(counts, ChannelEpgMatchSource.Regex)}; fuzzy={GetCount(counts, ChannelEpgMatchSource.Fuzzy)}; unmatched={unmatchedCount}";
         }
 
         private static void LogMatchOutcome(int sourceProfileId, XmltvChannelDescriptor xmltvChannel, ChannelEpgMatchOutcome outcome)
@@ -637,7 +988,91 @@ namespace Kroira.App.Services.Parsing
 
             ImportRuntimeLogger.Log(
                 "EPG MATCH",
-                $"source_profile_id={sourceProfileId}; xmltv_channel_id={FormatDiagnosticValue(xmltvChannel.Id)}; display_names={FormatDiagnosticValue(string.Join(" | ", xmltvChannel.DisplayNames))}; match_reason={outcome.Reason}; confidence={outcome.Confidence}; matched_channel_count={outcome.Channels.Count}; channel_ids={FormatDiagnosticValue(matchedChannelIds)}; channel_names={FormatDiagnosticValue(matchedChannelNames)}; matched_value={FormatDiagnosticValue(outcome.MatchedValue)}; matched_key={FormatDiagnosticValue(outcome.MatchedKey)}; diagnostics={FormatDiagnosticValue(outcome.Diagnostic)}");
+                $"source_profile_id={sourceProfileId}; xmltv_channel_id={FormatDiagnosticValue(xmltvChannel.Id)}; display_names={FormatDiagnosticValue(string.Join(" | ", xmltvChannel.DisplayNames))}; source_label={FormatDiagnosticValue(xmltvChannel.SourceLabel)}; match_reason={outcome.Reason}; confidence={outcome.Confidence}; supplemental={outcome.IsSupplemental}; matched_channel_count={outcome.Channels.Count}; channel_ids={FormatDiagnosticValue(matchedChannelIds)}; channel_names={FormatDiagnosticValue(matchedChannelNames)}; matched_value={FormatDiagnosticValue(outcome.MatchedValue)}; matched_key={FormatDiagnosticValue(outcome.MatchedKey)}; diagnostics={FormatDiagnosticValue(outcome.Diagnostic)}");
+        }
+
+        private static XmltvChannelAccumulator GetOrCreateChannelAccumulator(
+            IDictionary<string, XmltvChannelAccumulator> xmltvChannels,
+            string channelId,
+            EpgDiscoveredGuideSource source)
+        {
+            if (!xmltvChannels.TryGetValue(channelId, out var accumulator))
+            {
+                accumulator = new XmltvChannelAccumulator(channelId, source);
+                xmltvChannels[channelId] = accumulator;
+            }
+            else if (source.Priority < accumulator.SourcePriority)
+            {
+                accumulator.SourcePriority = source.Priority;
+                accumulator.SourceKind = source.Kind;
+                accumulator.SourceLabel = source.Label;
+                accumulator.SourceUrl = source.Url;
+            }
+
+            return accumulator;
+        }
+
+        private static string SerializeGuideSourceStatuses(EpgDiscoveryResult discovered)
+        {
+            try
+            {
+                return JsonSerializer.Serialize(discovered.BuildStatusSnapshots());
+            }
+            catch
+            {
+                return string.Empty;
+            }
+        }
+
+        private static string BuildFailureGuideSourceStatusJson(string activeXmltvUrl, EpgSyncResultCode resultCode, string reason)
+        {
+            if (string.IsNullOrWhiteSpace(activeXmltvUrl))
+            {
+                return string.Empty;
+            }
+
+            try
+            {
+                var snapshot = new[]
+                {
+                    new EpgGuideSourceStatusSnapshot
+                    {
+                        Label = "XMLTV",
+                        Url = activeXmltvUrl,
+                        Status = EpgGuideSourceStatus.Failed,
+                        Message = reason,
+                        CheckedAtUtc = DateTime.UtcNow,
+                        Kind = EpgGuideSourceKind.Provider
+                    }
+                };
+
+                return JsonSerializer.Serialize(snapshot);
+            }
+            catch
+            {
+                return string.Empty;
+            }
+        }
+
+        private static string BuildGuideWarningSummary(EpgDiscoveryResult discovered, EpgSyncMetrics metrics)
+        {
+            var warnings = new List<string>();
+            foreach (var failed in discovered.GuideSources.Where(source => source.Status == EpgGuideSourceStatus.Failed))
+            {
+                warnings.Add($"{failed.Label} failed: {TrimSummary(failed.Message, 120)}");
+            }
+
+            if (metrics.WeakMatchCount > 0)
+            {
+                warnings.Add($"{metrics.WeakMatchCount:N0} guide matches need review.");
+            }
+
+            if (metrics.UnmatchedChannelCount > 0)
+            {
+                warnings.Add($"{metrics.UnmatchedChannelCount:N0} live channels are unmatched.");
+            }
+
+            return TrimSummary(string.Join(" ", warnings.Distinct(StringComparer.OrdinalIgnoreCase)), 500);
         }
 
         private static DateTime? ParseXmltvDate(string dateStr)
@@ -727,8 +1162,49 @@ namespace Kroira.App.Services.Parsing
             int UnmatchedChannelCount,
             int CurrentCoverageCount,
             int NextCoverageCount,
+            int XmltvChannelCount,
+            int ExactMatchCount,
+            int NormalizedMatchCount,
+            int ApprovedMatchCount,
+            int WeakMatchCount,
             EpgSyncResultCode ResultCode,
             string MatchBreakdown);
+
+        private sealed record XmltvSourceParseSummary(int XmltvChannelCount, int ProgrammeCount);
+
+        private sealed class XmltvChannelAccumulator
+        {
+            public XmltvChannelAccumulator(string id, EpgDiscoveredGuideSource source)
+            {
+                Id = id;
+                SourcePriority = source.Priority;
+                SourceKind = source.Kind;
+                SourceLabel = source.Label;
+                SourceUrl = source.Url;
+            }
+
+            public string Id { get; }
+            public int SourcePriority { get; set; }
+            public EpgGuideSourceKind SourceKind { get; set; }
+            public string SourceLabel { get; set; }
+            public string SourceUrl { get; set; }
+            public HashSet<string> DisplayNames { get; } = new(StringComparer.OrdinalIgnoreCase);
+            public HashSet<string> IconUrls { get; } = new(StringComparer.OrdinalIgnoreCase);
+
+            public XmltvChannelDescriptor ToDescriptor()
+            {
+                return new XmltvChannelDescriptor
+                {
+                    Id = Id,
+                    DisplayNames = DisplayNames.OrderBy(value => value, StringComparer.OrdinalIgnoreCase).ToList(),
+                    IconUrls = IconUrls.OrderBy(value => value, StringComparer.OrdinalIgnoreCase).ToList(),
+                    SourcePriority = SourcePriority,
+                    SourceKind = SourceKind,
+                    SourceLabel = SourceLabel,
+                    SourceUrl = SourceUrl
+                };
+            }
+        }
 
         private sealed class EpgSyncFailureException : Exception
         {

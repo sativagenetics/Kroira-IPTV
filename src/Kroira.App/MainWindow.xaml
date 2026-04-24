@@ -72,21 +72,7 @@
                         <FontIcon Glyph="&#xE80F;" FontSize="16" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
-                <NavigationViewItem Content="Continue Watching" Tag="ContinueWatching" Margin="0,2" Height="42">
-                    <NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE916;" FontSize="16" />
-                    </NavigationViewItem.Icon>
-                </NavigationViewItem>
-                <NavigationViewItem Content="Library"
-                                    Tag="MediaLibrary"
-                                    Margin="0,2"
-                                    Height="42"
-                                    Visibility="{x:Bind MediaLibraryNavigationVisibility, Mode=OneWay}">
-                    <NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE7C3;" FontSize="16" />
-                    </NavigationViewItem.Icon>
-                </NavigationViewItem>
-                <NavigationViewItemSeparator />
+                <NavigationViewItemSeparator Margin="0,8" />
                 <NavigationViewItem Content="Live TV" Tag="Channels" Margin="0,2" Height="42">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE714;" FontSize="16" />
@@ -102,15 +88,35 @@
                         <FontIcon Glyph="&#xE8A9;" FontSize="16" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
+                <NavigationViewItemSeparator Margin="0,8" />
+                <NavigationViewItem Content="Continue Watching" Tag="ContinueWatching" Margin="0,2" Height="42">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE916;" FontSize="16" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+                <NavigationViewItem Content="Library"
+                                    Tag="MediaLibrary"
+                                    Margin="0,2"
+                                    Height="42"
+                                    Visibility="{x:Bind MediaLibraryNavigationVisibility, Mode=OneWay}">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE7C3;" FontSize="16" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
                 <NavigationViewItem Content="Favorites" Tag="Favorites" Margin="0,2" Height="42">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE734;" FontSize="16" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
-                <NavigationViewItemSeparator />
+                <NavigationViewItemSeparator Margin="0,8" />
                 <NavigationViewItem Content="Sources" Tag="Sources" Margin="0,2" Height="42">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE8F1;" FontSize="16" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+                <NavigationViewItem Content="Guide" Tag="Guide" Margin="0,2" Height="42">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE787;" FontSize="16" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
                 <NavigationViewItem Content="Settings" Tag="Settings" Margin="0,2" Height="42">
@@ -118,34 +124,14 @@
                         <FontIcon Glyph="&#xE713;" FontSize="16" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
-                <NavigationViewItemSeparator />
+            </NavigationView.MenuItems>
+            <NavigationView.FooterMenuItems>
                 <NavigationViewItem Content="Profile" Tag="Profile" Margin="0,2" Height="42">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE77B;" FontSize="16" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
-            </NavigationView.MenuItems>
-            <NavigationView.PaneFooter>
-                <Border x:Name="PaneFooterRoot"
-                        Margin="18,16,16,22"
-                        Padding="12,10"
-                        Background="#8A10141A"
-                        BorderBrush="{StaticResource KroiraGhostBorderBrush}"
-                        BorderThickness="1"
-                        CornerRadius="10">
-                    <StackPanel Spacing="3">
-                        <TextBlock Text="SESSION"
-                                   Foreground="{StaticResource KroiraTextTertiaryBrush}"
-                                   FontSize="10"
-                                   FontWeight="SemiBold"
-                                   CharacterSpacing="140" />
-                        <TextBlock Text="Ready"
-                                   Foreground="{StaticResource KroiraTextPrimaryBrush}"
-                                   FontSize="13"
-                                   FontWeight="SemiBold" />
-                    </StackPanel>
-                </Border>
-            </NavigationView.PaneFooter>
+            </NavigationView.FooterMenuItems>
             <Grid Background="Transparent"
                   XYFocusKeyboardNavigation="Enabled">
                 <Border x:Name="ContentHostBorder"

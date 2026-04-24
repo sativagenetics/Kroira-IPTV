@@ -12,6 +12,7 @@ namespace Kroira.App.Models
         public string Username { get; set; } = string.Empty;
         public string Password { get; set; } = string.Empty;
         public string ManualEpgUrl { get; set; } = string.Empty;
+        public string FallbackEpgUrls { get; set; } = string.Empty;
         public EpgActiveMode EpgMode { get; set; } = EpgActiveMode.Detected;
         public SourceProxyScope ProxyScope { get; set; } = SourceProxyScope.Disabled;
         public string ProxyUrl { get; set; } = string.Empty;

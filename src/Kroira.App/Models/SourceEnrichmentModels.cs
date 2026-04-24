@@ -11,7 +11,8 @@ namespace Kroira.App.Models
         Normalized = 3,
         Alias = 4,
         Fuzzy = 5,
-        Regex = 6
+        Regex = 6,
+        UserApproved = 7
     }
 
     public enum ChannelLogoSource

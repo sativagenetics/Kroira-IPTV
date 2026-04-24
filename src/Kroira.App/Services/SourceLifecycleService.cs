@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Kroira.App.Data;
 using Kroira.App.Models;
@@ -20,6 +21,7 @@ namespace Kroira.App.Services
         public string Username { get; set; } = string.Empty;
         public string Password { get; set; } = string.Empty;
         public string ManualEpgUrl { get; set; } = string.Empty;
+        public string FallbackEpgUrls { get; set; } = string.Empty;
         public EpgActiveMode EpgMode { get; set; } = EpgActiveMode.Detected;
         public M3uImportMode M3uImportMode { get; set; } = M3uImportMode.LiveMoviesAndSeries;
         public SourceProxyScope ProxyScope { get; set; } = SourceProxyScope.Disabled;
@@ -49,6 +51,7 @@ namespace Kroira.App.Services
         public int SourceId { get; set; }
         public EpgActiveMode ActiveMode { get; set; } = EpgActiveMode.Detected;
         public string ManualEpgUrl { get; set; } = string.Empty;
+        public string FallbackEpgUrls { get; set; } = string.Empty;
         public SourceProxyScope ProxyScope { get; set; } = SourceProxyScope.Disabled;
         public string ProxyUrl { get; set; } = string.Empty;
         public SourceCompanionScope CompanionScope { get; set; } = SourceCompanionScope.Disabled;
@@ -122,6 +125,7 @@ namespace Kroira.App.Services
                     Username = normalized.Username,
                     Password = normalized.Password,
                     ManualEpgUrl = normalized.ManualEpgUrl,
+                    FallbackEpgUrls = normalized.FallbackEpgUrls,
                     EpgMode = normalized.EpgMode,
                     M3uImportMode = normalized.M3uImportMode,
                     ProxyScope = normalized.ProxyScope,
@@ -217,6 +221,7 @@ namespace Kroira.App.Services
 
             var previousMode = credential.EpgMode;
             var previousManualUrl = credential.ManualEpgUrl ?? string.Empty;
+            var previousFallbackUrls = credential.FallbackEpgUrls ?? string.Empty;
             var previousProxyScope = credential.ProxyScope;
             var previousProxyUrl = credential.ProxyUrl ?? string.Empty;
             var previousCompanionScope = credential.CompanionScope;
@@ -225,6 +230,7 @@ namespace Kroira.App.Services
 
             credential.EpgMode = normalized.ActiveMode;
             credential.ManualEpgUrl = normalized.ManualEpgUrl;
+            credential.FallbackEpgUrls = normalized.FallbackEpgUrls;
             credential.ProxyScope = normalized.ProxyScope;
             credential.ProxyUrl = normalized.ProxyUrl;
             credential.CompanionScope = normalized.CompanionScope;
@@ -233,7 +239,8 @@ namespace Kroira.App.Services
             await db.SaveChangesAsync();
 
             var guideBindingChanged = previousMode != credential.EpgMode ||
-                                      !string.Equals(previousManualUrl, credential.ManualEpgUrl, StringComparison.OrdinalIgnoreCase);
+                                      !string.Equals(previousManualUrl, credential.ManualEpgUrl, StringComparison.OrdinalIgnoreCase) ||
+                                      !string.Equals(previousFallbackUrls, credential.FallbackEpgUrls, StringComparison.OrdinalIgnoreCase);
             var routingChanged = previousProxyScope != credential.ProxyScope ||
                                  !string.Equals(previousProxyUrl, credential.ProxyUrl, StringComparison.OrdinalIgnoreCase) ||
                                  previousCompanionScope != credential.CompanionScope ||
@@ -526,6 +533,7 @@ namespace Kroira.App.Services
                 Username = request.Type == SourceType.Xtream ? (request.Username?.Trim() ?? string.Empty) : string.Empty,
                 Password = request.Type == SourceType.Xtream ? (request.Password ?? string.Empty) : string.Empty,
                 ManualEpgUrl = NormalizeOptionalUrl(request.ManualEpgUrl),
+                FallbackEpgUrls = NormalizeGuideUrlList(request.FallbackEpgUrls),
                 EpgMode = request.EpgMode,
                 M3uImportMode = request.M3uImportMode,
                 ProxyScope = request.ProxyScope,
@@ -558,6 +566,7 @@ namespace Kroira.App.Services
                 SourceId = request.SourceId,
                 ActiveMode = request.ActiveMode,
                 ManualEpgUrl = NormalizeOptionalUrl(request.ManualEpgUrl),
+                FallbackEpgUrls = NormalizeGuideUrlList(request.FallbackEpgUrls),
                 ProxyScope = request.ProxyScope,
                 ProxyUrl = NormalizeOptionalUrl(request.ProxyUrl),
                 CompanionScope = request.CompanionScope,
@@ -596,6 +605,7 @@ namespace Kroira.App.Services
             {
                 ActiveMode = request.EpgMode,
                 ManualEpgUrl = request.ManualEpgUrl,
+                FallbackEpgUrls = request.FallbackEpgUrls,
                 ProxyScope = request.ProxyScope,
                 ProxyUrl = request.ProxyUrl,
                 CompanionScope = request.CompanionScope,
@@ -649,6 +659,21 @@ namespace Kroira.App.Services
         private static string NormalizeOptionalUrl(string value)
         {
             return string.IsNullOrWhiteSpace(value) ? string.Empty : value.Trim();
+        }
+
+        private static string NormalizeGuideUrlList(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return string.Empty;
+            }
+
+            return string.Join(
+                Environment.NewLine,
+                value.Split(new[] { '\r', '\n', ';' }, StringSplitOptions.RemoveEmptyEntries)
+                    .Select(item => item.Trim())
+                    .Where(item => !string.IsNullOrWhiteSpace(item))
+                    .Distinct(StringComparer.OrdinalIgnoreCase));
         }
 
         private static string NormalizeCompanionUrl(string value)
@@ -870,6 +895,17 @@ namespace Kroira.App.Services
             epgLog.FailureReason = hasGuideData
                 ? "Guide settings changed. Sync pending; last successful guide data is still available."
                 : "Guide settings updated. Sync pending.";
+            epgLog.GuideWarningSummary = epgLog.FailureReason;
+            epgLog.GuideSourceStatusJson = BuildPendingGuideSourceStatusJson(credential, nowUtc);
+
+            if (!hasGuideData)
+            {
+                epgLog.XmltvChannelCount = 0;
+                epgLog.ExactMatchCount = 0;
+                epgLog.NormalizedMatchCount = 0;
+                epgLog.ApprovedMatchCount = 0;
+                epgLog.WeakMatchCount = 0;
+            }
 
             await db.SaveChangesAsync();
             return hasGuideData;
@@ -881,8 +917,93 @@ namespace Kroira.App.Services
             {
                 EpgActiveMode.Manual => credential.ManualEpgUrl?.Trim() ?? string.Empty,
                 EpgActiveMode.None => string.Empty,
-                _ => credential.DetectedEpgUrl?.Trim() ?? string.Empty
+                _ => !string.IsNullOrWhiteSpace(credential.DetectedEpgUrl)
+                    ? credential.DetectedEpgUrl.Trim()
+                    : FirstGuideUrl(credential.FallbackEpgUrls)
             };
+        }
+
+        private static string FirstGuideUrl(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return string.Empty;
+            }
+
+            return value
+                .Split(new[] { '\r', '\n', ';' }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(item => item.Trim())
+                .FirstOrDefault(item => !string.IsNullOrWhiteSpace(item)) ?? string.Empty;
+        }
+
+        private static string BuildPendingGuideSourceStatusJson(SourceCredential credential, DateTime checkedAtUtc)
+        {
+            var snapshots = new List<EpgGuideSourceStatusSnapshot>();
+            var priority = 0;
+            if (credential.EpgMode == EpgActiveMode.Manual)
+            {
+                if (!string.IsNullOrWhiteSpace(credential.ManualEpgUrl))
+                {
+                    snapshots.Add(BuildPendingGuideSource(
+                        "Manual XMLTV override",
+                        credential.ManualEpgUrl.Trim(),
+                        EpgGuideSourceKind.Manual,
+                        isOptional: false,
+                        priority++,
+                        checkedAtUtc));
+                }
+            }
+            else if (credential.EpgMode != EpgActiveMode.None &&
+                     !string.IsNullOrWhiteSpace(credential.DetectedEpgUrl))
+            {
+                snapshots.Add(BuildPendingGuideSource(
+                    "Provider XMLTV",
+                    credential.DetectedEpgUrl.Trim(),
+                    EpgGuideSourceKind.Provider,
+                    isOptional: false,
+                    priority++,
+                    checkedAtUtc));
+            }
+
+            foreach (var url in SplitGuideUrls(credential.FallbackEpgUrls))
+            {
+                var kind = EpgPublicGuideCatalog.ClassifyFallbackUrl(url);
+                snapshots.Add(BuildPendingGuideSource(
+                    EpgPublicGuideCatalog.BuildGuideSourceLabel(url, kind, "Fallback XMLTV"),
+                    url,
+                    kind,
+                    isOptional: true,
+                    priority++,
+                    checkedAtUtc));
+            }
+
+            return snapshots.Count == 0 ? string.Empty : JsonSerializer.Serialize(snapshots);
+        }
+
+        private static EpgGuideSourceStatusSnapshot BuildPendingGuideSource(
+            string label,
+            string url,
+            EpgGuideSourceKind kind,
+            bool isOptional,
+            int priority,
+            DateTime checkedAtUtc)
+        {
+            return new EpgGuideSourceStatusSnapshot
+            {
+                Label = label,
+                Url = url,
+                Kind = kind,
+                Status = EpgGuideSourceStatus.Pending,
+                IsOptional = isOptional,
+                Priority = priority,
+                CheckedAtUtc = checkedAtUtc,
+                Message = "Configured. Sync pending."
+            };
+        }
+
+        private static IReadOnlyList<string> SplitGuideUrls(string? value)
+        {
+            return EpgPublicGuideCatalog.SplitGuideUrls(value);
         }
 
         private static async Task TryPostDeleteRepairAsync(

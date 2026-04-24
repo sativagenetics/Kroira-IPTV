@@ -372,7 +372,7 @@ namespace Kroira.App.Services
             var suspiciousVod = AnalyzeSuspiciousVodEntries(profile.Type, movies, series);
             var suspiciousEntryCount = suspiciousLive.Count + suspiciousVod.Count;
             var logoCount = liveChannels.Count(channel => !string.IsNullOrWhiteSpace(channel.LogoUrl));
-            var guideFallbackCount = liveChannels.Count(channel => channel.EpgMatchSource is ChannelEpgMatchSource.Previous or ChannelEpgMatchSource.Normalized or ChannelEpgMatchSource.Alias or ChannelEpgMatchSource.Regex or ChannelEpgMatchSource.Fuzzy);
+            var guideFallbackCount = liveChannels.Count(channel => channel.EpgMatchSource is ChannelEpgMatchSource.Previous or ChannelEpgMatchSource.Normalized or ChannelEpgMatchSource.UserApproved or ChannelEpgMatchSource.Alias or ChannelEpgMatchSource.Regex or ChannelEpgMatchSource.Fuzzy);
             var guideReuseCount = liveChannels.Count(channel => channel.EpgMatchSource == ChannelEpgMatchSource.Previous);
             var logoFallbackCount = liveChannels.Count(channel => channel.LogoSource is ChannelLogoSource.Previous or ChannelLogoSource.Xmltv);
             var providerLogoCount = liveChannels.Count(channel => channel.LogoSource == ChannelLogoSource.Provider);

@@ -296,6 +296,7 @@ namespace Kroira.App
             services.AddTransient<MediaLibraryViewModel>();
             services.AddTransient<SourceOnboardingViewModel>();
             services.AddTransient<SourceListViewModel>();
+            services.AddTransient<EpgCenterViewModel>();
             services.AddTransient<ChannelBrowserViewModel>();
             services.AddTransient<FavoritesViewModel>();
             services.AddTransient<ContinueWatchingViewModel>();
@@ -317,6 +318,7 @@ namespace Kroira.App
             services.AddSingleton<ICatalogSurfaceCountService, CatalogSurfaceCountService>();
             services.AddSingleton<IHomeRecommendationService, HomeRecommendationService>();
             services.AddSingleton<ILiveGuideService, LiveGuideService>();
+            services.AddSingleton<IEpgCoverageReportService, EpgCoverageReportService>();
             services.AddSingleton<ISurfaceStateService, SurfaceStateService>();
             services.AddSingleton<IBackupPackageService, BackupPackageService>();
             services.AddSingleton<IMediaJobService, MediaJobService>();
