@@ -77,10 +77,11 @@ namespace Kroira.App.Services.Parsing
 
                 var currentCategoryContext = string.Empty;
                 PendingExtinf? pending = null;
+                var seenEntries = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
                 foreach (var rawLine in lines)
                 {
-                    var line = rawLine.Trim();
+                    var line = StripBom(rawLine).Trim();
                     if (string.IsNullOrWhiteSpace(line))
                     {
                         continue;
@@ -99,6 +100,14 @@ namespace Kroira.App.Services.Parsing
                             currentCategoryContext = explicitGroup;
                         }
 
+                        var logoUrl = M3uMetadataParser.GetFirstAttributeValue(
+                            extinf.Attributes,
+                            "tvg-logo",
+                            "logo",
+                            "channel-logo",
+                            "icon",
+                            "tvg-icon");
+
                         pending = new PendingExtinf
                         {
                             Name = ResolveEntryName(extinf),
@@ -106,7 +115,7 @@ namespace Kroira.App.Services.Parsing
                                         !string.Equals(explicitGroup, DefaultGroupName, StringComparison.OrdinalIgnoreCase)
                                 ? explicitGroup
                                 : NormalizeGroupName(currentCategoryContext),
-                            LogoUrl = M3uMetadataParser.GetFirstAttributeValue(extinf.Attributes, "tvg-logo"),
+                            LogoUrl = logoUrl,
                             TvgType = M3uMetadataParser.GetFirstAttributeValue(extinf.Attributes, "tvg-type"),
                             TvgId = M3uMetadataParser.GetFirstAttributeValue(extinf.Attributes, "tvg-id"),
                             TvgName = M3uMetadataParser.GetFirstAttributeValue(extinf.Attributes, "tvg-name"),
@@ -115,6 +124,11 @@ namespace Kroira.App.Services.Parsing
                                                     !string.Equals(explicitGroup, DefaultGroupName, StringComparison.OrdinalIgnoreCase)
                         };
 
+                        continue;
+                    }
+
+                    if (TryApplyM3uMetadataLine(line, pending, ref currentCategoryContext))
+                    {
                         continue;
                     }
 
@@ -128,7 +142,7 @@ namespace Kroira.App.Services.Parsing
                             continue;
                         }
 
-                        parsedEntries.Add(new M3uEntry
+                        var entry = new M3uEntry
                         {
                             GroupName = NormalizeGroupName(pending.GroupName),
                             Name = pending.Name,
@@ -139,7 +153,25 @@ namespace Kroira.App.Services.Parsing
                             TvgName = pending.TvgName,
                             Attributes = pending.Attributes,
                             HadExplicitGroupTitle = pending.HadExplicitGroupTitle
-                        });
+                        };
+
+                        var duplicateKey = BuildDuplicateEntryKey(entry);
+                        if (!seenEntries.Add(duplicateKey))
+                        {
+                            diagnostics.DuplicateRejectedCount++;
+                            acquisitionSession?.RecordSuppressed(
+                                SourceAcquisitionItemKind.Source,
+                                "acquire.m3u.duplicate_entry",
+                                "Duplicate M3U row was ignored.",
+                                entry.Name,
+                                entry.GroupName,
+                                entry.Name,
+                                entry.GroupName);
+                            pending = null;
+                            continue;
+                        }
+
+                        parsedEntries.Add(entry);
 
                         if (pending.HadExplicitGroupTitle)
                         {
@@ -216,6 +248,21 @@ namespace Kroira.App.Services.Parsing
                         continue;
                     }
 
+                    if (IsStandalonePromotionalLabel(entry.Name) ||
+                        IsStandalonePromotionalLabel(entry.GroupName))
+                    {
+                        acquisitionSession?.RecordSuppressed(
+                            SourceAcquisitionItemKind.Source,
+                            "acquire.m3u.promotional_noise",
+                            "Promotional or preview playlist row was suppressed.",
+                            entry.Name,
+                            entry.GroupName,
+                            entry.Name,
+                            entry.GroupName);
+                        diagnostics.NoiseRejectedCount++;
+                        continue;
+                    }
+
                     if (ContentClassifier.IsProviderCategoryRow(entry.Name, categoryLabels))
                     {
                         acquisitionSession?.RecordSuppressed(
@@ -266,6 +313,30 @@ namespace Kroira.App.Services.Parsing
                             _channelCatchupService.ApplyM3uCatchup(channel, entry.Attributes);
                             category.Channels!.Add(channel);
                             totalChannels++;
+                            break;
+
+                        case ContentClassifier.M3uEntryType.Radio:
+                            acquisitionSession?.RecordSuppressed(
+                                SourceAcquisitionItemKind.Source,
+                                "acquire.m3u.radio_unsupported",
+                                "Radio rows are not imported because this catalog does not currently expose radio playback.",
+                                entry.Name,
+                                entry.GroupName,
+                                entry.Name,
+                                entry.GroupName);
+                            diagnostics.RadioIgnoredCount++;
+                            break;
+
+                        case ContentClassifier.M3uEntryType.Unknown:
+                            acquisitionSession?.RecordSuppressed(
+                                SourceAcquisitionItemKind.Source,
+                                "acquire.m3u.unknown_entry",
+                                "Playlist row could not be classified safely and was left out for review.",
+                                entry.Name,
+                                entry.GroupName,
+                                entry.Name,
+                                entry.GroupName);
+                            diagnostics.UnknownRejectedCount++;
                             break;
 
                         case ContentClassifier.M3uEntryType.Movie:
@@ -438,12 +509,13 @@ namespace Kroira.App.Services.Parsing
             }
             catch (Exception ex)
             {
+                var safeMessage = EpgDiagnosticFormatter.Redact(ex.Message);
                 var syncState = await db.SourceSyncStates.FirstOrDefaultAsync(state => state.SourceProfileId == sourceProfileId);
                 if (syncState != null)
                 {
                     syncState.LastAttempt = DateTime.UtcNow;
                     syncState.HttpStatusCode = ResolveFailureStatusCode(ex);
-                    syncState.ErrorLog = $"M3U import failed: {ex.Message}";
+                    syncState.ErrorLog = $"M3U import failed: {safeMessage}";
                     await db.SaveChangesAsync();
                 }
 
@@ -762,8 +834,65 @@ namespace Kroira.App.Services.Parsing
 
         private static string NormalizeGroupName(string groupName)
         {
-            var normalized = ContentClassifier.NormalizeLabel(groupName ?? string.Empty);
+            var normalized = ContentClassifier.NormalizeLabel(groupName ?? string.Empty)
+                .Trim('\uFEFF')
+                .Trim()
+                .Trim('"', '\'', '|', '-', '_', '.', ':', ';', '#', '*', '=', '+', ' ', '\t');
             return string.IsNullOrWhiteSpace(normalized) ? DefaultGroupName : normalized;
+        }
+
+        private static bool TryApplyM3uMetadataLine(
+            string line,
+            PendingExtinf? pending,
+            ref string currentCategoryContext)
+        {
+            if (line.StartsWith("#EXTGRP:", StringComparison.OrdinalIgnoreCase) ||
+                line.StartsWith("#GROUP:", StringComparison.OrdinalIgnoreCase))
+            {
+                var separatorIndex = line.IndexOf(':');
+                var groupName = separatorIndex >= 0 && separatorIndex < line.Length - 1
+                    ? NormalizeGroupName(line[(separatorIndex + 1)..])
+                    : string.Empty;
+                if (!string.IsNullOrWhiteSpace(groupName) &&
+                    !string.Equals(groupName, DefaultGroupName, StringComparison.OrdinalIgnoreCase))
+                {
+                    currentCategoryContext = groupName;
+                    if (pending != null && !pending.HadExplicitGroupTitle)
+                    {
+                        pending.GroupName = groupName;
+                        pending.HadExplicitGroupTitle = true;
+                    }
+                }
+
+                return true;
+            }
+
+            return line.StartsWith("#EXTVLCOPT:", StringComparison.OrdinalIgnoreCase) ||
+                   line.StartsWith("#KODIPROP:", StringComparison.OrdinalIgnoreCase) ||
+                   line.StartsWith("#EXT-X-", StringComparison.OrdinalIgnoreCase) ||
+                   line.StartsWith("#EXTM3U", StringComparison.OrdinalIgnoreCase) ||
+                   line.StartsWith("#", StringComparison.Ordinal);
+        }
+
+        private static string BuildDuplicateEntryKey(M3uEntry entry)
+        {
+            return $"{entry.Name.Trim()}|{entry.Url.Trim()}";
+        }
+
+        private static bool IsStandalonePromotionalLabel(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return false;
+            }
+
+            var normalized = ContentClassifier.NormalizeLabel(value).Trim().Trim('[', ']', '(', ')', '{', '}', '|', ':', '-', '~').ToLowerInvariant();
+            return normalized is "trailer" or "trailers" or "teaser" or "teasers" or "preview" or "previews" or "clip" or "clips" or "sample" or "samples";
+        }
+
+        private static string StripBom(string value)
+        {
+            return string.IsNullOrEmpty(value) ? string.Empty : value.TrimStart('\uFEFF');
         }
 
         private static int GetUncategorizedCount(
@@ -792,7 +921,33 @@ namespace Kroira.App.Services.Parsing
                 ? $"Parsed {totalChannels} channels (LiveOnly mode - VOD suppressed)."
                 : $"Parsed {totalChannels} channels, {totalMovies} movies, {totalEpisodes} episodes across {totalSeries} series. Mode: {importMode}.";
 
-            return $"{summary} Uncategorized={diagnostics.UncategorizedCount}, pseudo_rejected={diagnostics.PseudoItemRejectedCount}, xmltv_found={(diagnostics.XmltvUrlFound ? "yes" : "no")}.";
+            var segments = new List<string>
+            {
+                $"Uncategorized={diagnostics.UncategorizedCount}",
+                $"pseudo_rejected={diagnostics.PseudoItemRejectedCount}"
+            };
+            if (diagnostics.DuplicateRejectedCount > 0)
+            {
+                segments.Add($"duplicate_rejected={diagnostics.DuplicateRejectedCount}");
+            }
+
+            if (diagnostics.NoiseRejectedCount > 0)
+            {
+                segments.Add($"noise_rejected={diagnostics.NoiseRejectedCount}");
+            }
+
+            if (diagnostics.RadioIgnoredCount > 0)
+            {
+                segments.Add($"radio_ignored={diagnostics.RadioIgnoredCount}");
+            }
+
+            if (diagnostics.UnknownRejectedCount > 0)
+            {
+                segments.Add($"unknown_rejected={diagnostics.UnknownRejectedCount}");
+            }
+
+            segments.Add($"xmltv_found={(diagnostics.XmltvUrlFound ? "yes" : "no")}");
+            return $"{summary} {string.Join(", ", segments)}.";
         }
 
         private static void LogHeaderDiagnostics(int sourceProfileId, M3uHeaderMetadata headerMetadata)
@@ -814,7 +969,7 @@ namespace Kroira.App.Services.Parsing
         {
             ImportRuntimeLogger.Log(
                 "M3U IMPORT",
-                $"source_profile_id={sourceProfileId}; live_count={diagnostics.LiveCount}; movie_count={diagnostics.MovieCount}; series_count={diagnostics.SeriesCount}; with_group_title_count={diagnostics.WithGroupTitleCount}; with_tvg_logo_count={diagnostics.WithTvgLogoCount}; with_tvg_id_count={diagnostics.WithTvgIdCount}; uncategorized_count={diagnostics.UncategorizedCount}; pseudo_item_rejected_count={diagnostics.PseudoItemRejectedCount}; xmltv_url_found={(diagnostics.XmltvUrlFound ? "true" : "false")}; xmltv_url_value={FormatDiagnosticValue(diagnostics.XmltvUrlValue)}");
+                $"source_profile_id={sourceProfileId}; live_count={diagnostics.LiveCount}; movie_count={diagnostics.MovieCount}; series_count={diagnostics.SeriesCount}; with_group_title_count={diagnostics.WithGroupTitleCount}; with_tvg_logo_count={diagnostics.WithTvgLogoCount}; with_tvg_id_count={diagnostics.WithTvgIdCount}; uncategorized_count={diagnostics.UncategorizedCount}; pseudo_item_rejected_count={diagnostics.PseudoItemRejectedCount}; duplicate_rejected_count={diagnostics.DuplicateRejectedCount}; noise_rejected_count={diagnostics.NoiseRejectedCount}; radio_ignored_count={diagnostics.RadioIgnoredCount}; unknown_rejected_count={diagnostics.UnknownRejectedCount}; xmltv_url_found={(diagnostics.XmltvUrlFound ? "true" : "false")}; xmltv_url_value={FormatDiagnosticValue(diagnostics.XmltvUrlValue)}");
         }
 
         private static async Task LogPersistedDiagnosticsAsync(
@@ -931,6 +1086,10 @@ namespace Kroira.App.Services.Parsing
             public int WithTvgIdCount { get; set; }
             public int UncategorizedCount { get; set; }
             public int PseudoItemRejectedCount { get; set; }
+            public int DuplicateRejectedCount { get; set; }
+            public int NoiseRejectedCount { get; set; }
+            public int RadioIgnoredCount { get; set; }
+            public int UnknownRejectedCount { get; set; }
             public bool XmltvUrlFound { get; set; }
             public string XmltvUrlValue { get; set; } = string.Empty;
         }
