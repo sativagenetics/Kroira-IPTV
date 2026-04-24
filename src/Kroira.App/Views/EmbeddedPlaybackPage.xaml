@@ -292,14 +292,8 @@
         <Grid x:Name="BottomChromeHost"
               Grid.Row="2"
               Margin="18,0,18,18"
-              RowSpacing="10"
               Canvas.ZIndex="2">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-            </Grid.RowDefinitions>
-
-        <Border x:Name="BottomBar" Grid.Row="1" Margin="0" Background="#5A05060A" BorderBrush="#12FFFFFF" BorderThickness="1" CornerRadius="24" Padding="16,8,16,10" Canvas.ZIndex="1">
+        <Border x:Name="BottomBar" Margin="0" Background="#5A05060A" BorderBrush="#12FFFFFF" BorderThickness="1" CornerRadius="24" Padding="16,8,16,10" Canvas.ZIndex="1">
             <Grid RowSpacing="8">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
@@ -443,7 +437,9 @@
             </Grid>
         </Border>
 
-        <Border x:Name="ToolsPanel" Grid.Row="0" Visibility="Collapsed" Background="#B005060A" BorderBrush="{StaticResource KroiraGhostBorderBrush}" BorderThickness="1" CornerRadius="18" Padding="12,10" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0" MaxHeight="360" Canvas.ZIndex="2">
+        </Grid>
+
+        <Border x:Name="ToolsPanel" Visibility="Collapsed" Width="360" Background="#B005060A" BorderBrush="{StaticResource KroiraGhostBorderBrush}" BorderThickness="1" CornerRadius="18" Padding="12,10" Margin="0" MaxHeight="360">
             <ScrollViewer MaxHeight="340" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                 <StackPanel Width="336" MaxWidth="336" Spacing="9">
                     <Grid ColumnSpacing="10">
@@ -573,7 +569,6 @@
                 </StackPanel>
             </ScrollViewer>
         </Border>
-        </Grid>
 
         <Border x:Name="StatusOverlay" Grid.RowSpan="3" Background="#96090B13" Visibility="Collapsed" IsHitTestVisible="False">
             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="12" MaxWidth="420" Padding="24">

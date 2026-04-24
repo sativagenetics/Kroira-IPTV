@@ -107,6 +107,7 @@ namespace Kroira.App.Views
         private readonly HashSet<int> _failedMirrorContentIds = new();
         private FlyoutBase? _activeUtilityFlyout;
         private FlyoutBase? _pendingUtilityFlyout;
+        private MenuFlyout? _toolsMenuFlyout;
 
         private static string LogPath => System.IO.Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
@@ -2866,6 +2867,7 @@ namespace Kroira.App.Views
             _openOverlayFlyouts.Clear();
             _activeUtilityFlyout = null;
             _pendingUtilityFlyout = null;
+            _toolsMenuFlyout = null;
             _toolsPanelOpen = false;
             UpdateToolsPanelVisibility();
             SetMenuSurfaceInputShield(false, "flyouts_teardown");

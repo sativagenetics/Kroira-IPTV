@@ -60,7 +60,7 @@ namespace Kroira.App
 
                 _windowManager.FullscreenStateChanged += WindowManager_FullscreenStateChanged;
                 LogStartupCheckpoint("MW 09: subscribed to FullscreenStateChanged");
-                UpdatePaneHeader(true);
+                ApplyShellStateForPageType(null, forceLayout: false);
 
                 if (Content is UIElement rootElement)
                 {
@@ -80,7 +80,7 @@ namespace Kroira.App
             try
             {
                 LogStartupCheckpoint($"MW FS: fullscreen changed, isFullscreen={_windowManager.IsFullscreen}");
-                UpdateShellChromeForCurrentRoute();
+                ApplyShellStateForCurrentPage(forceLayout: true);
             }
             catch (Exception ex)
             {
@@ -109,15 +109,15 @@ namespace Kroira.App
                 return;
             }
 
-            UpdateShellChromeForRoute(e.SourcePageType);
-            QueueShellChromeRefresh();
+            ApplyShellStateForPageType(e.SourcePageType, forceLayout: true);
+            QueueShellStateRefresh(e.SourcePageType);
         }
 
         private void ContentFrame_Navigated(object sender, NavigationEventArgs e)
         {
             SyncSelectedNavigationItem(e.SourcePageType);
-            UpdateShellChromeForRoute(e.SourcePageType);
-            QueueShellChromeRefresh();
+            ApplyShellStateForPageType(e.SourcePageType, forceLayout: true);
+            QueueShellStateRefresh(e.SourcePageType);
             if (!_remoteNavigationService.IsRemoteModeEnabled ||
                 ContentFrame.Content is not IRemoteNavigationPage remotePage)
             {
@@ -188,12 +188,12 @@ namespace Kroira.App
             PaneHeaderRoot.Margin = isOpen ? new Thickness(18, 28, 14, 30) : new Thickness(17, 28, 0, 30);
         }
 
-        private void UpdateShellChromeForCurrentRoute()
+        private void ApplyShellStateForCurrentPage(bool forceLayout)
         {
-            UpdateShellChromeForRoute(ContentFrame.Content?.GetType());
+            ApplyShellStateForPageType(ContentFrame.Content?.GetType(), forceLayout);
         }
 
-        private void UpdateShellChromeForRoute(Type? pageType)
+        private void ApplyShellStateForPageType(Type? pageType, bool forceLayout)
         {
             var isPlaybackRoute = pageType == typeof(EmbeddedPlaybackPage);
             var isFullscreen = _windowManager?.IsFullscreen == true;
@@ -209,23 +209,25 @@ namespace Kroira.App
             {
                 RootNavView.PaneDisplayMode = NavigationViewPaneDisplayMode.LeftCompact;
                 RootNavView.IsPaneVisible = true;
-                RootNavView.IsPaneOpen = true;
+                RootNavView.IsPaneOpen = false;
             }
 
-            ContentHostBorder.BorderThickness = isPlaybackRoute
+            ContentHostBorder.BorderThickness = suppressNormalChrome
                 ? new Thickness(0)
                 : new Thickness(1, 0, 0, 0);
 
-            if (!suppressNormalChrome)
-            {
-                UpdatePaneHeader(RootNavView.IsPaneOpen);
-            }
+            UpdatePaneHeader(!suppressNormalChrome && RootNavView.IsPaneOpen);
 
             RootNavView.InvalidateMeasure();
             ContentHostBorder.InvalidateMeasure();
+            if (forceLayout)
+            {
+                RootNavView.UpdateLayout();
+                ContentHostBorder.UpdateLayout();
+            }
         }
 
-        private void QueueShellChromeRefresh()
+        private void QueueShellStateRefresh(Type? pageType)
         {
             var dispatcherQueue = RootNavView.DispatcherQueue;
             if (dispatcherQueue == null)
@@ -235,12 +237,10 @@ namespace Kroira.App
 
             dispatcherQueue.TryEnqueue(() =>
             {
-                UpdateShellChromeForCurrentRoute();
-                RootNavView.UpdateLayout();
+                ApplyShellStateForPageType(pageType ?? ContentFrame.Content?.GetType(), forceLayout: true);
                 dispatcherQueue.TryEnqueue(() =>
                 {
-                    UpdateShellChromeForCurrentRoute();
-                    RootNavView.UpdateLayout();
+                    ApplyShellStateForPageType(ContentFrame.Content?.GetType() ?? pageType, forceLayout: true);
                 });
             });
         }
@@ -462,6 +462,7 @@ namespace Kroira.App
             var enqueued = dispatcherQueue.TryEnqueue(() =>
             {
                 LogStartupCheckpoint("MW INIT 02: starting initial navigation");
+                ApplyShellStateForPageType(typeof(HomePage), forceLayout: true);
                 var navigated = ContentFrame.Navigate(typeof(HomePage));
                 LogStartupCheckpoint($"MW INIT 03: initial navigation result={navigated}");
 
@@ -475,6 +476,8 @@ namespace Kroira.App
                     RootNavView.SelectedItem = RootNavView.MenuItems[0];
                     LogStartupCheckpoint("MW INIT 04: selected first nav item");
                 }
+
+                ApplyShellStateForPageType(typeof(HomePage), forceLayout: true);
             });
 
             if (!enqueued)

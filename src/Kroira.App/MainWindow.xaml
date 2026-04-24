@@ -21,7 +21,7 @@
                         IsBackButtonVisible="Collapsed"
                         IsSettingsVisible="False"
                         PaneDisplayMode="LeftCompact"
-                        IsPaneOpen="True"
+                        IsPaneOpen="False"
                         OpenPaneLength="236"
                         CompactPaneLength="64"
                         UseSystemFocusVisuals="True">
