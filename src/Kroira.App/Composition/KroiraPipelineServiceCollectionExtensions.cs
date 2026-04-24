@@ -18,6 +18,8 @@ namespace Kroira.App.Composition
             services.AddSingleton<ISourceRoutingService, SourceRoutingService>();
             services.AddSingleton<ICompanionRelayService, CompanionRelayService>();
             services.AddSingleton<ISensitiveDataRedactionService, SensitiveDataRedactionService>();
+            services.AddSingleton<ISourceCredentialProtector, DpapiSourceCredentialProtector>();
+            services.AddSingleton<ISourceCredentialStore, SourceCredentialStore>();
             services.AddSingleton<ISourceAcquisitionService, SourceAcquisitionService>();
             services.AddSingleton<IContentOperationalService, ContentOperationalService>();
             services.AddSingleton<IProviderStreamResolverService, ProviderStreamResolverService>();

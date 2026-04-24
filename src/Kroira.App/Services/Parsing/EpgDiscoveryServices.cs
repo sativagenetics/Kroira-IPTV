@@ -132,17 +132,21 @@ namespace Kroira.App.Services.Parsing
     public sealed class M3uEpgDiscoveryService : IEpgSourceDiscoveryService
     {
         private readonly ISourceRoutingService _sourceRoutingService;
+        private readonly ISourceCredentialStore _credentialStore;
 
-        public M3uEpgDiscoveryService(ISourceRoutingService sourceRoutingService)
+        public M3uEpgDiscoveryService(
+            ISourceRoutingService sourceRoutingService,
+            ISourceCredentialStore? credentialStore = null)
         {
             _sourceRoutingService = sourceRoutingService;
+            _credentialStore = credentialStore ?? SourceCredentialStore.CreateDefault();
         }
 
         public SourceType SourceType => SourceType.M3U;
 
         public async Task<EpgDiscoveryResult> DiscoverAsync(AppDbContext db, int sourceProfileId)
         {
-            var cred = await db.SourceCredentials.FirstOrDefaultAsync(c => c.SourceProfileId == sourceProfileId);
+            var cred = await _credentialStore.GetCredentialAsync(db, sourceProfileId);
             if (cred == null || string.IsNullOrWhiteSpace(cred.Url))
             {
                 throw new Exception("M3U source URL or path is empty.");
@@ -248,17 +252,21 @@ namespace Kroira.App.Services.Parsing
     public sealed class XtreamEpgDiscoveryService : IEpgSourceDiscoveryService
     {
         private readonly ISourceRoutingService _sourceRoutingService;
+        private readonly ISourceCredentialStore _credentialStore;
 
-        public XtreamEpgDiscoveryService(ISourceRoutingService sourceRoutingService)
+        public XtreamEpgDiscoveryService(
+            ISourceRoutingService sourceRoutingService,
+            ISourceCredentialStore? credentialStore = null)
         {
             _sourceRoutingService = sourceRoutingService;
+            _credentialStore = credentialStore ?? SourceCredentialStore.CreateDefault();
         }
 
         public SourceType SourceType => SourceType.Xtream;
 
         public async Task<EpgDiscoveryResult> DiscoverAsync(AppDbContext db, int sourceProfileId)
         {
-            var cred = await db.SourceCredentials.FirstOrDefaultAsync(c => c.SourceProfileId == sourceProfileId);
+            var cred = await _credentialStore.GetCredentialAsync(db, sourceProfileId);
             if (cred == null || string.IsNullOrWhiteSpace(cred.Url) || string.IsNullOrWhiteSpace(cred.Username))
             {
                 throw new Exception("Xtream credentials are incomplete.");
@@ -266,6 +274,7 @@ namespace Kroira.App.Services.Parsing
 
             var providerGuideUrl = EpgDiscoveryHelpers.BuildXtreamProviderXmltvUrl(cred);
             cred.DetectedEpgUrl = providerGuideUrl;
+            await _credentialStore.ProtectCredentialAsync(db, cred);
 
             var activeMode = EpgDiscoveryHelpers.ResolveActiveMode(cred);
             var providerCandidates = new List<EpgSourceCandidate>
@@ -312,17 +321,21 @@ namespace Kroira.App.Services.Parsing
     public sealed class StalkerEpgDiscoveryService : IEpgSourceDiscoveryService
     {
         private readonly ISourceRoutingService _sourceRoutingService;
+        private readonly ISourceCredentialStore _credentialStore;
 
-        public StalkerEpgDiscoveryService(ISourceRoutingService sourceRoutingService)
+        public StalkerEpgDiscoveryService(
+            ISourceRoutingService sourceRoutingService,
+            ISourceCredentialStore? credentialStore = null)
         {
             _sourceRoutingService = sourceRoutingService;
+            _credentialStore = credentialStore ?? SourceCredentialStore.CreateDefault();
         }
 
         public SourceType SourceType => SourceType.Stalker;
 
         public async Task<EpgDiscoveryResult> DiscoverAsync(AppDbContext db, int sourceProfileId)
         {
-            var cred = await db.SourceCredentials.FirstOrDefaultAsync(c => c.SourceProfileId == sourceProfileId);
+            var cred = await _credentialStore.GetCredentialAsync(db, sourceProfileId);
             if (cred == null || string.IsNullOrWhiteSpace(cred.Url))
             {
                 throw new Exception("Stalker source credentials are incomplete.");

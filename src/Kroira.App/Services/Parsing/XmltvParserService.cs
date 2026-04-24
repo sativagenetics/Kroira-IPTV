@@ -33,15 +33,18 @@ namespace Kroira.App.Services.Parsing
         private readonly IReadOnlyDictionary<SourceType, IEpgSourceDiscoveryService> _discoveryServices;
         private readonly ISourceEnrichmentService _sourceEnrichmentService;
         private readonly ISourceHealthService _sourceHealthService;
+        private readonly ISourceCredentialStore _credentialStore;
 
         public XmltvParserService(
             IEnumerable<IEpgSourceDiscoveryService> discoveryServices,
             ISourceEnrichmentService sourceEnrichmentService,
-            ISourceHealthService sourceHealthService)
+            ISourceHealthService sourceHealthService,
+            ISourceCredentialStore? credentialStore = null)
         {
             _discoveryServices = discoveryServices.ToDictionary(service => service.SourceType);
             _sourceEnrichmentService = sourceEnrichmentService;
             _sourceHealthService = sourceHealthService;
+            _credentialStore = credentialStore ?? SourceCredentialStore.CreateDefault();
         }
 
         public async Task ParseAndImportEpgAsync(
@@ -56,7 +59,7 @@ namespace Kroira.App.Services.Parsing
                 throw new Exception("Source not found.");
             }
 
-            var credential = await db.SourceCredentials.FirstOrDefaultAsync(c => c.SourceProfileId == sourceProfileId);
+            var credential = await _credentialStore.GetCredentialAsync(db, sourceProfileId);
             if (credential == null)
             {
                 throw new Exception("Source credentials were not found.");
@@ -110,7 +113,13 @@ namespace Kroira.App.Services.Parsing
                     return;
                 }
 
-                await ParseAndPersistXmltvAsync(db, sourceProfileId, discovered, _sourceEnrichmentService, acquisitionSession);
+                await ParseAndPersistXmltvAsync(
+                    db,
+                    sourceProfileId,
+                    discovered,
+                    _sourceEnrichmentService,
+                    _credentialStore,
+                    acquisitionSession);
                 if (refreshHealth)
                 {
                     await _sourceHealthService.RefreshSourceHealthAsync(db, sourceProfileId, acquisitionSession);
@@ -182,6 +191,7 @@ namespace Kroira.App.Services.Parsing
             int sourceProfileId,
             EpgDiscoveryResult discovered,
             ISourceEnrichmentService sourceEnrichmentService,
+            ISourceCredentialStore credentialStore,
             SourceAcquisitionSession? acquisitionSession)
         {
             var xmltvChannels = new Dictionary<string, XmltvChannelAccumulator>(StringComparer.OrdinalIgnoreCase);
@@ -299,7 +309,14 @@ namespace Kroira.App.Services.Parsing
                 "EPG SYNC",
                 $"source_profile_id={sourceProfileId}; stage=match_complete; total_live_channels={metrics.TotalLiveChannelCount}; matched_channels={metrics.MatchedChannelCount}; unmatched_channels={metrics.UnmatchedChannelCount}; exact_matches={metrics.ExactMatchCount}; normalized_matches={metrics.NormalizedMatchCount}; approved_matches={metrics.ApprovedMatchCount}; weak_matches={metrics.WeakMatchCount}; current_coverage={metrics.CurrentCoverageCount}; next_coverage={metrics.NextCoverageCount}; match_breakdown={FormatDiagnosticValue(metrics.MatchBreakdown)}");
 
-            await PersistGuideDataAsync(db, sourceProfileId, discovered, channels, epgItems, metrics);
+            await PersistGuideDataAsync(
+                db,
+                sourceProfileId,
+                discovered,
+                channels,
+                epgItems,
+                metrics,
+                credentialStore);
         }
 
         private static async Task<bool> TryReuseCachedGuideDataAsync(
@@ -715,7 +732,8 @@ namespace Kroira.App.Services.Parsing
             EpgDiscoveryResult discovered,
             IReadOnlyCollection<Channel> channels,
             IReadOnlyCollection<EpgProgram> epgItems,
-            EpgSyncMetrics metrics)
+            EpgSyncMetrics metrics,
+            ISourceCredentialStore credentialStore)
         {
             using var transaction = await db.Database.BeginTransactionAsync();
             try
@@ -759,10 +777,11 @@ namespace Kroira.App.Services.Parsing
                 epgLog.GuideWarningSummary = BuildGuideWarningSummary(discovered, metrics);
                 epgLog.FailureReason = string.Empty;
 
-                var credential = await db.SourceCredentials.FirstOrDefaultAsync(item => item.SourceProfileId == sourceProfileId);
+                var credential = await credentialStore.GetCredentialAsync(db, sourceProfileId);
                 if (credential != null)
                 {
                     credential.DetectedEpgUrl = discovered.DetectedXmltvUrl;
+                    await credentialStore.ProtectCredentialAsync(db, credential);
                 }
 
                 await db.SaveChangesAsync();

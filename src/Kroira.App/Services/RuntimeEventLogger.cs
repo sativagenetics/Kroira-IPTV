@@ -6,6 +6,7 @@ namespace Kroira.App.Services
     internal static class RuntimeEventLogger
     {
         private static readonly object Sync = new();
+        private static readonly ISensitiveDataRedactionService Redactor = new SensitiveDataRedactionService();
 
         private static string LogPath => Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
@@ -16,8 +17,9 @@ namespace Kroira.App.Services
         {
             try
             {
+                var safeMessage = Redactor.RedactLooseText(message);
                 var line =
-                    $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] {area} {message}; thread={Environment.CurrentManagedThreadId}{Environment.NewLine}";
+                    $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] {area} {safeMessage}; thread={Environment.CurrentManagedThreadId}{Environment.NewLine}";
                 var directory = Path.GetDirectoryName(LogPath);
                 if (!string.IsNullOrWhiteSpace(directory))
                 {

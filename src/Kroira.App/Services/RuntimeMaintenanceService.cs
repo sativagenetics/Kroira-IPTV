@@ -37,10 +37,12 @@ namespace Kroira.App.Services
                 var logicalCatalogStateService = services.GetRequiredService<ILogicalCatalogStateService>();
                 var contentOperationalService = services.GetRequiredService<IContentOperationalService>();
                 var autoRefreshService = services.GetRequiredService<ISourceAutoRefreshService>();
+                var credentialStore = services.GetRequiredService<ISourceCredentialStore>();
 
                 await profileStateService.GetActiveProfileAsync(db);
                 await CleanupOrphanedRowsAsync(db, cancellationToken);
                 cancellationToken.ThrowIfCancellationRequested();
+                await TryProtectExistingCredentialsAsync(db, credentialStore, cancellationToken);
 
                 await acquisitionService.BackfillAsync(db, cancellationToken: cancellationToken);
                 await autoRefreshService.RepairRuntimeStateAsync(db);
@@ -65,9 +67,11 @@ namespace Kroira.App.Services
                 var browsePreferencesService = services.GetRequiredService<IBrowsePreferencesService>();
                 var contentOperationalService = services.GetRequiredService<IContentOperationalService>();
                 var sourceHealthService = services.GetRequiredService<ISourceHealthService>();
+                var credentialStore = services.GetRequiredService<ISourceCredentialStore>();
 
                 await profileStateService.GetActiveProfileAsync(db);
                 await CleanupOrphanedRowsAsync(db, cancellationToken);
+                await TryProtectExistingCredentialsAsync(db, credentialStore, cancellationToken);
                 await acquisitionService.BackfillAsync(db, cancellationToken: cancellationToken);
                 await browsePreferencesService.RepairSourceReferencesAsync(db);
 
@@ -244,6 +248,33 @@ namespace Kroira.App.Services
             return sourcesToRefresh.Distinct().ToList();
         }
 
+        private static async Task TryProtectExistingCredentialsAsync(
+            AppDbContext db,
+            ISourceCredentialStore credentialStore,
+            CancellationToken cancellationToken)
+        {
+            try
+            {
+                var result = await credentialStore.ProtectExistingCredentialsAsync(db, cancellationToken);
+                if (result.MigratedCount > 0 ||
+                    result.RemovedStaleSecretCount > 0 ||
+                    result.FailedCount > 0)
+                {
+                    RuntimeEventLogger.Log(
+                        "RUNTIME-MAINT",
+                        $"credential protection migration: migrated={result.MigratedCount}, stale_removed={result.RemovedStaleSecretCount}, failed={result.FailedCount}");
+                }
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                RuntimeEventLogger.Log("RUNTIME-MAINT", ex, "credential protection migration skipped");
+            }
+        }
+
         private static async Task CleanupOrphanedRowsAsync(AppDbContext db, CancellationToken cancellationToken)
         {
             var profileIds = await db.AppProfiles
@@ -278,6 +309,9 @@ namespace Kroira.App.Services
                 .ToListAsync(cancellationToken);
             var orphanCredentials = await db.SourceCredentials
                 .Where(credential => !sourceIds.Contains(credential.SourceProfileId))
+                .ToListAsync(cancellationToken);
+            var orphanProtectedCredentials = await db.SourceProtectedCredentialSecrets
+                .Where(secret => !sourceIds.Contains(secret.SourceProfileId))
                 .ToListAsync(cancellationToken);
             var orphanEpgLogs = await db.EpgSyncLogs
                 .Where(log => !sourceIds.Contains(log.SourceProfileId))
@@ -332,6 +366,7 @@ namespace Kroira.App.Services
                 orphanAcquisitionProfiles.Count == 0 &&
                 orphanAcquisitionRuns.Count == 0 &&
                 orphanCredentials.Count == 0 &&
+                orphanProtectedCredentials.Count == 0 &&
                 orphanEpgLogs.Count == 0 &&
                 orphanHealthReports.Count == 0 &&
                 orphanHealthComponents.Count == 0 &&
@@ -354,6 +389,7 @@ namespace Kroira.App.Services
             db.SourceAcquisitionRuns.RemoveRange(orphanAcquisitionRuns);
             db.SourceAcquisitionProfiles.RemoveRange(orphanAcquisitionProfiles);
             db.SourceCredentials.RemoveRange(orphanCredentials);
+            db.SourceProtectedCredentialSecrets.RemoveRange(orphanProtectedCredentials);
             db.EpgSyncLogs.RemoveRange(orphanEpgLogs);
             db.SourceHealthComponents.RemoveRange(orphanHealthComponents);
             db.SourceHealthProbes.RemoveRange(orphanHealthProbes);

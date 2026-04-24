@@ -203,6 +203,7 @@ namespace Kroira.App.Data
             EnsureColumn(conn, "SourceCredentials", "StalkerTimezone", "TEXT NOT NULL DEFAULT ''");
             EnsureColumn(conn, "SourceCredentials", "StalkerLocale", "TEXT NOT NULL DEFAULT ''");
             EnsureColumn(conn, "SourceCredentials", "StalkerApiUrl", "TEXT NOT NULL DEFAULT ''");
+            EnsureSourceProtectedCredentialTables(conn);
             EnsureColumn(conn, "SourceSyncStates", "LastAutoRefreshAttemptAtUtc", "TEXT");
             EnsureColumn(conn, "SourceSyncStates", "LastAutoRefreshSuccessAtUtc", "TEXT");
             EnsureColumn(conn, "SourceSyncStates", "NextAutoRefreshDueAtUtc", "TEXT");
@@ -1051,6 +1052,30 @@ namespace Kroira.App.Data
             cmd.CommandText = @"
                 CREATE UNIQUE INDEX IF NOT EXISTS ""IX_StalkerPortalSnapshots_SourceProfileId""
                 ON ""StalkerPortalSnapshots"" (""SourceProfileId"");";
+            cmd.ExecuteNonQuery();
+        }
+
+        private static void EnsureSourceProtectedCredentialTables(SqliteConnection conn)
+        {
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = @"
+                CREATE TABLE IF NOT EXISTS ""SourceProtectedCredentialSecrets"" (
+                    ""Id""               INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                    ""SourceProfileId""  INTEGER NOT NULL,
+                    ""Name""             TEXT    NOT NULL DEFAULT '',
+                    ""ProtectedValue""   TEXT    NOT NULL DEFAULT '',
+                    ""ProtectionScheme"" TEXT    NOT NULL DEFAULT '',
+                    ""UpdatedAtUtc""     TEXT    NOT NULL DEFAULT '',
+                    CONSTRAINT ""FK_SourceProtectedCredentialSecrets_SourceProfiles_SourceProfileId""
+                        FOREIGN KEY (""SourceProfileId"")
+                        REFERENCES ""SourceProfiles"" (""Id"")
+                        ON DELETE CASCADE
+                );";
+            cmd.ExecuteNonQuery();
+
+            cmd.CommandText = @"
+                CREATE UNIQUE INDEX IF NOT EXISTS ""IX_SourceProtectedCredentialSecrets_SourceProfileId_Name""
+                ON ""SourceProtectedCredentialSecrets"" (""SourceProfileId"", ""Name"");";
             cmd.ExecuteNonQuery();
         }
 

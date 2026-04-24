@@ -31,19 +31,22 @@ namespace Kroira.App.Services.Parsing
         private readonly ISourceEnrichmentService _sourceEnrichmentService;
         private readonly ISourceHealthService _sourceHealthService;
         private readonly ISourceRoutingService _sourceRoutingService;
+        private readonly ISourceCredentialStore _credentialStore;
 
         public M3uParserService(
             ICatalogNormalizationService catalogNormalizationService,
             IChannelCatchupService channelCatchupService,
             ISourceEnrichmentService sourceEnrichmentService,
             ISourceHealthService sourceHealthService,
-            ISourceRoutingService sourceRoutingService)
+            ISourceRoutingService sourceRoutingService,
+            ISourceCredentialStore? credentialStore = null)
         {
             _catalogNormalizationService = catalogNormalizationService;
             _channelCatchupService = channelCatchupService;
             _sourceEnrichmentService = sourceEnrichmentService;
             _sourceHealthService = sourceHealthService;
             _sourceRoutingService = sourceRoutingService;
+            _credentialStore = credentialStore ?? SourceCredentialStore.CreateDefault();
         }
 
         public async Task ParseAndImportM3uAsync(
@@ -52,7 +55,7 @@ namespace Kroira.App.Services.Parsing
             SourceAcquisitionSession? acquisitionSession = null,
             bool refreshHealth = true)
         {
-            var cred = await db.SourceCredentials.FirstOrDefaultAsync(c => c.SourceProfileId == sourceProfileId);
+            var cred = await _credentialStore.GetCredentialAsync(db, sourceProfileId);
             if (cred == null || string.IsNullOrWhiteSpace(cred.Url))
             {
                 throw new Exception("Source URL or Path is empty.");
@@ -486,6 +489,7 @@ namespace Kroira.App.Services.Parsing
                         profile.LastSync = DateTime.UtcNow;
                     }
 
+                    await _credentialStore.ProtectCredentialAsync(db, cred);
                     await db.SaveChangesAsync();
                     await _sourceEnrichmentService.PrepareLiveCatalogAsync(db, sourceProfileId, acquisitionSession);
                     await transaction.CommitAsync();

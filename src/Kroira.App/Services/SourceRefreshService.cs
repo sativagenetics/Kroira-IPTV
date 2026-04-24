@@ -52,6 +52,7 @@ namespace Kroira.App.Services
             var contentOperationalService = scopeServices.ServiceProvider.GetRequiredService<IContentOperationalService>();
             var autoRefreshService = scopeServices.ServiceProvider.GetRequiredService<ISourceAutoRefreshService>();
             var sourceHealthService = scopeServices.ServiceProvider.GetRequiredService<ISourceHealthService>();
+            var credentialStore = scopeServices.ServiceProvider.GetRequiredService<ISourceCredentialStore>();
 
             var profile = await db.SourceProfiles.FirstOrDefaultAsync(item => item.Id == sourceProfileId);
             if (profile == null)
@@ -79,7 +80,7 @@ namespace Kroira.App.Services
                 await db.SaveChangesAsync();
             }
 
-            var credential = await db.SourceCredentials.FirstOrDefaultAsync(item => item.SourceProfileId == sourceProfileId);
+            var credential = await credentialStore.GetCredentialAsync(db, sourceProfileId);
             var acquisitionSession = await acquisitionService.BeginSessionAsync(db, profile, credential, trigger, scope);
             var shouldAttemptGuideSync = ShouldAttemptGuideSync(profile, credential);
 

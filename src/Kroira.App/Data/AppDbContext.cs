@@ -18,6 +18,7 @@ namespace Kroira.App.Data
         public DbSet<SchemaVersion> SchemaVersions { get; set; } = null!;
         public DbSet<SourceProfile> SourceProfiles { get; set; } = null!;
         public DbSet<SourceCredential> SourceCredentials { get; set; } = null!;
+        public DbSet<SourceProtectedCredentialSecret> SourceProtectedCredentialSecrets { get; set; } = null!;
         public DbSet<SourceSyncState> SourceSyncStates { get; set; } = null!;
         public DbSet<StalkerPortalSnapshot> StalkerPortalSnapshots { get; set; } = null!;
         public DbSet<SourceAcquisitionProfile> SourceAcquisitionProfiles { get; set; } = null!;
@@ -75,6 +76,30 @@ namespace Kroira.App.Data
                 .WithOne()
                 .HasForeignKey<SourceCredential>(e => e.SourceProfileId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<SourceProtectedCredentialSecret>()
+                .HasIndex(e => new { e.SourceProfileId, e.Name })
+                .IsUnique();
+
+            modelBuilder.Entity<SourceProtectedCredentialSecret>()
+                .HasOne<SourceProfile>()
+                .WithMany()
+                .HasForeignKey(e => e.SourceProfileId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<SourceProtectedCredentialSecret>()
+                .Property(e => e.Name)
+                .IsRequired()
+                .HasMaxLength(96);
+
+            modelBuilder.Entity<SourceProtectedCredentialSecret>()
+                .Property(e => e.ProtectedValue)
+                .IsRequired();
+
+            modelBuilder.Entity<SourceProtectedCredentialSecret>()
+                .Property(e => e.ProtectionScheme)
+                .IsRequired()
+                .HasMaxLength(64);
 
             modelBuilder.Entity<SourceCredential>()
                 .Property(e => e.ProxyUrl)

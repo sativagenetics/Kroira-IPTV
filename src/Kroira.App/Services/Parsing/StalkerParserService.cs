@@ -30,17 +30,20 @@ namespace Kroira.App.Services.Parsing
         private readonly ISourceEnrichmentService _sourceEnrichmentService;
         private readonly ISourceHealthService _sourceHealthService;
         private readonly IStalkerPortalClient _stalkerPortalClient;
+        private readonly ISourceCredentialStore _credentialStore;
 
         public StalkerParserService(
             ICatalogNormalizationService catalogNormalizationService,
             ISourceEnrichmentService sourceEnrichmentService,
             ISourceHealthService sourceHealthService,
-            IStalkerPortalClient stalkerPortalClient)
+            IStalkerPortalClient stalkerPortalClient,
+            ISourceCredentialStore? credentialStore = null)
         {
             _catalogNormalizationService = catalogNormalizationService;
             _sourceEnrichmentService = sourceEnrichmentService;
             _sourceHealthService = sourceHealthService;
             _stalkerPortalClient = stalkerPortalClient;
+            _credentialStore = credentialStore ?? SourceCredentialStore.CreateDefault();
         }
 
         public async Task ParseAndImportStalkerAsync(
@@ -55,7 +58,7 @@ namespace Kroira.App.Services.Parsing
                 throw new InvalidOperationException("Source not found.");
             }
 
-            var credential = await db.SourceCredentials.FirstOrDefaultAsync(item => item.SourceProfileId == sourceProfileId);
+            var credential = await _credentialStore.GetCredentialAsync(db, sourceProfileId);
             if (credential == null)
             {
                 throw new InvalidOperationException("Stalker source credentials are missing.");
@@ -85,9 +88,10 @@ namespace Kroira.App.Services.Parsing
             }
             catch (Exception ex)
             {
+                var safeMessage = EpgDiagnosticFormatter.Redact(ex.Message);
                 await transaction.RollbackAsync();
-                await UpsertPortalSnapshotAsync(db, sourceProfileId, portalCatalog, ex.Message);
-                await UpdateSyncStateAsync(db, sourceProfileId, 500, $"Stalker sync failed: {ex.Message}");
+                await UpsertPortalSnapshotAsync(db, sourceProfileId, portalCatalog, safeMessage);
+                await UpdateSyncStateAsync(db, sourceProfileId, 500, $"Stalker sync failed: {safeMessage}");
                 if (refreshHealth)
                 {
                     await _sourceHealthService.RefreshSourceHealthAsync(db, sourceProfileId, acquisitionSession);
@@ -109,7 +113,7 @@ namespace Kroira.App.Services.Parsing
                 throw new InvalidOperationException("Source not found.");
             }
 
-            var credential = await db.SourceCredentials.FirstOrDefaultAsync(item => item.SourceProfileId == sourceProfileId);
+            var credential = await _credentialStore.GetCredentialAsync(db, sourceProfileId);
             if (credential == null)
             {
                 throw new InvalidOperationException("Stalker source credentials are missing.");
@@ -138,9 +142,10 @@ namespace Kroira.App.Services.Parsing
             }
             catch (Exception ex)
             {
+                var safeMessage = EpgDiagnosticFormatter.Redact(ex.Message);
                 await transaction.RollbackAsync();
-                await UpsertPortalSnapshotAsync(db, sourceProfileId, portalCatalog, ex.Message);
-                await UpdateSyncStateAsync(db, sourceProfileId, 500, $"Stalker library sync failed: {ex.Message}");
+                await UpsertPortalSnapshotAsync(db, sourceProfileId, portalCatalog, safeMessage);
+                await UpdateSyncStateAsync(db, sourceProfileId, 500, $"Stalker library sync failed: {safeMessage}");
                 if (refreshHealth)
                 {
                     await _sourceHealthService.RefreshSourceHealthAsync(db, sourceProfileId, acquisitionSession);
