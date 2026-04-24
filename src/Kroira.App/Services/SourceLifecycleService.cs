@@ -333,6 +333,15 @@ namespace Kroira.App.Services
                         .Select(channel => channel.Id)
                         .ToListAsync();
 
+                var epgMappingDecisions = await db.EpgMappingDecisions
+                    .Where(decision => decision.SourceProfileId == sourceProfileId ||
+                                       channelIds.Contains(decision.ChannelId))
+                    .ToListAsync();
+                if (epgMappingDecisions.Count > 0)
+                {
+                    db.EpgMappingDecisions.RemoveRange(epgMappingDecisions);
+                }
+
                 if (channelIds.Count > 0)
                 {
                     var epgPrograms = await db.EpgPrograms
