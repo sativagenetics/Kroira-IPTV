@@ -97,6 +97,11 @@ namespace Kroira.App.Views
             NavigateToTarget("Sources", $"OpenSources_Click sender={DescribeNavigationSender(sender)}");
         }
 
+        private void RetrySurface_Click(object sender, RoutedEventArgs e)
+        {
+            _ = ViewModel.LoadCommand.ExecuteAsync(null);
+        }
+
         private void FeaturedPrimary_Click(object sender, RoutedEventArgs e)
         {
             var item = ViewModel.FeaturedItem;

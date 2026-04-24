@@ -86,6 +86,11 @@ namespace Kroira.App.Views
             Frame.Navigate(typeof(EpgCenterPage));
         }
 
+        private void RetrySurface_Click(object sender, RoutedEventArgs e)
+        {
+            _ = ViewModel.LoadChannelsCommand.ExecuteAsync(null);
+        }
+
         private void SearchBox_KeyDown(object sender, KeyRoutedEventArgs e)
         {
             if (e.Key == VirtualKey.Down || e.Key == VirtualKey.Enter)

@@ -112,13 +112,11 @@
                     </Grid>
 
                     <Grid Grid.Row="1" Padding="10,0,10,12">
-                        <Border Visibility="{x:Bind ViewModel.LiveEmptyVisibility, Mode=OneWay}" Background="#3D111827" BorderBrush="{StaticResource KroiraGhostBorderBrush}" BorderThickness="1" CornerRadius="12" Padding="18" VerticalAlignment="Top">
-                            <StackPanel Spacing="8">
-                                <FontIcon Glyph="&#xE714;" Foreground="{StaticResource KroiraTextTertiaryBrush}" FontSize="22" />
-                                <TextBlock Text="No live resume items" Style="{StaticResource KroiraTitleStyle}" />
-                                <TextBlock Text="Live playback entries appear here when saved progress exists." Style="{StaticResource KroiraBodyStyle}" TextWrapping="Wrap" />
-                            </StackPanel>
-                        </Border>
+                        <controls:EmptyStateView IconGlyph="&#xE714;"
+                                                 Title="No live resume items"
+                                                 Message="Live playback entries appear here when saved progress exists."
+                                                 Visibility="{x:Bind ViewModel.LiveEmptyVisibility, Mode=OneWay}"
+                                                 VerticalAlignment="Top" />
                         <ListView x:Name="LiveList"
                                   ItemsSource="{x:Bind ViewModel.LiveProgressItems, Mode=OneWay}"
                                   SelectionMode="None"
@@ -193,17 +191,16 @@
                                       IsOn="{x:Bind ViewModel.HideWatchedItems, Mode=TwoWay}"
                                       OnContent=""
                                       OffContent=""
-                                      VerticalAlignment="Center" />
+                                      VerticalAlignment="Center"
+                                      AutomationProperties.Name="Hide watched continue watching items" />
                     </Grid>
 
                     <Grid Grid.Row="1" Padding="10,0,10,12">
-                        <Border Visibility="{x:Bind ViewModel.MovieEmptyVisibility, Mode=OneWay}" Background="#3D111827" BorderBrush="{StaticResource KroiraGhostBorderBrush}" BorderThickness="1" CornerRadius="12" Padding="18" VerticalAlignment="Top">
-                            <StackPanel Spacing="8">
-                                <FontIcon Glyph="&#xE8B2;" Foreground="{StaticResource KroiraTextTertiaryBrush}" FontSize="22" />
-                                <TextBlock Text="No movies to resume" Style="{StaticResource KroiraTitleStyle}" />
-                                <TextBlock Text="Partially watched movies will collect here." Style="{StaticResource KroiraBodyStyle}" TextWrapping="Wrap" />
-                            </StackPanel>
-                        </Border>
+                        <controls:EmptyStateView IconGlyph="&#xE8B2;"
+                                                 Title="No movies to resume"
+                                                 Message="Partially watched movies will collect here."
+                                                 Visibility="{x:Bind ViewModel.MovieEmptyVisibility, Mode=OneWay}"
+                                                 VerticalAlignment="Top" />
                         <ListView x:Name="MovieList"
                                   ItemsSource="{x:Bind ViewModel.MovieProgressItems, Mode=OneWay}"
                                   SelectionMode="None"
@@ -235,16 +232,25 @@
                                                 <TextBlock Text="{Binding Title}" Style="{StaticResource KroiraTitleStyle}" MaxLines="2" TextWrapping="Wrap" TextTrimming="CharacterEllipsis" />
                                                 <TextBlock Text="{Binding LastWatchedText}" Style="{StaticResource KroiraMetaStyle}" MaxLines="1" TextTrimming="CharacterEllipsis" />
                                                 <TextBlock Text="{Binding ResumeContextText}" Foreground="{StaticResource KroiraAccentBrush}" FontSize="11" FontWeight="SemiBold" MaxLines="1" TextTrimming="CharacterEllipsis" />
+                                                <ProgressBar Value="{Binding ProgressPercent}"
+                                                             Maximum="100"
+                                                             Height="3"
+                                                             Margin="0,3,0,0"
+                                                             Foreground="{StaticResource KroiraAccentBrush}"
+                                                             Background="{StaticResource KroiraGhostBorderBrush}"
+                                                             AutomationProperties.Name="{Binding ProgressText}" />
                                             </StackPanel>
                                             <StackPanel Grid.Column="2" Spacing="6" VerticalAlignment="Center" Width="82">
                                                 <Button Content="Watched"
                                                         Click="MarkWatched_Click"
                                                         Style="{StaticResource QuietManagementButtonStyle}"
-                                                        Visibility="{Binding MarkWatchedVisibility}" />
+                                                        Visibility="{Binding MarkWatchedVisibility}"
+                                                        AutomationProperties.Name="Mark movie watched" />
                                                 <Button Content="Unwatched"
                                                         Click="MarkUnwatched_Click"
                                                         Style="{StaticResource QuietManagementButtonStyle}"
-                                                        Visibility="{Binding MarkUnwatchedVisibility}" />
+                                                        Visibility="{Binding MarkUnwatchedVisibility}"
+                                                        AutomationProperties.Name="Mark movie unwatched" />
                                                 <Button Tag="{Binding ProgressId}"
                                                         Click="RemoveProgress_Click"
                                                         Style="{StaticResource QuietIconButtonStyle}"
@@ -284,13 +290,11 @@
                     </Grid>
 
                     <Grid Grid.Row="1" Padding="10,0,10,12">
-                        <Border Visibility="{x:Bind ViewModel.SeriesEmptyVisibility, Mode=OneWay}" Background="#3D111827" BorderBrush="{StaticResource KroiraGhostBorderBrush}" BorderThickness="1" CornerRadius="12" Padding="18" VerticalAlignment="Top">
-                            <StackPanel Spacing="8">
-                                <FontIcon Glyph="&#xE8A9;" Foreground="{StaticResource KroiraTextTertiaryBrush}" FontSize="22" />
-                                <TextBlock Text="No episodes to resume" Style="{StaticResource KroiraTitleStyle}" />
-                                <TextBlock Text="Saved episode progress will appear as a compact queue." Style="{StaticResource KroiraBodyStyle}" TextWrapping="Wrap" />
-                            </StackPanel>
-                        </Border>
+                        <controls:EmptyStateView IconGlyph="&#xE8A9;"
+                                                 Title="No episodes to resume"
+                                                 Message="Saved episode progress will appear as a compact queue."
+                                                 Visibility="{x:Bind ViewModel.SeriesEmptyVisibility, Mode=OneWay}"
+                                                 VerticalAlignment="Top" />
                         <ListView x:Name="SeriesList"
                                   ItemsSource="{x:Bind ViewModel.SeriesProgressItems, Mode=OneWay}"
                                   SelectionMode="None"
@@ -322,16 +326,25 @@
                                                 <TextBlock Text="{Binding Title}" Style="{StaticResource KroiraTitleStyle}" MaxLines="2" TextWrapping="Wrap" TextTrimming="CharacterEllipsis" />
                                                 <TextBlock Text="{Binding LastWatchedText}" Style="{StaticResource KroiraMetaStyle}" MaxLines="1" TextTrimming="CharacterEllipsis" />
                                                 <TextBlock Text="{Binding ResumeContextText}" Foreground="{StaticResource KroiraAccentBrush}" FontSize="11" FontWeight="SemiBold" MaxLines="1" TextTrimming="CharacterEllipsis" />
+                                                <ProgressBar Value="{Binding ProgressPercent}"
+                                                             Maximum="100"
+                                                             Height="3"
+                                                             Margin="0,3,0,0"
+                                                             Foreground="{StaticResource KroiraAccentBrush}"
+                                                             Background="{StaticResource KroiraGhostBorderBrush}"
+                                                             AutomationProperties.Name="{Binding ProgressText}" />
                                             </StackPanel>
                                             <StackPanel Grid.Column="2" Spacing="6" VerticalAlignment="Center" Width="82">
                                                 <Button Content="Watched"
                                                         Click="MarkWatched_Click"
                                                         Style="{StaticResource QuietManagementButtonStyle}"
-                                                        Visibility="{Binding MarkWatchedVisibility}" />
+                                                        Visibility="{Binding MarkWatchedVisibility}"
+                                                        AutomationProperties.Name="Mark episode watched" />
                                                 <Button Content="Unwatched"
                                                         Click="MarkUnwatched_Click"
                                                         Style="{StaticResource QuietManagementButtonStyle}"
-                                                        Visibility="{Binding MarkUnwatchedVisibility}" />
+                                                        Visibility="{Binding MarkUnwatchedVisibility}"
+                                                        AutomationProperties.Name="Mark episode unwatched" />
                                                 <Button Tag="{Binding ProgressId}"
                                                         Click="RemoveProgress_Click"
                                                         Style="{StaticResource QuietIconButtonStyle}"
@@ -352,38 +365,29 @@
         </Grid>
         </Grid>
 
-        <Border Visibility="{x:Bind ViewModel.SurfaceState.StateVisibility, Mode=OneWay}"
-                HorizontalAlignment="Center"
-                VerticalAlignment="Center"
-                MaxWidth="560"
-                Margin="32"
-                Background="#76070B12"
-                BorderBrush="{StaticResource KroiraGlassBorderBrush}"
-                BorderThickness="1"
-                CornerRadius="16"
-                Padding="28,24">
-            <StackPanel Spacing="12">
-                <Grid Width="32" Height="32">
-                    <ProgressRing IsActive="True"
-                                  Width="28"
-                                  Height="28"
-                                  Visibility="{x:Bind ViewModel.SurfaceState.ProgressVisibility, Mode=OneWay}" />
-                    <FontIcon Glyph="{x:Bind ViewModel.SurfaceState.Glyph, Mode=OneWay}"
-                              FontSize="28"
-                              Foreground="{StaticResource KroiraTextTertiaryBrush}"
-                              Visibility="{x:Bind ViewModel.SurfaceState.IconVisibility, Mode=OneWay}" />
-                </Grid>
-                <TextBlock Text="{x:Bind ViewModel.SurfaceState.Title, Mode=OneWay}"
-                           Style="{StaticResource KroiraSectionTitleStyle}" />
-                <TextBlock Text="{x:Bind ViewModel.SurfaceState.Message, Mode=OneWay}"
-                           Style="{StaticResource KroiraBodyStyle}"
-                           TextWrapping="Wrap" />
-                <Button Content="{x:Bind ViewModel.SurfaceState.ActionLabel, Mode=OneWay}"
-                        Click="OpenSources_Click"
-                        Visibility="{x:Bind ViewModel.SurfaceState.ActionVisibility, Mode=OneWay}"
-                        Style="{StaticResource KroiraPrimaryButtonStyle}"
-                        HorizontalAlignment="Left" />
-            </StackPanel>
-        </Border>
+        <Grid Visibility="{x:Bind ViewModel.SurfaceState.StateVisibility, Mode=OneWay}"
+              HorizontalAlignment="Center"
+              VerticalAlignment="Center"
+              Margin="32">
+            <controls:LoadingStateView Title="{x:Bind ViewModel.SurfaceState.Title, Mode=OneWay}"
+                                       Message="{x:Bind ViewModel.SurfaceState.Message, Mode=OneWay}"
+                                       Visibility="{x:Bind ViewModel.SurfaceState.LoadingStateVisibility, Mode=OneWay}" />
+            <controls:EmptyStateView IconGlyph="{x:Bind ViewModel.SurfaceState.Glyph, Mode=OneWay}"
+                                     Title="{x:Bind ViewModel.SurfaceState.Title, Mode=OneWay}"
+                                     Message="{x:Bind ViewModel.SurfaceState.Message, Mode=OneWay}"
+                                     PrimaryActionLabel="{x:Bind ViewModel.SurfaceState.ActionLabel, Mode=OneWay}"
+                                     PrimaryActionVisibility="{x:Bind ViewModel.SurfaceState.ActionVisibility, Mode=OneWay}"
+                                     Visibility="{x:Bind ViewModel.SurfaceState.EmptyStateVisibility, Mode=OneWay}"
+                                     PrimaryActionClick="OpenSources_Click" />
+            <controls:ErrorStateView IconGlyph="{x:Bind ViewModel.SurfaceState.Glyph, Mode=OneWay}"
+                                     Title="{x:Bind ViewModel.SurfaceState.Title, Mode=OneWay}"
+                                     Message="{x:Bind ViewModel.SurfaceState.Message, Mode=OneWay}"
+                                     RetryActionLabel="Retry"
+                                     DiagnosticsActionLabel="{x:Bind ViewModel.SurfaceState.ActionLabel, Mode=OneWay}"
+                                     DiagnosticsActionVisibility="{x:Bind ViewModel.SurfaceState.DiagnosticsActionVisibility, Mode=OneWay}"
+                                     Visibility="{x:Bind ViewModel.SurfaceState.ErrorStateVisibility, Mode=OneWay}"
+                                     RetryClick="RetrySurface_Click"
+                                     DiagnosticsClick="OpenSources_Click" />
+        </Grid>
     </Grid>
 </Page>

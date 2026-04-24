@@ -31,6 +31,11 @@ namespace Kroira.App.Views
             Frame.Navigate(typeof(SourceListPage));
         }
 
+        private void RetrySurface_Click(object sender, RoutedEventArgs e)
+        {
+            _ = ViewModel.LoadProgressCommand.ExecuteAsync(null);
+        }
+
         private void ItemList_ItemClick(object sender, ItemClickEventArgs e)
         {
             if (e.ClickedItem is ProgressItemViewModel item)

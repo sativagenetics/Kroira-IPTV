@@ -102,6 +102,16 @@ namespace Kroira.App.Views
             await ViewModel.RestoreBackupAsync(file.Path);
         }
 
+        private void OpenSourcesFromSettings_Click(object sender, RoutedEventArgs e)
+        {
+            Frame.Navigate(typeof(SourceListPage));
+        }
+
+        private void OpenGuideFromSettings_Click(object sender, RoutedEventArgs e)
+        {
+            Frame.Navigate(typeof(EpgCenterPage));
+        }
+
         private Windows.Storage.Pickers.FileSavePicker CreateSavePicker()
         {
             var picker = new Windows.Storage.Pickers.FileSavePicker

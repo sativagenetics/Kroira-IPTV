@@ -227,7 +227,7 @@ namespace Kroira.App.ViewModels
             channel.LiveProgressText = $"{Math.Round(channel.LiveProgressValue):0}% live";
             channel.EpgVisibility = Visibility.Visible;
             channel.GuideMetaVisibility = Visibility.Visible;
-            channel.DescriptionVisibility = string.IsNullOrWhiteSpace(current.Description)
+            channel.DescriptionVisibility = string.IsNullOrWhiteSpace(channel.CurrentProgramDescription)
                 ? Visibility.Collapsed
                 : Visibility.Visible;
             channel.SubtitleVisibility = string.IsNullOrWhiteSpace(current.Subtitle)

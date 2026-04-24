@@ -281,11 +281,12 @@
                         </Grid.ColumnDefinitions>
 
                         <Grid Grid.Column="0">
-                            <TextBox x:Name="SearchBox"
-                                     Style="{StaticResource KroiraFilterTextBoxStyle}"
-                                     Text="{x:Bind ViewModel.SearchQuery, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                     KeyDown="SearchBox_KeyDown"
-                                     PlaceholderText="Search movies" />
+                             <TextBox x:Name="SearchBox"
+                                      Style="{StaticResource KroiraFilterTextBoxStyle}"
+                                      Text="{x:Bind ViewModel.SearchQuery, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                      KeyDown="SearchBox_KeyDown"
+                                      PlaceholderText="Search movies"
+                                      AutomationProperties.Name="Search movies" />
                             <FontIcon Glyph="&#xE721;"
                                       FontSize="14"
                                       Foreground="{StaticResource KroiraTextTertiaryBrush}"
@@ -294,27 +295,31 @@
                                       VerticalAlignment="Center" />
                         </Grid>
 
-                        <ComboBox Grid.Column="1"
-                                  Style="{StaticResource KroiraFilterComboBoxStyle}"
-                                  ItemsSource="{x:Bind ViewModel.SourceOptions, Mode=OneWay}"
-                                  SelectedItem="{x:Bind ViewModel.SelectedSourceOption, Mode=TwoWay}"
-                                  DisplayMemberPath="DisplayName" />
+                         <ComboBox Grid.Column="1"
+                                   Style="{StaticResource KroiraFilterComboBoxStyle}"
+                                   ItemsSource="{x:Bind ViewModel.SourceOptions, Mode=OneWay}"
+                                   SelectedItem="{x:Bind ViewModel.SelectedSourceOption, Mode=TwoWay}"
+                                   DisplayMemberPath="DisplayName"
+                                   AutomationProperties.Name="Movie provider" />
 
-                        <ComboBox Grid.Column="2"
-                                  Style="{StaticResource KroiraFilterComboBoxStyle}"
-                                  ItemsSource="{x:Bind ViewModel.SortOptions, Mode=OneWay}"
-                                  SelectedItem="{x:Bind ViewModel.SelectedSortOption, Mode=TwoWay}"
-                                  DisplayMemberPath="Label" />
+                         <ComboBox Grid.Column="2"
+                                   Style="{StaticResource KroiraFilterComboBoxStyle}"
+                                   ItemsSource="{x:Bind ViewModel.SortOptions, Mode=OneWay}"
+                                   SelectedItem="{x:Bind ViewModel.SelectedSortOption, Mode=TwoWay}"
+                                   DisplayMemberPath="Label"
+                                   AutomationProperties.Name="Movie sort" />
 
                         <StackPanel Grid.Column="3"
                                     Orientation="Horizontal"
                                     Spacing="8"
                                     HorizontalAlignment="Right"
                                     VerticalAlignment="Center">
-                            <CheckBox Content="Favorites"
-                                      IsChecked="{x:Bind ViewModel.FavoritesOnly, Mode=TwoWay}" />
-                            <CheckBox Content="Primary only"
-                                      IsChecked="{x:Bind ViewModel.HideSecondaryContent, Mode=TwoWay}" />
+                             <CheckBox Content="Favorites"
+                                       IsChecked="{x:Bind ViewModel.FavoritesOnly, Mode=TwoWay}"
+                                       AutomationProperties.Name="Show favorite movies only" />
+                             <CheckBox Content="Primary only"
+                                       IsChecked="{x:Bind ViewModel.HideSecondaryContent, Mode=TwoWay}"
+                                       AutomationProperties.Name="Show primary movie entries only" />
                         </StackPanel>
                     </Grid>
             </Border>
@@ -331,7 +336,8 @@
                       ScrollViewer.HorizontalScrollMode="Enabled"
                       ScrollViewer.HorizontalScrollBarVisibility="Hidden"
                       ScrollViewer.VerticalScrollMode="Disabled"
-                      ScrollViewer.VerticalScrollBarVisibility="Disabled">
+                      ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                      AutomationProperties.Name="Movie categories">
                 <ListView.ItemsPanel>
                     <ItemsPanelTemplate>
                         <ItemsStackPanel Orientation="Horizontal" />
@@ -362,22 +368,12 @@
             </ListView>
 
             <Grid Grid.Row="2">
-                    <StackPanel Visibility="{x:Bind ViewModel.IsEmpty, Mode=OneWay}"
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                Spacing="10"
-                                MaxWidth="460">
-                    <FontIcon Glyph="&#xE8B2;"
-                              Foreground="{StaticResource KroiraTextTertiaryBrush}"
-                              FontSize="28"
-                              HorizontalAlignment="Center" />
-                        <TextBlock Text="{x:Bind ViewModel.EmptyStateTitle, Mode=OneWay}"
-                                   Style="{StaticResource KroiraSectionTitleStyle}"
-                                   HorizontalAlignment="Center" />
-                        <TextBlock Text="{x:Bind ViewModel.EmptyStateMessage, Mode=OneWay}"
-                                   Style="{StaticResource KroiraBodyStyle}"
-                                   TextAlignment="Center" />
-                    </StackPanel>
+                    <controls:EmptyStateView IconGlyph="&#xE8B2;"
+                                             Title="{x:Bind ViewModel.EmptyStateTitle, Mode=OneWay}"
+                                             Message="{x:Bind ViewModel.EmptyStateMessage, Mode=OneWay}"
+                                             Visibility="{x:Bind ViewModel.IsEmpty, Mode=OneWay}"
+                                             HorizontalAlignment="Center"
+                                             VerticalAlignment="Center" />
 
                 <GridView x:Name="MovieGrid"
                           ItemsSource="{x:Bind ViewModel.DisplayMovieSlots, Mode=OneWay}"
@@ -482,11 +478,12 @@
                                                                        Foreground="{StaticResource KroiraTextPrimaryBrush}" />
                                                         </StackPanel>
                                                     </Border>
-                                                    <Button Grid.Column="1"
-                                                            Click="FavoriteToggle_Click"
-                                                            Tag="{Binding Id}"
-                                                            ToolTipService.ToolTip="{Binding FavoriteLabel}"
-                                                            Width="30"
+                                                     <Button Grid.Column="1"
+                                                             Click="FavoriteToggle_Click"
+                                                             Tag="{Binding Id}"
+                                                             ToolTipService.ToolTip="{Binding FavoriteLabel}"
+                                                             AutomationProperties.Name="{Binding FavoriteLabel}"
+                                                             Width="30"
                                                             Height="30"
                                                             Padding="0"
                                                             MinWidth="0"
@@ -574,38 +571,29 @@
         </Grid>
         </Grid>
 
-        <Border Visibility="{x:Bind ViewModel.BlockingSurfaceVisibility, Mode=OneWay}"
-                HorizontalAlignment="Center"
-                VerticalAlignment="Center"
-                MaxWidth="560"
-                Margin="32"
-                Background="#76070B12"
-                BorderBrush="{StaticResource KroiraGlassBorderBrush}"
-                BorderThickness="1"
-                CornerRadius="16"
-                Padding="28,24">
-            <StackPanel Spacing="12">
-                <Grid Width="32" Height="32">
-                    <ProgressRing IsActive="True"
-                                  Width="28"
-                                  Height="28"
-                                  Visibility="{x:Bind ViewModel.SurfaceState.ProgressVisibility, Mode=OneWay}" />
-                    <FontIcon Glyph="{x:Bind ViewModel.SurfaceState.Glyph, Mode=OneWay}"
-                              FontSize="28"
-                              Foreground="{StaticResource KroiraTextTertiaryBrush}"
-                              Visibility="{x:Bind ViewModel.SurfaceState.IconVisibility, Mode=OneWay}" />
-                </Grid>
-                <TextBlock Text="{x:Bind ViewModel.SurfaceState.Title, Mode=OneWay}"
-                           Style="{StaticResource KroiraSectionTitleStyle}" />
-                <TextBlock Text="{x:Bind ViewModel.SurfaceState.Message, Mode=OneWay}"
-                           Style="{StaticResource KroiraBodyStyle}"
-                           TextWrapping="Wrap" />
-                <Button Content="{x:Bind ViewModel.SurfaceState.ActionLabel, Mode=OneWay}"
-                        Click="OpenSources_Click"
-                        Visibility="{x:Bind ViewModel.SurfaceState.ActionVisibility, Mode=OneWay}"
-                        Style="{StaticResource KroiraPrimaryButtonStyle}"
-                        HorizontalAlignment="Left" />
-            </StackPanel>
-        </Border>
+        <Grid Visibility="{x:Bind ViewModel.BlockingSurfaceVisibility, Mode=OneWay}"
+              HorizontalAlignment="Center"
+              VerticalAlignment="Center"
+              Margin="32">
+            <controls:LoadingStateView Title="{x:Bind ViewModel.SurfaceState.Title, Mode=OneWay}"
+                                       Message="{x:Bind ViewModel.SurfaceState.Message, Mode=OneWay}"
+                                       Visibility="{x:Bind ViewModel.SurfaceState.LoadingStateVisibility, Mode=OneWay}" />
+            <controls:EmptyStateView IconGlyph="{x:Bind ViewModel.SurfaceState.Glyph, Mode=OneWay}"
+                                     Title="{x:Bind ViewModel.SurfaceState.Title, Mode=OneWay}"
+                                     Message="{x:Bind ViewModel.SurfaceState.Message, Mode=OneWay}"
+                                     PrimaryActionLabel="{x:Bind ViewModel.SurfaceState.ActionLabel, Mode=OneWay}"
+                                     PrimaryActionVisibility="{x:Bind ViewModel.SurfaceState.ActionVisibility, Mode=OneWay}"
+                                     Visibility="{x:Bind ViewModel.SurfaceState.EmptyStateVisibility, Mode=OneWay}"
+                                     PrimaryActionClick="OpenSources_Click" />
+            <controls:ErrorStateView IconGlyph="{x:Bind ViewModel.SurfaceState.Glyph, Mode=OneWay}"
+                                     Title="{x:Bind ViewModel.SurfaceState.Title, Mode=OneWay}"
+                                     Message="{x:Bind ViewModel.SurfaceState.Message, Mode=OneWay}"
+                                     RetryActionLabel="Retry"
+                                     DiagnosticsActionLabel="{x:Bind ViewModel.SurfaceState.ActionLabel, Mode=OneWay}"
+                                     DiagnosticsActionVisibility="{x:Bind ViewModel.SurfaceState.DiagnosticsActionVisibility, Mode=OneWay}"
+                                     Visibility="{x:Bind ViewModel.SurfaceState.ErrorStateVisibility, Mode=OneWay}"
+                                     RetryClick="RetrySurface_Click"
+                                     DiagnosticsClick="OpenSources_Click" />
+        </Grid>
     </Grid>
 </Page>

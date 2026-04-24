@@ -30,6 +30,11 @@ namespace Kroira.App.Views
             Frame.Navigate(typeof(SourceListPage));
         }
 
+        private void RetrySurface_Click(object sender, RoutedEventArgs e)
+        {
+            ViewModel.LoadFavoritesCommand.Execute(null);
+        }
+
         private void ChannelList_ItemClick(object sender, ItemClickEventArgs e)
         {
             if (e.ClickedItem is BrowserChannelViewModel channel)

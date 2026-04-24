@@ -124,21 +124,11 @@
                     </Grid>
 
                     <Grid Grid.Row="1" Padding="10,0,10,12">
-                        <Border Visibility="{x:Bind ViewModel.ChannelsEmptyVisibility, Mode=OneWay}"
-                                Background="#3D111827"
-                                BorderBrush="{StaticResource KroiraGhostBorderBrush}"
-                                BorderThickness="1"
-                                CornerRadius="12"
-                                Padding="18"
-                                VerticalAlignment="Top">
-                            <StackPanel Spacing="8">
-                                <FontIcon Glyph="&#xE714;" Foreground="{StaticResource KroiraTextTertiaryBrush}" FontSize="22" />
-                                <TextBlock Text="No saved channels" Style="{StaticResource KroiraTitleStyle}" />
-                                <TextBlock Text="Star channels from Live TV to build a quick launch lane."
-                                           Style="{StaticResource KroiraBodyStyle}"
-                                           TextWrapping="Wrap" />
-                            </StackPanel>
-                        </Border>
+                        <controls:EmptyStateView IconGlyph="&#xE714;"
+                                                 Title="No saved channels"
+                                                 Message="Star channels from Live TV to build a quick launch lane."
+                                                 Visibility="{x:Bind ViewModel.ChannelsEmptyVisibility, Mode=OneWay}"
+                                                 VerticalAlignment="Top" />
 
                         <ListView x:Name="ChannelList"
                                   ItemsSource="{x:Bind ViewModel.FavoriteChannels, Mode=OneWay}"
@@ -215,21 +205,11 @@
                     </Grid>
 
                     <Grid Grid.Row="1" Padding="10,0,10,12">
-                        <Border Visibility="{x:Bind ViewModel.MoviesEmptyVisibility, Mode=OneWay}"
-                                Background="#3D111827"
-                                BorderBrush="{StaticResource KroiraGhostBorderBrush}"
-                                BorderThickness="1"
-                                CornerRadius="12"
-                                Padding="18"
-                                VerticalAlignment="Top">
-                            <StackPanel Spacing="8">
-                                <FontIcon Glyph="&#xE8B2;" Foreground="{StaticResource KroiraTextTertiaryBrush}" FontSize="22" />
-                                <TextBlock Text="No saved movies" Style="{StaticResource KroiraTitleStyle}" />
-                                <TextBlock Text="Save movie cards to keep a focused watchlist here."
-                                           Style="{StaticResource KroiraBodyStyle}"
-                                           TextWrapping="Wrap" />
-                            </StackPanel>
-                        </Border>
+                        <controls:EmptyStateView IconGlyph="&#xE8B2;"
+                                                 Title="No saved movies"
+                                                 Message="Save movie cards to keep a focused watchlist here."
+                                                 Visibility="{x:Bind ViewModel.MoviesEmptyVisibility, Mode=OneWay}"
+                                                 VerticalAlignment="Top" />
 
                         <ListView x:Name="MovieList"
                                   ItemsSource="{x:Bind ViewModel.FavoriteMovies, Mode=OneWay}"
@@ -297,21 +277,11 @@
                     </Grid>
 
                     <Grid Grid.Row="1" Padding="10,0,10,12">
-                        <Border Visibility="{x:Bind ViewModel.SeriesEmptyVisibility, Mode=OneWay}"
-                                Background="#3D111827"
-                                BorderBrush="{StaticResource KroiraGhostBorderBrush}"
-                                BorderThickness="1"
-                                CornerRadius="12"
-                                Padding="18"
-                                VerticalAlignment="Top">
-                            <StackPanel Spacing="8">
-                                <FontIcon Glyph="&#xE8A9;" Foreground="{StaticResource KroiraTextTertiaryBrush}" FontSize="22" />
-                                <TextBlock Text="No saved series" Style="{StaticResource KroiraTitleStyle}" />
-                                <TextBlock Text="Saved series appear here as a dedicated show lane."
-                                           Style="{StaticResource KroiraBodyStyle}"
-                                           TextWrapping="Wrap" />
-                            </StackPanel>
-                        </Border>
+                        <controls:EmptyStateView IconGlyph="&#xE8A9;"
+                                                 Title="No saved series"
+                                                 Message="Saved series appear here as a dedicated show lane."
+                                                 Visibility="{x:Bind ViewModel.SeriesEmptyVisibility, Mode=OneWay}"
+                                                 VerticalAlignment="Top" />
 
                         <ListView x:Name="SeriesList"
                                   ItemsSource="{x:Bind ViewModel.FavoriteSeries, Mode=OneWay}"
@@ -501,24 +471,10 @@
                             </Grid>
                         </Border>
 
-                        <Border Visibility="{x:Bind ViewModel.SelectedSeriesEpisodesEmptyVisibility, Mode=OneWay}"
-                                Background="#7A0B0E14"
-                                BorderBrush="{StaticResource KroiraGlassBorderBrush}"
-                                BorderThickness="1"
-                                CornerRadius="12"
-                                Padding="18">
-                            <StackPanel Spacing="8">
-                                <FontIcon Glyph="&#xE8A9;"
-                                          FontSize="22"
-                                          Foreground="{StaticResource KroiraTextTertiaryBrush}"
-                                          HorizontalAlignment="Left" />
-                                <TextBlock Text="No playable episodes"
-                                           Style="{StaticResource KroiraTitleStyle}" />
-                                <TextBlock Text="This saved series does not currently have playable episode data in the local library."
-                                           Style="{StaticResource KroiraBodyStyle}"
-                                           TextWrapping="Wrap" />
-                            </StackPanel>
-                        </Border>
+                        <controls:EmptyStateView IconGlyph="&#xE8A9;"
+                                                 Title="No playable episodes"
+                                                 Message="This saved series does not currently have playable episode data in the local library."
+                                                 Visibility="{x:Bind ViewModel.SelectedSeriesEpisodesEmptyVisibility, Mode=OneWay}" />
 
                         <ListView x:Name="EpisodeList"
                                   Visibility="{x:Bind ViewModel.SelectedSeriesEpisodesVisibility, Mode=OneWay}"
@@ -577,38 +533,29 @@
         </Border>
         </Grid>
 
-        <Border Visibility="{x:Bind ViewModel.SurfaceState.StateVisibility, Mode=OneWay}"
-                HorizontalAlignment="Center"
-                VerticalAlignment="Center"
-                MaxWidth="560"
-                Margin="32"
-                Background="#76070B12"
-                BorderBrush="{StaticResource KroiraGlassBorderBrush}"
-                BorderThickness="1"
-                CornerRadius="16"
-                Padding="28,24">
-            <StackPanel Spacing="12">
-                <Grid Width="32" Height="32">
-                    <ProgressRing IsActive="True"
-                                  Width="28"
-                                  Height="28"
-                                  Visibility="{x:Bind ViewModel.SurfaceState.ProgressVisibility, Mode=OneWay}" />
-                    <FontIcon Glyph="{x:Bind ViewModel.SurfaceState.Glyph, Mode=OneWay}"
-                              FontSize="28"
-                              Foreground="{StaticResource KroiraTextTertiaryBrush}"
-                              Visibility="{x:Bind ViewModel.SurfaceState.IconVisibility, Mode=OneWay}" />
-                </Grid>
-                <TextBlock Text="{x:Bind ViewModel.SurfaceState.Title, Mode=OneWay}"
-                           Style="{StaticResource KroiraSectionTitleStyle}" />
-                <TextBlock Text="{x:Bind ViewModel.SurfaceState.Message, Mode=OneWay}"
-                           Style="{StaticResource KroiraBodyStyle}"
-                           TextWrapping="Wrap" />
-                <Button Content="{x:Bind ViewModel.SurfaceState.ActionLabel, Mode=OneWay}"
-                        Click="OpenSources_Click"
-                        Visibility="{x:Bind ViewModel.SurfaceState.ActionVisibility, Mode=OneWay}"
-                        Style="{StaticResource KroiraPrimaryButtonStyle}"
-                        HorizontalAlignment="Left" />
-            </StackPanel>
-        </Border>
+        <Grid Visibility="{x:Bind ViewModel.SurfaceState.StateVisibility, Mode=OneWay}"
+              HorizontalAlignment="Center"
+              VerticalAlignment="Center"
+              Margin="32">
+            <controls:LoadingStateView Title="{x:Bind ViewModel.SurfaceState.Title, Mode=OneWay}"
+                                       Message="{x:Bind ViewModel.SurfaceState.Message, Mode=OneWay}"
+                                       Visibility="{x:Bind ViewModel.SurfaceState.LoadingStateVisibility, Mode=OneWay}" />
+            <controls:EmptyStateView IconGlyph="{x:Bind ViewModel.SurfaceState.Glyph, Mode=OneWay}"
+                                     Title="{x:Bind ViewModel.SurfaceState.Title, Mode=OneWay}"
+                                     Message="{x:Bind ViewModel.SurfaceState.Message, Mode=OneWay}"
+                                     PrimaryActionLabel="{x:Bind ViewModel.SurfaceState.ActionLabel, Mode=OneWay}"
+                                     PrimaryActionVisibility="{x:Bind ViewModel.SurfaceState.ActionVisibility, Mode=OneWay}"
+                                     Visibility="{x:Bind ViewModel.SurfaceState.EmptyStateVisibility, Mode=OneWay}"
+                                     PrimaryActionClick="OpenSources_Click" />
+            <controls:ErrorStateView IconGlyph="{x:Bind ViewModel.SurfaceState.Glyph, Mode=OneWay}"
+                                     Title="{x:Bind ViewModel.SurfaceState.Title, Mode=OneWay}"
+                                     Message="{x:Bind ViewModel.SurfaceState.Message, Mode=OneWay}"
+                                     RetryActionLabel="Retry"
+                                     DiagnosticsActionLabel="{x:Bind ViewModel.SurfaceState.ActionLabel, Mode=OneWay}"
+                                     DiagnosticsActionVisibility="{x:Bind ViewModel.SurfaceState.DiagnosticsActionVisibility, Mode=OneWay}"
+                                     Visibility="{x:Bind ViewModel.SurfaceState.ErrorStateVisibility, Mode=OneWay}"
+                                     RetryClick="RetrySurface_Click"
+                                     DiagnosticsClick="OpenSources_Click" />
+        </Grid>
     </Grid>
 </Page>

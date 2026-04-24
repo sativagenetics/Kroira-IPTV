@@ -706,7 +706,8 @@
                             HorizontalAlignment="Right"
                             VerticalAlignment="Center"
                             Click="LiveTv_Click"
-                            Style="{StaticResource KroiraGhostButtonStyle}" />
+                            Style="{StaticResource KroiraGhostButtonStyle}"
+                            AutomationProperties.Name="Open all live TV" />
                 </Grid>
 
                 <controls:Rail x:Name="LiveSportsNowRail"
@@ -737,22 +738,10 @@
                                ItemSpacing="16"
                                ScrollAmount="404" />
 
-                <Border Visibility="{x:Bind ViewModel.ContinueEmptyVisibility, Mode=OneWay}"
-                        Background="#A00B0E13"
-                        BorderBrush="{StaticResource KroiraGlassBorderBrush}"
-                        BorderThickness="1"
-                        CornerRadius="12"
-                        Padding="24,20">
-                    <StackPanel Spacing="8" MaxWidth="500">
-                        <FontIcon Glyph="&#xE768;"
-                                  FontSize="18"
-                                  Foreground="{StaticResource KroiraTextTertiaryBrush}" />
-                        <TextBlock Text="Nothing to resume yet"
-                                   Style="{StaticResource KroiraTitleStyle}" />
-                        <TextBlock Text="Start watching a channel, movie, or episode and it will appear here."
-                                   Style="{StaticResource KroiraBodyStyle}" />
-                    </StackPanel>
-                </Border>
+                <controls:EmptyStateView IconGlyph="&#xE768;"
+                                         Title="Nothing to resume yet"
+                                         Message="Start watching a channel, movie, or episode and it will appear here."
+                                         Visibility="{x:Bind ViewModel.ContinueEmptyVisibility, Mode=OneWay}" />
             </StackPanel>
 
             <StackPanel Spacing="16" Visibility="{x:Bind ViewModel.PopularItemsVisibility, Mode=OneWay}">
@@ -764,7 +753,8 @@
                             HorizontalAlignment="Right"
                             VerticalAlignment="Center"
                             Click="BrowseCatalog_Click"
-                            Style="{StaticResource KroiraGhostButtonStyle}" />
+                            Style="{StaticResource KroiraGhostButtonStyle}"
+                            AutomationProperties.Name="Browse catalog" />
                 </Grid>
                 <controls:Rail x:Name="RecommendedRail"
                                ItemsSource="{x:Bind ViewModel.PopularItems, Mode=OneWay}"
@@ -834,38 +824,29 @@
         </StackPanel>
         </ScrollViewer>
 
-        <Border Visibility="{x:Bind ViewModel.SurfaceState.StateVisibility, Mode=OneWay}"
-                HorizontalAlignment="Center"
-                VerticalAlignment="Center"
-                MaxWidth="560"
-                Margin="32"
-                Background="#76070B12"
-                BorderBrush="{StaticResource KroiraGlassBorderBrush}"
-                BorderThickness="1"
-                CornerRadius="16"
-                Padding="28,24">
-            <StackPanel Spacing="12">
-                <Grid Width="32" Height="32">
-                    <ProgressRing IsActive="True"
-                                  Width="28"
-                                  Height="28"
-                                  Visibility="{x:Bind ViewModel.SurfaceState.ProgressVisibility, Mode=OneWay}" />
-                    <FontIcon Glyph="{x:Bind ViewModel.SurfaceState.Glyph, Mode=OneWay}"
-                              FontSize="28"
-                              Foreground="{StaticResource KroiraTextTertiaryBrush}"
-                              Visibility="{x:Bind ViewModel.SurfaceState.IconVisibility, Mode=OneWay}" />
-                </Grid>
-                <TextBlock Text="{x:Bind ViewModel.SurfaceState.Title, Mode=OneWay}"
-                           Style="{StaticResource KroiraSectionTitleStyle}" />
-                <TextBlock Text="{x:Bind ViewModel.SurfaceState.Message, Mode=OneWay}"
-                           Style="{StaticResource KroiraBodyStyle}"
-                           TextWrapping="Wrap" />
-                <Button Content="{x:Bind ViewModel.SurfaceState.ActionLabel, Mode=OneWay}"
-                        Click="OpenSources_Click"
-                        Visibility="{x:Bind ViewModel.SurfaceState.ActionVisibility, Mode=OneWay}"
-                        Style="{StaticResource KroiraPrimaryButtonStyle}"
-                        HorizontalAlignment="Left" />
-            </StackPanel>
-        </Border>
+        <Grid Visibility="{x:Bind ViewModel.SurfaceState.StateVisibility, Mode=OneWay}"
+              HorizontalAlignment="Center"
+              VerticalAlignment="Center"
+              Margin="32">
+            <controls:LoadingStateView Title="{x:Bind ViewModel.SurfaceState.Title, Mode=OneWay}"
+                                       Message="{x:Bind ViewModel.SurfaceState.Message, Mode=OneWay}"
+                                       Visibility="{x:Bind ViewModel.SurfaceState.LoadingStateVisibility, Mode=OneWay}" />
+            <controls:EmptyStateView IconGlyph="{x:Bind ViewModel.SurfaceState.Glyph, Mode=OneWay}"
+                                     Title="{x:Bind ViewModel.SurfaceState.Title, Mode=OneWay}"
+                                     Message="{x:Bind ViewModel.SurfaceState.Message, Mode=OneWay}"
+                                     PrimaryActionLabel="{x:Bind ViewModel.SurfaceState.ActionLabel, Mode=OneWay}"
+                                     PrimaryActionVisibility="{x:Bind ViewModel.SurfaceState.ActionVisibility, Mode=OneWay}"
+                                     Visibility="{x:Bind ViewModel.SurfaceState.EmptyStateVisibility, Mode=OneWay}"
+                                     PrimaryActionClick="OpenSources_Click" />
+            <controls:ErrorStateView IconGlyph="{x:Bind ViewModel.SurfaceState.Glyph, Mode=OneWay}"
+                                     Title="{x:Bind ViewModel.SurfaceState.Title, Mode=OneWay}"
+                                     Message="{x:Bind ViewModel.SurfaceState.Message, Mode=OneWay}"
+                                     RetryActionLabel="Retry"
+                                     DiagnosticsActionLabel="{x:Bind ViewModel.SurfaceState.ActionLabel, Mode=OneWay}"
+                                     DiagnosticsActionVisibility="{x:Bind ViewModel.SurfaceState.DiagnosticsActionVisibility, Mode=OneWay}"
+                                     Visibility="{x:Bind ViewModel.SurfaceState.ErrorStateVisibility, Mode=OneWay}"
+                                     RetryClick="RetrySurface_Click"
+                                     DiagnosticsClick="OpenSources_Click" />
+        </Grid>
     </Grid>
 </Page>

@@ -98,6 +98,11 @@ namespace Kroira.App.Views
             Frame.Navigate(typeof(SourceListPage));
         }
 
+        private void RetrySurface_Click(object sender, RoutedEventArgs e)
+        {
+            _ = ViewModel.LoadSeriesCommand.ExecuteAsync(null);
+        }
+
         private void SeriesPage_Loaded(object sender, RoutedEventArgs e)
         {
             QueueRestoreCategorySelection("page-loaded");
