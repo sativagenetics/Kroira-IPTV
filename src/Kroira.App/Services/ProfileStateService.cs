@@ -124,6 +124,7 @@ namespace Kroira.App.Services
         Task<AppProfile> GetActiveProfileAsync(AppDbContext db);
         Task<int> GetActiveProfileIdAsync(AppDbContext db);
         Task<AppProfile> CreateProfileAsync(AppDbContext db, string name, bool isKidsProfile);
+        Task<bool> DeleteProfileAsync(AppDbContext db, int profileId);
         Task RenameProfileAsync(AppDbContext db, int profileId, string name);
         Task SwitchProfileAsync(AppDbContext db, int profileId);
         Task<ParentalControlSetting> GetParentalControlsAsync(AppDbContext db, int profileId);
@@ -213,6 +214,62 @@ namespace Kroira.App.Services
 
             OnProfileConfigurationChanged(profile);
             return profile;
+        }
+
+        public async Task<bool> DeleteProfileAsync(AppDbContext db, int profileId)
+        {
+            await EnsureDefaultProfileExistsAsync(db);
+            var profiles = await db.AppProfiles
+                .OrderBy(profile => profile.CreatedAtUtc)
+                .ThenBy(profile => profile.Id)
+                .ToListAsync();
+            if (profiles.Count <= 1)
+            {
+                return false;
+            }
+
+            var profile = profiles.FirstOrDefault(item => item.Id == profileId);
+            if (profile == null)
+            {
+                return false;
+            }
+
+            var fallback = profiles.FirstOrDefault(item => item.Id != profileId);
+            if (fallback == null)
+            {
+                return false;
+            }
+
+            var activeProfileId = await GetActiveProfileIdAsync(db);
+            if (activeProfileId == profileId)
+            {
+                await SaveActiveProfileIdAsync(db, fallback.Id);
+            }
+
+            var controls = await db.ParentalControlSettings
+                .Where(setting => setting.ProfileId == profileId)
+                .ToListAsync();
+            if (controls.Count > 0)
+            {
+                db.ParentalControlSettings.RemoveRange(controls);
+            }
+
+            db.AppProfiles.Remove(profile);
+            await db.SaveChangesAsync();
+
+            lock (_stateLock)
+            {
+                _unlockedProfiles.Remove(profileId);
+            }
+
+            OnProfileConfigurationChanged(fallback);
+            if (activeProfileId == profileId)
+            {
+                RelockProfile(fallback.Id);
+                ActiveProfileChanged?.Invoke(this, new ProfileStateChangedEventArgs(fallback.Id, fallback.Name));
+            }
+
+            return true;
         }
 
         public async Task RenameProfileAsync(AppDbContext db, int profileId, string name)

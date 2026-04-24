@@ -56,6 +56,7 @@ namespace Kroira.App.ViewModels
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(ProfileSwitcherVisibility))]
         [NotifyPropertyChangedFor(nameof(ProfileCountText))]
+        [NotifyPropertyChangedFor(nameof(CanDeleteSelectedProfile))]
         private AppProfile? _selectedProfile;
 
         [ObservableProperty]
@@ -80,6 +81,10 @@ namespace Kroira.App.ViewModels
         private string _accessStatusText = "All imported content is visible for this profile.";
 
         [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(ProfileActionStatusVisibility))]
+        private string _profileActionStatusText = string.Empty;
+
+        [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(SetPinVisibility))]
         [NotifyPropertyChangedFor(nameof(ClearPinVisibility))]
         [NotifyPropertyChangedFor(nameof(UnlockVisibility))]
@@ -101,8 +106,10 @@ namespace Kroira.App.ViewModels
         public Visibility SourceLocksEmptyVisibility => SourceLocks.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
         public Visibility CategoryLocksListVisibility => CategoryLocks.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
         public Visibility CategoryLocksEmptyVisibility => CategoryLocks.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+        public Visibility ProfileActionStatusVisibility => string.IsNullOrWhiteSpace(ProfileActionStatusText) ? Visibility.Collapsed : Visibility.Visible;
         public string SourceLocksSummaryText => SourceLocks.Count == 1 ? "1 source can be restricted." : $"{SourceLocks.Count} sources can be restricted.";
         public string CategoryLocksSummaryText => CategoryLocks.Count == 1 ? "1 category can be restricted." : $"{CategoryLocks.Count} categories can be restricted.";
+        public bool CanDeleteSelectedProfile => SelectedProfile != null && Profiles.Count > 1;
         public bool CanAddProfiles => _entitlementService.IsFeatureEnabled(EntitlementFeatureKeys.ProfilesMultiple) &&
                                       (!_profileLimit.HasValue || Profiles.Count < _profileLimit.Value);
         public bool CanManageParentalControls => _entitlementService.IsFeatureEnabled(EntitlementFeatureKeys.ProfilesParentalControls);
@@ -161,14 +168,30 @@ namespace Kroira.App.ViewModels
                     Profiles.Add(profile);
                 }
 
-                SelectedProfile = await profileService.GetActiveProfileAsync(db);
-                await LoadSelectedProfileStateAsync(db, profileService, SelectedProfile);
+                var activeProfile = await profileService.GetActiveProfileAsync(db);
+                var selectedProfile = ResolveSelectableProfile(activeProfile);
+                SelectedProfile = selectedProfile;
+                await LoadSelectedProfileStateAsync(db, profileService, selectedProfile);
+            }
+            catch (Exception ex)
+            {
+                RuntimeEventLogger.Log("PROFILE", ex, "load failed");
+                ProfileActionStatusText = $"Profile load failed: {ex.Message}";
+                SourceLocks.Clear();
+                CategoryLocks.Clear();
+                OnPropertyChanged(nameof(SourceLocksListVisibility));
+                OnPropertyChanged(nameof(SourceLocksEmptyVisibility));
+                OnPropertyChanged(nameof(SourceLocksSummaryText));
+                OnPropertyChanged(nameof(CategoryLocksListVisibility));
+                OnPropertyChanged(nameof(CategoryLocksEmptyVisibility));
+                OnPropertyChanged(nameof(CategoryLocksSummaryText));
             }
             finally
             {
                 _isLoading = false;
                 OnPropertyChanged(nameof(ProfileSwitcherVisibility));
                 OnPropertyChanged(nameof(ProfileCountText));
+                OnPropertyChanged(nameof(CanDeleteSelectedProfile));
                 OnPropertyChanged(nameof(CanAddProfiles));
                 OnPropertyChanged(nameof(CanManageParentalControls));
             }
@@ -200,6 +223,40 @@ namespace Kroira.App.ViewModels
 
             await profileService.RenameProfileAsync(db, SelectedProfile.Id, EditableProfileName);
             await LoadAsync();
+        }
+
+        [RelayCommand]
+        public async Task DeleteSelectedProfileAsync()
+        {
+            if (SelectedProfile == null)
+            {
+                return;
+            }
+
+            if (!CanDeleteSelectedProfile)
+            {
+                ProfileActionStatusText = "At least one profile must remain.";
+                return;
+            }
+
+            var deletedProfileName = SelectedProfile.Name;
+            try
+            {
+                using var scope = _serviceProvider.CreateScope();
+                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                var profileService = scope.ServiceProvider.GetRequiredService<IProfileStateService>();
+
+                var deleted = await profileService.DeleteProfileAsync(db, SelectedProfile.Id);
+                ProfileActionStatusText = deleted
+                    ? $"Deleted profile {deletedProfileName}."
+                    : "This profile could not be deleted. At least one profile must remain.";
+                await LoadAsync();
+            }
+            catch (Exception ex)
+            {
+                RuntimeEventLogger.Log("PROFILE", ex, $"delete failed profile_id={SelectedProfile.Id}");
+                ProfileActionStatusText = $"Profile deletion failed: {ex.Message}";
+            }
         }
 
         [RelayCommand]
@@ -316,15 +373,16 @@ namespace Kroira.App.ViewModels
             _isLoading = true;
             try
             {
-                SelectedProfile = profile;
-                EditableProfileName = profile.Name;
+                var selectedProfile = ResolveSelectableProfile(profile);
+                SelectedProfile = selectedProfile;
+                EditableProfileName = selectedProfile.Name;
 
-                var controls = await profileService.GetParentalControlsAsync(db, profile.Id);
+                var controls = await profileService.GetParentalControlsAsync(db, selectedProfile.Id);
                 var access = await profileService.GetAccessSnapshotAsync(db);
 
                 HasPin = !string.IsNullOrWhiteSpace(controls.PinHash);
                 IsLockedContentUnlocked = access.IsUnlocked;
-                IsKidsSafeMode = profile.IsKidsProfile || controls.IsKidsSafeMode;
+                IsKidsSafeMode = selectedProfile.IsKidsProfile || controls.IsKidsSafeMode;
                 HideLockedContent = controls.HideLockedContent;
                 PinStatusText = HasPin
                     ? IsLockedContentUnlocked
@@ -332,14 +390,19 @@ namespace Kroira.App.ViewModels
                         : "PIN set. Enter it to reveal locked content for this session."
                     : "No PIN set.";
 
-                await BuildSourceLocksAsync(db, profileService, profile.Id, access);
-                await BuildCategoryLocksAsync(db, profileService, profile.Id, access);
+                await BuildSourceLocksAsync(db, profileService, selectedProfile.Id, access);
+                await BuildCategoryLocksAsync(db, profileService, selectedProfile.Id, access);
                 AccessStatusText = BuildAccessStatus(access);
             }
             finally
             {
                 _isLoading = false;
             }
+        }
+
+        private AppProfile ResolveSelectableProfile(AppProfile profile)
+        {
+            return Profiles.FirstOrDefault(item => item.Id == profile.Id) ?? profile;
         }
 
         private async Task BuildSourceLocksAsync(AppDbContext db, IProfileStateService profileService, int profileId, ProfileAccessSnapshot access)
@@ -359,7 +422,7 @@ namespace Kroira.App.ViewModels
                     access.LockedSourceIds.Contains(source.Id),
                     (option, isLocked) =>
                     {
-                        var pending = SaveSourceLocksAsync(profileService, profileId);
+                        _ = SaveSourceLocksAsync(profileService, profileId);
                     }));
             }
 
@@ -419,7 +482,7 @@ namespace Kroira.App.ViewModels
                     access.LockedCategoryKeys.Contains(key),
                     (option, isLocked) =>
                     {
-                        var pending = SaveCategoryLocksAsync(profileService, profileId);
+                        _ = SaveCategoryLocksAsync(profileService, profileId);
                     }));
             }
         }
@@ -436,11 +499,20 @@ namespace Kroira.App.ViewModels
             {
                 using var scope = _serviceProvider.CreateScope();
                 var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-                await profileService.SetLockedSourceIdsAsync(
-                    db,
-                    profileId,
-                    SourceLocks.Where(option => option.IsLocked).Select(option => int.Parse(option.Key)));
-                AccessStatusText = BuildAccessStatus(await profileService.GetAccessSnapshotAsync(db));
+                try
+                {
+                    await profileService.SetLockedSourceIdsAsync(
+                        db,
+                        profileId,
+                        SourceLocks.Where(option => option.IsLocked).Select(option => int.Parse(option.Key)));
+                    AccessStatusText = BuildAccessStatus(await profileService.GetAccessSnapshotAsync(db));
+                    ProfileActionStatusText = string.Empty;
+                }
+                catch (Exception ex)
+                {
+                    RuntimeEventLogger.Log("PROFILE", ex, $"source lock save failed profile_id={profileId}");
+                    ProfileActionStatusText = $"Source lock update failed: {ex.Message}";
+                }
             }
             finally
             {
@@ -460,11 +532,20 @@ namespace Kroira.App.ViewModels
             {
                 using var scope = _serviceProvider.CreateScope();
                 var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-                await profileService.SetLockedCategoryKeysAsync(
-                    db,
-                    profileId,
-                    CategoryLocks.Where(option => option.IsLocked).Select(option => option.Key));
-                AccessStatusText = BuildAccessStatus(await profileService.GetAccessSnapshotAsync(db));
+                try
+                {
+                    await profileService.SetLockedCategoryKeysAsync(
+                        db,
+                        profileId,
+                        CategoryLocks.Where(option => option.IsLocked).Select(option => option.Key));
+                    AccessStatusText = BuildAccessStatus(await profileService.GetAccessSnapshotAsync(db));
+                    ProfileActionStatusText = string.Empty;
+                }
+                catch (Exception ex)
+                {
+                    RuntimeEventLogger.Log("PROFILE", ex, $"category lock save failed profile_id={profileId}");
+                    ProfileActionStatusText = $"Category lock update failed: {ex.Message}";
+                }
             }
             finally
             {

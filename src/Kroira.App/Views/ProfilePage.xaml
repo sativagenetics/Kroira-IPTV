@@ -90,7 +90,15 @@
                                 <Button Content="Add kids profile"
                                         Command="{x:Bind ViewModel.AddKidsProfileCommand}"
                                         IsEnabled="{x:Bind ViewModel.CanAddProfiles, Mode=OneWay}" />
+                                <Button Content="Delete profile"
+                                        Click="DeleteProfile_Click"
+                                        IsEnabled="{x:Bind ViewModel.CanDeleteSelectedProfile, Mode=OneWay}" />
                             </StackPanel>
+                            <TextBlock Text="{x:Bind ViewModel.ProfileActionStatusText, Mode=OneWay}"
+                                       Visibility="{x:Bind ViewModel.ProfileActionStatusVisibility, Mode=OneWay}"
+                                       Style="{StaticResource KroiraBodyStyle}"
+                                       Foreground="{StaticResource KroiraTextSecondaryBrush}"
+                                       TextWrapping="Wrap" />
                         </StackPanel>
                     </Border>
 
@@ -168,30 +176,42 @@
                             <TextBlock Text="Locked sources" Style="{StaticResource KroiraSectionTitleStyle}" />
                             <TextBlock Text="{x:Bind ViewModel.SourceLocksSummaryText, Mode=OneWay}"
                                        Style="{StaticResource KroiraBodyStyle}" />
-                            <ItemsControl ItemsSource="{x:Bind ViewModel.SourceLocks, Mode=OneWay}"
-                                          IsEnabled="{x:Bind ViewModel.CanManageParentalControls, Mode=OneWay}"
-                                          Visibility="{x:Bind ViewModel.SourceLocksListVisibility, Mode=OneWay}">
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate x:DataType="viewModels:ProfileLockOptionViewModel">
-                                        <CheckBox IsChecked="{x:Bind IsLocked, Mode=TwoWay}"
-                                                  Margin="0,4,0,4">
-                                            <StackPanel>
-                                                <TextBlock Text="{x:Bind Label}" />
-                                                <TextBlock Text="{x:Bind Detail}"
-                                                           Foreground="{StaticResource KroiraTextTertiaryBrush}"
-                                                           FontSize="12" />
-                                            </StackPanel>
-                                        </CheckBox>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
+                            <Border MaxHeight="240"
+                                    Padding="10"
+                                    Background="{StaticResource KroiraSurfaceElevatedBrush}"
+                                    BorderBrush="{StaticResource KroiraChromeLineBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="12"
+                                    Visibility="{x:Bind ViewModel.SourceLocksListVisibility, Mode=OneWay}">
+                                <ScrollViewer VerticalScrollBarVisibility="Auto"
+                                              VerticalScrollMode="Auto"
+                                              HorizontalScrollBarVisibility="Disabled"
+                                              HorizontalScrollMode="Disabled">
+                                    <ItemsControl ItemsSource="{x:Bind ViewModel.SourceLocks, Mode=OneWay}"
+                                                  IsEnabled="{x:Bind ViewModel.CanManageParentalControls, Mode=OneWay}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate x:DataType="viewModels:ProfileLockOptionViewModel">
+                                                <CheckBox IsChecked="{x:Bind IsLocked, Mode=TwoWay}"
+                                                          Margin="0,4,0,4">
+                                                    <StackPanel>
+                                                        <TextBlock Text="{x:Bind Label}" />
+                                                        <TextBlock Text="{x:Bind Detail}"
+                                                                   Foreground="{StaticResource KroiraTextTertiaryBrush}"
+                                                                   FontSize="12" />
+                                                    </StackPanel>
+                                                </CheckBox>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </ScrollViewer>
+                            </Border>
                             <Border Visibility="{x:Bind ViewModel.SourceLocksEmptyVisibility, Mode=OneWay}"
                                     Padding="18"
                                     Background="{StaticResource KroiraSurfaceElevatedBrush}"
                                     BorderBrush="{StaticResource KroiraChromeLineBrush}"
                                     BorderThickness="1"
                                     CornerRadius="12">
-                                <TextBlock Text="Add a source before configuring source-level restrictions."
+                                <TextBlock Text="No sources available. Add a source first."
                                            Style="{StaticResource KroiraBodyStyle}"
                                            TextWrapping="Wrap" />
                             </Border>
