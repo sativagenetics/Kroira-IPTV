@@ -824,10 +824,10 @@ namespace Kroira.App.Services
                 var outcomes = new Dictionary<string, ChannelEpgMatchOutcome>(StringComparer.OrdinalIgnoreCase);
                 var assignedChannelIds = new HashSet<int>();
 
+                MatchUsingApprovedDecisions(orderedChannels, outcomes, assignedChannelIds);
                 MatchUsingExactIds(orderedChannels, outcomes, assignedChannelIds, _byProviderGuideId, ChannelEpgMatchSource.Provider, 97, "Provider guide id", respectReviewRejections: false);
                 MatchUsingNormalizedValues(orderedChannels, outcomes, assignedChannelIds);
                 MatchUsingTrustedAliasKeys(orderedChannels, outcomes, assignedChannelIds);
-                MatchUsingApprovedDecisions(orderedChannels, outcomes, assignedChannelIds);
                 MatchUsingExactIds(orderedChannels, outcomes, assignedChannelIds, _byPreviousGuideId, ChannelEpgMatchSource.Previous, 91, "Previous guide mapping", respectReviewRejections: true);
                 MatchUsingAliasKeys(orderedChannels, outcomes, assignedChannelIds);
                 if (orderedChannels.Count <= ExpensiveWeakMatchXmltvChannelLimit)

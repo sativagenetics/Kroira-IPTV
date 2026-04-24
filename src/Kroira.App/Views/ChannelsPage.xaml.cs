@@ -81,6 +81,11 @@ namespace Kroira.App.Views
             Frame.Navigate(typeof(SourceListPage));
         }
 
+        private void OpenGuide_Click(object sender, RoutedEventArgs e)
+        {
+            Frame.Navigate(typeof(EpgCenterPage));
+        }
+
         private void SearchBox_KeyDown(object sender, KeyRoutedEventArgs e)
         {
             if (e.Key == VirtualKey.Down || e.Key == VirtualKey.Enter)

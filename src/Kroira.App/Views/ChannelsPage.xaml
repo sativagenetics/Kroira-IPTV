@@ -177,6 +177,9 @@
                                   IsChecked="{x:Bind ViewModel.FavoritesOnly, Mode=TwoWay}" />
                         <CheckBox Content="Guide matched"
                                   IsChecked="{x:Bind ViewModel.GuideMatchedOnly, Mode=TwoWay}" />
+                        <Button Content="Guide"
+                                Click="OpenGuide_Click"
+                                Style="{StaticResource LiveQuickOverlayButtonStyle}" />
                         <Button Content="Clear recent"
                                 Click="ClearRecentHistory_Click"
                                 Style="{StaticResource LiveQuickOverlayButtonStyle}"

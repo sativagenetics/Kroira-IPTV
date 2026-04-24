@@ -318,6 +318,8 @@ namespace Kroira.App
             services.AddSingleton<ICatalogSurfaceCountService, CatalogSurfaceCountService>();
             services.AddSingleton<IHomeRecommendationService, HomeRecommendationService>();
             services.AddSingleton<ILiveGuideService, LiveGuideService>();
+            services.AddSingleton<IEpgGuideTimelineService, EpgGuideTimelineService>();
+            services.AddSingleton<IEpgManualMatchService, EpgManualMatchService>();
             services.AddSingleton<IEpgCoverageReportService, EpgCoverageReportService>();
             services.AddSingleton<ISurfaceStateService, SurfaceStateService>();
             services.AddSingleton<IBackupPackageService, BackupPackageService>();

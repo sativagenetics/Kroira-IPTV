@@ -32,6 +32,11 @@ namespace Kroira.App.Views
             this.Frame.Navigate(typeof(SourceOnboardingPage));
         }
 
+        private void OpenEpgCenter_Click(object sender, RoutedEventArgs e)
+        {
+            this.Frame.Navigate(typeof(EpgCenterPage));
+        }
+
         private void DeleteSource_Click(object sender, RoutedEventArgs e)
         {
             if (sender is FrameworkElement { Tag: int id })

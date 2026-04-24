@@ -235,6 +235,7 @@ namespace Kroira.App.ViewModels
         partial void OnSelectedSourceOptionChanged(EpgCenterSourceOption? value)
         {
             _ = RefreshPublicGuidePresetPreviewAsync();
+            _ = ReloadGuideSurfacesAsync();
         }
 
         partial void OnSelectedPublicGuidePresetChanged(EpgPublicGuidePreset? value)
@@ -599,6 +600,7 @@ namespace Kroira.App.ViewModels
             var reportService = scope.ServiceProvider.GetRequiredService<IEpgCoverageReportService>();
             var report = await reportService.BuildReportAsync(db);
             ApplyReport(report);
+            await ReloadGuideSurfacesAsync();
         }
 
         private async Task<bool> SaveMappingDecisionAsync(EpgChannelCoverageViewModel item, EpgMappingDecisionState decisionState)
