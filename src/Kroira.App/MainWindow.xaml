@@ -92,6 +92,11 @@
                         <FontIcon Glyph="&#xE714;" FontSize="16" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
+                <NavigationViewItem Content="Guide" Tag="Guide" Margin="0,2" Height="42">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE787;" FontSize="16" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
                 <NavigationViewItem Content="Movies" Tag="Movies" Margin="0,2" Height="42">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE8B2;" FontSize="16" />

@@ -115,6 +115,11 @@ namespace Kroira.App.Data
                 .IsRequired()
                 .HasMaxLength(600);
 
+            modelBuilder.Entity<SourceCredential>()
+                .Property(e => e.FallbackEpgUrls)
+                .IsRequired()
+                .HasMaxLength(4000);
+
             modelBuilder.Entity<SourceSyncState>()
                 .HasOne<SourceProfile>()
                 .WithOne()
@@ -608,6 +613,16 @@ namespace Kroira.App.Data
                 .WithOne()
                 .HasForeignKey<EpgSyncLog>(e => e.SourceProfileId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<EpgSyncLog>()
+                .Property(e => e.GuideSourceStatusJson)
+                .IsRequired()
+                .HasMaxLength(8000);
+
+            modelBuilder.Entity<EpgSyncLog>()
+                .Property(e => e.GuideWarningSummary)
+                .IsRequired()
+                .HasMaxLength(800);
 
             modelBuilder.Entity<EpgProgram>()
                 .HasIndex(e => new { e.ChannelId, e.StartTimeUtc })

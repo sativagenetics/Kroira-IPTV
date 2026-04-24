@@ -190,6 +190,7 @@ namespace Kroira.App.Data
             EnsureColumn(conn, "EpgPrograms", "Subtitle", "TEXT");
             EnsureColumn(conn, "EpgPrograms", "Category", "TEXT");
             EnsureColumn(conn, "SourceCredentials", "DetectedEpgUrl", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "SourceCredentials", "FallbackEpgUrls", "TEXT NOT NULL DEFAULT ''");
             EnsureColumn(conn, "SourceCredentials", "EpgMode", "INTEGER NOT NULL DEFAULT 1");
             EnsureColumn(conn, "SourceCredentials", "ProxyScope", "INTEGER NOT NULL DEFAULT 0");
             EnsureColumn(conn, "SourceCredentials", "ProxyUrl", "TEXT NOT NULL DEFAULT ''");
@@ -441,7 +442,13 @@ namespace Kroira.App.Data
             EnsureColumn(conn, "EpgSyncLogs", "CurrentCoverageCount", "INTEGER NOT NULL DEFAULT 0");
             EnsureColumn(conn, "EpgSyncLogs", "NextCoverageCount", "INTEGER NOT NULL DEFAULT 0");
             EnsureColumn(conn, "EpgSyncLogs", "TotalLiveChannelCount", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "EpgSyncLogs", "XmltvChannelCount", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "EpgSyncLogs", "ExactMatchCount", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "EpgSyncLogs", "NormalizedMatchCount", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(conn, "EpgSyncLogs", "WeakMatchCount", "INTEGER NOT NULL DEFAULT 0");
             EnsureColumn(conn, "EpgSyncLogs", "MatchBreakdown", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "EpgSyncLogs", "GuideSourceStatusJson", "TEXT NOT NULL DEFAULT ''");
+            EnsureColumn(conn, "EpgSyncLogs", "GuideWarningSummary", "TEXT NOT NULL DEFAULT ''");
             BackfillLegacyEpgSyncLogColumns(conn);
 
             EnsureIndex(conn, "IX_Movies_MetadataUpdatedAt", "Movies", "MetadataUpdatedAt");
@@ -767,7 +774,13 @@ namespace Kroira.App.Data
                     ""NextCoverageCount""    INTEGER NOT NULL DEFAULT 0,
                     ""TotalLiveChannelCount"" INTEGER NOT NULL DEFAULT 0,
                     ""ProgrammeCount""      INTEGER NOT NULL DEFAULT 0,
+                    ""XmltvChannelCount""   INTEGER NOT NULL DEFAULT 0,
+                    ""ExactMatchCount""     INTEGER NOT NULL DEFAULT 0,
+                    ""NormalizedMatchCount"" INTEGER NOT NULL DEFAULT 0,
+                    ""WeakMatchCount""      INTEGER NOT NULL DEFAULT 0,
                     ""MatchBreakdown""      TEXT    NOT NULL DEFAULT '',
+                    ""GuideSourceStatusJson"" TEXT  NOT NULL DEFAULT '',
+                    ""GuideWarningSummary"" TEXT    NOT NULL DEFAULT '',
                     ""FailureReason""       TEXT    NOT NULL DEFAULT '',
                     CONSTRAINT ""FK_EpgSyncLogs_SourceProfiles_SourceProfileId""
                         FOREIGN KEY (""SourceProfileId"")

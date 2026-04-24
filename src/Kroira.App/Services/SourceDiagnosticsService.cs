@@ -107,6 +107,7 @@ namespace Kroira.App.Services
                     SourceProfileId = credential.SourceProfileId,
                     DetectedEpgUrl = credential.DetectedEpgUrl,
                     ManualEpgUrl = credential.EpgUrl,
+                    FallbackEpgUrls = credential.FallbackEpgUrls,
                     EpgMode = credential.EpgMode,
                     ProxyScope = credential.ProxyScope,
                     ProxyUrl = credential.ProxyUrl,
@@ -377,15 +378,16 @@ namespace Kroira.App.Services
                 var activeMode = credential?.EpgMode ?? EpgActiveMode.Detected;
                 var detectedEpgUrl = credential?.DetectedEpgUrl ?? string.Empty;
                 var manualEpgUrl = credential?.ManualEpgUrl ?? string.Empty;
+                var fallbackEpgUrls = credential?.FallbackEpgUrls ?? string.Empty;
                 var activeXmltvUrl = ResolveActiveXmltvUrl(activeMode, detectedEpgUrl, manualEpgUrl, epgLog);
-                var status = ResolveEpgStatus(sourceType, liveCount, activeMode, detectedEpgUrl, manualEpgUrl, epgLog);
+                var status = ResolveEpgStatus(sourceType, liveCount, activeMode, detectedEpgUrl, manualEpgUrl, fallbackEpgUrls, epgLog);
                 var resultCode = epgLog?.ResultCode ?? EpgSyncResultCode.None;
                 var failureStage = epgLog?.FailureStage ?? EpgFailureStage.None;
                 var importFailure = syncState != null && syncState.HttpStatusCode >= 400;
                 var hasCatalog = liveCount + movieCount + seriesCount > 0;
                 var hasPersistedGuideData = matchedCount > 0 || (epgLog?.ProgrammeCount ?? 0) > 0;
                 var autoRefreshState = syncState?.AutoRefreshState ?? SourceAutoRefreshState.Idle;
-                var guideWarnings = BuildGuideWarnings(sourceType, liveCount, activeMode, status, resultCode, matchedCount, unmatchedCount, currentCoverageCount, nextCoverageCount, !string.IsNullOrWhiteSpace(detectedEpgUrl), !string.IsNullOrWhiteSpace(manualEpgUrl), hasPersistedGuideData);
+                var guideWarnings = BuildGuideWarnings(sourceType, liveCount, activeMode, status, resultCode, matchedCount, unmatchedCount, currentCoverageCount, nextCoverageCount, !string.IsNullOrWhiteSpace(detectedEpgUrl), !string.IsNullOrWhiteSpace(manualEpgUrl), !string.IsNullOrWhiteSpace(fallbackEpgUrls), hasPersistedGuideData);
                 var importWarnings = BuildImportWarnings(hasCatalog, liveCount, sourceType, syncState);
                 var failureSummary = BuildFailureSummary(syncState, status, resultCode, failureStage, epgLog);
                 var healthLabel = healthReport != null
@@ -407,7 +409,8 @@ namespace Kroira.App.Services
                     HasDetectedEpgUrl = !string.IsNullOrWhiteSpace(detectedEpgUrl),
                     HasManualEpgUrl = !string.IsNullOrWhiteSpace(manualEpgUrl),
                     HasActiveXmltvUrl = !string.IsNullOrWhiteSpace(activeXmltvUrl),
-                    HasEpgUrl = !string.IsNullOrWhiteSpace(detectedEpgUrl) || !string.IsNullOrWhiteSpace(manualEpgUrl) || !string.IsNullOrWhiteSpace(activeXmltvUrl),
+                    HasFallbackEpgUrls = !string.IsNullOrWhiteSpace(fallbackEpgUrls),
+                    HasEpgUrl = !string.IsNullOrWhiteSpace(detectedEpgUrl) || !string.IsNullOrWhiteSpace(manualEpgUrl) || !string.IsNullOrWhiteSpace(fallbackEpgUrls) || !string.IsNullOrWhiteSpace(activeXmltvUrl),
                     HasPersistedGuideData = hasPersistedGuideData,
                     MatchedLiveChannelCount = matchedCount,
                     UnmatchedLiveChannelCount = unmatchedCount,
@@ -428,7 +431,7 @@ namespace Kroira.App.Services
                     EpgCoverageText = BuildCoverageSummary(liveCount, activeMode, status, resultCode, matchedCount, unmatchedCount, currentCoverageCount, nextCoverageCount, hasPersistedGuideData),
                     EpgStatusText = BuildGuideStatusLabel(status, resultCode, activeMode),
                     EpgStatusSummary = BuildGuideStatusSummary(status, resultCode, failureStage, activeMode, liveCount, matchedCount, unmatchedCount, currentCoverageCount, nextCoverageCount, epgLog),
-                    EpgUrlSummaryText = BuildUrlSummary(sourceType, activeMode, detectedEpgUrl, manualEpgUrl, activeXmltvUrl),
+                    EpgUrlSummaryText = BuildUrlSummary(sourceType, activeMode, detectedEpgUrl, manualEpgUrl, fallbackEpgUrls, activeXmltvUrl),
                     MatchBreakdownText = FormatMatchBreakdown(epgLog?.MatchBreakdown, matchedCount, unmatchedCount, currentCoverageCount, nextCoverageCount, liveCount),
                     WarningSummaryText = warningSummary,
                     FailureSummaryText = failureSummary,
@@ -444,6 +447,7 @@ namespace Kroira.App.Services
                     ActiveEpgModeText = BuildModeLabel(activeMode),
                     DetectedEpgUrl = detectedEpgUrl,
                     ManualEpgUrl = manualEpgUrl,
+                    FallbackEpgUrls = fallbackEpgUrls,
                     ActiveXmltvUrl = activeXmltvUrl,
                     AutoRefreshState = autoRefreshState,
                     AutoRefreshStatusText = BuildAutoRefreshStatusLabel(autoRefreshState),
@@ -536,7 +540,7 @@ namespace Kroira.App.Services
             }
         }
 
-        private static EpgStatus ResolveEpgStatus(SourceType sourceType, int liveCount, EpgActiveMode activeMode, string detectedEpgUrl, string manualEpgUrl, EpgSyncLog? epgLog)
+        private static EpgStatus ResolveEpgStatus(SourceType sourceType, int liveCount, EpgActiveMode activeMode, string detectedEpgUrl, string manualEpgUrl, string fallbackEpgUrls, EpgSyncLog? epgLog)
         {
             if (epgLog != null && epgLog.Status != EpgStatus.Unknown)
             {
@@ -560,7 +564,7 @@ namespace Kroira.App.Services
                     : EpgStatus.Unknown;
             }
 
-            if (sourceType == SourceType.M3U && liveCount > 0 && string.IsNullOrWhiteSpace(detectedEpgUrl) && string.IsNullOrWhiteSpace(manualEpgUrl))
+            if (sourceType == SourceType.M3U && liveCount > 0 && string.IsNullOrWhiteSpace(detectedEpgUrl) && string.IsNullOrWhiteSpace(manualEpgUrl) && string.IsNullOrWhiteSpace(fallbackEpgUrls))
             {
                 return EpgStatus.UnavailableNoXmltv;
             }
@@ -607,7 +611,7 @@ namespace Kroira.App.Services
             return warnings;
         }
 
-        private static List<string> BuildGuideWarnings(SourceType sourceType, int liveCount, EpgActiveMode activeMode, EpgStatus status, EpgSyncResultCode resultCode, int matchedCount, int unmatchedCount, int currentCoverageCount, int nextCoverageCount, bool hasDetectedEpgUrl, bool hasManualEpgUrl, bool hasPersistedGuideData)
+        private static List<string> BuildGuideWarnings(SourceType sourceType, int liveCount, EpgActiveMode activeMode, EpgStatus status, EpgSyncResultCode resultCode, int matchedCount, int unmatchedCount, int currentCoverageCount, int nextCoverageCount, bool hasDetectedEpgUrl, bool hasManualEpgUrl, bool hasFallbackEpgUrls, bool hasPersistedGuideData)
         {
             var warnings = new List<string>();
             if (liveCount == 0)
@@ -659,7 +663,7 @@ namespace Kroira.App.Services
                 warnings.Add("Matched guide data exists, but there is no current or next listing in the next 24 hours.");
             }
 
-            if (sourceType == SourceType.M3U && !hasDetectedEpgUrl && !hasManualEpgUrl)
+            if (sourceType == SourceType.M3U && !hasDetectedEpgUrl && !hasManualEpgUrl && !hasFallbackEpgUrls)
             {
                 warnings.Add("No XMLTV URL is currently available for this playlist.");
             }
@@ -832,14 +836,17 @@ namespace Kroira.App.Services
             return $"{matchedCount}/{liveCount} live channels matched. Current coverage {currentCoverageCount}/{liveCount}, next coverage {nextCoverageCount}/{liveCount}, unmatched {unmatchedCount}.";
         }
 
-        private static string BuildUrlSummary(SourceType sourceType, EpgActiveMode activeMode, string detectedEpgUrl, string manualEpgUrl, string activeXmltvUrl)
+        private static string BuildUrlSummary(SourceType sourceType, EpgActiveMode activeMode, string detectedEpgUrl, string manualEpgUrl, string fallbackEpgUrls, string activeXmltvUrl)
         {
+            var fallbackCount = CountGuideUrls(fallbackEpgUrls);
             if (activeMode == EpgActiveMode.None)
             {
                 return !string.IsNullOrWhiteSpace(detectedEpgUrl)
                     ? "Guide disabled. Detected XMLTV URL is preserved."
                     : !string.IsNullOrWhiteSpace(manualEpgUrl)
                         ? "Guide disabled. Manual XMLTV URL is preserved."
+                        : fallbackCount > 0
+                            ? $"Guide disabled. {fallbackCount:N0} fallback XMLTV URL{(fallbackCount == 1 ? string.Empty : "s")} preserved."
                         : "Guide disabled. No XMLTV URL is active.";
             }
 
@@ -850,6 +857,16 @@ namespace Kroira.App.Services
                     : !string.IsNullOrWhiteSpace(detectedEpgUrl)
                         ? $"Manual override active. Detected URL is preserved separately. Active: {Trim(activeXmltvUrl, 120)}"
                         : $"Manual override active. Active: {Trim(activeXmltvUrl, 120)}";
+            }
+
+            if (fallbackCount > 0 && !string.IsNullOrWhiteSpace(activeXmltvUrl))
+            {
+                return $"Detected XMLTV active with {fallbackCount:N0} fallback/enrichment URL{(fallbackCount == 1 ? string.Empty : "s")}. {Trim(activeXmltvUrl, 120)}";
+            }
+
+            if (fallbackCount > 0)
+            {
+                return $"Provider XMLTV will be tried first, then {fallbackCount:N0} fallback/enrichment URL{(fallbackCount == 1 ? string.Empty : "s")}.";
             }
 
             if (!string.IsNullOrWhiteSpace(activeXmltvUrl)) return $"Detected XMLTV active. {Trim(activeXmltvUrl, 120)}";
@@ -871,6 +888,19 @@ namespace Kroira.App.Services
             return liveCount == 0
                 ? string.Empty
                 : $"{matchedCount}/{liveCount} matched, {unmatchedCount} unmatched. Current {currentCoverageCount}/{liveCount}, next {nextCoverageCount}/{liveCount}.";
+        }
+
+        private static int CountGuideUrls(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return 0;
+            }
+
+            return value
+                .Split(new[] { '\r', '\n', ';' }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(item => item.Trim())
+                .Count(item => !string.IsNullOrWhiteSpace(item));
         }
 
         private static string BuildFailureSummary(SourceSyncState? syncState, EpgStatus status, EpgSyncResultCode resultCode, EpgFailureStage failureStage, EpgSyncLog? epgLog)
@@ -1083,6 +1113,7 @@ namespace Kroira.App.Services
             public int SourceProfileId { get; set; }
             public string DetectedEpgUrl { get; set; } = string.Empty;
             public string ManualEpgUrl { get; set; } = string.Empty;
+            public string FallbackEpgUrls { get; set; } = string.Empty;
             public EpgActiveMode EpgMode { get; set; } = EpgActiveMode.Detected;
             public SourceProxyScope ProxyScope { get; set; } = SourceProxyScope.Disabled;
             public string ProxyUrl { get; set; } = string.Empty;
@@ -1109,6 +1140,7 @@ namespace Kroira.App.Services
         public bool HasEpgUrl { get; set; }
         public bool HasDetectedEpgUrl { get; set; }
         public bool HasManualEpgUrl { get; set; }
+        public bool HasFallbackEpgUrls { get; set; }
         public bool HasActiveXmltvUrl { get; set; }
         public bool HasPersistedGuideData { get; set; }
         public int MatchedLiveChannelCount { get; set; }
@@ -1148,6 +1180,7 @@ namespace Kroira.App.Services
         public string ActiveEpgModeText { get; set; } = "Detected from provider";
         public string DetectedEpgUrl { get; set; } = string.Empty;
         public string ManualEpgUrl { get; set; } = string.Empty;
+        public string FallbackEpgUrls { get; set; } = string.Empty;
         public string ActiveXmltvUrl { get; set; } = string.Empty;
         public SourceAutoRefreshState AutoRefreshState { get; set; }
         public string AutoRefreshStatusText { get; set; } = "Auto standby";

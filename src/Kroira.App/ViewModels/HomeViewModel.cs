@@ -148,16 +148,6 @@ namespace Kroira.App.ViewModels
 
         private static readonly string StartupLogPath =
             Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Kroira", "startup-log.txt");
-        private static readonly string[] SportsPresentationSuffixes =
-        {
-            " hd",
-            " fhd",
-            " uhd",
-            " 4k",
-            " 1080p",
-            " 720p"
-        };
-
         private static readonly HashSet<HomeLoadSection> DefaultEnabledLoadSections = new()
         {
             HomeLoadSection.ResolveAccess,
@@ -1401,18 +1391,9 @@ namespace Kroira.App.ViewModels
         private static string BuildSportsPresentationKey(HomeSportsLiveItem item)
         {
             var key = ContentClassifier.NormalizeLabel(item.Title).ToLowerInvariant();
-            foreach (var suffix in SportsPresentationSuffixes)
-            {
-                if (key.EndsWith(suffix, StringComparison.Ordinal))
-                {
-                    key = key[..^suffix.Length].Trim();
-                    break;
-                }
-            }
-
             return string.IsNullOrWhiteSpace(key)
                 ? item.ContentId.ToString(System.Globalization.CultureInfo.InvariantCulture)
-                : key;
+                : $"{key}|{item.ContentId.ToString(System.Globalization.CultureInfo.InvariantCulture)}";
         }
 
         private static bool IsTurkishHint(string value)

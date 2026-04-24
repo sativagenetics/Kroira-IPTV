@@ -94,6 +94,13 @@
                                  Style="{StaticResource KroiraTextBoxStyle}"
                                  Text="{x:Bind ViewModel.ManualEpgUrl, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                  PlaceholderText="http://.../epg.xml or C:\guide.xml" />
+                        <TextBox Header="Fallback/enrichment XMLTV URLs"
+                                 Style="{StaticResource KroiraTextBoxStyle}"
+                                 Text="{x:Bind ViewModel.FallbackEpgUrls, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                 PlaceholderText="One XMLTV URL per line. Public feeds are optional."
+                                 AcceptsReturn="True"
+                                 TextWrapping="Wrap"
+                                 MinHeight="88" />
                     </StackPanel>
 
                     <StackPanel Spacing="8">

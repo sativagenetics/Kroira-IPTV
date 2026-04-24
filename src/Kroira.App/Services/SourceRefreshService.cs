@@ -365,7 +365,8 @@ namespace Kroira.App.Services
             if (profile.Type == SourceType.Stalker)
             {
                 return !string.IsNullOrWhiteSpace(credential.ManualEpgUrl) ||
-                       !string.IsNullOrWhiteSpace(credential.DetectedEpgUrl);
+                       !string.IsNullOrWhiteSpace(credential.DetectedEpgUrl) ||
+                       !string.IsNullOrWhiteSpace(credential.FallbackEpgUrls);
             }
 
             return true;

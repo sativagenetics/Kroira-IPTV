@@ -56,6 +56,7 @@ namespace Kroira.App.Models
         // Legacy column name retained for compatibility; this now stores the manual XMLTV override URL.
         public string EpgUrl { get; set; } = string.Empty;
         public string DetectedEpgUrl { get; set; } = string.Empty;
+        public string FallbackEpgUrls { get; set; } = string.Empty;
         public EpgActiveMode EpgMode { get; set; } = EpgActiveMode.Detected;
 
         /// <summary>

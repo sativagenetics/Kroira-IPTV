@@ -70,6 +70,9 @@ namespace Kroira.App.ViewModels
         private string _manualEpgUrl = string.Empty;
 
         [ObservableProperty]
+        private string _fallbackEpgUrls = string.Empty;
+
+        [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(ProxyUrlVisibility))]
         [NotifyPropertyChangedFor(nameof(ProxySummaryText))]
         private int _selectedProxyModeIndex = 0;
@@ -230,6 +233,7 @@ namespace Kroira.App.ViewModels
                     Username = IsXtream ? XtreamUsername : string.Empty,
                     Password = IsXtream ? XtreamPassword : string.Empty,
                     ManualEpgUrl = ManualEpgUrl,
+                    FallbackEpgUrls = FallbackEpgUrls,
                     EpgMode = SelectedGuideMode,
                     M3uImportMode = M3uImportMode.LiveMoviesAndSeries,
                     ProxyScope = SelectedProxyMode,
@@ -248,6 +252,7 @@ namespace Kroira.App.ViewModels
                 SourceName = string.Empty;
                 M3uUrlOrPath = string.Empty;
                 ManualEpgUrl = string.Empty;
+                FallbackEpgUrls = string.Empty;
                 SelectedEpgModeIndex = 0;
                 SelectedProxyModeIndex = 0;
                 ProxyUrl = string.Empty;

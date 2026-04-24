@@ -309,6 +309,9 @@ namespace Kroira.App
                     case "Channels":
                         NavigateTo(typeof(ChannelsPage));
                         break;
+                    case "Guide":
+                        NavigateTo(typeof(EpgCenterPage));
+                        break;
                     case "Home":
                         NavigateTo(typeof(HomePage));
                         break;
@@ -405,6 +408,7 @@ namespace Kroira.App
                 var type when type == typeof(ContinueWatchingPage) => "ContinueWatching",
                 var type when type == typeof(MediaLibraryPage) => "MediaLibrary",
                 var type when type == typeof(ChannelsPage) => "Channels",
+                var type when type == typeof(EpgCenterPage) => "Guide",
                 var type when type == typeof(MoviesPage) => "Movies",
                 var type when type == typeof(SeriesPage) => "Series",
                 var type when type == typeof(FavoritesPage) => "Favorites",

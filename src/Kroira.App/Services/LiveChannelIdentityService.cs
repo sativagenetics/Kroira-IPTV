@@ -13,6 +13,9 @@ namespace Kroira.App.Services
         LiveChannelIdentity Build(string name, string providerEpgChannelId);
         string NormalizeExactKey(string value);
         string NormalizeAliasKey(string value);
+        string NormalizeForEpgScheduleMatch(string value);
+        string NormalizeForChannelDisplayDedupe(string value);
+        string NormalizeForPlaybackIdentity(string value);
         IReadOnlyList<string> BuildAliasKeys(params string?[] values);
         double ComputeDiceCoefficient(string left, string right);
     }
@@ -20,7 +23,11 @@ namespace Kroira.App.Services
     public sealed class LiveChannelIdentityService : ILiveChannelIdentityService
     {
         private static readonly Regex MultiSpaceRegex = new(@"\s{2,}", RegexOptions.Compiled);
-        private static readonly Regex QualityRegex = new(@"\b(?:hd|fhd|uhd|sd|4k)\b", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+        private static readonly Regex QualityRegex = new(@"\b(?:hd|fhd|uhd|sd|4k|hevc|h\.?265|h265|x265|x\.?265)\b", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+        private static readonly Regex CodecRegex = new(@"\b(?:hevc|h\.?265|h265|x265|x\.?265)\b", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+        private static readonly Regex IptvNoiseRegex = new(@"\b(?:vip|backup|yedek|alt|source|copy)\b", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+        private static readonly Regex LeadingRegionPrefixRegex = new(@"^\s*(?:tr|turkey|turkiye)\s*[:\|\-_/]+", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+        private static readonly Regex SeparatorRegex = new(@"[\|\-_/\.]+", RegexOptions.Compiled);
         private static readonly Regex AliasNoiseRegex = new(@"\b(?:tv|television|channel)\b", RegexOptions.Compiled | RegexOptions.IgnoreCase);
         private static readonly Regex RegionNoiseRegex = new(@"\b(?:us|usa|uk|u\.k|u\.s|tr|turkiye|turkey)\b", RegexOptions.Compiled | RegexOptions.IgnoreCase);
         private static readonly Regex BracketNoiseRegex = new(@"[\(\[\{].*?[\)\]\}]", RegexOptions.Compiled);
@@ -42,7 +49,8 @@ namespace Kroira.App.Services
 
         public LiveChannelIdentity Build(string name, string providerEpgChannelId)
         {
-            var normalizedName = NormalizeExactKey(name);
+            var normalizedName = NormalizeForEpgScheduleMatch(name);
+            var playbackIdentity = NormalizeForPlaybackIdentity(name);
             var aliasKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             foreach (var alias in BuildAliasKeys(name, providerEpgChannelId, normalizedName))
             {
@@ -54,14 +62,21 @@ namespace Kroira.App.Services
                 ? guideAlias
                 : aliasKeys.FirstOrDefault(alias => !string.Equals(alias, guideAlias, StringComparison.OrdinalIgnoreCase)) ?? guideAlias;
 
-            var identityKey = !string.IsNullOrWhiteSpace(preferredAlias)
-                ? $"{(string.Equals(preferredAlias, guideAlias, StringComparison.OrdinalIgnoreCase) ? "id" : "name")}:{preferredAlias}"
-                : "name:unknown";
+            var identityKey = !string.IsNullOrWhiteSpace(playbackIdentity)
+                ? $"name:{playbackIdentity}"
+                : !string.IsNullOrWhiteSpace(preferredAlias)
+                    ? $"{(string.Equals(preferredAlias, guideAlias, StringComparison.OrdinalIgnoreCase) ? "id" : "name")}:{preferredAlias}"
+                    : "name:unknown";
 
             return new LiveChannelIdentity(identityKey, normalizedName, aliasKeys.OrderBy(value => value, StringComparer.OrdinalIgnoreCase).ToList());
         }
 
         public string NormalizeExactKey(string value)
+        {
+            return NormalizeForEpgScheduleMatch(value);
+        }
+
+        public string NormalizeForEpgScheduleMatch(string value)
         {
             if (string.IsNullOrWhiteSpace(value))
             {
@@ -69,10 +84,23 @@ namespace Kroira.App.Services
             }
 
             var normalized = ContentClassifier.NormalizeLabel(value).Trim();
+            normalized = LeadingRegionPrefixRegex.Replace(normalized, " ");
             normalized = BracketNoiseRegex.Replace(normalized, " ");
             normalized = QualityRegex.Replace(normalized, " ");
+            normalized = IptvNoiseRegex.Replace(normalized, " ");
+            normalized = SeparatorRegex.Replace(normalized, " ");
             normalized = MultiSpaceRegex.Replace(normalized, " ");
             return normalized.Trim().ToLowerInvariant();
+        }
+
+        public string NormalizeForChannelDisplayDedupe(string value)
+        {
+            return NormalizePreservingQuality(value, compact: false);
+        }
+
+        public string NormalizeForPlaybackIdentity(string value)
+        {
+            return NormalizePreservingQuality(value, compact: true);
         }
 
         public string NormalizeAliasKey(string value)
@@ -85,9 +113,11 @@ namespace Kroira.App.Services
             var normalized = RemoveDiacritics(value).ToLowerInvariant();
             normalized = normalized.Replace("&", " and ", StringComparison.Ordinal);
             normalized = normalized.Replace("+", " plus ", StringComparison.Ordinal);
+            normalized = LeadingRegionPrefixRegex.Replace(normalized, " ");
             normalized = BracketNoiseRegex.Replace(normalized, " ");
             normalized = NormalizeNumberWords(normalized);
             normalized = QualityRegex.Replace(normalized, " ");
+            normalized = IptvNoiseRegex.Replace(normalized, " ");
             normalized = AliasNoiseRegex.Replace(normalized, " ");
             normalized = RegionNoiseRegex.Replace(normalized, " ");
             normalized = NonAlphaNumericRegex.Replace(normalized, " ");
@@ -149,6 +179,28 @@ namespace Kroira.App.Services
             {
                 keys.Add(value);
             }
+        }
+
+        private static string NormalizePreservingQuality(string value, bool compact)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return string.Empty;
+            }
+
+            var normalized = RemoveDiacritics(value).ToLowerInvariant();
+            normalized = normalized.Replace("&", " and ", StringComparison.Ordinal);
+            normalized = normalized.Replace("+", " plus ", StringComparison.Ordinal);
+            normalized = LeadingRegionPrefixRegex.Replace(normalized, " ");
+            normalized = BracketNoiseRegex.Replace(normalized, " ");
+            normalized = NormalizeNumberWords(normalized);
+            normalized = CodecRegex.Replace(normalized, " ");
+            normalized = IptvNoiseRegex.Replace(normalized, " ");
+            normalized = NonAlphaNumericRegex.Replace(normalized, " ");
+            normalized = MultiSpaceRegex.Replace(normalized, " ").Trim();
+            return compact
+                ? normalized.Replace(" ", string.Empty, StringComparison.Ordinal)
+                : normalized;
         }
 
         private static bool IsStrongGuideAlias(string value)

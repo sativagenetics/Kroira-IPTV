@@ -176,6 +176,7 @@ namespace Kroira.App.ViewModels
                 Username = XtreamUsername,
                 Password = XtreamPassword,
                 ManualEpgUrl = ManualEpgUrl,
+                FallbackEpgUrls = FallbackEpgUrls,
                 EpgMode = SelectedGuideMode,
                 ProxyScope = SelectedProxyMode,
                 ProxyUrl = ProxyUrl,
@@ -208,6 +209,7 @@ namespace Kroira.App.ViewModels
                 StalkerLocale?.Trim() ?? string.Empty,
                 SelectedEpgModeIndex,
                 ManualEpgUrl?.Trim() ?? string.Empty,
+                FallbackEpgUrls?.Trim() ?? string.Empty,
                 SelectedProxyModeIndex,
                 ProxyUrl?.Trim() ?? string.Empty,
                 SelectedCompanionScopeIndex,
@@ -239,6 +241,7 @@ namespace Kroira.App.ViewModels
         partial void OnStalkerTimezoneChanged(string value) => ClearValidationSnapshot();
         partial void OnStalkerLocaleChanged(string value) => ClearValidationSnapshot();
         partial void OnManualEpgUrlChanged(string value) => ClearValidationSnapshot();
+        partial void OnFallbackEpgUrlsChanged(string value) => ClearValidationSnapshot();
         partial void OnSelectedProxyModeIndexChanged(int value) => ClearValidationSnapshot();
         partial void OnProxyUrlChanged(string value) => ClearValidationSnapshot();
         partial void OnSelectedCompanionScopeIndexChanged(int value) => ClearValidationSnapshot();

@@ -415,11 +415,24 @@ namespace Kroira.App.Migrations
                     b.Property<int>("CurrentCoverageCount")
                         .HasColumnType("INTEGER");
 
+                    b.Property<int>("ExactMatchCount")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("FailureReason")
                         .HasColumnType("TEXT");
 
                     b.Property<int>("FailureStage")
                         .HasColumnType("INTEGER");
+
+                    b.Property<string>("GuideSourceStatusJson")
+                        .IsRequired()
+                        .HasMaxLength(8000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("GuideWarningSummary")
+                        .IsRequired()
+                        .HasMaxLength(800)
+                        .HasColumnType("TEXT");
 
                     b.Property<bool>("IsSuccess")
                         .HasColumnType("INTEGER");
@@ -434,6 +447,9 @@ namespace Kroira.App.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<int>("NextCoverageCount")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("NormalizedMatchCount")
                         .HasColumnType("INTEGER");
 
                     b.Property<int>("ProgrammeCount")
@@ -455,6 +471,12 @@ namespace Kroira.App.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<int>("UnmatchedChannelCount")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("WeakMatchCount")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("XmltvChannelCount")
                         .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
@@ -1475,6 +1497,11 @@ namespace Kroira.App.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("EpgUrl")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("FallbackEpgUrls")
+                        .IsRequired()
+                        .HasMaxLength(4000)
                         .HasColumnType("TEXT");
 
                     b.Property<int>("M3uImportMode")
