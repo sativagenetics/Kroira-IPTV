@@ -16,6 +16,7 @@
             <Setter Property="MinHeight" Value="0" />
             <Setter Property="HorizontalContentAlignment" Value="Stretch" />
             <Setter Property="VerticalContentAlignment" Value="Stretch" />
+            <Setter Property="UseSystemFocusVisuals" Value="True" />
         </Style>
 
         <DataTemplate x:Key="SummaryStatTemplate">
@@ -284,86 +285,98 @@
         <DataTemplate x:Key="LiveSportsNowCardTemplate">
             <Button Click="LiveSportsNow_Click"
                     Style="{StaticResource HomeCardButtonStyle}">
-                <Border Width="288"
-                        Height="126"
-                        Padding="14"
-                        Background="#66070B12"
+                <Border Width="284"
+                        Height="118"
+                        Padding="12"
                         BorderBrush="{StaticResource KroiraGlassBorderBrush}"
                         BorderThickness="1"
-                        CornerRadius="14">
-                    <Grid RowSpacing="10">
+                        CornerRadius="12">
+                    <Border.Background>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                            <GradientStop Color="#73101827" Offset="0" />
+                            <GradientStop Color="#52070B12" Offset="0.58" />
+                            <GradientStop Color="#32121726" Offset="1" />
+                        </LinearGradientBrush>
+                    </Border.Background>
+                    <Grid ColumnSpacing="12"
+                          RowSpacing="6">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="54" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
                         <Grid.RowDefinitions>
-                            <RowDefinition Height="*" />
                             <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
                         </Grid.RowDefinitions>
 
-                        <Grid ColumnSpacing="12">
+                        <Border Grid.RowSpan="3"
+                                Width="54"
+                                Height="54"
+                                CornerRadius="10"
+                                Background="#6410141A"
+                                BorderBrush="{StaticResource KroiraHaloBorderBrush}"
+                                BorderThickness="1"
+                                VerticalAlignment="Top">
+                            <Grid>
+                                <FontIcon Glyph="&#xE714;"
+                                          FontSize="18"
+                                          Foreground="{StaticResource KroiraTextTertiaryBrush}"
+                                          Opacity="0.45" />
+                                <Image Source="{Binding LogoUrl, Converter={StaticResource UrlToImageSourceConverter}}"
+                                       Stretch="Uniform"
+                                       Margin="7" />
+                            </Grid>
+                        </Border>
+
+                        <Grid Grid.Column="1"
+                              ColumnSpacing="8">
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="58" />
                                 <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
-
-                            <Border Width="58"
-                                    Height="46"
-                                    CornerRadius="10"
-                                    Background="#5810141A"
-                                    BorderBrush="{StaticResource KroiraGlassBorderBrush}"
-                                    BorderThickness="1">
-                                <Grid>
-                                    <FontIcon Glyph="&#xE714;"
-                                              FontSize="18"
-                                              Foreground="{StaticResource KroiraTextTertiaryBrush}"
-                                              Opacity="0.55" />
-                                    <Image Source="{Binding LogoUrl, Converter={StaticResource UrlToImageSourceConverter}}"
-                                           Stretch="Uniform"
-                                           Margin="7" />
-                                </Grid>
+                            <TextBlock Text="{Binding Title}"
+                                       Style="{StaticResource KroiraTitleStyle}"
+                                       FontSize="14"
+                                       MaxLines="1"
+                                       TextTrimming="CharacterEllipsis" />
+                            <Border Grid.Column="1"
+                                    Background="{StaticResource KroiraStateDangerSoftBrush}"
+                                    BorderBrush="#24FF5A5F"
+                                    BorderThickness="1"
+                                    CornerRadius="7"
+                                    Padding="6,2"
+                                    VerticalAlignment="Center">
+                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <Ellipse Width="4"
+                                             Height="4"
+                                             Fill="{StaticResource KroiraLiveDotBrush}"
+                                             VerticalAlignment="Center" />
+                                    <TextBlock Text="{Binding BadgeText}"
+                                               Foreground="{StaticResource KroiraLiveDotBrush}"
+                                               FontSize="8"
+                                               FontWeight="SemiBold" />
+                                </StackPanel>
                             </Border>
-
-                            <StackPanel Grid.Column="1"
-                                        Spacing="3"
-                                        VerticalAlignment="Center">
-                                <Grid ColumnSpacing="8">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Text="{Binding Title}"
-                                               Style="{StaticResource KroiraTitleStyle}"
-                                               MaxLines="1"
-                                               TextTrimming="CharacterEllipsis" />
-                                    <Border Grid.Column="1"
-                                            Background="{StaticResource KroiraStateDangerSoftBrush}"
-                                            BorderBrush="#33FF5A5F"
-                                            BorderThickness="1"
-                                            CornerRadius="8"
-                                            Padding="7,2">
-                                        <StackPanel Orientation="Horizontal" Spacing="5">
-                                            <Ellipse Width="5"
-                                                     Height="5"
-                                                     Fill="{StaticResource KroiraLiveDotBrush}"
-                                                     VerticalAlignment="Center" />
-                                            <TextBlock Text="{Binding BadgeText}"
-                                                       Foreground="{StaticResource KroiraLiveDotBrush}"
-                                                       FontSize="9"
-                                                       FontWeight="SemiBold" />
-                                        </StackPanel>
-                                    </Border>
-                                </Grid>
-                                <TextBlock Text="{Binding Detail}"
-                                           Style="{StaticResource KroiraMetaStyle}"
-                                           MaxLines="1"
-                                           TextTrimming="CharacterEllipsis" />
-                            </StackPanel>
                         </Grid>
 
                         <TextBlock Grid.Row="1"
+                                   Grid.Column="1"
+                                   Text="{Binding Detail}"
+                                   Style="{StaticResource KroiraMetaStyle}"
+                                   FontSize="11"
+                                   MaxLines="1"
+                                   TextTrimming="CharacterEllipsis" />
+
+                        <TextBlock Grid.Row="2"
+                                   Grid.Column="1"
                                    Text="{Binding ProgramLine}"
                                    Style="{StaticResource KroiraBodyStyle}"
                                    FontSize="12"
-                                   LineHeight="17"
+                                   LineHeight="16"
                                    MaxLines="1"
                                    TextTrimming="CharacterEllipsis"
+                                   Foreground="{StaticResource KroiraTextSecondaryBrush}"
                                    Visibility="{Binding ProgramVisibility}" />
                     </Grid>
                 </Border>
@@ -380,10 +393,10 @@
                       HorizontalScrollBarVisibility="Disabled"
                       HorizontalScrollMode="Disabled"
                       Visibility="{x:Bind ViewModel.SurfaceState.ContentVisibility, Mode=OneWay}">
-        <StackPanel Padding="28,16,44,46" Spacing="28">
-            <Border MinHeight="330"
-                    MaxHeight="380"
-                    Margin="-28,-20,-44,0"
+        <StackPanel Padding="28,14,44,46" Spacing="22">
+            <Border MinHeight="304"
+                    MaxHeight="344"
+                    Margin="-28,-18,-44,0"
                     CornerRadius="0,0,28,28"
                     BorderBrush="{StaticResource KroiraGhostBorderBrush}"
                     BorderThickness="0">
@@ -393,23 +406,32 @@
                     <Image Source="ms-appx:///Assets/Home/match-center-hero.png"
                            Stretch="UniformToFill"
                            Opacity="0.92" />
-                    <Border Background="{StaticResource KroiraHeroScrimBrush}" />
+                    <Border>
+                        <Border.Background>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                <GradientStop Color="#F605060A" Offset="0" />
+                                <GradientStop Color="#DD070912" Offset="0.42" />
+                                <GradientStop Color="#70151B2A" Offset="0.72" />
+                                <GradientStop Color="#E805060A" Offset="1" />
+                            </LinearGradientBrush>
+                        </Border.Background>
+                    </Border>
                     <Border Background="{StaticResource KroiraVerticalScrimBrush}" />
                     <Border HorizontalAlignment="Right"
-                            Width="520"
+                            Width="500"
                             Background="{StaticResource KroiraPlumWashBrush}"
-                            Opacity="0.55" />
+                            Opacity="0.48" />
 
-                    <Grid Padding="54,34,52,34"
-                          ColumnSpacing="28">
+                    <Grid Padding="52,30,50,30"
+                          ColumnSpacing="24">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="260" />
+                            <ColumnDefinition Width="244" />
                         </Grid.ColumnDefinitions>
 
-                        <StackPanel Spacing="12"
+                        <StackPanel Spacing="10"
                                     VerticalAlignment="Center"
-                                    MaxWidth="650">
+                                    MaxWidth="620">
                             <Border Background="#B40A0D11"
                                     BorderBrush="{StaticResource KroiraChromeLineBrush}"
                                     BorderThickness="1"
@@ -429,8 +451,8 @@
                             </Border>
                             <TextBlock Text="Match Center"
                                        Style="{StaticResource KroiraDisplayLgStyle}"
-                                       FontSize="48"
-                                       LineHeight="54"
+                                       FontSize="46"
+                                       LineHeight="52"
                                        MaxLines="1" />
                             <TextBlock Text="Jump into live sports instantly."
                                        Style="{StaticResource KroiraBodyStyle}"
@@ -443,7 +465,7 @@
                                     Style="{StaticResource KroiraPrimaryButtonStyle}"
                                     Padding="20,11"
                                     MinWidth="154"
-                                    Margin="0,8,0,0"
+                                    Margin="0,6,0,0"
                                     HorizontalAlignment="Left"
                                     AutomationProperties.Name="Watch Live TV">
                                 <StackPanel Orientation="Horizontal" Spacing="8">
@@ -454,21 +476,27 @@
                         </StackPanel>
 
                         <Border Grid.Column="1"
-                                Width="224"
-                                Padding="18"
+                                Width="216"
+                                Padding="16"
                                 VerticalAlignment="Center"
                                 HorizontalAlignment="Right"
-                                Background="#82070B12"
                                 BorderBrush="{StaticResource KroiraGlassBorderBrush}"
                                 BorderThickness="1"
-                                CornerRadius="18">
-                            <StackPanel Spacing="12">
-                                <Grid Width="48"
-                                      Height="48"
+                                CornerRadius="16">
+                            <Border.Background>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                    <GradientStop Color="#8A101827" Offset="0" />
+                                    <GradientStop Color="#72070B12" Offset="0.6" />
+                                    <GradientStop Color="#4B221734" Offset="1" />
+                                </LinearGradientBrush>
+                            </Border.Background>
+                            <StackPanel Spacing="10">
+                                <Grid Width="44"
+                                      Height="44"
                                       HorizontalAlignment="Left">
                                     <Ellipse Fill="{StaticResource KroiraStateDangerSoftBrush}" />
                                     <FontIcon Glyph="&#xE7FC;"
-                                              FontSize="21"
+                                              FontSize="19"
                                               Foreground="{StaticResource KroiraLiveDotBrush}" />
                                 </Grid>
                                 <StackPanel Spacing="4">
@@ -477,6 +505,8 @@
                                                FontSize="17" />
                                     <TextBlock Text="Sports channels, live events, and match-night viewing in one jump."
                                                Style="{StaticResource KroiraBodyStyle}"
+                                               FontSize="12"
+                                               LineHeight="17"
                                                MaxLines="3"
                                                TextTrimming="CharacterEllipsis" />
                                 </StackPanel>
@@ -491,45 +521,41 @@
                 </Grid>
             </Border>
 
-            <StackPanel Spacing="12">
+            <StackPanel Spacing="10">
                 <TextBlock Text="Live TV Shortcuts"
                            Style="{StaticResource KroiraSectionTitleStyle}" />
 
-                <Grid ColumnSpacing="12">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
-
-                    <Button Grid.Column="0"
-                            Click="LiveTv_Click"
-                            Style="{StaticResource HomeCardButtonStyle}"
-                            AutomationProperties.Name="All Channels">
-                        <Border Height="88"
-                                Padding="14"
-                                Background="#66070B12"
+                <Grid HorizontalAlignment="Stretch">
+                    <StackPanel Orientation="Horizontal"
+                                Spacing="10"
+                                HorizontalAlignment="Center">
+                        <Button Width="226"
+                                Click="LiveTv_Click"
+                                Style="{StaticResource HomeCardButtonStyle}"
+                                AutomationProperties.Name="All Channels">
+                        <Border Height="78"
+                                Padding="12"
+                                Background="#5C070B12"
                                 BorderBrush="{StaticResource KroiraGlassBorderBrush}"
                                 BorderThickness="1"
-                                CornerRadius="14">
-                            <Grid ColumnSpacing="12">
+                                CornerRadius="12">
+                            <Grid ColumnSpacing="10">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="36" />
+                                    <ColumnDefinition Width="34" />
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
-                                <Border Width="36"
-                                        Height="36"
+                                <Border Width="34"
+                                        Height="34"
                                         Background="{StaticResource KroiraControlBrush}"
                                         BorderBrush="{StaticResource KroiraControlBorderBrush}"
                                         BorderThickness="1"
-                                        CornerRadius="10">
+                                        CornerRadius="9">
                                     <FontIcon Glyph="&#xE714;"
                                               FontSize="17"
                                               Foreground="{StaticResource KroiraAccentBrush}" />
                                 </Border>
                                 <StackPanel Grid.Column="1"
-                                            Spacing="2"
+                                            Spacing="1"
                                             VerticalAlignment="Center">
                                     <TextBlock Text="All Channels"
                                                Style="{StaticResource KroiraTitleStyle}"
@@ -542,35 +568,35 @@
                                 </StackPanel>
                             </Grid>
                         </Border>
-                    </Button>
+                        </Button>
 
-                    <Button Grid.Column="1"
-                            Click="Sports_Click"
-                            Style="{StaticResource HomeCardButtonStyle}"
-                            AutomationProperties.Name="Sports">
-                        <Border Height="88"
-                                Padding="14"
-                                Background="#66070B12"
+                        <Button Width="226"
+                                Click="Sports_Click"
+                                Style="{StaticResource HomeCardButtonStyle}"
+                                AutomationProperties.Name="Sports">
+                        <Border Height="78"
+                                Padding="12"
+                                Background="#5C070B12"
                                 BorderBrush="{StaticResource KroiraGlassBorderBrush}"
                                 BorderThickness="1"
-                                CornerRadius="14">
-                            <Grid ColumnSpacing="12">
+                                CornerRadius="12">
+                            <Grid ColumnSpacing="10">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="36" />
+                                    <ColumnDefinition Width="34" />
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
-                                <Border Width="36"
-                                        Height="36"
+                                <Border Width="34"
+                                        Height="34"
                                         Background="{StaticResource KroiraStateDangerSoftBrush}"
                                         BorderBrush="#33FF5A5F"
                                         BorderThickness="1"
-                                        CornerRadius="10">
+                                        CornerRadius="9">
                                     <FontIcon Glyph="&#xE7FC;"
                                               FontSize="17"
                                               Foreground="{StaticResource KroiraLiveDotBrush}" />
                                 </Border>
                                 <StackPanel Grid.Column="1"
-                                            Spacing="2"
+                                            Spacing="1"
                                             VerticalAlignment="Center">
                                     <TextBlock Text="Sports"
                                                Style="{StaticResource KroiraTitleStyle}"
@@ -583,35 +609,35 @@
                                 </StackPanel>
                             </Grid>
                         </Border>
-                    </Button>
+                        </Button>
 
-                    <Button Grid.Column="2"
-                            Click="Favorites_Click"
-                            Style="{StaticResource HomeCardButtonStyle}"
-                            AutomationProperties.Name="Favorites">
-                        <Border Height="88"
-                                Padding="14"
-                                Background="#66070B12"
+                        <Button Width="226"
+                                Click="Favorites_Click"
+                                Style="{StaticResource HomeCardButtonStyle}"
+                                AutomationProperties.Name="Favorites">
+                        <Border Height="78"
+                                Padding="12"
+                                Background="#5C070B12"
                                 BorderBrush="{StaticResource KroiraGlassBorderBrush}"
                                 BorderThickness="1"
-                                CornerRadius="14">
-                            <Grid ColumnSpacing="12">
+                                CornerRadius="12">
+                            <Grid ColumnSpacing="10">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="36" />
+                                    <ColumnDefinition Width="34" />
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
-                                <Border Width="36"
-                                        Height="36"
+                                <Border Width="34"
+                                        Height="34"
                                         Background="{StaticResource KroiraControlBrush}"
                                         BorderBrush="{StaticResource KroiraControlBorderBrush}"
                                         BorderThickness="1"
-                                        CornerRadius="10">
+                                        CornerRadius="9">
                                     <FontIcon Glyph="&#xE734;"
                                               FontSize="17"
                                               Foreground="{StaticResource KroiraAccentBrush}" />
                                 </Border>
                                 <StackPanel Grid.Column="1"
-                                            Spacing="2"
+                                            Spacing="1"
                                             VerticalAlignment="Center">
                                     <TextBlock Text="Favorites"
                                                Style="{StaticResource KroiraTitleStyle}"
@@ -624,35 +650,35 @@
                                 </StackPanel>
                             </Grid>
                         </Border>
-                    </Button>
+                        </Button>
 
-                    <Button Grid.Column="3"
-                            Click="ContinueWatching_Click"
-                            Style="{StaticResource HomeCardButtonStyle}"
-                            AutomationProperties.Name="Recently Watched">
-                        <Border Height="88"
-                                Padding="14"
-                                Background="#66070B12"
+                        <Button Width="226"
+                                Click="ContinueWatching_Click"
+                                Style="{StaticResource HomeCardButtonStyle}"
+                                AutomationProperties.Name="Recently Watched">
+                        <Border Height="78"
+                                Padding="12"
+                                Background="#5C070B12"
                                 BorderBrush="{StaticResource KroiraGlassBorderBrush}"
                                 BorderThickness="1"
-                                CornerRadius="14">
-                            <Grid ColumnSpacing="12">
+                                CornerRadius="12">
+                            <Grid ColumnSpacing="10">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="36" />
+                                    <ColumnDefinition Width="34" />
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
-                                <Border Width="36"
-                                        Height="36"
+                                <Border Width="34"
+                                        Height="34"
                                         Background="{StaticResource KroiraControlBrush}"
                                         BorderBrush="{StaticResource KroiraControlBorderBrush}"
                                         BorderThickness="1"
-                                        CornerRadius="10">
+                                        CornerRadius="9">
                                     <FontIcon Glyph="&#xE916;"
                                               FontSize="17"
                                               Foreground="{StaticResource KroiraAccentBrush}" />
                                 </Border>
                                 <StackPanel Grid.Column="1"
-                                            Spacing="2"
+                                            Spacing="1"
                                             VerticalAlignment="Center">
                                     <TextBlock Text="Recently Watched"
                                                Style="{StaticResource KroiraTitleStyle}"
@@ -665,11 +691,12 @@
                                 </StackPanel>
                             </Grid>
                         </Border>
-                    </Button>
+                        </Button>
+                    </StackPanel>
                 </Grid>
             </StackPanel>
 
-            <StackPanel Spacing="12"
+            <StackPanel Spacing="10"
                         Visibility="{x:Bind ViewModel.LiveSportsItemsVisibility, Mode=OneWay}">
                 <Grid>
                     <TextBlock Text="Live Sports Now"
@@ -685,8 +712,8 @@
                 <controls:Rail x:Name="LiveSportsNowRail"
                                ItemsSource="{x:Bind ViewModel.LiveSportsItems, Mode=OneWay}"
                                ItemTemplate="{StaticResource LiveSportsNowCardTemplate}"
-                               RailHeight="132"
-                               ItemSpacing="12"
+                               RailHeight="124"
+                               ItemSpacing="10"
                                ScrollAmount="360" />
             </StackPanel>
 

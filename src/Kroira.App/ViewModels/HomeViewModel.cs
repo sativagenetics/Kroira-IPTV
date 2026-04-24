@@ -148,6 +148,16 @@ namespace Kroira.App.ViewModels
 
         private static readonly string StartupLogPath =
             Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Kroira", "startup-log.txt");
+        private static readonly string[] SportsPresentationSuffixes =
+        {
+            " hd",
+            " fhd",
+            " uhd",
+            " 4k",
+            " 1080p",
+            " 720p"
+        };
+
         private static readonly HashSet<HomeLoadSection> DefaultEnabledLoadSections = new()
         {
             HomeLoadSection.ResolveAccess,
@@ -993,7 +1003,6 @@ namespace Kroira.App.ViewModels
             var categoryMap = categories.ToDictionary(category => category.Id);
             var categoryLabels = ContentClassifier.BuildCategoryLabelSet(categories.Select(category => category.Name));
             var sources = await db.SourceProfiles.AsNoTracking().OrderBy(source => source.Name).ToListAsync();
-            var sourceMap = sources.ToDictionary(source => source.Id);
             var sourceTypeById = sources.ToDictionary(source => source.Id, source => source.Type);
 
             var progressRows = await db.PlaybackProgresses
@@ -1050,7 +1059,6 @@ namespace Kroira.App.ViewModels
             foreach (var channel in channels)
             {
                 var category = categoryMap[channel.ChannelCategoryId];
-                sourceMap.TryGetValue(category.SourceProfileId, out var source);
 
                 var presentation = taxonomyService.ResolveLiveChannelPresentation(channel.Name);
                 var title = string.IsNullOrWhiteSpace(presentation.DisplayName) ? channel.Name : presentation.DisplayName;
@@ -1111,18 +1119,13 @@ namespace Kroira.App.ViewModels
                 var programLine = program == null || string.IsNullOrWhiteSpace(program.Title)
                     ? string.Empty
                     : $"{(ReferenceEquals(program, currentProgram) ? "Now" : "Next")}: {program.Title}";
-                var sourceName = source?.Name ?? string.Empty;
-                var detail = string.IsNullOrWhiteSpace(sourceName)
-                    ? displayCategory
-                    : $"{displayCategory} / {sourceName}";
-
                 candidates.Add((new HomeSportsLiveItem
                 {
                     ContentId = channel.Id,
                     PreferredSourceProfileId = category.SourceProfileId,
                     LogicalContentKey = logicalCatalogStateService.BuildChannelLogicalKey(channel),
                     Title = title,
-                    Detail = detail,
+                    Detail = displayCategory,
                     LogoUrl = channel.LogoUrl,
                     StreamUrl = channel.StreamUrl,
                     ProgramLine = programLine,
@@ -1131,6 +1134,13 @@ namespace Kroira.App.ViewModels
             }
 
             foreach (var candidate in candidates
+                         .GroupBy(candidate => BuildSportsPresentationKey(candidate.Item), StringComparer.OrdinalIgnoreCase)
+                         .Select(group => group
+                             .OrderByDescending(candidate => candidate.Score)
+                             .ThenByDescending(candidate => candidate.LastWatchedAtUtc ?? DateTime.MinValue)
+                             .ThenByDescending(candidate => !string.IsNullOrWhiteSpace(candidate.Item.LogoUrl))
+                             .ThenBy(candidate => candidate.Item.Title, StringComparer.CurrentCultureIgnoreCase)
+                             .First())
                          .OrderByDescending(candidate => candidate.Score)
                          .ThenByDescending(candidate => candidate.LastWatchedAtUtc ?? DateTime.MinValue)
                          .ThenBy(candidate => candidate.Item.Title, StringComparer.CurrentCultureIgnoreCase)
@@ -1386,6 +1396,23 @@ namespace Kroira.App.ViewModels
         private static bool HasSportsHint(string? value)
         {
             return ContentClassifier.IsSportsLikeLabel(value);
+        }
+
+        private static string BuildSportsPresentationKey(HomeSportsLiveItem item)
+        {
+            var key = ContentClassifier.NormalizeLabel(item.Title).ToLowerInvariant();
+            foreach (var suffix in SportsPresentationSuffixes)
+            {
+                if (key.EndsWith(suffix, StringComparison.Ordinal))
+                {
+                    key = key[..^suffix.Length].Trim();
+                    break;
+                }
+            }
+
+            return string.IsNullOrWhiteSpace(key)
+                ? item.ContentId.ToString(System.Globalization.CultureInfo.InvariantCulture)
+                : key;
         }
 
         private static bool IsTurkishHint(string value)
