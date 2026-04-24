@@ -184,7 +184,6 @@ namespace Kroira.App
         private void UpdatePaneHeader(bool isOpen)
         {
             PaneBrandText.Visibility = isOpen ? Visibility.Visible : Visibility.Collapsed;
-            PaneFooterRoot.Visibility = isOpen ? Visibility.Visible : Visibility.Collapsed;
             PaneHeaderRoot.Margin = isOpen ? new Thickness(18, 28, 14, 30) : new Thickness(17, 28, 0, 30);
         }
 
@@ -389,7 +388,7 @@ namespace Kroira.App
                 return true;
             }
 
-            foreach (var item in RootNavView.MenuItems.OfType<NavigationViewItem>())
+            foreach (var item in EnumerateNavigationItems())
             {
                 if (item.Visibility == Visibility.Visible && item.Focus(FocusState.Keyboard))
                 {
@@ -425,13 +424,19 @@ namespace Kroira.App
                 return;
             }
 
-            var selected = RootNavView.MenuItems
-                .OfType<NavigationViewItem>()
+            var selected = EnumerateNavigationItems()
                 .FirstOrDefault(item => string.Equals(item.Tag?.ToString(), tag, StringComparison.OrdinalIgnoreCase));
             if (selected != null)
             {
                 RootNavView.SelectedItem = selected;
             }
+        }
+
+        private System.Collections.Generic.IEnumerable<NavigationViewItem> EnumerateNavigationItems()
+        {
+            return RootNavView.MenuItems
+                .OfType<NavigationViewItem>()
+                .Concat(RootNavView.FooterMenuItems.OfType<NavigationViewItem>());
         }
 
         private void NavigateTo(Type pageType)
