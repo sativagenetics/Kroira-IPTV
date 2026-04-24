@@ -303,6 +303,7 @@ namespace Kroira.App
             services.AddTransient<MoviesViewModel>();
             services.AddTransient<SeriesViewModel>();
             services.AddTransient<ChannelsPageViewModel>();
+            services.AddTransient<SearchViewModel>();
 
             services.AddSingleton<IEntitlementService, MockEntitlementService>();
             services.AddSingleton<ILibraryWatchStateService, LibraryWatchStateService>();

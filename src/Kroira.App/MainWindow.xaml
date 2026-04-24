@@ -72,6 +72,11 @@
                         <FontIcon Glyph="&#xE80F;" FontSize="16" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
+                <NavigationViewItem Content="Search" Tag="Search" Margin="0,2" Height="42">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE721;" FontSize="16" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
                 <NavigationViewItemSeparator Margin="0,8" />
                 <NavigationViewItem Content="Live TV" Tag="Channels" Margin="0,2" Height="42">
                     <NavigationViewItem.Icon>

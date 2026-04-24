@@ -24,6 +24,7 @@ namespace Kroira.App.Composition
             services.AddSingleton<IContentOperationalService, ContentOperationalService>();
             services.AddSingleton<IProviderStreamResolverService, ProviderStreamResolverService>();
             services.AddSingleton<IPlayableItemInspectionService, PlayableItemInspectionService>();
+            services.AddSingleton<IMediaSearchService, MediaSearchService>();
             services.AddSingleton<IExternalUriLauncher, SystemExternalUriLauncher>();
             services.AddSingleton<IExternalPlayerLaunchService, ExternalPlayerLaunchService>();
             services.AddSingleton<ISourceDiagnosticsService, SourceDiagnosticsService>();
