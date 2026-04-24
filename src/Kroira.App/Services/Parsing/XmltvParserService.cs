@@ -199,7 +199,9 @@ namespace Kroira.App.Services.Parsing
 
                 try
                 {
-                    var summary = ParseXmltvChannelIndex(source, xmltvChannels);
+                    var sourceXmltvChannels = new Dictionary<string, XmltvChannelAccumulator>(StringComparer.OrdinalIgnoreCase);
+                    var summary = ParseXmltvChannelIndex(source, sourceXmltvChannels);
+                    MergeXmltvChannels(xmltvChannels, sourceXmltvChannels.Values);
                     source.XmltvChannelCount = summary.XmltvChannelCount;
                     source.ProgrammeCount = summary.ProgrammeCount;
                     source.Message = $"Parsed {source.XmltvChannelCount:N0} XMLTV channels and found {source.ProgrammeCount:N0} programmes. Programme import waits for matched channels and the active time window.";
@@ -503,6 +505,38 @@ namespace Kroira.App.Services.Parsing
             return new XmltvSourceParseSummary(sourceXmltvChannelIds.Count, programmeCount);
         }
 
+        private static void MergeXmltvChannels(
+            IDictionary<string, XmltvChannelAccumulator> target,
+            IEnumerable<XmltvChannelAccumulator> sourceChannels)
+        {
+            foreach (var sourceChannel in sourceChannels)
+            {
+                if (!target.TryGetValue(sourceChannel.Id, out var targetChannel))
+                {
+                    target[sourceChannel.Id] = sourceChannel;
+                    continue;
+                }
+
+                if (sourceChannel.SourcePriority < targetChannel.SourcePriority)
+                {
+                    targetChannel.SourcePriority = sourceChannel.SourcePriority;
+                    targetChannel.SourceKind = sourceChannel.SourceKind;
+                    targetChannel.SourceLabel = sourceChannel.SourceLabel;
+                    targetChannel.SourceUrl = sourceChannel.SourceUrl;
+                }
+
+                foreach (var displayName in sourceChannel.DisplayNames)
+                {
+                    targetChannel.DisplayNames.Add(displayName);
+                }
+
+                foreach (var iconUrl in sourceChannel.IconUrls)
+                {
+                    targetChannel.IconUrls.Add(iconUrl);
+                }
+            }
+        }
+
         private static int AppendMatchedProgrammesFromSource(
             EpgDiscoveredGuideSource source,
             IReadOnlyDictionary<string, ChannelEpgMatchOutcome> channelMatches,
@@ -669,7 +703,9 @@ namespace Kroira.App.Services.Parsing
             {
                 DtdProcessing = DtdProcessing.Ignore,
                 IgnoreComments = true,
-                IgnoreWhitespace = true
+                IgnoreWhitespace = true,
+                XmlResolver = null,
+                MaxCharactersFromEntities = 0
             };
         }
 
@@ -1217,12 +1253,7 @@ namespace Kroira.App.Services.Parsing
 
         private static string FormatDiagnosticValue(string value)
         {
-            if (string.IsNullOrWhiteSpace(value))
-            {
-                return "\"\"";
-            }
-
-            return $"\"{value.Replace("\"", "'")}\"";
+            return EpgDiagnosticFormatter.Format(value);
         }
 
         private sealed record EpgSyncMetrics(

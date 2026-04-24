@@ -241,12 +241,7 @@ namespace Kroira.App.Services.Parsing
 
         private static string FormatDiagnosticValue(string value)
         {
-            if (string.IsNullOrWhiteSpace(value))
-            {
-                return "\"\"";
-            }
-
-            return $"\"{value.Replace("\"", "'")}\"";
+            return EpgDiagnosticFormatter.Format(value);
         }
     }
 
@@ -269,9 +264,7 @@ namespace Kroira.App.Services.Parsing
                 throw new Exception("Xtream credentials are incomplete.");
             }
 
-            var baseUrl = cred.Url.TrimEnd('/');
-            var authQuery = $"?username={Uri.EscapeDataString(cred.Username)}&password={Uri.EscapeDataString(cred.Password)}";
-            var providerGuideUrl = $"{baseUrl}/xmltv.php{authQuery}";
+            var providerGuideUrl = EpgDiscoveryHelpers.BuildXtreamProviderXmltvUrl(cred);
             cred.DetectedEpgUrl = providerGuideUrl;
 
             var activeMode = EpgDiscoveryHelpers.ResolveActiveMode(cred);
@@ -289,7 +282,8 @@ namespace Kroira.App.Services.Parsing
             var candidates = activeMode == EpgActiveMode.Manual
                 ? EpgDiscoveryHelpers.BuildManualAndFallbackCandidates(cred, 1)
                 : providerCandidates
-                    .Concat(EpgDiscoveryHelpers.BuildFallbackCandidates(cred, 1))
+                    .Concat(EpgDiscoveryHelpers.BuildConfiguredEpgUrlFallbackCandidates(cred, 1))
+                    .Concat(EpgDiscoveryHelpers.BuildFallbackCandidates(cred, 2))
                     .ToList();
 
             if (activeMode == EpgActiveMode.Manual &&
@@ -311,12 +305,7 @@ namespace Kroira.App.Services.Parsing
 
         private static string FormatDiagnosticValue(string value)
         {
-            if (string.IsNullOrWhiteSpace(value))
-            {
-                return "\"\"";
-            }
-
-            return $"\"{value.Replace("\"", "'")}\"";
+            return EpgDiagnosticFormatter.Format(value);
         }
     }
 
@@ -436,6 +425,67 @@ namespace Kroira.App.Services.Parsing
             }
 
             return candidates;
+        }
+
+        internal static IReadOnlyList<EpgSourceCandidate> BuildConfiguredEpgUrlFallbackCandidates(SourceCredential credential, int startingPriority)
+        {
+            if (string.IsNullOrWhiteSpace(credential.ManualEpgUrl))
+            {
+                return Array.Empty<EpgSourceCandidate>();
+            }
+
+            return new[]
+            {
+                new EpgSourceCandidate
+                {
+                    Url = credential.ManualEpgUrl.Trim(),
+                    Label = "Configured XMLTV fallback",
+                    Method = "configured_epg_url",
+                    Kind = EpgGuideSourceKind.Manual,
+                    IsOptional = true,
+                    Priority = startingPriority
+                }
+            };
+        }
+
+        internal static string BuildXtreamProviderXmltvUrl(SourceCredential credential)
+        {
+            var baseUrl = (credential.Url ?? string.Empty).Trim();
+            var authQuery = $"?username={Uri.EscapeDataString(credential.Username ?? string.Empty)}&password={Uri.EscapeDataString(credential.Password ?? string.Empty)}";
+            if (Uri.TryCreate(baseUrl, UriKind.Absolute, out var uri))
+            {
+                var path = uri.AbsolutePath.TrimEnd('/');
+                if (string.IsNullOrWhiteSpace(path) || path == "/")
+                {
+                    path = "/xmltv.php";
+                }
+                else
+                {
+                    var fileName = Path.GetFileName(path);
+                    path = string.Equals(fileName, "get.php", StringComparison.OrdinalIgnoreCase) ||
+                           string.Equals(fileName, "player_api.php", StringComparison.OrdinalIgnoreCase) ||
+                           string.Equals(fileName, "xmltv.php", StringComparison.OrdinalIgnoreCase)
+                        ? ReplaceFileName(path, "xmltv.php")
+                        : $"{path}/xmltv.php";
+                }
+
+                var builder = new UriBuilder(uri)
+                {
+                    Path = path,
+                    Query = authQuery.TrimStart('?')
+                };
+                return builder.Uri.ToString();
+            }
+
+            return $"{baseUrl.TrimEnd('/')}/xmltv.php{authQuery}";
+        }
+
+        private static string ReplaceFileName(string absolutePath, string newFileName)
+        {
+            var lastSlashIndex = absolutePath.LastIndexOf('/');
+            return lastSlashIndex < 0
+                ? newFileName
+                : absolutePath[..(lastSlashIndex + 1)] + newFileName;
         }
 
         internal static async Task<EpgDiscoveryResult> FetchGuideSourcesAsync(
@@ -752,7 +802,7 @@ namespace Kroira.App.Services.Parsing
 
             static string locationForLog(string value)
             {
-                return string.IsNullOrWhiteSpace(value) ? "(empty)" : value;
+                return string.IsNullOrWhiteSpace(value) ? "(empty)" : EpgDiagnosticFormatter.RedactUrl(value);
             }
         }
 
@@ -820,12 +870,7 @@ namespace Kroira.App.Services.Parsing
 
         private static string FormatDiagnosticValue(string value)
         {
-            if (string.IsNullOrWhiteSpace(value))
-            {
-                return "\"\"";
-            }
-
-            return $"\"{value.Replace("\"", "'")}\"";
+            return EpgDiagnosticFormatter.Format(value);
         }
 
         internal sealed record EpgXmltvFetchResult(

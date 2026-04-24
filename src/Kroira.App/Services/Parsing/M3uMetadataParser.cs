@@ -25,8 +25,11 @@ namespace Kroira.App.Services.Parsing
     internal static class M3uMetadataParser
     {
         private static readonly Regex AttributeRegex = new(
-            @"(?<key>[A-Za-z0-9_-]+)\s*=\s*(?:(?<quote>['""])(?<quoted>.*?)\k<quote>|(?<bare>[^\s,]+))",
+            @"(?<key>[A-Za-z0-9_-]+)\s*=\s*(?:(?<quote>['""])(?<quoted>.*?)\k<quote>|(?<bare>[^\s]+))",
             RegexOptions.Compiled | RegexOptions.IgnoreCase);
+        private static readonly Regex AbsoluteUrlRegex = new(
+            @"[a-z][a-z0-9+\-.]*://[^\s,;|]+",
+            RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
         private static readonly string[] XmltvAttributeNames =
         {
@@ -222,7 +225,28 @@ namespace Kroira.App.Services.Parsing
 
         private static IReadOnlyList<string> SplitPossibleUrls(string value)
         {
-            return value
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return Array.Empty<string>();
+            }
+
+            var trimmed = value.Trim();
+            var absoluteUrls = AbsoluteUrlRegex
+                .Matches(trimmed)
+                .Select(match => match.Value.Trim())
+                .Where(candidate => !string.IsNullOrWhiteSpace(candidate))
+                .ToList();
+            if (absoluteUrls.Count > 1)
+            {
+                return absoluteUrls;
+            }
+
+            if (trimmed.IndexOfAny(new[] { ',', ';', '|' }) < 0)
+            {
+                return new[] { trimmed };
+            }
+
+            return trimmed
                 .Split(new[] { ',', ';', '|'}, StringSplitOptions.RemoveEmptyEntries)
                 .Select(candidate => candidate.Trim())
                 .Where(candidate => !string.IsNullOrWhiteSpace(candidate))

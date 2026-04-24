@@ -27,6 +27,8 @@ $commonBuildArgs = @(
     "-c", $Configuration,
     "-p:Platform=x64",
     "-p:AppxPackageSigningEnabled=false",
+    "-m:1",
+    "-p:BuildInParallel=false",
     "--nologo",
     "-v:minimal"
 )

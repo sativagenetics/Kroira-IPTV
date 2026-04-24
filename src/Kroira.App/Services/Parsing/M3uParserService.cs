@@ -864,12 +864,7 @@ namespace Kroira.App.Services.Parsing
 
         private static string FormatDiagnosticValue(string value)
         {
-            if (string.IsNullOrWhiteSpace(value))
-            {
-                return "\"\"";
-            }
-
-            return $"\"{value.Replace("\"", "'")}\"";
+            return EpgDiagnosticFormatter.Format(value);
         }
 
         private static int ResolveFailureStatusCode(Exception ex)
