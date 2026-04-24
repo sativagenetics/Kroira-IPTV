@@ -2,10 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
-using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -160,13 +158,6 @@ namespace Kroira.App.ViewModels
             HomeLoadSection.BuildRecommendations,
             HomeLoadSection.ApplyRecommendations,
             HomeLoadSection.LoadContinue
-        };
-
-        private static readonly string[] SportsShortcutTerms =
-        {
-            "sport", "sports", "spor", "football", "futbol", "soccer", "match", "mac", "league", "cup",
-            "champions league", "uefa", "super lig", "premier league", "nba", "formula", "f1", "tennis",
-            "basket", "bein", "s sport", "trt spor", "tivibu spor", "exxen", "eurosport", "smart spor"
         };
 
         private readonly IServiceProvider _serviceProvider;
@@ -1394,41 +1385,7 @@ namespace Kroira.App.ViewModels
 
         private static bool HasSportsHint(string? value)
         {
-            if (string.IsNullOrWhiteSpace(value))
-            {
-                return false;
-            }
-
-            if (ContentClassifier.IsSportsLikeLabel(value))
-            {
-                return true;
-            }
-
-            var normalized = NormalizeSportsLookup(value);
-            foreach (var term in SportsShortcutTerms)
-            {
-                if (normalized.Contains(term, StringComparison.OrdinalIgnoreCase))
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        private static string NormalizeSportsLookup(string value)
-        {
-            var normalized = ContentClassifier.NormalizeLabel(value).ToLowerInvariant().Normalize(NormalizationForm.FormD);
-            var builder = new StringBuilder(normalized.Length);
-            foreach (var character in normalized)
-            {
-                if (CharUnicodeInfo.GetUnicodeCategory(character) != UnicodeCategory.NonSpacingMark)
-                {
-                    builder.Append(character);
-                }
-            }
-
-            return builder.ToString().Normalize(NormalizationForm.FormC);
+            return ContentClassifier.IsSportsLikeLabel(value);
         }
 
         private static bool IsTurkishHint(string value)

@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
+using System.Text;
 using System.Text.RegularExpressions;
 using Kroira.App.Models;
 
@@ -863,6 +865,8 @@ namespace Kroira.App.Services
         {
             "sport", "sports", "spor", "futbol", "football", "soccer", "basket", "basketball",
             "tennis", "golf", "baseball", "hockey", "motorsport", "motor sport", "formula 1", "f1",
+            "match", "mac", "league", "cup", "bein", "bein sports", "s sport", "trt spor",
+            "tivibu spor", "exxen", "eurosport", "smart spor",
             "motogp", "racing", "fight", "boxing", "wrestling", "ufc", "mma", "premier league",
             "champions league", "europa league", "conference league", "uefa", "bundesliga",
             "laliga", "la liga", "serie a", "ligue 1", "super lig", "süper lig", "nba", "nfl",
@@ -933,7 +937,7 @@ namespace Kroira.App.Services
                 return false;
             }
 
-            var normalized = NormalizeLabel(value).ToLowerInvariant();
+            var normalized = NormalizeLookupLabel(value);
             foreach (var token in _sportsTokens)
             {
                 if (normalized.Contains(token, StringComparison.OrdinalIgnoreCase))
@@ -952,7 +956,7 @@ namespace Kroira.App.Services
                 return false;
             }
 
-            var normalized = NormalizeLabel(value).ToLowerInvariant();
+            var normalized = NormalizeLookupLabel(value);
             if (_turkishBoundaryRegex.IsMatch(normalized))
             {
                 return true;
@@ -967,6 +971,21 @@ namespace Kroira.App.Services
             }
 
             return false;
+        }
+
+        private static string NormalizeLookupLabel(string value)
+        {
+            var normalized = NormalizeLabel(value).ToLowerInvariant().Normalize(NormalizationForm.FormD);
+            var builder = new StringBuilder(normalized.Length);
+            foreach (var character in normalized)
+            {
+                if (CharUnicodeInfo.GetUnicodeCategory(character) != UnicodeCategory.NonSpacingMark)
+                {
+                    builder.Append(character);
+                }
+            }
+
+            return builder.ToString().Normalize(NormalizationForm.FormC);
         }
 
         public static bool IsSportsLikeChannel(string? title, string? categoryName)

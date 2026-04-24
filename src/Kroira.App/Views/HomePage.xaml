@@ -545,7 +545,7 @@
                     </Button>
 
                     <Button Grid.Column="1"
-                            Click="LiveTv_Click"
+                            Click="Sports_Click"
                             Style="{StaticResource HomeCardButtonStyle}"
                             AutomationProperties.Name="Sports">
                         <Border Height="88"

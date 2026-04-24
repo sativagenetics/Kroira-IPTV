@@ -63,6 +63,7 @@ namespace Kroira.App.ViewModels
         private int _lastPreDiscoveryCount;
         private bool _lastDiscoveryFacetFiltersActive;
         private bool _isInitializing;
+        private ChannelsNavigationContext? _navigationContext;
 
         public BulkObservableCollection<BrowserChannelViewModel> FilteredChannels { get; } = new();
         public ObservableCollection<LiveChannelSectionViewModel> SpotlightSections { get; } = new();
@@ -291,6 +292,12 @@ namespace Kroira.App.ViewModels
             DiscoverySourceTypeOptions.CollectionChanged += (_, _) => OnPropertyChanged(nameof(DiscoverySourceTypeVisibility));
         }
 
+        public void SetNavigationContext(ChannelsNavigationContext? context)
+        {
+            _navigationContext = context?.Mode == ChannelsNavigationMode.Sports ? context : null;
+            Log($"NAV: context set mode={_navigationContext?.Mode.ToString() ?? "Default"}");
+        }
+
         [RelayCommand]
         public async Task LoadChannelsAsync()
         {
@@ -448,14 +455,7 @@ namespace Kroira.App.ViewModels
                 _isInitializing = true;
                 try
                 {
-                    FavoritesOnly = _preferences.FavoritesOnly;
-                    GuideMatchedOnly = _preferences.GuideMatchedOnly;
-                    SelectedSortOption = SortOptions.FirstOrDefault(option => string.Equals(option.Key, ResolveInitialSortKey(), StringComparison.OrdinalIgnoreCase))
-                        ?? SortOptions.First();
-                    SelectedSourceOption = SourceOptions.FirstOrDefault(option => option.Id == _preferences.SelectedSourceId)
-                        ?? SourceOptions.FirstOrDefault();
-                    SelectedCategory = Categories.FirstOrDefault(category => string.Equals(category.FilterKey, _preferences.SelectedCategoryKey, StringComparison.OrdinalIgnoreCase))
-                        ?? Categories.FirstOrDefault();
+                    ApplyInitialFilterSelection();
                 }
                 finally
                 {
@@ -472,6 +472,65 @@ namespace Kroira.App.ViewModels
                 Log($"LOAD FAILED: {ex}");
                 SurfaceState = _serviceProvider.GetRequiredService<ISurfaceStateService>().CreateFailureState(SurfaceStateCopies.LiveTv, ex);
             }
+        }
+
+        private void ApplyInitialFilterSelection()
+        {
+            if (_navigationContext?.Mode == ChannelsNavigationMode.Sports &&
+                TryResolveSportsCategoryKey(out var sportsCategoryKey))
+            {
+                SearchQuery = string.Empty;
+                FavoritesOnly = false;
+                GuideMatchedOnly = false;
+                SelectedSortOption = SortOptions.FirstOrDefault(option => string.Equals(option.Key, DefaultPrioritySortKey, StringComparison.OrdinalIgnoreCase))
+                    ?? SortOptions.First();
+                SelectedSourceOption = SourceOptions.FirstOrDefault();
+                SelectedCategory = Categories.FirstOrDefault(category => string.Equals(category.FilterKey, sportsCategoryKey, StringComparison.OrdinalIgnoreCase))
+                    ?? Categories.FirstOrDefault();
+
+                Log($"NAV: sports focus applied category={SelectedCategory?.FilterKey ?? "(all)"} count={SelectedCategory?.ItemCount ?? 0}");
+                return;
+            }
+
+            if (_navigationContext?.Mode == ChannelsNavigationMode.Sports)
+            {
+                Log("NAV: sports focus requested but no sports category exists; falling back to normal channel state");
+            }
+
+            FavoritesOnly = _preferences.FavoritesOnly;
+            GuideMatchedOnly = _preferences.GuideMatchedOnly;
+            SelectedSortOption = SortOptions.FirstOrDefault(option => string.Equals(option.Key, ResolveInitialSortKey(), StringComparison.OrdinalIgnoreCase))
+                ?? SortOptions.First();
+            SelectedSourceOption = SourceOptions.FirstOrDefault(option => option.Id == _preferences.SelectedSourceId)
+                ?? SourceOptions.FirstOrDefault();
+            SelectedCategory = Categories.FirstOrDefault(category => string.Equals(category.FilterKey, _preferences.SelectedCategoryKey, StringComparison.OrdinalIgnoreCase))
+                ?? Categories.FirstOrDefault();
+        }
+
+        private bool TryResolveSportsCategoryKey(out string categoryKey)
+        {
+            var smartSports = Categories.FirstOrDefault(category =>
+                string.Equals(category.FilterKey, SmartSportsCategoryKey, StringComparison.OrdinalIgnoreCase));
+            if (smartSports != null)
+            {
+                categoryKey = smartSports.FilterKey;
+                return true;
+            }
+
+            var categoryMatch = Categories
+                .Where(category => !category.IsSmartCategory)
+                .FirstOrDefault(category =>
+                    ContentClassifier.IsSportsLikeLabel(category.Name) ||
+                    ContentClassifier.IsSportsLikeLabel(category.Description));
+
+            if (categoryMatch != null)
+            {
+                categoryKey = categoryMatch.FilterKey;
+                return true;
+            }
+
+            categoryKey = string.Empty;
+            return false;
         }
 
         [RelayCommand]

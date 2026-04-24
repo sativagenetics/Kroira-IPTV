@@ -68,8 +68,10 @@ namespace Kroira.App.Views
 
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
-            Log($"04: OnNavigatedTo entered, parameterType={e.Parameter?.GetType().FullName ?? "null"}");
+            var navigationContext = e.Parameter as ChannelsNavigationContext;
+            Log($"04: OnNavigatedTo entered, parameterType={e.Parameter?.GetType().FullName ?? "null"}, mode={navigationContext?.Mode.ToString() ?? "Default"}");
             base.OnNavigatedTo(e);
+            ViewModel.SetNavigationContext(navigationContext);
             _ = ViewModel.LoadChannelsCommand.ExecuteAsync(null);
             Log("05: queued LoadChannelsCommand");
         }

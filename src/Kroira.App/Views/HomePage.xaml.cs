@@ -243,6 +243,14 @@ namespace Kroira.App.Views
             NavigateFromHome(typeof(ChannelsPage), $"LiveTv_Click sender={DescribeNavigationSender(sender)}");
         }
 
+        private void Sports_Click(object sender, RoutedEventArgs e)
+        {
+            NavigateFromHome(
+                typeof(ChannelsPage),
+                ChannelsNavigationContext.Sports(),
+                $"Sports_Click sender={DescribeNavigationSender(sender)} mode=Sports");
+        }
+
         private void Favorites_Click(object sender, RoutedEventArgs e)
         {
             NavigateFromHome(typeof(FavoritesPage), $"Favorites_Click sender={DescribeNavigationSender(sender)}");
