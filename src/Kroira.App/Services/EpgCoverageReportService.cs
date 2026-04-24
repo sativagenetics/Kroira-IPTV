@@ -29,6 +29,15 @@ namespace Kroira.App.Services
             var logs = await db.EpgSyncLogs.AsNoTracking()
                 .Where(log => sourceIds.Contains(log.SourceProfileId))
                 .ToDictionaryAsync(log => log.SourceProfileId);
+            var mappingDecisions = await db.EpgMappingDecisions.AsNoTracking()
+                .Where(decision => sourceIds.Contains(decision.SourceProfileId))
+                .ToListAsync();
+            var decisionsBySource = mappingDecisions
+                .GroupBy(decision => decision.SourceProfileId)
+                .ToDictionary(group => group.Key, group => group.ToList());
+            var decisionsByChannelAndGuide = mappingDecisions
+                .GroupBy(decision => BuildDecisionKey(decision.ChannelId, decision.XmltvChannelId), StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(group => group.Key, group => group.OrderByDescending(decision => decision.UpdatedAtUtc).First(), StringComparer.OrdinalIgnoreCase);
 
             var channelRows = await db.Channels.AsNoTracking()
                 .Join(
@@ -75,9 +84,18 @@ namespace Kroira.App.Services
                     .Count(row => channelsWithGuideProgrammes.Contains(row.Channel.Id));
                 var exact = CountMatchType(sourceChannels.Select(row => row.Channel), ChannelEpgMatchSource.Provider);
                 var normalized = CountMatchType(sourceChannels.Select(row => row.Channel), ChannelEpgMatchSource.Normalized);
+                var approvedMatches = CountMatchType(sourceChannels.Select(row => row.Channel), ChannelEpgMatchSource.UserApproved);
                 var weak = sourceChannels
                     .Select(row => row.Channel)
                     .Count(channel => channel.EpgMatchSource is ChannelEpgMatchSource.Previous or ChannelEpgMatchSource.Alias or ChannelEpgMatchSource.Regex or ChannelEpgMatchSource.Fuzzy);
+                var sourceDecisions = decisionsBySource.TryGetValue(source.Id, out var decisions)
+                    ? decisions
+                    : new List<EpgMappingDecision>();
+                var reviewSuggestions = sourceChannels
+                    .Count(row => IsReviewSuggestion(row.Channel, decisionsByChannelAndGuide));
+                var potentialCoverage = Math.Min(
+                    sourceChannels.Count,
+                    sourceChannelsWithGuide + sourceChannels.Count(row => IsPotentialReviewCoverage(row.Channel, channelsWithGuideProgrammes, decisionsByChannelAndGuide)));
 
                 reportSources.Add(new EpgSourceCoverageReportItem
                 {
@@ -89,9 +107,14 @@ namespace Kroira.App.Services
                     ResultCode = log?.ResultCode ?? EpgSyncResultCode.None,
                     TotalLiveChannels = sourceChannels.Count,
                     ChannelsWithGuideProgrammes = sourceChannelsWithGuide,
+                    ReviewSuggestionChannels = reviewSuggestions,
+                    PotentialCoverageChannels = potentialCoverage,
                     ExactMatches = log?.ExactMatchCount > 0 ? log.ExactMatchCount : exact,
                     NormalizedMatches = log?.NormalizedMatchCount > 0 ? log.NormalizedMatchCount : normalized,
+                    ApprovedMatches = log?.ApprovedMatchCount > 0 ? log.ApprovedMatchCount : approvedMatches,
                     WeakMatches = log?.WeakMatchCount > 0 ? log.WeakMatchCount : weak,
+                    ApprovedMappingDecisions = sourceDecisions.Count(decision => decision.Decision == EpgMappingDecisionState.Approved),
+                    RejectedMappingDecisions = sourceDecisions.Count(decision => decision.Decision == EpgMappingDecisionState.Rejected),
                     UnmatchedChannels = Math.Max(0, sourceChannels.Count - sourceChannelsWithGuide),
                     ProgrammeCount = log?.ProgrammeCount ?? sourceChannels.Sum(row => programmeCounts.TryGetValue(row.Channel.Id, out var count) ? count : 0),
                     XmltvChannelCount = log?.XmltvChannelCount ?? 0,
@@ -114,16 +137,17 @@ namespace Kroira.App.Services
                 .ThenBy(row => row.Category.Name)
                 .ThenBy(row => row.Channel.Name)
                 .Take(100)
-                .Select(row => BuildChannelItem(row.Source, row.Category, row.Channel, programmeCounts))
+                .Select(row => BuildChannelItem(row.Source, row.Category, row.Channel, programmeCounts, decisionsByChannelAndGuide))
                 .ToList();
 
             var weakMatches = channelRows
                 .Where(row => row.Channel.EpgMatchSource is ChannelEpgMatchSource.Previous or ChannelEpgMatchSource.Alias or ChannelEpgMatchSource.Regex or ChannelEpgMatchSource.Fuzzy)
+                .Where(row => GetDecisionState(row.Channel, decisionsByChannelAndGuide) != EpgMappingDecisionState.Rejected)
                 .OrderBy(row => row.Channel.EpgMatchConfidence)
                 .ThenBy(row => row.Source.Name)
                 .ThenBy(row => row.Channel.Name)
                 .Take(100)
-                .Select(row => BuildChannelItem(row.Source, row.Category, row.Channel, programmeCounts))
+                .Select(row => BuildChannelItem(row.Source, row.Category, row.Channel, programmeCounts, decisionsByChannelAndGuide))
                 .ToList();
 
             var warnings = reportSources
@@ -137,9 +161,17 @@ namespace Kroira.App.Services
             {
                 TotalLiveChannels = channelRows.Count,
                 ChannelsWithGuideProgrammes = channelsWithGuideProgrammes.Count,
+                TrustedCoverageChannels = channelsWithGuideProgrammes.Count,
+                ReviewSuggestionChannels = reportSources.Sum(source => source.ReviewSuggestionChannels),
+                PotentialCoverageChannels = Math.Min(
+                    channelRows.Count,
+                    channelsWithGuideProgrammes.Count + channelRows.Count(row => IsPotentialReviewCoverage(row.Channel, channelsWithGuideProgrammes, decisionsByChannelAndGuide))),
                 ExactMatches = reportSources.Sum(source => source.ExactMatches),
                 NormalizedMatches = reportSources.Sum(source => source.NormalizedMatches),
+                ApprovedMatches = reportSources.Sum(source => source.ApprovedMatches),
                 WeakMatches = reportSources.Sum(source => source.WeakMatches),
+                ApprovedMappingDecisions = reportSources.Sum(source => source.ApprovedMappingDecisions),
+                RejectedMappingDecisions = reportSources.Sum(source => source.RejectedMappingDecisions),
                 UnmatchedChannels = Math.Max(0, channelRows.Count - channelsWithGuideProgrammes.Count),
                 ProgrammeCount = reportSources.Sum(source => source.ProgrammeCount),
                 XmltvChannelCount = reportSources.Sum(source => source.XmltvChannelCount),
@@ -157,12 +189,38 @@ namespace Kroira.App.Services
             return channels.Count(channel => channel.EpgMatchSource == source);
         }
 
+        private static bool IsWeakMatchType(ChannelEpgMatchSource source)
+        {
+            return source is ChannelEpgMatchSource.Previous or ChannelEpgMatchSource.Alias or ChannelEpgMatchSource.Regex or ChannelEpgMatchSource.Fuzzy;
+        }
+
+        private static bool IsReviewSuggestion(
+            Channel channel,
+            IReadOnlyDictionary<string, EpgMappingDecision> decisionsByChannelAndGuide)
+        {
+            return IsWeakMatchType(channel.EpgMatchSource) &&
+                   GetDecisionState(channel, decisionsByChannelAndGuide) == EpgMappingDecisionState.None;
+        }
+
+        private static bool IsPotentialReviewCoverage(
+            Channel channel,
+            ISet<int> channelsWithGuideProgrammes,
+            IReadOnlyDictionary<string, EpgMappingDecision> decisionsByChannelAndGuide)
+        {
+            return !channelsWithGuideProgrammes.Contains(channel.Id) &&
+                   IsReviewSuggestion(channel, decisionsByChannelAndGuide);
+        }
+
         private static EpgChannelCoverageReportItem BuildChannelItem(
             SourceProfile source,
             ChannelCategory category,
             Channel channel,
-            IReadOnlyDictionary<int, int> programmeCounts)
+            IReadOnlyDictionary<int, int> programmeCounts,
+            IReadOnlyDictionary<string, EpgMappingDecision> decisionsByChannelAndGuide)
         {
+            var decision = GetDecision(channel, decisionsByChannelAndGuide);
+            var decisionState = decision?.Decision ?? EpgMappingDecisionState.None;
+            var isWeak = IsWeakMatchType(channel.EpgMatchSource);
             return new EpgChannelCoverageReportItem
             {
                 ChannelId = channel.Id,
@@ -177,20 +235,29 @@ namespace Kroira.App.Services
                 MatchSummary = channel.EpgMatchSummary,
                 ProgrammeCount = programmeCounts.TryGetValue(channel.Id, out var count) ? count : 0,
                 IsActiveGuideAssignment = count > 0 && IsTrustedMatchType(channel.EpgMatchSource),
-                ReviewStatus = BuildReviewStatus(channel.EpgMatchSource, count)
+                ReviewStatus = BuildReviewStatus(channel.EpgMatchSource, count, decisionState),
+                MappingDecision = decisionState,
+                CanApprove = isWeak && decisionState != EpgMappingDecisionState.Approved,
+                CanReject = isWeak && decisionState != EpgMappingDecisionState.Rejected,
+                CanClearDecision = decisionState != EpgMappingDecisionState.None
             };
         }
 
         private static bool IsTrustedMatchType(ChannelEpgMatchSource source)
         {
-            return source is ChannelEpgMatchSource.Provider or ChannelEpgMatchSource.Normalized;
+            return source is ChannelEpgMatchSource.Provider or ChannelEpgMatchSource.Normalized or ChannelEpgMatchSource.UserApproved;
         }
 
-        private static string BuildReviewStatus(ChannelEpgMatchSource source, int programmeCount)
+        private static string BuildReviewStatus(ChannelEpgMatchSource source, int programmeCount, EpgMappingDecisionState decisionState)
         {
+            if (decisionState == EpgMappingDecisionState.Approved && IsWeakMatchType(source))
+            {
+                return "Approved - refresh EPG to activate this mapping";
+            }
+
             return source switch
             {
-                ChannelEpgMatchSource.Provider or ChannelEpgMatchSource.Normalized => programmeCount > 0
+                ChannelEpgMatchSource.Provider or ChannelEpgMatchSource.Normalized or ChannelEpgMatchSource.UserApproved => programmeCount > 0
                     ? "Active guide assignment"
                     : "Trusted match, no programmes in the active window",
                 ChannelEpgMatchSource.Previous or ChannelEpgMatchSource.Alias or ChannelEpgMatchSource.Regex or ChannelEpgMatchSource.Fuzzy => "Suggestion only - not used for current/next guide display",
@@ -204,12 +271,39 @@ namespace Kroira.App.Services
             {
                 ChannelEpgMatchSource.Provider => "Exact",
                 ChannelEpgMatchSource.Normalized => "Normalized",
+                ChannelEpgMatchSource.UserApproved => "Approved",
                 ChannelEpgMatchSource.Previous => "Reused",
                 ChannelEpgMatchSource.Alias => "Weak alias",
                 ChannelEpgMatchSource.Regex => "Weak regex",
                 ChannelEpgMatchSource.Fuzzy => "Fuzzy",
                 _ => "Unmatched"
             };
+        }
+
+        private static EpgMappingDecision? GetDecision(
+            Channel channel,
+            IReadOnlyDictionary<string, EpgMappingDecision> decisionsByChannelAndGuide)
+        {
+            if (string.IsNullOrWhiteSpace(channel.EpgChannelId))
+            {
+                return null;
+            }
+
+            return decisionsByChannelAndGuide.TryGetValue(BuildDecisionKey(channel.Id, channel.EpgChannelId), out var decision)
+                ? decision
+                : null;
+        }
+
+        private static EpgMappingDecisionState GetDecisionState(
+            Channel channel,
+            IReadOnlyDictionary<string, EpgMappingDecision> decisionsByChannelAndGuide)
+        {
+            return GetDecision(channel, decisionsByChannelAndGuide)?.Decision ?? EpgMappingDecisionState.None;
+        }
+
+        private static string BuildDecisionKey(int channelId, string xmltvChannelId)
+        {
+            return $"{channelId}|{(xmltvChannelId ?? string.Empty).Trim()}";
         }
 
         private static IReadOnlyList<EpgGuideSourceStatusSnapshot> ParseGuideSources(EpgSyncLog? log, SourceCredential? credential)

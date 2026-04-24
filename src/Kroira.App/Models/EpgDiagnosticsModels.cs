@@ -42,9 +42,15 @@ namespace Kroira.App.Models
     {
         public int TotalLiveChannels { get; set; }
         public int ChannelsWithGuideProgrammes { get; set; }
+        public int TrustedCoverageChannels { get; set; }
+        public int ReviewSuggestionChannels { get; set; }
+        public int PotentialCoverageChannels { get; set; }
         public int ExactMatches { get; set; }
         public int NormalizedMatches { get; set; }
+        public int ApprovedMatches { get; set; }
         public int WeakMatches { get; set; }
+        public int ApprovedMappingDecisions { get; set; }
+        public int RejectedMappingDecisions { get; set; }
         public int UnmatchedChannels { get; set; }
         public int ProgrammeCount { get; set; }
         public int XmltvChannelCount { get; set; }
@@ -66,9 +72,14 @@ namespace Kroira.App.Models
         public EpgSyncResultCode ResultCode { get; set; }
         public int TotalLiveChannels { get; set; }
         public int ChannelsWithGuideProgrammes { get; set; }
+        public int ReviewSuggestionChannels { get; set; }
+        public int PotentialCoverageChannels { get; set; }
         public int ExactMatches { get; set; }
         public int NormalizedMatches { get; set; }
+        public int ApprovedMatches { get; set; }
         public int WeakMatches { get; set; }
+        public int ApprovedMappingDecisions { get; set; }
+        public int RejectedMappingDecisions { get; set; }
         public int UnmatchedChannels { get; set; }
         public int ProgrammeCount { get; set; }
         public int XmltvChannelCount { get; set; }
@@ -99,5 +110,9 @@ namespace Kroira.App.Models
         public int ProgrammeCount { get; set; }
         public bool IsActiveGuideAssignment { get; set; }
         public string ReviewStatus { get; set; } = string.Empty;
+        public EpgMappingDecisionState MappingDecision { get; set; }
+        public bool CanApprove { get; set; }
+        public bool CanReject { get; set; }
+        public bool CanClearDecision { get; set; }
     }
 }

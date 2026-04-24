@@ -48,6 +48,35 @@ namespace Kroira.App.Views
             ViewModel.ClearPublicGuidePresetsCommand.Execute(null);
         }
 
+        private void ClearReviewDecisions_Click(object sender, RoutedEventArgs e)
+        {
+            ViewModel.ClearReviewDecisionsCommand.Execute(null);
+        }
+
+        private void ApproveWeakMatch_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button button && button.CommandParameter is EpgChannelCoverageViewModel item)
+            {
+                ViewModel.ApproveWeakMatchCommand.Execute(item);
+            }
+        }
+
+        private void RejectWeakMatch_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button button && button.CommandParameter is EpgChannelCoverageViewModel item)
+            {
+                ViewModel.RejectWeakMatchCommand.Execute(item);
+            }
+        }
+
+        private void ClearMappingDecision_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button button && button.CommandParameter is EpgChannelCoverageViewModel item)
+            {
+                ViewModel.ClearMappingDecisionCommand.Execute(item);
+            }
+        }
+
         public bool TryFocusPrimaryTarget()
         {
             return RemoteNavigationHelper.TryFocusElement(RefreshButton);

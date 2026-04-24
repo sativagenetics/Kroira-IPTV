@@ -903,6 +903,7 @@ namespace Kroira.App.Services
                 epgLog.XmltvChannelCount = 0;
                 epgLog.ExactMatchCount = 0;
                 epgLog.NormalizedMatchCount = 0;
+                epgLog.ApprovedMatchCount = 0;
                 epgLog.WeakMatchCount = 0;
             }
 

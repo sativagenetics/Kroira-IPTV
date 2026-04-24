@@ -38,14 +38,24 @@ namespace Kroira.App.ViewModels
 
     public sealed class EpgChannelCoverageViewModel
     {
+        public int ChannelId { get; set; }
+        public int SourceProfileId { get; set; }
         public string ChannelName { get; set; } = string.Empty;
         public string SourceName { get; set; } = string.Empty;
         public string CategoryName { get; set; } = string.Empty;
+        public string MatchedXmltvChannelId { get; set; } = string.Empty;
         public string MatchText { get; set; } = string.Empty;
         public string DetailText { get; set; } = string.Empty;
         public string ProposedGuideText { get; set; } = string.Empty;
         public string ReviewStatusText { get; set; } = string.Empty;
         public string WeakReasonText { get; set; } = string.Empty;
+        public bool CanApprove { get; set; }
+        public bool CanReject { get; set; }
+        public bool CanClearDecision { get; set; }
+        public Visibility ReviewActionsVisibility => CanApprove || CanReject || CanClearDecision ? Visibility.Visible : Visibility.Collapsed;
+        public Visibility ApproveVisibility => CanApprove ? Visibility.Visible : Visibility.Collapsed;
+        public Visibility RejectVisibility => CanReject ? Visibility.Visible : Visibility.Collapsed;
+        public Visibility ClearDecisionVisibility => CanClearDecision ? Visibility.Visible : Visibility.Collapsed;
         public string SearchKey { get; set; } = string.Empty;
     }
 
@@ -115,6 +125,7 @@ namespace Kroira.App.ViewModels
         [NotifyPropertyChangedFor(nameof(CanAddPublicGuidePresetMode))]
         [NotifyPropertyChangedFor(nameof(CanAddCustomPublicGuide))]
         [NotifyPropertyChangedFor(nameof(CanManagePublicGuidePresets))]
+        [NotifyPropertyChangedFor(nameof(CanManageReviewDecisions))]
         private bool _isBusy;
 
         [ObservableProperty]
@@ -132,6 +143,7 @@ namespace Kroira.App.ViewModels
         [NotifyPropertyChangedFor(nameof(CanAddPublicGuidePresetMode))]
         [NotifyPropertyChangedFor(nameof(CanAddCustomPublicGuide))]
         [NotifyPropertyChangedFor(nameof(CanManagePublicGuidePresets))]
+        [NotifyPropertyChangedFor(nameof(CanManageReviewDecisions))]
         private EpgCenterSourceOption? _selectedSourceOption;
 
         [ObservableProperty]
@@ -190,6 +202,7 @@ namespace Kroira.App.ViewModels
                                                    !IsBusy;
         public bool CanAddCustomPublicGuide => HasPublicGuideConfigSources && SelectedSourceOption != null && !string.IsNullOrWhiteSpace(CustomPublicGuideUrl) && !IsBusy;
         public bool CanManagePublicGuidePresets => HasPublicGuideConfigSources && SelectedSourceOption != null && !IsBusy;
+        public bool CanManageReviewDecisions => SelectedSourceOption != null && !IsBusy;
         public string PublicGuideActionText => SelectedPublicGuideAddMode?.Mode switch
         {
             EpgPublicGuideAddMode.AutoDetect => "Add Auto-Detected",
@@ -459,6 +472,126 @@ namespace Kroira.App.ViewModels
             }
         }
 
+        [RelayCommand]
+        public async Task ApproveWeakMatchAsync(EpgChannelCoverageViewModel? item)
+        {
+            if (item == null || IsBusy)
+            {
+                return;
+            }
+
+            IsBusy = true;
+            try
+            {
+                if (await SaveMappingDecisionAsync(item, EpgMappingDecisionState.Approved))
+                {
+                    AddPublicGuideStatusText = $"Approved EPG mapping for {item.ChannelName}. Refresh EPG to import programmes for the approved guide.";
+                }
+                await LoadReportAsync();
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+        }
+
+        [RelayCommand]
+        public async Task RejectWeakMatchAsync(EpgChannelCoverageViewModel? item)
+        {
+            if (item == null || IsBusy)
+            {
+                return;
+            }
+
+            IsBusy = true;
+            try
+            {
+                if (await SaveMappingDecisionAsync(item, EpgMappingDecisionState.Rejected))
+                {
+                    AddPublicGuideStatusText = $"Rejected EPG suggestion for {item.ChannelName}. It will not be suggested again unless review decisions are cleared.";
+                }
+                await LoadReportAsync();
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+        }
+
+        [RelayCommand]
+        public async Task ClearMappingDecisionAsync(EpgChannelCoverageViewModel? item)
+        {
+            if (item == null || IsBusy)
+            {
+                return;
+            }
+
+            IsBusy = true;
+            try
+            {
+                using var scope = _serviceProvider.CreateScope();
+                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                var xmltvChannelId = item.MatchedXmltvChannelId.Trim();
+                var existing = await db.EpgMappingDecisions
+                    .Where(decision => decision.SourceProfileId == item.SourceProfileId &&
+                                       decision.ChannelId == item.ChannelId &&
+                                       decision.XmltvChannelId == xmltvChannelId)
+                    .ToListAsync();
+                if (existing.Count > 0)
+                {
+                    db.EpgMappingDecisions.RemoveRange(existing);
+                    await db.SaveChangesAsync();
+                    AddPublicGuideStatusText = $"Cleared EPG review decision for {item.ChannelName}.";
+                }
+                else
+                {
+                    AddPublicGuideStatusText = $"No EPG review decision was stored for {item.ChannelName}.";
+                }
+
+                await LoadReportAsync();
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+        }
+
+        [RelayCommand]
+        public async Task ClearReviewDecisionsAsync()
+        {
+            if (!CanManageReviewDecisions || SelectedSourceOption == null)
+            {
+                return;
+            }
+
+            IsBusy = true;
+            try
+            {
+                using var scope = _serviceProvider.CreateScope();
+                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                var sourceId = SelectedSourceOption.SourceProfileId;
+                var decisions = await db.EpgMappingDecisions
+                    .Where(decision => decision.SourceProfileId == sourceId)
+                    .ToListAsync();
+                if (decisions.Count == 0)
+                {
+                    AddPublicGuideStatusText = $"No EPG review decisions are stored for {SelectedSourceOption.SourceName}.";
+                }
+                else
+                {
+                    db.EpgMappingDecisions.RemoveRange(decisions);
+                    await db.SaveChangesAsync();
+                    AddPublicGuideStatusText = $"Cleared {decisions.Count:N0} EPG review decision(s) for {SelectedSourceOption.SourceName}. Refresh EPG to rebuild suggestions.";
+                }
+
+                await LoadReportAsync();
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+        }
+
         private async Task LoadReportAsync()
         {
             using var scope = _serviceProvider.CreateScope();
@@ -466,6 +599,113 @@ namespace Kroira.App.ViewModels
             var reportService = scope.ServiceProvider.GetRequiredService<IEpgCoverageReportService>();
             var report = await reportService.BuildReportAsync(db);
             ApplyReport(report);
+        }
+
+        private async Task<bool> SaveMappingDecisionAsync(EpgChannelCoverageViewModel item, EpgMappingDecisionState decisionState)
+        {
+            var xmltvChannelId = item.MatchedXmltvChannelId.Trim();
+            if (string.IsNullOrWhiteSpace(xmltvChannelId))
+            {
+                AddPublicGuideStatusText = "This suggestion does not have an XMLTV channel id to review.";
+                return false;
+            }
+
+            using var scope = _serviceProvider.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var channel = await db.Channels.FirstOrDefaultAsync(candidate => candidate.Id == item.ChannelId);
+            if (channel == null)
+            {
+                AddPublicGuideStatusText = "The selected channel could not be loaded.";
+                return false;
+            }
+
+            var category = await db.ChannelCategories.AsNoTracking()
+                .FirstOrDefaultAsync(candidate => candidate.Id == channel.ChannelCategoryId && candidate.SourceProfileId == item.SourceProfileId);
+            if (category == null)
+            {
+                AddPublicGuideStatusText = "The selected channel source could not be verified.";
+                return false;
+            }
+
+            var nowUtc = DateTime.UtcNow;
+            var decision = await db.EpgMappingDecisions
+                .FirstOrDefaultAsync(candidate => candidate.SourceProfileId == item.SourceProfileId &&
+                                                  candidate.ChannelId == item.ChannelId &&
+                                                  candidate.XmltvChannelId == xmltvChannelId);
+            if (decision == null)
+            {
+                decision = new EpgMappingDecision
+                {
+                    SourceProfileId = item.SourceProfileId,
+                    ChannelId = item.ChannelId,
+                    XmltvChannelId = xmltvChannelId,
+                    CreatedAtUtc = nowUtc
+                };
+                db.EpgMappingDecisions.Add(decision);
+            }
+
+            decision.ChannelIdentityKey = channel.NormalizedIdentityKey;
+            decision.ChannelName = channel.Name;
+            decision.CategoryName = category.Name;
+            decision.ProviderEpgChannelId = channel.ProviderEpgChannelId;
+            decision.StreamUrlHash = EpgMappingDecisionIdentity.ComputeStreamUrlHash(channel.StreamUrl);
+            decision.XmltvDisplayName = CleanXmltvDisplayName(item.ProposedGuideText, xmltvChannelId);
+            decision.Decision = decisionState;
+            decision.SuggestedMatchSource = channel.EpgMatchSource;
+            decision.SuggestedConfidence = channel.EpgMatchConfidence;
+            decision.ReasonSummary = TrimForStorage(item.WeakReasonText, 500);
+            decision.UpdatedAtUtc = nowUtc;
+
+            if (decisionState == EpgMappingDecisionState.Rejected &&
+                string.Equals(channel.EpgChannelId, xmltvChannelId, StringComparison.OrdinalIgnoreCase) &&
+                channel.EpgMatchSource is ChannelEpgMatchSource.Previous or ChannelEpgMatchSource.Alias or ChannelEpgMatchSource.Regex or ChannelEpgMatchSource.Fuzzy)
+            {
+                RestoreProviderGuideDefault(channel);
+            }
+
+            await db.SaveChangesAsync();
+            return true;
+        }
+
+        private static void RestoreProviderGuideDefault(Channel channel)
+        {
+            if (!string.IsNullOrWhiteSpace(channel.ProviderEpgChannelId))
+            {
+                channel.EpgChannelId = channel.ProviderEpgChannelId;
+                channel.EpgMatchSource = ChannelEpgMatchSource.Provider;
+                channel.EpgMatchConfidence = 70;
+                channel.EpgMatchSummary = "Using provider guide metadata until XMLTV confirms a better match.";
+                return;
+            }
+
+            channel.EpgChannelId = string.Empty;
+            channel.EpgMatchSource = ChannelEpgMatchSource.None;
+            channel.EpgMatchConfidence = 0;
+            channel.EpgMatchSummary = string.Empty;
+        }
+
+        private static string CleanXmltvDisplayName(string value, string fallbackXmltvChannelId)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return fallbackXmltvChannelId;
+            }
+
+            var trimmed = value.Trim();
+            return trimmed.StartsWith("XMLTV ", StringComparison.OrdinalIgnoreCase)
+                ? trimmed[6..].Trim()
+                : trimmed;
+        }
+
+        private static string TrimForStorage(string value, int maxLength)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return string.Empty;
+            }
+
+            var trimmed = value.Trim();
+            return trimmed.Length <= maxLength ? trimmed : trimmed[..maxLength];
         }
 
         private void ApplyReport(EpgCoverageReport report)
@@ -477,21 +717,33 @@ namespace Kroira.App.ViewModels
 
             SummaryCards.Add(new EpgSummaryCardViewModel
             {
-                Label = "Coverage",
+                Label = "Trusted Coverage",
                 Value = $"{coveragePercent:0.#}%",
-                Detail = $"{report.ChannelsWithGuideProgrammes:N0} / {report.TotalLiveChannels:N0} live channels"
+                Detail = $"{report.TrustedCoverageChannels:N0} / {report.TotalLiveChannels:N0} live channels active"
             });
             SummaryCards.Add(new EpgSummaryCardViewModel
             {
-                Label = "Matches",
-                Value = $"{report.ExactMatches + report.NormalizedMatches + report.WeakMatches:N0}",
-                Detail = $"{report.ExactMatches:N0} exact, {report.NormalizedMatches:N0} normalized, {report.WeakMatches:N0} weak"
+                Label = "Review Suggestions",
+                Value = $"{report.ReviewSuggestionChannels:N0}",
+                Detail = $"{report.WeakMatches:N0} weak total, {report.ApprovedMappingDecisions:N0} approved, {report.RejectedMappingDecisions:N0} rejected"
+            });
+            SummaryCards.Add(new EpgSummaryCardViewModel
+            {
+                Label = "Potential Coverage",
+                Value = $"{report.PotentialCoverageChannels:N0}",
+                Detail = $"If review suggestions are approved; {report.ProgrammeCount:N0} programmes imported"
+            });
+            SummaryCards.Add(new EpgSummaryCardViewModel
+            {
+                Label = "Trusted Matches",
+                Value = $"{report.ExactMatches + report.NormalizedMatches + report.ApprovedMatches:N0}",
+                Detail = $"{report.ExactMatches:N0} exact, {report.NormalizedMatches:N0} normalized, {report.ApprovedMatches:N0} approved"
             });
             SummaryCards.Add(new EpgSummaryCardViewModel
             {
                 Label = "Unmatched",
                 Value = $"{report.UnmatchedChannels:N0}",
-                Detail = $"{report.ProgrammeCount:N0} programmes from {report.XmltvChannelCount:N0} XMLTV channels"
+                Detail = $"{report.XmltvChannelCount:N0} XMLTV channels indexed"
             });
 
             HeadlineText = report.TotalLiveChannels == 0
@@ -942,11 +1194,14 @@ namespace Kroira.App.ViewModels
 
             return new EpgChannelCoverageViewModel
             {
+                ChannelId = item.ChannelId,
+                SourceProfileId = item.SourceProfileId,
                 ChannelName = item.ChannelName,
                 SourceName = item.SourceName,
                 CategoryName = item.CategoryName,
+                MatchedXmltvChannelId = item.MatchedXmltvChannelId,
                 MatchText = $"{item.MatchType} - confidence {item.MatchConfidence}",
-                DetailText = $"{guideId} - {matchedId} - {item.ProgrammeCount:N0} programmes",
+                DetailText = $"{item.CategoryName} - {guideId} - {matchedId} - {item.ProgrammeCount:N0} programmes",
                 ProposedGuideText = matchedId,
                 ReviewStatusText = string.IsNullOrWhiteSpace(item.ReviewStatus)
                     ? (item.IsActiveGuideAssignment ? "Active guide assignment" : "Review needed")
@@ -954,6 +1209,9 @@ namespace Kroira.App.ViewModels
                 WeakReasonText = string.IsNullOrWhiteSpace(item.MatchSummary)
                     ? "No match diagnostic was recorded."
                     : item.MatchSummary,
+                CanApprove = item.CanApprove,
+                CanReject = item.CanReject,
+                CanClearDecision = item.CanClearDecision,
                 SearchKey = $"{item.ChannelName} {item.SourceName} {item.CategoryName} {item.ProviderEpgChannelId} {item.MatchedXmltvChannelId} {item.MatchSummary}"
             };
         }
@@ -965,7 +1223,7 @@ namespace Kroira.App.ViewModels
                 return "EPG coverage is waiting for imported live channels.";
             }
 
-            return $"{report.ExactMatches:N0} exact matches, {report.NormalizedMatches:N0} normalized matches, {report.WeakMatches:N0} weak matches, {report.UnmatchedChannels:N0} unmatched channels.";
+            return $"{report.ExactMatches:N0} exact matches, {report.NormalizedMatches:N0} normalized matches, {report.ApprovedMatches:N0} approved mappings, {report.ReviewSuggestionChannels:N0} review suggestions, {report.UnmatchedChannels:N0} unmatched channels.";
         }
 
         private static string BuildSourceStatusText(EpgSourceCoverageReportItem source)

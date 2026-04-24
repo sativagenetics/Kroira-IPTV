@@ -23,6 +23,7 @@ namespace Kroira.App.Models
         public int XmltvChannelCount { get; set; }
         public int ExactMatchCount { get; set; }
         public int NormalizedMatchCount { get; set; }
+        public int ApprovedMatchCount { get; set; }
         public int WeakMatchCount { get; set; }
         public string MatchBreakdown { get; set; } = string.Empty;
         public string GuideSourceStatusJson { get; set; } = string.Empty;

@@ -37,6 +37,10 @@ namespace Kroira.App.Services
             var records = await db.SourceChannelEnrichmentRecords
                 .Where(record => record.SourceProfileId == sourceProfileId)
                 .ToListAsync();
+            var decisions = await db.EpgMappingDecisions
+                .Where(decision => decision.SourceProfileId == sourceProfileId)
+                .ToListAsync();
+            var decisionLookup = EpgMappingDecisionLookup.Create(sourceProfileId, channels, decisions);
             if (channels.Count == 0)
             {
                 if (records.Count > 0)
@@ -53,7 +57,7 @@ namespace Kroira.App.Services
 
             foreach (var channel in channels)
             {
-                PrepareChannel(db, channel, lookup, records, sourceProfileId, nowUtc);
+                PrepareChannel(db, channel, lookup, records, sourceProfileId, nowUtc, decisionLookup);
             }
 
             var staleRecords = records
@@ -84,19 +88,23 @@ namespace Kroira.App.Services
             var records = await db.SourceChannelEnrichmentRecords
                 .Where(record => record.SourceProfileId == sourceProfileId)
                 .ToListAsync();
+            var decisions = await db.EpgMappingDecisions
+                .Where(decision => decision.SourceProfileId == sourceProfileId)
+                .ToListAsync();
+            var decisionLookup = EpgMappingDecisionLookup.Create(sourceProfileId, channels, decisions);
             var lookup = BuildLookup(records);
             var normalizedXmltvChannels = xmltvChannels
                 .Where(channel => !string.IsNullOrWhiteSpace(channel.Id))
                 .GroupBy(channel => channel.Id.Trim(), StringComparer.OrdinalIgnoreCase)
                 .Select(group => group.First())
                 .ToList();
-            var matcher = new EpgChannelMatcher(_identityService, channels);
+            var matcher = new EpgChannelMatcher(_identityService, channels, decisionLookup);
             var matches = matcher.MatchAll(normalizedXmltvChannels);
             var nowUtc = DateTime.UtcNow;
 
             foreach (var channel in channels)
             {
-                PrepareChannel(db, channel, lookup, records, sourceProfileId, nowUtc);
+                PrepareChannel(db, channel, lookup, records, sourceProfileId, nowUtc, decisionLookup);
             }
 
             foreach (var xmltvChannel in normalizedXmltvChannels)
@@ -181,7 +189,8 @@ namespace Kroira.App.Services
             EnrichmentLookup lookup,
             ICollection<SourceChannelEnrichmentRecord> records,
             int sourceProfileId,
-            DateTime nowUtc)
+            DateTime nowUtc,
+            EpgMappingDecisionLookup? decisionLookup = null)
         {
             channel.ProviderLogoUrl = NormalizeValue(string.IsNullOrWhiteSpace(channel.ProviderLogoUrl) ? channel.LogoUrl : channel.ProviderLogoUrl);
             channel.ProviderEpgChannelId = NormalizeValue(string.IsNullOrWhiteSpace(channel.ProviderEpgChannelId) ? channel.EpgChannelId : channel.ProviderEpgChannelId);
@@ -207,7 +216,7 @@ namespace Kroira.App.Services
                 record.LastAppliedAtUtc = nowUtc;
             }
 
-            ApplyStoredFallbacks(channel, record);
+            ApplyStoredFallbacks(channel, record, decisionLookup);
         }
 
         private static void ApplyProviderDefaults(Channel channel)
@@ -245,10 +254,11 @@ namespace Kroira.App.Services
             }
         }
 
-        private static void ApplyStoredFallbacks(Channel channel, SourceChannelEnrichmentRecord record)
+        private static void ApplyStoredFallbacks(Channel channel, SourceChannelEnrichmentRecord record, EpgMappingDecisionLookup? decisionLookup)
         {
             if (string.IsNullOrWhiteSpace(channel.ProviderEpgChannelId) &&
-                !string.IsNullOrWhiteSpace(record.MatchedXmltvChannelId))
+                !string.IsNullOrWhiteSpace(record.MatchedXmltvChannelId) &&
+                decisionLookup?.IsRejected(channel, record.MatchedXmltvChannelId) != true)
             {
                 channel.EpgChannelId = record.MatchedXmltvChannelId;
                 channel.EpgMatchSource = ChannelEpgMatchSource.Previous;
@@ -303,6 +313,7 @@ namespace Kroira.App.Services
                     ChannelEpgMatchSource.Provider => 88,
                     ChannelEpgMatchSource.Previous => 82,
                     ChannelEpgMatchSource.Normalized => 84,
+                    ChannelEpgMatchSource.UserApproved => 84,
                     ChannelEpgMatchSource.Alias => 78,
                     ChannelEpgMatchSource.Regex => 74,
                     ChannelEpgMatchSource.Fuzzy => 68,
@@ -346,6 +357,7 @@ namespace Kroira.App.Services
                     {
                         ChannelEpgMatchSource.Provider => 97,
                         ChannelEpgMatchSource.Normalized => 88,
+                        ChannelEpgMatchSource.UserApproved => 93,
                         _ => 0
                     }
                 },
@@ -371,6 +383,7 @@ namespace Kroira.App.Services
                 ChannelEpgMatchSource.Provider => $"Provider guide metadata matched XMLTV channel {label}.",
                 ChannelEpgMatchSource.Previous => $"The previous successful guide mapping still resolves to XMLTV channel {label}.",
                 ChannelEpgMatchSource.Normalized => $"Normalized channel identity matched XMLTV channel {label}.",
+                ChannelEpgMatchSource.UserApproved => $"User-approved guide mapping matched XMLTV channel {label}.",
                 ChannelEpgMatchSource.Alias => $"Alias fallback matched XMLTV channel {label}.",
                 ChannelEpgMatchSource.Regex => $"Regex-safe alias matching resolved XMLTV channel {label}.",
                 ChannelEpgMatchSource.Fuzzy => $"Safe fuzzy fallback matched XMLTV channel {label}.",
@@ -385,7 +398,7 @@ namespace Kroira.App.Services
 
         private static bool IsTrustedGuideSource(ChannelEpgMatchSource source)
         {
-            return source is ChannelEpgMatchSource.Provider or ChannelEpgMatchSource.Normalized;
+            return source is ChannelEpgMatchSource.Provider or ChannelEpgMatchSource.Normalized or ChannelEpgMatchSource.UserApproved;
         }
 
         private static bool IsWeakGuideSource(ChannelEpgMatchSource source)
@@ -412,6 +425,7 @@ namespace Kroira.App.Services
             ChannelEpgMatchSource.Provider => "epg.provider_id",
             ChannelEpgMatchSource.Previous => "epg.previous_match",
             ChannelEpgMatchSource.Normalized => "epg.normalized_alias",
+            ChannelEpgMatchSource.UserApproved => "epg.user_approved",
             ChannelEpgMatchSource.Alias => "epg.alias_match",
             ChannelEpgMatchSource.Regex => "epg.regex_alias",
             ChannelEpgMatchSource.Fuzzy => "epg.fuzzy_fallback",
@@ -594,23 +608,176 @@ namespace Kroira.App.Services
             }
         }
 
+        private sealed class EpgMappingDecisionLookup
+        {
+            private readonly Dictionary<string, List<EpgMappingDecision>> _approvedByXmltvChannelId;
+            private readonly HashSet<string> _rejectedChannelKeys;
+            private readonly HashSet<string> _rejectedStreamKeys;
+
+            private EpgMappingDecisionLookup(
+                Dictionary<string, List<EpgMappingDecision>> approvedByXmltvChannelId,
+                HashSet<string> rejectedChannelKeys,
+                HashSet<string> rejectedStreamKeys)
+            {
+                _approvedByXmltvChannelId = approvedByXmltvChannelId;
+                _rejectedChannelKeys = rejectedChannelKeys;
+                _rejectedStreamKeys = rejectedStreamKeys;
+            }
+
+            public static EpgMappingDecisionLookup Create(
+                int sourceProfileId,
+                IEnumerable<Channel> channels,
+                IEnumerable<EpgMappingDecision> decisions)
+            {
+                var approvedByXmltvChannelId = new Dictionary<string, List<EpgMappingDecision>>(StringComparer.OrdinalIgnoreCase);
+                var rejectedChannelKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                var rejectedStreamKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                var channelIds = channels.Select(channel => channel.Id).ToHashSet();
+
+                foreach (var decision in decisions.Where(decision => decision.SourceProfileId == sourceProfileId))
+                {
+                    var xmltvChannelId = NormalizeXmltvChannelId(decision.XmltvChannelId);
+                    if (string.IsNullOrWhiteSpace(xmltvChannelId))
+                    {
+                        continue;
+                    }
+
+                    if (decision.Decision == EpgMappingDecisionState.Approved)
+                    {
+                        if (!approvedByXmltvChannelId.TryGetValue(xmltvChannelId, out var approved))
+                        {
+                            approved = new List<EpgMappingDecision>();
+                            approvedByXmltvChannelId[xmltvChannelId] = approved;
+                        }
+
+                        approved.Add(decision);
+                    }
+                    else if (decision.Decision == EpgMappingDecisionState.Rejected)
+                    {
+                        if (channelIds.Contains(decision.ChannelId))
+                        {
+                            rejectedChannelKeys.Add(BuildChannelDecisionKey(decision.ChannelId, xmltvChannelId));
+                        }
+
+                        if (!string.IsNullOrWhiteSpace(decision.StreamUrlHash))
+                        {
+                            rejectedStreamKeys.Add(BuildStreamDecisionKey(decision.StreamUrlHash, xmltvChannelId));
+                        }
+                    }
+                }
+
+                return new EpgMappingDecisionLookup(approvedByXmltvChannelId, rejectedChannelKeys, rejectedStreamKeys);
+            }
+
+            public bool IsRejected(Channel channel, string xmltvChannelId)
+            {
+                var normalizedXmltvChannelId = NormalizeXmltvChannelId(xmltvChannelId);
+                if (string.IsNullOrWhiteSpace(normalizedXmltvChannelId))
+                {
+                    return false;
+                }
+
+                if (_rejectedChannelKeys.Contains(BuildChannelDecisionKey(channel.Id, normalizedXmltvChannelId)))
+                {
+                    return true;
+                }
+
+                var streamHash = EpgMappingDecisionIdentity.ComputeStreamUrlHash(channel.StreamUrl);
+                return !string.IsNullOrWhiteSpace(streamHash) &&
+                       _rejectedStreamKeys.Contains(BuildStreamDecisionKey(streamHash, normalizedXmltvChannelId));
+            }
+
+            public IReadOnlyList<Channel> ResolveApprovedChannels(
+                string xmltvChannelId,
+                IReadOnlyDictionary<int, Channel> channelsById,
+                IReadOnlyDictionary<string, List<Channel>> channelsByStreamUrlHash,
+                ISet<int> assignedChannelIds)
+            {
+                var normalizedXmltvChannelId = NormalizeXmltvChannelId(xmltvChannelId);
+                if (string.IsNullOrWhiteSpace(normalizedXmltvChannelId) ||
+                    !_approvedByXmltvChannelId.TryGetValue(normalizedXmltvChannelId, out var decisions))
+                {
+                    return Array.Empty<Channel>();
+                }
+
+                var channels = new List<Channel>();
+                foreach (var decision in decisions)
+                {
+                    if (channelsById.TryGetValue(decision.ChannelId, out var channel))
+                    {
+                        AddApprovedChannel(channel);
+                        continue;
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(decision.StreamUrlHash) &&
+                        channelsByStreamUrlHash.TryGetValue(decision.StreamUrlHash, out var streamMatches))
+                    {
+                        foreach (var streamMatch in streamMatches)
+                        {
+                            AddApprovedChannel(streamMatch);
+                        }
+                    }
+                }
+
+                return channels
+                    .GroupBy(channel => channel.Id)
+                    .Select(group => group.First())
+                    .ToList();
+
+                void AddApprovedChannel(Channel channel)
+                {
+                    if (assignedChannelIds.Contains(channel.Id) ||
+                        IsRejected(channel, normalizedXmltvChannelId))
+                    {
+                        return;
+                    }
+
+                    channels.Add(channel);
+                }
+            }
+
+            private static string NormalizeXmltvChannelId(string value)
+            {
+                return string.IsNullOrWhiteSpace(value) ? string.Empty : value.Trim();
+            }
+
+            private static string BuildChannelDecisionKey(int channelId, string xmltvChannelId)
+            {
+                return $"{channelId}|{xmltvChannelId}";
+            }
+
+            private static string BuildStreamDecisionKey(string streamUrlHash, string xmltvChannelId)
+            {
+                return $"{streamUrlHash.Trim()}|{xmltvChannelId}";
+            }
+        }
+
         private sealed class EpgChannelMatcher
         {
             private const int ExpensiveWeakMatchXmltvChannelLimit = 6000;
 
             private readonly ILiveChannelIdentityService _identityService;
+            private readonly EpgMappingDecisionLookup _decisionLookup;
             private readonly Dictionary<string, List<Channel>> _byProviderGuideId = new(StringComparer.OrdinalIgnoreCase);
             private readonly Dictionary<string, List<Channel>> _byPreviousGuideId = new(StringComparer.OrdinalIgnoreCase);
             private readonly Dictionary<string, List<Channel>> _byNormalizedValue = new(StringComparer.OrdinalIgnoreCase);
             private readonly Dictionary<string, List<Channel>> _byAliasKey = new(StringComparer.OrdinalIgnoreCase);
+            private readonly Dictionary<int, Channel> _byChannelId = new();
+            private readonly Dictionary<string, List<Channel>> _byStreamUrlHash = new(StringComparer.OrdinalIgnoreCase);
             private readonly List<ChannelCandidate> _candidates = new();
 
-            public EpgChannelMatcher(ILiveChannelIdentityService identityService, IEnumerable<Channel> channels)
+            public EpgChannelMatcher(
+                ILiveChannelIdentityService identityService,
+                IEnumerable<Channel> channels,
+                EpgMappingDecisionLookup decisionLookup)
             {
                 _identityService = identityService;
+                _decisionLookup = decisionLookup;
 
                 foreach (var channel in channels)
                 {
+                    _byChannelId[channel.Id] = channel;
+                    AddStreamHashIndex(channel);
                     AddIndex(_byProviderGuideId, channel.ProviderEpgChannelId, channel);
 
                     if (channel.EpgMatchSource == ChannelEpgMatchSource.Previous)
@@ -642,9 +809,10 @@ namespace Kroira.App.Services
                 var outcomes = new Dictionary<string, ChannelEpgMatchOutcome>(StringComparer.OrdinalIgnoreCase);
                 var assignedChannelIds = new HashSet<int>();
 
-                MatchUsingExactIds(orderedChannels, outcomes, assignedChannelIds, _byProviderGuideId, ChannelEpgMatchSource.Provider, 97, "Provider guide id");
-                MatchUsingExactIds(orderedChannels, outcomes, assignedChannelIds, _byPreviousGuideId, ChannelEpgMatchSource.Previous, 91, "Previous guide mapping");
+                MatchUsingExactIds(orderedChannels, outcomes, assignedChannelIds, _byProviderGuideId, ChannelEpgMatchSource.Provider, 97, "Provider guide id", respectReviewRejections: false);
                 MatchUsingNormalizedValues(orderedChannels, outcomes, assignedChannelIds);
+                MatchUsingApprovedDecisions(orderedChannels, outcomes, assignedChannelIds);
+                MatchUsingExactIds(orderedChannels, outcomes, assignedChannelIds, _byPreviousGuideId, ChannelEpgMatchSource.Previous, 91, "Previous guide mapping", respectReviewRejections: true);
                 MatchUsingAliasKeys(orderedChannels, outcomes, assignedChannelIds);
                 if (orderedChannels.Count <= ExpensiveWeakMatchXmltvChannelLimit)
                 {
@@ -677,7 +845,8 @@ namespace Kroira.App.Services
                 IReadOnlyDictionary<string, List<Channel>> index,
                 ChannelEpgMatchSource reason,
                 int confidence,
-                string label)
+                string label,
+                bool respectReviewRejections)
             {
                 foreach (var xmltvChannel in xmltvChannels)
                 {
@@ -692,6 +861,11 @@ namespace Kroira.App.Services
                     }
 
                     var availableMatches = GetAvailableMatches(matches, assignedChannelIds);
+                    if (respectReviewRejections)
+                    {
+                        availableMatches = FilterRejectedWeakMatches(xmltvChannel, availableMatches);
+                    }
+
                     if (availableMatches.Count == 0)
                     {
                         continue;
@@ -706,6 +880,41 @@ namespace Kroira.App.Services
                         confidence,
                         $"{label} matched XMLTV channel '{xmltvChannel.Id}'.",
                         xmltvChannel.Id,
+                        xmltvChannel.Id);
+                }
+            }
+
+            private void MatchUsingApprovedDecisions(
+                IReadOnlyCollection<XmltvChannelDescriptor> xmltvChannels,
+                IDictionary<string, ChannelEpgMatchOutcome> outcomes,
+                ISet<int> assignedChannelIds)
+            {
+                foreach (var xmltvChannel in xmltvChannels)
+                {
+                    if (outcomes.ContainsKey(xmltvChannel.Id))
+                    {
+                        continue;
+                    }
+
+                    var approvedMatches = _decisionLookup.ResolveApprovedChannels(
+                        xmltvChannel.Id,
+                        _byChannelId,
+                        _byStreamUrlHash,
+                        assignedChannelIds);
+                    if (approvedMatches.Count == 0)
+                    {
+                        continue;
+                    }
+
+                    AssignOutcome(
+                        outcomes,
+                        assignedChannelIds,
+                        xmltvChannel.Id,
+                        approvedMatches,
+                        ChannelEpgMatchSource.UserApproved,
+                        93,
+                        $"User-approved EPG mapping matched XMLTV channel '{xmltvChannel.Id}'.",
+                        xmltvChannel.PrimaryDisplayName,
                         xmltvChannel.Id);
                 }
             }
@@ -783,7 +992,9 @@ namespace Kroira.App.Services
                                 continue;
                             }
 
-                            if (!IsWeakMatchIdentitySafe(xmltvChannel, availableMatches, candidate, aliasKey, out var weakDiagnostic))
+                            availableMatches = FilterRejectedWeakMatches(xmltvChannel, availableMatches);
+                            if (availableMatches.Count == 0 ||
+                                !IsWeakMatchIdentitySafe(xmltvChannel, availableMatches, candidate, aliasKey, out var weakDiagnostic))
                             {
                                 continue;
                             }
@@ -827,7 +1038,9 @@ namespace Kroira.App.Services
                         continue;
                     }
 
-                    if (!IsWeakMatchIdentitySafe(xmltvChannel, regexOutcome.Channels, regexOutcome.MatchedValue, regexOutcome.MatchedKey, out var weakDiagnostic))
+                    var availableMatches = FilterRejectedWeakMatches(xmltvChannel, regexOutcome.Channels);
+                    if (availableMatches.Count == 0 ||
+                        !IsWeakMatchIdentitySafe(xmltvChannel, availableMatches, regexOutcome.MatchedValue, regexOutcome.MatchedKey, out var weakDiagnostic))
                     {
                         continue;
                     }
@@ -836,7 +1049,7 @@ namespace Kroira.App.Services
                         outcomes,
                         assignedChannelIds,
                         xmltvChannel.Id,
-                        regexOutcome.Channels,
+                        availableMatches,
                         regexOutcome.Reason,
                         regexOutcome.Confidence,
                         $"{regexOutcome.Diagnostic} {weakDiagnostic}",
@@ -863,7 +1076,9 @@ namespace Kroira.App.Services
                         continue;
                     }
 
-                    if (!IsWeakMatchIdentitySafe(xmltvChannel, fuzzyOutcome.Channels, fuzzyOutcome.MatchedValue, fuzzyOutcome.MatchedKey, out var weakDiagnostic))
+                    var availableMatches = FilterRejectedWeakMatches(xmltvChannel, fuzzyOutcome.Channels);
+                    if (availableMatches.Count == 0 ||
+                        !IsWeakMatchIdentitySafe(xmltvChannel, availableMatches, fuzzyOutcome.MatchedValue, fuzzyOutcome.MatchedKey, out var weakDiagnostic))
                     {
                         continue;
                     }
@@ -872,7 +1087,7 @@ namespace Kroira.App.Services
                         outcomes,
                         assignedChannelIds,
                         xmltvChannel.Id,
-                        fuzzyOutcome.Channels,
+                        availableMatches,
                         fuzzyOutcome.Reason,
                         fuzzyOutcome.Confidence,
                         $"{fuzzyOutcome.Diagnostic} {weakDiagnostic}",
@@ -959,6 +1174,7 @@ namespace Kroira.App.Services
                             .GroupBy(channel => channel.Id)
                             .Select(group => group.First())
                             .ToList();
+                        assignedMatches = FilterRejectedWeakMatches(xmltvChannel, assignedMatches);
                         if (assignedMatches.Count == 1 &&
                             IsWeakMatchIdentitySafe(xmltvChannel, assignedMatches, candidate, aliasKey, out var weakDiagnostic))
                         {
@@ -1295,10 +1511,39 @@ namespace Kroira.App.Services
                 }
             }
 
+            private void AddStreamHashIndex(Channel channel)
+            {
+                var streamHash = EpgMappingDecisionIdentity.ComputeStreamUrlHash(channel.StreamUrl);
+                if (string.IsNullOrWhiteSpace(streamHash))
+                {
+                    return;
+                }
+
+                if (!_byStreamUrlHash.TryGetValue(streamHash, out var channels))
+                {
+                    channels = new List<Channel>();
+                    _byStreamUrlHash[streamHash] = channels;
+                }
+
+                if (!channels.Any(item => item.Id == channel.Id))
+                {
+                    channels.Add(channel);
+                }
+            }
+
             private static List<Channel> GetAvailableMatches(IEnumerable<Channel> matches, ISet<int> assignedChannelIds)
             {
                 return matches
                     .Where(channel => !assignedChannelIds.Contains(channel.Id))
+                    .GroupBy(channel => channel.Id)
+                    .Select(group => group.First())
+                    .ToList();
+            }
+
+            private List<Channel> FilterRejectedWeakMatches(XmltvChannelDescriptor xmltvChannel, IEnumerable<Channel> matches)
+            {
+                return matches
+                    .Where(channel => !_decisionLookup.IsRejected(channel, xmltvChannel.Id))
                     .GroupBy(channel => channel.Id)
                     .Select(group => group.First())
                     .ToList();

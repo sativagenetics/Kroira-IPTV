@@ -138,6 +138,13 @@
                                         <TextBlock Text="Clear IPTV-EPG.org Presets" />
                                     </StackPanel>
                                 </Button>
+                                <Button Click="ClearReviewDecisions_Click"
+                                        IsEnabled="{x:Bind ViewModel.CanManageReviewDecisions, Mode=OneWay}">
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <FontIcon Glyph="&#xE711;" FontSize="14" />
+                                        <TextBlock Text="Clear Review Decisions" />
+                                    </StackPanel>
+                                </Button>
                             </StackPanel>
                             <TextBox Grid.Row="4"
                                      Grid.ColumnSpan="2"
@@ -277,10 +284,29 @@
                                 <DataTemplate x:DataType="vm:EpgChannelCoverageViewModel">
                                     <StackPanel Padding="6" Spacing="2">
                                         <TextBlock Text="{x:Bind ChannelName}" FontWeight="SemiBold" TextWrapping="WrapWholeWords" />
+                                        <TextBlock Text="{x:Bind SourceName}" Foreground="{StaticResource KroiraTextSecondaryBrush}" TextWrapping="WrapWholeWords" />
+                                        <TextBlock Text="{x:Bind CategoryName}" Foreground="{StaticResource KroiraTextTertiaryBrush}" TextWrapping="WrapWholeWords" />
                                         <TextBlock Text="{x:Bind ProposedGuideText}" Foreground="{StaticResource KroiraTextSecondaryBrush}" TextWrapping="WrapWholeWords" />
                                         <TextBlock Text="{x:Bind MatchText}" Foreground="{StaticResource KroiraTextSecondaryBrush}" />
                                         <TextBlock Text="{x:Bind ReviewStatusText}" Foreground="{StaticResource KroiraStateWarningBrush}" TextWrapping="WrapWholeWords" />
                                         <TextBlock Text="{x:Bind WeakReasonText}" Foreground="{StaticResource KroiraTextTertiaryBrush}" TextWrapping="WrapWholeWords" />
+                                        <StackPanel Orientation="Horizontal"
+                                                    Spacing="8"
+                                                    Margin="0,6,0,0"
+                                                    Visibility="{x:Bind ReviewActionsVisibility}">
+                                            <Button Content="Approve"
+                                                    Click="ApproveWeakMatch_Click"
+                                                    CommandParameter="{x:Bind}"
+                                                    Visibility="{x:Bind ApproveVisibility}" />
+                                            <Button Content="Reject"
+                                                    Click="RejectWeakMatch_Click"
+                                                    CommandParameter="{x:Bind}"
+                                                    Visibility="{x:Bind RejectVisibility}" />
+                                            <Button Content="Clear"
+                                                    Click="ClearMappingDecision_Click"
+                                                    CommandParameter="{x:Bind}"
+                                                    Visibility="{x:Bind ClearDecisionVisibility}" />
+                                        </StackPanel>
                                     </StackPanel>
                                 </DataTemplate>
                             </ListView.ItemTemplate>

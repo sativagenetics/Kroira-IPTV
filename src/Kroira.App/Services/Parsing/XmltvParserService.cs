@@ -291,7 +291,7 @@ namespace Kroira.App.Services.Parsing
             var metrics = BuildSyncMetrics(channels, epgItems, channelMatches.Values, xmltvChannels.Count);
             ImportRuntimeLogger.Log(
                 "EPG SYNC",
-                $"source_profile_id={sourceProfileId}; stage=match_complete; total_live_channels={metrics.TotalLiveChannelCount}; matched_channels={metrics.MatchedChannelCount}; unmatched_channels={metrics.UnmatchedChannelCount}; exact_matches={metrics.ExactMatchCount}; normalized_matches={metrics.NormalizedMatchCount}; weak_matches={metrics.WeakMatchCount}; current_coverage={metrics.CurrentCoverageCount}; next_coverage={metrics.NextCoverageCount}; match_breakdown={FormatDiagnosticValue(metrics.MatchBreakdown)}");
+                $"source_profile_id={sourceProfileId}; stage=match_complete; total_live_channels={metrics.TotalLiveChannelCount}; matched_channels={metrics.MatchedChannelCount}; unmatched_channels={metrics.UnmatchedChannelCount}; exact_matches={metrics.ExactMatchCount}; normalized_matches={metrics.NormalizedMatchCount}; approved_matches={metrics.ApprovedMatchCount}; weak_matches={metrics.WeakMatchCount}; current_coverage={metrics.CurrentCoverageCount}; next_coverage={metrics.NextCoverageCount}; match_breakdown={FormatDiagnosticValue(metrics.MatchBreakdown)}");
 
             await PersistGuideDataAsync(db, sourceProfileId, discovered, channels, epgItems, metrics);
         }
@@ -314,6 +314,11 @@ namespace Kroira.App.Services.Parsing
             if (!epgLog.LastSuccessAtUtc.HasValue ||
                 epgLog.LastSuccessAtUtc.Value < DateTime.UtcNow.Subtract(TimeSpan.FromHours(6)) ||
                 !await HasPersistedGuideDataAsync(db, sourceProfileId))
+            {
+                return false;
+            }
+
+            if (await HasReviewDecisionChangesAsync(db, sourceProfileId, epgLog.LastSuccessAtUtc.Value))
             {
                 return false;
             }
@@ -344,6 +349,17 @@ namespace Kroira.App.Services.Parsing
                 "EPG SYNC",
                 $"source_profile_id={sourceProfileId}; stage=cache_reuse; ready_source_count={readySources.Count}; last_success_utc={epgLog.LastSuccessAtUtc:o}; active_xmltv_url={FormatDiagnosticValue(epgLog.ActiveXmltvUrl)}");
             return true;
+        }
+
+        private static async Task<bool> HasReviewDecisionChangesAsync(
+            AppDbContext db,
+            int sourceProfileId,
+            DateTime lastSuccessAtUtc)
+        {
+            return await db.EpgMappingDecisions
+                .AsNoTracking()
+                .AnyAsync(decision => decision.SourceProfileId == sourceProfileId &&
+                                      decision.UpdatedAtUtc > lastSuccessAtUtc);
         }
 
         private static void ApplyPreviousGuideSourceDiagnostics(EpgDiscoveryResult discovered, string previousStatusJson)
@@ -570,7 +586,7 @@ namespace Kroira.App.Services.Parsing
 
         private static bool IsActiveProgrammeMatch(ChannelEpgMatchOutcome outcome)
         {
-            return outcome.Reason is ChannelEpgMatchSource.Provider or ChannelEpgMatchSource.Normalized;
+            return outcome.Reason is ChannelEpgMatchSource.Provider or ChannelEpgMatchSource.Normalized or ChannelEpgMatchSource.UserApproved;
         }
 
         private static XmlReaderSettings CreateXmltvReaderSettings()
@@ -626,6 +642,7 @@ namespace Kroira.App.Services.Parsing
                 epgLog.XmltvChannelCount = metrics.XmltvChannelCount;
                 epgLog.ExactMatchCount = metrics.ExactMatchCount;
                 epgLog.NormalizedMatchCount = metrics.NormalizedMatchCount;
+                epgLog.ApprovedMatchCount = metrics.ApprovedMatchCount;
                 epgLog.WeakMatchCount = metrics.WeakMatchCount;
                 epgLog.MatchBreakdown = metrics.MatchBreakdown;
                 epgLog.GuideSourceStatusJson = SerializeGuideSourceStatuses(discovered);
@@ -696,6 +713,7 @@ namespace Kroira.App.Services.Parsing
                 epgLog.XmltvChannelCount = 0;
                 epgLog.ExactMatchCount = 0;
                 epgLog.NormalizedMatchCount = 0;
+                epgLog.ApprovedMatchCount = 0;
                 epgLog.WeakMatchCount = 0;
                 epgLog.MatchBreakdown = string.Empty;
                 epgLog.GuideSourceStatusJson = string.Empty;
@@ -905,6 +923,12 @@ namespace Kroira.App.Services.Parsing
                 .Select(channel => channel.Id)
                 .Distinct()
                 .Count();
+            var approvedMatchCount = primaryMatchOutcomes
+                .Where(outcome => outcome.Reason == ChannelEpgMatchSource.UserApproved)
+                .SelectMany(outcome => outcome.Channels)
+                .Select(channel => channel.Id)
+                .Distinct()
+                .Count();
             var weakMatchCount = primaryMatchOutcomes
                 .Where(outcome => outcome.Reason is ChannelEpgMatchSource.Previous or ChannelEpgMatchSource.Alias or ChannelEpgMatchSource.Regex or ChannelEpgMatchSource.Fuzzy)
                 .SelectMany(outcome => outcome.Channels)
@@ -931,6 +955,7 @@ namespace Kroira.App.Services.Parsing
                 xmltvChannelCount,
                 exactMatchCount,
                 normalizedMatchCount,
+                approvedMatchCount,
                 weakMatchCount,
                 resultCode,
                 BuildMatchBreakdown(matchCounts, unmatchedCount));
@@ -943,12 +968,13 @@ namespace Kroira.App.Services.Parsing
 
             var exact = GetCount(counts, ChannelEpgMatchSource.Provider);
             var normalized = GetCount(counts, ChannelEpgMatchSource.Normalized);
+            var approved = GetCount(counts, ChannelEpgMatchSource.UserApproved);
             var weak = GetCount(counts, ChannelEpgMatchSource.Previous) +
                        GetCount(counts, ChannelEpgMatchSource.Alias) +
                        GetCount(counts, ChannelEpgMatchSource.Regex) +
                        GetCount(counts, ChannelEpgMatchSource.Fuzzy);
 
-            return $"exact={exact}; normalized={normalized}; weak={weak}; provider_id={exact}; reused={GetCount(counts, ChannelEpgMatchSource.Previous)}; alias={GetCount(counts, ChannelEpgMatchSource.Alias)}; regex={GetCount(counts, ChannelEpgMatchSource.Regex)}; fuzzy={GetCount(counts, ChannelEpgMatchSource.Fuzzy)}; unmatched={unmatchedCount}";
+            return $"exact={exact}; normalized={normalized}; approved={approved}; weak={weak}; provider_id={exact}; reused={GetCount(counts, ChannelEpgMatchSource.Previous)}; alias={GetCount(counts, ChannelEpgMatchSource.Alias)}; regex={GetCount(counts, ChannelEpgMatchSource.Regex)}; fuzzy={GetCount(counts, ChannelEpgMatchSource.Fuzzy)}; unmatched={unmatchedCount}";
         }
 
         private static void LogMatchOutcome(int sourceProfileId, XmltvChannelDescriptor xmltvChannel, ChannelEpgMatchOutcome outcome)
@@ -1139,6 +1165,7 @@ namespace Kroira.App.Services.Parsing
             int XmltvChannelCount,
             int ExactMatchCount,
             int NormalizedMatchCount,
+            int ApprovedMatchCount,
             int WeakMatchCount,
             EpgSyncResultCode ResultCode,
             string MatchBreakdown);
