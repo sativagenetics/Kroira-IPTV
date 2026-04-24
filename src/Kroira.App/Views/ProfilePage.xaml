@@ -12,7 +12,8 @@
     <ScrollViewer>
         <Grid Padding="34,28,34,34"
               RowSpacing="22"
-              MaxWidth="980"
+              MaxWidth="1180"
+              MinWidth="980"
               HorizontalAlignment="Center">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
@@ -58,7 +59,7 @@
             <Grid Grid.Row="1" ColumnSpacing="20">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="1.05*" />
-                    <ColumnDefinition Width="1.15*" />
+                    <ColumnDefinition Width="1.1*" />
                 </Grid.ColumnDefinitions>
 
                 <StackPanel Spacing="18">
@@ -165,8 +166,11 @@
                     <Border Style="{StaticResource KroiraSettingsGroupStyle}">
                         <StackPanel Spacing="14">
                             <TextBlock Text="Locked sources" Style="{StaticResource KroiraSectionTitleStyle}" />
+                            <TextBlock Text="{x:Bind ViewModel.SourceLocksSummaryText, Mode=OneWay}"
+                                       Style="{StaticResource KroiraBodyStyle}" />
                             <ItemsControl ItemsSource="{x:Bind ViewModel.SourceLocks, Mode=OneWay}"
-                                          IsEnabled="{x:Bind ViewModel.CanManageParentalControls, Mode=OneWay}">
+                                          IsEnabled="{x:Bind ViewModel.CanManageParentalControls, Mode=OneWay}"
+                                          Visibility="{x:Bind ViewModel.SourceLocksListVisibility, Mode=OneWay}">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate x:DataType="viewModels:ProfileLockOptionViewModel">
                                         <CheckBox IsChecked="{x:Bind IsLocked, Mode=TwoWay}"
@@ -181,18 +185,31 @@
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>
+                            <Border Visibility="{x:Bind ViewModel.SourceLocksEmptyVisibility, Mode=OneWay}"
+                                    Padding="18"
+                                    Background="{StaticResource KroiraSurfaceElevatedBrush}"
+                                    BorderBrush="{StaticResource KroiraChromeLineBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="12">
+                                <TextBlock Text="Add a source before configuring source-level restrictions."
+                                           Style="{StaticResource KroiraBodyStyle}"
+                                           TextWrapping="Wrap" />
+                            </Border>
                         </StackPanel>
                     </Border>
 
                     <Border Grid.Row="1" Style="{StaticResource KroiraSettingsGroupStyle}">
                         <StackPanel Spacing="14">
                             <TextBlock Text="Locked categories" Style="{StaticResource KroiraSectionTitleStyle}" />
+                            <TextBlock Text="{x:Bind ViewModel.CategoryLocksSummaryText, Mode=OneWay}"
+                                       Style="{StaticResource KroiraBodyStyle}" />
                             <Border MaxHeight="360"
                                     Padding="10"
                                     Background="{StaticResource KroiraSurfaceElevatedBrush}"
                                     BorderBrush="{StaticResource KroiraChromeLineBrush}"
                                     BorderThickness="1"
-                                    CornerRadius="12">
+                                    CornerRadius="12"
+                                    Visibility="{x:Bind ViewModel.CategoryLocksListVisibility, Mode=OneWay}">
                                 <ScrollViewer VerticalScrollBarVisibility="Auto"
                                               VerticalScrollMode="Auto"
                                               HorizontalScrollBarVisibility="Disabled"
@@ -214,6 +231,16 @@
                                         </ItemsControl.ItemTemplate>
                                     </ItemsControl>
                                 </ScrollViewer>
+                            </Border>
+                            <Border Visibility="{x:Bind ViewModel.CategoryLocksEmptyVisibility, Mode=OneWay}"
+                                    Padding="18"
+                                    Background="{StaticResource KroiraSurfaceElevatedBrush}"
+                                    BorderBrush="{StaticResource KroiraChromeLineBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="12">
+                                <TextBlock Text="Categories will appear here after sources are imported."
+                                           Style="{StaticResource KroiraBodyStyle}"
+                                           TextWrapping="Wrap" />
                             </Border>
                         </StackPanel>
                     </Border>

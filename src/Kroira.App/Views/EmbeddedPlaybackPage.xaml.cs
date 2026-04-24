@@ -2369,36 +2369,41 @@ namespace Kroira.App.Views
             }
 
             var now = DateTime.UtcNow;
-            var positionChanged = false;
-            var movedEnough = false;
+            var wasHidden = !_isOverlayVisible;
+            var positionChanged = !position.HasValue;
+            var movedEnough = !position.HasValue;
             if (position.HasValue)
             {
-                positionChanged = !_hasLastPointerPosition ||
-                    Distance(position.Value, _lastPointerPosition) > 0.5;
+                var distance = _hasLastPointerPosition
+                    ? Distance(position.Value, _lastPointerPosition)
+                    : double.MaxValue;
+                positionChanged = !_hasLastPointerPosition || distance > 0.5;
+                movedEnough = !_hasLastPointerPosition || distance >= PointerMoveResetDistance;
+            }
 
-                movedEnough = !_hasLastPointerPosition ||
-                    Distance(position.Value, _lastPointerPosition) >= PointerMoveResetDistance;
-
-                if (positionChanged)
+            if (wasHidden)
+            {
+                if (position.HasValue && !positionChanged)
                 {
-                    _lastPointerPosition = position.Value;
-                    _hasLastPointerPosition = true;
+                    LogPlaybackState($"OVERLAY: ignored stationary pointer source={source}");
+                    return;
                 }
+
+                if (position.HasValue)
+                {
+                    TrackPointerPosition(position.Value);
+                }
+
+                _ignorePointerUntilUtc = DateTime.MinValue;
+                ShowControls(cause: "pointer_move");
+                LogPlaybackState($"OVERLAY: pointer woke controls source={source} changed={positionChanged}");
+                ResetInactivityTimer("pointer_move", now);
+                return;
             }
 
             if (now < _ignorePointerUntilUtc)
             {
-                if (!_isOverlayVisible && position.HasValue)
-                {
-                    LogPlaybackState($"OVERLAY: pointer suppressed source={source}");
-                }
-                return;
-            }
-
-            var wasHidden = !_isOverlayVisible;
-            if (wasHidden && position.HasValue && !positionChanged)
-            {
-                LogPlaybackState($"OVERLAY: ignored stationary pointer source={source}");
+                LogPlaybackState($"OVERLAY: pointer suppressed source={source}");
                 return;
             }
 
@@ -2413,13 +2418,19 @@ namespace Kroira.App.Views
                 return;
             }
 
-            ShowControls(cause: "pointer_move");
-            if (wasHidden)
+            if (position.HasValue)
             {
-                LogPlaybackState($"OVERLAY: pointer woke controls source={source} changed={positionChanged}");
+                TrackPointerPosition(position.Value);
             }
 
+            ShowControls(cause: "pointer_move");
             ResetInactivityTimer("pointer_move", now);
+        }
+
+        private void TrackPointerPosition(Point position)
+        {
+            _lastPointerPosition = position;
+            _hasLastPointerPosition = true;
         }
 
         private void ShowControls(bool persist = false, string cause = "show_controls")

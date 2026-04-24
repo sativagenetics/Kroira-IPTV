@@ -291,9 +291,9 @@
                       HorizontalScrollBarVisibility="Disabled"
                       HorizontalScrollMode="Disabled"
                       Visibility="{x:Bind ViewModel.SurfaceState.ContentVisibility, Mode=OneWay}">
-        <StackPanel Padding="28,20,44,46" Spacing="34">
-            <Border MinHeight="410"
-                    MaxHeight="460"
+        <StackPanel Padding="28,16,44,46" Spacing="28">
+            <Border MinHeight="330"
+                    MaxHeight="360"
                     Margin="-28,-20,-44,0"
                     CornerRadius="0,0,28,28"
                     BorderBrush="{StaticResource KroiraGhostBorderBrush}"
@@ -334,7 +334,7 @@
                             CornerRadius="24,0,0,24"
                             Opacity="0.72" />
 
-                    <Grid Padding="60,44,54,36" ColumnSpacing="30">
+                    <Grid Padding="54,32,48,28" ColumnSpacing="26">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="188" />
@@ -349,8 +349,8 @@
                                        Foreground="{StaticResource KroiraAccentBrush}" />
                             <TextBlock Text="{x:Bind ViewModel.FeaturedItem.Title, Mode=OneWay}"
                                        Style="{StaticResource KroiraDisplayLgStyle}"
-                                       FontSize="52"
-                                       LineHeight="58"
+                                       FontSize="44"
+                                       LineHeight="50"
                                        MaxLines="2"
                                        TextWrapping="Wrap" />
                             <StackPanel Orientation="Horizontal" Spacing="12">
@@ -358,7 +358,8 @@
                                         BorderBrush="{StaticResource KroiraChromeLineBrush}"
                                         BorderThickness="1"
                                         CornerRadius="8"
-                                        Padding="9,4">
+                                        Padding="9,4"
+                                        Visibility="{x:Bind ViewModel.FeaturedItem.RatingVisibility, Mode=OneWay}">
                                     <TextBlock Text="{x:Bind ViewModel.FeaturedItem.RatingText, Mode=OneWay}"
                                                Foreground="{StaticResource KroiraAccentBrush}"
                                                FontSize="12"
@@ -416,8 +417,8 @@
                         <StackPanel Grid.Column="1"
                                     Spacing="10"
                                     VerticalAlignment="Bottom">
-                            <Border Width="164"
-                                    Height="244"
+                            <Border Width="142"
+                                    Height="212"
                                     CornerRadius="12"
                                     BorderBrush="{StaticResource KroiraGlassBorderBrush}"
                                     BorderThickness="1"
@@ -440,7 +441,7 @@
                                     </Border>
                                 </Grid>
                             </Border>
-                            <Border Width="164"
+                            <Border Width="142"
                                     Padding="11,9"
                                     Background="#9A090B0F"
                                     BorderBrush="{StaticResource KroiraChromeLineBrush}"

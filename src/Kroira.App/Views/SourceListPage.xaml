@@ -92,7 +92,7 @@
 
     <ScrollViewer VerticalScrollBarVisibility="Auto" VerticalScrollMode="Enabled">
         <Grid Background="Transparent">
-            <Grid MaxWidth="1180"
+            <Grid MaxWidth="1260"
                   HorizontalAlignment="Center"
                   Padding="32,28,32,36"
                   RowSpacing="18">
@@ -298,7 +298,7 @@
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
                             <Border Style="{StaticResource SourceShellCardStyle}" Margin="0,0,0,14">
-                                    <Grid RowSpacing="16">
+                                    <Grid RowSpacing="14">
                                         <Grid.RowDefinitions>
                                             <RowDefinition Height="Auto" />
                                             <RowDefinition Height="Auto" />
@@ -504,7 +504,7 @@
                                         </Border>
                                     </Grid>
 
-                                    <Grid Grid.Row="2" ColumnSpacing="12">
+                                    <Grid Grid.Row="2" ColumnSpacing="12" Visibility="Collapsed">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="1.2*" />
                                             <ColumnDefinition Width="*" />

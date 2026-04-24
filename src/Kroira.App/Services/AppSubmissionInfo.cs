@@ -5,7 +5,7 @@ namespace Kroira.App.Services
 {
     internal static class AppSubmissionInfo
     {
-        internal const string AppName = "KROIRA";
+        internal const string AppName = "KROIRA IPTV";
         internal const string ProductDescription = "KROIRA is a Windows IPTV library and player for user-provided M3U, Xtream, and Stalker sources.";
 
         // Replace these values before final store submission as needed.

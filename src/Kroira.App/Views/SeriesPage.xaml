@@ -45,8 +45,8 @@
     <Grid XYFocusKeyboardNavigation="Enabled">
         <controls:AmbientPageBackground />
 
-        <Grid Padding="30,28,30,34"
-              MaxWidth="1360"
+        <Grid Padding="30,26,30,34"
+              MaxWidth="1480"
               HorizontalAlignment="Center"
               RowSpacing="16"
               Visibility="{x:Bind ViewModel.ContentShellVisibility, Mode=OneWay}">
@@ -173,7 +173,7 @@
         <Grid Grid.Row="3" ColumnSpacing="20">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="430" />
+                <ColumnDefinition Width="370" />
             </Grid.ColumnDefinitions>
 
             <Grid Grid.Column="0">
@@ -211,7 +211,7 @@
                             <ItemsWrapGrid Orientation="Horizontal"
                                            ItemWidth="182"
                                            ItemHeight="248"
-                                           MaximumRowsOrColumns="4" />
+                                           MaximumRowsOrColumns="5" />
                         </ItemsPanelTemplate>
                     </GridView.ItemsPanel>
                     <GridView.ItemTemplate>
@@ -345,23 +345,23 @@
             </Grid>
 
             <Border Grid.Column="1"
-                    Background="#66070B12"
-                    BorderBrush="{StaticResource KroiraGhostBorderBrush}"
-                    BorderThickness="1"
+                    Background="Transparent"
+                    BorderBrush="Transparent"
+                    BorderThickness="0"
                     CornerRadius="16"
                     Padding="0"
                     VerticalAlignment="Stretch">
                 <Grid>
                     <!-- No-selection placeholder -->
                     <StackPanel Visibility="{x:Bind ViewModel.SelectedSeries, Mode=OneWay, Converter={StaticResource NullToVisibleConverter}}"
-                                Spacing="18"
-                                Padding="24"
-                                VerticalAlignment="Center">
-                        <Border Height="172"
+                                Spacing="14"
+                                Padding="18"
+                                VerticalAlignment="Top">
+                        <Border Height="136"
                                 CornerRadius="14"
                                 Background="{StaticResource KroiraMediaGradientBrush}"
-                                BorderBrush="{StaticResource KroiraGlassBorderBrush}"
-                                BorderThickness="1">
+                                BorderBrush="Transparent"
+                                BorderThickness="0">
                             <Grid>
                                 <FontIcon Glyph="&#xE8A9;"
                                           FontSize="34"
@@ -387,6 +387,7 @@
                                        Style="{StaticResource KroiraSectionTitleStyle}" />
                             <TextBlock Text="Select a title from the library to load artwork, seasons, and episode playback here."
                                        Style="{StaticResource KroiraBodyStyle}"
+                                       MaxLines="3"
                                        TextWrapping="Wrap" />
                         </StackPanel>
                     </StackPanel>

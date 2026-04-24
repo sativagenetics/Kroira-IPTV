@@ -97,6 +97,12 @@ namespace Kroira.App.ViewModels
         public Visibility ClearPinVisibility => HasPin ? Visibility.Visible : Visibility.Collapsed;
         public Visibility UnlockVisibility => HasPin && !IsLockedContentUnlocked ? Visibility.Visible : Visibility.Collapsed;
         public Visibility RelockVisibility => HasPin && IsLockedContentUnlocked ? Visibility.Visible : Visibility.Collapsed;
+        public Visibility SourceLocksListVisibility => SourceLocks.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+        public Visibility SourceLocksEmptyVisibility => SourceLocks.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+        public Visibility CategoryLocksListVisibility => CategoryLocks.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+        public Visibility CategoryLocksEmptyVisibility => CategoryLocks.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+        public string SourceLocksSummaryText => SourceLocks.Count == 1 ? "1 source can be restricted." : $"{SourceLocks.Count} sources can be restricted.";
+        public string CategoryLocksSummaryText => CategoryLocks.Count == 1 ? "1 category can be restricted." : $"{CategoryLocks.Count} categories can be restricted.";
         public bool CanAddProfiles => _entitlementService.IsFeatureEnabled(EntitlementFeatureKeys.ProfilesMultiple) &&
                                       (!_profileLimit.HasValue || Profiles.Count < _profileLimit.Value);
         public bool CanManageParentalControls => _entitlementService.IsFeatureEnabled(EntitlementFeatureKeys.ProfilesParentalControls);
@@ -356,6 +362,10 @@ namespace Kroira.App.ViewModels
                         var pending = SaveSourceLocksAsync(profileService, profileId);
                     }));
             }
+
+            OnPropertyChanged(nameof(SourceLocksListVisibility));
+            OnPropertyChanged(nameof(SourceLocksEmptyVisibility));
+            OnPropertyChanged(nameof(SourceLocksSummaryText));
         }
 
         private async Task BuildCategoryLocksAsync(AppDbContext db, IProfileStateService profileService, int profileId, ProfileAccessSnapshot access)
@@ -386,6 +396,10 @@ namespace Kroira.App.ViewModels
             AddCategoryLockOptions(liveCategories, ProfileDomains.Live, profileService, profileId, access);
             AddCategoryLockOptions(movieCategories, ProfileDomains.Movies, profileService, profileId, access);
             AddCategoryLockOptions(seriesCategories, ProfileDomains.Series, profileService, profileId, access);
+
+            OnPropertyChanged(nameof(CategoryLocksListVisibility));
+            OnPropertyChanged(nameof(CategoryLocksEmptyVisibility));
+            OnPropertyChanged(nameof(CategoryLocksSummaryText));
         }
 
         private void AddCategoryLockOptions(

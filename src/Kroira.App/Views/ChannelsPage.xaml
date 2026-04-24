@@ -87,10 +87,10 @@
     <Grid XYFocusKeyboardNavigation="Enabled">
         <controls:AmbientPageBackground />
 
-        <Grid Padding="24,16,24,20"
+        <Grid Padding="24,12,24,20"
               MaxWidth="1440"
               HorizontalAlignment="Center"
-              RowSpacing="12"
+              RowSpacing="9"
               Visibility="{x:Bind ViewModel.SurfaceState.ContentVisibility, Mode=OneWay}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
@@ -99,31 +99,28 @@
         </Grid.RowDefinitions>
 
         <Border Grid.Row="0"
-                MinHeight="92"
+                MinHeight="0"
                 BorderBrush="{StaticResource KroiraGhostBorderBrush}"
                 BorderThickness="0"
                 CornerRadius="{StaticResource KroiraRadiusHero}"
-                Padding="18,14">
+                Padding="0,0,0,2">
             <Border.Background>
-                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                    <GradientStop Color="#16203A" Offset="0" />
-                    <GradientStop Color="#0C1220" Offset="0.48" />
-                    <GradientStop Color="#080A0E" Offset="1" />
-                </LinearGradientBrush>
+                <SolidColorBrush Color="#00000000" />
             </Border.Background>
 
             <Grid>
-                <StackPanel Spacing="4" VerticalAlignment="Center">
+                <StackPanel Spacing="3" VerticalAlignment="Center">
                     <TextBlock Text="BROADCAST"
                                Style="{StaticResource KroiraLabelStyle}"
-                               Foreground="{StaticResource KroiraAccentBrush}" />
+                               Foreground="{StaticResource KroiraAccentBrush}"
+                               Visibility="Collapsed" />
                     <TextBlock Text="Live TV"
                                Style="{StaticResource KroiraDisplayLgStyle}"
-                               FontSize="28"
+                               FontSize="30"
                                LineHeight="34" />
                     <TextBlock Text="Browse live channels, guide times, favorites, and catch-up."
                                 Style="{StaticResource KroiraPageSubtitleStyle}"
-                                FontSize="12"
+                               FontSize="12"
                                 MaxLines="1"
                                 TextTrimming="CharacterEllipsis"
                                 MaxWidth="520" />

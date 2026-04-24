@@ -611,11 +611,11 @@ namespace Kroira.App.Views
 
             if (!string.IsNullOrWhiteSpace(_context?.OperationalSummary))
             {
-                hints.Add(_context.OperationalSummary);
+                hints.Add(ToPlayerFacingPlaybackHint(_context.OperationalSummary));
             }
             else if (!string.IsNullOrWhiteSpace(_resolvedRoutingSummary) && !string.Equals(_resolvedRoutingSummary, "Direct routing", StringComparison.OrdinalIgnoreCase))
             {
-                hints.Add(_resolvedRoutingSummary);
+                hints.Add(ToPlayerFacingPlaybackHint(_resolvedRoutingSummary));
             }
 
             if (_sleepDeadline.HasValue)
@@ -629,6 +629,27 @@ namespace Kroira.App.Views
 
             PlaybackHintText.Text = string.Join("  •  ", hints);
             PlaybackHintText.Visibility = string.IsNullOrWhiteSpace(PlaybackHintText.Text) ? Visibility.Collapsed : Visibility.Visible;
+        }
+
+        private static string ToPlayerFacingPlaybackHint(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return string.Empty;
+            }
+
+            return value
+                .Replace("Probe-backed", "Playback ready", StringComparison.OrdinalIgnoreCase)
+                .Replace("weak probe confidence", "connection may vary", StringComparison.OrdinalIgnoreCase)
+                .Replace("guide mapped", "guide available", StringComparison.OrdinalIgnoreCase)
+                .Replace("logo ready", "logo available", StringComparison.OrdinalIgnoreCase)
+                .Replace("poster", "artwork available", StringComparison.OrdinalIgnoreCase)
+                .Replace("overview", "description available", StringComparison.OrdinalIgnoreCase)
+                .Replace("metadata", "metadata available", StringComparison.OrdinalIgnoreCase)
+                .Replace("stale source", "refresh suggested", StringComparison.OrdinalIgnoreCase)
+                .Replace("proxy routed", "optimized route", StringComparison.OrdinalIgnoreCase)
+                .Replace("Operationally usable live mirror", "Ready live source", StringComparison.OrdinalIgnoreCase)
+                .Replace("Operationally usable movie source", "Ready movie source", StringComparison.OrdinalIgnoreCase);
         }
 
         private void RefreshInfoPanel()

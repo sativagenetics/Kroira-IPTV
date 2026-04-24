@@ -1,6 +1,7 @@
 param(
     [string]$Configuration = "Debug",
     [string]$Platform = "x64",
+    [string]$OutputRoot,
     [switch]$SkipBuild,
     [switch]$SkipDeploy,
     [switch]$SkipPlayer
@@ -16,7 +17,14 @@ $manifestPath = Join-Path $stagedPackageRoot "AppxManifest.xml"
 $packageName = "SATIVAGENETICS.KROIRAIPTV"
 $appId = "App"
 $timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
-$shotRoot = Join-Path $repoRoot "artifacts\ui-screenshots\$timestamp"
+if ([string]::IsNullOrWhiteSpace($OutputRoot)) {
+    $OutputRoot = Join-Path $repoRoot "artifacts\ui-screenshots"
+}
+elseif (-not [System.IO.Path]::IsPathRooted($OutputRoot)) {
+    $OutputRoot = Join-Path $repoRoot $OutputRoot
+}
+
+$shotRoot = Join-Path $OutputRoot $timestamp
 
 New-Item -ItemType Directory -Force -Path $shotRoot | Out-Null
 
@@ -39,8 +47,11 @@ function Sync-CurrentBuildToStagedPackage {
         Where-Object { $_.Name -ne "AppX" -and $_.Name -ne "publish" } |
         ForEach-Object {
             Copy-Item -LiteralPath $_.FullName -Destination $stagedPackageRoot -Recurse -Force
-        }
+    }
 }
+
+Get-Process Kroira.App -ErrorAction SilentlyContinue | Stop-Process -Force
+Start-Sleep -Milliseconds 300
 
 Sync-CurrentBuildToStagedPackage
 
@@ -49,7 +60,6 @@ if (-not (Test-Path $manifestPath)) {
 }
 
 if (-not $SkipDeploy) {
-    Get-Process Kroira.App -ErrorAction SilentlyContinue | Stop-Process -Force
     $existingPackage = Get-AppxPackage -Name $packageName | Select-Object -First 1
     $registeredLocation = if ($existingPackage) { [System.IO.Path]::GetFullPath($existingPackage.InstallLocation) } else { $null }
     $stagedLocation = [System.IO.Path]::GetFullPath($stagedPackageRoot)
@@ -82,6 +92,7 @@ public static class KroiraVisualSmokeNative
     [DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
     [DllImport("user32.dll")] public static extern bool GetWindowRect(IntPtr hWnd, out RECT rect);
     [DllImport("user32.dll")] public static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
+    [DllImport("user32.dll")] public static extern bool SetCursorPos(int X, int Y);
     public static readonly IntPtr HWND_TOPMOST = new IntPtr(-1);
     public static readonly IntPtr HWND_NOTOPMOST = new IntPtr(-2);
     public const uint SWP_NOMOVE = 0x0002;
@@ -219,6 +230,9 @@ function Capture-KroiraWindow {
     if ($width -le 0 -or $height -le 0) {
         throw "Invalid KROIRA window bounds: $width x $height"
     }
+
+    [KroiraVisualSmokeNative]::SetCursorPos($rect.Right - 40, $rect.Bottom - 40) | Out-Null
+    Start-Sleep -Milliseconds 700
 
     $bitmap = New-Object System.Drawing.Bitmap $width, $height
     $graphics = [System.Drawing.Graphics]::FromImage($bitmap)

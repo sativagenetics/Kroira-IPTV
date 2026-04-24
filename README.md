@@ -86,6 +86,22 @@ Curated repository screenshots are not committed yet. Temporary debug captures a
 
 When stable, sanitized screenshots are ready, place them under [docs/screenshots](docs/screenshots/README.md) and update this section with relative image links.
 
+For local visual QA, use the packaged smoke workflow:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\visual-smoke.ps1 -Configuration Debug -Platform x64
+```
+
+For store/release screenshot review, use:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\store-screenshots.ps1 -Configuration Debug -Platform x64
+```
+
+Public Store screenshots require sanitized/sample data. See [Store Screenshot Workflow](docs/store_screenshot_workflow.md).
+
+Generated captures are written under `artifacts/` and are intentionally ignored by git.
+
 ## Getting Started
 
 ### Requirements

@@ -11,7 +11,7 @@
     <Page.Resources>
         <Style x:Key="MovieTileContainerStyle" TargetType="GridViewItem">
             <Setter Property="Padding" Value="0" />
-            <Setter Property="Margin" Value="0,0,16,24" />
+            <Setter Property="Margin" Value="0,0,10,22" />
             <Setter Property="HorizontalContentAlignment" Value="Stretch" />
             <Setter Property="VerticalContentAlignment" Value="Stretch" />
             <Setter Property="UseSystemFocusVisuals" Value="True" />
@@ -36,15 +36,33 @@
     <Grid XYFocusKeyboardNavigation="Enabled">
         <controls:AmbientPageBackground />
 
-        <Grid Padding="42,32,42,40"
+        <Grid Padding="34,26,34,38"
               MaxWidth="1480"
               HorizontalAlignment="Center"
-              RowSpacing="18"
+              RowSpacing="14"
               Visibility="{x:Bind ViewModel.ContentShellVisibility, Mode=OneWay}">
         <Grid.RowDefinitions>
-            <RowDefinition Height="326" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
+
+        <Grid Grid.Row="0" ColumnSpacing="18">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <StackPanel Spacing="5">
+                <TextBlock Text="MOVIES LIBRARY"
+                           Style="{StaticResource KroiraLabelStyle}"
+                           Foreground="{StaticResource KroiraAccentBrush}" />
+                <TextBlock Text="Movies"
+                           Style="{StaticResource KroiraPageTitleStyle}" />
+                <TextBlock Text="Search, filter, and pick a film from your sources."
+                           Style="{StaticResource KroiraPageSubtitleStyle}"
+                           MaxWidth="720" />
+            </StackPanel>
+        </Grid>
 
         <!--
             FEATURED HERO
@@ -60,6 +78,7 @@
         <Border Grid.Row="0"
                 Height="326"
                 MaxHeight="326"
+                Visibility="Collapsed"
                 VerticalAlignment="Top"
                 BorderBrush="{StaticResource KroiraGhostBorderBrush}"
                 BorderThickness="0"
@@ -142,7 +161,8 @@
                                     BorderBrush="{StaticResource KroiraChromeLineBrush}"
                                     BorderThickness="1"
                                     CornerRadius="8"
-                                    Padding="9,4">
+                                    Padding="9,4"
+                                    Visibility="{x:Bind ViewModel.FeaturedMovie.RatingVisibility, Mode=OneWay}">
                                 <TextBlock Text="{x:Bind ViewModel.FeaturedMovie.RatingText, Mode=OneWay}"
                                            Foreground="{StaticResource KroiraAccentBrush}"
                                            FontSize="12"
@@ -374,10 +394,10 @@
                           Padding="0,4,0,24">
                     <GridView.ItemsPanel>
                         <ItemsPanelTemplate>
-                            <ItemsWrapGrid Orientation="Horizontal"
-                                           ItemWidth="206"
+                        <ItemsWrapGrid Orientation="Horizontal"
+                                           ItemWidth="198"
                                            ItemHeight="334"
-                                           MaximumRowsOrColumns="6" />
+                                           MaximumRowsOrColumns="7" />
                         </ItemsPanelTemplate>
                     </GridView.ItemsPanel>
                     <GridView.ItemTemplate>

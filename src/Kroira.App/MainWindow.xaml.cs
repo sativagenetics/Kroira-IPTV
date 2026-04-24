@@ -44,6 +44,7 @@ namespace Kroira.App
                 InitializeComponent();
                 LogStartupCheckpoint("MW 03: after InitializeComponent");
 
+                ContentFrame.Navigating += ContentFrame_Navigating;
                 ContentFrame.NavigationFailed += ContentFrame_NavigationFailed;
                 ContentFrame.Navigated += ContentFrame_Navigated;
                 var app = RequireApp();
@@ -101,10 +102,22 @@ namespace Kroira.App
                 e.Exception);
         }
 
+        private void ContentFrame_Navigating(object sender, NavigatingCancelEventArgs e)
+        {
+            if (e.Cancel)
+            {
+                return;
+            }
+
+            UpdateShellChromeForRoute(e.SourcePageType);
+            QueueShellChromeRefresh();
+        }
+
         private void ContentFrame_Navigated(object sender, NavigationEventArgs e)
         {
             SyncSelectedNavigationItem(e.SourcePageType);
-            UpdateShellChromeForCurrentRoute();
+            UpdateShellChromeForRoute(e.SourcePageType);
+            QueueShellChromeRefresh();
             if (!_remoteNavigationService.IsRemoteModeEnabled ||
                 ContentFrame.Content is not IRemoteNavigationPage remotePage)
             {
@@ -177,15 +190,27 @@ namespace Kroira.App
 
         private void UpdateShellChromeForCurrentRoute()
         {
-            var isPlaybackRoute = ContentFrame.Content is EmbeddedPlaybackPage;
+            UpdateShellChromeForRoute(ContentFrame.Content?.GetType());
+        }
+
+        private void UpdateShellChromeForRoute(Type? pageType)
+        {
+            var isPlaybackRoute = pageType == typeof(EmbeddedPlaybackPage);
             var isFullscreen = _windowManager?.IsFullscreen == true;
             var suppressNormalChrome = isPlaybackRoute || isFullscreen;
 
-            RootNavView.IsPaneVisible = !suppressNormalChrome;
-            RootNavView.IsPaneOpen = !suppressNormalChrome;
-            RootNavView.PaneDisplayMode = suppressNormalChrome
-                ? NavigationViewPaneDisplayMode.LeftMinimal
-                : NavigationViewPaneDisplayMode.LeftCompact;
+            if (suppressNormalChrome)
+            {
+                RootNavView.IsPaneOpen = false;
+                RootNavView.IsPaneVisible = false;
+                RootNavView.PaneDisplayMode = NavigationViewPaneDisplayMode.LeftMinimal;
+            }
+            else
+            {
+                RootNavView.PaneDisplayMode = NavigationViewPaneDisplayMode.LeftCompact;
+                RootNavView.IsPaneVisible = true;
+                RootNavView.IsPaneOpen = true;
+            }
 
             ContentHostBorder.BorderThickness = isPlaybackRoute
                 ? new Thickness(0)
@@ -195,6 +220,29 @@ namespace Kroira.App
             {
                 UpdatePaneHeader(RootNavView.IsPaneOpen);
             }
+
+            RootNavView.InvalidateMeasure();
+            ContentHostBorder.InvalidateMeasure();
+        }
+
+        private void QueueShellChromeRefresh()
+        {
+            var dispatcherQueue = RootNavView.DispatcherQueue;
+            if (dispatcherQueue == null)
+            {
+                return;
+            }
+
+            dispatcherQueue.TryEnqueue(() =>
+            {
+                UpdateShellChromeForCurrentRoute();
+                RootNavView.UpdateLayout();
+                dispatcherQueue.TryEnqueue(() =>
+                {
+                    UpdateShellChromeForCurrentRoute();
+                    RootNavView.UpdateLayout();
+                });
+            });
         }
 
         private void ConfigureDarkTitleBar()

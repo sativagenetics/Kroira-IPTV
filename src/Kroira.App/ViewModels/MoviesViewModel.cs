@@ -37,6 +37,7 @@ namespace Kroira.App.ViewModels
         public string DisplayPosterUrl => Movie.DisplayPosterUrl;
         public string DisplayHeroArtworkUrl => Movie.DisplayHeroArtworkUrl;
         public string RatingText => Movie.RatingText;
+        public Visibility RatingVisibility => string.IsNullOrWhiteSpace(RatingText) ? Visibility.Collapsed : Visibility.Visible;
         public string MetadataLine
         {
             get
@@ -95,6 +96,7 @@ namespace Kroira.App.ViewModels
             OnPropertyChanged(nameof(DisplayPosterUrl));
             OnPropertyChanged(nameof(DisplayHeroArtworkUrl));
             OnPropertyChanged(nameof(RatingText));
+            OnPropertyChanged(nameof(RatingVisibility));
             OnPropertyChanged(nameof(MetadataLine));
             OnPropertyChanged(nameof(Overview));
             OnPropertyChanged(nameof(CategoryName));
