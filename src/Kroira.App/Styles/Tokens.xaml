@@ -11,20 +11,25 @@
     <x:Double x:Key="KroiraSpace7">32</x:Double>
     <x:Double x:Key="KroiraSpace8">40</x:Double>
     <x:Double x:Key="KroiraSpace9">56</x:Double>
-    <Thickness x:Key="KroiraPagePadding">48,38,48,48</Thickness>
-    <x:Double x:Key="KroiraPageContentMaxWidth">1320</x:Double>
+    <Thickness x:Key="KroiraPagePadding">48,32,48,52</Thickness>
+    <x:Double x:Key="KroiraPageContentMaxWidth">1440</x:Double>
 
     <CornerRadius x:Key="KroiraRadiusInput">8</CornerRadius>
     <CornerRadius x:Key="KroiraRadiusChip">999</CornerRadius>
     <CornerRadius x:Key="KroiraRadiusRow">12</CornerRadius>
-    <CornerRadius x:Key="KroiraRadiusCard">10</CornerRadius>
-    <CornerRadius x:Key="KroiraRadiusPanel">12</CornerRadius>
-    <CornerRadius x:Key="KroiraRadiusSheet">14</CornerRadius>
+    <CornerRadius x:Key="KroiraRadiusCard">12</CornerRadius>
+    <CornerRadius x:Key="KroiraRadiusPanel">16</CornerRadius>
+    <CornerRadius x:Key="KroiraRadiusSheet">20</CornerRadius>
+    <CornerRadius x:Key="KroiraRadiusHero">24</CornerRadius>
+    <CornerRadius x:Key="KroiraRadiusPoster">12</CornerRadius>
 
     <x:Double x:Key="KroiraFocusRingThickness">2</x:Double>
+    <Thickness x:Key="KroiraCinematicPageInset">42,30,42,44</Thickness>
+    <Thickness x:Key="KroiraRailSectionMargin">0,0,0,4</Thickness>
+    <Thickness x:Key="KroiraCardInnerPadding">10,10,10,12</Thickness>
 
-    <x:Double x:Key="KroiraChannelCardWidth">248</x:Double>
-    <x:Double x:Key="KroiraChannelCardHeight">192</x:Double>
+    <x:Double x:Key="KroiraChannelCardWidth">252</x:Double>
+    <x:Double x:Key="KroiraChannelCardHeight">184</x:Double>
     <x:Double x:Key="KroiraLiveCardWidth">292</x:Double>
     <x:Double x:Key="KroiraLiveCardHeight">148</x:Double>
     <x:Double x:Key="KroiraContinueCardWidth">330</x:Double>

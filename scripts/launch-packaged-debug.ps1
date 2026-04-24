@@ -11,7 +11,7 @@ $ErrorActionPreference = "Stop"
 
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $project = Join-Path $repoRoot "src\Kroira.App\Kroira.App.csproj"
-$packageName = "SATIVAGENETICS.KROIRAIPTVPlayer"
+$packageName = "SATIVAGENETICS.KROIRAIPTV"
 $targetFramework = "net8.0-windows10.0.19041.0"
 $runtime = switch ($Platform) {
     "x64" { "win-x64" }
@@ -30,6 +30,9 @@ if (-not $NoBuild) {
 if (-not (Test-Path $appxDir)) {
     New-Item -ItemType Directory -Path $appxDir | Out-Null
 }
+
+Get-Process Kroira.App -ErrorAction SilentlyContinue | Stop-Process -Force
+Start-Sleep -Milliseconds 300
 
 $items = @(
     "Kroira.App.dll",

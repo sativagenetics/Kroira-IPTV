@@ -8,13 +8,17 @@ using Kroira.App.Models;
 using Kroira.App.Services;
 using Kroira.App.Views;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.UI;
 using Microsoft.UI.Input;
+using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Navigation;
 using Windows.System;
+using Windows.UI;
 using Windows.UI.Core;
+using WinRT.Interop;
 
 namespace Kroira.App
 {
@@ -40,6 +44,7 @@ namespace Kroira.App
                 InitializeComponent();
                 LogStartupCheckpoint("MW 03: after InitializeComponent");
 
+                ContentFrame.Navigating += ContentFrame_Navigating;
                 ContentFrame.NavigationFailed += ContentFrame_NavigationFailed;
                 ContentFrame.Navigated += ContentFrame_Navigated;
                 var app = RequireApp();
@@ -51,10 +56,11 @@ namespace Kroira.App
 
                 Title = "Kroira IPTV";
                 LogStartupCheckpoint("MW 08: title set");
+                ConfigureDarkTitleBar();
 
                 _windowManager.FullscreenStateChanged += WindowManager_FullscreenStateChanged;
                 LogStartupCheckpoint("MW 09: subscribed to FullscreenStateChanged");
-                UpdatePaneHeader(true);
+                ApplyShellStateForPageType(null, forceLayout: false);
 
                 if (Content is UIElement rootElement)
                 {
@@ -74,18 +80,7 @@ namespace Kroira.App
             try
             {
                 LogStartupCheckpoint($"MW FS: fullscreen changed, isFullscreen={_windowManager.IsFullscreen}");
-
-                if (_windowManager.IsFullscreen)
-                {
-                    RootNavView.IsPaneVisible = false;
-                    RootNavView.PaneDisplayMode = NavigationViewPaneDisplayMode.LeftMinimal;
-                }
-                else
-                {
-                    RootNavView.IsPaneVisible = true;
-                    RootNavView.PaneDisplayMode = NavigationViewPaneDisplayMode.LeftCompact;
-                    RootNavView.IsPaneOpen = true;
-                }
+                ApplyShellStateForCurrentPage(forceLayout: true);
             }
             catch (Exception ex)
             {
@@ -107,9 +102,22 @@ namespace Kroira.App
                 e.Exception);
         }
 
+        private void ContentFrame_Navigating(object sender, NavigatingCancelEventArgs e)
+        {
+            if (e.Cancel)
+            {
+                return;
+            }
+
+            ApplyShellStateForPageType(e.SourcePageType, forceLayout: true);
+            QueueShellStateRefresh(e.SourcePageType);
+        }
+
         private void ContentFrame_Navigated(object sender, NavigationEventArgs e)
         {
             SyncSelectedNavigationItem(e.SourcePageType);
+            ApplyShellStateForPageType(e.SourcePageType, forceLayout: true);
+            QueueShellStateRefresh(e.SourcePageType);
             if (!_remoteNavigationService.IsRemoteModeEnabled ||
                 ContentFrame.Content is not IRemoteNavigationPage remotePage)
             {
@@ -178,6 +186,106 @@ namespace Kroira.App
             PaneBrandText.Visibility = isOpen ? Visibility.Visible : Visibility.Collapsed;
             PaneFooterRoot.Visibility = isOpen ? Visibility.Visible : Visibility.Collapsed;
             PaneHeaderRoot.Margin = isOpen ? new Thickness(18, 28, 14, 30) : new Thickness(17, 28, 0, 30);
+        }
+
+        private void ApplyShellStateForCurrentPage(bool forceLayout)
+        {
+            ApplyShellStateForPageType(ContentFrame.Content?.GetType(), forceLayout);
+        }
+
+        private void ApplyShellStateForPageType(Type? pageType, bool forceLayout)
+        {
+            var isPlaybackRoute = pageType == typeof(EmbeddedPlaybackPage);
+            var isFullscreen = _windowManager?.IsFullscreen == true;
+            var suppressNormalChrome = isPlaybackRoute || isFullscreen;
+
+            if (suppressNormalChrome)
+            {
+                RootNavView.IsPaneOpen = false;
+                RootNavView.IsPaneVisible = false;
+                RootNavView.PaneDisplayMode = NavigationViewPaneDisplayMode.LeftMinimal;
+            }
+            else
+            {
+                RootNavView.PaneDisplayMode = NavigationViewPaneDisplayMode.LeftCompact;
+                RootNavView.IsPaneVisible = true;
+                RootNavView.IsPaneOpen = false;
+            }
+
+            ContentHostBorder.BorderThickness = suppressNormalChrome
+                ? new Thickness(0)
+                : new Thickness(1, 0, 0, 0);
+
+            UpdatePaneHeader(!suppressNormalChrome && RootNavView.IsPaneOpen);
+
+            RootNavView.InvalidateMeasure();
+            ContentHostBorder.InvalidateMeasure();
+            if (forceLayout)
+            {
+                RootNavView.UpdateLayout();
+                ContentHostBorder.UpdateLayout();
+            }
+        }
+
+        private void QueueShellStateRefresh(Type? pageType)
+        {
+            var dispatcherQueue = RootNavView.DispatcherQueue;
+            if (dispatcherQueue == null)
+            {
+                return;
+            }
+
+            dispatcherQueue.TryEnqueue(() =>
+            {
+                ApplyShellStateForPageType(pageType ?? ContentFrame.Content?.GetType(), forceLayout: true);
+                dispatcherQueue.TryEnqueue(() =>
+                {
+                    ApplyShellStateForPageType(ContentFrame.Content?.GetType() ?? pageType, forceLayout: true);
+                });
+            });
+        }
+
+        private void ConfigureDarkTitleBar()
+        {
+            try
+            {
+                if (!AppWindowTitleBar.IsCustomizationSupported())
+                {
+                    LogStartupCheckpoint("MW TITLEBAR: customization unsupported");
+                    return;
+                }
+
+                var hwnd = WindowNative.GetWindowHandle(this);
+                var windowId = Win32Interop.GetWindowIdFromWindow(hwnd);
+                var appWindow = AppWindow.GetFromWindowId(windowId);
+                var titleBar = appWindow.TitleBar;
+
+                var background = Color.FromArgb(255, 5, 6, 10);
+                var inactiveBackground = Color.FromArgb(255, 8, 10, 16);
+                var foreground = Color.FromArgb(255, 238, 241, 246);
+                var mutedForeground = Color.FromArgb(255, 140, 148, 162);
+                var hover = Color.FromArgb(255, 22, 27, 39);
+                var pressed = Color.FromArgb(255, 36, 26, 52);
+
+                titleBar.BackgroundColor = background;
+                titleBar.InactiveBackgroundColor = inactiveBackground;
+                titleBar.ForegroundColor = foreground;
+                titleBar.InactiveForegroundColor = mutedForeground;
+                titleBar.ButtonBackgroundColor = background;
+                titleBar.ButtonInactiveBackgroundColor = inactiveBackground;
+                titleBar.ButtonForegroundColor = foreground;
+                titleBar.ButtonInactiveForegroundColor = mutedForeground;
+                titleBar.ButtonHoverBackgroundColor = hover;
+                titleBar.ButtonHoverForegroundColor = foreground;
+                titleBar.ButtonPressedBackgroundColor = pressed;
+                titleBar.ButtonPressedForegroundColor = foreground;
+                LogStartupCheckpoint("MW TITLEBAR: dark colors applied");
+            }
+            catch (Exception ex)
+            {
+                LogStartupCheckpoint("MW TITLEBAR ERROR");
+                LogStartupException("MAINWINDOW TITLEBAR ERROR", ex);
+            }
         }
 
         private void RootNavView_ItemInvoked(NavigationView sender, NavigationViewItemInvokedEventArgs args)
@@ -354,6 +462,7 @@ namespace Kroira.App
             var enqueued = dispatcherQueue.TryEnqueue(() =>
             {
                 LogStartupCheckpoint("MW INIT 02: starting initial navigation");
+                ApplyShellStateForPageType(typeof(HomePage), forceLayout: true);
                 var navigated = ContentFrame.Navigate(typeof(HomePage));
                 LogStartupCheckpoint($"MW INIT 03: initial navigation result={navigated}");
 
@@ -367,6 +476,8 @@ namespace Kroira.App
                     RootNavView.SelectedItem = RootNavView.MenuItems[0];
                     LogStartupCheckpoint("MW INIT 04: selected first nav item");
                 }
+
+                ApplyShellStateForPageType(typeof(HomePage), forceLayout: true);
             });
 
             if (!enqueued)

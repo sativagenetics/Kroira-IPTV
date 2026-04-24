@@ -213,7 +213,7 @@ namespace Kroira.App.ViewModels
             SelectedLanguage = Languages.FirstOrDefault(language => language.Code == languageCode)
                 ?? Languages.First(language => language.Code == AppLanguageService.DefaultLanguageCode);
             _isLoadingLanguage = false;
-            LanguageStatusText = $"{activeProfile.Name} uses the selected language.";
+            LanguageStatusText = "The selected language applies to this profile.";
 
             _isLoadingAppearance = true;
             SelectedThemeOption = ThemeOptions.FirstOrDefault(option => option.Key == appearance.ThemePresetKey) ?? ThemeOptions.FirstOrDefault();
@@ -246,7 +246,7 @@ namespace Kroira.App.ViewModels
             var profileService = scope.ServiceProvider.GetRequiredService<IProfileStateService>();
             var activeProfile = await profileService.GetActiveProfileAsync(db);
             await AppLanguageService.SetLanguageAsync(db, languageCode, activeProfile.Id);
-            LanguageStatusText = $"{activeProfile.Name} now uses the selected language.";
+            LanguageStatusText = "The selected language now applies to this profile.";
         }
 
         private async Task SaveAppearanceAsync()

@@ -2,6 +2,7 @@
     x:Class="Kroira.App.Views.MediaLibraryPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:Kroira.App.Controls"
     xmlns:local="using:Kroira.App.Views"
     Background="{StaticResource KroiraPageBackgroundBrush}">
 
@@ -9,6 +10,9 @@
         <local:BoolToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
         <local:StringToCollapsedConverter x:Key="StringNullOrWhiteSpaceToCollapsedConverter" />
     </Page.Resources>
+
+    <Grid>
+        <controls:AmbientPageBackground />
 
     <Grid Padding="40,32,40,36"
           MaxWidth="1360"
@@ -27,8 +31,8 @@
                 Padding="24,22">
             <Border.Background>
                 <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                    <GradientStop Color="#172B2F" Offset="0" />
-                    <GradientStop Color="#141A20" Offset="0.52" />
+                    <GradientStop Color="#16203A" Offset="0" />
+                    <GradientStop Color="#0C1220" Offset="0.52" />
                     <GradientStop Color="#080A0E" Offset="1" />
                 </LinearGradientBrush>
             </Border.Background>
@@ -116,7 +120,7 @@
 
             <Border Grid.Column="0"
                     Visibility="{x:Bind ViewModel.RecordingsVisibility, Mode=OneWay}"
-                    Background="#D00A0D11"
+                    Background="#70070B12"
                     BorderBrush="{StaticResource KroiraGlassBorderBrush}"
                     BorderThickness="1"
                     CornerRadius="14"
@@ -189,7 +193,7 @@
 
             <Border Grid.Column="1"
                     Visibility="{x:Bind ViewModel.DownloadsVisibility, Mode=OneWay}"
-                    Background="#D00A0D11"
+                    Background="#70070B12"
                     BorderBrush="{StaticResource KroiraGlassBorderBrush}"
                     BorderThickness="1"
                     CornerRadius="14"
@@ -263,5 +267,6 @@
                 </Grid>
             </Border>
         </Grid>
+    </Grid>
     </Grid>
 </Page>

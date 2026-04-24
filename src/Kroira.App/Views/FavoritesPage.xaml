@@ -2,14 +2,15 @@
     x:Class="Kroira.App.Views.FavoritesPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:Kroira.App.Controls"
     Background="{StaticResource KroiraPageBackgroundBrush}">
 
     <Page.Resources>
         <Style x:Key="HubColumnStyle" TargetType="Border">
-            <Setter Property="Background" Value="#D00B0E13" />
-            <Setter Property="BorderBrush" Value="{StaticResource KroiraGlassBorderBrush}" />
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="CornerRadius" Value="16" />
+            <Setter Property="Background" Value="#28070B12" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="CornerRadius" Value="12" />
             <Setter Property="Padding" Value="0" />
         </Style>
 
@@ -19,12 +20,36 @@
             <Setter Property="HorizontalContentAlignment" Value="Stretch" />
             <Setter Property="CornerRadius" Value="12" />
         </Style>
+
+        <Style x:Key="QuietManagementButtonStyle" TargetType="Button" BasedOn="{StaticResource KroiraGhostButtonStyle}">
+            <Setter Property="Padding" Value="9,5" />
+            <Setter Property="MinHeight" Value="28" />
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="Foreground" Value="{StaticResource KroiraTextTertiaryBrush}" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="Background" Value="#08000000" />
+            <Setter Property="Opacity" Value="0.62" />
+        </Style>
+
+        <Style x:Key="QuietIconButtonStyle" TargetType="Button" BasedOn="{StaticResource KroiraGhostButtonStyle}">
+            <Setter Property="Width" Value="28" />
+            <Setter Property="Height" Value="28" />
+            <Setter Property="MinWidth" Value="0" />
+            <Setter Property="MinHeight" Value="0" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Foreground" Value="{StaticResource KroiraTextTertiaryBrush}" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="Background" Value="#08000000" />
+            <Setter Property="Opacity" Value="0.58" />
+        </Style>
     </Page.Resources>
 
     <Grid XYFocusKeyboardNavigation="Enabled">
-        <Grid Padding="34,30,36,34"
-              RowSpacing="20"
-              MaxWidth="1420"
+        <controls:AmbientPageBackground />
+
+        <Grid Padding="34,28,36,34"
+              RowSpacing="18"
+              MaxWidth="1180"
               HorizontalAlignment="Center"
               Visibility="{x:Bind ViewModel.SurfaceState.ContentVisibility, Mode=OneWay}">
         <Grid.RowDefinitions>
@@ -49,8 +74,8 @@
                            MaxWidth="720" />
             </StackPanel>
             <Border Grid.Column="1"
-                    Background="#99161B24"
-                    BorderBrush="{StaticResource KroiraGlassBorderBrush}"
+                    Background="#42111827"
+                    BorderBrush="{StaticResource KroiraGhostBorderBrush}"
                     BorderThickness="1"
                     CornerRadius="14"
                     Padding="14,10"
@@ -100,7 +125,7 @@
 
                     <Grid Grid.Row="1" Padding="10,0,10,12">
                         <Border Visibility="{x:Bind ViewModel.ChannelsEmptyVisibility, Mode=OneWay}"
-                                Background="#6611161E"
+                                Background="#3D111827"
                                 BorderBrush="{StaticResource KroiraGhostBorderBrush}"
                                 BorderThickness="1"
                                 CornerRadius="12"
@@ -127,9 +152,9 @@
                                   Padding="0">
                             <ListView.ItemTemplate>
                                 <DataTemplate>
-                                    <Border Background="#AA11161E"
-                                            BorderBrush="{StaticResource KroiraChromeLineBrush}"
-                                            BorderThickness="1"
+                                    <Border Background="#40111827"
+                                            BorderBrush="Transparent"
+                                            BorderThickness="0"
                                             CornerRadius="12"
                                             Padding="12">
                                         <Grid ColumnSpacing="12">
@@ -152,12 +177,14 @@
                                                 </StackPanel>
                                             </StackPanel>
                                             <Button Grid.Column="2"
-                                                    Content="Remove"
                                                     Tag="{Binding Id}"
                                                     Click="RemoveChannelFavorite_Click"
-                                                    Style="{StaticResource KroiraDangerButtonStyle}"
-                                                    FontSize="11"
-                                                    VerticalAlignment="Center" />
+                                                    Style="{StaticResource QuietIconButtonStyle}"
+                                                    VerticalAlignment="Center"
+                                                    AutomationProperties.Name="Remove favorite"
+                                                    ToolTipService.ToolTip="Remove">
+                                                <FontIcon Glyph="&#xE74D;" FontSize="11" />
+                                            </Button>
                                         </Grid>
                                     </Border>
                                 </DataTemplate>
@@ -189,7 +216,7 @@
 
                     <Grid Grid.Row="1" Padding="10,0,10,12">
                         <Border Visibility="{x:Bind ViewModel.MoviesEmptyVisibility, Mode=OneWay}"
-                                Background="#6611161E"
+                                Background="#3D111827"
                                 BorderBrush="{StaticResource KroiraGhostBorderBrush}"
                                 BorderThickness="1"
                                 CornerRadius="12"
@@ -216,7 +243,7 @@
                                   Padding="0">
                             <ListView.ItemTemplate>
                                 <DataTemplate>
-                                    <Border Background="#AA11161E" BorderBrush="{StaticResource KroiraChromeLineBrush}" BorderThickness="1" CornerRadius="12" Padding="10">
+                                    <Border Background="#40111827" BorderBrush="Transparent" BorderThickness="0" CornerRadius="12" Padding="10">
                                         <Grid ColumnSpacing="12">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="54" />
@@ -229,9 +256,17 @@
                                             <StackPanel Grid.Column="1" Spacing="4" VerticalAlignment="Center">
                                                 <TextBlock Text="{Binding Title}" Style="{StaticResource KroiraTitleStyle}" MaxLines="2" TextWrapping="Wrap" TextTrimming="CharacterEllipsis" />
                                                 <TextBlock Text="{Binding MetadataLine}" Style="{StaticResource KroiraMetaStyle}" MaxLines="1" TextTrimming="CharacterEllipsis" />
-                                                <TextBlock Text="Select to play" Foreground="{StaticResource KroiraAccentBrush}" FontSize="11" FontWeight="SemiBold" />
+                                                <TextBlock Text="Movie" Style="{StaticResource KroiraMetaStyle}" />
                                             </StackPanel>
-                                            <Button Grid.Column="2" Content="Remove" Tag="{Binding Id}" Click="RemoveMovieFavorite_Click" Style="{StaticResource KroiraDangerButtonStyle}" FontSize="11" VerticalAlignment="Center" />
+                                            <Button Grid.Column="2"
+                                                    Tag="{Binding Id}"
+                                                    Click="RemoveMovieFavorite_Click"
+                                                    Style="{StaticResource QuietIconButtonStyle}"
+                                                    VerticalAlignment="Center"
+                                                    AutomationProperties.Name="Remove favorite"
+                                                    ToolTipService.ToolTip="Remove">
+                                                <FontIcon Glyph="&#xE74D;" FontSize="11" />
+                                            </Button>
                                         </Grid>
                                     </Border>
                                 </DataTemplate>
@@ -263,7 +298,7 @@
 
                     <Grid Grid.Row="1" Padding="10,0,10,12">
                         <Border Visibility="{x:Bind ViewModel.SeriesEmptyVisibility, Mode=OneWay}"
-                                Background="#6611161E"
+                                Background="#3D111827"
                                 BorderBrush="{StaticResource KroiraGhostBorderBrush}"
                                 BorderThickness="1"
                                 CornerRadius="12"
@@ -289,7 +324,7 @@
                                   Padding="0">
                             <ListView.ItemTemplate>
                                 <DataTemplate>
-                                    <Border Background="#AA11161E" BorderBrush="{StaticResource KroiraChromeLineBrush}" BorderThickness="1" CornerRadius="12" Padding="10">
+                                    <Border Background="#40111827" BorderBrush="Transparent" BorderThickness="0" CornerRadius="12" Padding="10">
                                         <Grid ColumnSpacing="12">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="54" />
@@ -302,9 +337,17 @@
                                             <StackPanel Grid.Column="1" Spacing="4" VerticalAlignment="Center">
                                                 <TextBlock Text="{Binding Title}" Style="{StaticResource KroiraTitleStyle}" MaxLines="2" TextWrapping="Wrap" TextTrimming="CharacterEllipsis" />
                                                 <TextBlock Text="{Binding MetadataLine}" Style="{StaticResource KroiraMetaStyle}" MaxLines="1" TextTrimming="CharacterEllipsis" />
-                                                <TextBlock Text="Select to inspect" Foreground="{StaticResource KroiraAccentBrush}" FontSize="11" FontWeight="SemiBold" />
+                                                <TextBlock Text="Series" Style="{StaticResource KroiraMetaStyle}" />
                                             </StackPanel>
-                                            <Button Grid.Column="2" Content="Remove" Tag="{Binding Id}" Click="RemoveSeriesFavorite_Click" Style="{StaticResource KroiraDangerButtonStyle}" FontSize="11" VerticalAlignment="Center" />
+                                            <Button Grid.Column="2"
+                                                    Tag="{Binding Id}"
+                                                    Click="RemoveSeriesFavorite_Click"
+                                                    Style="{StaticResource QuietIconButtonStyle}"
+                                                    VerticalAlignment="Center"
+                                                    AutomationProperties.Name="Remove favorite"
+                                                    ToolTipService.ToolTip="Remove">
+                                                <FontIcon Glyph="&#xE74D;" FontSize="11" />
+                                            </Button>
                                         </Grid>
                                     </Border>
                                 </DataTemplate>
@@ -320,9 +363,9 @@
                 HorizontalAlignment="Right"
                 VerticalAlignment="Stretch"
                 Visibility="{x:Bind ViewModel.SeriesDetailVisibility, Mode=OneWay}"
-                Background="#F0080A0D"
-                BorderBrush="{StaticResource KroiraGlassBorderBrush}"
-                BorderThickness="1"
+                Background="#D0080A0D"
+                BorderBrush="Transparent"
+                BorderThickness="0"
                 CornerRadius="18"
                 Padding="0"
                 Margin="0,0,0,0">
@@ -345,7 +388,7 @@
                                 <TextBlock Text="SAVED SERIES"
                                            Style="{StaticResource KroiraLabelStyle}"
                                            Foreground="{StaticResource KroiraAccentBrush}" />
-                                <TextBlock Text="Inline inspect"
+                                <TextBlock Text="Series details"
                                            Style="{StaticResource KroiraSectionTitleStyle}" />
                             </StackPanel>
                             <Button x:Name="CloseSeriesDetailButton"
@@ -414,9 +457,9 @@
                             </Grid>
                         </Border>
 
-                        <Border Background="#9611161E"
-                                BorderBrush="{StaticResource KroiraChromeLineBrush}"
-                                BorderThickness="1"
+                        <Border Background="#3E111827"
+                                BorderBrush="Transparent"
+                                BorderThickness="0"
                                 CornerRadius="12"
                                 Padding="13">
                             <Grid ColumnSpacing="12">
@@ -490,9 +533,9 @@
                                   ScrollViewer.VerticalScrollBarVisibility="Auto">
                             <ListView.ItemTemplate>
                                 <DataTemplate>
-                                    <Border Background="#B111161E"
-                                            BorderBrush="{StaticResource KroiraChromeLineBrush}"
-                                            BorderThickness="1"
+                                    <Border Background="#3E111827"
+                                            BorderBrush="Transparent"
+                                            BorderThickness="0"
                                             CornerRadius="10"
                                             Padding="12,10">
                                         <Grid ColumnSpacing="10">
@@ -539,7 +582,7 @@
                 VerticalAlignment="Center"
                 MaxWidth="560"
                 Margin="32"
-                Background="#D00B0E13"
+                Background="#76070B12"
                 BorderBrush="{StaticResource KroiraGlassBorderBrush}"
                 BorderThickness="1"
                 CornerRadius="16"

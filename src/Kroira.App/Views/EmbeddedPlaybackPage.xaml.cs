@@ -30,6 +30,7 @@ namespace Kroira.App.Views
     public sealed partial class EmbeddedPlaybackPage : Page, IRemoteNavigationPage
     {
         private static readonly TimeSpan ControlsHideDelay = TimeSpan.FromMilliseconds(2250);
+        private static readonly TimeSpan ExternalIdleHideDelay = TimeSpan.FromMilliseconds(700);
         private static readonly TimeSpan PointerHideSuppressDelay = TimeSpan.FromMilliseconds(350);
         private static readonly TimeSpan PointerTimerResetThrottle = TimeSpan.FromMilliseconds(250);
         private static readonly TimeSpan MenuSurfaceClickSuppressDelay = TimeSpan.FromMilliseconds(450);
@@ -95,6 +96,7 @@ namespace Kroira.App.Views
         private int _lastOpenSucceededAttemptId = -1;
         private int _lastOpenFailedAttemptId = -1;
         private int _fullscreenTransitionGeneration;
+        private int _externalIdleHideGeneration;
         private string _lastPlayerWarning = string.Empty;
         private string _lastStateMessage = string.Empty;
         private PlaybackAspectMode _selectedAspectMode = PlaybackAspectMode.Automatic;
@@ -107,6 +109,7 @@ namespace Kroira.App.Views
         private readonly HashSet<int> _failedMirrorContentIds = new();
         private FlyoutBase? _activeUtilityFlyout;
         private FlyoutBase? _pendingUtilityFlyout;
+        private MenuFlyout? _toolsMenuFlyout;
 
         private static string LogPath => System.IO.Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
@@ -382,7 +385,8 @@ namespace Kroira.App.Views
                 _surface = new VideoSurface(parentHwnd, VideoHost,
                     onClick: OnVideoClick,
                     onDoubleClick: OnVideoDoubleClick,
-                    onMouseMoved: OnVideoMouseMoved);
+                    onMouseMoved: OnVideoMouseMoved,
+                    onMouseExited: OnVideoMouseExited);
                 _surface.Present(force: true, reason: "surface_created");
                 ApplySurfaceInputShield("surface_created");
                 LogPlaybackState($"SURFACE: created hwnd=0x{_surface.Handle.ToInt64():X}");
@@ -1395,9 +1399,16 @@ namespace Kroira.App.Views
             HandlePointerActivity(ToScreenPoint(e.GetCurrentPoint(RootGrid).Position), "page");
         }
 
+        private void Page_PointerExited(object sender, PointerRoutedEventArgs e)
+        {
+            if (_teardownStarted) return;
+            HandlePointerExit("page");
+        }
+
         private void Page_PointerPressed(object sender, PointerRoutedEventArgs e)
         {
             if (_teardownStarted) return;
+            CancelExternalIdleHide();
 
             if (_toolsPanelOpen && !IsToolsPanelInteractionSource(e.OriginalSource))
             {
@@ -1436,6 +1447,7 @@ namespace Kroira.App.Views
         private void Page_KeyDown(object sender, KeyRoutedEventArgs e)
         {
             if (_teardownStarted) return;
+            CancelExternalIdleHide();
             if (HandleEnhancedKeyDown(e)) return;
             ShowControls(cause: "key_input");
             ResetInactivityTimer("key_input");
@@ -1489,6 +1501,15 @@ namespace Kroira.App.Views
             {
                 if (_teardownStarted) return;
                 HandlePointerActivity(screenPosition, "video-surface");
+            });
+        }
+
+        private void OnVideoMouseExited()
+        {
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                if (_teardownStarted) return;
+                HandlePointerExit("video-surface");
             });
         }
 
@@ -1633,8 +1654,18 @@ namespace Kroira.App.Views
             LogStructuredPlayback("window_activation", $"active={BoolToLog(_isWindowActive)}");
             if (_isWindowActive)
             {
-                ShowControls(cause: "focus_gained");
-                ResetInactivityTimer("focus_gained");
+                if (_isOverlayVisible &&
+                    _stateMachine.State == PlaybackSessionState.Playing &&
+                    !IsMenuOpen &&
+                    !IsUserInteractingWithControls)
+                {
+                    ResetInactivityTimer("focus_gained_visible");
+                }
+                else
+                {
+                    UpdateOverlayVisibility("focus_gained");
+                }
+
                 DispatcherQueue.TryEnqueue(() =>
                 {
                     if (_teardownStarted || !_isWindowActive)
@@ -1648,7 +1679,7 @@ namespace Kroira.App.Views
             else
             {
                 ResetInteractionTrackingState("focus_lost");
-                StopInactivityTimer("focus_lost");
+                ScheduleExternalIdleHide("focus_lost");
             }
         }
 
@@ -1659,6 +1690,7 @@ namespace Kroira.App.Views
                 return;
             }
 
+            CancelExternalIdleHide();
             _isPointerOverControls = true;
             ShowControls(persist: true, cause: "pointer_move");
         }
@@ -2361,6 +2393,21 @@ namespace Kroira.App.Views
         private void HandlePointerActivity(Point? position, string source)
         {
             if (_teardownStarted) return;
+            if (TryGetCursorScreenPoint(out var cursorPosition))
+            {
+                position = cursorPosition;
+            }
+
+            if (position.HasValue && !IsScreenPointInsidePlayerWindow(position.Value))
+            {
+                LogStructuredPlayback(
+                    "pointer_move_outside_window",
+                    $"source={SanitizeForLog(source)}; x={(int)Math.Round(position.Value.X)}; y={(int)Math.Round(position.Value.Y)}");
+                HandlePointerExit(source);
+                return;
+            }
+
+            CancelExternalIdleHide();
 
             if (IsUserInteractingWithControls)
             {
@@ -2369,36 +2416,41 @@ namespace Kroira.App.Views
             }
 
             var now = DateTime.UtcNow;
-            var positionChanged = false;
-            var movedEnough = false;
+            var wasHidden = !_isOverlayVisible;
+            var positionChanged = !position.HasValue;
+            var movedEnough = !position.HasValue;
             if (position.HasValue)
             {
-                positionChanged = !_hasLastPointerPosition ||
-                    Distance(position.Value, _lastPointerPosition) > 0.5;
+                var distance = _hasLastPointerPosition
+                    ? Distance(position.Value, _lastPointerPosition)
+                    : double.MaxValue;
+                positionChanged = !_hasLastPointerPosition || distance > 0.5;
+                movedEnough = !_hasLastPointerPosition || distance >= PointerMoveResetDistance;
+            }
 
-                movedEnough = !_hasLastPointerPosition ||
-                    Distance(position.Value, _lastPointerPosition) >= PointerMoveResetDistance;
-
-                if (positionChanged)
+            if (wasHidden)
+            {
+                if (position.HasValue && !positionChanged)
                 {
-                    _lastPointerPosition = position.Value;
-                    _hasLastPointerPosition = true;
+                    LogPlaybackState($"OVERLAY: ignored stationary pointer source={source}");
+                    return;
                 }
+
+                if (position.HasValue)
+                {
+                    TrackPointerPosition(position.Value);
+                }
+
+                _ignorePointerUntilUtc = DateTime.MinValue;
+                ShowControls(cause: "pointer_move");
+                LogPlaybackState($"OVERLAY: pointer woke controls source={source} changed={positionChanged}");
+                ResetInactivityTimer("pointer_move", now);
+                return;
             }
 
             if (now < _ignorePointerUntilUtc)
             {
-                if (!_isOverlayVisible && position.HasValue)
-                {
-                    LogPlaybackState($"OVERLAY: pointer suppressed source={source}");
-                }
-                return;
-            }
-
-            var wasHidden = !_isOverlayVisible;
-            if (wasHidden && position.HasValue && !positionChanged)
-            {
-                LogPlaybackState($"OVERLAY: ignored stationary pointer source={source}");
+                LogPlaybackState($"OVERLAY: pointer suppressed source={source}");
                 return;
             }
 
@@ -2413,13 +2465,34 @@ namespace Kroira.App.Views
                 return;
             }
 
-            ShowControls(cause: "pointer_move");
-            if (wasHidden)
+            if (position.HasValue)
             {
-                LogPlaybackState($"OVERLAY: pointer woke controls source={source} changed={positionChanged}");
+                TrackPointerPosition(position.Value);
             }
 
+            ShowControls(cause: "pointer_move");
             ResetInactivityTimer("pointer_move", now);
+        }
+
+        private void HandlePointerExit(string source)
+        {
+            if (_teardownStarted)
+            {
+                return;
+            }
+
+            _isPointerOverControls = false;
+            _hasLastPointerPosition = false;
+            LogStructuredPlayback(
+                "pointer_exit",
+                $"source={SanitizeForLog(source)}; fullscreen={BoolToLog(IsFullscreenPlaybackActive())}; window_active={BoolToLog(_isWindowActive)}; overlay_visible={BoolToLog(_isOverlayVisible)}; menu_open={BoolToLog(IsMenuOpen)}");
+            ScheduleExternalIdleHide($"pointer_exit_{source}");
+        }
+
+        private void TrackPointerPosition(Point position)
+        {
+            _lastPointerPosition = position;
+            _hasLastPointerPosition = true;
         }
 
         private void ShowControls(bool persist = false, string cause = "show_controls")
@@ -2510,8 +2583,7 @@ namespace Kroira.App.Views
             return _stateMachine.State != PlaybackSessionState.Playing ||
                    _isPointerOverControls ||
                    IsMenuOpen ||
-                   IsUserInteractingWithControls ||
-                   !_isWindowActive;
+                   IsUserInteractingWithControls;
         }
 
         private void UpdateOverlayVisibility(string reason)
@@ -2590,7 +2662,6 @@ namespace Kroira.App.Views
         {
             return _stateMachine.State switch
             {
-                PlaybackSessionState.Playing when !_isWindowActive => "window_inactive",
                 PlaybackSessionState.Playing when IsMenuOpen => "menu_open",
                 PlaybackSessionState.Playing when _isPointerOverControls => "pointer_over_controls",
                 PlaybackSessionState.Playing when IsUserInteractingWithControls => "recent_user_activity",
@@ -2606,6 +2677,124 @@ namespace Kroira.App.Views
         private static string BoolToLog(bool value)
         {
             return value ? "true" : "false";
+        }
+
+        private bool IsFullscreenPlaybackActive()
+        {
+            return !IsPictureInPictureMode() && _windowManager?.IsFullscreen == true;
+        }
+
+        private bool IsScreenPointInsidePlayerWindow(Point point)
+        {
+            var hwnd = ResolveHostWindowHandle();
+            if (hwnd == IntPtr.Zero || !GetWindowRect(hwnd, out var rect))
+            {
+                return true;
+            }
+
+            return point.X >= rect.Left &&
+                   point.X < rect.Right &&
+                   point.Y >= rect.Top &&
+                   point.Y < rect.Bottom;
+        }
+
+        private static bool TryGetCursorScreenPoint(out Point point)
+        {
+            if (GetCursorPos(out var nativePoint))
+            {
+                point = new Point(nativePoint.X, nativePoint.Y);
+                return true;
+            }
+
+            point = default;
+            return false;
+        }
+
+        private void CancelExternalIdleHide()
+        {
+            Interlocked.Increment(ref _externalIdleHideGeneration);
+        }
+
+        private void ScheduleExternalIdleHide(string reason)
+        {
+            if (_teardownStarted)
+            {
+                return;
+            }
+
+            _isPointerOverControls = false;
+            if (_stateMachine.State != PlaybackSessionState.Playing ||
+                IsMenuOpen ||
+                IsUserInteractingWithControls)
+            {
+                UpdateOverlayVisibility(reason);
+                return;
+            }
+
+            if (_controlsHideTimer != null && _isOverlayVisible && CanAutoHideOverlay())
+            {
+                _lastPointerTimerRestartUtc = DateTime.UtcNow;
+                _controlsHideTimer.Stop();
+                _controlsHideTimer.Start();
+                LogStructuredPlayback(
+                    "inactivity_timer_armed",
+                    $"cause={SanitizeForLog(reason)}; timer_armed={BoolToLog(_controlsHideTimer.IsEnabled)}; deny_reason=none");
+            }
+
+            if (!_isOverlayVisible)
+            {
+                _overlayHiddenByInactivity = true;
+                UpdateOverlayVisibility(reason);
+                return;
+            }
+
+            if (!_isWindowActive || IsFullscreenPlaybackActive())
+            {
+                var generation = Interlocked.Increment(ref _externalIdleHideGeneration);
+                LogStructuredPlayback(
+                    "external_idle_hide_scheduled",
+                    $"reason={SanitizeForLog(reason)}; delay_ms={(int)ExternalIdleHideDelay.TotalMilliseconds}; fullscreen={BoolToLog(IsFullscreenPlaybackActive())}; window_active={BoolToLog(_isWindowActive)}");
+                _ = HideOverlayAfterExternalIdleDelayAsync(generation, reason);
+            }
+
+            UpdateOverlayVisibility(reason);
+        }
+
+        private async Task HideOverlayAfterExternalIdleDelayAsync(int generation, string reason)
+        {
+            try
+            {
+                await Task.Delay(ExternalIdleHideDelay);
+                DispatcherQueue.TryEnqueue(() =>
+                {
+                    if (_teardownStarted || generation != _externalIdleHideGeneration)
+                    {
+                        return;
+                    }
+
+                    if (_stateMachine.State != PlaybackSessionState.Playing ||
+                        IsMenuOpen ||
+                        _isPointerOverControls ||
+                        IsUserInteractingWithControls ||
+                        (_isWindowActive && !IsFullscreenPlaybackActive()))
+                    {
+                        LogStructuredPlayback(
+                            "external_idle_hide_skipped",
+                            $"reason={SanitizeForLog(reason)}; state={_stateMachine.State}; window_active={BoolToLog(_isWindowActive)}; fullscreen={BoolToLog(IsFullscreenPlaybackActive())}; menu_open={BoolToLog(IsMenuOpen)}; pointer_over_controls={BoolToLog(_isPointerOverControls)}; interacting={BoolToLog(IsUserInteractingWithControls)}");
+                        return;
+                    }
+
+                    _overlayHiddenByInactivity = true;
+                    _controlsHideTimer?.Stop();
+                    LogStructuredPlayback(
+                        "external_idle_hide_elapsed",
+                        $"reason={SanitizeForLog(reason)}; window_active={BoolToLog(_isWindowActive)}; fullscreen={BoolToLog(IsFullscreenPlaybackActive())}");
+                    UpdateOverlayVisibility($"external_idle_{reason}");
+                });
+            }
+            catch
+            {
+            }
         }
 
         private void ResumeOverlayAutoHide(string cause = "click")
@@ -2855,6 +3044,7 @@ namespace Kroira.App.Views
             _openOverlayFlyouts.Clear();
             _activeUtilityFlyout = null;
             _pendingUtilityFlyout = null;
+            _toolsMenuFlyout = null;
             _toolsPanelOpen = false;
             UpdateToolsPanelVisibility();
             SetMenuSurfaceInputShield(false, "flyouts_teardown");
@@ -3098,9 +3288,26 @@ namespace Kroira.App.Views
             public int Y;
         }
 
+        [StructLayout(LayoutKind.Sequential)]
+        private struct NativeRect
+        {
+            public int Left;
+            public int Top;
+            public int Right;
+            public int Bottom;
+        }
+
         [DllImport("user32.dll")]
         [return: MarshalAs(UnmanagedType.Bool)]
         private static extern bool ClientToScreen(IntPtr hWnd, ref NativePoint lpPoint);
+
+        [DllImport("user32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool GetWindowRect(IntPtr hWnd, out NativeRect rect);
+
+        [DllImport("user32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool GetCursorPos(out NativePoint lpPoint);
 
         private static string AspectModeLabel(PlaybackAspectMode aspectMode)
         {

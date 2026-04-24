@@ -34,7 +34,7 @@
       EntryPoint="$targetentrypoint$">
       <uap:VisualElements
         DisplayName="KROIRA IPTV"
-        Description="Bring your own M3U and Xtream sources to a polished Windows IPTV library and player."
+        Description="Bring your own M3U, Xtream, and Stalker sources to a polished Windows IPTV library and player."
         BackgroundColor="transparent"
         Square150x150Logo="Assets\Square150x150Logo.png"
         Square44x44Logo="Assets\Square44x44Logo.png">

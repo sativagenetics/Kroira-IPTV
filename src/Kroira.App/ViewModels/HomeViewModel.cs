@@ -77,6 +77,7 @@ namespace Kroira.App.ViewModels
         public string PrimaryActionLabel { get; set; } = "Play";
         public string Target { get; set; } = string.Empty;
         public string RatingText => VoteAverage > 0 ? $"{VoteAverage:0.0}" : string.Empty;
+        public Visibility RatingVisibility => string.IsNullOrWhiteSpace(RatingText) ? Visibility.Collapsed : Visibility.Visible;
     }
 
     public sealed class HomeMediaItem
@@ -654,7 +655,7 @@ namespace Kroira.App.ViewModels
                     VoteAverage = featuredMovie.VoteAverage,
                     Popularity = featuredMovie.Popularity,
                     ArtworkScore = GetArtworkScore(featuredMovie),
-                    PrimaryActionLabel = "Play movie",
+                    PrimaryActionLabel = "Play",
                     Target = "Movies"
                 };
                 return;

@@ -77,7 +77,6 @@ namespace Kroira.App.Views
 
         private void UpdateToolsPanelVisibility()
         {
-            ToolsPanel.Visibility = _toolsPanelOpen ? Visibility.Visible : Visibility.Collapsed;
             ApplyToolButtonSelection(ToolsButton, _toolsPanelOpen);
         }
 
@@ -121,7 +120,17 @@ namespace Kroira.App.Views
             {
                 BuildToolsFlyout();
                 UpdateToolsPanelVisibility();
+                SuppressSurfaceClicks();
+                SetMenuSurfaceInputShield(true, "tools_open");
                 ShowControls(persist: true, cause: "tools_open");
+                _toolsMenuFlyout?.Hide();
+                _toolsMenuFlyout = CreateToolsMenuFlyout();
+                _toolsMenuFlyout.Closed += ToolsMenuFlyout_Closed;
+                WireOverlayFlyout(_toolsMenuFlyout);
+                _toolsMenuFlyout.ShowAt(ToolsButton, new FlyoutShowOptions
+                {
+                    Placement = FlyoutPlacementMode.TopEdgeAlignedRight
+                });
                 DispatcherQueue.TryEnqueue(() =>
                 {
                     if (_teardownStarted || !_toolsPanelOpen)
@@ -136,8 +145,201 @@ namespace Kroira.App.Views
 
             RefreshToolToggleStates();
             UpdateToolsPanelVisibility();
+            _toolsMenuFlyout?.Hide();
+            _toolsMenuFlyout = null;
+            SetMenuSurfaceInputShield(AreFlyoutMenusOpen, "tools_closed");
             RestorePlayerKeyboardFocus(force: true);
             ResumeOverlayAutoHide("tools_closed");
+        }
+
+        private void ToolsMenuFlyout_Closed(object? sender, object e)
+        {
+            if (!_toolsPanelOpen)
+            {
+                if (ReferenceEquals(sender, _toolsMenuFlyout))
+                {
+                    _toolsMenuFlyout = null;
+                }
+
+                return;
+            }
+
+            _toolsPanelOpen = false;
+            if (ReferenceEquals(sender, _toolsMenuFlyout))
+            {
+                _toolsMenuFlyout = null;
+            }
+
+            RefreshToolToggleStates();
+            UpdateToolsPanelVisibility();
+        }
+
+        private MenuFlyout CreateToolsMenuFlyout()
+        {
+            var flyout = new MenuFlyout();
+            var isLive = IsLivePlayback();
+            var isChannel = IsChannelPlayback();
+            var canSeek = IsTimelineSeekAllowed();
+            var hasEpisodeNavigation = _allEpisodeSwitchItems.Count > 1;
+            var canUsePictureInPicture = CanUseFeature(EntitlementFeatureKeys.PlaybackPictureInPicture);
+
+            AddToolsMenuItem(flyout.Items, "Info", () => TogglePanel(nameof(InfoPanel)), _infoPanelOpen);
+            AddToolsMenuItem(flyout.Items, "Retry stream", RetryCurrentPlayback);
+            if (!isLive && canSeek)
+            {
+                AddToolsMenuItem(flyout.Items, "Restart", () => RestartPlayerSession("tools_menu", 0));
+            }
+
+            if (IsCatchupPlayback() || (isLive && canSeek))
+            {
+                AddToolsMenuItem(flyout.Items, "Jump to live", () =>
+                {
+                    if (IsCatchupPlayback())
+                    {
+                        _ = ReturnToLivePlaybackAsync("tools_menu");
+                    }
+                    else
+                    {
+                        GoToLiveEdge("tools_menu");
+                    }
+                });
+            }
+
+            if (isChannel || hasEpisodeNavigation)
+            {
+                AddToolsSeparator(flyout.Items);
+                if (isChannel)
+                {
+                    AddToolsMenuItem(flyout.Items, "Guide", () => TogglePanel(nameof(MiniGuidePanel)), _guidePanelOpen);
+                    AddToolsMenuItem(flyout.Items, "Channels", () => TogglePanel(nameof(ChannelSwitchPanel)), _channelPanelOpen);
+                }
+
+                if (hasEpisodeNavigation)
+                {
+                    AddToolsMenuItem(flyout.Items, "Episodes", () => TogglePanel(nameof(EpisodePanel)), _episodePanelOpen);
+                }
+            }
+
+            AddToolsSeparator(flyout.Items);
+            AddDisplayToolsMenu(flyout.Items);
+            AddAudioSubtitleToolsMenu(flyout.Items);
+            AddSessionToolsMenu(flyout.Items, canUsePictureInPicture);
+            return flyout;
+        }
+
+        private void AddDisplayToolsMenu(IList<MenuFlyoutItemBase> items)
+        {
+            var display = new MenuFlyoutSubItem { Text = "Display" };
+            AddAspectMenuItem(display, "Automatic", PlaybackAspectMode.Automatic);
+            AddAspectMenuItem(display, "Fill window", PlaybackAspectMode.FillWindow);
+            AddAspectMenuItem(display, "16:9", PlaybackAspectMode.Ratio16x9);
+            AddAspectMenuItem(display, "4:3", PlaybackAspectMode.Ratio4x3);
+            AddAspectMenuItem(display, "1.85:1", PlaybackAspectMode.Ratio185x1);
+            AddAspectMenuItem(display, "2.35:1", PlaybackAspectMode.Ratio235x1);
+            display.Items.Add(new MenuFlyoutSeparator());
+            AddToolsMenuItem(display.Items, "Zoom out", () => AdjustVideoZoom(-0.15), isEnabled: _player != null);
+            AddToolsMenuItem(display.Items, "Reset zoom", () => SetVideoZoom(0), IsApproximately(_player?.VideoZoom ?? 0, 0, 0.01), _player != null);
+            AddToolsMenuItem(display.Items, "Zoom in", () => AdjustVideoZoom(0.15), isEnabled: _player != null);
+            display.Items.Add(new MenuFlyoutSeparator());
+            AddToolsMenuItem(display.Items, "Rotation 0 deg", () => SetVideoRotation(0), NormalizeRotation(_player?.VideoRotation ?? 0) == 0, _player != null);
+            AddToolsMenuItem(display.Items, "Rotation 90 deg", () => SetVideoRotation(90), NormalizeRotation(_player?.VideoRotation ?? 0) == 90, _player != null);
+            AddToolsMenuItem(display.Items, "Rotation 180 deg", () => SetVideoRotation(180), NormalizeRotation(_player?.VideoRotation ?? 0) == 180, _player != null);
+            AddToolsMenuItem(display.Items, "Rotation 270 deg", () => SetVideoRotation(270), NormalizeRotation(_player?.VideoRotation ?? 0) == 270, _player != null);
+            display.Items.Add(new MenuFlyoutSeparator());
+            AddToolsMenuItem(display.Items, "Deinterlace", ToggleDeinterlace, _player?.IsDeinterlaceEnabled ?? _playerPreferences.Deinterlace, _player != null);
+            items.Add(display);
+        }
+
+        private void AddAudioSubtitleToolsMenu(IList<MenuFlyoutItemBase> items)
+        {
+            var audioSubtitles = new MenuFlyoutSubItem { Text = "Audio and subtitles" };
+            AddToolsMenuItem(audioSubtitles.Items, "Tracks", OpenTracksFlyout);
+            audioSubtitles.Items.Add(new MenuFlyoutSeparator());
+            AddToolsMenuItem(audioSubtitles.Items, "Audio delay -0.1s", () => AdjustAudioDelay(-0.1));
+            AddToolsMenuItem(audioSubtitles.Items, "Reset audio delay", () => SetAudioDelay(0), IsApproximately(_player?.AudioDelaySeconds ?? _playerPreferences.AudioDelaySeconds, 0, 0.01));
+            AddToolsMenuItem(audioSubtitles.Items, "Audio delay +0.1s", () => AdjustAudioDelay(0.1));
+            audioSubtitles.Items.Add(new MenuFlyoutSeparator());
+            AddToolsMenuItem(audioSubtitles.Items, "Subtitle delay -0.1s", () => AdjustSubtitleDelay(-0.1));
+            AddToolsMenuItem(audioSubtitles.Items, "Reset subtitle delay", () => SetSubtitleDelay(0), IsApproximately(_player?.SubtitleDelaySeconds ?? _playerPreferences.SubtitleDelaySeconds, 0, 0.01));
+            AddToolsMenuItem(audioSubtitles.Items, "Subtitle delay +0.1s", () => AdjustSubtitleDelay(0.1));
+            audioSubtitles.Items.Add(new MenuFlyoutSeparator());
+            AddToolsMenuItem(audioSubtitles.Items, "Subtitle size small", () => SetSubtitleScale(0.85), IsApproximately(_player?.SubtitleScale > 0 ? _player.SubtitleScale : _playerPreferences.SubtitleScale, 0.85));
+            AddToolsMenuItem(audioSubtitles.Items, "Subtitle size medium", () => SetSubtitleScale(1.0), IsApproximately(_player?.SubtitleScale > 0 ? _player.SubtitleScale : _playerPreferences.SubtitleScale, 1.0));
+            AddToolsMenuItem(audioSubtitles.Items, "Subtitle size large", () => SetSubtitleScale(1.2), IsApproximately(_player?.SubtitleScale > 0 ? _player.SubtitleScale : _playerPreferences.SubtitleScale, 1.2));
+            audioSubtitles.Items.Add(new MenuFlyoutSeparator());
+            AddToolsMenuItem(audioSubtitles.Items, "Subtitle high", () => SetSubtitlePosition(84), (_player?.SubtitlePosition ?? _playerPreferences.SubtitlePosition) <= 88);
+            AddToolsMenuItem(audioSubtitles.Items, "Subtitle middle", () => SetSubtitlePosition(92), (_player?.SubtitlePosition ?? _playerPreferences.SubtitlePosition) > 88 && (_player?.SubtitlePosition ?? _playerPreferences.SubtitlePosition) < 98);
+            AddToolsMenuItem(audioSubtitles.Items, "Subtitle low", () => SetSubtitlePosition(100), (_player?.SubtitlePosition ?? _playerPreferences.SubtitlePosition) >= 98);
+            items.Add(audioSubtitles);
+        }
+
+        private void AddSessionToolsMenu(IList<MenuFlyoutItemBase> items, bool canUsePictureInPicture)
+        {
+            var session = new MenuFlyoutSubItem { Text = "Session" };
+            AddToolsMenuItem(session.Items, "Sleep 30 minutes", () => SetSleepTimer(TimeSpan.FromMinutes(30)));
+            AddToolsMenuItem(session.Items, "Sleep 60 minutes", () => SetSleepTimer(TimeSpan.FromMinutes(60)));
+            AddToolsMenuItem(session.Items, "Sleep 90 minutes", () => SetSleepTimer(TimeSpan.FromMinutes(90)));
+            AddToolsMenuItem(session.Items, "Sleep timer off", CancelSleepTimer, !_sleepDeadline.HasValue || _sleepDeadline.Value <= DateTimeOffset.UtcNow);
+            session.Items.Add(new MenuFlyoutSeparator());
+            AddToolsMenuItem(session.Items, IsPictureInPictureMode() ? "Exit picture in picture" : "Picture in picture", () => PictureInPicture_Click(this, new RoutedEventArgs()), IsPictureInPictureMode(), canUsePictureInPicture);
+            AddToolsMenuItem(session.Items, "Always on top", ToggleAlwaysOnTop, _windowManager?.IsAlwaysOnTop == true, !IsPictureInPictureMode());
+            AddToolsMenuItem(session.Items, "Screenshot", CaptureScreenshot, isEnabled: _player != null);
+            session.Items.Add(new MenuFlyoutSeparator());
+            AddToolsMenuItem(session.Items, "Stop playback", () =>
+            {
+                _player?.Stop();
+                NavigateBack();
+            });
+            items.Add(session);
+        }
+
+        private void AddAspectMenuItem(MenuFlyoutSubItem parent, string text, PlaybackAspectMode aspectMode)
+        {
+            var item = new ToggleMenuFlyoutItem
+            {
+                Text = text,
+                Tag = aspectMode,
+                IsChecked = _selectedAspectMode == aspectMode,
+                IsEnabled = CanUseFeature(EntitlementFeatureKeys.PlaybackAspectControls) && _player != null
+            };
+            item.Click += AspectItem_Click;
+            parent.Items.Add(item);
+        }
+
+        private void AddToolsMenuItem(
+            IList<MenuFlyoutItemBase> items,
+            string text,
+            Action action,
+            bool? isChecked = null,
+            bool isEnabled = true)
+        {
+            MenuFlyoutItem item = isChecked.HasValue
+                ? new ToggleMenuFlyoutItem { Text = text, IsChecked = isChecked.Value }
+                : new MenuFlyoutItem { Text = text };
+
+            item.IsEnabled = isEnabled;
+            item.Click += (_, _) =>
+            {
+                if (_teardownStarted)
+                {
+                    return;
+                }
+
+                action();
+                RefreshToolToggleStates();
+                RefreshInfoPanel();
+                UpdatePlaybackHint();
+                ResetInactivityTimer("tools_menu");
+            };
+            items.Add(item);
+        }
+
+        private static void AddToolsSeparator(IList<MenuFlyoutItemBase> items)
+        {
+            if (items.Count > 0 && items[^1] is not MenuFlyoutSeparator)
+            {
+                items.Add(new MenuFlyoutSeparator());
+            }
         }
 
         private void ApplyToolButtonSelection(Button button, bool selected)
@@ -611,11 +813,11 @@ namespace Kroira.App.Views
 
             if (!string.IsNullOrWhiteSpace(_context?.OperationalSummary))
             {
-                hints.Add(_context.OperationalSummary);
+                hints.Add(ToPlayerFacingPlaybackHint(_context.OperationalSummary));
             }
             else if (!string.IsNullOrWhiteSpace(_resolvedRoutingSummary) && !string.Equals(_resolvedRoutingSummary, "Direct routing", StringComparison.OrdinalIgnoreCase))
             {
-                hints.Add(_resolvedRoutingSummary);
+                hints.Add(ToPlayerFacingPlaybackHint(_resolvedRoutingSummary));
             }
 
             if (_sleepDeadline.HasValue)
@@ -629,6 +831,27 @@ namespace Kroira.App.Views
 
             PlaybackHintText.Text = string.Join("  •  ", hints);
             PlaybackHintText.Visibility = string.IsNullOrWhiteSpace(PlaybackHintText.Text) ? Visibility.Collapsed : Visibility.Visible;
+        }
+
+        private static string ToPlayerFacingPlaybackHint(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return string.Empty;
+            }
+
+            return value
+                .Replace("Probe-backed", "Playback ready", StringComparison.OrdinalIgnoreCase)
+                .Replace("weak probe confidence", "connection may vary", StringComparison.OrdinalIgnoreCase)
+                .Replace("guide mapped", "guide available", StringComparison.OrdinalIgnoreCase)
+                .Replace("logo ready", "logo available", StringComparison.OrdinalIgnoreCase)
+                .Replace("poster", "artwork available", StringComparison.OrdinalIgnoreCase)
+                .Replace("overview", "description available", StringComparison.OrdinalIgnoreCase)
+                .Replace("metadata", "metadata available", StringComparison.OrdinalIgnoreCase)
+                .Replace("stale source", "refresh suggested", StringComparison.OrdinalIgnoreCase)
+                .Replace("proxy routed", "optimized route", StringComparison.OrdinalIgnoreCase)
+                .Replace("Operationally usable live mirror", "Ready live source", StringComparison.OrdinalIgnoreCase)
+                .Replace("Operationally usable movie source", "Ready movie source", StringComparison.OrdinalIgnoreCase);
         }
 
         private void RefreshInfoPanel()

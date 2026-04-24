@@ -23,6 +23,10 @@ internal sealed class RegressionRunner
         @"\b\d{1,2}[./-]\d{1,2}[./-]\d{4} \d{1,2}:\d{2}\b",
         RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
+    private static readonly Regex RedactedTimestampMeridiemPattern = new(
+        @"\[timestamp\]\s+(?:AM|PM)\b",
+        RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
+
     public async Task<RegressionRunResult> RunAsync(RegressionRunnerOptions options)
     {
         var repoRoot = ResolveRepoRoot();
@@ -2903,7 +2907,8 @@ internal sealed class RegressionRunner
             .Replace(encodedServerBaseUrl, "[fixture-server]", StringComparison.OrdinalIgnoreCase)
             .Replace(doubleEncodedServerBaseUrl, "[fixture-server]", StringComparison.OrdinalIgnoreCase);
         normalized = AbsoluteSyncTimestampPattern.Replace(normalized, "[timestamp]");
-        return GenericLocalTimestampPattern.Replace(normalized, "[timestamp]");
+        normalized = GenericLocalTimestampPattern.Replace(normalized, "[timestamp]");
+        return RedactedTimestampMeridiemPattern.Replace(normalized, "[timestamp]");
     }
 
     private static string NormalizeRedactedUrl(IServiceProvider services, string? value, string serverBaseUrl)

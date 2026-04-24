@@ -35,6 +35,8 @@ namespace Kroira.App.Services.Playback
         private const uint WM_LBUTTONUP = 0x0202;
         private const uint WM_LBUTTONDBLCLK = 0x0203;
         private const uint WM_MOUSEMOVE = 0x0200;
+        private const uint WM_MOUSELEAVE = 0x02A3;
+        private const uint TME_LEAVE = 0x00000002;
 
         private static readonly IntPtr HWND_TOP = IntPtr.Zero;
 
@@ -111,9 +113,22 @@ namespace Kroira.App.Services.Playback
             public int Y;
         }
 
+        [StructLayout(LayoutKind.Sequential)]
+        private struct TRACKMOUSEEVENT
+        {
+            public uint cbSize;
+            public uint dwFlags;
+            public IntPtr hwndTrack;
+            public uint dwHoverTime;
+        }
+
         [DllImport("user32.dll")]
         [return: MarshalAs(UnmanagedType.Bool)]
         private static extern bool GetClientRect(IntPtr hWnd, out RECT rect);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool TrackMouseEvent(ref TRACKMOUSEEVENT lpEventTrack);
 
         [DllImport("kernel32.dll")]
         private static extern IntPtr GetModuleHandle(string lpModuleName);
@@ -129,6 +144,7 @@ namespace Kroira.App.Services.Playback
         private readonly Action _onDoubleClick;
         private readonly Action _onClick;
         private readonly Action<Point> _onMouseMoved;
+        private readonly Action _onMouseExited;
         private readonly object _clickLock = new();
 
         private IntPtr _hwnd;
@@ -137,6 +153,7 @@ namespace Kroira.App.Services.Playback
         private bool _disposed;
         private bool _inputEnabled = true;
         private bool _isVisible = true;
+        private bool _trackingMouseLeave;
         private int _lastX = int.MinValue;
         private int _lastY = int.MinValue;
         private int _lastWidth = int.MinValue;
@@ -150,13 +167,14 @@ namespace Kroira.App.Services.Playback
             "startup-log.txt");
 
         public VideoSurface(IntPtr parentHwnd, FrameworkElement host,
-            Action onClick, Action onDoubleClick, Action<Point> onMouseMoved)
+            Action onClick, Action onDoubleClick, Action<Point> onMouseMoved, Action onMouseExited)
         {
             _parentHwnd = parentHwnd;
             _host = host;
             _onClick = onClick;
             _onDoubleClick = onDoubleClick;
             _onMouseMoved = onMouseMoved;
+            _onMouseExited = onMouseExited;
 
             EnsureClassRegistered();
             Create();
@@ -376,6 +394,9 @@ namespace Kroira.App.Services.Playback
                     case WM_MOUSEMOVE:
                         self.HandleMouseMove(lParam);
                         return IntPtr.Zero;
+                    case WM_MOUSELEAVE:
+                        self.HandleMouseLeave();
+                        return IntPtr.Zero;
                 }
             }
             return DefWindowProc(hWnd, msg, wParam, lParam);
@@ -383,6 +404,7 @@ namespace Kroira.App.Services.Playback
 
         private void HandleMouseMove(IntPtr lParam)
         {
+            TrackMouseLeave();
             if (_onMouseMoved == null)
             {
                 return;
@@ -403,6 +425,30 @@ namespace Kroira.App.Services.Playback
             }
 
             _onMouseMoved(new Point(point.X, point.Y));
+        }
+
+        private void TrackMouseLeave()
+        {
+            if (_trackingMouseLeave || _hwnd == IntPtr.Zero)
+            {
+                return;
+            }
+
+            var track = new TRACKMOUSEEVENT
+            {
+                cbSize = (uint)Marshal.SizeOf<TRACKMOUSEEVENT>(),
+                dwFlags = TME_LEAVE,
+                hwndTrack = _hwnd,
+                dwHoverTime = 0
+            };
+
+            _trackingMouseLeave = TrackMouseEvent(ref track);
+        }
+
+        private void HandleMouseLeave()
+        {
+            _trackingMouseLeave = false;
+            _onMouseExited?.Invoke();
         }
 
         private void ScheduleSingleClick()

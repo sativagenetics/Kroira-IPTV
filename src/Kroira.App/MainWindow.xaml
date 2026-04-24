@@ -7,12 +7,12 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
 
-    <Grid Background="{StaticResource KroiraPageAtmosphereBrush}"
+    <Grid Background="{StaticResource KroiraShellGradientBrush}"
           XYFocusKeyboardNavigation="Enabled">
         <Border HorizontalAlignment="Stretch"
                 VerticalAlignment="Top"
                 Height="1"
-                Background="{StaticResource KroiraChromeLineBrush}" />
+                Background="{StaticResource KroiraHaloBorderBrush}" />
         <NavigationView x:Name="RootNavView"
                         ItemInvoked="RootNavView_ItemInvoked"
                         PaneOpening="RootNavView_PaneOpening"
@@ -21,7 +21,7 @@
                         IsBackButtonVisible="Collapsed"
                         IsSettingsVisible="False"
                         PaneDisplayMode="LeftCompact"
-                        IsPaneOpen="True"
+                        IsPaneOpen="False"
                         OpenPaneLength="236"
                         CompactPaneLength="64"
                         UseSystemFocusVisuals="True">
@@ -38,8 +38,8 @@
                             BorderThickness="1">
                         <Border.Background>
                             <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                                <GradientStop Color="#3A2A17" Offset="0" />
-                                <GradientStop Color="#12161D" Offset="1" />
+                                <GradientStop Color="#3B1851" Offset="0" />
+                                <GradientStop Color="#101827" Offset="1" />
                             </LinearGradientBrush>
                         </Border.Background>
                         <TextBlock Text="K"
@@ -130,7 +130,7 @@
                         Margin="18,16,16,22"
                         Padding="12,10"
                         Background="#8A10141A"
-                        BorderBrush="{StaticResource KroiraGlassBorderBrush}"
+                        BorderBrush="{StaticResource KroiraGhostBorderBrush}"
                         BorderThickness="1"
                         CornerRadius="10">
                     <StackPanel Spacing="3">
@@ -148,9 +148,10 @@
             </NavigationView.PaneFooter>
             <Grid Background="Transparent"
                   XYFocusKeyboardNavigation="Enabled">
-                <Border Margin="0,0,0,0"
-                        Background="#3305070A"
-                        BorderBrush="#14FFFFFF"
+                <Border x:Name="ContentHostBorder"
+                        Margin="0,0,0,0"
+                        Background="Transparent"
+                        BorderBrush="{StaticResource KroiraGhostBorderBrush}"
                         BorderThickness="1,0,0,0">
                     <Frame x:Name="ContentFrame" />
                 </Border>

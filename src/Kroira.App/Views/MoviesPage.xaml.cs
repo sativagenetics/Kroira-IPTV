@@ -13,6 +13,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
+using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Navigation;
 using Windows.Foundation;
 using Windows.System;
@@ -21,6 +22,7 @@ namespace Kroira.App.Views
 {
     public sealed partial class MoviesPage : Page, IRemoteNavigationPage
     {
+        private const string MediaActionOverlayTag = "MediaActionOverlay";
         private bool _isRestoringCategorySelection;
         private bool _isCategorySelectionRestoreQueued;
 
@@ -227,6 +229,164 @@ namespace Kroira.App.Views
 
                 e.Handled = true;
             }
+        }
+
+        private void RevealCardRoot_Loaded(object sender, RoutedEventArgs e)
+        {
+            if (sender is not FrameworkElement root)
+            {
+                return;
+            }
+
+            SetActionOverlay(root, reveal: false);
+            root.PointerEntered -= RevealCard_PointerEntered;
+            root.PointerEntered += RevealCard_PointerEntered;
+            root.PointerExited -= RevealCard_PointerExited;
+            root.PointerExited += RevealCard_PointerExited;
+            root.GotFocus -= RevealCard_GotFocus;
+            root.GotFocus += RevealCard_GotFocus;
+            root.LostFocus -= RevealCard_LostFocus;
+            root.LostFocus += RevealCard_LostFocus;
+
+            var item = FindAncestor<GridViewItem>(root);
+            if (item == null)
+            {
+                return;
+            }
+
+            item.PointerEntered -= RevealCard_PointerEntered;
+            item.PointerEntered += RevealCard_PointerEntered;
+            item.PointerExited -= RevealCard_PointerExited;
+            item.PointerExited += RevealCard_PointerExited;
+            item.GotFocus -= RevealCard_GotFocus;
+            item.GotFocus += RevealCard_GotFocus;
+            item.LostFocus -= RevealCard_LostFocus;
+            item.LostFocus += RevealCard_LostFocus;
+        }
+
+        private void RevealCard_PointerEntered(object sender, PointerRoutedEventArgs e)
+        {
+            SetActionOverlay(sender as DependencyObject, reveal: true);
+        }
+
+        private void RevealCard_PointerExited(object sender, PointerRoutedEventArgs e)
+        {
+            var source = sender as DependencyObject;
+            if (HasKeyboardFocusWithin(source))
+            {
+                return;
+            }
+
+            SetActionOverlay(source, reveal: false);
+        }
+
+        private void RevealCard_GotFocus(object sender, RoutedEventArgs e)
+        {
+            SetActionOverlay(sender as DependencyObject, reveal: true);
+        }
+
+        private void RevealCard_LostFocus(object sender, RoutedEventArgs e)
+        {
+            var source = sender as DependencyObject;
+            if (DispatcherQueue != null)
+            {
+                DispatcherQueue.TryEnqueue(() =>
+                {
+                    if (!HasKeyboardFocusWithin(source))
+                    {
+                        SetActionOverlay(source, reveal: false);
+                    }
+                });
+                return;
+            }
+
+            if (!HasKeyboardFocusWithin(source))
+            {
+                SetActionOverlay(source, reveal: false);
+            }
+        }
+
+        private static void SetActionOverlay(DependencyObject? source, bool reveal)
+        {
+            if (source == null)
+            {
+                return;
+            }
+
+            var overlay = FindTaggedDescendant(source, MediaActionOverlayTag);
+            if (overlay == null)
+            {
+                return;
+            }
+
+            overlay.Visibility = reveal ? Visibility.Visible : Visibility.Collapsed;
+            overlay.Opacity = reveal ? 1 : 0;
+            overlay.IsHitTestVisible = reveal;
+        }
+
+        private static bool HasKeyboardFocusWithin(DependencyObject? source)
+        {
+            if (source == null)
+            {
+                return false;
+            }
+
+            var focused = FocusManager.GetFocusedElement();
+            return focused is DependencyObject focusedObject && IsDescendantOrSelf(source, focusedObject);
+        }
+
+        private static bool IsDescendantOrSelf(DependencyObject root, DependencyObject candidate)
+        {
+            var current = candidate;
+            while (current != null)
+            {
+                if (ReferenceEquals(current, root))
+                {
+                    return true;
+                }
+
+                current = VisualTreeHelper.GetParent(current);
+            }
+
+            return false;
+        }
+
+        private static FrameworkElement? FindTaggedDescendant(DependencyObject root, string tag)
+        {
+            if (root is FrameworkElement element && Equals(element.Tag, tag))
+            {
+                return element;
+            }
+
+            var childCount = VisualTreeHelper.GetChildrenCount(root);
+            for (var i = 0; i < childCount; i++)
+            {
+                var child = VisualTreeHelper.GetChild(root, i);
+                var match = FindTaggedDescendant(child, tag);
+                if (match != null)
+                {
+                    return match;
+                }
+            }
+
+            return null;
+        }
+
+        private static T? FindAncestor<T>(DependencyObject? source)
+            where T : DependencyObject
+        {
+            var current = source == null ? null : VisualTreeHelper.GetParent(source);
+            while (current != null)
+            {
+                if (current is T match)
+                {
+                    return match;
+                }
+
+                current = VisualTreeHelper.GetParent(current);
+            }
+
+            return null;
         }
 
         private async void FeaturedInspect_Click(object sender, RoutedEventArgs e)

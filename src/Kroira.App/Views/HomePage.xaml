@@ -20,14 +20,14 @@
 
         <DataTemplate x:Key="SummaryStatTemplate">
             <Border MinWidth="118"
-                    Padding="14,10"
-                    Background="#7A090B0F"
-                    BorderBrush="#18FFFFFF"
-                    BorderThickness="1"
-                    CornerRadius="10">
+                    Padding="10,5"
+                    Background="Transparent"
+                    BorderBrush="Transparent"
+                    BorderThickness="0"
+                    CornerRadius="8">
                 <StackPanel Spacing="1">
                     <TextBlock Text="{Binding Value}"
-                               FontSize="20"
+                               FontSize="17"
                                FontWeight="SemiBold"
                                Foreground="{StaticResource KroiraTextPrimaryBrush}" />
                     <TextBlock Text="{Binding Label}"
@@ -42,9 +42,9 @@
                     Style="{StaticResource HomeCardButtonStyle}">
                 <Border Width="372"
                         Height="218"
-                        BorderBrush="{StaticResource KroiraGlassBorderBrush}"
-                        BorderThickness="1"
-                        CornerRadius="12">
+                        BorderBrush="Transparent"
+                        BorderThickness="0"
+                        CornerRadius="16">
                     <Grid>
                         <Border Background="{StaticResource KroiraMediaGradientBrush}"
                                 CornerRadius="12" />
@@ -55,7 +55,7 @@
                             <Border.Background>
                                 <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
                                     <GradientStop Color="#E0090B0F" Offset="0" />
-                                    <GradientStop Color="#8610141A" Offset="0.46" />
+                                    <GradientStop Color="#7010141A" Offset="0.46" />
                                     <GradientStop Color="#F0090B0F" Offset="1" />
                                 </LinearGradientBrush>
                             </Border.Background>
@@ -75,8 +75,8 @@
                                     Height="158"
                                     CornerRadius="9"
                                     Background="{StaticResource KroiraPosterPlaceholderBrush}"
-                                    BorderBrush="{StaticResource KroiraGlassBorderBrush}"
-                                    BorderThickness="1">
+                                    BorderBrush="Transparent"
+                                    BorderThickness="0">
                                 <Grid>
                                     <FontIcon Glyph="&#xE8B2;"
                                               Foreground="{StaticResource KroiraTextTertiaryBrush}"
@@ -91,8 +91,8 @@
                                         Spacing="8"
                                         VerticalAlignment="Top">
                                 <Border Background="#B30A0D11"
-                                        BorderBrush="{StaticResource KroiraChromeLineBrush}"
-                                        BorderThickness="1"
+                                        BorderBrush="Transparent"
+                                        BorderThickness="0"
                                         CornerRadius="8"
                                         Padding="8,3"
                                         HorizontalAlignment="Left">
@@ -113,16 +113,10 @@
                                            LineHeight="17"
                                            MaxLines="2"
                                            TextTrimming="CharacterEllipsis" />
-                                <StackPanel Orientation="Horizontal" Spacing="8">
-                                    <TextBlock Text="{Binding Detail}"
-                                               Style="{StaticResource KroiraMetaStyle}"
-                                               MaxLines="1"
-                                               TextTrimming="CharacterEllipsis" />
-                                    <TextBlock Text="{Binding VoteAverage}"
-                                               Foreground="{StaticResource KroiraAccentBrush}"
-                                               FontSize="12"
-                                               FontWeight="SemiBold" />
-                                </StackPanel>
+                                <TextBlock Text="{Binding Detail}"
+                                           Style="{StaticResource KroiraMetaStyle}"
+                                           MaxLines="1"
+                                           TextTrimming="CharacterEllipsis" />
                             </StackPanel>
 
                             <Grid Grid.Row="1"
@@ -155,22 +149,21 @@
                     Style="{StaticResource HomeCardButtonStyle}">
                 <Border Width="188"
                         Height="300"
-                        BorderBrush="{StaticResource KroiraGlassBorderBrush}"
-                        BorderThickness="1"
+                        BorderBrush="Transparent"
+                        BorderThickness="0"
                         CornerRadius="12"
                         Padding="10,10,10,12">
                     <Border.Background>
                         <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                            <GradientStop Color="#252016" Offset="0" />
-                            <GradientStop Color="#10151C" Offset="0.54" />
-                            <GradientStop Color="#080A0D" Offset="1" />
+                            <GradientStop Color="#111827" Offset="0" />
+                            <GradientStop Color="#090E18" Offset="0.54" />
+                            <GradientStop Color="#00000000" Offset="1" />
                         </LinearGradientBrush>
                     </Border.Background>
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="206" />
                             <RowDefinition Height="*" />
-                            <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
 
                         <Grid>
@@ -197,19 +190,6 @@
                                     </LinearGradientBrush>
                                 </Border.Background>
                             </Border>
-                            <Border Background="#C8090B0F"
-                                    BorderBrush="{StaticResource KroiraChromeLineBrush}"
-                                    BorderThickness="1"
-                                    CornerRadius="8"
-                                    Padding="7,3"
-                                    HorizontalAlignment="Right"
-                                    VerticalAlignment="Top"
-                                    Margin="8">
-                                <TextBlock Text="{Binding RatingText}"
-                                           Foreground="{StaticResource KroiraAccentBrush}"
-                                           FontSize="11"
-                                           FontWeight="SemiBold" />
-                            </Border>
                         </Grid>
 
                         <StackPanel Grid.Row="1" Spacing="4" Margin="1,10,1,4">
@@ -224,24 +204,6 @@
                                        MaxLines="1"
                                        TextTrimming="CharacterEllipsis" />
                         </StackPanel>
-
-                        <Border Grid.Row="2"
-                                HorizontalAlignment="Left"
-                                Background="#1B231A10"
-                                BorderBrush="{StaticResource KroiraChromeLineBrush}"
-                                BorderThickness="1"
-                                CornerRadius="8"
-                                Padding="9,4">
-                            <StackPanel Orientation="Horizontal" Spacing="6">
-                                <FontIcon Glyph="&#xE768;"
-                                          FontSize="11"
-                                          Foreground="{StaticResource KroiraAccentBrush}" />
-                                <TextBlock Text="Open"
-                                           FontSize="11"
-                                           FontWeight="SemiBold"
-                                           Foreground="{StaticResource KroiraAccentBrush}" />
-                            </StackPanel>
-                        </Border>
                     </Grid>
                 </Border>
             </Button>
@@ -252,9 +214,9 @@
                     Style="{StaticResource HomeCardButtonStyle}">
                 <Border Width="248"
                         Height="138"
-                        BorderBrush="{StaticResource KroiraGlassBorderBrush}"
+                        BorderBrush="{StaticResource KroiraGhostBorderBrush}"
                         BorderThickness="1"
-                        CornerRadius="12"
+                        CornerRadius="14"
                         Padding="14">
                     <Border.Background>
                         <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
@@ -321,21 +283,24 @@
     </Page.Resources>
 
     <Grid XYFocusKeyboardNavigation="Enabled">
+        <controls:AmbientPageBackground />
+
         <ScrollViewer x:Name="HomeScrollViewer"
                       VerticalScrollBarVisibility="Auto"
                       VerticalScrollMode="Auto"
                       HorizontalScrollBarVisibility="Disabled"
                       HorizontalScrollMode="Disabled"
                       Visibility="{x:Bind ViewModel.SurfaceState.ContentVisibility, Mode=OneWay}">
-        <StackPanel Padding="44,32,44,46" Spacing="30">
-            <Border MinHeight="288"
-                    MaxHeight="344"
-                    CornerRadius="18"
-                    BorderBrush="{StaticResource KroiraGlassBorderBrush}"
-                    BorderThickness="1">
+        <StackPanel Padding="28,16,44,46" Spacing="28">
+            <Border MinHeight="330"
+                    MaxHeight="360"
+                    Margin="-28,-20,-44,0"
+                    CornerRadius="0,0,28,28"
+                    BorderBrush="{StaticResource KroiraGhostBorderBrush}"
+                    BorderThickness="0">
                 <Grid>
                     <Border Background="{StaticResource KroiraMediaGradientBrush}"
-                            CornerRadius="18" />
+                            CornerRadius="0,0,28,28" />
                     <Image Source="{x:Bind ViewModel.FeaturedItem.HeroArtworkUrl, Mode=OneWay, Converter={StaticResource UrlToImageSourceConverter}}"
                            Stretch="UniformToFill"
                            Opacity="0.88" />
@@ -347,10 +312,10 @@
                     <Border>
                         <Border.Background>
                             <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                                <GradientStop Color="#F006080A" Offset="0" />
-                                <GradientStop Color="#D1090B0F" Offset="0.38" />
-                                <GradientStop Color="#5910141A" Offset="0.68" />
-                                <GradientStop Color="#D0080A0D" Offset="1" />
+                                <GradientStop Color="#F205060A" Offset="0" />
+                                <GradientStop Color="#D9070912" Offset="0.38" />
+                                <GradientStop Color="#52151B2A" Offset="0.68" />
+                                <GradientStop Color="#D605060A" Offset="1" />
                             </LinearGradientBrush>
                         </Border.Background>
                     </Border>
@@ -363,12 +328,13 @@
                             </LinearGradientBrush>
                         </Border.Background>
                     </Border>
-                    <Border Width="5"
+                    <Border Width="0"
                             HorizontalAlignment="Left"
                             Background="{StaticResource KroiraAccentGradientBrush}"
-                            CornerRadius="18,0,0,18" />
+                            CornerRadius="24,0,0,24"
+                            Opacity="0.72" />
 
-                    <Grid Padding="36,24" ColumnSpacing="26">
+                    <Grid Padding="54,32,48,28" ColumnSpacing="26">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="188" />
@@ -392,7 +358,8 @@
                                         BorderBrush="{StaticResource KroiraChromeLineBrush}"
                                         BorderThickness="1"
                                         CornerRadius="8"
-                                        Padding="9,4">
+                                        Padding="9,4"
+                                        Visibility="{x:Bind ViewModel.FeaturedItem.RatingVisibility, Mode=OneWay}">
                                     <TextBlock Text="{x:Bind ViewModel.FeaturedItem.RatingText, Mode=OneWay}"
                                                Foreground="{StaticResource KroiraAccentBrush}"
                                                FontSize="12"
@@ -429,12 +396,13 @@
                                         Content="Live TV" />
                             </StackPanel>
                             <Border Margin="0,5,0,0"
-                                    Padding="7"
-                                    Background="#5E090B0F"
-                                    BorderBrush="{StaticResource KroiraGlassBorderBrush}"
-                                    BorderThickness="1"
-                                    CornerRadius="12"
-                                    HorizontalAlignment="Left">
+                                    Padding="0"
+                                    Background="Transparent"
+                                    BorderBrush="Transparent"
+                                    BorderThickness="0"
+                                    CornerRadius="0"
+                                    HorizontalAlignment="Left"
+                                    Visibility="Collapsed">
                                 <ItemsControl ItemsSource="{x:Bind ViewModel.SummaryItems, Mode=OneWay}"
                                               ItemTemplate="{StaticResource SummaryStatTemplate}">
                                     <ItemsControl.ItemsPanel>
@@ -449,8 +417,8 @@
                         <StackPanel Grid.Column="1"
                                     Spacing="10"
                                     VerticalAlignment="Bottom">
-                            <Border Width="164"
-                                    Height="244"
+                            <Border Width="142"
+                                    Height="212"
                                     CornerRadius="12"
                                     BorderBrush="{StaticResource KroiraGlassBorderBrush}"
                                     BorderThickness="1"
@@ -473,7 +441,7 @@
                                     </Border>
                                 </Grid>
                             </Border>
-                            <Border Width="164"
+                            <Border Width="142"
                                     Padding="11,9"
                                     Background="#9A090B0F"
                                     BorderBrush="{StaticResource KroiraChromeLineBrush}"
@@ -592,6 +560,22 @@
                                ItemSpacing="16"
                                ScrollAmount="360" />
             </StackPanel>
+
+            <StackPanel Spacing="8"
+                        Opacity="0.72"
+                        Margin="0,2,0,0">
+                <TextBlock Text="Library at a glance"
+                           Style="{StaticResource KroiraLabelStyle}"
+                           Foreground="{StaticResource KroiraTextTertiaryBrush}" />
+                <ItemsControl ItemsSource="{x:Bind ViewModel.SummaryItems, Mode=OneWay}"
+                              ItemTemplate="{StaticResource SummaryStatTemplate}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <ItemsStackPanel Orientation="Horizontal" />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                </ItemsControl>
+            </StackPanel>
         </StackPanel>
         </ScrollViewer>
 
@@ -600,7 +584,7 @@
                 VerticalAlignment="Center"
                 MaxWidth="560"
                 Margin="32"
-                Background="#D00B0E13"
+                Background="#76070B12"
                 BorderBrush="{StaticResource KroiraGlassBorderBrush}"
                 BorderThickness="1"
                 CornerRadius="16"

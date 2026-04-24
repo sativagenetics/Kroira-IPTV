@@ -37,6 +37,7 @@ namespace Kroira.App.ViewModels
         public string DisplayPosterUrl => Movie.DisplayPosterUrl;
         public string DisplayHeroArtworkUrl => Movie.DisplayHeroArtworkUrl;
         public string RatingText => Movie.RatingText;
+        public Visibility RatingVisibility => string.IsNullOrWhiteSpace(RatingText) ? Visibility.Collapsed : Visibility.Visible;
         public string MetadataLine
         {
             get
@@ -95,6 +96,7 @@ namespace Kroira.App.ViewModels
             OnPropertyChanged(nameof(DisplayPosterUrl));
             OnPropertyChanged(nameof(DisplayHeroArtworkUrl));
             OnPropertyChanged(nameof(RatingText));
+            OnPropertyChanged(nameof(RatingVisibility));
             OnPropertyChanged(nameof(MetadataLine));
             OnPropertyChanged(nameof(Overview));
             OnPropertyChanged(nameof(CategoryName));
@@ -243,7 +245,7 @@ namespace Kroira.App.ViewModels
         [ObservableProperty] private bool _hideSecondaryContent;
         [ObservableProperty] private bool _hasAdvancedFilters;
         [ObservableProperty] private bool _isEmpty;
-        [ObservableProperty] private string _discoverySummaryText = "Source type, language, genre, artwork, and health appear only when the catalog proves them.";
+        [ObservableProperty] private string _discoverySummaryText = "Browse by source, language, genre, and artwork availability.";
         [ObservableProperty] private string _emptyStateTitle = "No movies to show";
         [ObservableProperty] private string _emptyStateMessage = "Sync a VOD source, or clear your search and browse filters.";
         [ObservableProperty] private SurfaceStatePresentation _surfaceState = SurfaceStateCopies.Movies.Create(SurfaceViewState.Loading);

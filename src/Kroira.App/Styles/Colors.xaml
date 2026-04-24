@@ -2,29 +2,30 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
-    <!-- Premium media palette: black glass, warm cinema chrome, cold broadcast accent. -->
+    <!-- KROIRA cinematic media palette: near-black base, midnight undertones, restrained plum glow. -->
 
-    <SolidColorBrush x:Key="KroiraPageBackgroundBrush" Color="#090A0D" />
-    <SolidColorBrush x:Key="KroiraGlassBrush" Color="#6613181F" />
-    <SolidColorBrush x:Key="KroiraGlassStrongBrush" Color="#8A171C23" />
-    <SolidColorBrush x:Key="KroiraSurfaceSoftBrush" Color="#10141A" />
-    <SolidColorBrush x:Key="KroiraSurfaceBrush" Color="#151A22" />
-    <SolidColorBrush x:Key="KroiraSurfaceElevatedBrush" Color="#1B212A" />
+    <SolidColorBrush x:Key="KroiraPageBackgroundBrush" Color="#05060A" />
+    <SolidColorBrush x:Key="KroiraGlassBrush" Color="#55101928" />
+    <SolidColorBrush x:Key="KroiraGlassStrongBrush" Color="#8A111827" />
+    <SolidColorBrush x:Key="KroiraSurfaceSoftBrush" Color="#0B1019" />
+    <SolidColorBrush x:Key="KroiraSurfaceBrush" Color="#111827" />
+    <SolidColorBrush x:Key="KroiraSurfaceElevatedBrush" Color="#172033" />
 
-    <SolidColorBrush x:Key="KroiraBorderBrush" Color="#29313C" />
-    <SolidColorBrush x:Key="KroiraBorderStrongBrush" Color="#47515F" />
-    <SolidColorBrush x:Key="KroiraGhostBorderBrush" Color="#FFFFFF" Opacity="0.13" />
-    <SolidColorBrush x:Key="KroiraGlassBorderBrush" Color="#FFFFFF" Opacity="0.18" />
-    <SolidColorBrush x:Key="KroiraChromeLineBrush" Color="#C8A86A" Opacity="0.34" />
+    <SolidColorBrush x:Key="KroiraBorderBrush" Color="#283247" />
+    <SolidColorBrush x:Key="KroiraBorderStrongBrush" Color="#46526C" />
+    <SolidColorBrush x:Key="KroiraGhostBorderBrush" Color="#D7E2FF" Opacity="0.09" />
+    <SolidColorBrush x:Key="KroiraGlassBorderBrush" Color="#D7E2FF" Opacity="0.12" />
+    <SolidColorBrush x:Key="KroiraChromeLineBrush" Color="#C167FF" Opacity="0.30" />
+    <SolidColorBrush x:Key="KroiraHaloBorderBrush" Color="#8AB4FF" Opacity="0.20" />
 
-    <SolidColorBrush x:Key="KroiraTextPrimaryBrush" Color="#F6F3EA" />
-    <SolidColorBrush x:Key="KroiraTextSecondaryBrush" Color="#C7C1B6" />
-    <SolidColorBrush x:Key="KroiraTextTertiaryBrush" Color="#817C74" />
+    <SolidColorBrush x:Key="KroiraTextPrimaryBrush" Color="#F7F8FF" />
+    <SolidColorBrush x:Key="KroiraTextSecondaryBrush" Color="#B9C2D6" />
+    <SolidColorBrush x:Key="KroiraTextTertiaryBrush" Color="#78839B" />
 
-    <SolidColorBrush x:Key="KroiraAccentBrush" Color="#E7C46E" />
-    <SolidColorBrush x:Key="KroiraAccentStrongBrush" Color="#F1A63E" />
-    <SolidColorBrush x:Key="KroiraAccentContainerBrush" Color="#342716" />
-    <SolidColorBrush x:Key="KroiraGoldBrush" Color="#E7C46E" />
+    <SolidColorBrush x:Key="KroiraAccentBrush" Color="#C167FF" />
+    <SolidColorBrush x:Key="KroiraAccentStrongBrush" Color="#8AB4FF" />
+    <SolidColorBrush x:Key="KroiraAccentContainerBrush" Color="#2A1738" />
+    <SolidColorBrush x:Key="KroiraGoldBrush" Color="#C167FF" />
     <SolidColorBrush x:Key="KroiraLiveDotBrush" Color="#FF4E4E" />
 
     <SolidColorBrush x:Key="KroiraStateSuccessBrush" Color="#5AC178" />
@@ -38,35 +39,63 @@
     <SolidColorBrush x:Key="KroiraStateNeutralBrush" Color="#AEB6C3" />
     <SolidColorBrush x:Key="KroiraStateNeutralSoftBrush" Color="#AEB6C3" Opacity="0.10" />
 
-    <SolidColorBrush x:Key="KroiraControlBrush" Color="#F6F3EA" Opacity="0.075" />
-    <SolidColorBrush x:Key="KroiraControlBorderBrush" Color="#FFFFFF" Opacity="0.16" />
+    <SolidColorBrush x:Key="KroiraControlBrush" Color="#EAF1FF" Opacity="0.065" />
+    <SolidColorBrush x:Key="KroiraControlBorderBrush" Color="#D7E2FF" Opacity="0.13" />
+    <SolidColorBrush x:Key="KroiraScrimBrush" Color="#05060A" Opacity="0.82" />
+    <SolidColorBrush x:Key="KroiraSoftScrimBrush" Color="#05060A" Opacity="0.54" />
+    <SolidColorBrush x:Key="KroiraPlumWashBrush" Color="#3C174D" Opacity="0.36" />
+    <SolidColorBrush x:Key="KroiraBlueWashBrush" Color="#0C3A70" Opacity="0.28" />
 
     <LinearGradientBrush x:Key="KroiraPageAtmosphereBrush" StartPoint="0,0" EndPoint="1,1">
-        <GradientStop Color="#171A1F" Offset="0" />
-        <GradientStop Color="#090A0D" Offset="0.48" />
-        <GradientStop Color="#050607" Offset="1" />
+        <GradientStop Color="#121A2A" Offset="0" />
+        <GradientStop Color="#070914" Offset="0.46" />
+        <GradientStop Color="#020306" Offset="1" />
     </LinearGradientBrush>
 
     <LinearGradientBrush x:Key="KroiraShellGradientBrush" StartPoint="0,0" EndPoint="1,1">
-        <GradientStop Color="#17100A" Offset="0" />
-        <GradientStop Color="#090A0D" Offset="0.48" />
-        <GradientStop Color="#030405" Offset="1" />
+        <GradientStop Color="#0D1321" Offset="0" />
+        <GradientStop Color="#070914" Offset="0.5" />
+        <GradientStop Color="#020306" Offset="1" />
     </LinearGradientBrush>
 
     <LinearGradientBrush x:Key="KroiraSurfaceGradientBrush" StartPoint="0,0" EndPoint="0,1">
-        <GradientStop Color="#242A33" Offset="0" />
-        <GradientStop Color="#10141A" Offset="1" />
+        <GradientStop Color="#18233A" Offset="0" />
+        <GradientStop Color="#0A0F1A" Offset="1" />
     </LinearGradientBrush>
 
     <LinearGradientBrush x:Key="KroiraMediaGradientBrush" StartPoint="0,0" EndPoint="1,1">
-        <GradientStop Color="#362514" Offset="0" />
-        <GradientStop Color="#161B22" Offset="0.46" />
-        <GradientStop Color="#090A0D" Offset="1" />
+        <GradientStop Color="#321542" Offset="0" />
+        <GradientStop Color="#101B31" Offset="0.44" />
+        <GradientStop Color="#05060A" Offset="1" />
     </LinearGradientBrush>
 
     <LinearGradientBrush x:Key="KroiraAccentGradientBrush" StartPoint="0,0" EndPoint="1,1">
-        <GradientStop Color="#F0C568" Offset="0" />
-        <GradientStop Color="#A95B25" Offset="1" />
+        <GradientStop Color="#C167FF" Offset="0" />
+        <GradientStop Color="#7AA7FF" Offset="1" />
+    </LinearGradientBrush>
+
+    <LinearGradientBrush x:Key="KroiraHeroScrimBrush" StartPoint="0,0" EndPoint="1,0">
+        <GradientStop Color="#F205060A" Offset="0" />
+        <GradientStop Color="#D9070912" Offset="0.38" />
+        <GradientStop Color="#62151B2A" Offset="0.68" />
+        <GradientStop Color="#DA05060A" Offset="1" />
+    </LinearGradientBrush>
+
+    <LinearGradientBrush x:Key="KroiraVerticalScrimBrush" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#22000000" Offset="0" />
+        <GradientStop Color="#08000000" Offset="0.42" />
+        <GradientStop Color="#C805060A" Offset="1" />
+    </LinearGradientBrush>
+
+    <LinearGradientBrush x:Key="KroiraPosterOverlayBrush" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#000F1724" Offset="0" />
+        <GradientStop Color="#D805060A" Offset="1" />
+    </LinearGradientBrush>
+
+    <LinearGradientBrush x:Key="KroiraAmbientSweepBrush" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#4B1B62" Offset="0" />
+        <GradientStop Color="#0E356A" Offset="0.42" />
+        <GradientStop Color="#020306" Offset="1" />
     </LinearGradientBrush>
 
 </ResourceDictionary>

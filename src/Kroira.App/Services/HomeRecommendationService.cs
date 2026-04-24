@@ -321,7 +321,7 @@ namespace Kroira.App.Services
                 .Select(state =>
                 {
                     var score = ScoreFeaturedMovie(state, affinity);
-                    return (BuildMovieItem(state, BuildRecommendationDetail(state.Preferred, state.LastAffinityTag), "Movies", "Play movie"), score);
+                    return (BuildMovieItem(state, BuildRecommendationDetail(state.Preferred, state.LastAffinityTag), "Movies", "Play"), score);
                 }));
 
             candidates.AddRange(seriesStates
