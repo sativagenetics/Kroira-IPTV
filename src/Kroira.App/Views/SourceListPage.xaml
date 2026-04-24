@@ -7,10 +7,10 @@
 
     <Page.Resources>
         <Style x:Key="SourceDashboardCardStyle" TargetType="Border" BasedOn="{StaticResource KroiraCardStyle}">
-            <Setter Property="Background" Value="#D911151B" />
-            <Setter Property="BorderBrush" Value="{StaticResource KroiraGlassBorderBrush}" />
+            <Setter Property="Background" Value="#52101827" />
+            <Setter Property="BorderBrush" Value="{StaticResource KroiraGhostBorderBrush}" />
             <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="CornerRadius" Value="18" />
+            <Setter Property="CornerRadius" Value="16" />
             <Setter Property="Padding" Value="20" />
         </Style>
 
@@ -63,7 +63,7 @@
         </Style>
 
         <Style x:Key="SourceMetricChipStyle" TargetType="Border">
-            <Setter Property="Background" Value="#8611161E" />
+            <Setter Property="Background" Value="#36111827" />
             <Setter Property="BorderBrush" Value="{StaticResource KroiraChromeLineBrush}" />
             <Setter Property="BorderThickness" Value="1" />
             <Setter Property="CornerRadius" Value="14" />
@@ -71,7 +71,7 @@
         </Style>
 
         <Style x:Key="SourceDetailPanelStyle" TargetType="Border">
-            <Setter Property="Background" Value="#8C10141B" />
+            <Setter Property="Background" Value="#46101827" />
             <Setter Property="BorderBrush" Value="{StaticResource KroiraChromeLineBrush}" />
             <Setter Property="BorderThickness" Value="1" />
             <Setter Property="CornerRadius" Value="14" />
@@ -79,17 +79,20 @@
         </Style>
 
         <Style x:Key="SourceActivityCardStyle" TargetType="Border">
-            <Setter Property="Background" Value="#9611161E" />
-            <Setter Property="BorderBrush" Value="{StaticResource KroiraGlassBorderBrush}" />
+            <Setter Property="Background" Value="#42111827" />
+            <Setter Property="BorderBrush" Value="{StaticResource KroiraGhostBorderBrush}" />
             <Setter Property="BorderThickness" Value="1" />
             <Setter Property="CornerRadius" Value="14" />
             <Setter Property="Padding" Value="14,12" />
         </Style>
     </Page.Resources>
 
+    <Grid>
+        <controls:AmbientPageBackground />
+
     <ScrollViewer VerticalScrollBarVisibility="Auto" VerticalScrollMode="Enabled">
-        <Grid Background="{StaticResource KroiraPageAtmosphereBrush}">
-            <Grid MaxWidth="1480"
+        <Grid Background="Transparent">
+            <Grid MaxWidth="1180"
                   HorizontalAlignment="Center"
                   Padding="32,28,32,36"
                   RowSpacing="18">
@@ -113,7 +116,7 @@
                                    Foreground="{StaticResource KroiraAccentBrush}" />
                         <TextBlock Text="Sources"
                                    Style="{StaticResource KroiraPageTitleStyle}" />
-                        <TextBlock Text="Monitor source health, guide coverage, and recent sync activity."
+                        <TextBlock Text="Manage sources, guide coverage, and recent updates."
                                    Style="{StaticResource KroiraPageSubtitleStyle}"
                                    MaxWidth="760" />
                     </StackPanel>
@@ -124,7 +127,7 @@
                                 HorizontalAlignment="Right">
                         <Grid>
                             <TextBox Text="{x:Bind ViewModel.SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                     PlaceholderText="Search sources, guide mode, or health"
+                                     PlaceholderText="Search sources, guide mode, or status"
                                      Style="{StaticResource SourceSearchBoxStyle}" />
                             <FontIcon Glyph="&#xE721;"
                                       Foreground="{StaticResource KroiraTextTertiaryBrush}"
@@ -197,7 +200,7 @@
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
-                            <TextBlock Text="SYSTEM HEALTH" Style="{StaticResource SourceMetricLabelStyle}" />
+                            <TextBlock Text="SOURCE STATUS" Style="{StaticResource SourceMetricLabelStyle}" />
                             <FontIcon Grid.Column="1" Glyph="&#xE73E;" Foreground="{StaticResource KroiraAccentBrush}" FontSize="15" />
                             <controls:StatusPill Grid.Row="1"
                                                  Label="{x:Bind ViewModel.HealthStatusHeadline, Mode=OneWay}"
@@ -509,7 +512,7 @@
 
                                         <Border Style="{StaticResource SourceDetailPanelStyle}">
                                             <StackPanel Spacing="6">
-                                                <TextBlock Text="HEALTH SUMMARY" Style="{StaticResource SourceMiniLabelStyle}" />
+                                                <TextBlock Text="STATUS SUMMARY" Style="{StaticResource SourceMiniLabelStyle}" />
                                                 <TextBlock Text="{Binding Status}" Style="{StaticResource KroiraBodyStyle}" MaxLines="3" TextWrapping="WrapWholeWords" TextTrimming="CharacterEllipsis" />
                                                 <TextBlock Text="{Binding ValidationResultText}" Visibility="{Binding ValidationVisibility}" Style="{StaticResource KroiraBodyStyle}" MaxLines="3" TextWrapping="WrapWholeWords" TextTrimming="CharacterEllipsis" />
                                                 <ItemsControl ItemsSource="{Binding HealthComponents}" Visibility="{Binding HealthComponentsVisibility}">
@@ -552,7 +555,7 @@
                                     </Grid>
 
                                     <Expander Grid.Row="3"
-                                              Header="Health and guide details"
+                                              Header="Source and guide details"
                                               IsExpanded="{Binding IsHealthDetailsExpanded, Mode=TwoWay}">
                                         <Grid Margin="0,12,0,0" ColumnSpacing="16">
                                             <Grid.ColumnDefinitions>
@@ -596,7 +599,7 @@
                                             </StackPanel>
 
                                             <StackPanel Grid.Column="1" Spacing="7">
-                                                <TextBlock Text="Guide diagnostics" Style="{StaticResource SourceMiniLabelStyle}" />
+                                                <TextBlock Text="Guide details" Style="{StaticResource SourceMiniLabelStyle}" />
                                                 <TextBlock Text="{Binding GuideModeText}" Style="{StaticResource KroiraBodyStyle}" MaxLines="1" TextTrimming="CharacterEllipsis" />
                                                 <TextBlock Text="{Binding GuideStatusSummaryText}" Visibility="{Binding GuideStatusSummaryVisibility}" Style="{StaticResource KroiraBodyStyle}" MaxLines="2" TextWrapping="WrapWholeWords" TextTrimming="CharacterEllipsis" />
                                                 <TextBlock Text="{Binding GuideUrlText}" Visibility="{Binding GuideUrlVisibility}" Style="{StaticResource KroiraBodyStyle}" MaxLines="2" TextWrapping="WrapWholeWords" TextTrimming="CharacterEllipsis" />
@@ -1171,4 +1174,5 @@
         </Grid>
         </Grid>
     </ScrollViewer>
+    </Grid>
 </Page>

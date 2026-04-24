@@ -2,11 +2,14 @@
     x:Class="Kroira.App.Views.ChannelBrowserPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:Kroira.App.Controls"
     Background="{StaticResource KroiraPageBackgroundBrush}">
 
+    <Grid XYFocusKeyboardNavigation="Enabled">
+        <controls:AmbientPageBackground />
+
     <Grid Padding="28"
-          RowSpacing="18"
-          XYFocusKeyboardNavigation="Enabled">
+          RowSpacing="18">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
@@ -107,7 +110,7 @@
                             </Grid>
                         </StackPanel>
                         <StackPanel Grid.Column="2" Spacing="8" VerticalAlignment="Top">
-                            <Button Content="Inspect"
+                            <Button Content="Details"
                                     Click="InspectChannel_Click"
                                     Background="#141A29"
                                     Foreground="{StaticResource KroiraTextPrimaryBrush}"
@@ -132,5 +135,6 @@
                 </DataTemplate>
             </GridView.ItemTemplate>
         </GridView>
+    </Grid>
     </Grid>
 </Page>

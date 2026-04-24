@@ -8,13 +8,17 @@ using Kroira.App.Models;
 using Kroira.App.Services;
 using Kroira.App.Views;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.UI;
 using Microsoft.UI.Input;
+using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Navigation;
 using Windows.System;
+using Windows.UI;
 using Windows.UI.Core;
+using WinRT.Interop;
 
 namespace Kroira.App
 {
@@ -51,6 +55,7 @@ namespace Kroira.App
 
                 Title = "Kroira IPTV";
                 LogStartupCheckpoint("MW 08: title set");
+                ConfigureDarkTitleBar();
 
                 _windowManager.FullscreenStateChanged += WindowManager_FullscreenStateChanged;
                 LogStartupCheckpoint("MW 09: subscribed to FullscreenStateChanged");
@@ -74,18 +79,7 @@ namespace Kroira.App
             try
             {
                 LogStartupCheckpoint($"MW FS: fullscreen changed, isFullscreen={_windowManager.IsFullscreen}");
-
-                if (_windowManager.IsFullscreen)
-                {
-                    RootNavView.IsPaneVisible = false;
-                    RootNavView.PaneDisplayMode = NavigationViewPaneDisplayMode.LeftMinimal;
-                }
-                else
-                {
-                    RootNavView.IsPaneVisible = true;
-                    RootNavView.PaneDisplayMode = NavigationViewPaneDisplayMode.LeftCompact;
-                    RootNavView.IsPaneOpen = true;
-                }
+                UpdateShellChromeForCurrentRoute();
             }
             catch (Exception ex)
             {
@@ -110,6 +104,7 @@ namespace Kroira.App
         private void ContentFrame_Navigated(object sender, NavigationEventArgs e)
         {
             SyncSelectedNavigationItem(e.SourcePageType);
+            UpdateShellChromeForCurrentRoute();
             if (!_remoteNavigationService.IsRemoteModeEnabled ||
                 ContentFrame.Content is not IRemoteNavigationPage remotePage)
             {
@@ -178,6 +173,71 @@ namespace Kroira.App
             PaneBrandText.Visibility = isOpen ? Visibility.Visible : Visibility.Collapsed;
             PaneFooterRoot.Visibility = isOpen ? Visibility.Visible : Visibility.Collapsed;
             PaneHeaderRoot.Margin = isOpen ? new Thickness(18, 28, 14, 30) : new Thickness(17, 28, 0, 30);
+        }
+
+        private void UpdateShellChromeForCurrentRoute()
+        {
+            var isPlaybackRoute = ContentFrame.Content is EmbeddedPlaybackPage;
+            var isFullscreen = _windowManager?.IsFullscreen == true;
+            var suppressNormalChrome = isPlaybackRoute || isFullscreen;
+
+            RootNavView.IsPaneVisible = !suppressNormalChrome;
+            RootNavView.IsPaneOpen = !suppressNormalChrome;
+            RootNavView.PaneDisplayMode = suppressNormalChrome
+                ? NavigationViewPaneDisplayMode.LeftMinimal
+                : NavigationViewPaneDisplayMode.LeftCompact;
+
+            ContentHostBorder.BorderThickness = isPlaybackRoute
+                ? new Thickness(0)
+                : new Thickness(1, 0, 0, 0);
+
+            if (!suppressNormalChrome)
+            {
+                UpdatePaneHeader(RootNavView.IsPaneOpen);
+            }
+        }
+
+        private void ConfigureDarkTitleBar()
+        {
+            try
+            {
+                if (!AppWindowTitleBar.IsCustomizationSupported())
+                {
+                    LogStartupCheckpoint("MW TITLEBAR: customization unsupported");
+                    return;
+                }
+
+                var hwnd = WindowNative.GetWindowHandle(this);
+                var windowId = Win32Interop.GetWindowIdFromWindow(hwnd);
+                var appWindow = AppWindow.GetFromWindowId(windowId);
+                var titleBar = appWindow.TitleBar;
+
+                var background = Color.FromArgb(255, 5, 6, 10);
+                var inactiveBackground = Color.FromArgb(255, 8, 10, 16);
+                var foreground = Color.FromArgb(255, 238, 241, 246);
+                var mutedForeground = Color.FromArgb(255, 140, 148, 162);
+                var hover = Color.FromArgb(255, 22, 27, 39);
+                var pressed = Color.FromArgb(255, 36, 26, 52);
+
+                titleBar.BackgroundColor = background;
+                titleBar.InactiveBackgroundColor = inactiveBackground;
+                titleBar.ForegroundColor = foreground;
+                titleBar.InactiveForegroundColor = mutedForeground;
+                titleBar.ButtonBackgroundColor = background;
+                titleBar.ButtonInactiveBackgroundColor = inactiveBackground;
+                titleBar.ButtonForegroundColor = foreground;
+                titleBar.ButtonInactiveForegroundColor = mutedForeground;
+                titleBar.ButtonHoverBackgroundColor = hover;
+                titleBar.ButtonHoverForegroundColor = foreground;
+                titleBar.ButtonPressedBackgroundColor = pressed;
+                titleBar.ButtonPressedForegroundColor = foreground;
+                LogStartupCheckpoint("MW TITLEBAR: dark colors applied");
+            }
+            catch (Exception ex)
+            {
+                LogStartupCheckpoint("MW TITLEBAR ERROR");
+                LogStartupException("MAINWINDOW TITLEBAR ERROR", ex);
+            }
         }
 
         private void RootNavView_ItemInvoked(NavigationView sender, NavigationViewItemInvokedEventArgs args)

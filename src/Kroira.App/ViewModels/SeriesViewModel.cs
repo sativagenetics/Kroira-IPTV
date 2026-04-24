@@ -414,7 +414,7 @@ namespace Kroira.App.ViewModels
         private bool _isEmpty;
 
         [ObservableProperty]
-        private string _discoverySummaryText = "Source type, language, genre, episode-ready, and health appear only when the catalog proves them.";
+        private string _discoverySummaryText = "Browse by source, language, genre, and episode availability.";
 
         [ObservableProperty]
         private string _emptyStateTitle = "No series to show";

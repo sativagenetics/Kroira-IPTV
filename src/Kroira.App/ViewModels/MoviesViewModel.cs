@@ -243,7 +243,7 @@ namespace Kroira.App.ViewModels
         [ObservableProperty] private bool _hideSecondaryContent;
         [ObservableProperty] private bool _hasAdvancedFilters;
         [ObservableProperty] private bool _isEmpty;
-        [ObservableProperty] private string _discoverySummaryText = "Source type, language, genre, artwork, and health appear only when the catalog proves them.";
+        [ObservableProperty] private string _discoverySummaryText = "Browse by source, language, genre, and artwork availability.";
         [ObservableProperty] private string _emptyStateTitle = "No movies to show";
         [ObservableProperty] private string _emptyStateMessage = "Sync a VOD source, or clear your search and browse filters.";
         [ObservableProperty] private SurfaceStatePresentation _surfaceState = SurfaceStateCopies.Movies.Create(SurfaceViewState.Loading);

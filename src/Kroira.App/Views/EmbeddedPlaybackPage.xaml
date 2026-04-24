@@ -51,8 +51,8 @@
         </Style>
 
         <Style x:Key="PlayerPrimaryTransportButtonStyle" TargetType="Button" BasedOn="{StaticResource PlayerTransportButtonStyle}">
-            <Setter Property="Background" Value="#4B7CFF" />
-            <Setter Property="Foreground" Value="White" />
+            <Setter Property="Background" Value="{StaticResource KroiraAccentGradientBrush}" />
+            <Setter Property="Foreground" Value="#05060A" />
             <Setter Property="MinWidth" Value="50" />
             <Setter Property="Height" Value="50" />
             <Setter Property="CornerRadius" Value="25" />
@@ -90,7 +90,13 @@
             <RowDefinition x:Name="BottomRow" Height="Auto" />
         </Grid.RowDefinitions>
 
-        <Border x:Name="TopBar" Grid.Row="0" Margin="16,14,16,0" Background="#56090B13" BorderBrush="#18FFFFFF" BorderThickness="1" CornerRadius="20" Padding="14,10">
+        <Grid x:Name="VideoHost"
+              Grid.Row="0"
+              Grid.RowSpan="3"
+              Background="Black"
+              Canvas.ZIndex="0" />
+
+        <Border x:Name="TopBar" Grid.Row="0" Margin="18,16,18,0" Background="#5605060A" BorderBrush="#12FFFFFF" BorderThickness="1" CornerRadius="22" Padding="14,10" Canvas.ZIndex="2">
             <StackPanel Spacing="10">
                 <Grid>
                     <Grid.ColumnDefinitions>
@@ -131,7 +137,7 @@
                         <Border Grid.Column="2" x:Name="LivePill" Visibility="Collapsed" Background="#D6E1FF" CornerRadius="10" Padding="8,3" VerticalAlignment="Center">
                             <TextBlock Text="LIVE" FontSize="10" FontWeight="Bold" Foreground="#090B13" />
                         </Border>
-                        <Border Grid.Column="2" x:Name="CatchupPill" Visibility="Collapsed" Background="#E7C46E" CornerRadius="10" Padding="8,3" VerticalAlignment="Center">
+                        <Border Grid.Column="2" x:Name="CatchupPill" Visibility="Collapsed" Background="#C167FF" CornerRadius="10" Padding="8,3" VerticalAlignment="Center">
                             <TextBlock Text="CATCHUP" FontSize="10" FontWeight="Bold" Foreground="#090B13" />
                         </Border>
                     </StackPanel>
@@ -144,7 +150,7 @@
                     </StackPanel>
                 </Border>
 
-                <Border x:Name="MiniGuidePanel" Visibility="Collapsed" Background="#141A29" BorderBrush="#2F344E" BorderThickness="1" CornerRadius="12" Padding="14,12">
+                <Border x:Name="MiniGuidePanel" Visibility="Collapsed" Background="#C00A1020" BorderBrush="{StaticResource KroiraHaloBorderBrush}" BorderThickness="1" CornerRadius="14" Padding="14,12">
                     <StackPanel Spacing="8">
                         <TextBlock Text="Now / Next" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource KroiraTextSecondaryBrush}" />
                         <TextBlock x:Name="GuideCurrentTitleText" FontSize="16" FontWeight="SemiBold" Foreground="{StaticResource KroiraTextPrimaryBrush}" TextWrapping="Wrap" />
@@ -193,7 +199,7 @@
                     </StackPanel>
                 </Border>
 
-                <Border x:Name="ChannelSwitchPanel" Visibility="Collapsed" Background="#141A29" BorderBrush="#2F344E" BorderThickness="1" CornerRadius="12" Padding="14,12">
+                <Border x:Name="ChannelSwitchPanel" Visibility="Collapsed" Background="#C00A1020" BorderBrush="{StaticResource KroiraHaloBorderBrush}" BorderThickness="1" CornerRadius="14" Padding="14,12">
                     <StackPanel Spacing="8">
                         <TextBlock Text="Channel surf" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource KroiraTextSecondaryBrush}" />
                         <TextBox x:Name="ChannelSearchBox" PlaceholderText="Search channels" TextChanged="ChannelSearchBox_TextChanged" />
@@ -218,7 +224,7 @@
                     </StackPanel>
                 </Border>
 
-                <Border x:Name="EpisodePanel" Visibility="Collapsed" Background="#141A29" BorderBrush="#2F344E" BorderThickness="1" CornerRadius="12" Padding="14,12">
+                <Border x:Name="EpisodePanel" Visibility="Collapsed" Background="#C00A1020" BorderBrush="{StaticResource KroiraHaloBorderBrush}" BorderThickness="1" CornerRadius="14" Padding="14,12">
                     <StackPanel Spacing="8">
                         <TextBlock x:Name="EpisodePanelHeaderText" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource KroiraTextSecondaryBrush}" />
                         <TextBlock x:Name="EpisodePanelStatusText" FontSize="12" Foreground="{StaticResource KroiraTextSecondaryBrush}" TextWrapping="Wrap" />
@@ -235,9 +241,9 @@
                     </StackPanel>
                 </Border>
 
-                <Border x:Name="InfoPanel" Visibility="Collapsed" Background="#141A29" BorderBrush="#2F344E" BorderThickness="1" CornerRadius="12" Padding="14,12">
+                <Border x:Name="InfoPanel" Visibility="Collapsed" Background="#C00A1020" BorderBrush="{StaticResource KroiraHaloBorderBrush}" BorderThickness="1" CornerRadius="14" Padding="14,12">
                     <StackPanel Spacing="8">
-                        <TextBlock Text="Playback diagnostics" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource KroiraTextSecondaryBrush}" />
+                        <TextBlock Text="Playback info" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource KroiraTextSecondaryBrush}" />
                         <TextBlock x:Name="InfoSummaryText" FontSize="12" Foreground="{StaticResource KroiraTextSecondaryBrush}" TextWrapping="Wrap" />
                         <Grid ColumnSpacing="18" RowSpacing="6">
                             <Grid.ColumnDefinitions>
@@ -271,7 +277,7 @@
                         </Grid>
                         <StackPanel Orientation="Horizontal" Spacing="8">
                             <Button x:Name="InspectCurrentItemButton"
-                                    Content="Inspect item"
+                                    Content="Details"
                                     Click="InspectCurrentItem_Click"
                                     Style="{StaticResource PlayerToolsChipButtonStyle}" />
                             <Button x:Name="OpenExternalPlayerButton"
@@ -284,9 +290,7 @@
             </StackPanel>
         </Border>
 
-        <Grid x:Name="VideoHost" Grid.Row="1" Background="Black" />
-
-        <Border x:Name="BottomBar" Grid.Row="2" Margin="16,0,16,16" Background="#5A090B13" BorderBrush="#18FFFFFF" BorderThickness="1" CornerRadius="24" Padding="16,8,16,10">
+        <Border x:Name="BottomBar" Grid.Row="2" Margin="18,0,18,18" Background="#5A05060A" BorderBrush="#12FFFFFF" BorderThickness="1" CornerRadius="24" Padding="16,8,16,10" Canvas.ZIndex="2">
             <Grid RowSpacing="8">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
@@ -303,7 +307,7 @@
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
                     <TextBlock Grid.Column="0" x:Name="PositionText" Text="0:00" VerticalAlignment="Center" Foreground="{StaticResource KroiraTextPrimaryBrush}" FontSize="13" FontWeight="SemiBold" Opacity="0.96" />
-                    <Slider Grid.Column="1" x:Name="TimelineSlider" Minimum="0" Maximum="1000" StepFrequency="1" Height="32" Margin="0" IsTabStop="False" IsThumbToolTipEnabled="False" VerticalAlignment="Center" PointerPressed="TimelineSlider_PointerPressed" PointerReleased="TimelineSlider_PointerReleased" PointerCaptureLost="TimelineSlider_PointerCaptureLost" LostFocus="TimelineSlider_LostFocus" KeyUp="TimelineSlider_KeyUp" Foreground="#83A8FF" Background="#26FFFFFF" />
+                    <Slider Grid.Column="1" x:Name="TimelineSlider" Minimum="0" Maximum="1000" StepFrequency="1" Height="32" Margin="0" IsTabStop="False" IsThumbToolTipEnabled="False" VerticalAlignment="Center" PointerPressed="TimelineSlider_PointerPressed" PointerReleased="TimelineSlider_PointerReleased" PointerCaptureLost="TimelineSlider_PointerCaptureLost" LostFocus="TimelineSlider_LostFocus" KeyUp="TimelineSlider_KeyUp" Foreground="{StaticResource KroiraAccentStrongBrush}" Background="#26FFFFFF" />
                     <TextBlock Grid.Column="2" x:Name="DurationText" Text="0:00" VerticalAlignment="Center" Foreground="{StaticResource KroiraTextSecondaryBrush}" FontSize="13" Opacity="0.88" />
                 </Grid>
 
@@ -388,7 +392,7 @@
                                 <Button x:Name="MuteButton" Style="{StaticResource PlayerIconButtonStyle}" Click="Mute_Click" MinWidth="32" Height="32" ToolTipService.ToolTip="Mute">
                                     <FontIcon x:Name="MuteIcon" FontFamily="Segoe MDL2 Assets" Glyph="&#xE767;" />
                                 </Button>
-                                <Slider x:Name="VolumeSlider" Minimum="0" Maximum="100" Value="100" Width="72" Height="32" StepFrequency="1" IsTabStop="True" IsThumbToolTipEnabled="False" VerticalAlignment="Center" ValueChanged="VolumeSlider_ValueChanged" Foreground="#83A8FF" Background="#26FFFFFF" />
+                                <Slider x:Name="VolumeSlider" Minimum="0" Maximum="100" Value="100" Width="72" Height="32" StepFrequency="1" IsTabStop="True" IsThumbToolTipEnabled="False" VerticalAlignment="Center" ValueChanged="VolumeSlider_ValueChanged" Foreground="{StaticResource KroiraAccentStrongBrush}" Background="#26FFFFFF" />
                             </StackPanel>
                         </Border>
                         </StackPanel>
@@ -430,7 +434,7 @@
             </Grid>
         </Border>
 
-        <Border x:Name="ToolsPanel" Grid.Row="1" Visibility="Collapsed" Background="#8A0A0D14" BorderBrush="#18FFFFFF" BorderThickness="1" CornerRadius="18" Padding="12,10" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,24,8" MaxHeight="360" Canvas.ZIndex="20">
+        <Border x:Name="ToolsPanel" Grid.Row="1" Visibility="Collapsed" Background="#B005060A" BorderBrush="{StaticResource KroiraGhostBorderBrush}" BorderThickness="1" CornerRadius="18" Padding="12,10" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,24,8" MaxHeight="360" Canvas.ZIndex="20">
             <ScrollViewer MaxHeight="340" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                 <StackPanel Width="336" MaxWidth="336" Spacing="9">
                     <Grid ColumnSpacing="10">

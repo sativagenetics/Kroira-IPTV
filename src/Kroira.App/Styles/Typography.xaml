@@ -7,17 +7,17 @@
 
     <Style x:Key="KroiraDisplayLgStyle" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource KroiraDisplayFontFamily}" />
-        <Setter Property="FontSize" Value="46" />
+        <Setter Property="FontSize" Value="50" />
         <Setter Property="FontWeight" Value="SemiBold" />
-        <Setter Property="LineHeight" Value="54" />
+        <Setter Property="LineHeight" Value="58" />
         <Setter Property="Foreground" Value="{StaticResource KroiraTextPrimaryBrush}" />
         <Setter Property="TextWrapping" Value="Wrap" />
     </Style>
 
     <Style x:Key="KroiraPageTitleStyle" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource KroiraDisplayFontFamily}" />
-        <Setter Property="FontSize" Value="34" />
-        <Setter Property="LineHeight" Value="40" />
+        <Setter Property="FontSize" Value="36" />
+        <Setter Property="LineHeight" Value="42" />
         <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="Foreground" Value="{StaticResource KroiraTextPrimaryBrush}" />
         <Setter Property="TextWrapping" Value="Wrap" />
@@ -25,23 +25,23 @@
 
     <Style x:Key="KroiraPageSubtitleStyle" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource KroiraTextFontFamily}" />
-        <Setter Property="FontSize" Value="14" />
-        <Setter Property="LineHeight" Value="20" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="LineHeight" Value="19" />
         <Setter Property="Foreground" Value="{StaticResource KroiraTextSecondaryBrush}" />
         <Setter Property="TextWrapping" Value="Wrap" />
     </Style>
 
     <Style x:Key="KroiraSectionTitleStyle" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource KroiraDisplayFontFamily}" />
-        <Setter Property="FontSize" Value="19" />
-        <Setter Property="LineHeight" Value="25" />
+        <Setter Property="FontSize" Value="20" />
+        <Setter Property="LineHeight" Value="26" />
         <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="Foreground" Value="{StaticResource KroiraTextPrimaryBrush}" />
     </Style>
 
     <Style x:Key="KroiraTitleStyle" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource KroiraTextFontFamily}" />
-        <Setter Property="FontSize" Value="15" />
+        <Setter Property="FontSize" Value="14" />
         <Setter Property="LineHeight" Value="20" />
         <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="Foreground" Value="{StaticResource KroiraTextPrimaryBrush}" />
@@ -60,7 +60,7 @@
         <Setter Property="FontSize" Value="11" />
         <Setter Property="LineHeight" Value="16" />
         <Setter Property="FontWeight" Value="SemiBold" />
-        <Setter Property="CharacterSpacing" Value="120" />
+        <Setter Property="CharacterSpacing" Value="85" />
         <Setter Property="Foreground" Value="{StaticResource KroiraTextTertiaryBrush}" />
     </Style>
 

@@ -117,7 +117,7 @@ namespace Kroira.App.ViewModels
         private bool _hasAdvancedFilters;
 
         [ObservableProperty]
-        private string _discoverySummaryText = "Guide, catchup, source type, and health stay quiet until sync evidence proves them.";
+        private string _discoverySummaryText = "Guide and catch-up details appear when they are available for these channels.";
 
         [ObservableProperty]
         private string _emptyStateTitle = "No channels to show";
@@ -927,7 +927,7 @@ namespace Kroira.App.ViewModels
             }
 
             EmptyStateTitle = baseResultCount == 0 ? "No channels to show" : "Live browser is empty";
-            EmptyStateMessage = "Sync a live source, or review provider and category rules if this source should already contain channels.";
+            EmptyStateMessage = "Try a different category, adjust search, or sync a live source from Sources.";
         }
 
         private void RegisterSpotlightSection(string key, string title, string subtitle)
@@ -1236,13 +1236,13 @@ namespace Kroira.App.ViewModels
             var filterKey = SelectedCategory?.FilterKey ?? string.Empty;
             var baseText = filterKey switch
             {
-                SmartPriorityCategoryKey => "High-value sports, favorites, and repeat channels ordered for fast match watching.",
-                SmartSportsCategoryKey => "Sports-led channels across the visible providers, still ordered by priority first.",
+                SmartPriorityCategoryKey => "Favorites, sports, and recent channels surfaced for fast watching.",
+                SmartSportsCategoryKey => "Sports channels across your visible providers.",
                 SmartTurkishSportsCategoryKey => "Turkish sports coverage grouped for fast kickoff and match-day access.",
                 SmartRecentCategoryKey => "Your recent live history, with the newest tune-ins closest to the top.",
-                _ when string.IsNullOrWhiteSpace(filterKey) => "Every visible live channel, ordered priority-first with A-Z still available as a fallback.",
+                _ when string.IsNullOrWhiteSpace(filterKey) => "All available live channels in your library.",
                 _ when !string.IsNullOrWhiteSpace(SelectedCategory?.Description) => SelectedCategory!.Description,
-                _ => $"Channels in {SelectedCategory?.Name ?? "this category"}, ordered to surface the best watch options first."
+                _ => $"Channels in {SelectedCategory?.Name ?? "this category"}, ready to watch."
             };
 
             return HasDiscoveryFilters()
@@ -1448,7 +1448,7 @@ namespace Kroira.App.ViewModels
                 "guide_first" => channels
                     .OrderByDescending(channel => channel.HasMatchedGuide)
                     .ThenByDescending(channel => ComputePriorityScore(channel))
-                    .ThenBy(channel => channel.CurrentProgramTitle == "No current listing")
+                    .ThenBy(channel => string.IsNullOrWhiteSpace(channel.CurrentProgramTitle))
                     .ThenBy(channel => channel.Name, StringComparer.CurrentCultureIgnoreCase),
                 _ => channels
                     .OrderByDescending(channel => ComputePriorityScore(channel))

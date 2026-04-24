@@ -2,14 +2,15 @@
     x:Class="Kroira.App.Views.ContinueWatchingPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:Kroira.App.Controls"
     Background="{StaticResource KroiraPageBackgroundBrush}">
 
     <Page.Resources>
         <Style x:Key="ResumeColumnStyle" TargetType="Border">
-            <Setter Property="Background" Value="#D00B0E13" />
-            <Setter Property="BorderBrush" Value="{StaticResource KroiraGlassBorderBrush}" />
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="CornerRadius" Value="16" />
+            <Setter Property="Background" Value="#28070B12" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="CornerRadius" Value="12" />
         </Style>
 
         <Style x:Key="ResumeItemContainerStyle" TargetType="ListViewItem">
@@ -18,12 +19,36 @@
             <Setter Property="HorizontalContentAlignment" Value="Stretch" />
             <Setter Property="CornerRadius" Value="12" />
         </Style>
+
+        <Style x:Key="QuietManagementButtonStyle" TargetType="Button" BasedOn="{StaticResource KroiraGhostButtonStyle}">
+            <Setter Property="Padding" Value="9,5" />
+            <Setter Property="MinHeight" Value="28" />
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="Foreground" Value="{StaticResource KroiraTextTertiaryBrush}" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="Background" Value="#08000000" />
+            <Setter Property="Opacity" Value="0.62" />
+        </Style>
+
+        <Style x:Key="QuietIconButtonStyle" TargetType="Button" BasedOn="{StaticResource KroiraGhostButtonStyle}">
+            <Setter Property="Width" Value="28" />
+            <Setter Property="Height" Value="28" />
+            <Setter Property="MinWidth" Value="0" />
+            <Setter Property="MinHeight" Value="0" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Foreground" Value="{StaticResource KroiraTextTertiaryBrush}" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="Background" Value="#08000000" />
+            <Setter Property="Opacity" Value="0.58" />
+        </Style>
     </Page.Resources>
 
     <Grid XYFocusKeyboardNavigation="Enabled">
-        <Grid Padding="34,30,36,34"
-              RowSpacing="20"
-              MaxWidth="1420"
+        <controls:AmbientPageBackground />
+
+        <Grid Padding="34,28,36,34"
+              RowSpacing="18"
+              MaxWidth="1180"
               HorizontalAlignment="Center"
               Visibility="{x:Bind ViewModel.SurfaceState.ContentVisibility, Mode=OneWay}">
         <Grid.RowDefinitions>
@@ -44,12 +69,13 @@
                            MaxWidth="760" />
             </StackPanel>
             <Border Grid.Column="1"
-                    Background="#99161B24"
-                    BorderBrush="{StaticResource KroiraGlassBorderBrush}"
+                    Background="#42111827"
+                    BorderBrush="{StaticResource KroiraGhostBorderBrush}"
                     BorderThickness="1"
                     CornerRadius="14"
                     Padding="14,10"
-                    VerticalAlignment="Bottom">
+                    VerticalAlignment="Bottom"
+                    Visibility="Collapsed">
                 <TextBlock Text="RESUME HUB"
                            Foreground="{StaticResource KroiraAccentBrush}"
                            FontSize="11"
@@ -86,7 +112,7 @@
                     </Grid>
 
                     <Grid Grid.Row="1" Padding="10,0,10,12">
-                        <Border Visibility="{x:Bind ViewModel.LiveEmptyVisibility, Mode=OneWay}" Background="#6611161E" BorderBrush="{StaticResource KroiraGhostBorderBrush}" BorderThickness="1" CornerRadius="12" Padding="18" VerticalAlignment="Top">
+                        <Border Visibility="{x:Bind ViewModel.LiveEmptyVisibility, Mode=OneWay}" Background="#3D111827" BorderBrush="{StaticResource KroiraGhostBorderBrush}" BorderThickness="1" CornerRadius="12" Padding="18" VerticalAlignment="Top">
                             <StackPanel Spacing="8">
                                 <FontIcon Glyph="&#xE714;" Foreground="{StaticResource KroiraTextTertiaryBrush}" FontSize="22" />
                                 <TextBlock Text="No live resume items" Style="{StaticResource KroiraTitleStyle}" />
@@ -105,7 +131,7 @@
                                   ScrollViewer.VerticalScrollBarVisibility="Auto">
                             <ListView.ItemTemplate>
                                 <DataTemplate>
-                                    <Border Background="#AA11161E" BorderBrush="{StaticResource KroiraChromeLineBrush}" BorderThickness="1" CornerRadius="12" Padding="11">
+                                    <Border Background="#40111827" BorderBrush="Transparent" BorderThickness="0" CornerRadius="12" Padding="11">
                                         <Grid ColumnSpacing="12">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="48" />
@@ -123,7 +149,16 @@
                                                 <TextBlock Text="{Binding LastWatchedText}" Style="{StaticResource KroiraMetaStyle}" />
                                                 <TextBlock Text="{Binding ResumeContextText}" Style="{StaticResource KroiraBodyStyle}" MaxLines="1" TextTrimming="CharacterEllipsis" />
                                             </StackPanel>
-                                            <Button Grid.Column="2" Content="Remove" Tag="{Binding ProgressId}" Click="RemoveProgress_Click" Style="{StaticResource KroiraDangerButtonStyle}" FontSize="11" VerticalAlignment="Center" Visibility="{Binding RemoveVisibility}" />
+                                            <Button Grid.Column="2"
+                                                    Tag="{Binding ProgressId}"
+                                                    Click="RemoveProgress_Click"
+                                                    Style="{StaticResource QuietIconButtonStyle}"
+                                                    VerticalAlignment="Center"
+                                                    Visibility="{Binding RemoveVisibility}"
+                                                    AutomationProperties.Name="Remove from continue watching"
+                                                    ToolTipService.ToolTip="Remove">
+                                                <FontIcon Glyph="&#xE74D;" FontSize="11" />
+                                            </Button>
                                         </Grid>
                                     </Border>
                                 </DataTemplate>
@@ -162,7 +197,7 @@
                     </Grid>
 
                     <Grid Grid.Row="1" Padding="10,0,10,12">
-                        <Border Visibility="{x:Bind ViewModel.MovieEmptyVisibility, Mode=OneWay}" Background="#6611161E" BorderBrush="{StaticResource KroiraGhostBorderBrush}" BorderThickness="1" CornerRadius="12" Padding="18" VerticalAlignment="Top">
+                        <Border Visibility="{x:Bind ViewModel.MovieEmptyVisibility, Mode=OneWay}" Background="#3D111827" BorderBrush="{StaticResource KroiraGhostBorderBrush}" BorderThickness="1" CornerRadius="12" Padding="18" VerticalAlignment="Top">
                             <StackPanel Spacing="8">
                                 <FontIcon Glyph="&#xE8B2;" Foreground="{StaticResource KroiraTextTertiaryBrush}" FontSize="22" />
                                 <TextBlock Text="No movies to resume" Style="{StaticResource KroiraTitleStyle}" />
@@ -181,7 +216,7 @@
                                   ScrollViewer.VerticalScrollBarVisibility="Auto">
                             <ListView.ItemTemplate>
                                 <DataTemplate>
-                                    <Border Background="#AA11161E" BorderBrush="{StaticResource KroiraChromeLineBrush}" BorderThickness="1" CornerRadius="12" Padding="10">
+                                    <Border Background="#40111827" BorderBrush="Transparent" BorderThickness="0" CornerRadius="12" Padding="10">
                                         <Grid ColumnSpacing="12">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="54" />
@@ -204,20 +239,20 @@
                                             <StackPanel Grid.Column="2" Spacing="6" VerticalAlignment="Center">
                                                 <Button Content="Watched"
                                                         Click="MarkWatched_Click"
-                                                        Style="{StaticResource KroiraGhostButtonStyle}"
-                                                        FontSize="11"
+                                                        Style="{StaticResource QuietManagementButtonStyle}"
                                                         Visibility="{Binding MarkWatchedVisibility}" />
                                                 <Button Content="Unwatched"
                                                         Click="MarkUnwatched_Click"
-                                                        Style="{StaticResource KroiraGhostButtonStyle}"
-                                                        FontSize="11"
+                                                        Style="{StaticResource QuietManagementButtonStyle}"
                                                         Visibility="{Binding MarkUnwatchedVisibility}" />
-                                                <Button Content="Remove"
-                                                        Tag="{Binding ProgressId}"
+                                                <Button Tag="{Binding ProgressId}"
                                                         Click="RemoveProgress_Click"
-                                                        Style="{StaticResource KroiraDangerButtonStyle}"
-                                                        FontSize="11"
-                                                        Visibility="{Binding RemoveVisibility}" />
+                                                        Style="{StaticResource QuietIconButtonStyle}"
+                                                        Visibility="{Binding RemoveVisibility}"
+                                                        AutomationProperties.Name="Remove from continue watching"
+                                                        ToolTipService.ToolTip="Remove">
+                                                    <FontIcon Glyph="&#xE74D;" FontSize="11" />
+                                                </Button>
                                             </StackPanel>
                                         </Grid>
                                     </Border>
@@ -249,7 +284,7 @@
                     </Grid>
 
                     <Grid Grid.Row="1" Padding="10,0,10,12">
-                        <Border Visibility="{x:Bind ViewModel.SeriesEmptyVisibility, Mode=OneWay}" Background="#6611161E" BorderBrush="{StaticResource KroiraGhostBorderBrush}" BorderThickness="1" CornerRadius="12" Padding="18" VerticalAlignment="Top">
+                        <Border Visibility="{x:Bind ViewModel.SeriesEmptyVisibility, Mode=OneWay}" Background="#3D111827" BorderBrush="{StaticResource KroiraGhostBorderBrush}" BorderThickness="1" CornerRadius="12" Padding="18" VerticalAlignment="Top">
                             <StackPanel Spacing="8">
                                 <FontIcon Glyph="&#xE8A9;" Foreground="{StaticResource KroiraTextTertiaryBrush}" FontSize="22" />
                                 <TextBlock Text="No episodes to resume" Style="{StaticResource KroiraTitleStyle}" />
@@ -268,7 +303,7 @@
                                   ScrollViewer.VerticalScrollBarVisibility="Auto">
                             <ListView.ItemTemplate>
                                 <DataTemplate>
-                                    <Border Background="#AA11161E" BorderBrush="{StaticResource KroiraChromeLineBrush}" BorderThickness="1" CornerRadius="12" Padding="10">
+                                    <Border Background="#40111827" BorderBrush="Transparent" BorderThickness="0" CornerRadius="12" Padding="10">
                                         <Grid ColumnSpacing="12">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="54" />
@@ -291,20 +326,20 @@
                                             <StackPanel Grid.Column="2" Spacing="6" VerticalAlignment="Center">
                                                 <Button Content="Watched"
                                                         Click="MarkWatched_Click"
-                                                        Style="{StaticResource KroiraGhostButtonStyle}"
-                                                        FontSize="11"
+                                                        Style="{StaticResource QuietManagementButtonStyle}"
                                                         Visibility="{Binding MarkWatchedVisibility}" />
                                                 <Button Content="Unwatched"
                                                         Click="MarkUnwatched_Click"
-                                                        Style="{StaticResource KroiraGhostButtonStyle}"
-                                                        FontSize="11"
+                                                        Style="{StaticResource QuietManagementButtonStyle}"
                                                         Visibility="{Binding MarkUnwatchedVisibility}" />
-                                                <Button Content="Remove"
-                                                        Tag="{Binding ProgressId}"
+                                                <Button Tag="{Binding ProgressId}"
                                                         Click="RemoveProgress_Click"
-                                                        Style="{StaticResource KroiraDangerButtonStyle}"
-                                                        FontSize="11"
-                                                        Visibility="{Binding RemoveVisibility}" />
+                                                        Style="{StaticResource QuietIconButtonStyle}"
+                                                        Visibility="{Binding RemoveVisibility}"
+                                                        AutomationProperties.Name="Remove from continue watching"
+                                                        ToolTipService.ToolTip="Remove">
+                                                    <FontIcon Glyph="&#xE74D;" FontSize="11" />
+                                                </Button>
                                             </StackPanel>
                                         </Grid>
                                     </Border>
@@ -322,7 +357,7 @@
                 VerticalAlignment="Center"
                 MaxWidth="560"
                 Margin="32"
-                Background="#D00B0E13"
+                Background="#76070B12"
                 BorderBrush="{StaticResource KroiraGlassBorderBrush}"
                 BorderThickness="1"
                 CornerRadius="16"

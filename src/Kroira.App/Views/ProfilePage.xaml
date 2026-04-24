@@ -2,27 +2,31 @@
     x:Class="Kroira.App.Views.ProfilePage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:Kroira.App.Controls"
     xmlns:viewModels="using:Kroira.App.ViewModels"
     Background="{StaticResource KroiraPageBackgroundBrush}">
+
+    <Grid>
+        <controls:AmbientPageBackground />
 
     <ScrollViewer>
         <Grid Padding="34,28,34,34"
               RowSpacing="22"
-              MaxWidth="1080"
-              HorizontalAlignment="Left">
+              MaxWidth="980"
+              HorizontalAlignment="Center">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
             <Border Grid.Row="0"
-                    BorderBrush="{StaticResource KroiraGlassBorderBrush}"
-                    BorderThickness="1"
-                    CornerRadius="16"
+                    BorderBrush="{StaticResource KroiraGhostBorderBrush}"
+                    BorderThickness="0"
+                    CornerRadius="{StaticResource KroiraRadiusSheet}"
                     Padding="24">
                 <Border.Background>
                     <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                        <GradientStop Color="#281D10" Offset="0" />
+                        <GradientStop Color="#1B1130" Offset="0" />
                         <GradientStop Color="#111722" Offset="0.6" />
                         <GradientStop Color="#090A0D" Offset="1" />
                     </LinearGradientBrush>
@@ -217,4 +221,5 @@
             </Grid>
         </Grid>
     </ScrollViewer>
+    </Grid>
 </Page>

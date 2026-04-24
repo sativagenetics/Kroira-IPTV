@@ -1,0 +1,59 @@
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Style x:Key="KroiraCinematicHeroStyle" TargetType="Border">
+        <Setter Property="Background" Value="{StaticResource KroiraMediaGradientBrush}" />
+        <Setter Property="BorderBrush" Value="{StaticResource KroiraGhostBorderBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="{StaticResource KroiraRadiusHero}" />
+    </Style>
+
+    <Style x:Key="KroiraFloatingSurfaceStyle" TargetType="Border">
+        <Setter Property="Background" Value="#6B0B101A" />
+        <Setter Property="BorderBrush" Value="{StaticResource KroiraGhostBorderBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="{StaticResource KroiraRadiusPanel}" />
+        <Setter Property="Padding" Value="18" />
+    </Style>
+
+    <Style x:Key="KroiraQuietSurfaceStyle" TargetType="Border">
+        <Setter Property="Background" Value="#3D0B101A" />
+        <Setter Property="BorderBrush" Value="{StaticResource KroiraGhostBorderBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="{StaticResource KroiraRadiusPanel}" />
+        <Setter Property="Padding" Value="16" />
+    </Style>
+
+    <Style x:Key="KroiraShelfSurfaceStyle" TargetType="Border">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderBrush" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="CornerRadius" Value="0" />
+        <Setter Property="Padding" Value="0" />
+    </Style>
+
+    <Style x:Key="KroiraMediaObjectStyle" TargetType="Border">
+        <Setter Property="Background" Value="{StaticResource KroiraPosterPlaceholderBrush}" />
+        <Setter Property="BorderBrush" Value="{StaticResource KroiraHaloBorderBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="{StaticResource KroiraRadiusPoster}" />
+    </Style>
+
+    <Style x:Key="KroiraEmptyStateSurfaceStyle" TargetType="Border">
+        <Setter Property="Background" Value="#72070B12" />
+        <Setter Property="BorderBrush" Value="{StaticResource KroiraGhostBorderBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="{StaticResource KroiraRadiusPanel}" />
+        <Setter Property="Padding" Value="24,20" />
+    </Style>
+
+    <Style x:Key="KroiraUtilityHeaderStyle" TargetType="Border">
+        <Setter Property="Background" Value="#520B101A" />
+        <Setter Property="BorderBrush" Value="{StaticResource KroiraGhostBorderBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="{StaticResource KroiraRadiusSheet}" />
+        <Setter Property="Padding" Value="24" />
+    </Style>
+
+</ResourceDictionary>
