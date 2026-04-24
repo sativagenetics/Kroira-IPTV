@@ -5,6 +5,7 @@
     Background="Black"
     NavigationCacheMode="Disabled"
     PointerMoved="Page_PointerMoved"
+    PointerExited="Page_PointerExited"
     PointerWheelChanged="Page_PointerWheelChanged">
 
     <Page.Resources>
