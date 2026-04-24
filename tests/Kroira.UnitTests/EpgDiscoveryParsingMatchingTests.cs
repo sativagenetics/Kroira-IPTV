@@ -378,7 +378,8 @@ public sealed class EpgDiscoveryParsingMatchingTests
         public Task RefreshSourceHealthAsync(
             AppDbContext db,
             int sourceProfileId,
-            SourceAcquisitionSession? acquisitionSession = null)
+            SourceAcquisitionSession? acquisitionSession = null,
+            bool forceProbe = false)
         {
             return Task.CompletedTask;
         }

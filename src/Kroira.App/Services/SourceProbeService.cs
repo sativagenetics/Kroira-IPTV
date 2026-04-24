@@ -15,7 +15,8 @@ namespace Kroira.App.Services
         Task<SourceProbeRunResult> ProbeAsync(
             SourceHealthProbeType probeType,
             IReadOnlyList<SourceProbeCandidate> candidates,
-            SourceRoutingDecision? routing = null);
+            SourceRoutingDecision? routing = null,
+            CancellationToken cancellationToken = default);
     }
 
     public sealed class SourceProbeCandidate
@@ -47,8 +48,11 @@ namespace Kroira.App.Services
         public async Task<SourceProbeRunResult> ProbeAsync(
             SourceHealthProbeType probeType,
             IReadOnlyList<SourceProbeCandidate> candidates,
-            SourceRoutingDecision? routing = null)
+            SourceRoutingDecision? routing = null,
+            CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             var probeable = candidates
                 .Where(candidate => TryCreateHttpUri(candidate.StreamUrl, out _))
                 .GroupBy(
@@ -77,6 +81,7 @@ namespace Kroira.App.Services
             {
                 var results = await Task.WhenAll(sample.Select(candidate =>
                 {
+                    cancellationToken.ThrowIfCancellationRequested();
                     var effectiveRouting = candidate.Routing ?? routing;
                     var routeKey = BuildRoutingKey(effectiveRouting);
                     if (!clients.TryGetValue(routeKey, out var httpClient))
@@ -85,7 +90,7 @@ namespace Kroira.App.Services
                         clients[routeKey] = httpClient;
                     }
 
-                    return ProbeCandidateAsync(httpClient, candidate);
+                    return ProbeCandidateAsync(httpClient, candidate, cancellationToken);
                 }));
 
                 var successCount = results.Count(result => result.Kind == ProbeResultKind.Success);
@@ -126,7 +131,10 @@ namespace Kroira.App.Services
             }
         }
 
-        private async Task<ProbeAttemptResult> ProbeCandidateAsync(HttpClient httpClient, SourceProbeCandidate candidate)
+        private async Task<ProbeAttemptResult> ProbeCandidateAsync(
+            HttpClient httpClient,
+            SourceProbeCandidate candidate,
+            CancellationToken cancellationToken)
         {
             if (!TryCreateHttpUri(candidate.StreamUrl, out var uri))
             {
@@ -134,7 +142,8 @@ namespace Kroira.App.Services
             }
 
             using var request = new HttpRequestMessage(HttpMethod.Get, uri);
-            using var timeoutCts = new CancellationTokenSource(ProbeTimeout);
+            using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            timeoutCts.CancelAfter(ProbeTimeout);
 
             try
             {
@@ -143,7 +152,7 @@ namespace Kroira.App.Services
                     ? new ProbeAttemptResult(ProbeResultKind.Success)
                     : new ProbeAttemptResult(ProbeResultKind.HttpError);
             }
-            catch (OperationCanceledException) when (timeoutCts.IsCancellationRequested)
+            catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested && timeoutCts.IsCancellationRequested)
             {
                 return new ProbeAttemptResult(ProbeResultKind.Timeout);
             }
