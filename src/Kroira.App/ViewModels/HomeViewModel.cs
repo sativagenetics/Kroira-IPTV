@@ -2,8 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -58,6 +60,20 @@ namespace Kroira.App.ViewModels
         public string Detail { get; set; } = "Live channel";
     }
 
+    public sealed class HomeSportsLiveItem
+    {
+        public int ContentId { get; set; }
+        public int PreferredSourceProfileId { get; set; }
+        public string LogicalContentKey { get; set; } = string.Empty;
+        public string Title { get; set; } = string.Empty;
+        public string LogoUrl { get; set; } = string.Empty;
+        public string StreamUrl { get; set; } = string.Empty;
+        public string Detail { get; set; } = string.Empty;
+        public string ProgramLine { get; set; } = string.Empty;
+        public string BadgeText { get; set; } = "SPORTS";
+        public Visibility ProgramVisibility => string.IsNullOrWhiteSpace(ProgramLine) ? Visibility.Collapsed : Visibility.Visible;
+    }
+
     public sealed class HomeFeaturedItem
     {
         public int ContentId { get; set; }
@@ -107,6 +123,7 @@ namespace Kroira.App.ViewModels
             LoadLastSync,
             BuildRecommendations,
             ApplyRecommendations,
+            LoadLiveSports,
             LoadContinue,
             LoadLive
         }
@@ -139,9 +156,17 @@ namespace Kroira.App.ViewModels
             HomeLoadSection.LoadSummary,
             HomeLoadSection.ApplySummary,
             HomeLoadSection.LoadLastSync,
+            HomeLoadSection.LoadLiveSports,
             HomeLoadSection.BuildRecommendations,
             HomeLoadSection.ApplyRecommendations,
             HomeLoadSection.LoadContinue
+        };
+
+        private static readonly string[] SportsShortcutTerms =
+        {
+            "sport", "sports", "spor", "football", "futbol", "soccer", "match", "mac", "league", "cup",
+            "champions league", "uefa", "super lig", "premier league", "nba", "formula", "f1", "tennis",
+            "basket", "bein", "s sport", "trt spor", "tivibu spor", "exxen", "eurosport", "smart spor"
         };
 
         private readonly IServiceProvider _serviceProvider;
@@ -153,6 +178,7 @@ namespace Kroira.App.ViewModels
         public ObservableCollection<HomeActionItem> QuickActions { get; } = new();
         public ObservableCollection<HomeContinueItem> ContinueItems { get; } = new();
         public ObservableCollection<HomeLiveItem> LiveItems { get; } = new();
+        public ObservableCollection<HomeSportsLiveItem> LiveSportsItems { get; } = new();
         public ObservableCollection<HomeMediaItem> PopularItems { get; } = new();
         public ObservableCollection<HomeMediaItem> RecentlyAddedItems { get; } = new();
         public ObservableCollection<HomeMediaItem> TopRatedItems { get; } = new();
@@ -189,6 +215,9 @@ namespace Kroira.App.ViewModels
 
         [ObservableProperty]
         private Visibility _liveItemsVisibility = Visibility.Collapsed;
+
+        [ObservableProperty]
+        private Visibility _liveSportsItemsVisibility = Visibility.Collapsed;
 
         [ObservableProperty]
         private Visibility _popularItemsVisibility = Visibility.Collapsed;
@@ -269,6 +298,9 @@ namespace Kroira.App.ViewModels
                     return;
                 }
 
+                await RunLoadSectionAsync(HomeLoadSection.LoadLiveSports, enabledSections, () =>
+                    LoadLiveSportsItemsAsync(context.Db, RequireAccess(context.Access)), continueOnFailure: true);
+
                 await RunLoadSectionAsync(HomeLoadSection.BuildRecommendations, enabledSections, async () =>
                 {
                     context.Recommendations = await BuildRecommendationsAsync(context);
@@ -308,6 +340,7 @@ namespace Kroira.App.ViewModels
             SummaryItems.Clear();
             ContinueItems.Clear();
             LiveItems.Clear();
+            LiveSportsItems.Clear();
             PopularItems.Clear();
             RecentlyAddedItems.Clear();
             TopRatedItems.Clear();
@@ -318,6 +351,7 @@ namespace Kroira.App.ViewModels
             ContinueEmptyVisibility = Visibility.Visible;
             SourceIssueVisibility = Visibility.Collapsed;
             LiveItemsVisibility = Visibility.Collapsed;
+            LiveSportsItemsVisibility = Visibility.Collapsed;
             PopularItemsVisibility = Visibility.Collapsed;
             RecentlyAddedItemsVisibility = Visibility.Collapsed;
             TopRatedItemsVisibility = Visibility.Collapsed;
@@ -942,6 +976,181 @@ namespace Kroira.App.ViewModels
             ContinueEmptyVisibility = ContinueItems.Count > 0 ? Visibility.Collapsed : Visibility.Visible;
         }
 
+        public async Task RecordLiveChannelLaunchAsync(int channelId)
+        {
+            if (channelId <= 0)
+            {
+                return;
+            }
+
+            using var scope = _serviceProvider.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var profileService = scope.ServiceProvider.GetRequiredService<IProfileStateService>();
+            var logicalCatalogStateService = scope.ServiceProvider.GetRequiredService<ILogicalCatalogStateService>();
+            var profileId = await profileService.GetActiveProfileIdAsync(db);
+            await logicalCatalogStateService.RecordLiveChannelLaunchAsync(db, profileId, channelId);
+        }
+
+        private async Task LoadLiveSportsItemsAsync(AppDbContext db, ProfileAccessSnapshot access)
+        {
+            LiveSportsItems.Clear();
+
+            var logicalCatalogStateService = _serviceProvider.GetRequiredService<ILogicalCatalogStateService>();
+            var taxonomyService = _serviceProvider.GetRequiredService<ICatalogTaxonomyService>();
+
+            var categories = await db.ChannelCategories.AsNoTracking().OrderBy(category => category.Name).ToListAsync();
+            var categoryMap = categories.ToDictionary(category => category.Id);
+            var categoryLabels = ContentClassifier.BuildCategoryLabelSet(categories.Select(category => category.Name));
+            var sources = await db.SourceProfiles.AsNoTracking().OrderBy(source => source.Name).ToListAsync();
+            var sourceMap = sources.ToDictionary(source => source.Id);
+            var sourceTypeById = sources.ToDictionary(source => source.Id, source => source.Type);
+
+            var progressRows = await db.PlaybackProgresses
+                .AsNoTracking()
+                .Where(progress => progress.ProfileId == access.ProfileId &&
+                                   progress.ContentType == PlaybackContentType.Channel)
+                .OrderByDescending(progress => progress.LastWatched)
+                .ToListAsync();
+            var lastWatchedByChannelId = progressRows
+                .GroupBy(progress => progress.ContentId)
+                .ToDictionary(group => group.Key, group => group.First().LastWatched);
+
+            var channels = (await db.Channels
+                    .AsNoTracking()
+                    .Where(channel => channel.StreamUrl != string.Empty)
+                    .ToListAsync())
+                .Where(channel => categoryMap.TryGetValue(channel.ChannelCategoryId, out var category) &&
+                                  sourceTypeById.TryGetValue(category.SourceProfileId, out var sourceType) &&
+                                  ContentClassifier.IsPlayableStoredLiveChannel(channel.Name, channel.StreamUrl, sourceType, categoryLabels) &&
+                                  access.IsLiveChannelAllowed(channel, category))
+                .ToList();
+
+            if (channels.Count == 0)
+            {
+                LiveSportsItemsVisibility = Visibility.Collapsed;
+                return;
+            }
+
+            var channelIds = channels.Select(channel => channel.Id).ToHashSet();
+            var nowUtc = DateTime.UtcNow;
+            var guideWindowEndUtc = nowUtc.AddHours(4);
+            var guideRows = (await db.EpgPrograms
+                    .AsNoTracking()
+                    .Where(program => program.EndTimeUtc >= nowUtc && program.StartTimeUtc <= guideWindowEndUtc)
+                    .OrderBy(program => program.ChannelId)
+                    .ThenBy(program => program.StartTimeUtc)
+                    .ToListAsync())
+                .Where(program => channelIds.Contains(program.ChannelId))
+                .ToList();
+
+            var guideByChannelId = guideRows
+                .GroupBy(program => program.ChannelId)
+                .ToDictionary(
+                    group => group.Key,
+                    group =>
+                    {
+                        var ordered = group.OrderBy(program => program.StartTimeUtc).ToList();
+                        var current = ordered.FirstOrDefault(program => program.StartTimeUtc <= nowUtc && program.EndTimeUtc > nowUtc);
+                        var next = ordered.FirstOrDefault(program => program.StartTimeUtc > nowUtc);
+                        return (Current: current, Next: next);
+                    });
+
+            var candidates = new List<(HomeSportsLiveItem Item, int Score, DateTime? LastWatchedAtUtc)>();
+            foreach (var channel in channels)
+            {
+                var category = categoryMap[channel.ChannelCategoryId];
+                sourceMap.TryGetValue(category.SourceProfileId, out var source);
+
+                var presentation = taxonomyService.ResolveLiveChannelPresentation(channel.Name);
+                var title = string.IsNullOrWhiteSpace(presentation.DisplayName) ? channel.Name : presentation.DisplayName;
+                var taxonomy = taxonomyService.ResolveLiveCategory(category.Name, title);
+                var displayCategory = string.IsNullOrWhiteSpace(taxonomy.DisplayCategoryName)
+                    ? category.Name
+                    : taxonomy.DisplayCategoryName;
+
+                guideByChannelId.TryGetValue(channel.Id, out var guide);
+                var currentProgram = guide.Current;
+                var nextProgram = guide.Next;
+                var hasChannelSportsSignal =
+                    HasSportsHint(title) ||
+                    HasSportsHint(channel.Name) ||
+                    HasSportsHint(displayCategory) ||
+                    HasSportsHint(category.Name);
+                var hasCurrentSportsSignal = HasSportsHint(currentProgram?.Title) || HasSportsHint(currentProgram?.Category);
+                var hasNextSportsSignal = HasSportsHint(nextProgram?.Title) || HasSportsHint(nextProgram?.Category);
+
+                if (!hasChannelSportsSignal && !hasCurrentSportsSignal && !hasNextSportsSignal)
+                {
+                    continue;
+                }
+
+                lastWatchedByChannelId.TryGetValue(channel.Id, out var lastWatchedAtUtc);
+                var score = 0;
+                if (ContentClassifier.IsTurkishSportsLikeChannel(title, displayCategory) ||
+                    (HasSportsHint(title) && (IsTurkishHint(title) || IsTurkishHint(displayCategory))))
+                {
+                    score += 950;
+                }
+
+                if (hasChannelSportsSignal)
+                {
+                    score += 700;
+                }
+
+                if (hasCurrentSportsSignal)
+                {
+                    score += 620;
+                }
+                else if (hasNextSportsSignal)
+                {
+                    score += 320;
+                }
+
+                if (lastWatchedAtUtc != default)
+                {
+                    score += 180;
+                }
+
+                if (!string.IsNullOrWhiteSpace(channel.LogoUrl))
+                {
+                    score += 35;
+                }
+
+                var program = hasCurrentSportsSignal ? currentProgram : hasNextSportsSignal ? nextProgram : currentProgram;
+                var programLine = program == null || string.IsNullOrWhiteSpace(program.Title)
+                    ? string.Empty
+                    : $"{(ReferenceEquals(program, currentProgram) ? "Now" : "Next")}: {program.Title}";
+                var sourceName = source?.Name ?? string.Empty;
+                var detail = string.IsNullOrWhiteSpace(sourceName)
+                    ? displayCategory
+                    : $"{displayCategory} / {sourceName}";
+
+                candidates.Add((new HomeSportsLiveItem
+                {
+                    ContentId = channel.Id,
+                    PreferredSourceProfileId = category.SourceProfileId,
+                    LogicalContentKey = logicalCatalogStateService.BuildChannelLogicalKey(channel),
+                    Title = title,
+                    Detail = detail,
+                    LogoUrl = channel.LogoUrl,
+                    StreamUrl = channel.StreamUrl,
+                    ProgramLine = programLine,
+                    BadgeText = hasCurrentSportsSignal ? "LIVE" : "SPORTS"
+                }, score, lastWatchedAtUtc == default ? null : lastWatchedAtUtc));
+            }
+
+            foreach (var candidate in candidates
+                         .OrderByDescending(candidate => candidate.Score)
+                         .ThenByDescending(candidate => candidate.LastWatchedAtUtc ?? DateTime.MinValue)
+                         .ThenBy(candidate => candidate.Item.Title, StringComparer.CurrentCultureIgnoreCase)
+                         .Take(10))
+            {
+                LiveSportsItems.Add(candidate.Item);
+            }
+
+            LiveSportsItemsVisibility = LiveSportsItems.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+        }
+
         private async Task LoadLiveItemsAsync(AppDbContext db, ProfileAccessSnapshot access)
         {
             LiveItems.Clear();
@@ -1181,6 +1390,45 @@ namespace Kroira.App.ViewModels
         private static bool IsTmdbImageUrl(string url)
         {
             return url.Contains("image.tmdb.org/t/p/", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool HasSportsHint(string? value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return false;
+            }
+
+            if (ContentClassifier.IsSportsLikeLabel(value))
+            {
+                return true;
+            }
+
+            var normalized = NormalizeSportsLookup(value);
+            foreach (var term in SportsShortcutTerms)
+            {
+                if (normalized.Contains(term, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static string NormalizeSportsLookup(string value)
+        {
+            var normalized = ContentClassifier.NormalizeLabel(value).ToLowerInvariant().Normalize(NormalizationForm.FormD);
+            var builder = new StringBuilder(normalized.Length);
+            foreach (var character in normalized)
+            {
+                if (CharUnicodeInfo.GetUnicodeCategory(character) != UnicodeCategory.NonSpacingMark)
+                {
+                    builder.Append(character);
+                }
+            }
+
+            return builder.ToString().Normalize(NormalizationForm.FormC);
         }
 
         private static bool IsTurkishHint(string value)

@@ -7,6 +7,7 @@ using Kroira.App.Services;
 using Kroira.App.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Navigation;
@@ -83,17 +84,17 @@ namespace Kroira.App.Views
 
         private void AddSource_Click(object sender, RoutedEventArgs e)
         {
-            Frame.Navigate(typeof(SourceOnboardingPage));
+            NavigateFromHome(typeof(SourceOnboardingPage), $"AddSource_Click sender={DescribeNavigationSender(sender)}");
         }
 
         private void ContinueWatching_Click(object sender, RoutedEventArgs e)
         {
-            Frame.Navigate(typeof(ContinueWatchingPage));
+            NavigateFromHome(typeof(ContinueWatchingPage), $"ContinueWatching_Click sender={DescribeNavigationSender(sender)}");
         }
 
         private void OpenSources_Click(object sender, RoutedEventArgs e)
         {
-            NavigateToTarget("Sources");
+            NavigateToTarget("Sources", $"OpenSources_Click sender={DescribeNavigationSender(sender)}");
         }
 
         private void FeaturedPrimary_Click(object sender, RoutedEventArgs e)
@@ -106,24 +107,24 @@ namespace Kroira.App.Views
 
             if (!string.IsNullOrWhiteSpace(item.StreamUrl))
             {
-                Frame.Navigate(typeof(EmbeddedPlaybackPage), new PlaybackLaunchContext
+                NavigateFromHome(typeof(EmbeddedPlaybackPage), new PlaybackLaunchContext
                 {
                     ContentId = item.ContentId,
                     ContentType = item.ContentType,
                     StreamUrl = item.StreamUrl,
                     StartPositionMs = 0
-                });
+                }, $"FeaturedPrimary_Click playback id={item.ContentId} title={item.Title}");
                 return;
             }
 
-            NavigateToTarget(item.Target);
+            NavigateToTarget(item.Target, $"FeaturedPrimary_Click target={item.Target}");
         }
 
         private void QuickAction_Click(object sender, RoutedEventArgs e)
         {
             if (GetTemplateItem<HomeActionItem>(sender) is { } item)
             {
-                NavigateToTarget(item.Target);
+                NavigateToTarget(item.Target, $"QuickAction_Click title={item.Title} sender={DescribeNavigationSender(sender)}");
             }
         }
 
@@ -144,17 +145,17 @@ namespace Kroira.App.Views
 
             if (!string.IsNullOrWhiteSpace(item.StreamUrl))
             {
-                Frame.Navigate(typeof(EmbeddedPlaybackPage), new PlaybackLaunchContext
+                NavigateFromHome(typeof(EmbeddedPlaybackPage), new PlaybackLaunchContext
                 {
                     ContentId = item.ContentId,
                     ContentType = item.ContentType,
                     StreamUrl = item.StreamUrl,
                     StartPositionMs = 0
-                });
+                }, $"MediaItem_Click playback id={item.ContentId} title={item.Title}");
                 return;
             }
 
-            NavigateToTarget(item.Target);
+            NavigateToTarget(item.Target, $"MediaItem_Click target={item.Target} title={item.Title}");
         }
 
         private void OpenContinueItem(HomeContinueItem item)
@@ -164,13 +165,13 @@ namespace Kroira.App.Views
                 return;
             }
 
-            Frame.Navigate(typeof(EmbeddedPlaybackPage), new PlaybackLaunchContext
+            NavigateFromHome(typeof(EmbeddedPlaybackPage), new PlaybackLaunchContext
             {
                 ContentId = item.ContentId,
                 ContentType = item.ContentType,
                 StreamUrl = item.StreamUrl,
                 StartPositionMs = item.SavedPositionMs
-            });
+            }, $"ContinueItem_Click playback id={item.ContentId} title={item.Title}");
         }
 
         private void LiveNow_Click(object sender, RoutedEventArgs e)
@@ -178,14 +179,44 @@ namespace Kroira.App.Views
             if (GetTemplateItem<HomeLiveItem>(sender) is { } item &&
                 !string.IsNullOrWhiteSpace(item.StreamUrl))
             {
-                Frame.Navigate(typeof(EmbeddedPlaybackPage), new PlaybackLaunchContext
+                NavigateFromHome(typeof(EmbeddedPlaybackPage), new PlaybackLaunchContext
                 {
                     ContentId = item.ContentId,
                     ContentType = PlaybackContentType.Channel,
                     StreamUrl = item.StreamUrl,
                     StartPositionMs = 0
-                });
+                }, $"LiveNow_Click channel id={item.ContentId} title={item.Title} sender={DescribeNavigationSender(sender)}");
             }
+        }
+
+        private async void LiveSportsNow_Click(object sender, RoutedEventArgs e)
+        {
+            if (GetTemplateItem<HomeSportsLiveItem>(sender) is not { } item ||
+                string.IsNullOrWhiteSpace(item.StreamUrl))
+            {
+                return;
+            }
+
+            try
+            {
+                await ViewModel.RecordLiveChannelLaunchAsync(item.ContentId);
+            }
+            catch (Exception ex)
+            {
+                LogStartupException("HOME LIVE SPORTS LAUNCH RECORD ERROR", ex);
+            }
+
+            NavigateFromHome(typeof(EmbeddedPlaybackPage), new PlaybackLaunchContext
+            {
+                ContentId = item.ContentId,
+                ContentType = PlaybackContentType.Channel,
+                LogicalContentKey = item.LogicalContentKey,
+                PreferredSourceProfileId = item.PreferredSourceProfileId,
+                CatalogStreamUrl = item.StreamUrl,
+                StreamUrl = item.StreamUrl,
+                LiveStreamUrl = item.StreamUrl,
+                StartPositionMs = 0
+            }, $"LiveSportsNow_Click channel id={item.ContentId} title={item.Title} sender={DescribeNavigationSender(sender)}");
         }
 
         private static T GetTemplateItem<T>(object sender) where T : class
@@ -209,12 +240,17 @@ namespace Kroira.App.Views
 
         private void LiveTv_Click(object sender, RoutedEventArgs e)
         {
-            Frame.Navigate(typeof(ChannelsPage));
+            NavigateFromHome(typeof(ChannelsPage), $"LiveTv_Click sender={DescribeNavigationSender(sender)}");
+        }
+
+        private void Favorites_Click(object sender, RoutedEventArgs e)
+        {
+            NavigateFromHome(typeof(FavoritesPage), $"Favorites_Click sender={DescribeNavigationSender(sender)}");
         }
 
         private void Movies_Click(object sender, RoutedEventArgs e)
         {
-            Frame.Navigate(typeof(MoviesPage));
+            NavigateFromHome(typeof(MoviesPage), $"Movies_Click sender={DescribeNavigationSender(sender)}");
         }
 
         private void BrowseCatalog_Click(object sender, RoutedEventArgs e)
@@ -222,39 +258,71 @@ namespace Kroira.App.Views
             var preferredTarget = ViewModel.PopularItems.FirstOrDefault()?.Target;
             if (string.Equals(preferredTarget, "Series", StringComparison.OrdinalIgnoreCase))
             {
-                Frame.Navigate(typeof(SeriesPage));
+                NavigateFromHome(typeof(SeriesPage), $"BrowseCatalog_Click preferredTarget={preferredTarget} sender={DescribeNavigationSender(sender)}");
                 return;
             }
 
-            Frame.Navigate(typeof(MoviesPage));
+            NavigateFromHome(typeof(MoviesPage), $"BrowseCatalog_Click preferredTarget={preferredTarget ?? "Movies"} sender={DescribeNavigationSender(sender)}");
         }
 
-        private void NavigateToTarget(string target)
+        private void NavigateToTarget(string target, string source = "NavigateToTarget")
         {
             switch (target)
             {
                 case "Channels":
-                    Frame.Navigate(typeof(ChannelsPage));
+                    NavigateFromHome(typeof(ChannelsPage), $"{source} target=Channels");
                     break;
                 case "Movies":
-                    Frame.Navigate(typeof(MoviesPage));
+                    NavigateFromHome(typeof(MoviesPage), $"{source} target=Movies");
                     break;
                 case "Series":
-                    Frame.Navigate(typeof(SeriesPage));
+                    NavigateFromHome(typeof(SeriesPage), $"{source} target=Series");
                     break;
                 case "Favorites":
-                    Frame.Navigate(typeof(FavoritesPage));
+                    NavigateFromHome(typeof(FavoritesPage), $"{source} target=Favorites");
                     break;
                 case "MediaLibrary":
-                    Frame.Navigate(StoreReleaseFeatures.ShowMediaLibrary ? typeof(MediaLibraryPage) : typeof(ContinueWatchingPage));
+                    NavigateFromHome(StoreReleaseFeatures.ShowMediaLibrary ? typeof(MediaLibraryPage) : typeof(ContinueWatchingPage),
+                        $"{source} target=MediaLibrary showMediaLibrary={StoreReleaseFeatures.ShowMediaLibrary}");
                     break;
                 case "Sources":
-                    Frame.Navigate(typeof(SourceListPage));
+                    NavigateFromHome(typeof(SourceListPage), $"{source} target=Sources");
                     break;
                 case "Settings":
-                    Frame.Navigate(typeof(SettingsPage));
+                    NavigateFromHome(typeof(SettingsPage), $"{source} target=Settings");
                     break;
             }
+        }
+
+        private bool NavigateFromHome(Type pageType, string source)
+        {
+            LogHomeNavigation($"{source} -> {pageType.Name}");
+            return Frame.Navigate(pageType);
+        }
+
+        private bool NavigateFromHome(Type pageType, object parameter, string source)
+        {
+            LogHomeNavigation($"{source} -> {pageType.Name} parameter={parameter.GetType().Name}");
+            return Frame.Navigate(pageType, parameter);
+        }
+
+        private static void LogHomeNavigation(string message)
+        {
+            LogStartupCheckpoint($"HOME NAV {message}");
+        }
+
+        private static string DescribeNavigationSender(object sender)
+        {
+            if (sender is not FrameworkElement element)
+            {
+                return sender?.GetType().Name ?? "null";
+            }
+
+            var name = string.IsNullOrWhiteSpace(element.Name) ? string.Empty : $"#{element.Name}";
+            var automationName = AutomationProperties.GetName(element);
+            var automation = string.IsNullOrWhiteSpace(automationName) ? string.Empty : $" automation='{automationName}'";
+            var dataContext = element.DataContext == null ? string.Empty : $" dataContext={element.DataContext.GetType().Name}";
+            return $"{element.GetType().Name}{name}{automation}{dataContext}";
         }
 
         private static void LogStartupCheckpoint(string message)
