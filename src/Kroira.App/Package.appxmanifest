@@ -8,7 +8,7 @@
   <Identity
     Name="SATIVAGENETICS.KROIRAIPTV"
     Publisher="CN=1B47D348-A27A-430F-8ED8-B45035F098CB"
-    Version="0.9.0.0" />
+    Version="2.0.0.0" />
 
   <Properties>
     <DisplayName>KROIRA IPTV</DisplayName>
