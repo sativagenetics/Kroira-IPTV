@@ -37,8 +37,8 @@
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
                     <StackPanel Spacing="8">
-                        <TextBlock Text="Settings" Style="{StaticResource KroiraPageTitleStyle}" />
-                        <TextBlock Text="Playback, library, appearance, and support settings."
+                        <TextBlock x:Uid="SettingsPageTitle" Text="Settings" Style="{StaticResource KroiraPageTitleStyle}" />
+                        <TextBlock x:Uid="SettingsPageSubtitle" Text="Playback, library, appearance, and support settings."
                                    Style="{StaticResource KroiraPageSubtitleStyle}"
                                    MaxWidth="680" />
                     </StackPanel>
@@ -67,8 +67,8 @@
                     <Border Style="{StaticResource KroiraSettingsGroupStyle}">
                         <StackPanel Spacing="16">
                             <StackPanel Spacing="3">
-                                <TextBlock Text="Application" Style="{StaticResource KroiraSectionTitleStyle}" />
-                                <TextBlock Text="Preferences that shape your local library experience."
+                                <TextBlock x:Uid="SettingsApplicationTitle" Text="Application" Style="{StaticResource KroiraSectionTitleStyle}" />
+                                <TextBlock x:Uid="SettingsApplicationSubtitle" Text="Preferences that shape your local library experience."
                                            Style="{StaticResource KroiraBodyStyle}" />
                             </StackPanel>
 
@@ -81,7 +81,7 @@
                                 </Grid.ColumnDefinitions>
 
                                 <StackPanel Spacing="5">
-                                    <TextBlock Text="Remote-friendly mode" Style="{StaticResource KroiraTitleStyle}" />
+                                    <TextBlock x:Uid="SettingsRemoteModeTitle" Text="Remote-friendly mode" Style="{StaticResource KroiraTitleStyle}" />
                                     <TextBlock Text="{x:Bind ViewModel.RemoteModeStatusText, Mode=OneWay}"
                                                Style="{StaticResource KroiraBodyStyle}"
                                                MaxWidth="520"
@@ -89,6 +89,7 @@
                                 </StackPanel>
 
                                  <ToggleSwitch x:Name="RemoteModeToggle"
+                                               x:Uid="SettingsRemoteModeToggle"
                                                Grid.Column="1"
                                                IsOn="{x:Bind ViewModel.RemoteModeEnabled, Mode=TwoWay}"
                                                HorizontalAlignment="Right"
@@ -103,13 +104,14 @@
                                 </Grid.ColumnDefinitions>
 
                                 <StackPanel Spacing="5">
-                                    <TextBlock Text="App language" Style="{StaticResource KroiraTitleStyle}" />
+                                    <TextBlock x:Uid="SettingsLanguageTitle" Text="App language" Style="{StaticResource KroiraTitleStyle}" />
                                     <TextBlock Text="{x:Bind ViewModel.LanguageStatusText, Mode=OneWay}"
                                                Style="{StaticResource KroiraBodyStyle}"
                                                MaxWidth="520" />
                                 </StackPanel>
 
                                  <ComboBox x:Name="LanguageComboBox"
+                                           x:Uid="SettingsLanguageComboBox"
                                            Grid.Column="1"
                                            Style="{StaticResource KroiraComboBoxStyle}"
                                            ItemsSource="{x:Bind ViewModel.Languages, Mode=OneWay}"
@@ -127,8 +129,8 @@
                     <Border Style="{StaticResource KroiraSettingsGroupStyle}">
                         <StackPanel Spacing="16">
                             <StackPanel Spacing="3">
-                                <TextBlock Text="Appearance" Style="{StaticResource KroiraSectionTitleStyle}" />
-                                <TextBlock Text="Choose the visual preset and accent combination that fits your setup."
+                                <TextBlock x:Uid="SettingsAppearanceTitle" Text="Appearance" Style="{StaticResource KroiraSectionTitleStyle}" />
+                                <TextBlock x:Uid="SettingsAppearanceSubtitle" Text="Choose the visual preset and accent combination that fits your setup."
                                            Style="{StaticResource KroiraBodyStyle}"
                                            TextWrapping="Wrap" />
                             </StackPanel>
@@ -142,12 +144,13 @@
                                 </Grid.ColumnDefinitions>
 
                                 <StackPanel Spacing="4">
-                                    <TextBlock Text="Theme preset" Style="{StaticResource KroiraTitleStyle}" />
-                                    <TextBlock Text="Adjust the page atmosphere and surface gradient family."
+                                    <TextBlock x:Uid="SettingsThemePresetTitle" Text="Theme preset" Style="{StaticResource KroiraTitleStyle}" />
+                                    <TextBlock x:Uid="SettingsThemePresetSubtitle" Text="Adjust the page atmosphere and surface gradient family."
                                                Style="{StaticResource KroiraBodyStyle}" />
                                 </StackPanel>
 
-                                 <ComboBox Grid.Column="1"
+                                 <ComboBox x:Uid="SettingsThemePresetComboBox"
+                                           Grid.Column="1"
                                            Style="{StaticResource KroiraComboBoxStyle}"
                                            ItemsSource="{x:Bind ViewModel.ThemeOptions, Mode=OneWay}"
                                            SelectedItem="{x:Bind ViewModel.SelectedThemeOption, Mode=TwoWay}"
@@ -167,12 +170,13 @@
                                 </Grid.ColumnDefinitions>
 
                                 <StackPanel Spacing="4">
-                                    <TextBlock Text="Accent pack" Style="{StaticResource KroiraTitleStyle}" />
-                                    <TextBlock Text="Retune action chrome, focus color, and highlight accents across the app."
+                                    <TextBlock x:Uid="SettingsAccentPackTitle" Text="Accent pack" Style="{StaticResource KroiraTitleStyle}" />
+                                    <TextBlock x:Uid="SettingsAccentPackSubtitle" Text="Retune action chrome, focus color, and highlight accents across the app."
                                                Style="{StaticResource KroiraBodyStyle}" />
                                 </StackPanel>
 
-                                 <ComboBox Grid.Column="1"
+                                 <ComboBox x:Uid="SettingsAccentPackComboBox"
+                                           Grid.Column="1"
                                            Style="{StaticResource KroiraComboBoxStyle}"
                                            ItemsSource="{x:Bind ViewModel.AccentOptions, Mode=OneWay}"
                                            SelectedItem="{x:Bind ViewModel.SelectedAccentOption, Mode=TwoWay}"
@@ -204,12 +208,12 @@
 
                         <Border Style="{StaticResource KroiraSettingsGroupStyle}">
                             <StackPanel Spacing="10">
-                                <TextBlock Text="Playback preferences" Style="{StaticResource KroiraSectionTitleStyle}" />
-                                <TextBlock Text="Resume state, favorites, and playback routing stay local and are applied without blocking app launch."
+                                <TextBlock x:Uid="SettingsPlaybackPreferencesTitle" Text="Playback preferences" Style="{StaticResource KroiraSectionTitleStyle}" />
+                                <TextBlock x:Uid="SettingsPlaybackPreferencesSubtitle" Text="Resume state, favorites, and playback routing stay local and are applied without blocking app launch."
                                             Style="{StaticResource KroiraBodyStyle}"
                                             TextWrapping="Wrap" />
                                 <Border Height="1" Background="{StaticResource KroiraBorderBrush}" Opacity="0.45" />
-                                <TextBlock Text="Local resume and routing"
+                                <TextBlock x:Uid="SettingsLocalResumeRouting" Text="Local resume and routing"
                                            Foreground="{StaticResource KroiraAccentBrush}"
                                            FontSize="12"
                                            FontWeight="SemiBold" />
@@ -218,17 +222,17 @@
 
                         <Border Grid.Column="1" Style="{StaticResource KroiraSettingsGroupStyle}">
                             <StackPanel Spacing="10">
-                                <TextBlock Text="EPG preferences" Style="{StaticResource KroiraSectionTitleStyle}" />
-                                <TextBlock Text="Guide sources, stale guide warnings, and manual channel matching are managed from the guide and source diagnostics surfaces."
+                                <TextBlock x:Uid="SettingsEpgPreferencesTitle" Text="EPG preferences" Style="{StaticResource KroiraSectionTitleStyle}" />
+                                <TextBlock x:Uid="SettingsEpgPreferencesSubtitle" Text="Guide sources, stale guide warnings, and manual channel matching are managed from the guide and source diagnostics surfaces."
                                             Style="{StaticResource KroiraBodyStyle}"
                                             TextWrapping="Wrap" />
                                 <Border Height="1" Background="{StaticResource KroiraBorderBrush}" Opacity="0.45" />
                                 <StackPanel Orientation="Horizontal" Spacing="10">
-                                    <Button Content="Open Guide"
+                                    <Button x:Uid="SettingsOpenGuideButton" Content="Open Guide"
                                             Click="OpenGuideFromSettings_Click"
                                             Style="{StaticResource KroiraGhostButtonStyle}"
                                             AutomationProperties.Name="Open guide settings" />
-                                    <Button Content="Sources"
+                                    <Button x:Uid="SettingsSourcesButton" Content="Sources"
                                             Click="OpenSourcesFromSettings_Click"
                                             Style="{StaticResource KroiraGhostButtonStyle}"
                                             AutomationProperties.Name="Open source diagnostics" />
@@ -238,12 +242,12 @@
 
                         <Border Grid.Row="1" Style="{StaticResource KroiraSettingsGroupStyle}">
                             <StackPanel Spacing="10">
-                                <TextBlock Text="Metadata preferences" Style="{StaticResource KroiraSectionTitleStyle}" />
-                                <TextBlock Text="TMDb enrichment is a background fallback when local provider artwork or titles are incomplete."
+                                <TextBlock x:Uid="SettingsMetadataPreferencesTitle" Text="Metadata preferences" Style="{StaticResource KroiraSectionTitleStyle}" />
+                                <TextBlock x:Uid="SettingsMetadataPreferencesSubtitle" Text="TMDb enrichment is a background fallback when local provider artwork or titles are incomplete."
                                            Style="{StaticResource KroiraBodyStyle}"
                                            TextWrapping="Wrap" />
                                 <Border Height="1" Background="{StaticResource KroiraBorderBrush}" Opacity="0.45" />
-                                <TextBlock Text="Provider metadata first"
+                                <TextBlock x:Uid="SettingsProviderMetadataFirst" Text="Provider metadata first"
                                            Foreground="{StaticResource KroiraAccentBrush}"
                                            FontSize="12"
                                            FontWeight="SemiBold" />
@@ -252,12 +256,12 @@
 
                         <Border Grid.Row="1" Grid.Column="1" Style="{StaticResource KroiraSettingsGroupStyle}">
                             <StackPanel Spacing="10">
-                                <TextBlock Text="Diagnostics export" Style="{StaticResource KroiraSectionTitleStyle}" />
-                                <TextBlock Text="Sanitized source reports are available per source and do not include credentials or provider tokens."
+                                <TextBlock x:Uid="SettingsDiagnosticsExportTitle" Text="Diagnostics export" Style="{StaticResource KroiraSectionTitleStyle}" />
+                                <TextBlock x:Uid="SettingsDiagnosticsExportSubtitle" Text="Sanitized source reports are available per source and do not include credentials or provider tokens."
                                            Style="{StaticResource KroiraBodyStyle}"
                                            TextWrapping="Wrap" />
                                 <Border Height="1" Background="{StaticResource KroiraBorderBrush}" Opacity="0.45" />
-                                <Button Content="Open Sources"
+                                <Button x:Uid="SettingsOpenSourcesButton" Content="Open Sources"
                                         Click="OpenSourcesFromSettings_Click"
                                         Style="{StaticResource KroiraGhostButtonStyle}"
                                         HorizontalAlignment="Left"
@@ -269,8 +273,8 @@
                     <Border Style="{StaticResource KroiraSettingsGroupStyle}">
                         <StackPanel Spacing="16">
                             <StackPanel Spacing="3">
-                                <TextBlock Text="Automatic refresh" Style="{StaticResource KroiraSectionTitleStyle}" />
-                                <TextBlock Text="Keep sources current on a bounded cadence while the app is open. Refreshes update guide data, artwork, and library availability."
+                                <TextBlock x:Uid="SettingsAutoRefreshTitle" Text="Automatic refresh" Style="{StaticResource KroiraSectionTitleStyle}" />
+                                <TextBlock x:Uid="SettingsAutoRefreshSubtitle" Text="Keep sources current on a bounded cadence while the app is open. Refreshes update guide data, artwork, and library availability."
                                            Style="{StaticResource KroiraBodyStyle}"
                                            TextWrapping="Wrap" />
                             </StackPanel>
@@ -284,13 +288,14 @@
                                 </Grid.ColumnDefinitions>
 
                                 <StackPanel Spacing="4">
-                                    <TextBlock Text="Enable automatic refresh" Style="{StaticResource KroiraTitleStyle}" />
+                                    <TextBlock x:Uid="SettingsEnableAutoRefreshTitle" Text="Enable automatic refresh" Style="{StaticResource KroiraTitleStyle}" />
                                     <TextBlock Text="{x:Bind ViewModel.AutoRefreshStatusText, Mode=OneWay}"
                                                Style="{StaticResource KroiraBodyStyle}"
                                                TextWrapping="Wrap" />
                                 </StackPanel>
 
-                                 <ToggleSwitch Grid.Column="1"
+                                 <ToggleSwitch x:Uid="SettingsEnableAutoRefreshToggle"
+                                               Grid.Column="1"
                                                IsOn="{x:Bind ViewModel.AutoRefreshEnabled, Mode=TwoWay}"
                                                HorizontalAlignment="Right"
                                                VerticalAlignment="Center"
@@ -304,12 +309,13 @@
                                 </Grid.ColumnDefinitions>
 
                                 <StackPanel Spacing="4">
-                                    <TextBlock Text="Refresh cadence" Style="{StaticResource KroiraTitleStyle}" />
-                                    <TextBlock Text="Choose how often sources become due while the app stays open."
+                                    <TextBlock x:Uid="SettingsRefreshCadenceTitle" Text="Refresh cadence" Style="{StaticResource KroiraTitleStyle}" />
+                                    <TextBlock x:Uid="SettingsRefreshCadenceSubtitle" Text="Choose how often sources become due while the app stays open."
                                                Style="{StaticResource KroiraBodyStyle}" />
                                 </StackPanel>
 
-                                 <ComboBox Grid.Column="1"
+                                 <ComboBox x:Uid="SettingsRefreshCadenceComboBox"
+                                           Grid.Column="1"
                                            Style="{StaticResource KroiraComboBoxStyle}"
                                            ItemsSource="{x:Bind ViewModel.AutoRefreshIntervalOptions, Mode=OneWay}"
                                            SelectedItem="{x:Bind ViewModel.SelectedAutoRefreshInterval, Mode=TwoWay}"
@@ -322,7 +328,7 @@
                                            AutomationProperties.Name="Refresh cadence" />
                             </Grid>
 
-                             <ToggleSwitch Header="Run shortly after launch"
+                             <ToggleSwitch x:Uid="SettingsRunRefreshAfterLaunchSwitch" Header="Run shortly after launch"
                                            IsOn="{x:Bind ViewModel.RunAutoRefreshAfterLaunch, Mode=TwoWay}"
                                            IsEnabled="{x:Bind ViewModel.AutoRefreshEnabled, Mode=OneWay}"
                                            AutomationProperties.Name="Run refresh shortly after launch" />
@@ -334,8 +340,8 @@
                     <Border Style="{StaticResource KroiraSettingsGroupStyle}">
                         <StackPanel Spacing="14">
                             <StackPanel Spacing="3">
-                                <TextBlock Text="App information" Style="{StaticResource KroiraSectionTitleStyle}" />
-                                <TextBlock Text="About, help, privacy, support, version, and legal information live on a separate information page."
+                                <TextBlock x:Uid="SettingsAppInformationTitle" Text="App information" Style="{StaticResource KroiraSectionTitleStyle}" />
+                                <TextBlock x:Uid="SettingsAppInformationSubtitle" Text="About, help, privacy, support, version, and legal information live on a separate information page."
                                            Style="{StaticResource KroiraBodyStyle}"
                                            TextWrapping="Wrap" />
                             </StackPanel>
@@ -353,7 +359,8 @@
                                                Style="{StaticResource KroiraBodyStyle}"
                                                TextWrapping="Wrap" />
                                 </StackPanel>
-                                <Button Grid.Column="1"
+                                <Button x:Uid="SettingsAppInformationOpenButton"
+                                        Grid.Column="1"
                                         Content="Open"
                                         Click="OpenAboutFromSettings_Click"
                                         Style="{StaticResource KroiraGhostButtonStyle}"
@@ -366,8 +373,8 @@
                     <Border Style="{StaticResource KroiraSettingsGroupStyle}" Visibility="Collapsed">
                         <StackPanel Spacing="16">
                             <StackPanel Spacing="3">
-                                <TextBlock Text="About" Style="{StaticResource KroiraSectionTitleStyle}" />
-                                <TextBlock Text="Installed build and release information."
+                                <TextBlock x:Uid="SettingsAboutTitle" Text="About" Style="{StaticResource KroiraSectionTitleStyle}" />
+                                <TextBlock x:Uid="SettingsAboutSubtitle" Text="Installed build and release information."
                                            Style="{StaticResource KroiraBodyStyle}" />
                             </StackPanel>
 
@@ -379,8 +386,8 @@
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
                                 <StackPanel Spacing="4">
-                                    <TextBlock Text="App" Style="{StaticResource KroiraTitleStyle}" />
-                                    <TextBlock Text="Name" Style="{StaticResource KroiraBodyStyle}" />
+                                    <TextBlock x:Uid="SettingsAppLabel" Text="App" Style="{StaticResource KroiraTitleStyle}" />
+                                    <TextBlock x:Uid="SettingsNameLabel" Text="Name" Style="{StaticResource KroiraBodyStyle}" />
                                 </StackPanel>
                                 <TextBlock Grid.Column="1"
                                            Text="{x:Bind ViewModel.AppName, Mode=OneWay}"
@@ -396,8 +403,8 @@
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
                                 <StackPanel Spacing="4">
-                                    <TextBlock Text="Release" Style="{StaticResource KroiraTitleStyle}" />
-                                    <TextBlock Text="Store submission version" Style="{StaticResource KroiraBodyStyle}" />
+                                    <TextBlock x:Uid="SettingsReleaseLabel" Text="Release" Style="{StaticResource KroiraTitleStyle}" />
+                                    <TextBlock x:Uid="SettingsStoreSubmissionVersionLabel" Text="Store submission version" Style="{StaticResource KroiraBodyStyle}" />
                                 </StackPanel>
                                 <TextBlock Grid.Column="1"
                                            Text="{x:Bind ViewModel.ReleaseVersionText, Mode=OneWay}"
@@ -413,8 +420,8 @@
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
                                 <StackPanel Spacing="4">
-                                    <TextBlock Text="Version / build" Style="{StaticResource KroiraTitleStyle}" />
-                                    <TextBlock Text="Installed package" Style="{StaticResource KroiraBodyStyle}" />
+                                    <TextBlock x:Uid="SettingsVersionBuildLabel" Text="Version / build" Style="{StaticResource KroiraTitleStyle}" />
+                                    <TextBlock x:Uid="SettingsInstalledPackageLabel" Text="Installed package" Style="{StaticResource KroiraBodyStyle}" />
                                 </StackPanel>
                                 <TextBlock Grid.Column="1"
                                            Text="{x:Bind ViewModel.AppVersionBuildText, Mode=OneTime}"
@@ -447,18 +454,18 @@
 
                             <Border Height="1" Background="{StaticResource KroiraBorderBrush}" Opacity="0.45" />
 
-                            <TextBlock Text="Restore replaces the current local setup, then rebuilds the library from the restored sources on this device."
+                            <TextBlock x:Uid="SettingsRestoreWarning" Text="Restore replaces the current local setup, then rebuilds the library from the restored sources on this device."
                                        Visibility="{x:Bind RestoreBackupVisibility, Mode=OneWay}"
                                        Style="{StaticResource KroiraBodyStyle}"
                                        TextWrapping="Wrap" />
 
                             <StackPanel Orientation="Horizontal" Spacing="12">
-                                 <Button Content="Export"
+                                 <Button x:Uid="SettingsExportButton" Content="Export"
                                          Click="OnExportBackupClick"
                                          IsEnabled="{x:Bind ViewModel.CanStartBackupAction, Mode=OneWay}"
                                          AutomationProperties.Name="Export backup" />
 
-                                 <Button Content="Restore"
+                                 <Button x:Uid="SettingsRestoreButton" Content="Restore"
                                          Click="OnRestoreBackupClick"
                                          Visibility="{x:Bind RestoreBackupVisibility, Mode=OneWay}"
                                          IsEnabled="{x:Bind ViewModel.CanStartBackupAction, Mode=OneWay}"
@@ -481,8 +488,8 @@
                     <Border Style="{StaticResource KroiraSettingsGroupStyle}" Visibility="Collapsed">
                         <StackPanel Spacing="14">
                             <StackPanel Spacing="3">
-                                <TextBlock Text="Help" Style="{StaticResource KroiraSectionTitleStyle}" />
-                                <TextBlock Text="Quick start for bringing your own sources."
+                                <TextBlock x:Uid="SettingsHelpTitle" Text="Help" Style="{StaticResource KroiraSectionTitleStyle}" />
+                                <TextBlock x:Uid="SettingsHelpSubtitle" Text="Quick start for bringing your own sources."
                                            Style="{StaticResource KroiraBodyStyle}"
                                            TextWrapping="Wrap" />
                             </StackPanel>
@@ -509,8 +516,8 @@
                     <Border Style="{StaticResource KroiraSettingsGroupStyle}" Visibility="Collapsed">
                         <StackPanel Spacing="14">
                             <StackPanel Spacing="3">
-                                <TextBlock Text="Privacy &amp; Support" Style="{StaticResource KroiraSectionTitleStyle}" />
-                                <TextBlock Text="Release support, privacy, and contact details."
+                                <TextBlock x:Uid="SettingsPrivacySupportTitle" Text="Privacy &amp; Support" Style="{StaticResource KroiraSectionTitleStyle}" />
+                                <TextBlock x:Uid="SettingsPrivacySupportSubtitle" Text="Release support, privacy, and contact details."
                                            Style="{StaticResource KroiraBodyStyle}"
                                            TextWrapping="Wrap" />
                             </StackPanel>
@@ -523,12 +530,13 @@
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
                                 <StackPanel Spacing="4">
-                                    <TextBlock Text="Privacy policy" Style="{StaticResource KroiraTitleStyle}" />
+                                    <TextBlock x:Uid="SettingsPrivacyPolicyTitle" Text="Privacy policy" Style="{StaticResource KroiraTitleStyle}" />
                                     <TextBlock Text="{x:Bind ViewModel.PrivacyPolicyDisplayText, Mode=OneWay}"
                                                Style="{StaticResource KroiraBodyStyle}"
                                                TextWrapping="Wrap" />
                                 </StackPanel>
-                                 <HyperlinkButton Grid.Column="1"
+                                 <HyperlinkButton x:Uid="SettingsPrivacyPolicyOpenButton"
+                                                  Grid.Column="1"
                                                   Content="Open"
                                                   Command="{x:Bind ViewModel.OpenPrivacyPolicyCommand}"
                                                   IsEnabled="{x:Bind ViewModel.CanOpenPrivacyPolicy, Mode=OneWay}"
@@ -564,12 +572,13 @@
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
                                 <StackPanel Spacing="4">
-                                    <TextBlock Text="Support page" Style="{StaticResource KroiraTitleStyle}" />
+                                    <TextBlock x:Uid="SettingsSupportPageTitle" Text="Support page" Style="{StaticResource KroiraTitleStyle}" />
                                     <TextBlock Text="{x:Bind ViewModel.SupportPageDisplayText, Mode=OneWay}"
                                                Style="{StaticResource KroiraBodyStyle}"
                                                TextWrapping="Wrap" />
                                 </StackPanel>
-                                 <HyperlinkButton Grid.Column="1"
+                                 <HyperlinkButton x:Uid="SettingsSupportOpenButton"
+                                                  Grid.Column="1"
                                                   Content="Open"
                                                   Command="{x:Bind ViewModel.OpenSupportCommand}"
                                                   IsEnabled="{x:Bind ViewModel.CanOpenSupportPage, Mode=OneWay}"
@@ -585,12 +594,13 @@
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
                                 <StackPanel Spacing="4">
-                                    <TextBlock Text="Support email" Style="{StaticResource KroiraTitleStyle}" />
+                                    <TextBlock x:Uid="SettingsSupportEmailTitle" Text="Support email" Style="{StaticResource KroiraTitleStyle}" />
                                     <TextBlock Text="{x:Bind ViewModel.SupportEmailText, Mode=OneWay}"
                                                Style="{StaticResource KroiraBodyStyle}"
                                                TextWrapping="Wrap" />
                                 </StackPanel>
-                                 <HyperlinkButton Grid.Column="1"
+                                 <HyperlinkButton x:Uid="SettingsSupportEmailButton"
+                                                  Grid.Column="1"
                                                   Content="Email"
                                                   Command="{x:Bind ViewModel.OpenSupportEmailCommand}"
                                                   IsEnabled="{x:Bind ViewModel.CanEmailSupport, Mode=OneWay}"
@@ -606,7 +616,7 @@
 
                             <Border Height="1" Background="{StaticResource KroiraBorderBrush}" Opacity="0.45" />
 
-                            <TextBlock Text="Common support topics"
+                            <TextBlock x:Uid="SettingsCommonSupportTopicsTitle" Text="Common support topics"
                                        Style="{StaticResource KroiraTitleStyle}" />
 
                             <TextBlock Text="{x:Bind ViewModel.SupportAuthenticationFailureText, Mode=OneWay}"
@@ -643,8 +653,8 @@
                     <Border Style="{StaticResource KroiraSettingsGroupStyle}" Visibility="Collapsed">
                         <StackPanel Spacing="12">
                             <StackPanel Spacing="3">
-                                <TextBlock Text="Disclaimer" Style="{StaticResource KroiraSectionTitleStyle}" />
-                                <TextBlock Text="Content and source responsibility."
+                                <TextBlock x:Uid="SettingsDisclaimerTitle" Text="Disclaimer" Style="{StaticResource KroiraSectionTitleStyle}" />
+                                <TextBlock x:Uid="SettingsDisclaimerSubtitle" Text="Content and source responsibility."
                                            Style="{StaticResource KroiraBodyStyle}" />
                             </StackPanel>
 
@@ -660,7 +670,7 @@
                         </StackPanel>
                     </Border>
 
-                    <TextBlock Text="Copyright 2026 KROIRA."
+                    <TextBlock x:Uid="SettingsCopyright" Text="Copyright 2026 KROIRA."
                                Foreground="{StaticResource KroiraTextTertiaryBrush}"
                                FontSize="12"
                                Visibility="Collapsed"

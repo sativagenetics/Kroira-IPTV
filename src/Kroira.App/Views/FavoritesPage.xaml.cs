@@ -195,24 +195,24 @@ namespace Kroira.App.Views
         private async void ClearChannelFavorites_Click(object sender, RoutedEventArgs e)
         {
             await ConfirmAndRunAsync(
-                "Clear all favorite live channels?",
-                "This removes every saved live channel favorite for the active profile on this device.",
+                LocalizedStrings.Get("Favorites.ClearChannelsTitle"),
+                LocalizedStrings.Get("Favorites.ClearChannelsMessage"),
                 () => ViewModel.ClearChannelFavoritesCommand.ExecuteAsync(null));
         }
 
         private async void ClearMovieFavorites_Click(object sender, RoutedEventArgs e)
         {
             await ConfirmAndRunAsync(
-                "Clear all favorite movies?",
-                "This removes every saved movie favorite for the active profile on this device.",
+                LocalizedStrings.Get("Favorites.ClearMoviesTitle"),
+                LocalizedStrings.Get("Favorites.ClearMoviesMessage"),
                 () => ViewModel.ClearMovieFavoritesCommand.ExecuteAsync(null));
         }
 
         private async void ClearSeriesFavorites_Click(object sender, RoutedEventArgs e)
         {
             await ConfirmAndRunAsync(
-                "Clear all favorite series?",
-                "This removes every saved series favorite for the active profile on this device.",
+                LocalizedStrings.Get("Favorites.ClearSeriesTitle"),
+                LocalizedStrings.Get("Favorites.ClearSeriesMessage"),
                 () => ViewModel.ClearSeriesFavoritesCommand.ExecuteAsync(null));
         }
 
@@ -222,8 +222,8 @@ namespace Kroira.App.Views
             {
                 Title = title,
                 Content = message,
-                PrimaryButtonText = "Clear all",
-                CloseButtonText = "Cancel",
+                PrimaryButtonText = LocalizedStrings.Get("General.ClearAll"),
+                CloseButtonText = LocalizedStrings.Get("General.Cancel"),
                 DefaultButton = ContentDialogButton.Close,
                 XamlRoot = XamlRoot
             };

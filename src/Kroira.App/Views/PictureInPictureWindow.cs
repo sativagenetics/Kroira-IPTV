@@ -1,4 +1,5 @@
 using Kroira.App.Models;
+using Kroira.App.Services;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 
@@ -10,7 +11,7 @@ namespace Kroira.App.Views
 
         public PictureInPictureWindow()
         {
-            Title = "Kroira PiP";
+            Title = LocalizedStrings.Get("Player.PipWindowTitle");
             Content = _contentFrame;
         }
 

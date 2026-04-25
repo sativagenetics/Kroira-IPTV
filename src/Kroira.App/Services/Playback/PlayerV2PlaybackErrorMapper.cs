@@ -3,6 +3,7 @@ using System;
 using System.Net;
 using System.Net.Http;
 using System.Net.Sockets;
+using Kroira.App.Services;
 
 namespace Kroira.App.Services.Playback
 {
@@ -51,8 +52,8 @@ namespace Kroira.App.Services.Playback
             {
                 return Create(
                     PlayerV2PlaybackErrorCode.InvalidUrl,
-                    "Invalid stream URL",
-                    "The stream URL is empty or is not an absolute URL.",
+                    L("Player.Error.InvalidStreamUrl.Title"),
+                    L("Player.Error.InvalidStreamUrl.Message"),
                     isRetryable: false);
             }
 
@@ -60,8 +61,8 @@ namespace Kroira.App.Services.Playback
             {
                 return Create(
                     PlayerV2PlaybackErrorCode.Timeout,
-                    "Stream timed out",
-                    "The stream did not respond before the playback timeout elapsed.",
+                    L("Player.Error.Timeout.Title"),
+                    L("Player.Error.Timeout.Message"),
                     isRetryable: true);
             }
 
@@ -69,8 +70,8 @@ namespace Kroira.App.Services.Playback
             {
                 return Create(
                     PlayerV2PlaybackErrorCode.Cancelled,
-                    "Playback cancelled",
-                    "Playback was cancelled before the stream opened.",
+                    L("Player.Error.Cancelled.Title"),
+                    L("Player.Error.Cancelled.Message"),
                     isRetryable: false);
             }
 
@@ -78,8 +79,8 @@ namespace Kroira.App.Services.Playback
             {
                 return Create(
                     PlayerV2PlaybackErrorCode.ForbiddenAuthFailure,
-                    "Stream authorization failed",
-                    "The provider rejected the stream request or the source credentials are no longer accepted.",
+                    L("Player.Error.Authorization.Title"),
+                    L("Player.Error.Authorization.Message"),
                     isRetryable: false);
             }
 
@@ -87,8 +88,8 @@ namespace Kroira.App.Services.Playback
             {
                 return Create(
                     PlayerV2PlaybackErrorCode.UnsupportedMedia,
-                    "Unsupported media",
-                    "The stream format or codec is not supported by the current player runtime.",
+                    L("Player.Error.UnsupportedMedia.Title"),
+                    L("Player.Error.UnsupportedMedia.Message"),
                     isRetryable: false);
             }
 
@@ -96,8 +97,8 @@ namespace Kroira.App.Services.Playback
             {
                 return Create(
                     PlayerV2PlaybackErrorCode.StreamEnded,
-                    "Stream ended",
-                    "The provider ended the stream.",
+                    L("Player.Error.StreamEnded.Title"),
+                    L("Player.Error.StreamEnded.Message"),
                     isRetryable: false);
             }
 
@@ -105,17 +106,19 @@ namespace Kroira.App.Services.Playback
             {
                 return Create(
                     PlayerV2PlaybackErrorCode.Unreachable,
-                    "Stream unreachable",
-                    "The stream host could not be reached from this device.",
+                    L("Player.Error.Unreachable.Title"),
+                    L("Player.Error.Unreachable.Message"),
                     isRetryable: true);
             }
 
             return Create(
                 PlayerV2PlaybackErrorCode.Unknown,
-                "Playback failed",
-                "The player could not classify the playback failure.",
+                L("Player.Error.PlaybackFailed"),
+                L("Player.Error.Unknown.Message"),
                 isRetryable: true);
         }
+
+        private static string L(string key) => LocalizedStrings.Get(key);
 
         private static PlayerV2PlaybackError Create(
             PlayerV2PlaybackErrorCode code,

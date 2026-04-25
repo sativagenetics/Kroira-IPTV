@@ -1,4 +1,5 @@
 using System;
+using Kroira.App.Services;
 using Kroira.App.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
@@ -32,10 +33,10 @@ namespace Kroira.App.Views
 
             var dialog = new ContentDialog
             {
-                Title = "Delete this profile?",
-                Content = "This cannot be undone.",
-                PrimaryButtonText = "Delete",
-                CloseButtonText = "Cancel",
+                Title = LocalizedStrings.Get("Profile.DeleteConfirmTitle"),
+                Content = LocalizedStrings.Get("Profile.DeleteConfirmMessage"),
+                PrimaryButtonText = LocalizedStrings.Get("General.Delete"),
+                CloseButtonText = LocalizedStrings.Get("General.Cancel"),
                 DefaultButton = ContentDialogButton.Close,
                 XamlRoot = XamlRoot
             };

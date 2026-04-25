@@ -48,6 +48,7 @@ namespace Kroira.App.Views
         private sealed class PlayerGuideProgramItem
         {
             public string Title { get; init; } = string.Empty;
+            public string ProgramTitle { get; init; } = string.Empty;
             public string TimeText { get; init; } = string.Empty;
             public string StatusText { get; init; } = string.Empty;
             public bool IsCurrent { get; init; }
@@ -68,9 +69,9 @@ namespace Kroira.App.Views
         private readonly List<(string Key, ToggleMenuFlyoutItem Item)> _toggleToolItems = new();
         private readonly List<(double Scale, string Label)> _subtitleScalePresets = new()
         {
-            (0.85, "Small"),
-            (1.0, "Medium"),
-            (1.2, "Large")
+            (0.85, "Player.SubtitleSize.Small"),
+            (1.0, "Player.SubtitleSize.Medium"),
+            (1.2, "Player.SubtitleSize.Large")
         };
 
         private IPlayerPreferencesService? _playerPreferencesService;
@@ -450,8 +451,8 @@ namespace Kroira.App.Views
             }
 
             ApplyEpisodeFilter();
-            EpisodePanelHeaderText.Text = "Season / episode quick panel";
-            EpisodePanelStatusText.Text = $"{_allEpisodeSwitchItems.Count:N0} playable episodes in this series.";
+            EpisodePanelHeaderText.Text = LocalizedStrings.Get("Player.Episodes.PanelHeader");
+            EpisodePanelStatusText.Text = LocalizedStrings.Format("Player.Episodes.PanelStatus", _allEpisodeSwitchItems.Count);
             ClearGuidePanel();
         }
 
@@ -567,11 +568,11 @@ namespace Kroira.App.Views
 
         private void ApplyGuideSummary(ChannelGuideSummary summary)
         {
-            GuideCurrentTitleText.Text = summary.CurrentProgram?.Title ?? "No current programme";
+            GuideCurrentTitleText.Text = summary.CurrentProgram?.Title ?? LocalizedStrings.Get("Player.Guide.NoCurrentProgramme");
             GuideCurrentTimeText.Text = summary.CurrentProgram != null
                 ? $"{summary.CurrentProgram.StartTimeUtc.ToLocalTime():HH:mm} - {summary.CurrentProgram.EndTimeUtc.ToLocalTime():HH:mm}"
                 : string.Empty;
-            GuideNextTitleText.Text = summary.NextProgram?.Title ?? "No upcoming programme";
+            GuideNextTitleText.Text = summary.NextProgram?.Title ?? LocalizedStrings.Get("Player.Guide.NoUpcomingProgramme");
             GuideNextTimeText.Text = summary.NextProgram != null
                 ? $"{summary.NextProgram.StartTimeUtc.ToLocalTime():HH:mm}"
                 : string.Empty;
@@ -579,7 +580,7 @@ namespace Kroira.App.Views
             GuideCatchupStatusText.Text = summary.CatchupStatusSummary;
             _resolvedGuideSummary = string.IsNullOrWhiteSpace(summary.CatchupStatusSummary)
                 ? summary.SourceStatusSummary
-                : $"{summary.SourceStatusSummary}  â€¢  {summary.CatchupStatusSummary}";
+                : $"{summary.SourceStatusSummary} - {summary.CatchupStatusSummary}";
             BottomLiveTitleText.Text = TitleText.Text;
             BottomLiveMetaText.Text = string.Empty;
             BottomLiveMetaText.Visibility = Visibility.Collapsed;
@@ -588,7 +589,8 @@ namespace Kroira.App.Views
             {
                 _guideProgramItems.Add(new PlayerGuideProgramItem
                 {
-                    Title = program.IsCurrent ? $"Now · {program.Title}" : program.Title,
+                    Title = program.IsCurrent ? LocalizedStrings.Format("Player.Guide.NowProgram", program.Title) : program.Title,
+                    ProgramTitle = program.Title,
                     TimeText = $"{program.StartTimeUtc.ToLocalTime():HH:mm} - {program.EndTimeUtc.ToLocalTime():HH:mm}",
                     StatusText = program.CatchupStatusText,
                     IsCurrent = program.IsCurrent,
@@ -630,15 +632,15 @@ namespace Kroira.App.Views
 
             if (summary?.CurrentProgram != null && summary.NextProgram != null)
             {
-                return $"Now: {summary.CurrentProgram.Title} • Next: {summary.NextProgram.Title}";
+                return LocalizedStrings.Format("Player.Meta.NowNext", summary.CurrentProgram.Title, summary.NextProgram.Title);
             }
 
             if (summary?.CurrentProgram != null)
             {
-                return $"Now: {summary.CurrentProgram.Title}";
+                return LocalizedStrings.Format("Player.Meta.Now", summary.CurrentProgram.Title);
             }
 
-            return summary?.SourceStatusSummary ?? "Guide not available.";
+            return summary?.SourceStatusSummary ?? LocalizedStrings.Get("Player.Guide.NotAvailable");
         }
 
         private string BuildCatchupContextText()
@@ -659,14 +661,14 @@ namespace Kroira.App.Views
                 parts.Add($"{_context.CatchupProgramStartTimeUtc.Value.ToLocalTime():HH:mm} - {_context.CatchupProgramEndTimeUtc.Value.ToLocalTime():HH:mm}");
             }
 
-            parts.Add("Catchup playback");
+            parts.Add(LocalizedStrings.Get("Player.Catchup.Playback"));
 
             if (!string.IsNullOrWhiteSpace(_context.CatchupStatusText))
             {
                 parts.Add(_context.CatchupStatusText);
             }
 
-            return string.Join("  â€¢  ", parts.Where(value => !string.IsNullOrWhiteSpace(value)));
+            return string.Join(" - ", parts.Where(value => !string.IsNullOrWhiteSpace(value)));
         }
     }
 }

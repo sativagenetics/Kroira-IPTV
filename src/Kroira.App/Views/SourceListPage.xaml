@@ -111,12 +111,12 @@
                     </Grid.ColumnDefinitions>
 
                     <StackPanel Spacing="8">
-                        <TextBlock Text="CONTENT DELIVERY"
+                        <TextBlock x:Uid="SourcesContentDeliveryLabel" Text="CONTENT DELIVERY"
                                    Style="{StaticResource KroiraLabelStyle}"
                                    Foreground="{StaticResource KroiraAccentBrush}" />
-                        <TextBlock Text="Sources"
+                        <TextBlock x:Uid="SourcesPageTitle" Text="Sources"
                                    Style="{StaticResource KroiraPageTitleStyle}" />
-                        <TextBlock Text="Manage sources, guide coverage, and recent updates."
+                        <TextBlock x:Uid="SourcesPageSubtitle" Text="Manage sources, guide coverage, and recent updates."
                                    Style="{StaticResource KroiraPageSubtitleStyle}"
                                    MaxWidth="760" />
                     </StackPanel>
@@ -126,7 +126,8 @@
                                 VerticalAlignment="Top"
                                 HorizontalAlignment="Right">
                         <Grid>
-                            <TextBox Text="{x:Bind ViewModel.SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                            <TextBox x:Uid="SourcesSearchBox"
+                                     Text="{x:Bind ViewModel.SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                      PlaceholderText="Search sources, guide mode, or status"
                                      Style="{StaticResource SourceSearchBoxStyle}" />
                             <FontIcon Glyph="&#xE721;"
@@ -139,7 +140,8 @@
                         <StackPanel Orientation="Horizontal"
                                     Spacing="10"
                                     HorizontalAlignment="Right">
-                            <Button Command="{x:Bind ViewModel.SyncAllSourcesCommand}"
+                            <Button x:Uid="SourcesSyncAllButton"
+                                    Command="{x:Bind ViewModel.SyncAllSourcesCommand}"
                                     IsEnabled="{x:Bind ViewModel.CanSyncAllSources, Mode=OneWay}"
                                     Style="{StaticResource KroiraPrimaryButtonStyle}"
                                     Padding="18,10"
@@ -153,14 +155,14 @@
                                     Style="{StaticResource SourceActionSecondaryButtonStyle}">
                                 <StackPanel Orientation="Horizontal" Spacing="8">
                                     <FontIcon Glyph="&#xE9D2;" FontSize="12" />
-                                    <TextBlock Text="Guide" />
+                                    <TextBlock x:Uid="GeneralGuideText" Text="Guide" />
                                 </StackPanel>
                             </Button>
                             <Button Command="{x:Bind ViewModel.LoadSourcesCommand}"
                                     Style="{StaticResource SourceActionSecondaryButtonStyle}">
                                 <StackPanel Orientation="Horizontal" Spacing="8">
                                     <FontIcon Glyph="&#xE72C;" FontSize="12" />
-                                    <TextBlock Text="Refresh" />
+                                    <TextBlock x:Uid="GeneralRefreshText" Text="Refresh" />
                                 </StackPanel>
                             </Button>
                             <Button Click="AddNewSource_Click"
@@ -168,7 +170,7 @@
                                     Padding="18,10">
                                 <StackPanel Orientation="Horizontal" Spacing="8">
                                     <FontIcon Glyph="&#xE710;" FontSize="12" />
-                                    <TextBlock Text="Add Source" />
+                                    <TextBlock x:Uid="GeneralAddSourceText" Text="Add Source" />
                                 </StackPanel>
                             </Button>
                         </StackPanel>
@@ -194,7 +196,7 @@
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
-                            <TextBlock Text="ACTIVE SOURCES" Style="{StaticResource SourceMetricLabelStyle}" />
+                            <TextBlock x:Uid="SourcesActiveSourcesLabel" Text="ACTIVE SOURCES" Style="{StaticResource SourceMetricLabelStyle}" />
                             <FontIcon Grid.Column="1" Glyph="&#xE8FD;" Foreground="{StaticResource KroiraAccentBrush}" FontSize="15" />
                             <TextBlock Grid.Row="1"
                                        Text="{x:Bind ViewModel.SourceCount, Mode=OneWay, Converter={StaticResource NumberFormatConverter}}"
@@ -217,7 +219,7 @@
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
-                            <TextBlock Text="SOURCE STATUS" Style="{StaticResource SourceMetricLabelStyle}" />
+                            <TextBlock x:Uid="SourcesSourceStatusLabel" Text="SOURCE STATUS" Style="{StaticResource SourceMetricLabelStyle}" />
                             <FontIcon Grid.Column="1" Glyph="&#xE73E;" Foreground="{StaticResource KroiraAccentBrush}" FontSize="15" />
                             <controls:StatusPill Grid.Row="1"
                                                  Label="{x:Bind ViewModel.HealthStatusHeadline, Mode=OneWay}"
@@ -240,16 +242,16 @@
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
-                            <TextBlock Text="CATALOG INDEX" Style="{StaticResource SourceMetricLabelStyle}" />
+                            <TextBlock x:Uid="SourcesCatalogIndexLabel" Text="CATALOG INDEX" Style="{StaticResource SourceMetricLabelStyle}" />
                             <FontIcon Grid.Column="1" Glyph="&#xE8D2;" Foreground="{StaticResource KroiraAccentBrush}" FontSize="15" />
                             <TextBlock Grid.Row="1"
                                        Text="{x:Bind ViewModel.TotalAssetCount, Mode=OneWay, Converter={StaticResource NumberFormatConverter}}"
                                        Style="{StaticResource SourceMetricValueStyle}" />
                             <TextBlock Grid.Row="2" Style="{StaticResource KroiraBodyStyle}">
                                 <Run Text="{x:Bind ViewModel.TotalLiveChannelCount, Mode=OneWay, Converter={StaticResource NumberFormatConverter}}" />
-                                <Run Text=" live / " />
+                                <Run x:Uid="SourcesSummaryLiveSeparatorRun" Text=" live / " />
                                 <Run Text="{x:Bind ViewModel.TotalLibraryAssetCount, Mode=OneWay, Converter={StaticResource NumberFormatConverter}}" />
-                                <Run Text=" library" />
+                                <Run x:Uid="SourcesSummaryLibraryRun" Text=" library" />
                             </TextBlock>
                         </Grid>
                     </Border>
@@ -266,7 +268,7 @@
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
-                            <TextBlock Text="GUIDE COVERAGE" Style="{StaticResource SourceMetricLabelStyle}" />
+                            <TextBlock x:Uid="SourcesGuideCoverageLabel" Text="GUIDE COVERAGE" Style="{StaticResource SourceMetricLabelStyle}" />
                             <FontIcon Grid.Column="1" Glyph="&#xE787;" Foreground="{StaticResource KroiraAccentBrush}" FontSize="15" />
                             <TextBlock Grid.Row="1"
                                        Text="{x:Bind ViewModel.GuideCoverageHeadline, Mode=OneWay}"
@@ -292,10 +294,10 @@
                     </Grid.ColumnDefinitions>
 
                     <StackPanel Spacing="4">
-                        <TextBlock Text="MANAGED SOURCES"
+                        <TextBlock x:Uid="SourcesManagedSourcesLabel" Text="MANAGED SOURCES"
                                    Style="{StaticResource KroiraLabelStyle}"
                                    Foreground="{StaticResource KroiraAccentBrush}" />
-                        <TextBlock Text="Source Overview"
+                        <TextBlock x:Uid="SourcesOverviewTitle" Text="Source Overview"
                                    Style="{StaticResource KroiraSectionTitleStyle}" />
                     </StackPanel>
 
@@ -401,7 +403,7 @@
                                                         Style="{StaticResource SourceActionSecondaryButtonStyle}">
                                                     <StackPanel Orientation="Horizontal" Spacing="8">
                                                         <FontIcon Glyph="&#xE8B6;" FontSize="12" />
-                                                        <TextBlock Text="Browse" />
+                                                        <TextBlock x:Uid="GeneralBrowseText" Text="Browse" />
                                                     </StackPanel>
                                                 </Button>
 
@@ -411,7 +413,7 @@
                                                         Style="{StaticResource SourceActionQuietButtonStyle}">
                                                     <StackPanel Orientation="Horizontal" Spacing="8">
                                                         <FontIcon Glyph="&#xE787;" FontSize="12" />
-                                                        <TextBlock Text="Guide" />
+                                                        <TextBlock x:Uid="GeneralGuideText2" Text="Guide" />
                                                     </StackPanel>
                                                 </Button>
                                             </StackPanel>
@@ -420,11 +422,11 @@
                                                     Style="{StaticResource SourceActionQuietButtonStyle}">
                                                 <StackPanel Orientation="Horizontal" Spacing="8">
                                                     <FontIcon Glyph="&#xE712;" FontSize="12" />
-                                                    <TextBlock Text="More" />
+                                                        <TextBlock x:Uid="GeneralMoreText" Text="More" />
                                                 </StackPanel>
                                                 <Button.Flyout>
                                                     <MenuFlyout>
-                                                        <MenuFlyoutItem Text="Guide Sync"
+                                                        <MenuFlyoutItem x:Uid="SourcesGuideSyncMenuItem" Text="Guide Sync"
                                                                         Tag="{Binding Id}"
                                                                         Click="SyncEpgSource_Click"
                                                                         Visibility="{Binding SyncEpgVisibility}"
@@ -433,7 +435,7 @@
                                                                 <FontIcon Glyph="&#xE787;" />
                                                             </MenuFlyoutItem.Icon>
                                                         </MenuFlyoutItem>
-                                                        <MenuFlyoutItem Text="VOD Only"
+                                                        <MenuFlyoutItem x:Uid="SourcesVodOnlyMenuItem" Text="VOD Only"
                                                                         Tag="{Binding Id}"
                                                                         Click="SyncXtreamVodSource_Click"
                                                                         Visibility="{Binding XtreamVodOnlyVisibility}">
@@ -442,7 +444,7 @@
                                                             </MenuFlyoutItem.Icon>
                                                         </MenuFlyoutItem>
                                                         <MenuFlyoutSeparator />
-                                                        <MenuFlyoutItem Text="Delete Source"
+                                                        <MenuFlyoutItem x:Uid="SourcesDeleteSourceMenuItem" Text="Delete Source"
                                                                         Tag="{Binding Id}"
                                                                         Click="DeleteSource_Click">
                                                             <MenuFlyoutItem.Icon>
@@ -465,7 +467,7 @@
 
                                         <Border Style="{StaticResource SourceMetricChipStyle}">
                                             <StackPanel Spacing="5">
-                                                <TextBlock Text="LIVE CHANNELS" Style="{StaticResource SourceMiniLabelStyle}" />
+                                                    <TextBlock x:Uid="SourcesLiveChannelsLabel" Text="LIVE CHANNELS" Style="{StaticResource SourceMiniLabelStyle}" />
                                                 <TextBlock Text="{Binding ChannelCount, Converter={StaticResource NumberFormatConverter}}" Style="{StaticResource SourceMiniValueStyle}" />
                                                 <TextBlock Text="{Binding ConnectionLabelText}" Style="{StaticResource KroiraBodyStyle}" MaxLines="1" TextTrimming="CharacterEllipsis" />
                                             </StackPanel>
@@ -473,23 +475,23 @@
 
                                         <Border Grid.Column="1" Style="{StaticResource SourceMetricChipStyle}">
                                             <StackPanel Spacing="5">
-                                                <TextBlock Text="CATALOG" Style="{StaticResource SourceMiniLabelStyle}" />
+                                                    <TextBlock x:Uid="SourcesCatalogLabel" Text="CATALOG" Style="{StaticResource SourceMiniLabelStyle}" />
                                                 <TextBlock Text="{Binding CatalogAssetCount, Converter={StaticResource NumberFormatConverter}}" Style="{StaticResource SourceMiniValueStyle}" />
                                                 <TextBlock Style="{StaticResource KroiraBodyStyle}">
                                                     <Run Text="{Binding MovieCount, Converter={StaticResource NumberFormatConverter}}" />
-                                                    <Run Text=" movies / " />
+                                                    <Run x:Uid="SourcesCatalogMoviesSeparatorRun" Text=" movies / " />
                                                     <Run Text="{Binding SeriesCount, Converter={StaticResource NumberFormatConverter}}" />
-                                                    <Run Text=" series" />
+                                                    <Run x:Uid="SourcesCatalogSeriesRun" Text=" series" />
                                                 </TextBlock>
                                             </StackPanel>
                                         </Border>
 
                                         <Border Grid.Column="2" Style="{StaticResource SourceMetricChipStyle}">
                                             <StackPanel Spacing="5">
-                                                <TextBlock Text="LAST SUCCESS" Style="{StaticResource SourceMiniLabelStyle}" />
+                                                    <TextBlock x:Uid="SourcesLastSuccessLabel" Text="LAST SUCCESS" Style="{StaticResource SourceMiniLabelStyle}" />
                                                 <TextBlock Text="{Binding LastSyncText}" Style="{StaticResource SourceMiniValueStyle}" />
                                                 <TextBlock Style="{StaticResource KroiraBodyStyle}" MaxLines="1" TextTrimming="CharacterEllipsis">
-                                                    <Run Text="Last attempt " />
+                                                    <Run x:Uid="SourcesLastAttemptRun" Text="Last attempt " />
                                                     <Run Text="{Binding LastAttemptText}" />
                                                 </TextBlock>
                                                 <TextBlock Text="{Binding LastSuccessfulSyncText}" Style="{StaticResource KroiraBodyStyle}" MaxLines="2" TextTrimming="CharacterEllipsis" TextWrapping="WrapWholeWords" />
@@ -505,7 +507,7 @@
 
                                         <Border Grid.Column="3" Style="{StaticResource SourceMetricChipStyle}">
                                             <StackPanel Spacing="6">
-                                                <TextBlock Text="GUIDE MAPPING" Style="{StaticResource SourceMiniLabelStyle}" />
+                                                    <TextBlock x:Uid="SourcesGuideMappingLabel" Text="GUIDE MAPPING" Style="{StaticResource SourceMiniLabelStyle}" />
                                                 <StackPanel Orientation="Horizontal" Spacing="8">
                                                     <TextBlock Text="{Binding GuideCoverageRatioText}" Style="{StaticResource SourceMiniValueStyle}" />
                                                     <controls:StatusPill Label="{Binding GuideBadgeText}" Kind="{Binding GuidePillKind}" />
@@ -529,7 +531,7 @@
 
                                         <Border Style="{StaticResource SourceDetailPanelStyle}">
                                             <StackPanel Spacing="6">
-                                                <TextBlock Text="STATUS SUMMARY" Style="{StaticResource SourceMiniLabelStyle}" />
+                                                <TextBlock x:Uid="SourcesStatusSummaryLabel" Text="STATUS SUMMARY" Style="{StaticResource SourceMiniLabelStyle}" />
                                                 <TextBlock Text="{Binding Status}" Style="{StaticResource KroiraBodyStyle}" MaxLines="3" TextWrapping="WrapWholeWords" TextTrimming="CharacterEllipsis" />
                                                 <TextBlock Text="{Binding ValidationResultText}" Visibility="{Binding ValidationVisibility}" Style="{StaticResource KroiraBodyStyle}" MaxLines="3" TextWrapping="WrapWholeWords" TextTrimming="CharacterEllipsis" />
                                                 <ItemsControl ItemsSource="{Binding HealthComponents}" Visibility="{Binding HealthComponentsVisibility}">
@@ -557,7 +559,7 @@
 
                                         <Border Grid.Column="1" Style="{StaticResource SourceDetailPanelStyle}">
                                             <StackPanel Spacing="6">
-                                                <TextBlock Text="GUIDE SNAPSHOT" Style="{StaticResource SourceMiniLabelStyle}" />
+                                                    <TextBlock x:Uid="SourcesGuideSnapshotLabel" Text="GUIDE SNAPSHOT" Style="{StaticResource SourceMiniLabelStyle}" />
                                                 <TextBlock Text="{Binding GuideStatusText}" Style="{StaticResource KroiraBodyStyle}" FontWeight="SemiBold" MaxLines="1" TextTrimming="CharacterEllipsis" />
                                                 <TextBlock Text="{Binding EpgCoverageText}" Style="{StaticResource KroiraBodyStyle}" MaxLines="2" TextWrapping="WrapWholeWords" TextTrimming="CharacterEllipsis" />
                                                 <TextBlock Text="{Binding ProxyStatusText}"
@@ -572,7 +574,8 @@
                                     </Grid>
 
                                     <Expander Grid.Row="3"
-                                              Header="Source and guide details"
+                                    x:Uid="SourcesDetailsExpander"
+                                    Header="Source and guide details"
                                               IsExpanded="{Binding IsHealthDetailsExpanded, Mode=TwoWay}">
                                         <Grid Margin="0,12,0,0" ColumnSpacing="16">
                                             <Grid.ColumnDefinitions>
@@ -581,7 +584,7 @@
                                             </Grid.ColumnDefinitions>
 
                                             <StackPanel Spacing="7">
-                                                <TextBlock Text="Sync and validation" Style="{StaticResource SourceMiniLabelStyle}" />
+                                            <TextBlock x:Uid="SourcesSyncValidationLabel" Text="Sync and validation" Style="{StaticResource SourceMiniLabelStyle}" />
                                                 <TextBlock Text="{Binding ImportResultText}" Style="{StaticResource KroiraBodyStyle}" MaxLines="2" TextWrapping="WrapWholeWords" TextTrimming="CharacterEllipsis" />
                                                 <TextBlock Text="{Binding ValidationResultText}" Visibility="{Binding ValidationVisibility}" Style="{StaticResource KroiraBodyStyle}" MaxLines="3" TextWrapping="WrapWholeWords" TextTrimming="CharacterEllipsis" />
                                                 <ItemsControl ItemsSource="{Binding HealthComponents}" Visibility="{Binding HealthComponentsVisibility}">
@@ -595,7 +598,7 @@
                                                     </ItemsControl.ItemTemplate>
                                                 </ItemsControl>
                                                 <TextBlock Style="{StaticResource KroiraBodyStyle}">
-                                                    <Run Text="Last attempt " />
+                                                    <Run x:Uid="SourcesLastAttemptDetailsRun" Text="Last attempt " />
                                                     <Run Text="{Binding LastAttemptText}" />
                                                 </TextBlock>
                                                 <TextBlock Text="{Binding LastSuccessfulSyncText}" Style="{StaticResource KroiraBodyStyle}" MaxLines="2" TextWrapping="WrapWholeWords" TextTrimming="CharacterEllipsis" />
@@ -613,7 +616,7 @@
                                                         </DataTemplate>
                                                     </ItemsControl.ItemTemplate>
                                                 </ItemsControl>
-                                                <TextBlock Text="Diagnostics metrics"
+                                                <TextBlock x:Uid="SourcesDiagnosticsMetricsTitle" Text="Diagnostics metrics"
                                                            Visibility="{Binding DiagnosticsMetricsVisibility}"
                                                            Style="{StaticResource SourceMiniLabelStyle}" />
                                                 <ItemsControl ItemsSource="{Binding DiagnosticsMetrics}"
@@ -648,7 +651,7 @@
                                                            MaxLines="3"
                                                            TextWrapping="WrapWholeWords"
                                                            TextTrimming="CharacterEllipsis" />
-                                                <TextBlock Text="Recommended actions"
+                                                <TextBlock x:Uid="SourcesRecommendedActionsTitle" Text="Recommended actions"
                                                            Visibility="{Binding RecommendedActionsVisibility}"
                                                            Style="{StaticResource SourceMiniLabelStyle}" />
                                                 <ItemsControl ItemsSource="{Binding RecommendedActions}"
@@ -693,7 +696,7 @@
                                             </StackPanel>
 
                                             <StackPanel Grid.Column="1" Spacing="7">
-                                                <TextBlock Text="Guide details" Style="{StaticResource SourceMiniLabelStyle}" />
+                                                        <TextBlock x:Uid="SourcesGuideDetailsLabel" Text="Guide details" Style="{StaticResource SourceMiniLabelStyle}" />
                                                 <TextBlock Text="{Binding GuideModeText}" Style="{StaticResource KroiraBodyStyle}" MaxLines="1" TextTrimming="CharacterEllipsis" />
                                                 <TextBlock Text="{Binding GuideStatusSummaryText}" Visibility="{Binding GuideStatusSummaryVisibility}" Style="{StaticResource KroiraBodyStyle}" MaxLines="2" TextWrapping="WrapWholeWords" TextTrimming="CharacterEllipsis" />
                                                 <TextBlock Text="{Binding GuideUrlText}" Visibility="{Binding GuideUrlVisibility}" Style="{StaticResource KroiraBodyStyle}" MaxLines="2" TextWrapping="WrapWholeWords" TextTrimming="CharacterEllipsis" />
@@ -701,7 +704,7 @@
                                                 <TextBlock Text="{Binding CatchupStatusText}" Visibility="{Binding CatchupStatusVisibility}" Style="{StaticResource KroiraBodyStyle}" MaxLines="2" TextWrapping="WrapWholeWords" TextTrimming="CharacterEllipsis" />
                                                 <TextBlock Text="{Binding CatchupLatestAttemptText}" Visibility="{Binding CatchupLatestAttemptVisibility}" Style="{StaticResource KroiraBodyStyle}" Foreground="{StaticResource KroiraTextSecondaryBrush}" MaxLines="3" TextWrapping="WrapWholeWords" TextTrimming="CharacterEllipsis" />
                                                 <Border Height="1" Background="{StaticResource KroiraBorderBrush}" Opacity="0.3" Margin="0,4,0,4" />
-                                                <TextBlock Text="Acquisition profile"
+                                                        <TextBlock x:Uid="SourcesAcquisitionProfileTitle" Text="Acquisition profile"
                                                            Visibility="{Binding AcquisitionProfileVisibility}"
                                                            Style="{StaticResource SourceMiniLabelStyle}" />
                                                 <TextBlock Text="{Binding AcquisitionProfileText}"
@@ -775,7 +778,7 @@
                                                     </ItemsControl.ItemTemplate>
                                                 </ItemsControl>
                                                 <Border Height="1" Background="{StaticResource KroiraBorderBrush}" Opacity="0.3" Margin="0,4,0,4" />
-                                                <TextBlock Text="Automatic refresh" Style="{StaticResource SourceMiniLabelStyle}" />
+                                                        <TextBlock x:Uid="SourcesAutomaticRefreshLabel" Text="Automatic refresh" Style="{StaticResource SourceMiniLabelStyle}" />
                                                 <StackPanel Orientation="Horizontal" Spacing="8">
                                                     <controls:StatusPill Label="{Binding AutoRefreshStatusText}" Kind="Neutral" />
                                                     <TextBlock Text="{Binding NextAutoRefreshText}"
@@ -795,7 +798,7 @@
                                                            MaxLines="1"
                                                            TextTrimming="CharacterEllipsis" />
                                                 <Border Height="1" Background="{StaticResource KroiraBorderBrush}" Opacity="0.3" Margin="0,4,0,4" />
-                                                <TextBlock Text="Operational routing" Style="{StaticResource SourceMiniLabelStyle}" />
+                                                        <TextBlock x:Uid="SourcesOperationalRoutingLabel" Text="Operational routing" Style="{StaticResource SourceMiniLabelStyle}" />
                                                 <TextBlock Text="{Binding OperationalStatusText}"
                                                            Visibility="{Binding OperationalStatusVisibility}"
                                                            Style="{StaticResource KroiraBodyStyle}"
@@ -821,7 +824,8 @@
                                     </Expander>
 
                                     <Expander Grid.Row="4"
-                                              Header="Repair assistant"
+                                    x:Uid="SourcesRepairAssistantExpander"
+                                    Header="Repair assistant"
                                               IsExpanded="{Binding IsRepairAssistantExpanded, Mode=TwoWay}">
                                         <Grid Margin="0,12,0,0" RowSpacing="14">
                                             <Grid.RowDefinitions>
@@ -877,7 +881,7 @@
                                                         VerticalAlignment="Top">
                                                     <StackPanel Orientation="Horizontal" Spacing="8">
                                                         <FontIcon Glyph="&#xE8C8;" FontSize="12" />
-                                                        <TextBlock Text="Copy safe report" />
+                                                    <TextBlock x:Uid="GeneralCopySafeReportText" Text="Copy safe report" />
                                                     </StackPanel>
                                                 </Button>
                                             </Grid>
@@ -891,7 +895,7 @@
 
                                                 <StackPanel Spacing="8"
                                                             Visibility="{Binding RepairCapabilitiesVisibility}">
-                                                    <TextBlock Text="Current capability view"
+                                                <TextBlock x:Uid="SourcesCurrentCapabilityTitle" Text="Current capability view"
                                                                Style="{StaticResource SourceMiniLabelStyle}" />
                                                     <ItemsControl ItemsSource="{Binding RepairCapabilities}">
                                                         <ItemsControl.ItemsPanel>
@@ -922,7 +926,7 @@
                                                 <StackPanel Grid.Column="1"
                                                             Spacing="8"
                                                             Visibility="{Binding RepairIssuesVisibility}">
-                                                    <TextBlock Text="Top issues"
+                                                <TextBlock x:Uid="SourcesTopIssuesTitle" Text="Top issues"
                                                                Style="{StaticResource SourceMiniLabelStyle}" />
                                                     <ItemsControl ItemsSource="{Binding RepairIssues}">
                                                         <ItemsControl.ItemTemplate>
@@ -946,7 +950,7 @@
                                             <StackPanel Grid.Row="2"
                                                         Spacing="8"
                                                         Visibility="{Binding RepairActionsVisibility}">
-                                                <TextBlock Text="Suggested next actions"
+                                                <TextBlock x:Uid="SourcesSuggestedActionsTitle" Text="Suggested next actions"
                                                            Style="{StaticResource SourceMiniLabelStyle}" />
                                                 <ItemsControl ItemsSource="{Binding RepairActions}">
                                                     <ItemsControl.ItemsPanel>
@@ -1023,7 +1027,8 @@
                                     </Expander>
 
                                     <Expander Grid.Row="5"
-                                              Header="Activity center"
+                                    x:Uid="SourcesActivityCenterExpander"
+                                    Header="Activity center"
                                               IsExpanded="{Binding IsActivityCenterExpanded, Mode=TwoWay}">
                                         <Grid Margin="0,12,0,0" RowSpacing="14">
                                             <Grid.RowDefinitions>
@@ -1067,7 +1072,7 @@
                                                         VerticalAlignment="Top">
                                                     <StackPanel Orientation="Horizontal" Spacing="8">
                                                         <FontIcon Glyph="&#xE8C8;" FontSize="12" />
-                                                        <TextBlock Text="Copy safe report" />
+                                                    <TextBlock x:Uid="GeneralCopySafeReportText2" Text="Copy safe report" />
                                                     </StackPanel>
                                                 </Button>
                                             </Grid>
@@ -1183,6 +1188,7 @@
                             Style="{StaticResource KroiraBodyStyle}"
                             TextWrapping="WrapWholeWords" />
                         <Button
+                            x:Uid="GeneralAddSourceButton"
                             Content="Add Source"
                             Click="AddNewSource_Click"
                             Style="{StaticResource KroiraPrimaryButtonStyle}"
@@ -1200,12 +1206,12 @@
                         </Grid.ColumnDefinitions>
 
                         <StackPanel Spacing="4">
-                            <TextBlock Text="RECENT ACTIVITY"
+                        <TextBlock x:Uid="SourcesRecentActivityLabel" Text="RECENT ACTIVITY"
                                        Style="{StaticResource KroiraLabelStyle}"
                                        Foreground="{StaticResource KroiraAccentBrush}" />
-                            <TextBlock Text="Recent Sync Activity"
+                        <TextBlock x:Uid="SourcesRecentSyncActivityTitle" Text="Recent Sync Activity"
                                        Style="{StaticResource KroiraSectionTitleStyle}" />
-                            <TextBlock Text="Latest source imports, guide updates, and recovery activity."
+                        <TextBlock x:Uid="SourcesRecentSyncActivitySubtitle" Text="Latest source imports, guide updates, and recovery activity."
                                        Style="{StaticResource KroiraBodyStyle}" />
                         </StackPanel>
 

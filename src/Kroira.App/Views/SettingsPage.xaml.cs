@@ -16,11 +16,13 @@ namespace Kroira.App.Views
 
         public SettingsViewModel ViewModel { get; }
 
-        public string BackupSectionTitle => StoreReleaseFeatures.ShowRestore ? "Backup & Restore" : "Backup & Export";
+        public string BackupSectionTitle => StoreReleaseFeatures.ShowRestore
+            ? LocalizedStrings.Get("Settings.Backup.Title.Restore")
+            : LocalizedStrings.Get("Settings.Backup.Title.Export");
 
         public string BackupSectionDescription => StoreReleaseFeatures.ShowRestore
-            ? "Versioned local export for sources, profiles, favorites, watch state, and local preferences."
-            : "Versioned local export for sources, profiles, favorites, watch state, and local preferences on this device.";
+            ? LocalizedStrings.Get("Settings.Backup.Description.Restore")
+            : LocalizedStrings.Get("Settings.Backup.Description.Export");
 
         public Visibility RestoreBackupVisibility => StoreReleaseFeatures.ShowRestore ? Visibility.Visible : Visibility.Collapsed;
 
@@ -65,7 +67,7 @@ namespace Kroira.App.Views
             catch (Exception ex)
             {
                 LogExport($"export click failed type={ex.GetType().Name} message='{ex.Message}'");
-                ViewModel.BackupStatusText = $"Backup export failed: {ex.Message}";
+                ViewModel.BackupStatusText = LocalizedStrings.Format("Settings.Backup.Export.Failed", ex.Message);
             }
             finally
             {
@@ -78,10 +80,10 @@ namespace Kroira.App.Views
         {
             var dialog = new ContentDialog
             {
-                Title = "Restore local backup?",
-                Content = "Restore replaces the current local sources, profiles, favorites, watch state, and local preferences before re-importing restored sources.",
-                PrimaryButtonText = "Restore",
-                CloseButtonText = "Cancel",
+                Title = LocalizedStrings.Get("Settings.Backup.Restore.ConfirmTitle"),
+                Content = LocalizedStrings.Get("Settings.Backup.Restore.ConfirmMessage"),
+                PrimaryButtonText = LocalizedStrings.Get("General.Restore"),
+                CloseButtonText = LocalizedStrings.Get("General.Cancel"),
                 DefaultButton = ContentDialogButton.Close,
                 XamlRoot = XamlRoot
             };
@@ -124,7 +126,7 @@ namespace Kroira.App.Views
                 SuggestedFileName = $"kroira-backup-{DateTime.Now:yyyyMMdd-HHmm}"
             };
 
-            picker.FileTypeChoices.Add("Kroira Backup", new List<string> { ".json" });
+            picker.FileTypeChoices.Add(LocalizedStrings.Get("Settings.Backup.FileType"), new List<string> { ".json" });
             InitializePicker(picker);
             return picker;
         }

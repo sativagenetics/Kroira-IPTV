@@ -37,14 +37,14 @@ namespace Kroira.App.Views
     public sealed class SeasonPrefixConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, string language)
-            => $"Season {value}";
+            => LocalizedStrings.Format("Series.SeasonNumber", value);
         public object ConvertBack(object value, Type targetType, object parameter, string language) => DependencyProperty.UnsetValue;
     }
 
     public sealed class EpisodePrefixConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, string language)
-            => $"Episode {value}";
+            => LocalizedStrings.Format("Series.EpisodeNumber", value);
         public object ConvertBack(object value, Type targetType, object parameter, string language) => DependencyProperty.UnsetValue;
     }
 
@@ -516,15 +516,15 @@ namespace Kroira.App.Views
                     PlaybackContentType.Episode,
                     item.Id,
                     item.Title,
-                    $"Season {item.SeasonNumber} Episode {item.EpisodeNumber}",
+                    LocalizedStrings.Format("Series.SeasonEpisodeLabel", item.SeasonNumber, item.EpisodeNumber),
                     item.StreamUrl);
             }
             catch (Exception ex)
             {
                 var dialog = new ContentDialog
                 {
-                    Title = "Download failed",
-                    CloseButtonText = "Close",
+                    Title = LocalizedStrings.Get("Movies.DownloadFailedTitle"),
+                    CloseButtonText = LocalizedStrings.Get("General.Close"),
                     XamlRoot = this.XamlRoot,
                     Content = ex.Message
                 };

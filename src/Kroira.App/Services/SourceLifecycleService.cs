@@ -167,7 +167,7 @@ namespace Kroira.App.Services
 
                 var message = refreshResult.Success
                     ? refreshResult.Message
-                    : $"Source saved, but import failed: {refreshResult.Message}";
+                    : F("SourceLifecycle.Create.ImportFailed", refreshResult.Message);
 
                 if (!string.IsNullOrWhiteSpace(duplicateHint))
                 {
@@ -186,7 +186,7 @@ namespace Kroira.App.Services
             }
             catch (Exception ex)
             {
-                var message = $"Source saved, but import failed: {ex.Message}";
+                var message = F("SourceLifecycle.Create.ImportFailed", ex.Message);
                 if (!string.IsNullOrWhiteSpace(duplicateHint))
                 {
                     message = $"{message} {duplicateHint}";
@@ -217,7 +217,7 @@ namespace Kroira.App.Services
             var credential = await credentialStore.GetCredentialAsync(db, request.SourceId);
             if (credential == null)
             {
-                throw new InvalidOperationException("Source credentials were not found.");
+                throw new InvalidOperationException(L("SourceLifecycle.Error.CredentialsNotFound"));
             }
 
             var normalized = NormalizeGuideRequest(request);
@@ -275,14 +275,14 @@ namespace Kroira.App.Services
                     Success = true,
                     SyncTriggered = false,
                     PreservedExistingGuideData = false,
-                    Message = "Guide settings were unchanged."
+                    Message = L("SourceLifecycle.Guide.Unchanged")
                 };
             }
 
             var preservedGuideData = false;
             var message = routingChanged && !guideBindingChanged
-                ? "Routing saved. Existing guide data is unchanged until the next sync."
-                : "Guide settings saved. Existing guide data is still available until the next sync.";
+                ? L("SourceLifecycle.Guide.RoutingSaved")
+                : L("SourceLifecycle.Guide.SettingsSaved");
 
             if (guideBindingChanged)
             {
@@ -315,7 +315,7 @@ namespace Kroira.App.Services
                 return new SourceDeleteResult
                 {
                     Success = false,
-                    Message = "Source not found."
+                    Message = L("SourceLifecycle.Delete.NotFound")
                 };
             }
 
@@ -508,28 +508,28 @@ namespace Kroira.App.Services
 
             await TryPostDeleteRepairAsync(
                 warnings,
-                "browse references",
+                L("SourceLifecycle.Repair.BrowseReferences"),
                 () => browsePreferencesService.RepairSourceReferencesAsync(db, sourceProfileId),
                 sourceProfileId);
             await TryPostDeleteRepairAsync(
                 warnings,
-                "logical state reconciliation",
+                L("SourceLifecycle.Repair.LogicalStateReconciliation"),
                 () => logicalCatalogStateService.ReconcilePersistentStateAsync(db),
                 sourceProfileId);
             await TryPostDeleteRepairAsync(
                 warnings,
-                "operational mirror rebuild",
+                L("SourceLifecycle.Repair.OperationalMirrorRebuild"),
                 () => contentOperationalService.RefreshOperationalStateAsync(db),
                 sourceProfileId);
             await TryPostDeleteRepairAsync(
                 warnings,
-                "auto-refresh runtime repair",
+                L("SourceLifecycle.Repair.AutoRefreshRuntimeRepair"),
                 () => autoRefreshService.RepairRuntimeStateAsync(db),
                 sourceProfileId);
 
             var message = warnings.Count == 0
-                ? $"Deleted source '{profile.Name}'."
-                : $"Deleted source '{profile.Name}'. Some cleanup was deferred.";
+                ? F("SourceLifecycle.Delete.Deleted", profile.Name)
+                : F("SourceLifecycle.Delete.DeletedCleanupDeferred", profile.Name);
 
             return new SourceDeleteResult
             {
@@ -601,12 +601,12 @@ namespace Kroira.App.Services
         {
             if (string.IsNullOrWhiteSpace(request.Name))
             {
-                throw new InvalidOperationException("Source name could not be resolved.");
+                throw new InvalidOperationException(L("SourceLifecycle.Validation.NameUnresolved"));
             }
 
             if (request.Type == SourceType.M3U && string.IsNullOrWhiteSpace(request.Url))
             {
-                throw new InvalidOperationException("M3U URL or file path is required.");
+                throw new InvalidOperationException(L("SourceLifecycle.Validation.M3uUrlRequired"));
             }
 
             if (request.Type == SourceType.Xtream &&
@@ -614,13 +614,13 @@ namespace Kroira.App.Services
                  string.IsNullOrWhiteSpace(request.Username) ||
                  string.IsNullOrWhiteSpace(request.Password)))
             {
-                throw new InvalidOperationException("Server URL, username, and password are required for Xtream.");
+                throw new InvalidOperationException(L("SourceLifecycle.Validation.XtreamRequired"));
             }
 
             if (request.Type == SourceType.Stalker &&
                 (string.IsNullOrWhiteSpace(request.Url) || string.IsNullOrWhiteSpace(request.StalkerMacAddress)))
             {
-                throw new InvalidOperationException("Portal URL and MAC address are required for Stalker.");
+                throw new InvalidOperationException(L("SourceLifecycle.Validation.StalkerRequired"));
             }
 
             ValidateGuideRequest(new SourceGuideSettingsUpdateRequest
@@ -640,17 +640,17 @@ namespace Kroira.App.Services
         {
             if (request.ActiveMode == EpgActiveMode.Manual && string.IsNullOrWhiteSpace(request.ManualEpgUrl))
             {
-                throw new InvalidOperationException("Manual XMLTV mode requires a manual XMLTV URL.");
+                throw new InvalidOperationException(L("SourceLifecycle.Validation.ManualXmltvRequired"));
             }
 
             if (request.ProxyScope != SourceProxyScope.Disabled && string.IsNullOrWhiteSpace(request.ProxyUrl))
             {
-                throw new InvalidOperationException("Proxy routing requires a proxy URL.");
+                throw new InvalidOperationException(L("SourceLifecycle.Validation.ProxyUrlRequired"));
             }
 
             if (request.CompanionScope != SourceCompanionScope.Disabled && string.IsNullOrWhiteSpace(request.CompanionUrl))
             {
-                throw new InvalidOperationException("Companion relay mode requires a companion endpoint URL.");
+                throw new InvalidOperationException(L("SourceLifecycle.Validation.CompanionEndpointRequired"));
             }
         }
 
@@ -807,7 +807,7 @@ namespace Kroira.App.Services
                     StringComparison.OrdinalIgnoreCase));
 
             return hasSimilarSource
-                ? "A similar source is already configured. Overlapping items will be treated as mirrored candidates."
+                ? L("SourceLifecycle.Create.DuplicateHint")
                 : string.Empty;
         }
 
@@ -915,8 +915,8 @@ namespace Kroira.App.Services
                 ? epgLog.MatchBreakdown
                 : string.Empty;
             epgLog.FailureReason = hasGuideData
-                ? "Guide settings changed. Sync pending; last successful guide data is still available."
-                : "Guide settings updated. Sync pending.";
+                ? L("SourceLifecycle.Guide.PendingPreserved")
+                : L("SourceLifecycle.Guide.Pending");
             epgLog.GuideWarningSummary = epgLog.FailureReason;
             epgLog.GuideSourceStatusJson = BuildPendingGuideSourceStatusJson(credential, nowUtc);
 
@@ -967,7 +967,7 @@ namespace Kroira.App.Services
                 if (!string.IsNullOrWhiteSpace(credential.ManualEpgUrl))
                 {
                     snapshots.Add(BuildPendingGuideSource(
-                        "Manual XMLTV override",
+                        L("SourceLifecycle.GuideSource.ManualXmltvOverride"),
                         credential.ManualEpgUrl.Trim(),
                         EpgGuideSourceKind.Manual,
                         isOptional: false,
@@ -979,7 +979,7 @@ namespace Kroira.App.Services
                      !string.IsNullOrWhiteSpace(credential.DetectedEpgUrl))
             {
                 snapshots.Add(BuildPendingGuideSource(
-                    "Provider XMLTV",
+                    L("SourceLifecycle.GuideSource.ProviderXmltv"),
                     credential.DetectedEpgUrl.Trim(),
                     EpgGuideSourceKind.Provider,
                     isOptional: false,
@@ -991,7 +991,7 @@ namespace Kroira.App.Services
             {
                 var kind = EpgPublicGuideCatalog.ClassifyFallbackUrl(url);
                 snapshots.Add(BuildPendingGuideSource(
-                    EpgPublicGuideCatalog.BuildGuideSourceLabel(url, kind, "Fallback XMLTV"),
+                    EpgPublicGuideCatalog.BuildGuideSourceLabel(url, kind, L("SourceLifecycle.GuideSource.FallbackXmltv")),
                     url,
                     kind,
                     isOptional: true,
@@ -1019,7 +1019,7 @@ namespace Kroira.App.Services
                 IsOptional = isOptional,
                 Priority = priority,
                 CheckedAtUtc = checkedAtUtc,
-                Message = "Configured. Sync pending."
+                Message = L("SourceLifecycle.GuideSource.ConfiguredSyncPending")
             };
         }
 
@@ -1041,7 +1041,7 @@ namespace Kroira.App.Services
             catch (Exception ex)
             {
                 RuntimeEventLogger.Log("SOURCE-LIFECYCLE", ex, $"source_id={sourceProfileId} {label} deferred");
-                warnings.Add($"{UppercaseFirst(label)} was deferred.");
+                warnings.Add(F("SourceLifecycle.Repair.Deferred", UppercaseFirst(label)));
             }
         }
 
@@ -1050,6 +1050,16 @@ namespace Kroira.App.Services
             return string.IsNullOrWhiteSpace(value)
                 ? string.Empty
                 : char.ToUpperInvariant(value[0]) + value[1..];
+        }
+
+        private static string L(string key)
+        {
+            return LocalizedStrings.Get(key);
+        }
+
+        private static string F(string key, params object?[] args)
+        {
+            return LocalizedStrings.Format(key, args);
         }
     }
 }

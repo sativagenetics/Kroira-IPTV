@@ -366,7 +366,7 @@ namespace Kroira.App.Views
             {
                 if (!string.IsNullOrWhiteSpace(channel.CatchupStatusText))
                 {
-                    await ShowMessageAsync("Catchup unavailable", channel.CatchupStatusText);
+                    await ShowMessageAsync(LocalizedStrings.Get("Channels.CatchupUnavailableTitle"), channel.CatchupStatusText);
                 }
 
                 return;
@@ -488,9 +488,9 @@ namespace Kroira.App.Views
             };
             var durationOptions = new[]
             {
-                new RecordingDurationOption("30 minutes", TimeSpan.FromMinutes(30)),
-                new RecordingDurationOption("60 minutes", TimeSpan.FromMinutes(60)),
-                new RecordingDurationOption("120 minutes", TimeSpan.FromMinutes(120))
+                new RecordingDurationOption(LocalizedStrings.Format("Player.Menu.SleepMinutes", 30), TimeSpan.FromMinutes(30)),
+                new RecordingDurationOption(LocalizedStrings.Format("Player.Menu.SleepMinutes", 60), TimeSpan.FromMinutes(60)),
+                new RecordingDurationOption(LocalizedStrings.Format("Player.Menu.SleepMinutes", 120), TimeSpan.FromMinutes(120))
             };
             var durationComboBox = new ComboBox
             {
@@ -501,9 +501,9 @@ namespace Kroira.App.Views
 
             var dialog = new ContentDialog
             {
-                Title = $"Schedule recording",
-                PrimaryButtonText = "Save",
-                CloseButtonText = "Cancel",
+                Title = LocalizedStrings.Get("Channels.Recording.ScheduleTitle"),
+                PrimaryButtonText = LocalizedStrings.Get("General.Save"),
+                CloseButtonText = LocalizedStrings.Get("General.Cancel"),
                 DefaultButton = ContentDialogButton.Primary,
                 XamlRoot = XamlRoot,
                 Content = new StackPanel
@@ -518,7 +518,7 @@ namespace Kroira.App.Views
                         },
                         new TextBlock
                         {
-                            Text = "Choose a local start time and duration.",
+                            Text = LocalizedStrings.Get("Channels.Recording.ScheduleMessage"),
                             TextWrapping = TextWrapping.Wrap
                         },
                         startDatePicker,
@@ -544,18 +544,18 @@ namespace Kroira.App.Views
             }
             catch (Exception ex)
             {
-                await ShowMessageAsync("Recording failed", ex.Message);
+                await ShowMessageAsync(LocalizedStrings.Get("Channels.Recording.FailedTitle"), ex.Message);
                 return;
             }
 
             var successDialog = new ContentDialog
             {
-                Title = "Recording scheduled",
-                PrimaryButtonText = "Open library",
-                CloseButtonText = "Close",
+                Title = LocalizedStrings.Get("Channels.Recording.ScheduledTitle"),
+                PrimaryButtonText = LocalizedStrings.Get("General.OpenLibrary"),
+                CloseButtonText = LocalizedStrings.Get("General.Close"),
                 DefaultButton = ContentDialogButton.Close,
                 XamlRoot = XamlRoot,
-                Content = $"{channel.Name} is scheduled for {selectedLocal:g}."
+                Content = LocalizedStrings.Format("Channels.Recording.ScheduledMessage", channel.Name, selectedLocal)
             };
 
             if (await ShowContentDialogAsync(successDialog) == ContentDialogResult.Primary)

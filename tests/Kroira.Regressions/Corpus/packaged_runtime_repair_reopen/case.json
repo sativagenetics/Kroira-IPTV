@@ -26,7 +26,7 @@
       "matchName": "TRT 1 HD",
       "positionMs": 120000,
       "durationMs": 0,
-      "lastWatchedUtc": "2026-04-22T08:30:00Z"
+      "lastWatchedUtc": "now-1h"
     },
     {
       "kind": "insert_playback_progress",
@@ -38,7 +38,7 @@
       "preferredSourceProfileIdOverride": 999999,
       "positionMs": 45000,
       "durationMs": 0,
-      "lastWatchedUtc": "2026-04-22T07:45:00Z"
+      "lastWatchedUtc": "now-2h"
     },
     {
       "kind": "delete_source_sync_state",

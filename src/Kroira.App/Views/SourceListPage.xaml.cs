@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Kroira.App.Models;
+using Kroira.App.Services;
 using Kroira.App.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
@@ -94,11 +95,11 @@ namespace Kroira.App.Views
             var report = ViewModel.GetSafeActivityReport(id);
             if (string.IsNullOrWhiteSpace(report))
             {
-                await ShowMessageAsync("Activity report unavailable", "This source does not have a share-safe activity summary yet.");
+                await ShowMessageAsync(LocalizedStrings.Get("Sources.ActivityReportUnavailableTitle"), LocalizedStrings.Get("Sources.ActivityReportUnavailableMessage"));
                 return;
             }
 
-            await CopyTextAsync(report, "Activity report unavailable");
+            await CopyTextAsync(report, LocalizedStrings.Get("Sources.ActivityReportUnavailableTitle"));
         }
 
         private async void DiagnosticsAction_Click(object sender, RoutedEventArgs e)
@@ -150,11 +151,11 @@ namespace Kroira.App.Views
             var report = ViewModel.GetSafeRepairReport(id);
             if (string.IsNullOrWhiteSpace(report))
             {
-                await ShowMessageAsync("Repair report unavailable", "This source does not have a share-safe repair summary yet.");
+                await ShowMessageAsync(LocalizedStrings.Get("Sources.RepairReportUnavailableTitle"), LocalizedStrings.Get("Sources.RepairReportUnavailableMessage"));
                 return;
             }
 
-            await CopyTextAsync(report, "Repair report unavailable");
+            await CopyTextAsync(report, LocalizedStrings.Get("Sources.RepairReportUnavailableTitle"));
         }
 
         private async Task CopyDiagnosticsReportAsync(int id)
@@ -162,11 +163,11 @@ namespace Kroira.App.Views
             var report = ViewModel.GetSafeDiagnosticsReport(id);
             if (string.IsNullOrWhiteSpace(report))
             {
-                await ShowMessageAsync("Diagnostics report unavailable", "This source does not have a share-safe diagnostics summary yet.");
+                await ShowMessageAsync(LocalizedStrings.Get("Sources.DiagnosticsReportUnavailableTitle"), LocalizedStrings.Get("Sources.DiagnosticsReportUnavailableMessage"));
                 return;
             }
 
-            await CopyTextAsync(report, "Diagnostics report unavailable");
+            await CopyTextAsync(report, LocalizedStrings.Get("Sources.DiagnosticsReportUnavailableTitle"));
         }
 
         private void SyncSourceById(int id)
@@ -216,7 +217,7 @@ namespace Kroira.App.Views
             }
             catch (Exception ex)
             {
-                await ShowMessageAsync("Stream probe failed", ex.Message);
+                await ShowMessageAsync(LocalizedStrings.Get("Sources.StreamProbeFailedTitle"), ex.Message);
             }
         }
 
@@ -282,7 +283,7 @@ namespace Kroira.App.Views
             }
             catch (Exception ex)
             {
-                await ShowMessageAsync("Repair attempt failed", ex.Message);
+                await ShowMessageAsync(LocalizedStrings.Get("Sources.RepairAttemptFailedTitle"), ex.Message);
             }
         }
 
@@ -291,36 +292,36 @@ namespace Kroira.App.Views
             var draft = await ViewModel.GetGuideSettingsAsync(id);
             if (draft == null)
             {
-                await ShowMessageAsync("Guide settings", "Source guide settings could not be loaded.");
+                await ShowMessageAsync(LocalizedStrings.Get("Sources.GuideSettingsTitle"), LocalizedStrings.Get("Sources.GuideSettingsLoadFailed"));
                 return;
             }
 
             var modeOptions = new[]
             {
-                new GuideModeOption(EpgActiveMode.Detected, "Detected from provider", "Use provider XMLTV first, then optional fallback/enrichment URLs."),
-                new GuideModeOption(EpgActiveMode.Manual, "Manual override", "Use your own XMLTV URL first and keep detected provider data on file."),
-                new GuideModeOption(EpgActiveMode.None, "No guide", "Disable guide syncing for this source.")
+                new GuideModeOption(EpgActiveMode.Detected, LocalizedStrings.Get("Sources.GuideMode.Detected.Label"), LocalizedStrings.Get("Sources.GuideMode.Detected.Description")),
+                new GuideModeOption(EpgActiveMode.Manual, LocalizedStrings.Get("Sources.GuideMode.Manual.Label"), LocalizedStrings.Get("Sources.GuideMode.Manual.Description")),
+                new GuideModeOption(EpgActiveMode.None, LocalizedStrings.Get("Sources.GuideMode.None.Label"), LocalizedStrings.Get("Sources.GuideMode.None.Description"))
             };
 
             var proxyOptions = new[]
             {
-                new ProxyModeOption(SourceProxyScope.Disabled, "Direct routing", "Use direct provider routing for import, guide, probe, and playback requests."),
-                new ProxyModeOption(SourceProxyScope.PlaybackOnly, "Playback only", "Route playback through the proxy while refresh and guide traffic stay direct."),
-                new ProxyModeOption(SourceProxyScope.PlaybackAndProbing, "Playback + probes", "Route playback and bounded operational probes through the proxy."),
-                new ProxyModeOption(SourceProxyScope.AllRequests, "All requests", "Route import, guide, probe, and playback traffic through the proxy.")
+                new ProxyModeOption(SourceProxyScope.Disabled, LocalizedStrings.Get("Sources.ProxyMode.Direct.Label"), LocalizedStrings.Get("Sources.ProxyMode.Direct.Description")),
+                new ProxyModeOption(SourceProxyScope.PlaybackOnly, LocalizedStrings.Get("Sources.ProxyMode.PlaybackOnly.Label"), LocalizedStrings.Get("Sources.ProxyMode.PlaybackOnly.Description")),
+                new ProxyModeOption(SourceProxyScope.PlaybackAndProbing, LocalizedStrings.Get("Sources.ProxyMode.PlaybackProbes.Label"), LocalizedStrings.Get("Sources.ProxyMode.PlaybackProbes.Description")),
+                new ProxyModeOption(SourceProxyScope.AllRequests, LocalizedStrings.Get("Sources.ProxyMode.AllRequests.Label"), LocalizedStrings.Get("Sources.ProxyMode.AllRequests.Description"))
             };
 
             var companionOptions = new[]
             {
-                new CompanionScopeOption(SourceCompanionScope.Disabled, "Disabled", "Keep direct playback as the only path for this source."),
-                new CompanionScopeOption(SourceCompanionScope.PlaybackOnly, "Playback only", "Resolve the provider stream first, then hand playback to the local companion relay."),
-                new CompanionScopeOption(SourceCompanionScope.PlaybackAndProbing, "Playback + probes", "Resolve the provider stream first, then use the local companion relay for playback and bounded health probes.")
+                new CompanionScopeOption(SourceCompanionScope.Disabled, LocalizedStrings.Get("General.Disabled"), LocalizedStrings.Get("Sources.Companion.Disabled.Description")),
+                new CompanionScopeOption(SourceCompanionScope.PlaybackOnly, LocalizedStrings.Get("Sources.ProxyMode.PlaybackOnly.Label"), LocalizedStrings.Get("Sources.Companion.PlaybackOnly.Description")),
+                new CompanionScopeOption(SourceCompanionScope.PlaybackAndProbing, LocalizedStrings.Get("Sources.ProxyMode.PlaybackProbes.Label"), LocalizedStrings.Get("Sources.Companion.PlaybackProbes.Description"))
             };
 
             var companionModeOptions = new[]
             {
-                new CompanionModeOption(SourceCompanionRelayMode.Relay, "Pass-through relay", "Ask the companion to relay the already resolved upstream stream without buffering hints."),
-                new CompanionModeOption(SourceCompanionRelayMode.Buffered, "Buffered relay", "Ask the companion to stabilize the already resolved upstream stream through a buffered relay.")
+                new CompanionModeOption(SourceCompanionRelayMode.Relay, LocalizedStrings.Get("Sources.CompanionMode.Relay.Label"), LocalizedStrings.Get("Sources.CompanionMode.Relay.Description")),
+                new CompanionModeOption(SourceCompanionRelayMode.Buffered, LocalizedStrings.Get("Sources.CompanionMode.Buffered.Label"), LocalizedStrings.Get("Sources.CompanionMode.Buffered.Description"))
             };
 
             var modeComboBox = new ComboBox
@@ -332,7 +333,7 @@ namespace Kroira.App.Views
 
             var proxyComboBox = new ComboBox
             {
-                Header = "Routing policy",
+                Header = LocalizedStrings.Get("Sources.RoutingPolicyHeader"),
                 ItemsSource = proxyOptions,
                 DisplayMemberPath = nameof(ProxyModeOption.Label),
                 SelectedItem = proxyOptions.FirstOrDefault(option => option.Scope == draft.ProxyScope) ?? proxyOptions[0]
@@ -340,15 +341,15 @@ namespace Kroira.App.Views
 
             var manualUrlBox = new TextBox
             {
-                Header = "Manual XMLTV URL",
+                Header = LocalizedStrings.Get("Sources.ManualXmltvUrlHeader"),
                 PlaceholderText = "https://... or C:\\guide.xml",
                 Text = draft.ManualEpgUrl
             };
 
             var fallbackUrlBox = new TextBox
             {
-                Header = "Fallback/enrichment XMLTV URLs",
-                PlaceholderText = "One XMLTV URL per line. Public feeds are optional.",
+                Header = LocalizedStrings.Get("Sources.FallbackXmltvUrlsHeader"),
+                PlaceholderText = LocalizedStrings.Get("Sources.FallbackXmltvUrlsPlaceholder"),
                 AcceptsReturn = true,
                 TextWrapping = TextWrapping.Wrap,
                 MinHeight = 88,
@@ -357,14 +358,14 @@ namespace Kroira.App.Views
 
             var proxyUrlBox = new TextBox
             {
-                Header = "Proxy URL",
+                Header = LocalizedStrings.Get("Sources.ProxyUrlHeader"),
                 PlaceholderText = "http://proxy-host:port or socks5://proxy-host:port",
                 Text = draft.ProxyUrl
             };
 
             var companionComboBox = new ComboBox
             {
-                Header = "Local companion relay",
+                Header = LocalizedStrings.Get("Sources.CompanionRelayHeader"),
                 ItemsSource = companionOptions,
                 DisplayMemberPath = nameof(CompanionScopeOption.Label),
                 SelectedItem = companionOptions.FirstOrDefault(option => option.Scope == draft.CompanionScope) ?? companionOptions[0]
@@ -372,7 +373,7 @@ namespace Kroira.App.Views
 
             var companionModeComboBox = new ComboBox
             {
-                Header = "Companion behavior",
+                Header = LocalizedStrings.Get("Sources.CompanionBehaviorHeader"),
                 ItemsSource = companionModeOptions,
                 DisplayMemberPath = nameof(CompanionModeOption.Label),
                 SelectedItem = companionModeOptions.FirstOrDefault(option => option.Mode == draft.CompanionMode) ?? companionModeOptions[1]
@@ -380,7 +381,7 @@ namespace Kroira.App.Views
 
             var companionUrlBox = new TextBox
             {
-                Header = "Companion endpoint",
+                Header = LocalizedStrings.Get("Sources.CompanionEndpointHeader"),
                 PlaceholderText = "http://127.0.0.1:9318/kroira-companion",
                 Text = draft.CompanionUrl
             };
@@ -457,10 +458,10 @@ namespace Kroira.App.Views
 
             var dialog = new ContentDialog
             {
-                Title = $"Guide settings · {draft.SourceName}",
-                PrimaryButtonText = "Save and sync",
-                SecondaryButtonText = "Save",
-                CloseButtonText = "Cancel",
+                Title = LocalizedStrings.Format("Sources.GuideSettingsForTitle", draft.SourceName),
+                PrimaryButtonText = LocalizedStrings.Get("Sources.SaveAndSync"),
+                SecondaryButtonText = LocalizedStrings.Get("General.Save"),
+                CloseButtonText = LocalizedStrings.Get("General.Cancel"),
                 DefaultButton = ContentDialogButton.Primary,
                 XamlRoot = XamlRoot,
                 Content = new StackPanel
@@ -471,17 +472,17 @@ namespace Kroira.App.Views
                         new TextBlock
                         {
                             Text = draft.SourceType == SourceType.M3U
-                                ? "Choose how this playlist should resolve XMLTV guide data and how the source should be routed operationally."
+                                ? LocalizedStrings.Get("Sources.GuideSettings.M3uMessage")
                                 : draft.SourceType == SourceType.Stalker
-                                    ? "Choose whether this Stalker portal should use a manual XMLTV feed and how its requests should be routed operationally."
-                                : "Choose whether guide data should come from the provider or a manual XMLTV override, then decide how routing should behave.",
+                                    ? LocalizedStrings.Get("Sources.GuideSettings.StalkerMessage")
+                                : LocalizedStrings.Get("Sources.GuideSettings.DefaultMessage"),
                             TextWrapping = TextWrapping.Wrap
                         },
                         new TextBlock
                         {
                             Text = string.IsNullOrWhiteSpace(draft.DetectedEpgUrl)
-                                ? "Detected XMLTV URL: none recorded yet"
-                                : $"Detected XMLTV URL: {draft.DetectedEpgUrl}",
+                                ? LocalizedStrings.Get("Sources.DetectedXmltvNone")
+                                : LocalizedStrings.Format("Sources.DetectedXmltvUrl", draft.DetectedEpgUrl),
                             TextWrapping = TextWrapping.Wrap
                         },
                         modeComboBox,
@@ -512,7 +513,7 @@ namespace Kroira.App.Views
                 }
             };
 
-            dialog.Title = $"Guide settings - {draft.SourceName}";
+            dialog.Title = LocalizedStrings.Format("Sources.GuideSettingsForTitle", draft.SourceName);
             var result = await ShowContentDialogAsync(dialog);
             if (result is not ContentDialogResult.Primary and not ContentDialogResult.Secondary)
             {
@@ -534,7 +535,7 @@ namespace Kroira.App.Views
             }
             catch (Exception ex)
             {
-                await ShowMessageAsync("Guide settings failed", ex.Message);
+                await ShowMessageAsync(LocalizedStrings.Get("Sources.GuideSettingsFailedTitle"), ex.Message);
             }
         }
 
@@ -542,7 +543,7 @@ namespace Kroira.App.Views
         {
             if (string.IsNullOrWhiteSpace(text))
             {
-                await ShowMessageAsync(unavailableTitle, "Nothing safe to copy yet.");
+                await ShowMessageAsync(unavailableTitle, LocalizedStrings.Get("Sources.NothingSafeToCopy"));
                 return;
             }
 
@@ -555,7 +556,7 @@ namespace Kroira.App.Views
             }
             catch (Exception ex)
             {
-                await ShowMessageAsync("Copy failed", ex.Message);
+                await ShowMessageAsync(LocalizedStrings.Get("Sources.CopyFailedTitle"), ex.Message);
             }
         }
 
@@ -564,7 +565,7 @@ namespace Kroira.App.Views
             await ShowContentDialogAsync(new ContentDialog
             {
                 Title = title,
-                CloseButtonText = "Close",
+                CloseButtonText = LocalizedStrings.Get("General.Close"),
                 XamlRoot = XamlRoot,
                 Content = message
             });

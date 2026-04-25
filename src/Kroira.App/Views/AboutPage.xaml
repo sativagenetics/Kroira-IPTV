@@ -48,6 +48,7 @@
                             </StackPanel>
                         </StackPanel>
                         <Button x:Name="BackToSettingsButton"
+                                x:Uid="AboutBackToSettingsButton"
                                 Grid.Column="1"
                                 Content="Settings"
                                 Click="BackToSettings_Click"
@@ -66,7 +67,7 @@
                     <StackPanel Grid.Column="0" Spacing="18">
                         <Border Style="{StaticResource KroiraSettingsGroupStyle}">
                             <StackPanel Spacing="14">
-                                <TextBlock Text="About" Style="{StaticResource KroiraSectionTitleStyle}" />
+                                <TextBlock x:Uid="AboutSectionTitle" Text="About" Style="{StaticResource KroiraSectionTitleStyle}" />
                                 <TextBlock Text="{x:Bind ViewModel.ProductDescription, Mode=OneWay}"
                                            Style="{StaticResource KroiraBodyStyle}"
                                            TextWrapping="Wrap" />
@@ -75,7 +76,7 @@
 
                         <Border Style="{StaticResource KroiraSettingsGroupStyle}">
                             <StackPanel Spacing="14">
-                                <TextBlock Text="Help" Style="{StaticResource KroiraSectionTitleStyle}" />
+                                <TextBlock x:Uid="AboutHelpTitle" Text="Help" Style="{StaticResource KroiraSectionTitleStyle}" />
                                 <Border Height="1" Background="{StaticResource KroiraBorderBrush}" Opacity="0.45" />
                                 <TextBlock Text="{x:Bind ViewModel.HelpStepOne, Mode=OneWay}" Style="{StaticResource KroiraBodyStyle}" TextWrapping="Wrap" />
                                 <TextBlock Text="{x:Bind ViewModel.HelpStepTwo, Mode=OneWay}" Style="{StaticResource KroiraBodyStyle}" TextWrapping="Wrap" />
@@ -86,7 +87,7 @@
 
                         <Border Style="{StaticResource KroiraSettingsGroupStyle}">
                             <StackPanel Spacing="14">
-                                <TextBlock Text="Privacy" Style="{StaticResource KroiraSectionTitleStyle}" />
+                                <TextBlock x:Uid="AboutPrivacyTitle" Text="Privacy" Style="{StaticResource KroiraSectionTitleStyle}" />
                                 <Border Height="1" Background="{StaticResource KroiraBorderBrush}" Opacity="0.45" />
                                 <TextBlock Text="{x:Bind ViewModel.PrivacySummaryText, Mode=OneWay}" Style="{StaticResource KroiraBodyStyle}" TextWrapping="Wrap" />
                                 <TextBlock Text="{x:Bind ViewModel.CredentialHandlingText, Mode=OneWay}" Style="{StaticResource KroiraBodyStyle}" TextWrapping="Wrap" />
@@ -105,14 +106,14 @@
                     <StackPanel Grid.Column="1" Spacing="18">
                         <Border Style="{StaticResource KroiraSettingsGroupStyle}">
                             <StackPanel Spacing="14">
-                                <TextBlock Text="Build" Style="{StaticResource KroiraSectionTitleStyle}" />
+                                <TextBlock x:Uid="AboutBuildTitle" Text="Build" Style="{StaticResource KroiraSectionTitleStyle}" />
                                 <Border Height="1" Background="{StaticResource KroiraBorderBrush}" Opacity="0.45" />
                                 <Grid ColumnSpacing="12">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock Text="App" Style="{StaticResource KroiraBodyStyle}" />
+                                    <TextBlock x:Uid="AboutAppLabel" Text="App" Style="{StaticResource KroiraBodyStyle}" />
                                     <TextBlock Grid.Column="1" Text="{x:Bind ViewModel.AppName, Mode=OneWay}" Style="{StaticResource KroiraTitleStyle}" />
                                 </Grid>
                                 <Grid ColumnSpacing="12">
@@ -120,7 +121,7 @@
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock Text="Release" Style="{StaticResource KroiraBodyStyle}" />
+                                    <TextBlock x:Uid="AboutReleaseLabel" Text="Release" Style="{StaticResource KroiraBodyStyle}" />
                                     <TextBlock Grid.Column="1" Text="{x:Bind ViewModel.ReleaseVersionText, Mode=OneWay}" Style="{StaticResource KroiraTitleStyle}" />
                                 </Grid>
                                 <TextBlock Text="{x:Bind ViewModel.AppVersionBuildText, Mode=OneTime}"
@@ -133,7 +134,7 @@
 
                         <Border Style="{StaticResource KroiraSettingsGroupStyle}">
                             <StackPanel Spacing="14">
-                                <TextBlock Text="Support" Style="{StaticResource KroiraSectionTitleStyle}" />
+                                <TextBlock x:Uid="AboutSupportTitle" Text="Support" Style="{StaticResource KroiraSectionTitleStyle}" />
                                 <Border Height="1" Background="{StaticResource KroiraBorderBrush}" Opacity="0.45" />
                                 <TextBlock Text="{x:Bind ViewModel.SupportSummaryText, Mode=OneWay}" Style="{StaticResource KroiraBodyStyle}" TextWrapping="Wrap" />
                                 <StackPanel Orientation="Horizontal" Spacing="12">
@@ -157,11 +158,11 @@
 
                         <Border Style="{StaticResource KroiraSettingsGroupStyle}">
                             <StackPanel Spacing="14">
-                                <TextBlock Text="Legal" Style="{StaticResource KroiraSectionTitleStyle}" />
+                                <TextBlock x:Uid="AboutLegalTitle" Text="Legal" Style="{StaticResource KroiraSectionTitleStyle}" />
                                 <Border Height="1" Background="{StaticResource KroiraBorderBrush}" Opacity="0.45" />
                                 <TextBlock Text="{x:Bind ViewModel.LegalDisclaimerText, Mode=OneWay}" Style="{StaticResource KroiraBodyStyle}" TextWrapping="Wrap" />
                                 <TextBlock Text="{x:Bind ViewModel.RunFullTrustJustificationText, Mode=OneWay}" Style="{StaticResource KroiraBodyStyle}" TextWrapping="Wrap" />
-                                <TextBlock Text="Copyright 2026 KROIRA."
+                                <TextBlock x:Uid="SettingsCopyright" Text="Copyright 2026 KROIRA."
                                            Foreground="{StaticResource KroiraTextTertiaryBrush}"
                                            FontSize="12" />
                             </StackPanel>

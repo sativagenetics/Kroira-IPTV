@@ -52,16 +52,16 @@ namespace Kroira.App.Services
 
         private static readonly IReadOnlyList<AppAppearanceOption> _themeOptions = new[]
         {
-            new AppAppearanceOption("cinema", "Cinema Gold", "Warm projection glow with the current premium contrast balance."),
-            new AppAppearanceOption("broadcast", "Broadcast Blue", "Cooler studio atmosphere with sharper steel-blue surfaces."),
-            new AppAppearanceOption("archive", "Archive Olive", "Muted editorial tones with softer olive-brown page lighting.")
+            new AppAppearanceOption("cinema", LocalizedStrings.Get("Appearance.Theme.Cinema.Name"), LocalizedStrings.Get("Appearance.Theme.Cinema.Description")),
+            new AppAppearanceOption("broadcast", LocalizedStrings.Get("Appearance.Theme.Broadcast.Name"), LocalizedStrings.Get("Appearance.Theme.Broadcast.Description")),
+            new AppAppearanceOption("archive", LocalizedStrings.Get("Appearance.Theme.Archive.Name"), LocalizedStrings.Get("Appearance.Theme.Archive.Description"))
         };
 
         private static readonly IReadOnlyList<AppAppearanceOption> _accentOptions = new[]
         {
-            new AppAppearanceOption("gold", "House Gold", "Keep the current cinema gold accent pack."),
-            new AppAppearanceOption("signal", "Signal Blue", "Swap action and focus chrome to a bright broadcast cyan."),
-            new AppAppearanceOption("ember", "Ember Copper", "Use a warmer copper-red accent pack for buttons and highlights.")
+            new AppAppearanceOption("gold", LocalizedStrings.Get("Appearance.Accent.Gold.Name"), LocalizedStrings.Get("Appearance.Accent.Gold.Description")),
+            new AppAppearanceOption("signal", LocalizedStrings.Get("Appearance.Accent.Signal.Name"), LocalizedStrings.Get("Appearance.Accent.Signal.Description")),
+            new AppAppearanceOption("ember", LocalizedStrings.Get("Appearance.Accent.Ember.Name"), LocalizedStrings.Get("Appearance.Accent.Ember.Description"))
         };
 
         public AppAppearanceService(IServiceProvider serviceProvider)

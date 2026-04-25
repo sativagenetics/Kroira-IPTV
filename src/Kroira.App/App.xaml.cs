@@ -48,6 +48,9 @@ namespace Kroira.App
 
             try
             {
+                SafeAppendLog("APP 01A: applying saved language override");
+                AppLanguageService.ApplySavedLanguageOverride();
+
                 SafeAppendLog("APP 02: before InitializeComponent");
                 InitializeComponent();
                 SafeAppendLog("APP 03: after InitializeComponent");
@@ -368,15 +371,16 @@ namespace Kroira.App
             {
                 SafeAppendLog("APP E01: showing startup error window");
 
+                var title = LocalizedStrings.Get("App.StartupError.Title");
                 var text =
-                    "Kroira startup error\n\n" +
+                    title + "\n\n" +
                     ex + "\n\n" +
-                    $"Startup log: {StartupLogPath}\n" +
-                    $"Startup error: {StartupErrorPath}";
+                    LocalizedStrings.Format("App.StartupError.LogPath", StartupLogPath) + "\n" +
+                    LocalizedStrings.Format("App.StartupError.ErrorPath", StartupErrorPath);
 
                 var errorWindow = new Window
                 {
-                    Title = "Kroira startup error",
+                    Title = title,
                     Content = new Grid
                     {
                         Padding = new Thickness(16),

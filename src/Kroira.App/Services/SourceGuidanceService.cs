@@ -77,9 +77,9 @@ namespace Kroira.App.Services
                     normalized.Type,
                     DetectTypeHint(normalized),
                     canSave: false,
-                    headline: "Source setup needs attention",
+                    headline: L("SourceGuidance.Setup.NeedsAttention"),
                     summary: validationIssues[0].Detail,
-                    connection: "KROIRA could not verify this source yet.",
+                    connection: L("SourceGuidance.Setup.CouldNotVerify"),
                     typeHint: BuildTypeHintText(normalized.Type, DetectTypeHint(normalized), consistent: false),
                     capabilities: BuildRoutingCapabilities(normalized),
                     issues: validationIssues);
@@ -96,17 +96,17 @@ namespace Kroira.App.Services
                         normalized.Type,
                         null,
                         canSave: false,
-                        headline: "Source format is not supported",
-                        summary: "KROIRA could not validate the selected source format.",
-                        connection: "No validation path is available.",
+                        headline: L("SourceGuidance.Setup.UnsupportedFormatHeadline"),
+                        summary: L("SourceGuidance.Setup.UnsupportedFormatSummary"),
+                        connection: L("SourceGuidance.Setup.NoValidationPath"),
                         typeHint: string.Empty,
                         capabilities: Array.Empty<SourceGuidanceCapability>(),
                         issues: new[]
                         {
                             new SourceGuidanceIssue
                             {
-                                Title = "Unsupported source type",
-                                Detail = "Choose M3U, Xtream, or Stalker.",
+                                Title = L("SourceGuidance.Issue.UnsupportedSourceType.Title"),
+                                Detail = L("SourceGuidance.Issue.UnsupportedSourceType.Detail"),
                                 Tone = SourceActivityTone.Failed
                             }
                         })
@@ -118,7 +118,7 @@ namespace Kroira.App.Services
                 {
                     new()
                     {
-                        Title = "Connection test failed",
+                        Title = L("SourceGuidance.Issue.ConnectionTestFailed.Title"),
                         Detail = SanitizeText(ex.Message),
                         Tone = SourceActivityTone.Failed
                     }
@@ -128,9 +128,9 @@ namespace Kroira.App.Services
                     normalized.Type,
                     DetectTypeHint(normalized),
                     canSave: false,
-                    headline: "Source setup needs attention",
+                    headline: L("SourceGuidance.Setup.NeedsAttention"),
                     summary: SanitizeText(ex.Message),
-                    connection: "The connection test did not complete successfully.",
+                    connection: L("SourceGuidance.Setup.ConnectionTestIncomplete"),
                     typeHint: BuildTypeHintText(normalized.Type, DetectTypeHint(normalized), consistent: false),
                     capabilities: BuildRoutingCapabilities(normalized),
                     issues: issues);
@@ -250,12 +250,12 @@ namespace Kroira.App.Services
                                 .FirstOrDefaultAsync(item => item.SourceProfileId == sourceId, cancellationToken);
                             if (credential == null)
                             {
-                                throw new InvalidOperationException("Source credentials were not found.");
+                                throw new InvalidOperationException(L("SourceLifecycle.Error.CredentialsNotFound"));
                             }
 
                             if (credential.CompanionScope == SourceCompanionScope.Disabled)
                             {
-                                detailBuilder.Add("Local companion relay was already disabled.");
+                                detailBuilder.Add(L("SourceGuidance.Repair.Detail.CompanionAlreadyDisabled"));
                             }
                             else
                             {
@@ -290,19 +290,19 @@ namespace Kroira.App.Services
                             await logicalCatalogStateService.ReconcilePersistentStateAsync(db);
                             await contentOperationalService.RefreshOperationalStateAsync(db);
                             await sourceHealthService.RefreshSourceHealthAsync(db, sourceId);
-                            detailBuilder.Add("Saved state, operational candidates, and source health were rebuilt.");
+                            detailBuilder.Add(L("SourceGuidance.Repair.Detail.StateRebuilt"));
                             break;
                         }
 
                     case SourceRepairActionType.RunStreamProbe:
                         {
                             await sourceHealthService.RefreshSourceHealthAsync(db, sourceId, forceProbe: true);
-                            detailBuilder.Add("A bounded sampled stream probe was run for this source.");
+                            detailBuilder.Add(L("SourceGuidance.Repair.Detail.StreamProbeRan"));
                             break;
                         }
 
                     default:
-                        throw new InvalidOperationException("This repair action is not applied directly from the assistant.");
+                        throw new InvalidOperationException(L("SourceGuidance.Repair.Error.ActionNotDirect"));
                 }
             }
             catch (Exception ex)
@@ -313,7 +313,7 @@ namespace Kroira.App.Services
                     SourceId = sourceId,
                     ActionType = actionType,
                     Success = false,
-                    HeadlineText = "Repair attempt needs review",
+                    HeadlineText = L("SourceGuidance.Repair.Result.NeedsReview"),
                     DetailText = failureDetail,
                     ChangeText = string.Empty,
                     SafeReportText = BuildRepairExecutionReport(actionType, false, failureDetail, string.Empty)
@@ -338,8 +338,8 @@ namespace Kroira.App.Services
                 : true;
 
             var headlineText = success
-                ? (afterSnapshot?.IsStable == true ? "Repair applied cleanly" : "Repair applied, but the source still needs attention")
-                : "Repair attempt needs review";
+                ? (afterSnapshot?.IsStable == true ? L("SourceGuidance.Repair.Result.AppliedCleanly") : L("SourceGuidance.Repair.Result.AppliedNeedsAttention"))
+                : L("SourceGuidance.Repair.Result.NeedsReview");
 
             return new SourceRepairExecutionResult
             {
@@ -361,7 +361,7 @@ namespace Kroira.App.Services
             var content = await ReadTextPreviewAsync(draft.Url, credential, SourceNetworkPurpose.Import, cancellationToken);
             if (!LooksLikeM3u(content))
             {
-                throw new InvalidOperationException("The endpoint responded, but it did not look like an M3U playlist.");
+                throw new InvalidOperationException(L("SourceGuidance.M3u.Error.NotPlaylist"));
             }
 
             var header = M3uMetadataParser.ParseHeaderMetadata(content, draft.Url);
@@ -435,49 +435,49 @@ namespace Kroira.App.Services
 
             if (sampledEntries == 0)
             {
-                throw new InvalidOperationException("The playlist was reachable, but it did not expose any playable entries.");
+                throw new InvalidOperationException(L("SourceGuidance.M3u.Error.NoEntries"));
             }
 
             var capabilities = new List<SourceGuidanceCapability>
             {
                 new()
                 {
-                    Label = "Connection",
-                    Value = "Playlist reachable",
-                    Detail = $"Sampled {sampledEntries:N0} entries without provider auth errors.",
+                    Label = L("SourceGuidance.Capability.Connection.Label"),
+                    Value = L("SourceGuidance.Capability.PlaylistReachable"),
+                    Detail = F("SourceGuidance.M3u.Detail.SampledEntries", sampledEntries),
                     Tone = SourceActivityTone.Healthy
                 },
                 new()
                 {
-                    Label = "Catalog",
+                    Label = L("SourceGuidance.Capability.Catalog.Label"),
                     Value = BuildCatalogCapabilityLabel(liveCount, movieCount, episodeCount > 0),
-                    Detail = $"{liveCount:N0} live, {movieCount:N0} VOD, {episodeCount:N0} episodic hints in the sampled slice.",
+                    Detail = F("SourceGuidance.M3u.Detail.CatalogCounts", liveCount, movieCount, episodeCount),
                     Tone = SourceActivityTone.Healthy
                 },
                 new()
                 {
-                    Label = "Guide",
+                    Label = L("SourceGuidance.Capability.Guide.Label"),
                     Value = header.XmltvUrls.Count > 0
-                        ? "Guide found"
+                        ? L("SourceGuidance.Capability.GuideFound")
                         : draft.EpgMode == EpgActiveMode.Manual
-                            ? "Manual guide set"
-                            : "No guide advertised",
+                            ? L("SourceGuidance.Capability.ManualGuideSet")
+                            : L("SourceGuidance.Capability.NoGuideAdvertised"),
                     Detail = header.XmltvUrls.Count > 0
                         ? SanitizeText(header.XmltvUrls[0])
                         : draft.EpgMode == EpgActiveMode.Manual
                             ? SanitizeText(draft.ManualEpgUrl)
-                            : "No XMLTV URL was advertised in the playlist header preview.",
+                            : L("SourceGuidance.M3u.Detail.NoXmltvAdvertised"),
                     Tone = header.XmltvUrls.Count > 0 || draft.EpgMode == EpgActiveMode.Manual
                         ? SourceActivityTone.Healthy
                         : SourceActivityTone.Warning
                 },
                 new()
                 {
-                    Label = "Catchup",
-                    Value = catchupCount > 0 ? $"{catchupCount:N0} hints" : "No clear hints",
+                    Label = L("SourceGuidance.Capability.Catchup.Label"),
+                    Value = catchupCount > 0 ? F("SourceGuidance.Capability.Hints", catchupCount) : L("SourceGuidance.Capability.NoClearHints"),
                     Detail = catchupCount > 0
-                        ? "Catchup attributes or archive-style stream patterns were found in the sampled slice."
-                        : "Catchup support can still appear later, but the sampled slice did not advertise it clearly.",
+                        ? L("SourceGuidance.M3u.Detail.CatchupDetected")
+                        : L("SourceGuidance.M3u.Detail.CatchupNotAdvertised"),
                     Tone = catchupCount > 0 ? SourceActivityTone.Healthy : SourceActivityTone.Neutral
                 }
             };
@@ -488,8 +488,8 @@ namespace Kroira.App.Services
             {
                 issues.Add(new SourceGuidanceIssue
                 {
-                    Title = "No guide URL was detected yet",
-                    Detail = "The playlist can still be saved, but guide sync will stay off unless you add a manual XMLTV feed.",
+                    Title = L("SourceGuidance.Issue.NoGuideUrlDetected.Title"),
+                    Detail = L("SourceGuidance.Issue.NoGuideUrlDetected.Detail"),
                     Tone = SourceActivityTone.Warning
                 });
             }
@@ -498,9 +498,9 @@ namespace Kroira.App.Services
                 draft.Type,
                 SourceType.M3U,
                 canSave: true,
-                headline: "Playlist looks importable",
-                summary: $"{BuildCatalogCapabilityLabel(liveCount, movieCount, episodeCount > 0)} was detected in the sampled playlist preview.",
-                connection: "KROIRA reached the playlist and parsed a representative slice successfully.",
+                headline: L("SourceGuidance.M3u.Headline.Importable"),
+                summary: F("SourceGuidance.M3u.Summary.SampledCatalog", BuildCatalogCapabilityLabel(liveCount, movieCount, episodeCount > 0)),
+                connection: L("SourceGuidance.M3u.Connection.Success"),
                 typeHint: BuildTypeHintText(draft.Type, SourceType.M3U, consistent: true),
                 capabilities: capabilities,
                 issues: issues);
@@ -559,39 +559,39 @@ namespace Kroira.App.Services
 
             if (liveCategoryCount == 0 && vodCategoryCount == 0 && seriesCategoryCount == 0)
             {
-                throw new InvalidOperationException("The Xtream endpoint responded, but it did not return any catalog categories.");
+                throw new InvalidOperationException(L("SourceGuidance.Xtream.Error.NoCategories"));
             }
 
             var capabilities = new List<SourceGuidanceCapability>
             {
                 new()
                 {
-                    Label = "Connection",
-                    Value = "Credentials accepted",
-                    Detail = $"{liveStreamCount:N0} live stream rows were reachable during the preview.",
+                    Label = L("SourceGuidance.Capability.Connection.Label"),
+                    Value = L("SourceGuidance.Xtream.Value.CredentialsAccepted"),
+                    Detail = F("SourceGuidance.Xtream.Detail.LiveRowsReachable", liveStreamCount),
                     Tone = SourceActivityTone.Healthy
                 },
                 new()
                 {
-                    Label = "Catalog",
+                    Label = L("SourceGuidance.Capability.Catalog.Label"),
                     Value = BuildXtreamCatalogLabel(liveCategoryCount, vodCategoryCount, seriesCategoryCount),
-                    Detail = $"{liveCategoryCount:N0} live categories, {vodCategoryCount:N0} movie categories, {seriesCategoryCount:N0} series categories.",
+                    Detail = F("SourceGuidance.Xtream.Detail.CategoryCounts", liveCategoryCount, vodCategoryCount, seriesCategoryCount),
                     Tone = SourceActivityTone.Healthy
                 },
                 new()
                 {
-                    Label = "Guide",
-                    Value = "Guide derived",
+                    Label = L("SourceGuidance.Capability.Guide.Label"),
+                    Value = L("SourceGuidance.Xtream.Value.GuideDerived"),
                     Detail = SanitizeText($"{baseUrl}/xmltv.php{authQuery}"),
                     Tone = SourceActivityTone.Healthy
                 },
                 new()
                 {
-                    Label = "Catchup",
-                    Value = catchupCount > 0 ? $"{catchupCount:N0} archive hints" : "No clear hints",
+                    Label = L("SourceGuidance.Capability.Catchup.Label"),
+                    Value = catchupCount > 0 ? F("SourceGuidance.Xtream.Value.ArchiveHints", catchupCount) : L("SourceGuidance.Capability.NoClearHints"),
                     Detail = catchupCount > 0
-                        ? "Archive-capable channels were detected in the sampled live stream list."
-                        : "The sampled live stream list did not advertise archive playback clearly.",
+                        ? L("SourceGuidance.Xtream.Detail.ArchiveDetected")
+                        : L("SourceGuidance.Xtream.Detail.ArchiveNotAdvertised"),
                     Tone = catchupCount > 0 ? SourceActivityTone.Healthy : SourceActivityTone.Neutral
                 }
             };
@@ -602,8 +602,8 @@ namespace Kroira.App.Services
             {
                 issues.Add(new SourceGuidanceIssue
                 {
-                    Title = "Movie catalog was not confirmed",
-                    Detail = "This Xtream provider may still be live-only, or the VOD endpoint may be restricted.",
+                    Title = L("SourceGuidance.Issue.MovieCatalogNotConfirmed.Title"),
+                    Detail = L("SourceGuidance.Issue.MovieCatalogNotConfirmed.Detail"),
                     Tone = SourceActivityTone.Warning
                 });
             }
@@ -612,8 +612,8 @@ namespace Kroira.App.Services
             {
                 issues.Add(new SourceGuidanceIssue
                 {
-                    Title = "Series catalog was not confirmed",
-                    Detail = "Series support will stay optional unless the provider exposes series categories.",
+                    Title = L("SourceGuidance.Issue.SeriesCatalogNotConfirmed.Title"),
+                    Detail = L("SourceGuidance.Issue.SeriesCatalogNotConfirmed.Detail"),
                     Tone = SourceActivityTone.Neutral
                 });
             }
@@ -622,9 +622,9 @@ namespace Kroira.App.Services
                 draft.Type,
                 SourceType.Xtream,
                 canSave: true,
-                headline: "Xtream provider looks reachable",
-                summary: $"{BuildXtreamCatalogLabel(liveCategoryCount, vodCategoryCount, seriesCategoryCount)} was confirmed through player_api preview calls.",
-                connection: "KROIRA reached the Xtream player_api endpoints with the supplied credentials.",
+                headline: L("SourceGuidance.Xtream.Headline.Reachable"),
+                summary: F("SourceGuidance.Xtream.Summary.PlayerApiConfirmed", BuildXtreamCatalogLabel(liveCategoryCount, vodCategoryCount, seriesCategoryCount)),
+                connection: L("SourceGuidance.Xtream.Connection.Success"),
                 typeHint: BuildTypeHintText(draft.Type, SourceType.Xtream, consistent: true),
                 capabilities: capabilities,
                 issues: issues);
@@ -639,40 +639,40 @@ namespace Kroira.App.Services
             {
                 new()
                 {
-                    Label = "Connection",
-                    Value = "Portal reachable",
+                    Label = L("SourceGuidance.Capability.Connection.Label"),
+                    Value = L("SourceGuidance.Stalker.Value.PortalReachable"),
                     Detail = string.IsNullOrWhiteSpace(catalog.DiscoveredApiUrl)
-                        ? "Handshake and profile discovery completed."
+                        ? L("SourceGuidance.Stalker.Detail.HandshakeCompleted")
                         : SanitizeText(catalog.DiscoveredApiUrl),
                     Tone = SourceActivityTone.Healthy
                 },
                 new()
                 {
-                    Label = "Catalog",
+                    Label = L("SourceGuidance.Capability.Catalog.Label"),
                     Value = BuildStalkerCatalogLabel(catalog),
-                    Detail = $"{catalog.LiveChannels.Count:N0} live, {catalog.Movies.Count:N0} movies, {catalog.Series.Count:N0} series items discovered.",
+                    Detail = F("SourceGuidance.Stalker.Detail.CatalogCounts", catalog.LiveChannels.Count, catalog.Movies.Count, catalog.Series.Count),
                     Tone = catalog.SupportsLive || catalog.SupportsMovies || catalog.SupportsSeries
                         ? SourceActivityTone.Healthy
                         : SourceActivityTone.Warning
                 },
                 new()
                 {
-                    Label = "Portal profile",
-                    Value = string.IsNullOrWhiteSpace(catalog.ProfileName) ? "Profile discovered" : catalog.ProfileName,
+                    Label = L("SourceGuidance.Capability.PortalProfile.Label"),
+                    Value = string.IsNullOrWhiteSpace(catalog.ProfileName) ? L("SourceGuidance.Stalker.Value.ProfileDiscovered") : catalog.ProfileName,
                     Detail = string.IsNullOrWhiteSpace(catalog.PortalName)
-                        ? "Portal handshake completed."
+                        ? L("SourceGuidance.Stalker.Detail.PortalHandshakeCompleted")
                         : catalog.PortalName,
                     Tone = SourceActivityTone.Healthy
                 },
                 new()
                 {
-                    Label = "Guide",
+                    Label = L("SourceGuidance.Capability.Guide.Label"),
                     Value = draft.EpgMode == EpgActiveMode.Manual && !string.IsNullOrWhiteSpace(draft.ManualEpgUrl)
-                        ? "Manual guide set"
-                        : "Manual guide optional",
+                        ? L("SourceGuidance.Capability.ManualGuideSet")
+                        : L("SourceGuidance.Stalker.Value.ManualGuideOptional"),
                     Detail = draft.EpgMode == EpgActiveMode.Manual && !string.IsNullOrWhiteSpace(draft.ManualEpgUrl)
                         ? SanitizeText(draft.ManualEpgUrl)
-                        : "Stalker portals do not always expose XMLTV directly. Add a manual guide only when you have one.",
+                        : L("SourceGuidance.Stalker.Detail.ManualGuideOptional"),
                     Tone = draft.EpgMode == EpgActiveMode.Manual && !string.IsNullOrWhiteSpace(draft.ManualEpgUrl)
                         ? SourceActivityTone.Healthy
                         : SourceActivityTone.Neutral
@@ -685,7 +685,7 @@ namespace Kroira.App.Services
             {
                 issues.Add(new SourceGuidanceIssue
                 {
-                    Title = "Portal returned a partial catalog",
+                    Title = L("SourceGuidance.Issue.PartialCatalog.Title"),
                     Detail = SanitizeText(warning),
                     Tone = SourceActivityTone.Warning
                 });
@@ -695,8 +695,8 @@ namespace Kroira.App.Services
             {
                 issues.Add(new SourceGuidanceIssue
                 {
-                    Title = "No catalog families were confirmed",
-                    Detail = "The portal handshake worked, but it did not return live, movie, or series data in this preview.",
+                    Title = L("SourceGuidance.Issue.NoCatalogFamilies.Title"),
+                    Detail = L("SourceGuidance.Issue.NoCatalogFamilies.Detail"),
                     Tone = SourceActivityTone.Warning
                 });
             }
@@ -705,9 +705,9 @@ namespace Kroira.App.Services
                 draft.Type,
                 SourceType.Stalker,
                 canSave: true,
-                headline: "Portal handshake completed",
-                summary: $"{BuildStalkerCatalogLabel(catalog)} was confirmed through the portal preview.",
-                connection: "KROIRA completed handshake and profile discovery with the supplied portal identity.",
+                headline: L("SourceGuidance.Stalker.Headline.HandshakeCompleted"),
+                summary: F("SourceGuidance.Stalker.Summary.PreviewConfirmed", BuildStalkerCatalogLabel(catalog)),
+                connection: L("SourceGuidance.Stalker.Connection.Success"),
                 typeHint: BuildTypeHintText(draft.Type, SourceType.Stalker, consistent: true),
                 capabilities: capabilities,
                 issues: issues);
@@ -752,18 +752,18 @@ namespace Kroira.App.Services
             {
                 new()
                 {
-                    Label = "Catalog",
+                    Label = L("SourceGuidance.Capability.Catalog.Label"),
                     Value = BuildCatalogCapabilityLabel(diagnostics.LiveChannelCount, diagnostics.MovieCount, diagnostics.SeriesCount > 0),
-                    Detail = $"{diagnostics.LiveChannelCount:N0} live, {diagnostics.MovieCount:N0} movies, {diagnostics.SeriesCount:N0} series.",
+                    Detail = F("SourceGuidance.Repair.Detail.CatalogCounts", diagnostics.LiveChannelCount, diagnostics.MovieCount, diagnostics.SeriesCount),
                     Tone = diagnostics.LiveChannelCount + diagnostics.MovieCount + diagnostics.SeriesCount > 0
                         ? SourceActivityTone.Healthy
                         : SourceActivityTone.Warning
                 },
                 new()
                 {
-                    Label = "Guide",
+                    Label = L("SourceGuidance.Capability.Guide.Label"),
                     Value = diagnostics.ActiveEpgMode == EpgActiveMode.None
-                        ? "Guide disabled"
+                        ? L("SourceGuidance.Capability.GuideDisabled")
                         : diagnostics.EpgStatusText,
                     Detail = SanitizeText(diagnostics.EpgStatusSummary),
                     Tone = diagnostics.EpgStatus switch
@@ -775,21 +775,21 @@ namespace Kroira.App.Services
                 },
                 new()
                 {
-                    Label = "Catchup",
-                    Value = diagnostics.CatchupChannelCount > 0 ? $"{diagnostics.CatchupChannelCount:N0} channels" : "No advertised support",
+                    Label = L("SourceGuidance.Capability.Catchup.Label"),
+                    Value = diagnostics.CatchupChannelCount > 0 ? F("SourceGuidance.Capability.Channels", diagnostics.CatchupChannelCount) : L("SourceGuidance.Capability.NoAdvertisedSupport"),
                     Detail = SanitizeText(diagnostics.CatchupStatusText),
                     Tone = diagnostics.CatchupChannelCount > 0 ? SourceActivityTone.Healthy : SourceActivityTone.Neutral
                 },
                 new()
                 {
-                    Label = "Routing",
+                    Label = L("SourceGuidance.Capability.Routing.Label"),
                     Value = credential == null
-                        ? "Direct"
+                        ? L("SourceGuidance.Routing.Direct")
                         : credential.CompanionScope != SourceCompanionScope.Disabled
-                            ? "Companion enabled"
+                            ? L("SourceGuidance.Routing.CompanionEnabled")
                             : credential.ProxyScope != SourceProxyScope.Disabled
-                                ? "Proxy enabled"
-                                : "Direct",
+                                ? L("SourceGuidance.Routing.ProxyEnabled")
+                                : L("SourceGuidance.Routing.Direct"),
                     Detail = SanitizeText(BuildRoutingDetail(credential, diagnostics)),
                     Tone = credential?.CompanionScope != SourceCompanionScope.Disabled || credential?.ProxyScope != SourceProxyScope.Disabled
                         ? SourceActivityTone.Neutral
@@ -822,7 +822,7 @@ namespace Kroira.App.Services
             {
                 issues.Add(new SourceGuidanceIssue
                 {
-                    Title = string.IsNullOrWhiteSpace(activity.HeadlineText) ? "Source status is stable" : SanitizeText(activity.HeadlineText),
+                    Title = string.IsNullOrWhiteSpace(activity.HeadlineText) ? L("SourceGuidance.Issue.SourceStable.Title") : SanitizeText(activity.HeadlineText),
                     Detail = string.IsNullOrWhiteSpace(activity.CurrentStateText)
                         ? SanitizeText(diagnostics.StatusSummary)
                         : SanitizeText(activity.CurrentStateText),
@@ -857,9 +857,9 @@ namespace Kroira.App.Services
                 {
                     ActionType = SourceRepairActionType.DisableCompanionRelay,
                     Kind = SourceRepairActionKind.Apply,
-                    Title = "Disable local companion relay",
-                    Summary = "Keep the provider path direct for this source, then rerun refresh and validation.",
-                    ButtonText = "Disable companion",
+                    Title = L("SourceGuidance.Action.DisableCompanion.Title"),
+                    Summary = L("SourceGuidance.Action.DisableCompanion.Summary"),
+                    ButtonText = L("SourceGuidance.Action.DisableCompanion.Button"),
                     IsPrimary = true,
                     Tone = SourceActivityTone.Warning
                 });
@@ -871,9 +871,9 @@ namespace Kroira.App.Services
                 {
                     ActionType = SourceRepairActionType.RefreshPortalProfile,
                     Kind = SourceRepairActionKind.Apply,
-                    Title = "Refresh portal profile",
-                    Summary = "Run a fresh Stalker handshake, reload profile data, and retest the portal catalog.",
-                    ButtonText = "Refresh portal",
+                    Title = L("SourceGuidance.Action.RefreshPortalProfile.Title"),
+                    Summary = L("SourceGuidance.Action.RefreshPortalProfile.Summary"),
+                    ButtonText = L("SourceGuidance.Action.RefreshPortalProfile.Button"),
                     IsPrimary = actions.Count == 0,
                     Tone = SourceActivityTone.Warning
                 });
@@ -887,9 +887,9 @@ namespace Kroira.App.Services
                     {
                         ActionType = SourceRepairActionType.RetestGuide,
                         Kind = SourceRepairActionKind.Apply,
-                        Title = "Retest guide feed",
-                        Summary = "Retry XMLTV fetch and rematch without changing catalog settings.",
-                        ButtonText = "Retest guide",
+                        Title = L("SourceGuidance.Action.RetestGuide.Title"),
+                        Summary = L("SourceGuidance.Action.RetestGuide.Summary"),
+                        ButtonText = L("SourceGuidance.Action.RetestGuide.Button"),
                         IsPrimary = actions.Count == 0,
                         Tone = SourceActivityTone.Warning
                     });
@@ -899,9 +899,9 @@ namespace Kroira.App.Services
                 {
                     ActionType = SourceRepairActionType.ReviewGuideSettings,
                     Kind = SourceRepairActionKind.Review,
-                    Title = "Review guide settings",
-                    Summary = "Check detected versus manual XMLTV and routing choices before the next guide sync.",
-                    ButtonText = "Guide settings",
+                    Title = L("SourceGuidance.Action.ReviewGuideSettings.Title"),
+                    Summary = L("SourceGuidance.Action.ReviewGuideSettings.Summary"),
+                    ButtonText = L("SourceGuidance.Action.ReviewGuideSettings.Button"),
                     IsPrimary = false,
                     Tone = SourceActivityTone.Neutral
                 });
@@ -915,11 +915,11 @@ namespace Kroira.App.Services
                         ? SourceRepairActionType.RefreshPortalProfile
                         : SourceRepairActionType.RetestSource,
                     Kind = SourceRepairActionKind.Apply,
-                    Title = profile.Type == SourceType.Stalker ? "Retest portal sync" : "Retest source",
+                    Title = profile.Type == SourceType.Stalker ? L("SourceGuidance.Action.RetestPortal.Title") : L("SourceGuidance.Action.RetestSource.Title"),
                     Summary = profile.Type == SourceType.Stalker
-                        ? "Run a fresh portal sync and validation pass."
-                        : "Run a fresh sync and validation pass for this source.",
-                    ButtonText = profile.Type == SourceType.Stalker ? "Retest portal" : "Retest source",
+                        ? L("SourceGuidance.Action.RetestPortal.Summary")
+                        : L("SourceGuidance.Action.RetestSource.Summary"),
+                    ButtonText = profile.Type == SourceType.Stalker ? L("SourceGuidance.Action.RetestPortal.Button") : L("SourceGuidance.Action.RetestSource.Button"),
                     IsPrimary = actions.Count == 0,
                     Tone = setupProblem ? SourceActivityTone.Warning : SourceActivityTone.Neutral
                 });
@@ -931,9 +931,9 @@ namespace Kroira.App.Services
                 {
                     ActionType = SourceRepairActionType.RunStreamProbe,
                     Kind = SourceRepairActionKind.Apply,
-                    Title = "Run bounded stream probe",
-                    Summary = "Probe a small sampled set with per-request timeout instead of hammering the provider.",
-                    ButtonText = "Run probe",
+                    Title = L("SourceGuidance.Action.RunStreamProbe.Title"),
+                    Summary = L("SourceGuidance.Action.RunStreamProbe.Summary"),
+                    ButtonText = L("SourceGuidance.Action.RunStreamProbe.Button"),
                     IsPrimary = actions.Count == 0,
                     Tone = SourceActivityTone.Neutral
                 });
@@ -945,9 +945,9 @@ namespace Kroira.App.Services
                 {
                     ActionType = SourceRepairActionType.RepairRuntimeState,
                     Kind = SourceRepairActionKind.Apply,
-                    Title = "Repair saved source state",
-                    Summary = "Rebuild source health, logical state, and operational candidates without changing provider credentials.",
-                    ButtonText = "Repair state",
+                    Title = L("SourceGuidance.Action.RepairRuntimeState.Title"),
+                    Summary = L("SourceGuidance.Action.RepairRuntimeState.Summary"),
+                    ButtonText = L("SourceGuidance.Action.RepairRuntimeState.Button"),
                     IsPrimary = false,
                     Tone = SourceActivityTone.Neutral
                 });
@@ -967,32 +967,32 @@ namespace Kroira.App.Services
         {
             if (HasCompanionFailureSignal(credential, diagnostics, activity))
             {
-                return "Companion routing is getting in the way";
+                return L("SourceGuidance.Repair.Headline.CompanionProblem");
             }
 
             if (profile.Type == SourceType.Stalker && !string.IsNullOrWhiteSpace(diagnostics.StalkerPortalErrorText))
             {
-                return "Portal connection needs attention";
+                return L("SourceGuidance.Repair.Headline.PortalNeedsAttention");
             }
 
             if (HasGuideFailureSignal(diagnostics))
             {
-                return "Guide data needs attention";
+                return L("SourceGuidance.Repair.Headline.GuideNeedsAttention");
             }
 
             if (diagnostics.LiveChannelCount + diagnostics.MovieCount + diagnostics.SeriesCount == 0 &&
                 !string.IsNullOrWhiteSpace(diagnostics.FailureSummaryText))
             {
-                return "Source setup needs a fresh connection test";
+                return L("SourceGuidance.Repair.Headline.FreshConnectionTest");
             }
 
             if (diagnostics.HealthLabel.Equals("Outdated", StringComparison.OrdinalIgnoreCase) ||
                 diagnostics.StatusSummary.Contains("stale", StringComparison.OrdinalIgnoreCase))
             {
-                return "Stored source state needs repair";
+                return L("SourceGuidance.Repair.Headline.StoredStateNeedsRepair");
             }
 
-            return "Source is connected and currently usable";
+            return L("SourceGuidance.Repair.Headline.ConnectedUsable");
         }
 
         private string ResolveRepairSummary(
@@ -1094,51 +1094,51 @@ namespace Kroira.App.Services
             switch (draft.Type)
             {
                 case SourceType.M3U when string.IsNullOrWhiteSpace(draft.Url):
-                    issues.Add(CreateIssue("Playlist URL or file path is required.", SourceActivityTone.Failed));
+                    issues.Add(CreateIssue(L("SourceGuidance.Validation.PlaylistUrlRequired"), SourceActivityTone.Failed));
                     break;
                 case SourceType.Xtream when string.IsNullOrWhiteSpace(draft.Url) ||
                                             string.IsNullOrWhiteSpace(draft.Username) ||
                                             string.IsNullOrWhiteSpace(draft.Password):
-                    issues.Add(CreateIssue("Server URL, username, and password are required for Xtream.", SourceActivityTone.Failed));
+                    issues.Add(CreateIssue(L("SourceGuidance.Validation.XtreamRequired"), SourceActivityTone.Failed));
                     break;
                 case SourceType.Stalker when string.IsNullOrWhiteSpace(draft.Url) ||
                                              string.IsNullOrWhiteSpace(draft.StalkerMacAddress):
-                    issues.Add(CreateIssue("Portal URL and MAC address are required for Stalker.", SourceActivityTone.Failed));
+                    issues.Add(CreateIssue(L("SourceGuidance.Validation.StalkerRequired"), SourceActivityTone.Failed));
                     break;
             }
 
             if (draft.EpgMode == EpgActiveMode.Manual && string.IsNullOrWhiteSpace(draft.ManualEpgUrl))
             {
-                issues.Add(CreateIssue("Manual guide mode requires a manual XMLTV URL.", SourceActivityTone.Failed));
+                issues.Add(CreateIssue(L("SourceGuidance.Validation.ManualXmltvRequired"), SourceActivityTone.Failed));
             }
 
             if (draft.ProxyScope != SourceProxyScope.Disabled && string.IsNullOrWhiteSpace(draft.ProxyUrl))
             {
-                issues.Add(CreateIssue("Proxy routing requires a proxy URL.", SourceActivityTone.Failed));
+                issues.Add(CreateIssue(L("SourceGuidance.Validation.ProxyUrlRequired"), SourceActivityTone.Failed));
             }
 
             if (draft.CompanionScope != SourceCompanionScope.Disabled && string.IsNullOrWhiteSpace(draft.CompanionUrl))
             {
-                issues.Add(CreateIssue("Companion relay mode requires a companion endpoint URL.", SourceActivityTone.Failed));
+                issues.Add(CreateIssue(L("SourceGuidance.Validation.CompanionEndpointRequired"), SourceActivityTone.Failed));
             }
 
             if (!string.IsNullOrWhiteSpace(draft.ProxyUrl) &&
                 draft.ProxyScope != SourceProxyScope.Disabled &&
                 !LooksLikeAbsoluteOrLocalPath(draft.ProxyUrl))
             {
-                issues.Add(CreateIssue("Proxy URL must be an absolute URL.", SourceActivityTone.Failed));
+                issues.Add(CreateIssue(L("SourceGuidance.Validation.ProxyUrlAbsolute"), SourceActivityTone.Failed));
             }
 
             if (!string.IsNullOrWhiteSpace(draft.CompanionUrl) &&
                 draft.CompanionScope != SourceCompanionScope.Disabled &&
                 !Uri.TryCreate(draft.CompanionUrl, UriKind.Absolute, out _))
             {
-                issues.Add(CreateIssue("Companion endpoint must be an absolute URL.", SourceActivityTone.Failed));
+                issues.Add(CreateIssue(L("SourceGuidance.Validation.CompanionEndpointAbsolute"), SourceActivityTone.Failed));
             }
 
             if (draft.Type != SourceType.M3U && !string.IsNullOrWhiteSpace(draft.Url) && !Uri.TryCreate(draft.Url, UriKind.Absolute, out _))
             {
-                issues.Add(CreateIssue("This source type requires an absolute URL.", SourceActivityTone.Failed));
+                issues.Add(CreateIssue(L("SourceGuidance.Validation.SourceTypeAbsoluteUrl"), SourceActivityTone.Failed));
             }
 
             return issues;
@@ -1185,15 +1185,15 @@ namespace Kroira.App.Services
             {
                 capabilities.Add(new SourceGuidanceCapability
                 {
-                    Label = "Proxy",
+                    Label = L("SourceGuidance.Capability.Proxy.Label"),
                     Value = draft.ProxyScope switch
                     {
-                        SourceProxyScope.PlaybackOnly => "Playback only",
-                        SourceProxyScope.PlaybackAndProbing => "Playback + probes",
-                        SourceProxyScope.AllRequests => "All requests",
-                        _ => "Disabled"
+                        SourceProxyScope.PlaybackOnly => L("SourceGuidance.Routing.PlaybackOnly"),
+                        SourceProxyScope.PlaybackAndProbing => L("SourceGuidance.Routing.PlaybackProbes"),
+                        SourceProxyScope.AllRequests => L("SourceGuidance.Routing.AllRequests"),
+                        _ => L("General.Disabled")
                     },
-                    Detail = string.IsNullOrWhiteSpace(draft.ProxyUrl) ? "Proxy configured." : draft.ProxyUrl,
+                    Detail = string.IsNullOrWhiteSpace(draft.ProxyUrl) ? L("SourceGuidance.Routing.ProxyConfigured") : draft.ProxyUrl,
                     Tone = SourceActivityTone.Neutral
                 });
             }
@@ -1202,9 +1202,9 @@ namespace Kroira.App.Services
             {
                 capabilities.Add(new SourceGuidanceCapability
                 {
-                    Label = "Companion",
-                    Value = draft.CompanionMode == SourceCompanionRelayMode.Buffered ? "Buffered relay" : "Pass-through relay",
-                    Detail = string.IsNullOrWhiteSpace(draft.CompanionUrl) ? "Companion configured." : draft.CompanionUrl,
+                    Label = L("SourceGuidance.Capability.Companion.Label"),
+                    Value = draft.CompanionMode == SourceCompanionRelayMode.Buffered ? L("SourceGuidance.Routing.BufferedRelay") : L("SourceGuidance.Routing.PassThroughRelay"),
+                    Detail = string.IsNullOrWhiteSpace(draft.CompanionUrl) ? L("SourceGuidance.Routing.CompanionConfigured") : draft.CompanionUrl,
                     Tone = SourceActivityTone.Neutral
                 });
             }
@@ -1219,8 +1219,8 @@ namespace Kroira.App.Services
             {
                 issues.Add(new SourceGuidanceIssue
                 {
-                    Title = "Companion relay is optional",
-                    Detail = "Keep direct playback as the normal path unless this provider behaves better behind a local relay.",
+                    Title = L("SourceGuidance.Issue.CompanionOptional.Title"),
+                    Detail = L("SourceGuidance.Issue.CompanionOptional.Detail"),
                     Tone = SourceActivityTone.Neutral
                 });
             }
@@ -1229,8 +1229,8 @@ namespace Kroira.App.Services
             {
                 issues.Add(new SourceGuidanceIssue
                 {
-                    Title = "All-requests proxy mode is broad",
-                    Detail = "Import, guide, probe, and playback traffic will all route through the proxy. Use it only when the provider truly needs it.",
+                    Title = L("SourceGuidance.Issue.AllRequestsProxyBroad.Title"),
+                    Detail = L("SourceGuidance.Issue.AllRequestsProxyBroad.Detail"),
                     Tone = SourceActivityTone.Warning
                 });
             }
@@ -1344,20 +1344,20 @@ namespace Kroira.App.Services
             var families = new List<string>();
             if (liveCount > 0)
             {
-                families.Add("Live");
+                families.Add(L("SourceGuidance.Catalog.Live"));
             }
 
             if (movieCount > 0)
             {
-                families.Add("Movies");
+                families.Add(L("SourceGuidance.Catalog.Movies"));
             }
 
             if (hasSeries)
             {
-                families.Add("Series");
+                families.Add(L("SourceGuidance.Catalog.Series"));
             }
 
-            return families.Count == 0 ? "No catalog confirmed" : string.Join(" + ", families);
+            return families.Count == 0 ? L("SourceGuidance.Catalog.NoneConfirmed") : string.Join(" + ", families);
         }
 
         private static string BuildXtreamCatalogLabel(int liveCategories, int vodCategories, int seriesCategories)
@@ -1365,20 +1365,20 @@ namespace Kroira.App.Services
             var families = new List<string>();
             if (liveCategories > 0)
             {
-                families.Add("Live");
+                families.Add(L("SourceGuidance.Catalog.Live"));
             }
 
             if (vodCategories > 0)
             {
-                families.Add("Movies");
+                families.Add(L("SourceGuidance.Catalog.Movies"));
             }
 
             if (seriesCategories > 0)
             {
-                families.Add("Series");
+                families.Add(L("SourceGuidance.Catalog.Series"));
             }
 
-            return families.Count == 0 ? "No catalog confirmed" : string.Join(" + ", families);
+            return families.Count == 0 ? L("SourceGuidance.Catalog.NoneConfirmed") : string.Join(" + ", families);
         }
 
         private static string BuildStalkerCatalogLabel(StalkerPortalCatalog catalog)
@@ -1386,35 +1386,35 @@ namespace Kroira.App.Services
             var families = new List<string>();
             if (catalog.SupportsLive)
             {
-                families.Add("Live");
+                families.Add(L("SourceGuidance.Catalog.Live"));
             }
 
             if (catalog.SupportsMovies)
             {
-                families.Add("Movies");
+                families.Add(L("SourceGuidance.Catalog.Movies"));
             }
 
             if (catalog.SupportsSeries)
             {
-                families.Add("Series");
+                families.Add(L("SourceGuidance.Catalog.Series"));
             }
 
-            return families.Count == 0 ? "No catalog confirmed" : string.Join(" + ", families);
+            return families.Count == 0 ? L("SourceGuidance.Catalog.NoneConfirmed") : string.Join(" + ", families);
         }
 
         private static string BuildTypeHintText(SourceType requestedType, SourceType? detectedType, bool consistent)
         {
             if (!detectedType.HasValue)
             {
-                return "KROIRA could not confidently classify this source yet.";
+                return L("SourceGuidance.TypeHint.Unclassified");
             }
 
             if (consistent || detectedType.Value == requestedType)
             {
-                return $"{requestedType} setup and the tested endpoint look consistent.";
+                return F("SourceGuidance.TypeHint.Consistent", requestedType);
             }
 
-            return $"This looks more like {detectedType.Value} than {requestedType}. Review the selected source type before saving.";
+            return F("SourceGuidance.TypeHint.Mismatch", detectedType.Value, requestedType);
         }
 
         private bool HasGuideFailureSignal(SourceDiagnosticsSnapshot diagnostics)
@@ -1475,15 +1475,15 @@ namespace Kroira.App.Services
         {
             if (credential == null)
             {
-                return "Direct routing";
+                return L("SourceGuidance.Routing.DirectRouting");
             }
 
             if (credential.CompanionScope != SourceCompanionScope.Disabled)
             {
-                var companionMode = credential.CompanionMode == SourceCompanionRelayMode.Buffered ? "buffered relay" : "pass-through relay";
+                var companionMode = credential.CompanionMode == SourceCompanionRelayMode.Buffered ? L("SourceGuidance.Routing.BufferedRelayLower") : L("SourceGuidance.Routing.PassThroughRelayLower");
                 return string.IsNullOrWhiteSpace(credential.CompanionUrl)
-                    ? $"Companion enabled ({companionMode})."
-                    : $"Companion enabled ({companionMode}) via {credential.CompanionUrl}.";
+                    ? F("SourceGuidance.Routing.CompanionEnabledMode", companionMode)
+                    : F("SourceGuidance.Routing.CompanionEnabledVia", companionMode, credential.CompanionUrl);
             }
 
             if (credential.ProxyScope != SourceProxyScope.Disabled)
@@ -1493,7 +1493,7 @@ namespace Kroira.App.Services
                     : $"{diagnostics.ProxyStatusText}.";
             }
 
-            return "Direct routing";
+            return L("SourceGuidance.Routing.DirectRouting");
         }
 
         private static string BuildCapabilitySummary(IReadOnlyList<SourceGuidanceCapability> capabilities)
@@ -1526,22 +1526,22 @@ namespace Kroira.App.Services
         private string BuildSetupSafeReport(SourceSetupValidationSnapshot snapshot)
         {
             var builder = new StringBuilder();
-            builder.AppendLine("KROIRA source setup report");
-            builder.AppendLine("Sensitive values are redacted.");
+            builder.AppendLine(L("SourceGuidance.Report.SetupTitle"));
+            builder.AppendLine(L("SourceGuidance.Report.RedactedNotice"));
             builder.AppendLine();
-            builder.AppendLine($"Requested type: {snapshot.RequestedType}");
-            builder.AppendLine($"Headline: {snapshot.HeadlineText}");
-            builder.AppendLine($"Summary: {snapshot.SummaryText}");
-            builder.AppendLine($"Connection: {snapshot.ConnectionText}");
+            builder.AppendLine(F("SourceGuidance.Report.RequestedType", snapshot.RequestedType));
+            builder.AppendLine(F("SourceGuidance.Report.Headline", snapshot.HeadlineText));
+            builder.AppendLine(F("SourceGuidance.Report.Summary", snapshot.SummaryText));
+            builder.AppendLine(F("SourceGuidance.Report.Connection", snapshot.ConnectionText));
             if (!string.IsNullOrWhiteSpace(snapshot.TypeHintText))
             {
-                builder.AppendLine($"Type hint: {snapshot.TypeHintText}");
+                builder.AppendLine(F("SourceGuidance.Report.TypeHint", snapshot.TypeHintText));
             }
 
             if (snapshot.Capabilities.Count > 0)
             {
                 builder.AppendLine();
-                builder.AppendLine("Capabilities");
+                builder.AppendLine(L("SourceGuidance.Report.Capabilities"));
                 foreach (var capability in snapshot.Capabilities)
                 {
                     builder.AppendLine($"{capability.Label}: {capability.Value} - {SanitizeText(capability.Detail)}");
@@ -1551,7 +1551,7 @@ namespace Kroira.App.Services
             if (snapshot.Issues.Count > 0)
             {
                 builder.AppendLine();
-                builder.AppendLine("Issues");
+                builder.AppendLine(L("SourceGuidance.Report.Issues"));
                 foreach (var issue in snapshot.Issues)
                 {
                     builder.AppendLine($"{issue.Title}: {SanitizeText(issue.Detail)}");
@@ -1568,23 +1568,23 @@ namespace Kroira.App.Services
             SourceRepairSnapshot snapshot)
         {
             var builder = new StringBuilder();
-            builder.AppendLine("KROIRA source repair report");
-            builder.AppendLine("Sensitive values are redacted.");
+            builder.AppendLine(L("SourceGuidance.Report.RepairTitle"));
+            builder.AppendLine(L("SourceGuidance.Report.RedactedNotice"));
             builder.AppendLine();
-            builder.AppendLine($"Source: {SanitizeText(profile.Name)}");
-            builder.AppendLine($"Type: {profile.Type}");
-            builder.AppendLine($"Headline: {snapshot.HeadlineText}");
-            builder.AppendLine($"Summary: {snapshot.SummaryText}");
-            builder.AppendLine($"Current status: {SanitizeText(snapshot.StatusText)}");
-            builder.AppendLine($"Activity focus: {SanitizeText(activity.CurrentStateText)}");
-            builder.AppendLine($"Latest attempt: {SanitizeText(activity.LatestAttemptText)}");
-            builder.AppendLine($"Last success: {SanitizeText(activity.LastSuccessText)}");
-            builder.AppendLine($"Health: {SanitizeText(diagnostics.HealthLabel)} / {diagnostics.HealthScore}/100");
+            builder.AppendLine(F("SourceGuidance.Report.Source", SanitizeText(profile.Name)));
+            builder.AppendLine(F("SourceGuidance.Report.Type", profile.Type));
+            builder.AppendLine(F("SourceGuidance.Report.Headline", snapshot.HeadlineText));
+            builder.AppendLine(F("SourceGuidance.Report.Summary", snapshot.SummaryText));
+            builder.AppendLine(F("SourceGuidance.Report.CurrentStatus", SanitizeText(snapshot.StatusText)));
+            builder.AppendLine(F("SourceGuidance.Report.ActivityFocus", SanitizeText(activity.CurrentStateText)));
+            builder.AppendLine(F("SourceGuidance.Report.LatestAttempt", SanitizeText(activity.LatestAttemptText)));
+            builder.AppendLine(F("SourceGuidance.Report.LastSuccess", SanitizeText(activity.LastSuccessText)));
+            builder.AppendLine(F("SourceGuidance.Report.Health", SanitizeText(diagnostics.HealthLabel), diagnostics.HealthScore));
 
             if (snapshot.Capabilities.Count > 0)
             {
                 builder.AppendLine();
-                builder.AppendLine("Capabilities");
+                builder.AppendLine(L("SourceGuidance.Report.Capabilities"));
                 foreach (var capability in snapshot.Capabilities)
                 {
                     builder.AppendLine($"{capability.Label}: {capability.Value} - {SanitizeText(capability.Detail)}");
@@ -1594,7 +1594,7 @@ namespace Kroira.App.Services
             if (snapshot.Issues.Count > 0)
             {
                 builder.AppendLine();
-                builder.AppendLine("Current issues");
+                builder.AppendLine(L("SourceGuidance.Report.CurrentIssues"));
                 foreach (var issue in snapshot.Issues)
                 {
                     builder.AppendLine($"{issue.Title}: {SanitizeText(issue.Detail)}");
@@ -1604,7 +1604,7 @@ namespace Kroira.App.Services
             if (snapshot.Actions.Count > 0)
             {
                 builder.AppendLine();
-                builder.AppendLine("Suggested actions");
+                builder.AppendLine(L("SourceGuidance.Report.SuggestedActions"));
                 foreach (var action in snapshot.Actions)
                 {
                     builder.AppendLine($"{action.ButtonText}: {SanitizeText(action.Summary)}");
@@ -1621,19 +1621,19 @@ namespace Kroira.App.Services
             string changeText)
         {
             var builder = new StringBuilder();
-            builder.AppendLine("KROIRA repair execution");
-            builder.AppendLine("Sensitive values are redacted.");
+            builder.AppendLine(L("SourceGuidance.Report.RepairExecutionTitle"));
+            builder.AppendLine(L("SourceGuidance.Report.RedactedNotice"));
             builder.AppendLine();
-            builder.AppendLine($"Action: {actionType}");
-            builder.AppendLine($"Result: {(success ? "Completed" : "Needs review")}");
+            builder.AppendLine(F("SourceGuidance.Report.Action", actionType));
+            builder.AppendLine(F("SourceGuidance.Report.Result", success ? L("SourceGuidance.Report.Completed") : L("SourceGuidance.Report.NeedsReview")));
             if (!string.IsNullOrWhiteSpace(detailText))
             {
-                builder.AppendLine($"Detail: {SanitizeText(detailText)}");
+                builder.AppendLine(F("SourceGuidance.Report.Detail", SanitizeText(detailText)));
             }
 
             if (!string.IsNullOrWhiteSpace(changeText))
             {
-                builder.AppendLine($"Change: {SanitizeText(changeText)}");
+                builder.AppendLine(F("SourceGuidance.Report.Change", SanitizeText(changeText)));
             }
 
             return builder.ToString().Trim();
@@ -1654,29 +1654,29 @@ namespace Kroira.App.Services
             if (before.HealthScore != after.HealthScore)
             {
                 var delta = after.HealthScore - before.HealthScore;
-                changes.Add($"Health moved from {before.HealthScore}/100 to {after.HealthScore}/100 ({(delta >= 0 ? "+" : string.Empty)}{delta}).");
+                changes.Add(F("SourceGuidance.Repair.Change.HealthMoved", before.HealthScore, after.HealthScore, delta >= 0 ? "+" : string.Empty, delta));
             }
 
             if (!string.Equals(before.EpgStatusText, after.EpgStatusText, StringComparison.OrdinalIgnoreCase))
             {
-                changes.Add($"Guide state changed from {SanitizeText(before.EpgStatusText)} to {SanitizeText(after.EpgStatusText)}.");
+                changes.Add(F("SourceGuidance.Repair.Change.GuideState", SanitizeText(before.EpgStatusText), SanitizeText(after.EpgStatusText)));
             }
 
             if (!string.Equals(before.CompanionStatusText, after.CompanionStatusText, StringComparison.OrdinalIgnoreCase))
             {
-                changes.Add($"Companion policy changed from {SanitizeText(before.CompanionStatusText)} to {SanitizeText(after.CompanionStatusText)}.");
+                changes.Add(F("SourceGuidance.Repair.Change.CompanionPolicy", SanitizeText(before.CompanionStatusText), SanitizeText(after.CompanionStatusText)));
             }
 
             if (beforeSnapshot != null &&
                 afterSnapshot != null &&
                 !string.Equals(beforeSnapshot.HeadlineText, afterSnapshot.HeadlineText, StringComparison.OrdinalIgnoreCase))
             {
-                changes.Add($"Top repair focus changed from {SanitizeText(beforeSnapshot.HeadlineText)} to {SanitizeText(afterSnapshot.HeadlineText)}.");
+                changes.Add(F("SourceGuidance.Repair.Change.TopFocus", SanitizeText(beforeSnapshot.HeadlineText), SanitizeText(afterSnapshot.HeadlineText)));
             }
 
             if (changes.Count == 0)
             {
-                return "The repair completed, but the source health summary did not move materially yet.";
+                return L("SourceGuidance.Repair.Change.NoMaterialMovement");
             }
 
             return string.Join(" ", changes);
@@ -1691,10 +1691,20 @@ namespace Kroira.App.Services
         {
             return new SourceGuidanceIssue
             {
-                Title = "Setup input needs attention",
+                Title = L("SourceGuidance.Setup.InputNeedsAttention"),
                 Detail = detail,
                 Tone = tone
             };
+        }
+
+        private static string L(string key)
+        {
+            return LocalizedStrings.Get(key);
+        }
+
+        private static string F(string key, params object?[] args)
+        {
+            return LocalizedStrings.Format(key, args);
         }
 
         private static bool LooksLikeAbsoluteOrLocalPath(string value)

@@ -28,7 +28,18 @@ namespace Kroira.App.ViewModels
 
         public ObservableCollection<LanguageOptionViewModel> Languages { get; } = new()
         {
-            new LanguageOptionViewModel(AppLanguageService.DefaultLanguageCode, "English")
+            new LanguageOptionViewModel(AppLanguageService.SystemDefaultLanguageCode, LocalizedStrings.Get("Language.SystemDefault")),
+            new LanguageOptionViewModel(AppLanguageService.DefaultLanguageCode, LocalizedStrings.Get("Language.English")),
+            new LanguageOptionViewModel("tr-TR", LocalizedStrings.Get("Language.Turkish")),
+            new LanguageOptionViewModel("zh-Hans", LocalizedStrings.Get("Language.ChineseSimplified")),
+            new LanguageOptionViewModel("es-ES", LocalizedStrings.Get("Language.Spanish")),
+            new LanguageOptionViewModel("ar-SA", LocalizedStrings.Get("Language.Arabic")),
+            new LanguageOptionViewModel("fr-FR", LocalizedStrings.Get("Language.French")),
+            new LanguageOptionViewModel("de-DE", LocalizedStrings.Get("Language.German")),
+            new LanguageOptionViewModel("pt-BR", LocalizedStrings.Get("Language.PortugueseBrazil")),
+            new LanguageOptionViewModel("hi-IN", LocalizedStrings.Get("Language.Hindi")),
+            new LanguageOptionViewModel("ja-JP", LocalizedStrings.Get("Language.Japanese")),
+            new LanguageOptionViewModel("ko-KR", LocalizedStrings.Get("Language.Korean"))
         };
 
         public ObservableCollection<AppAppearanceOptionViewModel> ThemeOptions { get; } = new();
@@ -45,10 +56,10 @@ namespace Kroira.App.ViewModels
         private string _licenseStatusDescription = string.Empty;
 
         [ObservableProperty]
-        private LanguageOptionViewModel _selectedLanguage = new LanguageOptionViewModel(AppLanguageService.DefaultLanguageCode, "English");
+        private LanguageOptionViewModel _selectedLanguage = new LanguageOptionViewModel(AppLanguageService.SystemDefaultLanguageCode, LocalizedStrings.Get("Language.SystemDefault"));
 
         [ObservableProperty]
-        private string _languageStatusText = "English is selected for the current profile.";
+        private string _languageStatusText = LocalizedStrings.Get("Settings.Language.Status.Initial");
 
         [ObservableProperty]
         private AppAppearanceOptionViewModel? _selectedThemeOption;
@@ -57,7 +68,7 @@ namespace Kroira.App.ViewModels
         private AppAppearanceOptionViewModel? _selectedAccentOption;
 
         [ObservableProperty]
-        private string _appearanceStatusText = "Choose the theme and accent combination you want KROIRA to use.";
+        private string _appearanceStatusText = LocalizedStrings.Get("Settings.Appearance.Status.Initial");
 
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(IsBackupIdle))]
@@ -66,10 +77,10 @@ namespace Kroira.App.ViewModels
 
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(HasBackupStatus))]
-        private string _backupStatusText = "Export or restore a local package with sources, profiles, favorites, playback progress, and preferences.";
+        private string _backupStatusText = LocalizedStrings.Get("Settings.Backup.Status.Initial");
 
         [ObservableProperty]
-        private string _resourceStatusText = "Links open in your default browser or mail app.";
+        private string _resourceStatusText = LocalizedStrings.Get("Settings.Resources.Status.Ready");
 
         [ObservableProperty]
         private bool _autoRefreshEnabled = true;
@@ -81,13 +92,13 @@ namespace Kroira.App.ViewModels
         private AutoRefreshIntervalOptionViewModel? _selectedAutoRefreshInterval;
 
         [ObservableProperty]
-        private string _autoRefreshStatusText = "Automatic refresh checks for source updates while the app is open.";
+        private string _autoRefreshStatusText = LocalizedStrings.Get("Settings.AutoRefresh.Status.Initial");
 
         [ObservableProperty]
         private bool _remoteModeEnabled = true;
 
         [ObservableProperty]
-        private string _remoteModeStatusText = "Remote-friendly mode keeps page landing focus, directional navigation, and back behavior predictable.";
+        private string _remoteModeStatusText = LocalizedStrings.Get("Settings.RemoteMode.Status.Initial");
 
         public bool IsBackupIdle => !IsBackupBusy;
         public bool CanUseBackupRestore => _entitlementService.IsFeatureEnabled(EntitlementFeatureKeys.LibraryBackupRestore);
@@ -228,13 +239,18 @@ namespace Kroira.App.ViewModels
             SelectedLanguage = Languages.FirstOrDefault(language => language.Code == languageCode)
                 ?? Languages.First(language => language.Code == AppLanguageService.DefaultLanguageCode);
             _isLoadingLanguage = false;
-            LanguageStatusText = "The selected language applies to this profile.";
+            LanguageStatusText = string.Equals(languageCode, AppLanguageService.SystemDefaultLanguageCode, StringComparison.OrdinalIgnoreCase)
+                ? LocalizedStrings.Get("Settings.Language.Status.System")
+                : LocalizedStrings.Format("Settings.Language.Status.Selected", SelectedLanguage.DisplayName);
 
             _isLoadingAppearance = true;
             SelectedThemeOption = ThemeOptions.FirstOrDefault(option => option.Key == appearance.ThemePresetKey) ?? ThemeOptions.FirstOrDefault();
             SelectedAccentOption = AccentOptions.FirstOrDefault(option => option.Key == appearance.AccentPresetKey) ?? AccentOptions.FirstOrDefault();
             _isLoadingAppearance = false;
-            AppearanceStatusText = $"{SelectedThemeOption?.DisplayName ?? "Cinema Gold"} with {SelectedAccentOption?.DisplayName ?? "House Gold"} is active.";
+            AppearanceStatusText = LocalizedStrings.Format(
+                "Settings.Appearance.Status.Active",
+                SelectedThemeOption?.DisplayName ?? LocalizedStrings.Get("Appearance.Theme.Cinema.Name"),
+                SelectedAccentOption?.DisplayName ?? LocalizedStrings.Get("Appearance.Accent.Gold.Name"));
 
             _isLoadingAutoRefresh = true;
             AutoRefreshEnabled = autoRefresh.IsEnabled;
@@ -243,15 +259,15 @@ namespace Kroira.App.ViewModels
                 ?? AutoRefreshIntervalOptions.FirstOrDefault();
             _isLoadingAutoRefresh = false;
             AutoRefreshStatusText = autoRefresh.IsEnabled
-                ? $"Automatic refresh runs every {autoRefresh.IntervalHours} hour{(autoRefresh.IntervalHours == 1 ? string.Empty : "s")} while KROIRA stays open."
-                : "Automatic refresh is turned off.";
+                ? LocalizedStrings.Format("Settings.AutoRefresh.Status.Running", autoRefresh.IntervalHours)
+                : LocalizedStrings.Get("Settings.AutoRefresh.Status.Off");
 
             _isLoadingRemoteMode = true;
             RemoteModeEnabled = _remoteNavigationService.IsRemoteModeEnabled;
             _isLoadingRemoteMode = false;
             RemoteModeStatusText = RemoteModeEnabled
-                ? "Remote-friendly mode is on. Pages land on a primary target and Esc/Back stay predictable."
-                : "Remote-friendly mode is off. KROIRA keeps desktop behavior without automatic page landing focus.";
+                ? LocalizedStrings.Get("Settings.RemoteMode.Status.On")
+                : LocalizedStrings.Get("Settings.RemoteMode.Status.Off");
         }
 
         private async Task SaveLanguageAsync(string languageCode)
@@ -261,7 +277,7 @@ namespace Kroira.App.ViewModels
             var profileService = scope.ServiceProvider.GetRequiredService<IProfileStateService>();
             var activeProfile = await profileService.GetActiveProfileAsync(db);
             await AppLanguageService.SetLanguageAsync(db, languageCode, activeProfile.Id);
-            LanguageStatusText = "The selected language now applies to this profile.";
+            LanguageStatusText = LocalizedStrings.Get("Settings.Language.Status.RestartRequired");
         }
 
         private async Task SaveAppearanceAsync()
@@ -280,7 +296,10 @@ namespace Kroira.App.ViewModels
             current.AccentPresetKey = CanUseAccentPacks ? SelectedAccentOption?.Key ?? current.AccentPresetKey : current.AccentPresetKey;
             await appearanceService.SaveAsync(db, current);
 
-            AppearanceStatusText = $"{SelectedThemeOption?.DisplayName ?? "Cinema Gold"} with {SelectedAccentOption?.DisplayName ?? "House Gold"} is active.";
+            AppearanceStatusText = LocalizedStrings.Format(
+                "Settings.Appearance.Status.Active",
+                SelectedThemeOption?.DisplayName ?? LocalizedStrings.Get("Appearance.Theme.Cinema.Name"),
+                SelectedAccentOption?.DisplayName ?? LocalizedStrings.Get("Appearance.Accent.Gold.Name"));
         }
 
         private async Task SaveAutoRefreshAsync()
@@ -296,16 +315,16 @@ namespace Kroira.App.ViewModels
             };
             await autoRefreshService.SaveSettingsAsync(db, settings);
             AutoRefreshStatusText = settings.IsEnabled
-                ? $"Automatic refresh runs every {settings.IntervalHours} hour{(settings.IntervalHours == 1 ? string.Empty : "s")} while KROIRA stays open."
-                : "Automatic refresh is turned off.";
+                ? LocalizedStrings.Format("Settings.AutoRefresh.Status.Running", settings.IntervalHours)
+                : LocalizedStrings.Get("Settings.AutoRefresh.Status.Off");
         }
 
         private async Task SaveRemoteModeAsync()
         {
             await _remoteNavigationService.SetRemoteModeEnabledAsync(RemoteModeEnabled);
             RemoteModeStatusText = RemoteModeEnabled
-                ? "Remote-friendly mode is on. Pages land on a primary target and Esc/Back stay predictable."
-                : "Remote-friendly mode is off. KROIRA keeps desktop behavior without automatic page landing focus.";
+                ? LocalizedStrings.Get("Settings.RemoteMode.Status.On")
+                : LocalizedStrings.Get("Settings.RemoteMode.Status.Off");
         }
 
         [RelayCommand]
@@ -324,9 +343,13 @@ namespace Kroira.App.ViewModels
             ProTierVisibility = isPro ? Visibility.Visible : Visibility.Collapsed;
             FreeTierVisibility = !isPro ? Visibility.Visible : Visibility.Collapsed;
 
-            var backupRestoreState = CanUseBackupRestore ? "available" : "not available";
-            var appearanceState = CanUseThemePresets || CanUseAccentPacks ? "available" : "not available";
-            LicenseStatusDescription = $"{_entitlementService.CurrentTierDisplayName} tier is active. Backup and restore are {backupRestoreState}, and appearance presets are {appearanceState}.";
+            var backupRestoreState = CanUseBackupRestore ? LocalizedStrings.Get("General.Available") : LocalizedStrings.Get("General.NotAvailable");
+            var appearanceState = CanUseThemePresets || CanUseAccentPacks ? LocalizedStrings.Get("General.Available") : LocalizedStrings.Get("General.NotAvailable");
+            LicenseStatusDescription = LocalizedStrings.Format(
+                "Settings.License.Status",
+                _entitlementService.CurrentTierDisplayName,
+                backupRestoreState,
+                appearanceState);
         }
 
         public async Task ExportBackupAsync(string filePath)
@@ -335,7 +358,7 @@ namespace Kroira.App.ViewModels
 
             if (!CanUseBackupRestore)
             {
-                BackupStatusText = "Backup export is not available on this tier.";
+                BackupStatusText = LocalizedStrings.Get("Settings.Backup.Export.NotAvailable");
                 LogBackup("export command denied by entitlement");
                 return;
             }
@@ -347,7 +370,7 @@ namespace Kroira.App.ViewModels
             }
 
             IsBackupBusy = true;
-            BackupStatusText = "Exporting backup package...";
+            BackupStatusText = LocalizedStrings.Get("Settings.Backup.Exporting");
             LogBackup("export status set busy");
 
             try
@@ -363,14 +386,18 @@ namespace Kroira.App.ViewModels
                 LogBackup($"export background task completed file='{result.FilePath}' sources={result.SourceCount} profiles={result.ProfileCount} favorites={result.FavoriteCount} watch={result.WatchStateCount}");
 
                 BackupStatusText =
-                    $"Exported {result.SourceCount} sources, {result.ProfileCount} profiles, " +
-                    $"{result.FavoriteCount} favorites, and {result.WatchStateCount} watch-state records.";
+                    LocalizedStrings.Format(
+                        "Settings.Backup.Export.Success",
+                        result.SourceCount,
+                        result.ProfileCount,
+                        result.FavoriteCount,
+                        result.WatchStateCount);
                 LogBackup("export status updated success");
             }
             catch (Exception ex)
             {
                 TryDeleteEmptyBackupFile(filePath);
-                BackupStatusText = $"Backup export failed: {ex.Message}";
+                BackupStatusText = LocalizedStrings.Format("Settings.Backup.Export.Failed", ex.Message);
                 LogBackup($"export failed type={ex.GetType().Name} message='{ex.Message}'");
             }
             finally
@@ -384,7 +411,7 @@ namespace Kroira.App.ViewModels
         {
             if (!CanUseBackupRestore)
             {
-                BackupStatusText = "Backup restore is not available on this tier.";
+                BackupStatusText = LocalizedStrings.Get("Settings.Backup.Restore.NotAvailable");
                 return;
             }
 
@@ -394,7 +421,7 @@ namespace Kroira.App.ViewModels
             }
 
             IsBackupBusy = true;
-            BackupStatusText = "Restoring backup package...";
+            BackupStatusText = LocalizedStrings.Get("Settings.Backup.Restoring");
 
             try
             {
@@ -405,12 +432,17 @@ namespace Kroira.App.ViewModels
 
                 var builder = new StringBuilder();
                 builder.Append(
-                    $"Restored {result.SourceCount} sources, {result.ProfileCount} profiles, " +
-                    $"{result.FavoriteCount} favorites, and {result.WatchStateCount} watch-state records.");
+                    LocalizedStrings.Format(
+                        "Settings.Backup.Restore.Success",
+                        result.SourceCount,
+                        result.ProfileCount,
+                        result.FavoriteCount,
+                        result.WatchStateCount));
 
                 if (result.SourceSyncFailureCount > 0)
                 {
-                    builder.Append($" {result.SourceSyncFailureCount} sources need attention after re-import.");
+                    builder.Append(' ');
+                    builder.Append(LocalizedStrings.Format("Settings.Backup.Restore.SourceFailures", result.SourceSyncFailureCount));
                 }
 
                 if (result.Warnings.Count > 0)
@@ -422,7 +454,7 @@ namespace Kroira.App.ViewModels
             }
             catch (Exception ex)
             {
-                BackupStatusText = $"Backup restore failed: {ex.Message}";
+                BackupStatusText = LocalizedStrings.Format("Settings.Backup.Restore.Failed", ex.Message);
             }
             finally
             {
@@ -454,8 +486,8 @@ namespace Kroira.App.ViewModels
         {
             await OpenExternalUriAsync(
                 AppSubmissionInfo.TryCreatePrivacyPolicyUri(out var uri) ? uri : null,
-                "Privacy policy details are not available in this build.",
-                "Unable to open the privacy policy link on this device.");
+                LocalizedStrings.Get("Settings.Privacy.Missing"),
+                LocalizedStrings.Get("Settings.Privacy.OpenFailed"));
         }
 
         [RelayCommand]
@@ -463,8 +495,8 @@ namespace Kroira.App.ViewModels
         {
             await OpenExternalUriAsync(
                 AppSubmissionInfo.TryCreateSupportPageUri(out var uri) ? uri : null,
-                "Support details are not available in this build.",
-                "Unable to open the support link on this device.");
+                LocalizedStrings.Get("Settings.Support.Missing"),
+                LocalizedStrings.Get("Settings.Support.OpenFailed"));
         }
 
         [RelayCommand]
@@ -472,8 +504,8 @@ namespace Kroira.App.ViewModels
         {
             await OpenExternalUriAsync(
                 AppSubmissionInfo.TryCreateSupportEmailUri(out var uri) ? uri : null,
-                "Support email is not available in this build.",
-                "Unable to open the support email action on this device.");
+                LocalizedStrings.Get("Settings.SupportEmail.Missing"),
+                LocalizedStrings.Get("Settings.SupportEmail.OpenFailed"));
         }
 
         private void LogBackup(string message)
@@ -493,7 +525,7 @@ namespace Kroira.App.ViewModels
             {
                 var launched = await Windows.System.Launcher.LaunchUriAsync(uri);
                 ResourceStatusText = launched
-                    ? "Links open in your default browser or mail app."
+                    ? LocalizedStrings.Get("Settings.Resources.Status.Ready")
                     : failureMessage;
             }
             catch
@@ -557,6 +589,8 @@ namespace Kroira.App.ViewModels
         }
 
         public int Hours { get; }
-        public string DisplayName => Hours == 1 ? "Every hour" : $"Every {Hours} hours";
+        public string DisplayName => Hours == 1
+            ? LocalizedStrings.Get("Settings.AutoRefresh.EveryHour")
+            : LocalizedStrings.Format("Settings.AutoRefresh.EveryHours", Hours);
     }
 }

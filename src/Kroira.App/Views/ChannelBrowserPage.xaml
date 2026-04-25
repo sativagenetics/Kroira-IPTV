@@ -19,12 +19,13 @@
         <StackPanel Spacing="16">
             <StackPanel Orientation="Horizontal" Spacing="12">
                 <Button x:Name="BackButton"
+                        x:Uid="GeneralBackButton"
                         Content="Back"
                         Click="Back_Click"
                         Style="{StaticResource KroiraButtonStyle}" />
                 <StackPanel>
-                    <TextBlock Text="Browser" Style="{StaticResource KroiraPageTitleStyle}" />
-                    <TextBlock Text="Source-level channel browser with guide-aware context." Style="{StaticResource KroiraPageSubtitleStyle}" />
+                    <TextBlock x:Uid="ChannelBrowserPageTitle" Text="Browser" Style="{StaticResource KroiraPageTitleStyle}" />
+                    <TextBlock x:Uid="ChannelBrowserPageSubtitle" Text="Source-level channel browser with guide-aware context." Style="{StaticResource KroiraPageSubtitleStyle}" />
                 </StackPanel>
             </StackPanel>
 
@@ -42,6 +43,7 @@
                           DisplayMemberPath="Name"
                           HorizontalAlignment="Stretch" />
                 <TextBox x:Name="SearchBox"
+                         x:Uid="ChannelBrowserSearchBox"
                          Grid.Column="1"
                          Style="{StaticResource KroiraTextBoxStyle}"
                          PlaceholderText="Search channels..."
@@ -110,7 +112,8 @@
                             </Grid>
                         </StackPanel>
                         <StackPanel Grid.Column="2" Spacing="8" VerticalAlignment="Top">
-                            <Button Content="Details"
+                            <Button x:Uid="GeneralDetailsButton"
+                                    Content="Details"
                                     Click="InspectChannel_Click"
                                     Background="#141A29"
                                     Foreground="{StaticResource KroiraTextPrimaryBrush}"

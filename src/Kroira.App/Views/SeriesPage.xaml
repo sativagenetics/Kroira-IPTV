@@ -69,12 +69,12 @@
             </Grid.ColumnDefinitions>
 
             <StackPanel Spacing="6">
-                <TextBlock Text="SHOWS LIBRARY"
+                <TextBlock x:Uid="SeriesLibraryLabel" Text="SHOWS LIBRARY"
                            Style="{StaticResource KroiraLabelStyle}"
                            Foreground="{StaticResource KroiraAccentBrush}" />
-                <TextBlock Text="Series"
+                <TextBlock x:Uid="SeriesPageTitle" Text="Series"
                            Style="{StaticResource KroiraPageTitleStyle}" />
-                <TextBlock Text="Pick a show to browse seasons and episodes."
+                <TextBlock x:Uid="SeriesPageSubtitle" Text="Pick a show to browse seasons and episodes."
                            Style="{StaticResource KroiraPageSubtitleStyle}"
                            MaxWidth="680" />
             </StackPanel>
@@ -93,6 +93,7 @@
 
                     <Grid Grid.Column="0">
                          <TextBox x:Name="SearchBox"
+                                  x:Uid="SeriesSearchBox"
                                   Style="{StaticResource KroiraFilterTextBoxStyle}"
                                   Text="{x:Bind ViewModel.SearchQuery, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                   KeyDown="SearchBox_KeyDown"
@@ -106,14 +107,16 @@
                                   VerticalAlignment="Center" />
                     </Grid>
 
-                     <ComboBox Grid.Column="1"
+                     <ComboBox x:Uid="SeriesProviderComboBox"
+                               Grid.Column="1"
                                Style="{StaticResource KroiraFilterComboBoxStyle}"
                                ItemsSource="{x:Bind ViewModel.SourceOptions, Mode=OneWay}"
                                SelectedItem="{x:Bind ViewModel.SelectedSourceOption, Mode=TwoWay}"
                                DisplayMemberPath="DisplayName"
                                AutomationProperties.Name="Series provider" />
 
-                     <ComboBox Grid.Column="2"
+                     <ComboBox x:Uid="SeriesSortComboBox"
+                               Grid.Column="2"
                                Style="{StaticResource KroiraFilterComboBoxStyle}"
                                ItemsSource="{x:Bind ViewModel.SortOptions, Mode=OneWay}"
                                SelectedItem="{x:Bind ViewModel.SelectedSortOption, Mode=TwoWay}"
@@ -125,10 +128,10 @@
                                 Spacing="10"
                                 HorizontalAlignment="Right"
                                 VerticalAlignment="Center">
-                         <CheckBox Content="Favorites"
+                         <CheckBox x:Uid="SeriesFavoritesFilter" Content="Favorites"
                                   IsChecked="{x:Bind ViewModel.FavoritesOnly, Mode=TwoWay}"
                                   AutomationProperties.Name="Show favorite series only" />
-                         <CheckBox Content="Primary only"
+                         <CheckBox x:Uid="SeriesPrimaryOnlyFilter" Content="Primary only"
                                   IsChecked="{x:Bind ViewModel.HideSecondaryContent, Mode=TwoWay}"
                                   AutomationProperties.Name="Show primary series entries only" />
                     </StackPanel>
@@ -139,6 +142,7 @@
                 Grid.Column="0"
                 Style="{StaticResource KroiraCategoryRailPanelStyle}">
             <ListView x:Name="CategoryList"
+                      x:Uid="SeriesCategoryList"
                       ItemsSource="{x:Bind ViewModel.Categories, Mode=OneWay}"
                       SelectedItem="{x:Bind ViewModel.SelectedCategory, Mode=TwoWay}"
                       SelectionMode="Single"
@@ -253,7 +257,7 @@
                                                             <FontIcon Glyph="&#xE7C3;"
                                                                       FontSize="10"
                                                                       Foreground="{StaticResource KroiraAccentBrush}" />
-                                                            <TextBlock Text="Details"
+                                                            <TextBlock x:Uid="GeneralDetailsText" Text="Details"
                                                                        FontSize="11"
                                                                        FontWeight="SemiBold"
                                                                        Foreground="{StaticResource KroiraTextPrimaryBrush}" />
@@ -357,9 +361,9 @@
                             </Grid>
                         </Border>
                         <StackPanel Spacing="8">
-                            <TextBlock Text="Pick a show"
+                            <TextBlock x:Uid="SeriesPickShowTitle" Text="Pick a show"
                                        Style="{StaticResource KroiraSectionTitleStyle}" />
-                            <TextBlock Text="Select a title from the library to load artwork, seasons, and episode playback here."
+                            <TextBlock x:Uid="SeriesPickShowMessage" Text="Select a title from the library to load artwork, seasons, and episode playback here."
                                        Style="{StaticResource KroiraBodyStyle}"
                                        MaxLines="3"
                                        TextWrapping="Wrap" />
@@ -471,20 +475,22 @@
                                     <StackPanel Spacing="10">
                                         <StackPanel Spacing="7"
                                                     Visibility="{x:Bind ViewModel.SelectedSeries.SourceSelectionVisibility, Mode=OneWay}">
-                                            <TextBlock Text="SOURCE"
+                                            <TextBlock x:Uid="SeriesSourceLabel" Text="SOURCE"
                                                        Style="{StaticResource KroiraLabelStyle}"
                                                        Foreground="{StaticResource KroiraAccentBrush}" />
-                                         <ComboBox Style="{StaticResource KroiraFilterComboBoxStyle}"
+                                         <ComboBox x:Uid="SeriesEpisodeSourceComboBox"
+                                                   Style="{StaticResource KroiraFilterComboBoxStyle}"
                                                    ItemsSource="{x:Bind ViewModel.SelectedSeries.SourceOptions, Mode=OneWay}"
                                                    SelectedItem="{x:Bind ViewModel.SelectedSeries.SelectedSourceOption, Mode=TwoWay}"
                                                    DisplayMemberPath="Label"
                                                    HorizontalAlignment="Stretch"
                                                    AutomationProperties.Name="Episode source" />
                                         </StackPanel>
-                                        <TextBlock Text="SEASON"
+                                        <TextBlock x:Uid="SeriesSeasonLabel" Text="SEASON"
                                                    Style="{StaticResource KroiraLabelStyle}"
                                                    Foreground="{StaticResource KroiraAccentBrush}" />
-                                         <ComboBox Style="{StaticResource KroiraFilterComboBoxStyle}"
+                                         <ComboBox x:Uid="SeriesSeasonComboBox"
+                                                   Style="{StaticResource KroiraFilterComboBoxStyle}"
                                                    ItemsSource="{x:Bind ViewModel.SeasonOptions, Mode=OneWay}"
                                                    SelectedItem="{x:Bind ViewModel.SelectedSeason, Mode=TwoWay}"
                                                    HorizontalAlignment="Stretch"
@@ -495,7 +501,7 @@
                                                 </DataTemplate>
                                             </ComboBox.ItemTemplate>
                                         </ComboBox>
-                                         <ToggleSwitch Header="Hide watched episodes"
+                                         <ToggleSwitch x:Uid="SeriesHideWatchedSwitch" Header="Hide watched episodes"
                                                        IsOn="{x:Bind ViewModel.HideWatchedEpisodes, Mode=TwoWay}"
                                                        OnContent=""
                                                        OffContent=""
@@ -508,12 +514,14 @@
                                                 VerticalAlignment="Bottom"
                                                 Visibility="{x:Bind ViewModel.SelectedEpisodePlayVisibility, Mode=OneWay}">
                                          <Button x:Name="PlaySelectedEpisodeButton"
+                                                  x:Uid="SeriesPlaySelectedEpisodeButton"
                                                  Content="Play"
                                                  Click="PlaySelectedEpisode_Click"
                                                  Style="{StaticResource KroiraPrimaryButtonStyle}"
                                                  Padding="18,11"
                                                  AutomationProperties.Name="Play selected episode" />
-                                        <Button Click="InspectSelectedEpisode_Click"
+                                        <Button x:Uid="SeriesEpisodeDetailsButton"
+                                                Click="InspectSelectedEpisode_Click"
                                                 Style="{StaticResource KroiraGhostButtonStyle}"
                                                 Width="38"
                                                 Height="38"
@@ -524,7 +532,8 @@
                                                       FontSize="12"
                                                       Foreground="{StaticResource KroiraTextPrimaryBrush}" />
                                         </Button>
-                                        <Button Click="DownloadSelectedEpisode_Click"
+                                        <Button x:Uid="SeriesEpisodeDownloadButton"
+                                                Click="DownloadSelectedEpisode_Click"
                                                 Visibility="{x:Bind DownloadActionsVisibility, Mode=OneWay}"
                                                 Style="{StaticResource KroiraGhostButtonStyle}"
                                                 Width="38"
@@ -554,7 +563,7 @@
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Text="EPISODES"
+                                <TextBlock x:Uid="SeriesEpisodesLabel" Text="EPISODES"
                                            Style="{StaticResource KroiraLabelStyle}"
                                            Foreground="{StaticResource KroiraAccentBrush}"
                                            VerticalAlignment="Center" />
@@ -566,6 +575,7 @@
                             </Grid>
 
                             <controls:EmptyStateView IconGlyph="&#xE8A9;"
+                                                     x:Uid="SeriesNoPlayableEpisodesEmpty"
                                                      Title="No playable episodes"
                                                      Message="Episode stream data is not available for this season yet. Re-sync the VOD source or select a different season."
                                                      Visibility="{x:Bind ViewModel.EpisodesEmptyVisibility, Mode=OneWay}" />
@@ -637,24 +647,24 @@
                                                                     Orientation="Horizontal"
                                                                     Spacing="6"
                                                                     Background="#B805070B">
-                                                            <Button Content="Details"
+                                                            <Button x:Uid="GeneralDetailsButton" Content="Details"
                                                                     Click="InspectEpisode_Click"
                                                                     Style="{StaticResource KroiraGhostButtonStyle}"
                                                                     FontSize="11"
                                                                     Padding="9,4" />
-                                                            <Button Content="Download"
+                                                            <Button x:Uid="GeneralDownloadButton" Content="Download"
                                                                     Click="DownloadEpisode_Click"
                                                                     Visibility="{Binding ElementName=SeriesPageRoot, Path=DownloadActionsVisibility}"
                                                                     Style="{StaticResource KroiraGhostButtonStyle}"
                                                                     FontSize="11"
                                                                     Padding="9,4" />
-                                                            <Button Content="Watched"
+                                                            <Button x:Uid="SeriesWatchedButton" Content="Watched"
                                                                     Click="MarkEpisodeWatched_Click"
                                                                     Style="{StaticResource KroiraGhostButtonStyle}"
                                                                     FontSize="11"
                                                                     Padding="9,4"
                                                                     Visibility="{Binding MarkWatchedVisibility}" />
-                                                            <Button Content="Unwatched"
+                                                            <Button x:Uid="SeriesUnwatchedButton" Content="Unwatched"
                                                                     Click="MarkEpisodeUnwatched_Click"
                                                                     Style="{StaticResource KroiraGhostButtonStyle}"
                                                                     FontSize="11"
@@ -692,6 +702,7 @@
             <controls:ErrorStateView IconGlyph="{x:Bind ViewModel.SurfaceState.Glyph, Mode=OneWay}"
                                      Title="{x:Bind ViewModel.SurfaceState.Title, Mode=OneWay}"
                                      Message="{x:Bind ViewModel.SurfaceState.Message, Mode=OneWay}"
+                                     x:Uid="GeneralRetryErrorState"
                                      RetryActionLabel="Retry"
                                      DiagnosticsActionLabel="{x:Bind ViewModel.SurfaceState.ActionLabel, Mode=OneWay}"
                                      DiagnosticsActionVisibility="{x:Bind ViewModel.SurfaceState.DiagnosticsActionVisibility, Mode=OneWay}"

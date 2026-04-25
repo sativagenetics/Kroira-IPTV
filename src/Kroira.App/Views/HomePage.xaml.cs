@@ -64,7 +64,7 @@ namespace Kroira.App.Views
             var dispatcherQueue = Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread();
             if (dispatcherQueue == null)
             {
-                throw new InvalidOperationException("UI dispatcher queue is unavailable for Home load.");
+                throw new InvalidOperationException(LocalizedStrings.Get("Home.Error.DispatcherUnavailable"));
             }
 
             var enqueued = dispatcherQueue.TryEnqueue(() =>

@@ -97,7 +97,7 @@
                                         CornerRadius="8"
                                         Padding="8,3"
                                         HorizontalAlignment="Left">
-                                    <TextBlock Text="RESUME"
+                                    <TextBlock x:Uid="GeneralResumeBadge" Text="RESUME"
                                                Foreground="{StaticResource KroiraAccentBrush}"
                                                FontSize="10"
                                                FontWeight="SemiBold" />
@@ -259,7 +259,7 @@
                                     VerticalAlignment="Top">
                                 <StackPanel Orientation="Horizontal" Spacing="5">
                                     <Ellipse Width="6" Height="6" Fill="{StaticResource KroiraLiveDotBrush}" />
-                                    <TextBlock Text="LIVE"
+                                    <TextBlock x:Uid="GeneralLiveBadge" Text="LIVE"
                                                Foreground="{StaticResource KroiraLiveDotBrush}"
                                                FontSize="10"
                                                FontWeight="SemiBold" />
@@ -443,24 +443,25 @@
                                              Height="7"
                                              Fill="{StaticResource KroiraLiveDotBrush}"
                                              VerticalAlignment="Center" />
-                                    <TextBlock Text="LIVE SPORTS"
+                                    <TextBlock x:Uid="HomeLiveSportsBadge" Text="LIVE SPORTS"
                                                Foreground="{StaticResource KroiraAccentBrush}"
                                                FontSize="11"
                                                FontWeight="SemiBold" />
                                 </StackPanel>
                             </Border>
-                            <TextBlock Text="Match Center"
+                            <TextBlock x:Uid="HomeMatchCenterTitle" Text="Match Center"
                                        Style="{StaticResource KroiraDisplayLgStyle}"
                                        FontSize="46"
                                        LineHeight="52"
                                        MaxLines="1" />
-                            <TextBlock Text="Jump into live sports instantly."
+                            <TextBlock x:Uid="HomeMatchCenterSubtitle" Text="Jump into live sports instantly."
                                        Style="{StaticResource KroiraBodyStyle}"
                                        FontSize="16"
                                        LineHeight="23"
                                        MaxWidth="460"
                                        Foreground="{StaticResource KroiraTextSecondaryBrush}" />
                             <Button x:Name="FeaturedPrimaryButton"
+                                    x:Uid="HomeWatchLiveTvButtonControl"
                                     Click="LiveTv_Click"
                                     Style="{StaticResource KroiraPrimaryButtonStyle}"
                                     Padding="20,11"
@@ -470,7 +471,7 @@
                                     AutomationProperties.Name="Watch Live TV">
                                 <StackPanel Orientation="Horizontal" Spacing="8">
                                     <FontIcon Glyph="&#xE768;" FontSize="14" />
-                                    <TextBlock Text="Watch Live TV" />
+                                    <TextBlock x:Uid="HomeWatchLiveTvButton" Text="Watch Live TV" />
                                 </StackPanel>
                             </Button>
                         </StackPanel>
@@ -500,10 +501,10 @@
                                               Foreground="{StaticResource KroiraLiveDotBrush}" />
                                 </Grid>
                                 <StackPanel Spacing="4">
-                                    <TextBlock Text="Live TV"
+                                    <TextBlock x:Uid="HomeHeroLiveTvTitle" Text="Live TV"
                                                Style="{StaticResource KroiraTitleStyle}"
                                                FontSize="17" />
-                                    <TextBlock Text="Sports channels, live events, and match-night viewing in one jump."
+                                    <TextBlock x:Uid="HomeHeroLiveTvSubtitle" Text="Sports channels, live events, and match-night viewing in one jump."
                                                Style="{StaticResource KroiraBodyStyle}"
                                                FontSize="12"
                                                LineHeight="17"
@@ -512,7 +513,7 @@
                                 </StackPanel>
                                 <Border Height="1"
                                         Background="{StaticResource KroiraGlassBorderBrush}" />
-                                <TextBlock Text="Ready when the match starts"
+                                <TextBlock x:Uid="HomeMatchReadyText" Text="Ready when the match starts"
                                            Style="{StaticResource KroiraMetaStyle}"
                                            Foreground="{StaticResource KroiraAccentBrush}" />
                             </StackPanel>
@@ -522,14 +523,15 @@
             </Border>
 
             <StackPanel Spacing="10">
-                <TextBlock Text="Live TV Shortcuts"
+                <TextBlock x:Uid="HomeLiveTvShortcutsTitle" Text="Live TV Shortcuts"
                            Style="{StaticResource KroiraSectionTitleStyle}" />
 
                 <Grid HorizontalAlignment="Stretch">
                     <StackPanel Orientation="Horizontal"
                                 Spacing="10"
                                 HorizontalAlignment="Center">
-                        <Button Width="226"
+                        <Button x:Uid="HomeAllChannelsButton"
+                                Width="226"
                                 Click="LiveTv_Click"
                                 Style="{StaticResource HomeCardButtonStyle}"
                                 AutomationProperties.Name="All Channels">
@@ -557,11 +559,11 @@
                                 <StackPanel Grid.Column="1"
                                             Spacing="1"
                                             VerticalAlignment="Center">
-                                    <TextBlock Text="All Channels"
+                                    <TextBlock x:Uid="HomeAllChannelsTitle" Text="All Channels"
                                                Style="{StaticResource KroiraTitleStyle}"
                                                MaxLines="1"
                                                TextTrimming="CharacterEllipsis" />
-                                    <TextBlock Text="Browse the full live lineup"
+                                    <TextBlock x:Uid="HomeAllChannelsSubtitle" Text="Browse the full live lineup"
                                                Style="{StaticResource KroiraMetaStyle}"
                                                MaxLines="1"
                                                TextTrimming="CharacterEllipsis" />
@@ -570,7 +572,8 @@
                         </Border>
                         </Button>
 
-                        <Button Width="226"
+                        <Button x:Uid="HomeSportsButton"
+                                Width="226"
                                 Click="Sports_Click"
                                 Style="{StaticResource HomeCardButtonStyle}"
                                 AutomationProperties.Name="Sports">
@@ -598,11 +601,11 @@
                                 <StackPanel Grid.Column="1"
                                             Spacing="1"
                                             VerticalAlignment="Center">
-                                    <TextBlock Text="Sports"
+                                    <TextBlock x:Uid="HomeSportsTitle" Text="Sports"
                                                Style="{StaticResource KroiraTitleStyle}"
                                                MaxLines="1"
                                                TextTrimming="CharacterEllipsis" />
-                                    <TextBlock Text="Jump to sports viewing"
+                                    <TextBlock x:Uid="HomeSportsSubtitle" Text="Jump to sports viewing"
                                                Style="{StaticResource KroiraMetaStyle}"
                                                MaxLines="1"
                                                TextTrimming="CharacterEllipsis" />
@@ -611,7 +614,8 @@
                         </Border>
                         </Button>
 
-                        <Button Width="226"
+                        <Button x:Uid="HomeFavoritesButton"
+                                Width="226"
                                 Click="Favorites_Click"
                                 Style="{StaticResource HomeCardButtonStyle}"
                                 AutomationProperties.Name="Favorites">
@@ -639,11 +643,11 @@
                                 <StackPanel Grid.Column="1"
                                             Spacing="1"
                                             VerticalAlignment="Center">
-                                    <TextBlock Text="Favorites"
+                                    <TextBlock x:Uid="HomeFavoritesTitle" Text="Favorites"
                                                Style="{StaticResource KroiraTitleStyle}"
                                                MaxLines="1"
                                                TextTrimming="CharacterEllipsis" />
-                                    <TextBlock Text="Open saved channels"
+                                    <TextBlock x:Uid="HomeFavoritesSubtitle" Text="Open saved channels"
                                                Style="{StaticResource KroiraMetaStyle}"
                                                MaxLines="1"
                                                TextTrimming="CharacterEllipsis" />
@@ -652,7 +656,8 @@
                         </Border>
                         </Button>
 
-                        <Button Width="226"
+                        <Button x:Uid="HomeRecentlyWatchedButton"
+                                Width="226"
                                 Click="ContinueWatching_Click"
                                 Style="{StaticResource HomeCardButtonStyle}"
                                 AutomationProperties.Name="Recently Watched">
@@ -680,11 +685,11 @@
                                 <StackPanel Grid.Column="1"
                                             Spacing="1"
                                             VerticalAlignment="Center">
-                                    <TextBlock Text="Recently Watched"
+                                    <TextBlock x:Uid="HomeRecentlyWatchedTitle" Text="Recently Watched"
                                                Style="{StaticResource KroiraTitleStyle}"
                                                MaxLines="1"
                                                TextTrimming="CharacterEllipsis" />
-                                    <TextBlock Text="Return to recent viewing"
+                                    <TextBlock x:Uid="HomeRecentlyWatchedSubtitle" Text="Return to recent viewing"
                                                Style="{StaticResource KroiraMetaStyle}"
                                                MaxLines="1"
                                                TextTrimming="CharacterEllipsis" />
@@ -699,10 +704,10 @@
             <StackPanel Spacing="10"
                         Visibility="{x:Bind ViewModel.LiveSportsItemsVisibility, Mode=OneWay}">
                 <Grid>
-                    <TextBlock Text="Live Sports Now"
+                    <TextBlock x:Uid="HomeLiveSportsNowTitle" Text="Live Sports Now"
                                Style="{StaticResource KroiraSectionTitleStyle}"
                                VerticalAlignment="Center" />
-                    <Button Content="All live TV"
+                    <Button x:Uid="HomeAllLiveTvButton" Content="All live TV"
                             HorizontalAlignment="Right"
                             VerticalAlignment="Center"
                             Click="LiveTv_Click"
@@ -720,10 +725,10 @@
 
             <StackPanel Spacing="16">
                 <Grid>
-                    <TextBlock Text="Continue Watching"
+                    <TextBlock x:Uid="HomeContinueWatchingTitle" Text="Continue Watching"
                                Style="{StaticResource KroiraSectionTitleStyle}"
                                VerticalAlignment="Center" />
-                    <Button Content="View all"
+                    <Button x:Uid="HomeViewAllButton" Content="View all"
                             HorizontalAlignment="Right"
                             VerticalAlignment="Center"
                             Click="ContinueWatching_Click"
@@ -739,6 +744,7 @@
                                ScrollAmount="404" />
 
                 <controls:EmptyStateView IconGlyph="&#xE768;"
+                                         x:Uid="HomeNothingToResumeEmpty"
                                          Title="Nothing to resume yet"
                                          Message="Start watching a channel, movie, or episode and it will appear here."
                                          Visibility="{x:Bind ViewModel.ContinueEmptyVisibility, Mode=OneWay}" />
@@ -746,10 +752,10 @@
 
             <StackPanel Spacing="16" Visibility="{x:Bind ViewModel.PopularItemsVisibility, Mode=OneWay}">
                 <Grid>
-                    <TextBlock Text="Recommended For You"
+                    <TextBlock x:Uid="HomeRecommendedForYouTitle" Text="Recommended For You"
                                Style="{StaticResource KroiraSectionTitleStyle}"
                                VerticalAlignment="Center" />
-                    <Button Content="Browse catalog"
+                    <Button x:Uid="HomeBrowseCatalogButton" Content="Browse catalog"
                             HorizontalAlignment="Right"
                             VerticalAlignment="Center"
                             Click="BrowseCatalog_Click"
@@ -765,7 +771,7 @@
             </StackPanel>
 
             <StackPanel Spacing="16" Visibility="{x:Bind ViewModel.RecentlyAddedItemsVisibility, Mode=OneWay}">
-                <TextBlock Text="Recently Added"
+                <TextBlock x:Uid="HomeRecentlyAddedTitle" Text="Recently Added"
                            Style="{StaticResource KroiraSectionTitleStyle}" />
                 <controls:Rail x:Name="RecentlyAddedRail"
                                ItemsSource="{x:Bind ViewModel.RecentlyAddedItems, Mode=OneWay}"
@@ -776,7 +782,7 @@
             </StackPanel>
 
             <StackPanel Spacing="16" Visibility="{x:Bind ViewModel.TopRatedItemsVisibility, Mode=OneWay}">
-                <TextBlock Text="Top Rated"
+                <TextBlock x:Uid="HomeTopRatedTitle" Text="Top Rated"
                            Style="{StaticResource KroiraSectionTitleStyle}" />
                 <controls:Rail x:Name="TopRatedRail"
                                ItemsSource="{x:Bind ViewModel.TopRatedItems, Mode=OneWay}"
@@ -788,10 +794,10 @@
 
             <StackPanel Spacing="16" Visibility="{x:Bind ViewModel.LiveItemsVisibility, Mode=OneWay}">
                 <Grid>
-                    <TextBlock Text="Live Now"
+                    <TextBlock x:Uid="HomeLiveNowTitle" Text="Live Now"
                                Style="{StaticResource KroiraSectionTitleStyle}"
                                VerticalAlignment="Center" />
-                    <Button Content="All live TV"
+                    <Button x:Uid="HomeAllLiveTvButton2" Content="All live TV"
                             HorizontalAlignment="Right"
                             VerticalAlignment="Center"
                             Click="LiveTv_Click"
@@ -809,7 +815,7 @@
             <StackPanel Spacing="8"
                         Opacity="0.72"
                         Margin="0,2,0,0">
-                <TextBlock Text="Library at a glance"
+                <TextBlock x:Uid="HomeLibraryAtGlanceTitle" Text="Library at a glance"
                            Style="{StaticResource KroiraLabelStyle}"
                            Foreground="{StaticResource KroiraTextTertiaryBrush}" />
                 <ItemsControl ItemsSource="{x:Bind ViewModel.SummaryItems, Mode=OneWay}"
@@ -841,6 +847,7 @@
             <controls:ErrorStateView IconGlyph="{x:Bind ViewModel.SurfaceState.Glyph, Mode=OneWay}"
                                      Title="{x:Bind ViewModel.SurfaceState.Title, Mode=OneWay}"
                                      Message="{x:Bind ViewModel.SurfaceState.Message, Mode=OneWay}"
+                                     x:Uid="GeneralRetryErrorState"
                                      RetryActionLabel="Retry"
                                      DiagnosticsActionLabel="{x:Bind ViewModel.SurfaceState.ActionLabel, Mode=OneWay}"
                                      DiagnosticsActionVisibility="{x:Bind ViewModel.SurfaceState.DiagnosticsActionVisibility, Mode=OneWay}"

@@ -49,8 +49,8 @@
                             Background="{StaticResource KroiraAccentGradientBrush}"
                             CornerRadius="3"
                             HorizontalAlignment="Left" />
-                    <TextBlock Text="Search" Style="{StaticResource KroiraPageTitleStyle}" />
-                    <TextBlock Text="Find synced live channels, movies, series, and playable episodes."
+                    <TextBlock x:Uid="SearchPageTitle" Text="Search" Style="{StaticResource KroiraPageTitleStyle}" />
+                    <TextBlock x:Uid="SearchPageSubtitle" Text="Find synced live channels, movies, series, and playable episodes."
                                Style="{StaticResource KroiraPageSubtitleStyle}"
                                MaxWidth="720" />
                 </StackPanel>
@@ -75,7 +75,8 @@
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
                 <Grid>
-                    <TextBox x:Name="SearchBox"
+                        <TextBox x:Name="SearchBox"
+                                 x:Uid="SearchMediaBox"
                              Style="{StaticResource KroiraFilterTextBoxStyle}"
                              Text="{x:Bind ViewModel.Query, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                              KeyDown="SearchBox_KeyDown"

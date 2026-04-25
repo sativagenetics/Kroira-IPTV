@@ -254,16 +254,16 @@ namespace Kroira.App.Services
         {
             if (decisionState == EpgMappingDecisionState.Approved && IsWeakMatchType(source))
             {
-                return "Approved - refresh EPG to activate this mapping";
+                return L("EpgCoverage.ReviewStatus.ApprovedRefresh");
             }
 
             return source switch
             {
                 ChannelEpgMatchSource.Provider or ChannelEpgMatchSource.Normalized or ChannelEpgMatchSource.UserApproved => programmeCount > 0
-                    ? "Active guide assignment"
-                    : "Trusted match, no programmes in the active window",
-                ChannelEpgMatchSource.Previous or ChannelEpgMatchSource.Alias or ChannelEpgMatchSource.Regex or ChannelEpgMatchSource.Fuzzy => "Suggestion only - not used for current/next guide display",
-                _ => "No guide match"
+                    ? L("EpgCoverage.ReviewStatus.ActiveAssignment")
+                    : L("EpgCoverage.ReviewStatus.TrustedNoProgrammes"),
+                ChannelEpgMatchSource.Previous or ChannelEpgMatchSource.Alias or ChannelEpgMatchSource.Regex or ChannelEpgMatchSource.Fuzzy => L("EpgCoverage.ReviewStatus.SuggestionOnly"),
+                _ => L("EpgCoverage.ReviewStatus.NoGuideMatch")
             };
         }
 
@@ -271,14 +271,14 @@ namespace Kroira.App.Services
         {
             return source switch
             {
-                ChannelEpgMatchSource.Provider => "Exact",
-                ChannelEpgMatchSource.Normalized => "Normalized",
-                ChannelEpgMatchSource.UserApproved => "Approved",
-                ChannelEpgMatchSource.Previous => "Reused",
-                ChannelEpgMatchSource.Alias => "Weak alias",
-                ChannelEpgMatchSource.Regex => "Weak regex",
-                ChannelEpgMatchSource.Fuzzy => "Fuzzy",
-                _ => "Unmatched"
+                ChannelEpgMatchSource.Provider => L("EpgCoverage.MatchType.Exact"),
+                ChannelEpgMatchSource.Normalized => L("EpgCoverage.MatchType.Normalized"),
+                ChannelEpgMatchSource.UserApproved => L("EpgCoverage.MatchType.Approved"),
+                ChannelEpgMatchSource.Previous => L("EpgCoverage.MatchType.Reused"),
+                ChannelEpgMatchSource.Alias => L("EpgCoverage.MatchType.WeakAlias"),
+                ChannelEpgMatchSource.Regex => L("EpgCoverage.MatchType.WeakRegex"),
+                ChannelEpgMatchSource.Fuzzy => L("EpgCoverage.MatchType.Fuzzy"),
+                _ => L("EpgCoverage.MatchType.Unmatched")
             };
         }
 
@@ -329,7 +329,7 @@ namespace Kroira.App.Services
             {
                 snapshots.Add(new EpgGuideSourceStatusSnapshot
                 {
-                    Label = "Active XMLTV",
+                    Label = L("EpgCoverage.GuideSource.ActiveXmltv"),
                     Url = RedactGuideUrl(log.ActiveXmltvUrl),
                     Kind = credential?.EpgMode == EpgActiveMode.Manual ? EpgGuideSourceKind.Manual : EpgGuideSourceKind.Provider,
                     Status = log.IsSuccess ? EpgGuideSourceStatus.Ready : EpgGuideSourceStatus.Failed,
@@ -343,12 +343,12 @@ namespace Kroira.App.Services
                 var kind = EpgPublicGuideCatalog.ClassifyFallbackUrl(url);
                 snapshots.Add(new EpgGuideSourceStatusSnapshot
                 {
-                    Label = EpgPublicGuideCatalog.BuildGuideSourceLabel(url, kind, "Fallback XMLTV"),
+                    Label = EpgPublicGuideCatalog.BuildGuideSourceLabel(url, kind, L("SourceLifecycle.GuideSource.FallbackXmltv")),
                     Url = RedactGuideUrl(url),
                     Kind = kind,
                     Status = EpgGuideSourceStatus.Pending,
                     IsOptional = true,
-                    Message = "Configured. Sync to test this source."
+                    Message = L("EpgCoverage.GuideSource.ConfiguredSyncToTest")
                 });
             }
 
@@ -403,6 +403,11 @@ namespace Kroira.App.Services
                     yield return trimmed;
                 }
             }
+        }
+
+        private static string L(string key)
+        {
+            return LocalizedStrings.Get(key);
         }
     }
 }

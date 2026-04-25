@@ -43,12 +43,12 @@
                 </Grid.ColumnDefinitions>
 
                 <StackPanel Spacing="8">
-                    <TextBlock Text="CAPTURE LIBRARY"
+                    <TextBlock x:Uid="MediaLibraryCaptureLibraryLabel" Text="CAPTURE LIBRARY"
                                Style="{StaticResource KroiraLabelStyle}"
                                Foreground="{StaticResource KroiraAccentBrush}" />
-                    <TextBlock Text="Recordings &amp; Downloads"
+                    <TextBlock x:Uid="MediaLibraryPageTitle" Text="Recordings &amp; Downloads"
                                Style="{StaticResource KroiraPageTitleStyle}" />
-                    <TextBlock Text="Monitor scheduled live recordings, queued VOD downloads, and completed files from one place."
+                    <TextBlock x:Uid="MediaLibraryPageSubtitle" Text="Monitor scheduled live recordings, queued VOD downloads, and completed files from one place."
                                Style="{StaticResource KroiraPageSubtitleStyle}"
                                MaxWidth="700" />
                 </StackPanel>
@@ -78,7 +78,7 @@
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
                 <StackPanel Spacing="4">
-                    <TextBlock Text="Storage path"
+                        <TextBlock x:Uid="MediaLibraryStoragePathLabel" Text="Storage path"
                                Style="{StaticResource KroiraLabelStyle}"
                                Foreground="{StaticResource KroiraAccentBrush}" />
                     <TextBlock Text="{x:Bind ViewModel.RootPath, Mode=OneWay}"
@@ -86,7 +86,8 @@
                                TextWrapping="WrapWholeWords" />
                 </StackPanel>
                 <Button Grid.Column="1"
-                        Content="Refresh"
+                            x:Uid="GeneralRefreshButton"
+                            Content="Refresh"
                         Click="Refresh_Click"
                         Style="{StaticResource KroiraGhostButtonStyle}"
                         VerticalAlignment="Center" />
@@ -110,10 +111,10 @@
                           Foreground="{StaticResource KroiraTextTertiaryBrush}"
                           FontSize="28"
                           HorizontalAlignment="Center" />
-                <TextBlock Text="No recordings or downloads yet"
+                    <TextBlock x:Uid="MediaLibraryNoItemsTitle" Text="No recordings or downloads yet"
                            Style="{StaticResource KroiraSectionTitleStyle}"
                            HorizontalAlignment="Center" />
-                <TextBlock Text="Schedule a live recording from Live TV or queue a VOD download from Movies or Series."
+                    <TextBlock x:Uid="MediaLibraryNoItemsSubtitle" Text="Schedule a live recording from Live TV or queue a VOD download from Movies or Series."
                            Style="{StaticResource KroiraBodyStyle}"
                            TextAlignment="Center" />
             </StackPanel>
@@ -130,7 +131,7 @@
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
-                    <TextBlock Text="LIVE RECORDINGS"
+                        <TextBlock x:Uid="MediaLibraryLiveRecordingsLabel" Text="LIVE RECORDINGS"
                                Style="{StaticResource KroiraLabelStyle}"
                                Foreground="{StaticResource KroiraAccentBrush}" />
                     <ListView Grid.Row="1"
@@ -170,16 +171,16 @@
                                                     Orientation="Horizontal"
                                                     Spacing="8"
                                                     VerticalAlignment="Center">
-                                            <Button Content="Play"
+                                            <Button x:Uid="GeneralPlayButton" Content="Play"
                                                     Click="PlayRecording_Click"
                                                     Visibility="{Binding CanPlay, Converter={StaticResource BooleanToVisibilityConverter}}" />
-                                            <Button Content="Retry"
+                                            <Button x:Uid="GeneralRetryButton" Content="Retry"
                                                     Click="RetryRecording_Click"
                                                     Visibility="{Binding CanRetry, Converter={StaticResource BooleanToVisibilityConverter}}" />
-                                            <Button Content="Cancel"
+                                            <Button x:Uid="GeneralCancelButton" Content="Cancel"
                                                     Click="CancelRecording_Click"
                                                     Visibility="{Binding CanCancel, Converter={StaticResource BooleanToVisibilityConverter}}" />
-                                            <Button Content="Delete"
+                                            <Button x:Uid="GeneralDeleteButton" Content="Delete"
                                                     Click="DeleteRecording_Click"
                                                     Visibility="{Binding CanDelete, Converter={StaticResource BooleanToVisibilityConverter}}" />
                                         </StackPanel>
@@ -203,7 +204,7 @@
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
-                    <TextBlock Text="VOD DOWNLOADS"
+                        <TextBlock x:Uid="MediaLibraryVodDownloadsLabel" Text="VOD DOWNLOADS"
                                Style="{StaticResource KroiraLabelStyle}"
                                Foreground="{StaticResource KroiraAccentBrush}" />
                     <ListView Grid.Row="1"
@@ -246,16 +247,16 @@
                                                     Orientation="Horizontal"
                                                     Spacing="8"
                                                     VerticalAlignment="Center">
-                                            <Button Content="Play"
+                                            <Button x:Uid="GeneralPlayButton2" Content="Play"
                                                     Click="PlayDownload_Click"
                                                     Visibility="{Binding CanPlay, Converter={StaticResource BooleanToVisibilityConverter}}" />
-                                            <Button Content="Retry"
+                                            <Button x:Uid="GeneralRetryButton2" Content="Retry"
                                                     Click="RetryDownload_Click"
                                                     Visibility="{Binding CanRetry, Converter={StaticResource BooleanToVisibilityConverter}}" />
-                                            <Button Content="Cancel"
+                                            <Button x:Uid="GeneralCancelButton2" Content="Cancel"
                                                     Click="CancelDownload_Click"
                                                     Visibility="{Binding CanCancel, Converter={StaticResource BooleanToVisibilityConverter}}" />
-                                            <Button Content="Delete"
+                                            <Button x:Uid="GeneralDeleteButton2" Content="Delete"
                                                     Click="DeleteDownload_Click"
                                                     Visibility="{Binding CanDelete, Converter={StaticResource BooleanToVisibilityConverter}}" />
                                         </StackPanel>

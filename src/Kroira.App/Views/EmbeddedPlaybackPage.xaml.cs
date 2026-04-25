@@ -120,7 +120,7 @@ namespace Kroira.App.Views
 
         private IServiceProvider AppServices =>
             ((App?)Application.Current)?.Services
-            ?? throw new InvalidOperationException("App services are unavailable.");
+            ?? throw new InvalidOperationException(LocalizedStrings.Get("Player.Error.AppServicesUnavailable"));
 
         private static void Log(string message)
         {
@@ -184,7 +184,7 @@ namespace Kroira.App.Views
             if (e.Parameter is not PlaybackLaunchContext context)
             {
                 _context = null;
-                ShowFatalError("Missing playback context.");
+                ShowFatalError(LocalizedStrings.Get("Player.Error.MissingContext"));
                 return;
             }
 
@@ -672,7 +672,7 @@ namespace Kroira.App.Views
             if (_loadTimeoutAttemptId != _activeAttemptId) return;
 
             LogStructuredPlayback("timeout_reason", "reason=open_timeout");
-            _ = AttemptRecoveryAsync(BuildFailureMessage(MapPlaybackError("Stream timed out while starting.", wasTimeout: true)), _activeAttemptId);
+            _ = AttemptRecoveryAsync(BuildFailureMessage(MapPlaybackError(LocalizedStrings.Get("Player.Error.StreamStartTimedOut"), wasTimeout: true)), _activeAttemptId);
         }
 
         private void BufferTimeoutTimer_Tick(object? sender, object e)
@@ -682,7 +682,7 @@ namespace Kroira.App.Views
             if (_bufferTimeoutAttemptId != _activeAttemptId) return;
 
             LogStructuredPlayback("timeout_reason", "reason=buffer_timeout");
-            _ = AttemptRecoveryAsync(BuildFailureMessage(MapPlaybackError("Stream stalled while buffering.", wasTimeout: true)), _activeAttemptId);
+            _ = AttemptRecoveryAsync(BuildFailureMessage(MapPlaybackError(LocalizedStrings.Get("Player.Error.StreamBufferStalled"), wasTimeout: true)), _activeAttemptId);
         }
 
         private async void ProgressPersistTimer_Tick(object? sender, object e)
@@ -727,7 +727,7 @@ namespace Kroira.App.Views
 
             if (isRetry)
             {
-                _stateMachine.BeginReconnect(_retryAttempt, MaxRetryAttempts, retryReason ?? "Trying to recover stream.");
+                _stateMachine.BeginReconnect(_retryAttempt, MaxRetryAttempts, retryReason ?? LocalizedStrings.Get("Player.Status.RecoveringStream"));
             }
             else
             {
@@ -1056,7 +1056,7 @@ namespace Kroira.App.Views
                 return true;
             }
 
-            ShowZapBanner(TitleText.Text, string.IsNullOrWhiteSpace(fallback.RecoverySummary) ? "Recovered via backup mirror." : fallback.RecoverySummary);
+            ShowZapBanner(TitleText.Text, string.IsNullOrWhiteSpace(fallback.RecoverySummary) ? LocalizedStrings.Get("Player.Status.RecoveredBackupMirror") : fallback.RecoverySummary);
             RestartPlayerSession("mirror_fallback", IsLivePlayback() ? 0 : GetRetryPositionMs());
             return true;
         }
@@ -1146,11 +1146,11 @@ namespace Kroira.App.Views
             switch (snapshot.State)
             {
                 case PlaybackSessionState.Opening:
-                    ShowStatusOverlay(snapshot.RetryAttempt > 0 ? "Reconnecting" : "Loading", snapshot.Message);
+                    ShowStatusOverlay(snapshot.RetryAttempt > 0 ? LocalizedStrings.Get("Player.Status.Reconnecting") : LocalizedStrings.Get("Player.Status.Loading"), snapshot.Message);
                     ShowControls(persist: true);
                     break;
                 case PlaybackSessionState.Buffering:
-                    ShowStatusOverlay("Buffering", snapshot.Message);
+                    ShowStatusOverlay(LocalizedStrings.Get("Player.Status.Buffering"), snapshot.Message);
                     ShowControls(persist: true, cause: "buffering");
                     break;
                 case PlaybackSessionState.Paused:
@@ -1359,7 +1359,7 @@ namespace Kroira.App.Views
 
             if (!IsPlaybackComplete())
             {
-                await AttemptRecoveryAsync(BuildFailureMessage(MapPlaybackError("Stream ended unexpectedly.", streamEnded: true)), _activeAttemptId);
+                await AttemptRecoveryAsync(BuildFailureMessage(MapPlaybackError(LocalizedStrings.Get("Player.Error.StreamEndedUnexpectedly"), streamEnded: true)), _activeAttemptId);
                 return;
             }
 
@@ -1964,8 +1964,8 @@ namespace Kroira.App.Views
             ToolTipService.SetToolTip(
                 TimelineSlider,
                 isLive
-                    ? canSeek ? "Seek within live buffer" : "Live stream has no seekable buffer"
-                    : canSeek ? "Seek" : "Seeking unavailable");
+                    ? canSeek ? LocalizedStrings.Get("Player.Seek.LiveBuffer") : LocalizedStrings.Get("Player.Seek.LiveBufferUnavailable")
+                    : canSeek ? LocalizedStrings.Get("Player.Seek.Seek") : LocalizedStrings.Get("Player.Seek.Unavailable"));
 
             UpdateEnhancedControlState();
         }
@@ -2006,27 +2006,27 @@ namespace Kroira.App.Views
             if (IsPictureInPictureMode())
             {
                 FullscreenIcon.Glyph = "\uE740";
-                ToolTipService.SetToolTip(FullscreenButton, "Fullscreen");
+                ToolTipService.SetToolTip(FullscreenButton, LocalizedStrings.Get("Player.Fullscreen.Enter"));
                 return;
             }
 
             var isFullscreen = _windowManager?.IsFullscreen == true;
             FullscreenIcon.Glyph = isFullscreen ? "\uE73F" : "\uE740";
-            ToolTipService.SetToolTip(FullscreenButton, isFullscreen ? "Exit fullscreen" : "Fullscreen");
+            ToolTipService.SetToolTip(FullscreenButton, isFullscreen ? LocalizedStrings.Get("Player.Fullscreen.Exit") : LocalizedStrings.Get("Player.Fullscreen.Enter"));
         }
 
         private void UpdatePictureInPictureUi()
         {
             var inPictureInPicture = IsPictureInPictureMode();
-            PictureInPictureButtonText.Text = inPictureInPicture ? "Return" : "PIP";
-            ToolTipService.SetToolTip(PictureInPictureButton, inPictureInPicture ? "Return to player" : "Picture in Picture");
+            PictureInPictureButtonText.Text = inPictureInPicture ? LocalizedStrings.Get("Player.Button.Return") : LocalizedStrings.Get("Player.Button.Pip");
+            ToolTipService.SetToolTip(PictureInPictureButton, inPictureInPicture ? LocalizedStrings.Get("Player.Button.ReturnToPlayer") : LocalizedStrings.Get("Player.Menu.PictureInPicture"));
         }
 
         private void BuildAspectMenu()
         {
             AspectFlyout.Items.Clear();
-            AddAspectItem("Automatic", PlaybackAspectMode.Automatic);
-            AddAspectItem("Fill window", PlaybackAspectMode.FillWindow);
+            AddAspectItem(LocalizedStrings.Get("Player.Aspect.Automatic"), PlaybackAspectMode.Automatic);
+            AddAspectItem(LocalizedStrings.Get("Player.Aspect.FillWindow"), PlaybackAspectMode.FillWindow);
             AddAspectItem("16:9", PlaybackAspectMode.Ratio16x9);
             AddAspectItem("4:3", PlaybackAspectMode.Ratio4x3);
             AddAspectItem("1.85:1", PlaybackAspectMode.Ratio185x1);
@@ -2056,7 +2056,7 @@ namespace Kroira.App.Views
                 }
             }
 
-            ToolTipService.SetToolTip(AspectButton, $"Aspect: {AspectModeLabel(_selectedAspectMode)}");
+            ToolTipService.SetToolTip(AspectButton, LocalizedStrings.Format("Player.Aspect.Tooltip", AspectModeLabel(_selectedAspectMode)));
         }
 
         private Task RefreshTrackMenusAsync()
@@ -2210,12 +2210,12 @@ namespace Kroira.App.Views
             var selectedAudioTrack = FindSelectedTrack(audioTracks);
             var selectedSubtitle = FindSelectedTrack(subtitleTracks);
             var tooltip = selectedAudioTrack != null && selectedSubtitle != null
-                ? $"Audio: {selectedAudioTrack.DisplayName} | Subs: {selectedSubtitle.DisplayName}"
+                ? $"{LocalizedStrings.Format("Player.Track.AudioFormat", selectedAudioTrack.DisplayName)} | {LocalizedStrings.Format("Player.Track.SubtitlesFormat", selectedSubtitle.DisplayName)}"
                 : selectedAudioTrack != null
-                    ? $"Audio: {selectedAudioTrack.DisplayName}"
+                    ? LocalizedStrings.Format("Player.Track.AudioFormat", selectedAudioTrack.DisplayName)
                     : selectedSubtitle != null
-                        ? $"Subtitles: {selectedSubtitle.DisplayName}"
-                        : "Audio and subtitles";
+                        ? LocalizedStrings.Format("Player.Track.SubtitlesFormat", selectedSubtitle.DisplayName)
+                        : LocalizedStrings.Get("Player.Menu.AudioAndSubtitles");
 
             TracksButton.Visibility = Visibility.Visible;
             ToolTipService.SetToolTip(TracksButton, tooltip);
@@ -2434,7 +2434,7 @@ namespace Kroira.App.Views
             }
 
             var mainWindow = ((App?)Application.Current)?.MainWindow
-                ?? throw new InvalidOperationException("Main window is unavailable.");
+                ?? throw new InvalidOperationException(LocalizedStrings.Get("Player.Error.MainWindowUnavailable"));
             return WindowNative.GetWindowHandle(mainWindow);
         }
 
@@ -3305,7 +3305,7 @@ namespace Kroira.App.Views
 
         private void ShowError(string? message)
         {
-            ErrorMessage.Text = string.IsNullOrWhiteSpace(message) ? "Unable to start playback." : message;
+            ErrorMessage.Text = string.IsNullOrWhiteSpace(message) ? LocalizedStrings.Get("Player.Error.UnableToStart") : message;
             ErrorOverlay.Visibility = Visibility.Visible;
             UpdateOverlayVisibility("error_visible");
         }
@@ -3345,11 +3345,11 @@ namespace Kroira.App.Views
             if (_context == null && string.IsNullOrWhiteSpace(streamUrl))
             {
                 var fallback = string.IsNullOrWhiteSpace(message)
-                    ? "Unable to start playback."
+                    ? LocalizedStrings.Get("Player.Error.UnableToStart")
                     : RedactPlaybackText(message);
                 return new PlayerV2PlaybackError(
                     PlayerV2PlaybackErrorCode.Unknown,
-                    "Playback failed",
+                    LocalizedStrings.Get("Player.Error.PlaybackFailed"),
                     fallback,
                     IsRetryable: true);
             }
@@ -3378,7 +3378,7 @@ namespace Kroira.App.Views
         private string BuildFailureMessage(string? fallbackMessage)
         {
             var baseMessage = string.IsNullOrWhiteSpace(fallbackMessage)
-                ? "Unable to start playback."
+                ? LocalizedStrings.Get("Player.Error.UnableToStart")
                 : RedactPlaybackText(fallbackMessage).Trim();
             var playerWarning = RedactPlaybackText(_lastPlayerWarning);
             return string.IsNullOrWhiteSpace(playerWarning)
@@ -3389,7 +3389,7 @@ namespace Kroira.App.Views
         private string BuildFailureMessage(PlayerV2PlaybackError error)
         {
             var message = string.IsNullOrWhiteSpace(error.Message) ? error.Title : error.Message;
-            var title = string.IsNullOrWhiteSpace(error.Title) ? "Playback failed" : error.Title;
+            var title = string.IsNullOrWhiteSpace(error.Title) ? LocalizedStrings.Get("Player.Error.PlaybackFailed") : error.Title;
             var baseMessage = message.StartsWith(title, StringComparison.OrdinalIgnoreCase)
                 ? message
                 : $"{title}. {message}";
@@ -3510,12 +3510,12 @@ namespace Kroira.App.Views
         {
             return aspectMode switch
             {
-                PlaybackAspectMode.FillWindow => "Fill window",
+                PlaybackAspectMode.FillWindow => LocalizedStrings.Get("Player.Aspect.FillWindow"),
                 PlaybackAspectMode.Ratio16x9 => "16:9",
                 PlaybackAspectMode.Ratio4x3 => "4:3",
                 PlaybackAspectMode.Ratio185x1 => "1.85:1",
                 PlaybackAspectMode.Ratio235x1 => "2.35:1",
-                _ => "Automatic",
+                _ => LocalizedStrings.Get("Player.Aspect.Automatic"),
             };
         }
 
@@ -3531,9 +3531,9 @@ namespace Kroira.App.Views
         {
             return ctx.ContentType switch
             {
-                PlaybackContentType.Channel => "Live",
-                PlaybackContentType.Movie => "Movie",
-                PlaybackContentType.Episode => "Episode",
+                PlaybackContentType.Channel => LocalizedStrings.Get("Player.Title.Live"),
+                PlaybackContentType.Movie => LocalizedStrings.Get("Player.Title.Movie"),
+                PlaybackContentType.Episode => LocalizedStrings.Get("Player.Title.Episode"),
                 _ => string.Empty,
             };
         }
@@ -3623,7 +3623,7 @@ namespace Kroira.App.Views
                 : _context.LiveStreamUrl;
             if (string.IsNullOrWhiteSpace(liveStreamUrl))
             {
-                ShowZapBanner("Live unavailable", "The live stream could not be resolved for this channel.");
+                ShowZapBanner(LocalizedStrings.Get("Player.Error.LiveUnavailable"), LocalizedStrings.Get("Player.Error.LiveResolveFailed"));
                 return;
             }
 
@@ -3635,7 +3635,7 @@ namespace Kroira.App.Views
                 return;
             }
 
-            ShowZapBanner(TitleText.Text, "Returned to live playback.");
+            ShowZapBanner(TitleText.Text, LocalizedStrings.Get("Player.Status.ReturnedToLive"));
             RestartPlayerSession($"go_live:{reason}", 0);
         }
 

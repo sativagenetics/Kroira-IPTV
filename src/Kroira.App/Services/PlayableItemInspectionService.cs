@@ -42,10 +42,13 @@ namespace Kroira.App.Services
             {
                 return new PlayableItemInspectionSnapshot
                 {
-                    Title = "Item unavailable",
-                    StatusText = "No playback context was available for inspection.",
+                    Title = L("PlayableInspection.Title.ItemUnavailable"),
+                    StatusText = L("PlayableInspection.Status.NoPlaybackContext"),
                     Sections = Array.Empty<PlayableItemInspectionSection>(),
-                    SafeReportText = $"KROIRA item inspection{Environment.NewLine}No playback context was available."
+                    SafeReportText = string.Join(
+                        Environment.NewLine,
+                        L("PlayableInspection.Report.Title"),
+                        L("PlayableInspection.Report.NoPlaybackContext"))
                 };
             }
 
@@ -159,7 +162,7 @@ namespace Kroira.App.Services
                         .FirstOrDefaultAsync(cancellationToken);
                     if (row == null)
                     {
-                        return LoadedItemDetails.Fallback("Channel", context);
+                        return LoadedItemDetails.Fallback(L("PlayableInspection.Fallback.Channel"), context);
                     }
 
                     return new LoadedItemDetails
@@ -187,7 +190,7 @@ namespace Kroira.App.Services
                         .FirstOrDefaultAsync(cancellationToken);
                     if (row == null)
                     {
-                        return LoadedItemDetails.Fallback("Movie", context);
+                        return LoadedItemDetails.Fallback(L("PlayableInspection.Fallback.Movie"), context);
                     }
 
                     return new LoadedItemDetails
@@ -225,7 +228,7 @@ namespace Kroira.App.Services
                         .FirstOrDefaultAsync(cancellationToken);
                     if (row == null)
                     {
-                        return LoadedItemDetails.Fallback("Episode", context);
+                        return LoadedItemDetails.Fallback(L("PlayableInspection.Fallback.Episode"), context);
                     }
 
                     return new LoadedItemDetails
@@ -243,7 +246,7 @@ namespace Kroira.App.Services
                 }
             }
 
-            return LoadedItemDetails.Fallback("Item", context);
+            return LoadedItemDetails.Fallback(L("PlayableInspection.Fallback.Item"), context);
         }
 
         private PlayableItemInspectionSection BuildIdentitySection(
@@ -255,56 +258,56 @@ namespace Kroira.App.Services
             string logicalKey)
         {
             var fields = new List<PlayableItemInspectionField>();
-            AddField(fields, "Content type", context.ContentType.ToString());
-            AddField(fields, "Source", details.SourceName);
-            AddField(fields, "Source type", details.SourceType.ToString());
-            AddField(fields, "Source profile id", details.SourceProfileId > 0 ? details.SourceProfileId.ToString() : string.Empty);
-            AddField(fields, "Source endpoint", _redactionService.RedactUrl(credential?.Url));
-            AddField(fields, "Logical identity", logicalKey);
-            AddField(fields, "Acquisition profile", FirstNonEmpty(diagnostics?.AcquisitionProfileLabel, diagnostics?.AcquisitionProfileKey));
-            AddField(fields, "Provider profile", BuildProviderProfileText(diagnostics, stalkerSnapshot));
+            AddField(fields, L("PlayableInspection.Field.ContentType"), context.ContentType.ToString());
+            AddField(fields, L("PlayableInspection.Field.Source"), details.SourceName);
+            AddField(fields, L("PlayableInspection.Field.SourceType"), details.SourceType.ToString());
+            AddField(fields, L("PlayableInspection.Field.SourceProfileId"), details.SourceProfileId > 0 ? details.SourceProfileId.ToString() : string.Empty);
+            AddField(fields, L("PlayableInspection.Field.SourceEndpoint"), _redactionService.RedactUrl(credential?.Url));
+            AddField(fields, L("PlayableInspection.Field.LogicalIdentity"), logicalKey);
+            AddField(fields, L("PlayableInspection.Field.AcquisitionProfile"), FirstNonEmpty(diagnostics?.AcquisitionProfileLabel, diagnostics?.AcquisitionProfileKey));
+            AddField(fields, L("PlayableInspection.Field.ProviderProfile"), BuildProviderProfileText(diagnostics, stalkerSnapshot));
 
             if (details.Channel != null)
             {
-                AddField(fields, "Raw provider name", details.Channel.Name);
-                AddField(fields, "Category", details.CategoryName);
-                AddField(fields, "Normalized name", details.Channel.NormalizedName);
-                AddField(fields, "Normalized identity", details.Channel.NormalizedIdentityKey);
-                AddField(fields, "Alias keys", details.Channel.AliasKeys);
-                AddField(fields, "Provider EPG id", details.Channel.ProviderEpgChannelId);
-                AddField(fields, "Matched EPG id", details.Channel.EpgChannelId);
+                AddField(fields, L("PlayableInspection.Field.RawProviderName"), details.Channel.Name);
+                AddField(fields, L("PlayableInspection.Field.Category"), details.CategoryName);
+                AddField(fields, L("PlayableInspection.Field.NormalizedName"), details.Channel.NormalizedName);
+                AddField(fields, L("PlayableInspection.Field.NormalizedIdentity"), details.Channel.NormalizedIdentityKey);
+                AddField(fields, L("PlayableInspection.Field.AliasKeys"), details.Channel.AliasKeys);
+                AddField(fields, L("PlayableInspection.Field.ProviderEpgId"), details.Channel.ProviderEpgChannelId);
+                AddField(fields, L("PlayableInspection.Field.MatchedEpgId"), details.Channel.EpgChannelId);
             }
 
             if (details.Movie != null)
             {
-                AddField(fields, "Raw provider title", details.Movie.RawSourceTitle);
-                AddField(fields, "Category", details.Movie.CategoryName);
-                AddField(fields, "Provider item id", details.Movie.ExternalId);
-                AddField(fields, "Canonical key", details.Movie.CanonicalTitleKey);
-                AddField(fields, "Dedup fingerprint", details.Movie.DedupFingerprint);
+                AddField(fields, L("PlayableInspection.Field.RawProviderTitle"), details.Movie.RawSourceTitle);
+                AddField(fields, L("PlayableInspection.Field.Category"), details.Movie.CategoryName);
+                AddField(fields, L("PlayableInspection.Field.ProviderItemId"), details.Movie.ExternalId);
+                AddField(fields, L("PlayableInspection.Field.CanonicalKey"), details.Movie.CanonicalTitleKey);
+                AddField(fields, L("PlayableInspection.Field.DedupFingerprint"), details.Movie.DedupFingerprint);
                 AddField(fields, "TMDb / IMDb", BuildJoined(" / ", details.Movie.TmdbId, details.Movie.ImdbId));
             }
 
             if (details.Episode != null)
             {
-                AddField(fields, "Series", details.Series?.Title);
-                AddField(fields, "Season / episode", details.SeasonNumber > 0 ? $"S{details.SeasonNumber:00}E{details.Episode.EpisodeNumber:00}" : $"Episode {details.Episode.EpisodeNumber}");
-                AddField(fields, "Episode provider id", details.Episode.ExternalId);
-                AddField(fields, "Series provider id", details.Series?.ExternalId);
-                AddField(fields, "Series canonical key", details.Series?.CanonicalTitleKey);
-                AddField(fields, "Series dedup fingerprint", details.Series?.DedupFingerprint);
+                AddField(fields, L("PlayableInspection.Field.Series"), details.Series?.Title);
+                AddField(fields, L("PlayableInspection.Field.SeasonEpisode"), details.SeasonNumber > 0 ? $"S{details.SeasonNumber:00}E{details.Episode.EpisodeNumber:00}" : F("PlayableInspection.Value.EpisodeNumber", details.Episode.EpisodeNumber));
+                AddField(fields, L("PlayableInspection.Field.EpisodeProviderId"), details.Episode.ExternalId);
+                AddField(fields, L("PlayableInspection.Field.SeriesProviderId"), details.Series?.ExternalId);
+                AddField(fields, L("PlayableInspection.Field.SeriesCanonicalKey"), details.Series?.CanonicalTitleKey);
+                AddField(fields, L("PlayableInspection.Field.SeriesDedupFingerprint"), details.Series?.DedupFingerprint);
             }
 
             if (stalkerSnapshot != null)
             {
                 AddRedactedField(fields, "Portal", BuildJoined(" ", stalkerSnapshot.PortalName, stalkerSnapshot.PortalVersion));
-                AddRedactedField(fields, "Portal profile", BuildJoined(" / ", stalkerSnapshot.ProfileName, stalkerSnapshot.ProfileId));
+                AddRedactedField(fields, L("PlayableInspection.Field.PortalProfile"), BuildJoined(" / ", stalkerSnapshot.ProfileName, stalkerSnapshot.ProfileId));
                 AddField(fields, "Portal MAC", _redactionService.RedactMacAddress(stalkerSnapshot.MacAddress));
             }
 
             return new PlayableItemInspectionSection
             {
-                Title = "Identity",
+                Title = L("PlayableInspection.Section.Identity"),
                 Fields = fields
             };
         }
@@ -315,39 +318,39 @@ namespace Kroira.App.Services
             SourceCredential? credential)
         {
             var fields = new List<PlayableItemInspectionField>();
-            AddField(fields, "Catalog stream", _redactionService.RedactUrl(context.CatalogStreamUrl));
-            AddField(fields, "Upstream stream", BuildUpstreamStreamText(context));
-            AddField(fields, "Launch stream", ShouldShowResolvedUrl(context) ? _redactionService.RedactUrl(context.StreamUrl) : "Not resolved until launch");
-            AddField(fields, "Live stream", context.ContentType == PlaybackContentType.Channel ? _redactionService.RedactUrl(context.LiveStreamUrl) : string.Empty);
-            AddRedactedField(fields, "Launch path", BuildLaunchPathText(context));
-            AddRedactedField(fields, "Provider resolution", FirstNonEmpty(context.ProviderSummary, InferProviderSummary(context.CatalogStreamUrl)));
-            AddRedactedField(fields, "Routing", FirstNonEmpty(context.RoutingSummary, credential?.ProxyScope == SourceProxyScope.Disabled ? "Direct routing" : string.Empty));
-            AddField(fields, "Source proxy policy", BuildProxyPolicyText(credential));
-            AddField(fields, "Proxy endpoint", _redactionService.RedactUrl(credential?.ProxyUrl));
-            AddField(fields, "Companion policy", BuildCompanionPolicyText(context, credential));
-            AddField(fields, "Companion endpoint", _redactionService.RedactUrl(FirstNonEmpty(context.CompanionUrl, credential?.CompanionUrl)));
-            AddRedactedField(fields, "Companion status", BuildCompanionStatusDisplayText(context, credential));
-            AddRedactedField(fields, "Operational selection", context.OperationalSummary);
-            AddField(fields, "Mirror candidates", context.MirrorCandidateCount > 0 ? context.MirrorCandidateCount.ToString() : string.Empty);
-            AddField(fields, "Playback mode", context.PlaybackMode.ToString());
+            AddField(fields, L("PlayableInspection.Field.CatalogStream"), _redactionService.RedactUrl(context.CatalogStreamUrl));
+            AddField(fields, L("PlayableInspection.Field.UpstreamStream"), BuildUpstreamStreamText(context));
+            AddField(fields, L("PlayableInspection.Field.LaunchStream"), ShouldShowResolvedUrl(context) ? _redactionService.RedactUrl(context.StreamUrl) : L("PlayableInspection.Value.NotResolvedUntilLaunch"));
+            AddField(fields, L("PlayableInspection.Field.LiveStream"), context.ContentType == PlaybackContentType.Channel ? _redactionService.RedactUrl(context.LiveStreamUrl) : string.Empty);
+            AddRedactedField(fields, L("PlayableInspection.Field.LaunchPath"), BuildLaunchPathText(context));
+            AddRedactedField(fields, L("PlayableInspection.Field.ProviderResolution"), FirstNonEmpty(context.ProviderSummary, InferProviderSummary(context.CatalogStreamUrl)));
+            AddRedactedField(fields, L("PlayableInspection.Field.Routing"), FirstNonEmpty(context.RoutingSummary, credential?.ProxyScope == SourceProxyScope.Disabled ? L("PlayableInspection.Value.DirectRouting") : string.Empty));
+            AddField(fields, L("PlayableInspection.Field.SourceProxyPolicy"), BuildProxyPolicyText(credential));
+            AddField(fields, L("PlayableInspection.Field.ProxyEndpoint"), _redactionService.RedactUrl(credential?.ProxyUrl));
+            AddField(fields, L("PlayableInspection.Field.CompanionPolicy"), BuildCompanionPolicyText(context, credential));
+            AddField(fields, L("PlayableInspection.Field.CompanionEndpoint"), _redactionService.RedactUrl(FirstNonEmpty(context.CompanionUrl, credential?.CompanionUrl)));
+            AddRedactedField(fields, L("PlayableInspection.Field.CompanionStatus"), BuildCompanionStatusDisplayText(context, credential));
+            AddRedactedField(fields, L("PlayableInspection.Field.OperationalSelection"), context.OperationalSummary);
+            AddField(fields, L("PlayableInspection.Field.MirrorCandidates"), context.MirrorCandidateCount > 0 ? context.MirrorCandidateCount.ToString() : string.Empty);
+            AddField(fields, L("PlayableInspection.Field.PlaybackMode"), context.PlaybackMode.ToString());
 
             if (context.PlaybackMode == CatchupPlaybackMode.Catchup || context.CatchupRequestKind != CatchupRequestKind.None)
             {
-                AddField(fields, "Catchup request", context.CatchupRequestKind.ToString());
-                AddRedactedField(fields, "Catchup status", BuildJoined(" - ", context.CatchupResolutionStatus.ToString(), context.CatchupStatusText));
-                AddField(fields, "Catchup program", context.CatchupProgramTitle);
-                AddField(fields, "Catchup window", FormatWindow(context.CatchupProgramStartTimeUtc, context.CatchupProgramEndTimeUtc));
+                AddField(fields, L("PlayableInspection.Field.CatchupRequest"), context.CatchupRequestKind.ToString());
+                AddRedactedField(fields, L("PlayableInspection.Field.CatchupStatus"), BuildJoined(" - ", context.CatchupResolutionStatus.ToString(), context.CatchupStatusText));
+                AddField(fields, L("PlayableInspection.Field.CatchupProgram"), context.CatchupProgramTitle);
+                AddField(fields, L("PlayableInspection.Field.CatchupWindow"), FormatWindow(context.CatchupProgramStartTimeUtc, context.CatchupProgramEndTimeUtc));
             }
 
             if (details.Channel != null)
             {
-                AddField(fields, "Catchup support", details.Channel.SupportsCatchup ? "Supported" : "Not advertised");
-                AddField(fields, "Catchup window hours", details.Channel.CatchupWindowHours > 0 ? details.Channel.CatchupWindowHours.ToString() : string.Empty);
+                AddField(fields, L("PlayableInspection.Field.CatchupSupport"), details.Channel.SupportsCatchup ? L("PlayableInspection.Value.Supported") : L("PlayableInspection.Value.NotAdvertised"));
+                AddField(fields, L("PlayableInspection.Field.CatchupWindowHours"), details.Channel.CatchupWindowHours > 0 ? details.Channel.CatchupWindowHours.ToString() : string.Empty);
             }
 
             return new PlayableItemInspectionSection
             {
-                Title = "Streams",
+                Title = L("PlayableInspection.Section.Streams"),
                 Fields = fields
             };
         }
@@ -359,18 +362,18 @@ namespace Kroira.App.Services
             CatchupPlaybackAttempt? catchupAttempt)
         {
             var fields = new List<PlayableItemInspectionField>();
-            AddRedactedField(fields, "Guide status", diagnostics?.EpgStatusText);
-            AddRedactedField(fields, "Guide summary", FirstNonEmpty(diagnostics?.EpgStatusSummary, diagnostics?.EpgCoverageText));
+            AddRedactedField(fields, L("PlayableInspection.Field.GuideStatus"), diagnostics?.EpgStatusText);
+            AddRedactedField(fields, L("PlayableInspection.Field.GuideSummary"), FirstNonEmpty(diagnostics?.EpgStatusSummary, diagnostics?.EpgCoverageText));
             AddField(fields, "EPG match", BuildJoined(" / ", channel.EpgMatchSource.ToString(), channel.EpgMatchConfidence > 0 ? $"{channel.EpgMatchConfidence}%" : string.Empty));
-            AddRedactedField(fields, "EPG match summary", channel.EpgMatchSummary);
-            AddRedactedField(fields, "Catchup source", BuildJoined(" / ", channel.CatchupSource.ToString(), channel.ProviderCatchupSource));
-            AddRedactedField(fields, "Catchup summary", channel.CatchupSummary);
-            AddRedactedField(fields, "Latest catchup attempt", BuildCatchupAttemptText(catchupAttempt));
-            AddRedactedField(fields, "Current playback catchup", context.PlaybackMode == CatchupPlaybackMode.Catchup ? context.CatchupStatusText : string.Empty);
+            AddRedactedField(fields, L("PlayableInspection.Field.EpgMatchSummary"), channel.EpgMatchSummary);
+            AddRedactedField(fields, L("PlayableInspection.Field.CatchupSource"), BuildJoined(" / ", channel.CatchupSource.ToString(), channel.ProviderCatchupSource));
+            AddRedactedField(fields, L("PlayableInspection.Field.CatchupSummary"), channel.CatchupSummary);
+            AddRedactedField(fields, L("PlayableInspection.Field.LatestCatchupAttempt"), BuildCatchupAttemptText(catchupAttempt));
+            AddRedactedField(fields, L("PlayableInspection.Field.CurrentPlaybackCatchup"), context.PlaybackMode == CatchupPlaybackMode.Catchup ? context.CatchupStatusText : string.Empty);
 
             return new PlayableItemInspectionSection
             {
-                Title = "Guide and catchup",
+                Title = L("PlayableInspection.Section.GuideCatchup"),
                 Fields = fields
             };
         }
@@ -381,22 +384,22 @@ namespace Kroira.App.Services
             LogicalOperationalState? operationalState)
         {
             var fields = new List<PlayableItemInspectionField>();
-            AddField(fields, "Logical content key", context.LogicalContentKey);
-            AddField(fields, "Preferred source profile", context.PreferredSourceProfileId > 0 ? context.PreferredSourceProfileId.ToString() : string.Empty);
-            AddRedactedField(fields, "Routing summary", context.RoutingSummary);
-            AddRedactedField(fields, "Provider summary", context.ProviderSummary);
-            AddRedactedField(fields, "Operational summary", context.OperationalSummary);
-            AddRedactedField(fields, "Recovery summary", operationalState?.RecoverySummary);
-            AddField(fields, "Candidate count", operationalState?.CandidateCount > 0 ? operationalState.CandidateCount.ToString() : string.Empty);
-            AddField(fields, "Last known good", operationalState != null && operationalState.LastKnownGoodSourceProfileId > 0
+            AddField(fields, L("PlayableInspection.Field.LogicalContentKey"), context.LogicalContentKey);
+            AddField(fields, L("PlayableInspection.Field.PreferredSourceProfile"), context.PreferredSourceProfileId > 0 ? context.PreferredSourceProfileId.ToString() : string.Empty);
+            AddRedactedField(fields, L("PlayableInspection.Field.RoutingSummary"), context.RoutingSummary);
+            AddRedactedField(fields, L("PlayableInspection.Field.ProviderSummary"), context.ProviderSummary);
+            AddRedactedField(fields, L("PlayableInspection.Field.OperationalSummary"), context.OperationalSummary);
+            AddRedactedField(fields, L("PlayableInspection.Field.RecoverySummary"), operationalState?.RecoverySummary);
+            AddField(fields, L("PlayableInspection.Field.CandidateCount"), operationalState?.CandidateCount > 0 ? operationalState.CandidateCount.ToString() : string.Empty);
+            AddField(fields, L("PlayableInspection.Field.LastKnownGood"), operationalState != null && operationalState.LastKnownGoodSourceProfileId > 0
                 ? $"{operationalState.LastKnownGoodSourceProfileId} at {operationalState.LastKnownGoodAtUtc?.ToLocalTime():g}"
                 : string.Empty);
-            AddRedactedField(fields, "Candidate ranking", BuildCandidateText(operationalState));
-            AddField(fields, "Source proxy policy", credential?.ProxyScope.ToString());
+            AddRedactedField(fields, L("PlayableInspection.Field.CandidateRanking"), BuildCandidateText(operationalState));
+            AddField(fields, L("PlayableInspection.Field.SourceProxyPolicy"), credential?.ProxyScope.ToString());
 
             return new PlayableItemInspectionSection
             {
-                Title = "Routing and fallback",
+                Title = L("PlayableInspection.Section.RoutingFallback"),
                 Fields = fields
             };
         }
@@ -408,25 +411,25 @@ namespace Kroira.App.Services
             {
                 return new PlayableItemInspectionSection
                 {
-                    Title = "Source diagnostics",
+                    Title = L("PlayableInspection.Section.SourceDiagnostics"),
                     Fields = fields
                 };
             }
 
-            AddRedactedField(fields, "Health", BuildJoined(" - ", diagnostics.HealthLabel, diagnostics.StatusSummary));
-            AddRedactedField(fields, "Validation", diagnostics.ValidationResultText);
-            AddRedactedField(fields, "Acquisition run", BuildJoined(" - ", diagnostics.AcquisitionRunStatusText, diagnostics.AcquisitionRunSummaryText));
-            AddRedactedField(fields, "Acquisition stats", diagnostics.AcquisitionStatsText);
-            AddRedactedField(fields, "Warning summary", FirstNonEmpty(diagnostics.WarningSummaryText, diagnostics.FailureSummaryText));
-            AddRedactedField(fields, "Top issue", diagnostics.Issues.FirstOrDefault()?.Message);
-            AddRedactedField(fields, "Probe summary", BuildProbeText(diagnostics.HealthProbes));
-            AddRedactedField(fields, "Relevant evidence", BuildEvidenceText(diagnostics.AcquisitionEvidence));
-            AddRedactedField(fields, "Portal status", BuildJoined(" - ", diagnostics.StalkerPortalSummaryText, diagnostics.StalkerPortalErrorText));
-            AddRedactedField(fields, "Catchup diagnostics", FirstNonEmpty(diagnostics.CatchupStatusText, diagnostics.CatchupLatestAttemptText));
+            AddRedactedField(fields, L("PlayableInspection.Field.Health"), BuildJoined(" - ", diagnostics.HealthLabel, diagnostics.StatusSummary));
+            AddRedactedField(fields, L("PlayableInspection.Field.Validation"), diagnostics.ValidationResultText);
+            AddRedactedField(fields, L("PlayableInspection.Field.AcquisitionRun"), BuildJoined(" - ", diagnostics.AcquisitionRunStatusText, diagnostics.AcquisitionRunSummaryText));
+            AddRedactedField(fields, L("PlayableInspection.Field.AcquisitionStats"), diagnostics.AcquisitionStatsText);
+            AddRedactedField(fields, L("PlayableInspection.Field.WarningSummary"), FirstNonEmpty(diagnostics.WarningSummaryText, diagnostics.FailureSummaryText));
+            AddRedactedField(fields, L("PlayableInspection.Field.TopIssue"), diagnostics.Issues.FirstOrDefault()?.Message);
+            AddRedactedField(fields, L("PlayableInspection.Field.ProbeSummary"), BuildProbeText(diagnostics.HealthProbes));
+            AddRedactedField(fields, L("PlayableInspection.Field.RelevantEvidence"), BuildEvidenceText(diagnostics.AcquisitionEvidence));
+            AddRedactedField(fields, L("PlayableInspection.Field.PortalStatus"), BuildJoined(" - ", diagnostics.StalkerPortalSummaryText, diagnostics.StalkerPortalErrorText));
+            AddRedactedField(fields, L("PlayableInspection.Field.CatchupDiagnostics"), FirstNonEmpty(diagnostics.CatchupStatusText, diagnostics.CatchupLatestAttemptText));
 
             return new PlayableItemInspectionSection
             {
-                Title = "Source diagnostics",
+                Title = L("PlayableInspection.Section.SourceDiagnostics"),
                 Fields = fields
             };
         }
@@ -434,21 +437,21 @@ namespace Kroira.App.Services
         private PlayableItemInspectionSection BuildRuntimeSection(PlayableItemInspectionRuntimeState runtimeState)
         {
             var fields = new List<PlayableItemInspectionField>();
-            AddField(fields, "Session state", runtimeState.SessionState);
-            AddRedactedField(fields, "Session message", runtimeState.SessionMessage);
-            AddField(fields, "Position / duration", BuildRuntimePositionText(runtimeState));
-            AddField(fields, "Seekability", runtimeState.IsSeekable ? "Seekable" : "Not seekable");
-            AddField(fields, "Resolution", runtimeState.Width > 0 && runtimeState.Height > 0 ? $"{runtimeState.Width}x{runtimeState.Height}" : string.Empty);
+            AddField(fields, L("PlayableInspection.Field.SessionState"), runtimeState.SessionState);
+            AddRedactedField(fields, L("PlayableInspection.Field.SessionMessage"), runtimeState.SessionMessage);
+            AddField(fields, L("PlayableInspection.Field.PositionDuration"), BuildRuntimePositionText(runtimeState));
+            AddField(fields, L("PlayableInspection.Field.Seekability"), runtimeState.IsSeekable ? L("PlayableInspection.Value.Seekable") : L("PlayableInspection.Value.NotSeekable"));
+            AddField(fields, L("PlayableInspection.Field.Resolution"), runtimeState.Width > 0 && runtimeState.Height > 0 ? $"{runtimeState.Width}x{runtimeState.Height}" : string.Empty);
             AddField(fields, "FPS", runtimeState.FramesPerSecond > 0 ? runtimeState.FramesPerSecond.ToString("0.##") : string.Empty);
-            AddField(fields, "Video codec", runtimeState.VideoCodec);
-            AddField(fields, "Audio codec", runtimeState.AudioCodec);
-            AddField(fields, "Container", runtimeState.ContainerFormat);
-            AddField(fields, "Pixel format", runtimeState.PixelFormat);
-            AddField(fields, "Hardware decode", runtimeState.IsHardwareDecodingActive ? "Active" : string.Empty);
+            AddField(fields, L("PlayableInspection.Field.VideoCodec"), runtimeState.VideoCodec);
+            AddField(fields, L("PlayableInspection.Field.AudioCodec"), runtimeState.AudioCodec);
+            AddField(fields, L("PlayableInspection.Field.Container"), runtimeState.ContainerFormat);
+            AddField(fields, L("PlayableInspection.Field.PixelFormat"), runtimeState.PixelFormat);
+            AddField(fields, L("PlayableInspection.Field.HardwareDecode"), runtimeState.IsHardwareDecodingActive ? L("PlayableInspection.Value.Active") : string.Empty);
 
             return new PlayableItemInspectionSection
             {
-                Title = "Current playback",
+                Title = L("PlayableInspection.Section.CurrentPlayback"),
                 Fields = fields
             };
         }
@@ -462,31 +465,31 @@ namespace Kroira.App.Services
             {
                 if (context.CompanionStatus == CompanionRelayStatus.Applied)
                 {
-                    return "Showing the active playback context, including the upstream provider stream and the local companion relay launch URL currently in use.";
+                    return L("PlayableInspection.Status.ActiveCompanion");
                 }
 
                 return ShouldShowResolvedUrl(context)
-                    ? "Showing the active playback context, including the resolved launch URL currently in use."
-                    : "Showing the active playback context with source-aware routing details.";
+                    ? L("PlayableInspection.Status.ActiveResolved")
+                    : L("PlayableInspection.Status.ActiveRouting");
             }
 
             if (context.PlaybackMode == CatchupPlaybackMode.Catchup || context.CatchupRequestKind != CatchupRequestKind.None)
             {
                 if (context.CompanionStatus == CompanionRelayStatus.Applied)
                 {
-                    return "Showing the catalog, upstream replay stream, and companion relay launch context for this catchup request.";
+                    return L("PlayableInspection.Status.CatchupCompanion");
                 }
 
-                return "Showing the catalog and catchup context for this item. The replay URL is resolved only when catchup is launched.";
+                return L("PlayableInspection.Status.CatchupCatalog");
             }
 
             if (context.CompanionStatus == CompanionRelayStatus.Applied)
             {
-                return "Showing the catalog-level view of this item, including the upstream provider stream and the local companion relay launch path.";
+                return L("PlayableInspection.Status.CatalogCompanion");
             }
 
             return string.IsNullOrWhiteSpace(diagnostics?.StatusSummary)
-                ? "Showing the catalog-level view of this item. Provider-specific URLs are resolved only at launch time."
+                ? L("PlayableInspection.Status.CatalogDeferred")
                 : diagnostics.StatusSummary;
         }
 
@@ -520,9 +523,9 @@ namespace Kroira.App.Services
         private string BuildSafeReport(string title, IReadOnlyList<PlayableItemInspectionSection> sections)
         {
             var builder = new StringBuilder();
-            builder.AppendLine("KROIRA item inspection");
+            builder.AppendLine(L("PlayableInspection.Report.Title"));
             builder.AppendLine(title);
-            builder.AppendLine("Sensitive values are redacted.");
+            builder.AppendLine(L("PlayableInspection.Report.RedactedNotice"));
 
             foreach (var section in sections)
             {
@@ -585,8 +588,8 @@ namespace Kroira.App.Services
         private static string InferProviderSummary(string? catalogStreamUrl)
         {
             return StalkerLocatorCodec.TryParse(catalogStreamUrl, out _)
-                ? "Stalker locator"
-                : "Direct stream URL";
+                ? L("PlayableInspection.Value.StalkerLocator")
+                : L("PlayableInspection.Value.DirectStreamUrl");
         }
 
         private static string BuildLaunchPathText(PlaybackLaunchContext context)
@@ -594,28 +597,28 @@ namespace Kroira.App.Services
             var parts = new List<string>();
             if (context.PlaybackMode == CatchupPlaybackMode.Catchup || context.CatchupRequestKind != CatchupRequestKind.None)
             {
-                parts.Add("Catchup replay");
+                parts.Add(L("PlayableInspection.Value.CatchupReplay"));
             }
 
             if (ShouldShowResolvedUrl(context))
             {
                 parts.Add(!string.IsNullOrWhiteSpace(context.UpstreamStreamUrl) &&
                           !string.Equals(context.UpstreamStreamUrl, context.StreamUrl, StringComparison.Ordinal)
-                    ? "Upstream resolved then relayed"
-                    : "Resolved launch URL");
+                    ? L("PlayableInspection.Value.UpstreamResolvedRelayed")
+                    : L("PlayableInspection.Value.ResolvedLaunchUrl"));
             }
             else
             {
-                parts.Add("Catalog URL");
+                parts.Add(L("PlayableInspection.Value.CatalogUrl"));
             }
 
             if (context.CompanionStatus == CompanionRelayStatus.Applied)
             {
-                parts.Add("Companion relay");
+                parts.Add(L("PlayableInspection.Value.CompanionRelay"));
             }
             else if (context.CompanionStatus == CompanionRelayStatus.FallbackDirect)
             {
-                parts.Add("Companion fallback to direct");
+                parts.Add(L("PlayableInspection.Value.CompanionFallbackDirect"));
             }
 
             if (!string.IsNullOrWhiteSpace(context.ProviderSummary))
@@ -645,7 +648,7 @@ namespace Kroira.App.Services
 
             return ShouldShowResolvedUrl(context)
                 ? _redactionService.RedactUrl(context.StreamUrl)
-                : "Not resolved until launch";
+                : L("PlayableInspection.Value.NotResolvedUntilLaunch");
         }
 
         private static string BuildProxyPolicyText(SourceCredential? credential)
@@ -664,16 +667,16 @@ namespace Kroira.App.Services
 
             if (scope == SourceCompanionScope.Disabled)
             {
-                return "Disabled";
+                return L("General.Disabled");
             }
 
             var scopeText = scope == SourceCompanionScope.PlaybackAndProbing
-                ? "Playback + probes"
-                : "Playback only";
+                ? L("PlayableInspection.Value.PlaybackProbes")
+                : L("PlayableInspection.Value.PlaybackOnly");
             var modeText = mode == SourceCompanionRelayMode.Buffered
-                ? "buffered relay"
-                : "pass-through relay";
-            return $"{scopeText} - {modeText}";
+                ? L("PlayableInspection.Value.BufferedRelayLower")
+                : L("PlayableInspection.Value.PassThroughRelayLower");
+            return F("PlayableInspection.Value.CompanionPolicyFormat", scopeText, modeText);
         }
 
         private static string BuildCompanionStatusDisplayText(PlaybackLaunchContext context, SourceCredential? credential)
@@ -688,11 +691,11 @@ namespace Kroira.App.Services
 
             var status = context.CompanionStatus switch
             {
-                CompanionRelayStatus.Applied => "Applied",
-                CompanionRelayStatus.FallbackDirect => "Fallback to direct",
-                CompanionRelayStatus.Skipped => "Skipped",
-                CompanionRelayStatus.Failed => "Failed",
-                _ => "Pending"
+                CompanionRelayStatus.Applied => L("PlayableInspection.Value.Applied"),
+                CompanionRelayStatus.FallbackDirect => L("PlayableInspection.Value.FallbackToDirect"),
+                CompanionRelayStatus.Skipped => L("PlayableInspection.Value.Skipped"),
+                CompanionRelayStatus.Failed => L("PlayableInspection.Value.Failed"),
+                _ => L("PlayableInspection.Value.Pending")
             };
 
             return BuildJoined(" - ", status, context.CompanionStatusText);
@@ -740,8 +743,8 @@ namespace Kroira.App.Services
                     .Select(candidate =>
                     {
                         var suffix = candidate.IsSelected
-                            ? "selected"
-                            : candidate.IsLastKnownGood ? "last good" : $"rank {candidate.Rank}";
+                            ? L("PlayableInspection.Value.Selected")
+                            : candidate.IsLastKnownGood ? L("PlayableInspection.Value.LastGood") : F("PlayableInspection.Value.Rank", candidate.Rank);
                         return $"{candidate.SourceName} ({suffix})";
                     }));
         }
@@ -844,6 +847,16 @@ namespace Kroira.App.Services
         private void AddRedactedField(ICollection<PlayableItemInspectionField> fields, string label, string? value)
         {
             AddField(fields, label, _redactionService.RedactLooseText(value));
+        }
+
+        private static string L(string key)
+        {
+            return LocalizedStrings.Get(key);
+        }
+
+        private static string F(string key, params object?[] args)
+        {
+            return LocalizedStrings.Format(key, args);
         }
 
         private sealed class LoadedItemDetails

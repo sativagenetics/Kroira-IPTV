@@ -111,15 +111,15 @@
 
             <Grid>
                 <StackPanel Spacing="3" VerticalAlignment="Center">
-                    <TextBlock Text="BROADCAST"
+                    <TextBlock x:Uid="ChannelsBroadcastLabel" Text="BROADCAST"
                                Style="{StaticResource KroiraLabelStyle}"
                                Foreground="{StaticResource KroiraAccentBrush}"
                                Visibility="Collapsed" />
-                    <TextBlock Text="Live TV"
+                    <TextBlock x:Uid="ChannelsPageTitle" Text="Live TV"
                                Style="{StaticResource KroiraDisplayLgStyle}"
                                FontSize="30"
                                LineHeight="34" />
-                    <TextBlock Text="Browse live channels, guide times, favorites, and catch-up."
+                    <TextBlock x:Uid="ChannelsPageSubtitle" Text="Browse live channels, guide times, favorites, and catch-up."
                                 Style="{StaticResource KroiraPageSubtitleStyle}"
                                FontSize="12"
                                 MaxLines="1"
@@ -141,6 +141,7 @@
 
                     <Grid Grid.Column="0">
                         <TextBox x:Name="SearchBox"
+                                 x:Uid="ChannelsSearchBox"
                                  Style="{StaticResource KroiraFilterTextBoxStyle}"
                                  Text="{x:Bind ViewModel.SearchQuery, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                  PlaceholderText="Search channels"
@@ -155,14 +156,16 @@
                                    VerticalAlignment="Center" />
                     </Grid>
 
-                    <ComboBox Grid.Column="1"
+                    <ComboBox x:Uid="ChannelsProviderComboBox"
+                              Grid.Column="1"
                               Style="{StaticResource KroiraFilterComboBoxStyle}"
                               ItemsSource="{x:Bind ViewModel.SourceOptions, Mode=OneWay}"
                               SelectedItem="{x:Bind ViewModel.SelectedSourceOption, Mode=TwoWay}"
                               DisplayMemberPath="DisplayName"
                               AutomationProperties.Name="Channel provider" />
 
-                    <ComboBox Grid.Column="2"
+                    <ComboBox x:Uid="ChannelsSortComboBox"
+                              Grid.Column="2"
                               Style="{StaticResource KroiraFilterComboBoxStyle}"
                               ItemsSource="{x:Bind ViewModel.SortOptions, Mode=OneWay}"
                               SelectedItem="{x:Bind ViewModel.SelectedSortOption, Mode=TwoWay}"
@@ -174,17 +177,17 @@
                                 Spacing="6"
                                 HorizontalAlignment="Right"
                                 VerticalAlignment="Center">
-                        <CheckBox Content="Favorites"
+                        <CheckBox x:Uid="ChannelsFavoritesFilter" Content="Favorites"
                                   IsChecked="{x:Bind ViewModel.FavoritesOnly, Mode=TwoWay}"
                                   AutomationProperties.Name="Show favorite channels only" />
-                        <CheckBox Content="Guide matched"
+                        <CheckBox x:Uid="ChannelsGuideMatchedFilter" Content="Guide matched"
                                   IsChecked="{x:Bind ViewModel.GuideMatchedOnly, Mode=TwoWay}"
                                   AutomationProperties.Name="Show guide matched channels only" />
-                        <Button Content="Guide"
+                        <Button x:Uid="GeneralGuideButton" Content="Guide"
                                 Click="OpenGuide_Click"
                                 Style="{StaticResource LiveQuickOverlayButtonStyle}"
                                 AutomationProperties.Name="Open guide" />
-                        <Button Content="Clear recent"
+                        <Button x:Uid="GeneralClearRecentButton" Content="Clear recent"
                                 Click="ClearRecentHistory_Click"
                                 Style="{StaticResource LiveQuickOverlayButtonStyle}"
                                 Visibility="{x:Bind ViewModel.ClearRecentHistoryVisibility, Mode=OneWay}"
@@ -201,7 +204,8 @@
 
             <Border Grid.Column="0"
                     Style="{StaticResource KroiraCategoryRailPanelStyle}">
-                <ListView ItemsSource="{x:Bind ViewModel.Categories, Mode=OneWay}"
+                <ListView x:Uid="ChannelsCategoryList"
+                          ItemsSource="{x:Bind ViewModel.Categories, Mode=OneWay}"
                           SelectedItem="{x:Bind ViewModel.SelectedCategory, Mode=TwoWay}"
                           SelectionMode="Single"
                           ItemContainerStyle="{StaticResource KroiraCategoryRailItemContainerStyle}"
@@ -229,7 +233,7 @@
                     </Grid.ColumnDefinitions>
 
                     <StackPanel Spacing="2">
-                        <TextBlock Text="CHANNEL BROWSER"
+                        <TextBlock x:Uid="ChannelsBrowserLabel" Text="CHANNEL BROWSER"
                                    Style="{StaticResource KroiraLabelStyle}"
                                    Foreground="{StaticResource KroiraAccentBrush}" />
                         <TextBlock Text="{x:Bind ViewModel.BrowseResultTitle, Mode=OneWay}"
@@ -250,7 +254,7 @@
                                    Style="{StaticResource KroiraLabelStyle}"
                                    Foreground="{StaticResource KroiraTextSecondaryBrush}"
                                    HorizontalAlignment="Right" />
-                        <Button Content="Clear recent"
+                        <Button x:Uid="GeneralClearRecentButton2" Content="Clear recent"
                                 Click="ClearRecentHistory_Click"
                                 Style="{StaticResource LiveQuickOverlayButtonStyle}"
                                 HorizontalAlignment="Right"
@@ -267,18 +271,19 @@
                                              VerticalAlignment="Center" />
 
                     <GridView x:Name="ChannelList"
-                      ItemsSource="{x:Bind ViewModel.FilteredChannels, Mode=OneWay}"
-                      SelectionMode="None"
-                      IsItemClickEnabled="True"
-                      ItemClick="ChannelList_ItemClick"
-                      Loaded="ChannelList_Loaded"
-                      ItemContainerStyle="{StaticResource ChannelTileContainerStyle}"
-                      ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                      ScrollViewer.VerticalScrollBarVisibility="Auto"
-                      Padding="0,0,0,28"
-                      AutomationProperties.Name="Live channels"
-                      TabIndex="2"
-                      KeyDown="ChannelList_KeyDown">
+                              x:Uid="ChannelsChannelList"
+                              ItemsSource="{x:Bind ViewModel.FilteredChannels, Mode=OneWay}"
+                              SelectionMode="None"
+                              IsItemClickEnabled="True"
+                              ItemClick="ChannelList_ItemClick"
+                              Loaded="ChannelList_Loaded"
+                              ItemContainerStyle="{StaticResource ChannelTileContainerStyle}"
+                              ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                              ScrollViewer.VerticalScrollBarVisibility="Auto"
+                              Padding="0,0,0,28"
+                              AutomationProperties.Name="Live channels"
+                              TabIndex="2"
+                              KeyDown="ChannelList_KeyDown">
                 <GridView.ItemsPanel>
                         <ItemsPanelTemplate>
                             <ItemsWrapGrid Orientation="Horizontal"
@@ -345,12 +350,13 @@
                                             VerticalAlignment="Top"
                                             Padding="6,2"
                                             Visibility="{Binding LastTunedVisibility}">
-                                        <TextBlock Text="LAST"
+                                        <TextBlock x:Uid="ChannelsLastBadge" Text="LAST"
                                                    Style="{StaticResource KroiraLabelStyle}"
                                                    FontSize="9"
                                                    Foreground="{StaticResource KroiraTextPrimaryBrush}" />
                                     </Border>
-                                    <Button Grid.RowSpan="5"
+                                    <Button x:Uid="ChannelsFavoriteButton"
+                                            Grid.RowSpan="5"
                                             Content="{Binding FavoriteIcon}"
                                             Tag="{Binding Id}"
                                             Click="FavoriteToggle_Click"
@@ -464,6 +470,7 @@
                                         <StackPanel Orientation="Horizontal"
                                                     Spacing="6">
                                             <Button Content="●"
+                                                    x:Uid="ChannelsScheduleRecordingButton"
                                                     Click="RecordChannel_Click"
                                                     Visibility="{Binding ElementName=LiveTvPage, Path=RecordingActionsVisibility}"
                                                     Style="{StaticResource ChannelFavoriteButtonStyle}"
@@ -471,13 +478,15 @@
                                                     AutomationProperties.Name="Schedule recording"
                                                     ToolTipService.ToolTip="Schedule recording" />
                                             <Button Content="{Binding CatchupActionLabel}"
+                                                    x:Uid="ChannelsStartOverButton"
                                                     Click="StartCatchup_Click"
                                                     Visibility="{Binding CatchupActionVisibility}"
                                                     Style="{StaticResource LiveQuickOverlayButtonStyle}"
                                                     Foreground="{StaticResource KroiraAccentBrush}"
                                                     AutomationProperties.Name="Start over"
                                                     ToolTipService.ToolTip="{Binding CatchupStatusText}" />
-                                            <Button Click="InspectChannel_Click"
+                                            <Button x:Uid="ChannelsDetailsButton"
+                                                    Click="InspectChannel_Click"
                                                     Style="{StaticResource LiveQuickOverlayButtonStyle}"
                                                     Width="28"
                                                     Height="28"
@@ -516,6 +525,7 @@
             <controls:ErrorStateView IconGlyph="{x:Bind ViewModel.SurfaceState.Glyph, Mode=OneWay}"
                                      Title="{x:Bind ViewModel.SurfaceState.Title, Mode=OneWay}"
                                      Message="{x:Bind ViewModel.SurfaceState.Message, Mode=OneWay}"
+                                     x:Uid="GeneralRetryErrorState"
                                      RetryActionLabel="Retry"
                                      DiagnosticsActionLabel="{x:Bind ViewModel.SurfaceState.ActionLabel, Mode=OneWay}"
                                      DiagnosticsActionVisibility="{x:Bind ViewModel.SurfaceState.DiagnosticsActionVisibility, Mode=OneWay}"

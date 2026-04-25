@@ -7,7 +7,8 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
 
-    <Grid Background="{StaticResource KroiraShellGradientBrush}"
+    <Grid x:Name="RootShell"
+          Background="{StaticResource KroiraShellGradientBrush}"
           XYFocusKeyboardNavigation="Enabled">
         <Border HorizontalAlignment="Stretch"
                 VerticalAlignment="Top"
@@ -67,39 +68,39 @@
                 </Grid>
             </NavigationView.PaneHeader>
             <NavigationView.MenuItems>
-                <NavigationViewItem Content="Home" Tag="Home" Margin="0,2" Height="42">
+                <NavigationViewItem x:Uid="ShellHomeItem" Tag="Home" Margin="0,2" Height="42">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE80F;" FontSize="16" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
-                <NavigationViewItem Content="Search" Tag="Search" Margin="0,2" Height="42">
+                <NavigationViewItem x:Uid="ShellSearchItem" Tag="Search" Margin="0,2" Height="42">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE721;" FontSize="16" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
                 <NavigationViewItemSeparator Margin="0,8" />
-                <NavigationViewItem Content="Live TV" Tag="Channels" Margin="0,2" Height="42">
+                <NavigationViewItem x:Uid="ShellLiveTvItem" Tag="Channels" Margin="0,2" Height="42">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE714;" FontSize="16" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
-                <NavigationViewItem Content="Movies" Tag="Movies" Margin="0,2" Height="42">
+                <NavigationViewItem x:Uid="ShellMoviesItem" Tag="Movies" Margin="0,2" Height="42">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE8B2;" FontSize="16" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
-                <NavigationViewItem Content="Series" Tag="Series" Margin="0,2" Height="42">
+                <NavigationViewItem x:Uid="ShellSeriesItem" Tag="Series" Margin="0,2" Height="42">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE8A9;" FontSize="16" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
                 <NavigationViewItemSeparator Margin="0,8" />
-                <NavigationViewItem Content="Continue Watching" Tag="ContinueWatching" Margin="0,2" Height="42">
+                <NavigationViewItem x:Uid="ShellContinueWatchingItem" Tag="ContinueWatching" Margin="0,2" Height="42">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE916;" FontSize="16" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
-                <NavigationViewItem Content="Library"
+                <NavigationViewItem x:Uid="ShellLibraryItem"
                                     Tag="MediaLibrary"
                                     Margin="0,2"
                                     Height="42"
@@ -108,30 +109,30 @@
                         <FontIcon Glyph="&#xE7C3;" FontSize="16" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
-                <NavigationViewItem Content="Favorites" Tag="Favorites" Margin="0,2" Height="42">
+                <NavigationViewItem x:Uid="ShellFavoritesItem" Tag="Favorites" Margin="0,2" Height="42">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE734;" FontSize="16" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
                 <NavigationViewItemSeparator Margin="0,8" />
-                <NavigationViewItem Content="Sources" Tag="Sources" Margin="0,2" Height="42">
+                <NavigationViewItem x:Uid="ShellSourcesItem" Tag="Sources" Margin="0,2" Height="42">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE8F1;" FontSize="16" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
-                <NavigationViewItem Content="Guide" Tag="Guide" Margin="0,2" Height="42">
+                <NavigationViewItem x:Uid="ShellGuideItem" Tag="Guide" Margin="0,2" Height="42">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE787;" FontSize="16" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
-                <NavigationViewItem Content="Settings" Tag="Settings" Margin="0,2" Height="42">
+                <NavigationViewItem x:Uid="ShellSettingsItem" Tag="Settings" Margin="0,2" Height="42">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE713;" FontSize="16" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
             </NavigationView.MenuItems>
             <NavigationView.FooterMenuItems>
-                <NavigationViewItem Content="Profile" Tag="Profile" Margin="0,2" Height="42">
+                <NavigationViewItem x:Uid="ShellProfileItem" Tag="Profile" Margin="0,2" Height="42">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE77B;" FontSize="16" />
                     </NavigationViewItem.Icon>

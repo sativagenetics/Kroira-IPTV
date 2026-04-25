@@ -82,6 +82,7 @@
 
     <Grid x:Name="RootGrid"
           Background="Black"
+          FlowDirection="LeftToRight"
           IsTabStop="True"
           UseSystemFocusVisuals="False"
           XYFocusKeyboardNavigation="Enabled">
@@ -105,7 +106,7 @@
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
 
-                    <Button Grid.Column="0" Style="{StaticResource PlayerHeaderButtonStyle}" Click="Back_Click" ToolTipService.ToolTip="Back">
+                    <Button x:Uid="GeneralBackButton" Grid.Column="0" Style="{StaticResource PlayerHeaderButtonStyle}" Click="Back_Click" ToolTipService.ToolTip="Back">
                         <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE72B;" />
                     </Button>
 
@@ -115,30 +116,30 @@
                     </StackPanel>
 
                     <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Spacing="8">
-                        <Button x:Name="FavoriteButton" Click="FavoriteButton_Click" Style="{StaticResource PlayerHeaderButtonStyle}" Foreground="{StaticResource KroiraGoldBrush}" ToolTipService.ToolTip="Save">
+                        <Button x:Name="FavoriteButton" x:Uid="GeneralSaveButton" Click="FavoriteButton_Click" Style="{StaticResource PlayerHeaderButtonStyle}" Foreground="{StaticResource KroiraGoldBrush}" ToolTipService.ToolTip="Save">
                             <FontIcon x:Name="FavoriteIcon" FontFamily="Segoe MDL2 Assets" Glyph="&#xE734;" />
                         </Button>
                         <Border Background="#12FFFFFF" BorderBrush="#14FFFFFF" BorderThickness="1" CornerRadius="18" Padding="4">
                             <StackPanel Orientation="Horizontal" Spacing="4">
                                 <Button x:Name="GuidePanelButton" Click="GuidePanelToggle_Click" Style="{StaticResource PlayerHeaderTextButtonStyle}" Visibility="Collapsed">
-                                    <TextBlock Text="Guide" FontSize="11" FontWeight="SemiBold" />
+                                    <TextBlock x:Uid="GeneralGuideText" Text="Guide" FontSize="11" FontWeight="SemiBold" />
                                 </Button>
                                 <Button x:Name="ChannelPanelButton" Click="ChannelPanelToggle_Click" Style="{StaticResource PlayerHeaderTextButtonStyle}" Visibility="Collapsed">
-                                    <TextBlock Text="Channels" FontSize="11" FontWeight="SemiBold" />
+                                    <TextBlock x:Uid="GeneralChannelsText" Text="Channels" FontSize="11" FontWeight="SemiBold" />
                                 </Button>
                                 <Button x:Name="EpisodePanelButton" Click="EpisodePanelToggle_Click" Style="{StaticResource PlayerHeaderTextButtonStyle}" Visibility="Collapsed">
-                                    <TextBlock Text="Episodes" FontSize="11" FontWeight="SemiBold" />
+                                    <TextBlock x:Uid="GeneralEpisodesText" Text="Episodes" FontSize="11" FontWeight="SemiBold" />
                                 </Button>
                                 <Button x:Name="InfoPanelButton" Click="InfoPanelToggle_Click" Style="{StaticResource PlayerHeaderTextButtonStyle}">
-                                    <TextBlock Text="Info" FontSize="11" FontWeight="SemiBold" />
+                                    <TextBlock x:Uid="GeneralInfoText" Text="Info" FontSize="11" FontWeight="SemiBold" />
                                 </Button>
                             </StackPanel>
                         </Border>
                         <Border Grid.Column="2" x:Name="LivePill" Visibility="Collapsed" Background="#D6E1FF" CornerRadius="10" Padding="8,3" VerticalAlignment="Center">
-                            <TextBlock Text="LIVE" FontSize="10" FontWeight="Bold" Foreground="#090B13" />
+                            <TextBlock x:Uid="GeneralLiveBadge" Text="LIVE" FontSize="10" FontWeight="Bold" Foreground="#090B13" />
                         </Border>
                         <Border Grid.Column="2" x:Name="CatchupPill" Visibility="Collapsed" Background="#C167FF" CornerRadius="10" Padding="8,3" VerticalAlignment="Center">
-                            <TextBlock Text="CATCHUP" FontSize="10" FontWeight="Bold" Foreground="#090B13" />
+                            <TextBlock x:Uid="GeneralCatchupBadge" Text="CATCHUP" FontSize="10" FontWeight="Bold" Foreground="#090B13" />
                         </Border>
                     </StackPanel>
                 </Grid>
@@ -152,7 +153,7 @@
 
                 <Border x:Name="MiniGuidePanel" Visibility="Collapsed" Background="#C00A1020" BorderBrush="{StaticResource KroiraHaloBorderBrush}" BorderThickness="1" CornerRadius="14" Padding="14,12">
                     <StackPanel Spacing="8">
-                        <TextBlock Text="Now / Next" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource KroiraTextSecondaryBrush}" />
+                        <TextBlock x:Uid="PlayerNowNextTitle" Text="Now / Next" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource KroiraTextSecondaryBrush}" />
                         <TextBlock x:Name="GuideCurrentTitleText" FontSize="16" FontWeight="SemiBold" Foreground="{StaticResource KroiraTextPrimaryBrush}" TextWrapping="Wrap" />
                         <TextBlock x:Name="GuideCurrentTimeText" FontSize="12" Foreground="{StaticResource KroiraTextSecondaryBrush}" />
                         <TextBlock x:Name="GuideNextTitleText" FontSize="13" Foreground="{StaticResource KroiraTextPrimaryBrush}" TextWrapping="Wrap" />
@@ -201,8 +202,8 @@
 
                 <Border x:Name="ChannelSwitchPanel" Visibility="Collapsed" Background="#C00A1020" BorderBrush="{StaticResource KroiraHaloBorderBrush}" BorderThickness="1" CornerRadius="14" Padding="14,12">
                     <StackPanel Spacing="8">
-                        <TextBlock Text="Channel surf" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource KroiraTextSecondaryBrush}" />
-                        <TextBox x:Name="ChannelSearchBox" PlaceholderText="Search channels" TextChanged="ChannelSearchBox_TextChanged" />
+                        <TextBlock x:Uid="PlayerChannelSurfTitle" Text="Channel surf" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource KroiraTextSecondaryBrush}" />
+                        <TextBox x:Name="ChannelSearchBox" x:Uid="ChannelsSearchBox" PlaceholderText="Search channels" TextChanged="ChannelSearchBox_TextChanged" />
                         <TextBlock x:Name="ChannelSearchStatusText" FontSize="12" Foreground="{StaticResource KroiraTextSecondaryBrush}" />
                         <ListView x:Name="ChannelSwitchList" MaxHeight="240" IsItemClickEnabled="True" SelectionMode="None" ItemClick="ChannelSwitchList_ItemClick">
                             <ListView.ItemTemplate>
@@ -243,7 +244,7 @@
 
                 <Border x:Name="InfoPanel" Visibility="Collapsed" Background="#C00A1020" BorderBrush="{StaticResource KroiraHaloBorderBrush}" BorderThickness="1" CornerRadius="14" Padding="14,12">
                     <StackPanel Spacing="8">
-                        <TextBlock Text="Playback info" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource KroiraTextSecondaryBrush}" />
+                        <TextBlock x:Uid="PlayerPlaybackInfoTitle" Text="Playback info" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource KroiraTextSecondaryBrush}" />
                         <TextBlock x:Name="InfoSummaryText" FontSize="12" Foreground="{StaticResource KroiraTextSecondaryBrush}" TextWrapping="Wrap" />
                         <Grid ColumnSpacing="18" RowSpacing="6">
                             <Grid.ColumnDefinitions>
@@ -258,29 +259,31 @@
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
-                            <TextBlock Grid.Row="0" Grid.Column="0" Text="Resolution" Foreground="{StaticResource KroiraTextSecondaryBrush}" />
+                            <TextBlock x:Uid="PlayerResolutionLabel" Grid.Row="0" Grid.Column="0" Text="Resolution" Foreground="{StaticResource KroiraTextSecondaryBrush}" />
                             <TextBlock x:Name="InfoResolutionText" Grid.Row="0" Grid.Column="1" Foreground="{StaticResource KroiraTextPrimaryBrush}" />
-                            <TextBlock Grid.Row="0" Grid.Column="2" Text="FPS" Foreground="{StaticResource KroiraTextSecondaryBrush}" />
+                            <TextBlock x:Uid="PlayerFpsLabel" Grid.Row="0" Grid.Column="2" Text="FPS" Foreground="{StaticResource KroiraTextSecondaryBrush}" />
                             <TextBlock x:Name="InfoFpsText" Grid.Row="0" Grid.Column="3" Foreground="{StaticResource KroiraTextPrimaryBrush}" />
-                            <TextBlock Grid.Row="1" Grid.Column="0" Text="Video" Foreground="{StaticResource KroiraTextSecondaryBrush}" />
+                            <TextBlock x:Uid="PlayerVideoLabel" Grid.Row="1" Grid.Column="0" Text="Video" Foreground="{StaticResource KroiraTextSecondaryBrush}" />
                             <TextBlock x:Name="InfoVideoCodecText" Grid.Row="1" Grid.Column="1" Foreground="{StaticResource KroiraTextPrimaryBrush}" />
-                            <TextBlock Grid.Row="1" Grid.Column="2" Text="Audio" Foreground="{StaticResource KroiraTextSecondaryBrush}" />
+                            <TextBlock x:Uid="PlayerAudioLabel" Grid.Row="1" Grid.Column="2" Text="Audio" Foreground="{StaticResource KroiraTextSecondaryBrush}" />
                             <TextBlock x:Name="InfoAudioCodecText" Grid.Row="1" Grid.Column="3" Foreground="{StaticResource KroiraTextPrimaryBrush}" />
-                            <TextBlock Grid.Row="2" Grid.Column="0" Text="Source" Foreground="{StaticResource KroiraTextSecondaryBrush}" />
+                            <TextBlock x:Uid="GeneralSourceLabel" Grid.Row="2" Grid.Column="0" Text="Source" Foreground="{StaticResource KroiraTextSecondaryBrush}" />
                             <TextBlock x:Name="InfoSourceText" Grid.Row="2" Grid.Column="1" Foreground="{StaticResource KroiraTextPrimaryBrush}" TextWrapping="Wrap" />
-                            <TextBlock Grid.Row="2" Grid.Column="2" Text="Speed" Foreground="{StaticResource KroiraTextSecondaryBrush}" />
+                            <TextBlock x:Uid="PlayerSpeedLabel" Grid.Row="2" Grid.Column="2" Text="Speed" Foreground="{StaticResource KroiraTextSecondaryBrush}" />
                             <TextBlock x:Name="InfoSpeedText" Grid.Row="2" Grid.Column="3" Foreground="{StaticResource KroiraTextPrimaryBrush}" />
-                            <TextBlock Grid.Row="3" Grid.Column="0" Text="Seek" Foreground="{StaticResource KroiraTextSecondaryBrush}" />
+                            <TextBlock x:Uid="PlayerSeekLabel" Grid.Row="3" Grid.Column="0" Text="Seek" Foreground="{StaticResource KroiraTextSecondaryBrush}" />
                             <TextBlock x:Name="InfoSeekText" Grid.Row="3" Grid.Column="1" Foreground="{StaticResource KroiraTextPrimaryBrush}" />
-                            <TextBlock Grid.Row="3" Grid.Column="2" Text="Guide" Foreground="{StaticResource KroiraTextSecondaryBrush}" />
+                            <TextBlock x:Uid="GeneralGuideLabel" Grid.Row="3" Grid.Column="2" Text="Guide" Foreground="{StaticResource KroiraTextSecondaryBrush}" />
                             <TextBlock x:Name="InfoGuideText" Grid.Row="3" Grid.Column="3" Foreground="{StaticResource KroiraTextPrimaryBrush}" TextWrapping="Wrap" />
                         </Grid>
                         <StackPanel Orientation="Horizontal" Spacing="8">
                             <Button x:Name="InspectCurrentItemButton"
+                                    x:Uid="GeneralDetailsButton"
                                     Content="Details"
                                     Click="InspectCurrentItem_Click"
                                     Style="{StaticResource PlayerToolsChipButtonStyle}" />
                             <Button x:Name="OpenExternalPlayerButton"
+                                    x:Uid="PlayerOpenExternalButton"
                                     Content="Open external"
                                     Click="OpenInExternalPlayer_Click"
                                     Style="{StaticResource PlayerToolsChipButtonStyle}" />
@@ -323,41 +326,41 @@
                     </Grid.ColumnDefinitions>
 
                     <StackPanel Grid.Column="0" x:Name="LiveSummaryPanel" Spacing="2" Visibility="Collapsed" MaxWidth="320" VerticalAlignment="Center">
-                        <TextBlock Text="Live now" FontSize="10" FontWeight="SemiBold" Foreground="{StaticResource KroiraTextSecondaryBrush}" Opacity="0.8" />
+                        <TextBlock x:Uid="PlayerLiveNowLabel" Text="Live now" FontSize="10" FontWeight="SemiBold" Foreground="{StaticResource KroiraTextSecondaryBrush}" Opacity="0.8" />
                         <TextBlock x:Name="BottomLiveTitleText" Foreground="{StaticResource KroiraTextPrimaryBrush}" FontSize="14" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
                         <TextBlock x:Name="BottomLiveMetaText" Foreground="{StaticResource KroiraTextSecondaryBrush}" FontSize="11" Opacity="0.86" TextTrimming="CharacterEllipsis" Visibility="Collapsed" />
                     </StackPanel>
 
                     <Border Grid.Column="1" Background="#08FFFFFF" BorderThickness="0" CornerRadius="22" Padding="10,6" HorizontalAlignment="Center">
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="8">
-                            <Button x:Name="PreviousChannelButton" Style="{StaticResource PlayerTransportButtonStyle}" Click="PreviousChannel_Click" Visibility="Collapsed" ToolTipService.ToolTip="Previous channel">
+                            <Button x:Name="PreviousChannelButton" x:Uid="PlayerPreviousChannelButton" Style="{StaticResource PlayerTransportButtonStyle}" Click="PreviousChannel_Click" Visibility="Collapsed" ToolTipService.ToolTip="Previous channel">
                                 <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE892;" />
                             </Button>
-                            <Button x:Name="LastChannelButton" Style="{StaticResource PlayerTransportButtonStyle}" Click="LastChannel_Click" Visibility="Collapsed" ToolTipService.ToolTip="Last channel">
+                            <Button x:Name="LastChannelButton" x:Uid="PlayerLastChannelButton" Style="{StaticResource PlayerTransportButtonStyle}" Click="LastChannel_Click" Visibility="Collapsed" ToolTipService.ToolTip="Last channel">
                                 <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE1D3;" />
                             </Button>
-                            <Button x:Name="Back30Button" Style="{StaticResource PlayerTransportButtonStyle}" Click="Back30_Click" Visibility="Collapsed" ToolTipService.ToolTip="Back 30 seconds">
+                            <Button x:Name="Back30Button" x:Uid="PlayerBack30Button" Style="{StaticResource PlayerTransportButtonStyle}" Click="Back30_Click" Visibility="Collapsed" ToolTipService.ToolTip="Back 30 seconds">
                                 <TextBlock Text="-30" FontSize="12" FontWeight="SemiBold" />
                             </Button>
-                            <Button x:Name="Back10Button" Style="{StaticResource PlayerTransportButtonStyle}" Click="Back10_Click" Visibility="Collapsed" ToolTipService.ToolTip="Back 10 seconds">
+                            <Button x:Name="Back10Button" x:Uid="PlayerBack10Button" Style="{StaticResource PlayerTransportButtonStyle}" Click="Back10_Click" Visibility="Collapsed" ToolTipService.ToolTip="Back 10 seconds">
                                 <TextBlock Text="-10" FontSize="12" FontWeight="SemiBold" />
                             </Button>
-                            <Button x:Name="RestartButton" Style="{StaticResource PlayerTransportButtonStyle}" Click="Restart_Click" Visibility="Collapsed" ToolTipService.ToolTip="Restart from beginning">
+                            <Button x:Name="RestartButton" x:Uid="PlayerRestartButton" Style="{StaticResource PlayerTransportButtonStyle}" Click="Restart_Click" Visibility="Collapsed" ToolTipService.ToolTip="Restart from beginning">
                                 <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE72C;" />
                             </Button>
-                            <Button x:Name="PlayPauseButton" Style="{StaticResource PlayerPrimaryTransportButtonStyle}" Click="PlayPause_Click" ToolTipService.ToolTip="Play or pause">
+                            <Button x:Name="PlayPauseButton" x:Uid="PlayerPlayPauseButton" Style="{StaticResource PlayerPrimaryTransportButtonStyle}" Click="PlayPause_Click" ToolTipService.ToolTip="Play or pause">
                                 <FontIcon x:Name="PlayPauseIcon" FontFamily="Segoe MDL2 Assets" Glyph="&#xE769;" />
                             </Button>
-                            <Button x:Name="StopButton" Style="{StaticResource PlayerTransportButtonStyle}" Click="Stop_Click" Visibility="Collapsed" ToolTipService.ToolTip="Stop playback">
+                            <Button x:Name="StopButton" x:Uid="PlayerStopButton" Style="{StaticResource PlayerTransportButtonStyle}" Click="Stop_Click" Visibility="Collapsed" ToolTipService.ToolTip="Stop playback">
                                 <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE71A;" />
                             </Button>
-                            <Button x:Name="Forward10Button" Style="{StaticResource PlayerTransportButtonStyle}" Click="Forward10_Click" Visibility="Collapsed" ToolTipService.ToolTip="Forward 10 seconds">
+                            <Button x:Name="Forward10Button" x:Uid="PlayerForward10Button" Style="{StaticResource PlayerTransportButtonStyle}" Click="Forward10_Click" Visibility="Collapsed" ToolTipService.ToolTip="Forward 10 seconds">
                                 <TextBlock Text="+10" FontSize="12" FontWeight="SemiBold" />
                             </Button>
-                            <Button x:Name="Forward30Button" Style="{StaticResource PlayerTransportButtonStyle}" Click="Forward30_Click" Visibility="Collapsed" ToolTipService.ToolTip="Forward 30 seconds">
+                            <Button x:Name="Forward30Button" x:Uid="PlayerForward30Button" Style="{StaticResource PlayerTransportButtonStyle}" Click="Forward30_Click" Visibility="Collapsed" ToolTipService.ToolTip="Forward 30 seconds">
                                 <TextBlock Text="+30" FontSize="12" FontWeight="SemiBold" />
                             </Button>
-                            <Button x:Name="NextChannelButton" Style="{StaticResource PlayerTransportButtonStyle}" Click="NextChannel_Click" Visibility="Collapsed" ToolTipService.ToolTip="Next channel">
+                            <Button x:Name="NextChannelButton" x:Uid="PlayerNextChannelButton" Style="{StaticResource PlayerTransportButtonStyle}" Click="NextChannel_Click" Visibility="Collapsed" ToolTipService.ToolTip="Next channel">
                                 <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE893;" />
                             </Button>
                         </StackPanel>
@@ -365,35 +368,35 @@
 
                     <Border Grid.Column="2" Background="Transparent" BorderThickness="0" CornerRadius="20" Padding="4,0" VerticalAlignment="Center">
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Spacing="8">
-                        <Button x:Name="BottomGuideButton" Style="{StaticResource PlayerIconButtonStyle}" Click="GuidePanelToggle_Click" Visibility="Collapsed" ToolTipService.ToolTip="Mini guide">
+                        <Button x:Name="BottomGuideButton" x:Uid="PlayerMiniGuideButton" Style="{StaticResource PlayerIconButtonStyle}" Click="GuidePanelToggle_Click" Visibility="Collapsed" ToolTipService.ToolTip="Mini guide">
                             <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE787;" />
                         </Button>
-                        <Button x:Name="BottomChannelListButton" Style="{StaticResource PlayerIconButtonStyle}" Click="ChannelPanelToggle_Click" Visibility="Collapsed" ToolTipService.ToolTip="Channel list">
+                        <Button x:Name="BottomChannelListButton" x:Uid="PlayerChannelListButton" Style="{StaticResource PlayerIconButtonStyle}" Click="ChannelPanelToggle_Click" Visibility="Collapsed" ToolTipService.ToolTip="Channel list">
                             <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE8FD;" />
                         </Button>
-                        <Button x:Name="GoLiveButton" Style="{StaticResource PlayerPillButtonStyle}" Click="GoLive_Click" Visibility="Collapsed" ToolTipService.ToolTip="Jump to live">
+                        <Button x:Name="GoLiveButton" x:Uid="PlayerGoLiveButton" Style="{StaticResource PlayerPillButtonStyle}" Click="GoLive_Click" Visibility="Collapsed" ToolTipService.ToolTip="Jump to live">
                             <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
                                 <Ellipse Width="7" Height="7" Fill="#FF4D5F" VerticalAlignment="Center" />
-                                <TextBlock Text="LIVE" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                <TextBlock x:Uid="GeneralLiveBadge" Text="LIVE" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center" />
                             </StackPanel>
                         </Button>
-                        <Button x:Name="SpeedButton" Style="{StaticResource PlayerPillButtonStyle}" Visibility="Collapsed" ToolTipService.ToolTip="Playback speed">
+                        <Button x:Name="SpeedButton" x:Uid="PlayerSpeedButton" Style="{StaticResource PlayerPillButtonStyle}" Visibility="Collapsed" ToolTipService.ToolTip="Playback speed">
                             <Button.Flyout><MenuFlyout x:Name="SpeedFlyout" /></Button.Flyout>
                             <TextBlock x:Name="SpeedButtonText" Text="1.0x" FontSize="11" FontWeight="SemiBold" />
                         </Button>
-                        <Button x:Name="TracksButton" Style="{StaticResource PlayerIconButtonStyle}" Visibility="Collapsed" ToolTipService.ToolTip="Audio and subtitles">
+                        <Button x:Name="TracksButton" x:Uid="PlayerTracksButton" Style="{StaticResource PlayerIconButtonStyle}" Visibility="Collapsed" ToolTipService.ToolTip="Audio and subtitles">
                             <Button.Flyout><MenuFlyout x:Name="TracksFlyout" /></Button.Flyout>
                             <TextBlock Text="A/V" FontSize="11" FontWeight="SemiBold" />
                         </Button>
-                        <Button x:Name="ToolsButton" Style="{StaticResource PlayerIconButtonStyle}" Click="ToolsButton_Click" ToolTipService.ToolTip="More">
+                        <Button x:Name="ToolsButton" x:Uid="PlayerMoreButton" Style="{StaticResource PlayerIconButtonStyle}" Click="ToolsButton_Click" ToolTipService.ToolTip="More">
                             <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE712;" />
                         </Button>
-                        <Button x:Name="FullscreenButton" Style="{StaticResource PlayerIconButtonStyle}" Click="Fullscreen_Click" ToolTipService.ToolTip="Fullscreen">
+                        <Button x:Name="FullscreenButton" x:Uid="PlayerFullscreenButton" Style="{StaticResource PlayerIconButtonStyle}" Click="Fullscreen_Click" ToolTipService.ToolTip="Fullscreen">
                             <FontIcon x:Name="FullscreenIcon" FontFamily="Segoe MDL2 Assets" Glyph="&#xE740;" />
                         </Button>
                         <Border Background="#10FFFFFF" BorderThickness="0" CornerRadius="16" Padding="4,2">
                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Spacing="6">
-                                <Button x:Name="MuteButton" Style="{StaticResource PlayerIconButtonStyle}" Click="Mute_Click" MinWidth="32" Height="32" ToolTipService.ToolTip="Mute">
+                                <Button x:Name="MuteButton" x:Uid="PlayerMuteButton" Style="{StaticResource PlayerIconButtonStyle}" Click="Mute_Click" MinWidth="32" Height="32" ToolTipService.ToolTip="Mute">
                                     <FontIcon x:Name="MuteIcon" FontFamily="Segoe MDL2 Assets" Glyph="&#xE767;" />
                                 </Button>
                                 <Slider x:Name="VolumeSlider" Minimum="0" Maximum="100" Value="100" Width="72" Height="32" StepFrequency="1" IsTabStop="True" IsThumbToolTipEnabled="False" VerticalAlignment="Center" ValueChanged="VolumeSlider_ValueChanged" Foreground="{StaticResource KroiraAccentStrongBrush}" Background="#26FFFFFF" />
@@ -432,7 +435,7 @@
                         <Button.Flyout><MenuFlyout x:Name="SleepTimerFlyout" /></Button.Flyout>
                     </Button>
                     <Button x:Name="PictureInPictureButton" Click="PictureInPicture_Click">
-                        <TextBlock x:Name="PictureInPictureButtonText" Text="PIP" />
+                        <TextBlock x:Name="PictureInPictureButtonText" x:Uid="PlayerPipText" Text="PIP" />
                     </Button>
                 </StackPanel>
             </Grid>
@@ -450,11 +453,11 @@
                         </Grid.ColumnDefinitions>
 
                         <StackPanel Spacing="1">
-                            <TextBlock Text="Playback tools" FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource KroiraTextPrimaryBrush}" />
-                            <TextBlock x:Name="ToolsPanelSummaryText" FontSize="11" Foreground="{StaticResource KroiraTextSecondaryBrush}" Text="Compact live controls for display, subtitles, and session actions." TextWrapping="Wrap" />
+                            <TextBlock x:Uid="PlayerPlaybackToolsTitle" Text="Playback tools" FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource KroiraTextPrimaryBrush}" />
+                            <TextBlock x:Name="ToolsPanelSummaryText" x:Uid="PlayerPlaybackToolsSummary" FontSize="11" Foreground="{StaticResource KroiraTextSecondaryBrush}" Text="Compact live controls for display, subtitles, and session actions." TextWrapping="Wrap" />
                         </StackPanel>
 
-                        <Button x:Name="ToolsPanelCloseButton" Grid.Column="1" Style="{StaticResource PlayerIconButtonStyle}" Click="ToolsButton_Click" ToolTipService.ToolTip="Close tools" MinWidth="32" Height="32">
+                        <Button x:Name="ToolsPanelCloseButton" x:Uid="PlayerCloseToolsButton" Grid.Column="1" Style="{StaticResource PlayerIconButtonStyle}" Click="ToolsButton_Click" ToolTipService.ToolTip="Close tools" MinWidth="32" Height="32">
                             <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE711;" />
                         </Button>
                     </Grid>
@@ -463,23 +466,23 @@
                         <Border Style="{StaticResource PlayerToolsSectionBorderStyle}">
                             <StackPanel Spacing="8">
                                 <StackPanel Spacing="2">
-                                    <TextBlock Text="Quick actions" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource KroiraTextSecondaryBrush}" />
-                                    <TextBlock Text="Panels, recovery, capture, and picture-in-picture." FontSize="10" Foreground="{StaticResource KroiraTextSecondaryBrush}" Opacity="0.82" TextWrapping="Wrap" />
+                                    <TextBlock x:Uid="PlayerQuickActionsTitle" Text="Quick actions" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource KroiraTextSecondaryBrush}" />
+                                    <TextBlock x:Uid="PlayerQuickActionsSummary" Text="Panels, recovery, capture, and picture-in-picture." FontSize="10" Foreground="{StaticResource KroiraTextSecondaryBrush}" Opacity="0.82" TextWrapping="Wrap" />
                                 </StackPanel>
                                 <StackPanel Orientation="Horizontal" Spacing="6">
-                                    <Button x:Name="ToolsInfoButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="InfoPanelToggle_Click" Content="Info" />
-                                    <Button x:Name="ToolsRetryButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="RetryPlayback_Click" Content="Retry" />
-                                    <Button x:Name="ToolsRestartButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="Restart_Click" Content="Restart" Visibility="Collapsed" />
-                                    <Button x:Name="ToolsJumpLiveButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="GoLive_Click" Content="Live" Visibility="Collapsed" />
+                                    <Button x:Name="ToolsInfoButton" x:Uid="GeneralInfoButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="InfoPanelToggle_Click" Content="Info" />
+                                    <Button x:Name="ToolsRetryButton" x:Uid="GeneralRetryButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="RetryPlayback_Click" Content="Retry" />
+                                    <Button x:Name="ToolsRestartButton" x:Uid="PlayerRestartContentButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="Restart_Click" Content="Restart" Visibility="Collapsed" />
+                                    <Button x:Name="ToolsJumpLiveButton" x:Uid="PlayerLiveButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="GoLive_Click" Content="Live" Visibility="Collapsed" />
                                 </StackPanel>
                                 <StackPanel Orientation="Horizontal" Spacing="6">
-                                    <Button x:Name="ToolsPictureInPictureButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="PictureInPicture_Click" Content="PiP" Visibility="Collapsed" />
-                                    <Button x:Name="ToolsScreenshotButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="CaptureScreenshot_Click" Content="Shot" />
-                                    <Button x:Name="ToolsGuideButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="GuidePanelToggle_Click" Content="Guide" Visibility="Collapsed" />
+                                    <Button x:Name="ToolsPictureInPictureButton" x:Uid="PlayerPipButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="PictureInPicture_Click" Content="PiP" Visibility="Collapsed" />
+                                    <Button x:Name="ToolsScreenshotButton" x:Uid="PlayerShotButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="CaptureScreenshot_Click" Content="Shot" />
+                                    <Button x:Name="ToolsGuideButton" x:Uid="GeneralGuideButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="GuidePanelToggle_Click" Content="Guide" Visibility="Collapsed" />
                                 </StackPanel>
                                 <StackPanel Orientation="Horizontal" Spacing="6">
-                                    <Button x:Name="ToolsChannelsButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="ChannelPanelToggle_Click" Content="Channels" Visibility="Collapsed" />
-                                    <Button x:Name="ToolsEpisodesButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="EpisodePanelToggle_Click" Content="Episodes" Visibility="Collapsed" />
+                                    <Button x:Name="ToolsChannelsButton" x:Uid="PlayerChannelsButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="ChannelPanelToggle_Click" Content="Channels" Visibility="Collapsed" />
+                                    <Button x:Name="ToolsEpisodesButton" x:Uid="PlayerEpisodesButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="EpisodePanelToggle_Click" Content="Episodes" Visibility="Collapsed" />
                                 </StackPanel>
                             </StackPanel>
                         </Border>
@@ -487,29 +490,29 @@
                         <Border Style="{StaticResource PlayerToolsSectionBorderStyle}">
                             <StackPanel Spacing="8">
                                 <StackPanel Spacing="2">
-                                    <TextBlock Text="Session" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource KroiraTextSecondaryBrush}" />
-                                    <TextBlock x:Name="ToolsSessionSummaryText" FontSize="10" Foreground="{StaticResource KroiraTextSecondaryBrush}" Opacity="0.82" TextWrapping="Wrap" Text="Sleep timer off. Window follows normal stacking." />
+                                    <TextBlock x:Uid="PlayerSessionTitle" Text="Session" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource KroiraTextSecondaryBrush}" />
+                                    <TextBlock x:Name="ToolsSessionSummaryText" x:Uid="PlayerSessionSummary" FontSize="10" Foreground="{StaticResource KroiraTextSecondaryBrush}" Opacity="0.82" TextWrapping="Wrap" Text="Sleep timer off. Window follows normal stacking." />
                                 </StackPanel>
                                 <StackPanel Orientation="Horizontal" Spacing="6">
                                     <Button x:Name="SleepTimer30Button" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="SleepTimerTool_Click" Tag="30" Content="30m" />
                                     <Button x:Name="SleepTimer60Button" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="SleepTimerTool_Click" Tag="60" Content="60m" />
                                     <Button x:Name="SleepTimer90Button" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="SleepTimerTool_Click" Tag="90" Content="90m" />
-                                    <Button x:Name="SleepTimerCancelButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="SleepTimerTool_Click" Tag="cancel" Content="Off" />
+                                    <Button x:Name="SleepTimerCancelButton" x:Uid="GeneralOffButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="SleepTimerTool_Click" Tag="cancel" Content="Off" />
                                 </StackPanel>
                                 <StackPanel Orientation="Horizontal" Spacing="6">
-                                    <Button x:Name="ToolsAlwaysOnTopButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="ToggleAlwaysOnTop_Click" Content="Always on top" />
-                                    <Button x:Name="ToolsStopButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="Stop_Click" Content="Stop" />
+                                    <Button x:Name="ToolsAlwaysOnTopButton" x:Uid="PlayerAlwaysOnTopButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="ToggleAlwaysOnTop_Click" Content="Always on top" />
+                                    <Button x:Name="ToolsStopButton" x:Uid="PlayerStopContentButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="Stop_Click" Content="Stop" />
                                 </StackPanel>
                             </StackPanel>
                         </Border>
 
                         <Border Style="{StaticResource PlayerToolsSectionBorderStyle}">
                             <StackPanel Spacing="8">
-                                <TextBlock Text="Display" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource KroiraTextSecondaryBrush}" />
-                                <TextBlock x:Name="ToolsDisplaySummaryText" FontSize="10" Foreground="{StaticResource KroiraTextSecondaryBrush}" Opacity="0.82" TextWrapping="Wrap" Text="Auto framing, neutral zoom, and standard rotation." />
+                                <TextBlock x:Uid="PlayerDisplayTitle" Text="Display" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource KroiraTextSecondaryBrush}" />
+                                <TextBlock x:Name="ToolsDisplaySummaryText" x:Uid="PlayerDisplaySummary" FontSize="10" Foreground="{StaticResource KroiraTextSecondaryBrush}" Opacity="0.82" TextWrapping="Wrap" Text="Auto framing, neutral zoom, and standard rotation." />
                                 <StackPanel Orientation="Horizontal" Spacing="6">
-                                    <Button x:Name="AspectAutoButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="AspectToolButton_Click" Tag="Automatic" Content="Auto" />
-                                    <Button x:Name="AspectFillButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="AspectToolButton_Click" Tag="FillWindow" Content="Fill" />
+                                    <Button x:Name="AspectAutoButton" x:Uid="PlayerAutoButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="AspectToolButton_Click" Tag="Automatic" Content="Auto" />
+                                    <Button x:Name="AspectFillButton" x:Uid="PlayerFillButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="AspectToolButton_Click" Tag="FillWindow" Content="Fill" />
                                     <Button x:Name="Aspect169Button" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="AspectToolButton_Click" Tag="Ratio16x9" Content="16:9" />
                                 </StackPanel>
                                 <StackPanel Orientation="Horizontal" Spacing="6">
@@ -519,50 +522,50 @@
                                 </StackPanel>
                                 <StackPanel Orientation="Horizontal" Spacing="6">
                                     <Button x:Name="ZoomOutButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="ZoomTool_Click" Tag="-0.15" Content="-" />
-                                    <Button x:Name="ZoomResetButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="ZoomTool_Click" Tag="reset" Content="Reset" />
+                                    <Button x:Name="ZoomResetButton" x:Uid="GeneralResetButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="ZoomTool_Click" Tag="reset" Content="Reset" />
                                     <Button x:Name="ZoomInButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="ZoomTool_Click" Tag="0.15" Content="+" />
                                 </StackPanel>
                                 <StackPanel Orientation="Horizontal" Spacing="6">
-                                    <Button x:Name="Rotation0Button" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="RotationTool_Click" Tag="0" Content="0 deg" />
-                                    <Button x:Name="Rotation90Button" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="RotationTool_Click" Tag="90" Content="90 deg" />
-                                    <Button x:Name="Rotation180Button" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="RotationTool_Click" Tag="180" Content="180 deg" />
-                                    <Button x:Name="Rotation270Button" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="RotationTool_Click" Tag="270" Content="270 deg" />
+                                    <Button x:Name="Rotation0Button" x:Uid="PlayerRotation0Button" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="RotationTool_Click" Tag="0" Content="0 deg" />
+                                    <Button x:Name="Rotation90Button" x:Uid="PlayerRotation90Button" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="RotationTool_Click" Tag="90" Content="90 deg" />
+                                    <Button x:Name="Rotation180Button" x:Uid="PlayerRotation180Button" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="RotationTool_Click" Tag="180" Content="180 deg" />
+                                    <Button x:Name="Rotation270Button" x:Uid="PlayerRotation270Button" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="RotationTool_Click" Tag="270" Content="270 deg" />
                                 </StackPanel>
                                 <StackPanel Orientation="Horizontal" Spacing="6">
-                                    <Button x:Name="ToolsDeinterlaceButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="ToggleDeinterlace_Click" Content="Deinterlace" />
+                                    <Button x:Name="ToolsDeinterlaceButton" x:Uid="PlayerDeinterlaceButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="ToggleDeinterlace_Click" Content="Deinterlace" />
                                 </StackPanel>
                             </StackPanel>
                         </Border>
 
                         <Border Style="{StaticResource PlayerToolsSectionBorderStyle}">
                             <StackPanel Spacing="8">
-                                <TextBlock Text="Audio &amp; subtitles" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource KroiraTextSecondaryBrush}" />
-                                <TextBlock x:Name="ToolsSubtitleSummaryText" FontSize="10" Foreground="{StaticResource KroiraTextSecondaryBrush}" Opacity="0.82" TextWrapping="Wrap" Text="Subtitle scale and placement follow the active player state." />
+                                <TextBlock x:Uid="PlayerAudioSubtitlesTitle" Text="Audio &amp; subtitles" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource KroiraTextSecondaryBrush}" />
+                                <TextBlock x:Name="ToolsSubtitleSummaryText" x:Uid="PlayerSubtitleSummary" FontSize="10" Foreground="{StaticResource KroiraTextSecondaryBrush}" Opacity="0.82" TextWrapping="Wrap" Text="Subtitle scale and placement follow the active player state." />
                                 <StackPanel Spacing="4">
-                                    <TextBlock x:Name="ToolsAudioDelayValueText" FontSize="10" Foreground="{StaticResource KroiraTextSecondaryBrush}" Text="Audio delay 0.0s" />
+                                    <TextBlock x:Name="ToolsAudioDelayValueText" x:Uid="PlayerAudioDelayValueText" FontSize="10" Foreground="{StaticResource KroiraTextSecondaryBrush}" Text="Audio delay 0.0s" />
                                     <StackPanel Orientation="Horizontal" Spacing="6">
                                         <Button x:Name="AudioDelayMinusButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="AudioDelayTool_Click" Tag="-0.1" Content="-0.1s" />
-                                        <Button x:Name="AudioDelayResetButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="AudioDelayTool_Click" Tag="reset" Content="Reset" />
+                                        <Button x:Name="AudioDelayResetButton" x:Uid="GeneralResetButton2" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="AudioDelayTool_Click" Tag="reset" Content="Reset" />
                                         <Button x:Name="AudioDelayPlusButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="AudioDelayTool_Click" Tag="0.1" Content="+0.1s" />
                                     </StackPanel>
                                 </StackPanel>
                                 <StackPanel Spacing="4">
-                                    <TextBlock x:Name="ToolsSubtitleDelayValueText" FontSize="10" Foreground="{StaticResource KroiraTextSecondaryBrush}" Text="Subtitle delay 0.0s" />
+                                    <TextBlock x:Name="ToolsSubtitleDelayValueText" x:Uid="PlayerSubtitleDelayValueText" FontSize="10" Foreground="{StaticResource KroiraTextSecondaryBrush}" Text="Subtitle delay 0.0s" />
                                     <StackPanel Orientation="Horizontal" Spacing="6">
                                         <Button x:Name="SubtitleDelayMinusButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="SubtitleDelayTool_Click" Tag="-0.1" Content="-0.1s" />
-                                        <Button x:Name="SubtitleDelayResetButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="SubtitleDelayTool_Click" Tag="reset" Content="Reset" />
+                                        <Button x:Name="SubtitleDelayResetButton" x:Uid="GeneralResetButton3" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="SubtitleDelayTool_Click" Tag="reset" Content="Reset" />
                                         <Button x:Name="SubtitleDelayPlusButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="SubtitleDelayTool_Click" Tag="0.1" Content="+0.1s" />
                                     </StackPanel>
                                 </StackPanel>
                                 <StackPanel Orientation="Horizontal" Spacing="6">
-                                    <Button x:Name="SubtitleSizeSmallButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="SubtitleStyleTool_Click" Tag="scale:0.85" Content="Small" />
-                                    <Button x:Name="SubtitleSizeMediumButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="SubtitleStyleTool_Click" Tag="scale:1.0" Content="Medium" />
-                                    <Button x:Name="SubtitleSizeLargeButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="SubtitleStyleTool_Click" Tag="scale:1.2" Content="Large" />
+                                    <Button x:Name="SubtitleSizeSmallButton" x:Uid="PlayerSmallButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="SubtitleStyleTool_Click" Tag="scale:0.85" Content="Small" />
+                                    <Button x:Name="SubtitleSizeMediumButton" x:Uid="PlayerMediumButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="SubtitleStyleTool_Click" Tag="scale:1.0" Content="Medium" />
+                                    <Button x:Name="SubtitleSizeLargeButton" x:Uid="PlayerLargeButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="SubtitleStyleTool_Click" Tag="scale:1.2" Content="Large" />
                                 </StackPanel>
                                 <StackPanel Orientation="Horizontal" Spacing="6">
-                                    <Button x:Name="SubtitlePositionHighButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="SubtitleStyleTool_Click" Tag="position:84" Content="High" />
-                                    <Button x:Name="SubtitlePositionCenterButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="SubtitleStyleTool_Click" Tag="position:92" Content="Mid" />
-                                    <Button x:Name="SubtitlePositionLowButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="SubtitleStyleTool_Click" Tag="position:100" Content="Low" />
+                                    <Button x:Name="SubtitlePositionHighButton" x:Uid="PlayerHighButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="SubtitleStyleTool_Click" Tag="position:84" Content="High" />
+                                    <Button x:Name="SubtitlePositionCenterButton" x:Uid="PlayerMidButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="SubtitleStyleTool_Click" Tag="position:92" Content="Mid" />
+                                    <Button x:Name="SubtitlePositionLowButton" x:Uid="PlayerLowButton" Style="{StaticResource PlayerToolsChipButtonStyle}" Click="SubtitleStyleTool_Click" Tag="position:100" Content="Low" />
                                 </StackPanel>
                             </StackPanel>
                         </Border>
@@ -581,11 +584,11 @@
 
         <Border x:Name="ErrorOverlay" Grid.RowSpan="3" Background="#E6090B13" Visibility="Collapsed">
             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="10" MaxWidth="520" Padding="24">
-                <TextBlock Text="Playback error" FontSize="20" FontWeight="SemiBold" Foreground="{StaticResource KroiraTextPrimaryBrush}" HorizontalAlignment="Center" />
+                <TextBlock x:Uid="PlayerPlaybackErrorTitle" Text="Playback error" FontSize="20" FontWeight="SemiBold" Foreground="{StaticResource KroiraTextPrimaryBrush}" HorizontalAlignment="Center" />
                 <TextBlock x:Name="ErrorMessage" Foreground="{StaticResource KroiraTextSecondaryBrush}" TextWrapping="Wrap" HorizontalAlignment="Center" TextAlignment="Center" />
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="10" Margin="0,12,0,0">
-                    <Button Click="RetryPlayback_Click" Style="{StaticResource KroiraPrimaryButtonStyle}" Content="Retry" />
-                    <Button Click="Back_Click" Content="Go back" />
+                    <Button x:Uid="GeneralRetryButton2" Click="RetryPlayback_Click" Style="{StaticResource KroiraPrimaryButtonStyle}" Content="Retry" />
+                    <Button x:Uid="GeneralGoBackButton" Click="Back_Click" Content="Go back" />
                 </StackPanel>
             </StackPanel>
         </Border>

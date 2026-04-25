@@ -43,6 +43,7 @@ namespace Kroira.App
                 LogStartupCheckpoint("MW 02: before InitializeComponent");
                 InitializeComponent();
                 LogStartupCheckpoint("MW 03: after InitializeComponent");
+                RootShell.FlowDirection = AppLanguageService.GetCurrentFlowDirection();
 
                 ContentFrame.Navigating += ContentFrame_Navigating;
                 ContentFrame.NavigationFailed += ContentFrame_NavigationFailed;
@@ -54,7 +55,7 @@ namespace Kroira.App
                 LogStartupCheckpoint("MW 07: after resolving IWindowManagerService");
                 _remoteNavigationService = app.Services.GetRequiredService<IRemoteNavigationService>();
 
-                Title = "Kroira IPTV";
+                Title = LocalizedStrings.Get("AppDisplayName");
                 LogStartupCheckpoint("MW 08: title set");
                 ConfigureDarkTitleBar();
 

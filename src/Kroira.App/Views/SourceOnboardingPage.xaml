@@ -28,73 +28,74 @@
 
             <Border Grid.Row="0" Style="{StaticResource KroiraPanelStyle}">
                 <StackPanel>
-                    <TextBlock Text="Add Source" Style="{StaticResource KroiraPageTitleStyle}" />
-                    <TextBlock Text="Connect your own M3U playlist, Xtream provider, or Stalker portal for live TV, movies, series, and guide data." Style="{StaticResource KroiraPageSubtitleStyle}" Margin="0,4,0,0" />
+                    <TextBlock x:Uid="SourceOnboardingPageTitle" Text="Add Source" Style="{StaticResource KroiraPageTitleStyle}" />
+                    <TextBlock x:Uid="SourceOnboardingPageSubtitle" Text="Connect your own M3U playlist, Xtream provider, or Stalker portal for live TV, movies, series, and guide data." Style="{StaticResource KroiraPageSubtitleStyle}" Margin="0,4,0,0" />
                 </StackPanel>
             </Border>
 
             <Border Grid.Row="1" Style="{StaticResource KroiraPanelStyle}">
                 <StackPanel Spacing="16">
-                    <TextBox Header="Source Name" Style="{StaticResource KroiraTextBoxStyle}" Text="{x:Bind ViewModel.SourceName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="e.g. My Custom List" />
+                    <TextBox x:Uid="SourceOnboardingSourceNameBox" Header="Source Name" Style="{StaticResource KroiraTextBoxStyle}" Text="{x:Bind ViewModel.SourceName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="e.g. My Custom List" />
 
-                    <RadioButtons Header="Source Format" SelectedIndex="{x:Bind ViewModel.SelectedFormatIndex, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
-                        <RadioButton Content="M3U (URL or Local File)" />
-                        <RadioButton Content="Xtream Codes" />
-                        <RadioButton Content="Stalker Portal" />
+                    <RadioButtons x:Uid="SourceOnboardingSourceFormatRadio" Header="Source Format" SelectedIndex="{x:Bind ViewModel.SelectedFormatIndex, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                        <RadioButton x:Uid="SourceOnboardingM3uRadio" Content="M3U (URL or Local File)" />
+                        <RadioButton x:Uid="SourceOnboardingXtreamRadio" Content="Xtream Codes" />
+                        <RadioButton x:Uid="SourceOnboardingStalkerRadio" Content="Stalker Portal" />
                     </RadioButtons>
 
                     <StackPanel Visibility="{x:Bind ViewModel.M3UVisibility, Mode=OneWay}" Spacing="8">
-                        <TextBlock Text="M3U playlist" Style="{StaticResource KroiraSectionTitleStyle}" />
+                        <TextBlock x:Uid="SourceOnboardingM3uTitle" Text="M3U playlist" Style="{StaticResource KroiraSectionTitleStyle}" />
                         <Grid ColumnSpacing="8">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
-                            <TextBox Grid.Column="0" Style="{StaticResource KroiraTextBoxStyle}" Text="{x:Bind ViewModel.M3uUrlOrPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="http://... or C:\..." />
-                            <Button Grid.Column="1" Content="Browse File..." Command="{x:Bind ViewModel.BrowseLocalFileCommand}" Style="{StaticResource KroiraButtonStyle}" />
+                            <TextBox x:Uid="SourceOnboardingM3uPathBox" Grid.Column="0" Style="{StaticResource KroiraTextBoxStyle}" Text="{x:Bind ViewModel.M3uUrlOrPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="http://... or C:\..." />
+                            <Button x:Uid="SourceOnboardingBrowseFileButton" Grid.Column="1" Content="Browse File..." Command="{x:Bind ViewModel.BrowseLocalFileCommand}" Style="{StaticResource KroiraButtonStyle}" />
                         </Grid>
 
                     </StackPanel>
 
                     <StackPanel Visibility="{x:Bind ViewModel.XtreamVisibility, Mode=OneWay}" Spacing="8">
-                        <TextBlock Text="Xtream provider" Style="{StaticResource KroiraSectionTitleStyle}" />
-                        <TextBox Header="Server URL" Style="{StaticResource KroiraTextBoxStyle}" Text="{x:Bind ViewModel.XtreamUrl, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="http://domain.com:8080" />
-                        <TextBox Header="Username" Style="{StaticResource KroiraTextBoxStyle}" Text="{x:Bind ViewModel.XtreamUsername, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                        <PasswordBox Header="Password" Password="{x:Bind ViewModel.XtreamPassword, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                        <TextBlock x:Uid="SourceOnboardingXtreamTitle" Text="Xtream provider" Style="{StaticResource KroiraSectionTitleStyle}" />
+                        <TextBox x:Uid="GeneralServerUrlBox" Header="Server URL" Style="{StaticResource KroiraTextBoxStyle}" Text="{x:Bind ViewModel.XtreamUrl, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="http://domain.com:8080" />
+                        <TextBox x:Uid="GeneralUsernameBox" Header="Username" Style="{StaticResource KroiraTextBoxStyle}" Text="{x:Bind ViewModel.XtreamUsername, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                        <PasswordBox x:Uid="GeneralPasswordBox" Header="Password" Password="{x:Bind ViewModel.XtreamPassword, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                     </StackPanel>
 
                     <StackPanel Visibility="{x:Bind ViewModel.StalkerVisibility, Mode=OneWay}" Spacing="8">
-                        <TextBlock Text="Stalker portal" Style="{StaticResource KroiraSectionTitleStyle}" />
-                        <TextBox Header="Portal URL" Style="{StaticResource KroiraTextBoxStyle}" Text="{x:Bind ViewModel.StalkerPortalUrl, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="http://portal.example.com/c/" />
-                        <TextBox Header="MAC Address" Style="{StaticResource KroiraTextBoxStyle}" Text="{x:Bind ViewModel.StalkerMacAddress, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="00:1A:79:00:00:01" />
-                        <TextBox Header="Device ID (Optional)" Style="{StaticResource KroiraTextBoxStyle}" Text="{x:Bind ViewModel.StalkerDeviceId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="Leave blank to derive from the MAC address" />
-                        <TextBox Header="Serial Number (Optional)" Style="{StaticResource KroiraTextBoxStyle}" Text="{x:Bind ViewModel.StalkerSerialNumber, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="Leave blank to derive from the MAC address" />
+                        <TextBlock x:Uid="SourceOnboardingStalkerTitle" Text="Stalker portal" Style="{StaticResource KroiraSectionTitleStyle}" />
+                        <TextBox x:Uid="SourceOnboardingPortalUrlBox" Header="Portal URL" Style="{StaticResource KroiraTextBoxStyle}" Text="{x:Bind ViewModel.StalkerPortalUrl, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="http://portal.example.com/c/" />
+                        <TextBox x:Uid="SourceOnboardingMacAddressBox" Header="MAC Address" Style="{StaticResource KroiraTextBoxStyle}" Text="{x:Bind ViewModel.StalkerMacAddress, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="00:1A:79:00:00:01" />
+                        <TextBox x:Uid="SourceOnboardingDeviceIdBox" Header="Device ID (Optional)" Style="{StaticResource KroiraTextBoxStyle}" Text="{x:Bind ViewModel.StalkerDeviceId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="Leave blank to derive from the MAC address" />
+                        <TextBox x:Uid="SourceOnboardingSerialNumberBox" Header="Serial Number (Optional)" Style="{StaticResource KroiraTextBoxStyle}" Text="{x:Bind ViewModel.StalkerSerialNumber, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="Leave blank to derive from the MAC address" />
                         <Grid ColumnSpacing="12">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
-                            <TextBox Grid.Column="0" Header="Timezone" Style="{StaticResource KroiraTextBoxStyle}" Text="{x:Bind ViewModel.StalkerTimezone, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                            <TextBox Grid.Column="1" Header="Locale" Style="{StaticResource KroiraTextBoxStyle}" Text="{x:Bind ViewModel.StalkerLocale, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                            <TextBox x:Uid="SourceOnboardingTimezoneBox" Grid.Column="0" Header="Timezone" Style="{StaticResource KroiraTextBoxStyle}" Text="{x:Bind ViewModel.StalkerTimezone, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                            <TextBox x:Uid="SourceOnboardingLocaleBox" Grid.Column="1" Header="Locale" Style="{StaticResource KroiraTextBoxStyle}" Text="{x:Bind ViewModel.StalkerLocale, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                         </Grid>
                     </StackPanel>
 
                     <StackPanel Spacing="8">
-                        <TextBlock Text="Guide mode" Style="{StaticResource KroiraSectionTitleStyle}" />
+                        <TextBlock x:Uid="SourceOnboardingGuideModeTitle" Text="Guide mode" Style="{StaticResource KroiraSectionTitleStyle}" />
                         <RadioButtons SelectedIndex="{x:Bind ViewModel.SelectedEpgModeIndex, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
-                            <RadioButton Content="Use provider guide" />
-                            <RadioButton Content="Manual XMLTV override" />
-                            <RadioButton Content="No guide" />
+                            <RadioButton x:Uid="SourceOnboardingUseProviderGuideRadio" Content="Use provider guide" />
+                            <RadioButton x:Uid="SourceOnboardingManualXmltvRadio" Content="Manual XMLTV override" />
+                            <RadioButton x:Uid="SourceOnboardingNoGuideRadio" Content="No guide" />
                         </RadioButtons>
                         <TextBlock Text="{x:Bind ViewModel.GuideModeSummaryText, Mode=OneWay}"
                                    Foreground="{StaticResource KroiraTextSecondaryBrush}"
                                    TextWrapping="WrapWholeWords" />
                         <TextBox Visibility="{x:Bind ViewModel.ManualEpgVisibility, Mode=OneWay}"
+                                 x:Uid="SourceOnboardingManualXmltvUrlBox"
                                  Header="Manual XMLTV URL"
                                  Style="{StaticResource KroiraTextBoxStyle}"
                                  Text="{x:Bind ViewModel.ManualEpgUrl, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                  PlaceholderText="http://.../epg.xml or C:\guide.xml" />
-                        <TextBox Header="Fallback/enrichment XMLTV URLs"
+                        <TextBox x:Uid="SourceOnboardingFallbackXmltvUrlsBox" Header="Fallback/enrichment XMLTV URLs"
                                  Style="{StaticResource KroiraTextBoxStyle}"
                                  Text="{x:Bind ViewModel.FallbackEpgUrls, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                  PlaceholderText="One XMLTV URL per line. Public feeds are optional."
@@ -104,17 +105,18 @@
                     </StackPanel>
 
                     <StackPanel Spacing="8">
-                        <TextBlock Text="Routing" Style="{StaticResource KroiraSectionTitleStyle}" />
+                        <TextBlock x:Uid="SourceOnboardingRoutingTitle" Text="Routing" Style="{StaticResource KroiraSectionTitleStyle}" />
                         <RadioButtons SelectedIndex="{x:Bind ViewModel.SelectedProxyModeIndex, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
-                            <RadioButton Content="Direct routing" />
-                            <RadioButton Content="Playback only" />
-                            <RadioButton Content="Playback + probes" />
-                            <RadioButton Content="All requests" />
+                            <RadioButton x:Uid="SourceOnboardingDirectRoutingRadio" Content="Direct routing" />
+                            <RadioButton x:Uid="SourceOnboardingPlaybackOnlyRadio" Content="Playback only" />
+                            <RadioButton x:Uid="SourceOnboardingPlaybackProbesRadio" Content="Playback + probes" />
+                            <RadioButton x:Uid="SourceOnboardingAllRequestsRadio" Content="All requests" />
                         </RadioButtons>
                         <TextBlock Text="{x:Bind ViewModel.ProxySummaryText, Mode=OneWay}"
                                    Foreground="{StaticResource KroiraTextSecondaryBrush}"
                                    TextWrapping="WrapWholeWords" />
                         <TextBox Visibility="{x:Bind ViewModel.ProxyUrlVisibility, Mode=OneWay}"
+                                 x:Uid="SourceOnboardingProxyUrlBox"
                                  Header="Proxy URL"
                                  Style="{StaticResource KroiraTextBoxStyle}"
                                  Text="{x:Bind ViewModel.ProxyUrl, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
@@ -122,21 +124,22 @@
                     </StackPanel>
 
                     <StackPanel Spacing="8">
-                        <TextBlock Text="Local companion relay" Style="{StaticResource KroiraSectionTitleStyle}" />
+                        <TextBlock x:Uid="SourceOnboardingCompanionRelayTitle" Text="Local companion relay" Style="{StaticResource KroiraSectionTitleStyle}" />
                         <RadioButtons SelectedIndex="{x:Bind ViewModel.SelectedCompanionScopeIndex, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
-                            <RadioButton Content="Disabled" />
-                            <RadioButton Content="Playback only" />
-                            <RadioButton Content="Playback + probes" />
+                            <RadioButton x:Uid="GeneralDisabledRadio" Content="Disabled" />
+                            <RadioButton x:Uid="SourceOnboardingPlaybackOnlyRadio2" Content="Playback only" />
+                            <RadioButton x:Uid="SourceOnboardingPlaybackProbesRadio2" Content="Playback + probes" />
                         </RadioButtons>
                         <TextBlock Text="{x:Bind ViewModel.CompanionSummaryText, Mode=OneWay}"
                                    Foreground="{StaticResource KroiraTextSecondaryBrush}"
                                    TextWrapping="WrapWholeWords" />
                         <RadioButtons Visibility="{x:Bind ViewModel.CompanionModeVisibility, Mode=OneWay}"
                                       SelectedIndex="{x:Bind ViewModel.SelectedCompanionModeIndex, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
-                            <RadioButton Content="Pass-through relay" />
-                            <RadioButton Content="Buffered relay" />
+                            <RadioButton x:Uid="SourceOnboardingPassThroughRelayRadio" Content="Pass-through relay" />
+                            <RadioButton x:Uid="SourceOnboardingBufferedRelayRadio" Content="Buffered relay" />
                         </RadioButtons>
                         <TextBox Visibility="{x:Bind ViewModel.CompanionUrlVisibility, Mode=OneWay}"
+                                 x:Uid="SourceOnboardingCompanionEndpointBox"
                                  Header="Companion endpoint"
                                  Style="{StaticResource KroiraTextBoxStyle}"
                                  Text="{x:Bind ViewModel.CompanionUrl, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
@@ -153,7 +156,7 @@
                             <StackPanel Orientation="Horizontal" Spacing="10">
                                 <controls:StatusPill Label="{x:Bind ViewModel.ValidationHeadlineText, Mode=OneWay}"
                                                      Kind="{x:Bind ViewModel.ValidationStatusKind, Mode=OneWay}" />
-                                <Button Content="Copy Safe Report"
+                                <Button x:Uid="GeneralCopySafeReportButton" Content="Copy Safe Report"
                                         Click="CopyValidationReport_Click"
                                         Visibility="{x:Bind ViewModel.ValidationVisibility, Mode=OneWay}"
                                         Style="{StaticResource KroiraGhostButtonStyle}"
@@ -224,12 +227,12 @@
                     <StackPanel Orientation="Horizontal"
                                 Spacing="10"
                                 Margin="0,8,0,0">
-                        <Button Content="Test Source"
+                        <Button x:Uid="SourceOnboardingTestSourceButton" Content="Test Source"
                                 Command="{x:Bind ViewModel.ValidateSourceCommand}"
                                 IsEnabled="{x:Bind ViewModel.CanTestSource, Mode=OneWay}"
                                 Style="{StaticResource KroiraGhostButtonStyle}"
                                 Padding="16,10" />
-                        <Button Content="Save and sync"
+                        <Button x:Uid="SourceOnboardingSaveAndSyncButton" Content="Save and sync"
                                 Command="{x:Bind ViewModel.SaveSourceCommand}"
                                 IsEnabled="{x:Bind ViewModel.CanSaveSource, Mode=OneWay}"
                                 Style="{StaticResource KroiraPrimaryButtonStyle}"

@@ -1832,6 +1832,11 @@ internal sealed class RegressionRunner
         var viewModel = new ChannelsPageViewModel(services);
         await viewModel.LoadChannelsAsync();
         await WaitForConditionAsync(() => viewModel.FilteredChannels.Count > 0 || viewModel.IsEmpty, TimeSpan.FromSeconds(1));
+        await WaitForConditionAsync(
+            () => viewModel.IsEmpty ||
+                  viewModel.FilteredChannels.Any(channel => channel.HasGuideData || channel.HasMatchedGuide),
+            TimeSpan.FromSeconds(1));
+        await WaitForStableLiveChannelsAsync(viewModel, TimeSpan.FromMilliseconds(200), TimeSpan.FromSeconds(1));
 
         return new LiveTvSurfaceSnapshot
         {
@@ -1922,6 +1927,39 @@ internal sealed class RegressionRunner
             if (DateTime.UtcNow - start >= timeout)
             {
                 break;
+            }
+
+            await Task.Delay(25);
+        }
+    }
+
+    private static async Task WaitForStableLiveChannelsAsync(
+        ChannelsPageViewModel viewModel,
+        TimeSpan stableFor,
+        TimeSpan timeout)
+    {
+        var startedAt = DateTime.UtcNow;
+        var stableSince = startedAt;
+        var previousSignature = string.Empty;
+
+        while (DateTime.UtcNow - startedAt < timeout)
+        {
+            var signature = string.Join(
+                "|",
+                viewModel.FilteredChannels.Select(channel =>
+                    $"{channel.Id}:{channel.Name}:{channel.HasGuideData}:{channel.HasMatchedGuide}:{channel.CurrentProgramTitle}:{channel.NextProgramTitle}"));
+
+            if (string.Equals(signature, previousSignature, StringComparison.Ordinal))
+            {
+                if (DateTime.UtcNow - stableSince >= stableFor)
+                {
+                    return;
+                }
+            }
+            else
+            {
+                previousSignature = signature;
+                stableSince = DateTime.UtcNow;
             }
 
             await Task.Delay(25);
@@ -2167,6 +2205,11 @@ internal sealed class RegressionRunner
 
     private static DateTime ParseTimestampOrDefault(string value)
     {
+        if (TryParseRelativeNowTimestamp(value, out var relativeTimestamp))
+        {
+            return relativeTimestamp;
+        }
+
         return DateTime.TryParse(
             value,
             System.Globalization.CultureInfo.InvariantCulture,
@@ -2174,6 +2217,38 @@ internal sealed class RegressionRunner
             out var parsed)
             ? parsed
             : new DateTime(2026, 4, 22, 9, 15, 0, DateTimeKind.Utc);
+    }
+
+    private static bool TryParseRelativeNowTimestamp(string value, out DateTime timestampUtc)
+    {
+        timestampUtc = default;
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return false;
+        }
+
+        var match = Regex.Match(
+            value.Trim(),
+            @"^now(?<sign>[+-])(?<amount>\d+)(?<unit>[mhd])$",
+            RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+        if (!match.Success)
+        {
+            return false;
+        }
+
+        var amount = int.Parse(match.Groups["amount"].Value, CultureInfo.InvariantCulture);
+        var offset = match.Groups["unit"].Value.ToLowerInvariant() switch
+        {
+            "m" => TimeSpan.FromMinutes(amount),
+            "h" => TimeSpan.FromHours(amount),
+            "d" => TimeSpan.FromDays(amount),
+            _ => TimeSpan.Zero
+        };
+
+        timestampUtc = match.Groups["sign"].Value == "+"
+            ? DateTime.UtcNow.Add(offset)
+            : DateTime.UtcNow.Subtract(offset);
+        return true;
     }
 
     private static async Task<LiveBrowsePreferencesSnapshot> CaptureLiveBrowsePreferencesAsync(AppDbContext db, string serverBaseUrl)

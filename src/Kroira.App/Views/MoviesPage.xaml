@@ -53,12 +53,12 @@
             </Grid.ColumnDefinitions>
 
             <StackPanel Spacing="5">
-                <TextBlock Text="MOVIES LIBRARY"
+                <TextBlock x:Uid="MoviesLibraryLabel" Text="MOVIES LIBRARY"
                            Style="{StaticResource KroiraLabelStyle}"
                            Foreground="{StaticResource KroiraAccentBrush}" />
-                <TextBlock Text="Movies"
+                <TextBlock x:Uid="MoviesPageTitle" Text="Movies"
                            Style="{StaticResource KroiraPageTitleStyle}" />
-                <TextBlock Text="Search, filter, and pick a film from your sources."
+                <TextBlock x:Uid="MoviesPageSubtitle" Text="Search, filter, and pick a film from your sources."
                            Style="{StaticResource KroiraPageSubtitleStyle}"
                            MaxWidth="720" />
             </StackPanel>
@@ -146,7 +146,7 @@
                                 Spacing="11"
                                 VerticalAlignment="Bottom"
                                 MaxWidth="760">
-                        <TextBlock Text="FEATURED FILM"
+                        <TextBlock x:Uid="MoviesFeaturedFilmLabel" Text="FEATURED FILM"
                                    Style="{StaticResource KroiraLabelStyle}"
                                    Foreground="{StaticResource KroiraAccentBrush}" />
                         <TextBlock Text="{x:Bind ViewModel.FeaturedMovie.Title, Mode=OneWay}"
@@ -193,7 +193,7 @@
                                     MinWidth="136">
                                 <StackPanel Orientation="Horizontal" Spacing="8">
                                     <FontIcon Glyph="&#xE102;" FontSize="13" />
-                                    <TextBlock Text="Play movie" />
+                                    <TextBlock x:Uid="MoviesPlayMovieButton" Text="Play movie" />
                                 </StackPanel>
                             </Button>
                             <Button Click="FeaturedInspect_Click"
@@ -202,7 +202,7 @@
                                     <FontIcon Glyph="&#xE946;"
                                               FontSize="13"
                                               Foreground="{StaticResource KroiraAccentBrush}" />
-                                    <TextBlock Text="Details" />
+                                    <TextBlock x:Uid="GeneralDetailsText" Text="Details" />
                                 </StackPanel>
                             </Button>
                             <Button Click="FavoriteToggle_Click"
@@ -223,7 +223,7 @@
                                     <FontIcon Glyph="&#xE896;"
                                               FontSize="13"
                                               Foreground="{StaticResource KroiraAccentBrush}" />
-                                    <TextBlock Text="Download" />
+                                    <TextBlock x:Uid="GeneralDownloadText" Text="Download" />
                                 </StackPanel>
                             </Button>
                         </StackPanel>
@@ -283,6 +283,7 @@
 
                         <Grid Grid.Column="0">
                              <TextBox x:Name="SearchBox"
+                                      x:Uid="MoviesSearchBox"
                                       Style="{StaticResource KroiraFilterTextBoxStyle}"
                                       Text="{x:Bind ViewModel.SearchQuery, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                       KeyDown="SearchBox_KeyDown"
@@ -296,14 +297,16 @@
                                       VerticalAlignment="Center" />
                         </Grid>
 
-                         <ComboBox Grid.Column="1"
+                         <ComboBox x:Uid="MoviesProviderComboBox"
+                                   Grid.Column="1"
                                    Style="{StaticResource KroiraFilterComboBoxStyle}"
                                    ItemsSource="{x:Bind ViewModel.SourceOptions, Mode=OneWay}"
                                    SelectedItem="{x:Bind ViewModel.SelectedSourceOption, Mode=TwoWay}"
                                    DisplayMemberPath="DisplayName"
                                    AutomationProperties.Name="Movie provider" />
 
-                         <ComboBox Grid.Column="2"
+                         <ComboBox x:Uid="MoviesSortComboBox"
+                                   Grid.Column="2"
                                    Style="{StaticResource KroiraFilterComboBoxStyle}"
                                    ItemsSource="{x:Bind ViewModel.SortOptions, Mode=OneWay}"
                                    SelectedItem="{x:Bind ViewModel.SelectedSortOption, Mode=TwoWay}"
@@ -315,10 +318,10 @@
                                     Spacing="8"
                                     HorizontalAlignment="Right"
                                     VerticalAlignment="Center">
-                             <CheckBox Content="Favorites"
+                             <CheckBox x:Uid="MoviesFavoritesFilter" Content="Favorites"
                                        IsChecked="{x:Bind ViewModel.FavoritesOnly, Mode=TwoWay}"
                                        AutomationProperties.Name="Show favorite movies only" />
-                             <CheckBox Content="Primary only"
+                             <CheckBox x:Uid="MoviesPrimaryOnlyFilter" Content="Primary only"
                                        IsChecked="{x:Bind ViewModel.HideSecondaryContent, Mode=TwoWay}"
                                        AutomationProperties.Name="Show primary movie entries only" />
                         </StackPanel>
@@ -329,6 +332,7 @@
                     Grid.Column="0"
                     Style="{StaticResource KroiraCategoryRailPanelStyle}">
                 <ListView x:Name="CategoryList"
+                          x:Uid="MoviesCategoryList"
                           ItemsSource="{x:Bind ViewModel.Categories, Mode=OneWay}"
                           SelectedItem="{x:Bind ViewModel.SelectedCategory, Mode=TwoWay}"
                           SelectionMode="Single"
@@ -449,7 +453,7 @@
                                                             <FontIcon Glyph="&#xE768;"
                                                                       FontSize="12"
                                                                       Foreground="{StaticResource KroiraAccentBrush}" />
-                                                            <TextBlock Text="Play"
+                                                            <TextBlock x:Uid="GeneralPlayText" Text="Play"
                                                                        FontSize="11"
                                                                        FontWeight="SemiBold"
                                                                        Foreground="{StaticResource KroiraTextPrimaryBrush}" />
@@ -473,7 +477,8 @@
                                                                   FontSize="12"
                                                                   Foreground="{StaticResource KroiraAccentBrush}" />
                                                     </Button>
-                                                    <Button Grid.Column="2"
+                                                    <Button x:Uid="MoviesDetailsButton"
+                                                            Grid.Column="2"
                                                             Click="MovieInspect_Click"
                                                             Width="28"
                                                             Height="28"
@@ -487,7 +492,8 @@
                                                                   FontSize="11"
                                                                   Foreground="{StaticResource KroiraTextPrimaryBrush}" />
                                                     </Button>
-                                                    <Button Grid.Column="3"
+                                                    <Button x:Uid="MoviesDownloadButton"
+                                                            Grid.Column="3"
                                                             Click="MovieDownload_Click"
                                                             Visibility="{Binding ElementName=MoviesPageRoot, Path=DownloadActionsVisibility}"
                                                             Width="28"
@@ -565,6 +571,7 @@
             <controls:ErrorStateView IconGlyph="{x:Bind ViewModel.SurfaceState.Glyph, Mode=OneWay}"
                                      Title="{x:Bind ViewModel.SurfaceState.Title, Mode=OneWay}"
                                      Message="{x:Bind ViewModel.SurfaceState.Message, Mode=OneWay}"
+                                     x:Uid="GeneralRetryErrorState"
                                      RetryActionLabel="Retry"
                                      DiagnosticsActionLabel="{x:Bind ViewModel.SurfaceState.ActionLabel, Mode=OneWay}"
                                      DiagnosticsActionVisibility="{x:Bind ViewModel.SurfaceState.DiagnosticsActionVisibility, Mode=OneWay}"

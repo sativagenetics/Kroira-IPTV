@@ -62,8 +62,8 @@
                         Background="{StaticResource KroiraAccentGradientBrush}"
                         CornerRadius="3"
                         HorizontalAlignment="Left" />
-                <TextBlock Text="Favorites" Style="{StaticResource KroiraPageTitleStyle}" />
-                <TextBlock Text="Your saved Live TV, Movies, and Series in dedicated media lanes."
+                    <TextBlock x:Uid="FavoritesPageTitle" Text="Favorites" Style="{StaticResource KroiraPageTitleStyle}" />
+                    <TextBlock x:Uid="FavoritesPageSubtitle" Text="Your saved Live TV, Movies, and Series in dedicated media lanes."
                            Style="{StaticResource KroiraPageSubtitleStyle}"
                            MaxWidth="720" />
             </StackPanel>
@@ -102,8 +102,8 @@
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
                         <StackPanel Spacing="3">
-                            <TextBlock Text="Live TV" Style="{StaticResource KroiraSectionTitleStyle}" />
-                            <TextBlock Text="Saved channels" Style="{StaticResource KroiraBodyStyle}" />
+                                <TextBlock x:Uid="FavoritesLiveTvTitle" Text="Live TV" Style="{StaticResource KroiraSectionTitleStyle}" />
+                                <TextBlock x:Uid="FavoritesSavedChannelsSubtitle" Text="Saved channels" Style="{StaticResource KroiraBodyStyle}" />
                         </StackPanel>
                         <Border Grid.Column="1"
                                 Style="{StaticResource KroiraLaneCountBadgeStyle}"
@@ -114,7 +114,8 @@
                                        FontWeight="SemiBold" />
                         </Border>
                         <Button Grid.Column="2"
-                                Content="Clear all"
+                                    x:Uid="FavoritesClearLiveButton"
+                                    Content="Clear all"
                                 Click="ClearChannelFavorites_Click"
                                 Style="{StaticResource KroiraLaneClearButtonStyle}"
                                 Visibility="{x:Bind ViewModel.ClearChannelsVisibility, Mode=OneWay}"
@@ -125,8 +126,9 @@
 
                     <Grid Grid.Row="1" Padding="10,0,10,12">
                         <controls:EmptyStateView IconGlyph="&#xE714;"
-                                                 Title="No saved channels"
-                                                 Message="Star channels from Live TV to build a quick launch lane."
+                                     x:Uid="FavoritesNoSavedChannelsEmpty"
+                                     Title="No saved channels"
+                                     Message="Star channels from Live TV to build a quick launch lane."
                                                  Visibility="{x:Bind ViewModel.ChannelsEmptyVisibility, Mode=OneWay}"
                                                  VerticalAlignment="Top" />
 
@@ -163,10 +165,11 @@
                                                 <TextBlock Text="{Binding Name}" Style="{StaticResource KroiraTitleStyle}" MaxLines="1" TextTrimming="CharacterEllipsis" />
                                                 <StackPanel Orientation="Horizontal" Spacing="6">
                                                     <Ellipse Width="6" Height="6" Fill="{StaticResource KroiraLiveDotBrush}" VerticalAlignment="Center" />
-                                                    <TextBlock Text="Live favorite" Style="{StaticResource KroiraMetaStyle}" />
+                                                <TextBlock x:Uid="FavoritesLiveFavoriteMeta" Text="Live favorite" Style="{StaticResource KroiraMetaStyle}" />
                                                 </StackPanel>
                                             </StackPanel>
-                                            <Button Grid.Column="2"
+                                            <Button x:Uid="FavoritesRemoveChannelButton"
+                                                    Grid.Column="2"
                                                     Tag="{Binding Id}"
                                                     Click="RemoveChannelFavorite_Click"
                                                     Style="{StaticResource QuietIconButtonStyle}"
@@ -198,14 +201,15 @@
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
                         <StackPanel Spacing="3">
-                            <TextBlock Text="Movies" Style="{StaticResource KroiraSectionTitleStyle}" />
-                            <TextBlock Text="Saved films" Style="{StaticResource KroiraBodyStyle}" />
+                                <TextBlock x:Uid="FavoritesMoviesTitle" Text="Movies" Style="{StaticResource KroiraSectionTitleStyle}" />
+                                <TextBlock x:Uid="FavoritesSavedFilmsSubtitle" Text="Saved films" Style="{StaticResource KroiraBodyStyle}" />
                         </StackPanel>
                         <Border Grid.Column="1" Style="{StaticResource KroiraLaneCountBadgeStyle}">
                             <TextBlock Text="{x:Bind ViewModel.MovieCountText, Mode=OneWay}" Foreground="{StaticResource KroiraAccentBrush}" FontSize="10" FontWeight="SemiBold" />
                         </Border>
                         <Button Grid.Column="2"
-                                Content="Clear all"
+                                    x:Uid="FavoritesClearMoviesButton"
+                                    Content="Clear all"
                                 Click="ClearMovieFavorites_Click"
                                 Style="{StaticResource KroiraLaneClearButtonStyle}"
                                 Visibility="{x:Bind ViewModel.ClearMoviesVisibility, Mode=OneWay}"
@@ -216,8 +220,9 @@
 
                     <Grid Grid.Row="1" Padding="10,0,10,12">
                         <controls:EmptyStateView IconGlyph="&#xE8B2;"
-                                                 Title="No saved movies"
-                                                 Message="Save movie cards to keep a focused watchlist here."
+                                     x:Uid="FavoritesNoSavedMoviesEmpty"
+                                     Title="No saved movies"
+                                     Message="Save movie cards to keep a focused watchlist here."
                                                  Visibility="{x:Bind ViewModel.MoviesEmptyVisibility, Mode=OneWay}"
                                                  VerticalAlignment="Top" />
 
@@ -246,9 +251,10 @@
                                             <StackPanel Grid.Column="1" Spacing="4" VerticalAlignment="Center">
                                                 <TextBlock Text="{Binding Title}" Style="{StaticResource KroiraTitleStyle}" MaxLines="2" TextWrapping="Wrap" TextTrimming="CharacterEllipsis" />
                                                 <TextBlock Text="{Binding MetadataLine}" Style="{StaticResource KroiraMetaStyle}" MaxLines="1" TextTrimming="CharacterEllipsis" />
-                                                <TextBlock Text="Movie" Style="{StaticResource KroiraMetaStyle}" />
+                                                <TextBlock x:Uid="GeneralMovieMeta" Text="Movie" Style="{StaticResource KroiraMetaStyle}" />
                                             </StackPanel>
-                                            <Button Grid.Column="2"
+                                            <Button x:Uid="FavoritesRemoveMovieButton"
+                                                    Grid.Column="2"
                                                     Tag="{Binding Id}"
                                                     Click="RemoveMovieFavorite_Click"
                                                     Style="{StaticResource QuietIconButtonStyle}"
@@ -280,14 +286,15 @@
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
                         <StackPanel Spacing="3">
-                            <TextBlock Text="Series" Style="{StaticResource KroiraSectionTitleStyle}" />
-                            <TextBlock Text="Saved shows" Style="{StaticResource KroiraBodyStyle}" />
+                                <TextBlock x:Uid="FavoritesSeriesTitle" Text="Series" Style="{StaticResource KroiraSectionTitleStyle}" />
+                                <TextBlock x:Uid="FavoritesSavedShowsSubtitle" Text="Saved shows" Style="{StaticResource KroiraBodyStyle}" />
                         </StackPanel>
                         <Border Grid.Column="1" Style="{StaticResource KroiraLaneCountBadgeStyle}">
                             <TextBlock Text="{x:Bind ViewModel.SeriesCountText, Mode=OneWay}" Foreground="{StaticResource KroiraAccentBrush}" FontSize="10" FontWeight="SemiBold" />
                         </Border>
                         <Button Grid.Column="2"
-                                Content="Clear all"
+                                    x:Uid="FavoritesClearSeriesButton"
+                                    Content="Clear all"
                                 Click="ClearSeriesFavorites_Click"
                                 Style="{StaticResource KroiraLaneClearButtonStyle}"
                                 Visibility="{x:Bind ViewModel.ClearSeriesVisibility, Mode=OneWay}"
@@ -298,8 +305,9 @@
 
                     <Grid Grid.Row="1" Padding="10,0,10,12">
                         <controls:EmptyStateView IconGlyph="&#xE8A9;"
-                                                 Title="No saved series"
-                                                 Message="Saved series appear here as a dedicated show lane."
+                                     x:Uid="FavoritesNoSavedSeriesEmpty"
+                                     Title="No saved series"
+                                     Message="Saved series appear here as a dedicated show lane."
                                                  Visibility="{x:Bind ViewModel.SeriesEmptyVisibility, Mode=OneWay}"
                                                  VerticalAlignment="Top" />
 
@@ -327,9 +335,10 @@
                                             <StackPanel Grid.Column="1" Spacing="4" VerticalAlignment="Center">
                                                 <TextBlock Text="{Binding Title}" Style="{StaticResource KroiraTitleStyle}" MaxLines="2" TextWrapping="Wrap" TextTrimming="CharacterEllipsis" />
                                                 <TextBlock Text="{Binding MetadataLine}" Style="{StaticResource KroiraMetaStyle}" MaxLines="1" TextTrimming="CharacterEllipsis" />
-                                                <TextBlock Text="Series" Style="{StaticResource KroiraMetaStyle}" />
+                                                <TextBlock x:Uid="GeneralSeriesMeta" Text="Series" Style="{StaticResource KroiraMetaStyle}" />
                                             </StackPanel>
-                                            <Button Grid.Column="2"
+                                            <Button x:Uid="FavoritesRemoveSeriesButton"
+                                                    Grid.Column="2"
                                                     Tag="{Binding Id}"
                                                     Click="RemoveSeriesFavorite_Click"
                                                     Style="{StaticResource QuietIconButtonStyle}"
@@ -375,13 +384,14 @@
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
                             <StackPanel Spacing="3">
-                                <TextBlock Text="SAVED SERIES"
+                                <TextBlock x:Uid="FavoritesSavedSeriesLabel" Text="SAVED SERIES"
                                            Style="{StaticResource KroiraLabelStyle}"
                                            Foreground="{StaticResource KroiraAccentBrush}" />
-                                <TextBlock Text="Series details"
+                                <TextBlock x:Uid="FavoritesSeriesDetailsTitle" Text="Series details"
                                            Style="{StaticResource KroiraSectionTitleStyle}" />
                             </StackPanel>
                             <Button x:Name="CloseSeriesDetailButton"
+                                    x:Uid="GeneralCloseButton"
                                     Grid.Column="1"
                                     Content="Close"
                                     Click="CloseSeriesDetail_Click"
@@ -459,7 +469,7 @@
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
                                 <StackPanel Spacing="7">
-                                    <TextBlock Text="SEASON"
+                                    <TextBlock x:Uid="SeriesSeasonLabel" Text="SEASON"
                                                Style="{StaticResource KroiraLabelStyle}"
                                                Foreground="{StaticResource KroiraAccentBrush}" />
                                     <ComboBox x:Name="SeasonComboBox"
@@ -475,6 +485,7 @@
                                     </ComboBox>
                                 </StackPanel>
                                 <Button x:Name="PlaySelectedEpisodeButton"
+                                        x:Uid="FavoritesPlaySelectedEpisodeButton"
                                         Grid.Column="1"
                                         Content="Play"
                                         Click="PlaySelectedEpisode_Click"
@@ -482,7 +493,8 @@
                                         Style="{StaticResource KroiraPrimaryButtonStyle}"
                                         Padding="16,11"
                                         VerticalAlignment="Bottom" />
-                                <Button Grid.Column="2"
+                                <Button x:Uid="FavoritesOpenSeriesPageButton"
+                                        Grid.Column="2"
                                         Content="Open Series page"
                                         Click="OpenSeriesPage_Click"
                                         Style="{StaticResource KroiraGhostButtonStyle}"
@@ -491,7 +503,8 @@
                             </Grid>
                         </Border>
 
-                        <controls:EmptyStateView IconGlyph="&#xE8A9;"
+                        <controls:EmptyStateView x:Uid="FavoritesNoPlayableEpisodesEmpty"
+                                                 IconGlyph="&#xE8A9;"
                                                  Title="No playable episodes"
                                                  Message="This saved series does not currently have playable episode data in the local library."
                                                  Visibility="{x:Bind ViewModel.SelectedSeriesEpisodesEmptyVisibility, Mode=OneWay}" />

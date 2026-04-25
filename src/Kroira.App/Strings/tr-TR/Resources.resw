@@ -1,0 +1,3375 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="AboutAppLabel.Text" xml:space="preserve">
+    <value>Uygulama</value>
+  </data>
+  <data name="AboutBackToSettingsButton.Content" xml:space="preserve">
+    <value>Ayarlar</value>
+  </data>
+  <data name="AboutBuildTitle.Text" xml:space="preserve">
+    <value>YapÃ„Â±</value>
+  </data>
+  <data name="AboutHelpTitle.Text" xml:space="preserve">
+    <value>YardÃ„Â±m</value>
+  </data>
+  <data name="AboutLegalTitle.Text" xml:space="preserve">
+    <value>Yasal</value>
+  </data>
+  <data name="AboutPrivacyTitle.Text" xml:space="preserve">
+    <value>Gizlilik</value>
+  </data>
+  <data name="AboutReleaseLabel.Text" xml:space="preserve">
+    <value>SÃƒÂ¼rÃƒÂ¼m</value>
+  </data>
+  <data name="AboutSectionTitle.Text" xml:space="preserve">
+    <value>HakkÃ„Â±nda</value>
+  </data>
+  <data name="AboutSupportTitle.Text" xml:space="preserve">
+    <value>Destek</value>
+  </data>
+  <data name="Appearance.Accent.Ember.Name" xml:space="preserve">
+    <value>Kor</value>
+  </data>
+  <data name="Appearance.Accent.Ember.Description" xml:space="preserve">
+    <value>CanlÃ„Â± ve uyarÃ„Â± durumlarÃ„Â± iÃƒÂ§in sÃ„Â±cak kÃ„Â±rmÃ„Â±zÃ„Â± vurgular.</value>
+  </data>
+  <data name="Appearance.Accent.Gold.Name" xml:space="preserve">
+    <value>AltÃ„Â±n</value>
+  </data>
+  <data name="Appearance.Accent.Gold.Description" xml:space="preserve">
+    <value>Birincil eylemlerde KROIRA altÃ„Â±n vurgusu.</value>
+  </data>
+  <data name="Appearance.Accent.Signal.Name" xml:space="preserve">
+    <value>Sinyal</value>
+  </data>
+  <data name="Appearance.Accent.Signal.Description" xml:space="preserve">
+    <value>Teknik oynatma yÃƒÂ¼zeyleri iÃƒÂ§in harika mavi kontroller.</value>
+  </data>
+  <data name="Appearance.Theme.Archive.Name" xml:space="preserve">
+    <value>ArÃ…Å¸iv</value>
+  </data>
+  <data name="Appearance.Theme.Archive.Description" xml:space="preserve">
+    <value>KÃƒÂ¼tÃƒÂ¼phanede gezinmek iÃƒÂ§in sessiz nÃƒÂ¶tr yÃƒÂ¼zeyler.</value>
+  </data>
+  <data name="Appearance.Theme.Broadcast.Name" xml:space="preserve">
+    <value>YayÃ„Â±n</value>
+  </data>
+  <data name="Appearance.Theme.Broadcast.Description" xml:space="preserve">
+    <value>KÃ„Â±lavuz aÃ„Å¸Ã„Â±rlÃ„Â±klÃ„Â± canlÃ„Â± TV oturumlarÃ„Â± iÃƒÂ§in daha keskin kontrast.</value>
+  </data>
+  <data name="Appearance.Theme.Cinema.Name" xml:space="preserve">
+    <value>Sinema</value>
+  </data>
+  <data name="Appearance.Theme.Cinema.Description" xml:space="preserve">
+    <value>AkÃ…Å¸am gÃƒÂ¶rÃƒÂ¼ntÃƒÂ¼leme iÃƒÂ§in altÃ„Â±n odaklÃ„Â± derin yÃƒÂ¼zeyler.</value>
+  </data>
+  <data name="ChannelBrowserPageSubtitle.Text" xml:space="preserve">
+    <value>KÃ„Â±lavuza duyarlÃ„Â± iÃƒÂ§eriÃ„Å¸e sahip kaynak dÃƒÂ¼zeyinde kanal tarayÃ„Â±cÃ„Â±sÃ„Â±.</value>
+  </data>
+  <data name="ChannelBrowserPageTitle.Text" xml:space="preserve">
+    <value>TarayÃ„Â±cÃ„Â±</value>
+  </data>
+  <data name="ChannelBrowserSearchBox.PlaceholderText" xml:space="preserve">
+    <value>Kanal ara...</value>
+  </data>
+  <data name="Channels.CatchupUnavailableTitle" xml:space="preserve">
+    <value>Yakalama kullanÃ„Â±lamÃ„Â±yor</value>
+  </data>
+  <data name="Channels.Recording.FailedTitle" xml:space="preserve">
+    <value>KayÃ„Â±t baÃ…Å¸arÃ„Â±sÃ„Â±z oldu</value>
+  </data>
+  <data name="Channels.Recording.ScheduledMessage" xml:space="preserve">
+    <value>{0}, {1:g} iÃƒÂ§in planlandÃ„Â±.</value>
+  </data>
+  <data name="Channels.Recording.ScheduledTitle" xml:space="preserve">
+    <value>KayÃ„Â±t planlandÃ„Â±</value>
+  </data>
+  <data name="Channels.Recording.ScheduleMessage" xml:space="preserve">
+    <value>Yerel bir baÃ…Å¸langÃ„Â±ÃƒÂ§ zamanÃ„Â± ve sÃƒÂ¼resi seÃƒÂ§in.</value>
+  </data>
+  <data name="Channels.Recording.ScheduleTitle" xml:space="preserve">
+    <value>KayÃ„Â±t planlama</value>
+  </data>
+  <data name="ChannelsBroadcastLabel.Text" xml:space="preserve">
+    <value>YayÃ„Â±n</value>
+  </data>
+  <data name="ChannelsBrowserLabel.Text" xml:space="preserve">
+    <value>KANAL TARAYICISI</value>
+  </data>
+  <data name="ChannelsGuideMatchedFilter.Content" xml:space="preserve">
+    <value>KÃ„Â±lavuz eÃ…Å¸leÃ…Å¸ti</value>
+  </data>
+  <data name="ChannelsLastBadge.Text" xml:space="preserve">
+    <value>SON</value>
+  </data>
+  <data name="ChannelsPageSubtitle.Text" xml:space="preserve">
+    <value>CanlÃ„Â± kanallara, rehber zamanlarÃ„Â±na, favorilere ve geliÃ…Å¸melere gÃƒÂ¶z atÃ„Â±n.</value>
+  </data>
+  <data name="ChannelsPageTitle.Text" xml:space="preserve">
+    <value>CanlÃ„Â± TV</value>
+  </data>
+  <data name="ChannelsSearchBox.PlaceholderText" xml:space="preserve">
+    <value>KanallarÃ„Â± ara</value>
+  </data>
+  <data name="ContinueWatching.ClearLiveMessage" xml:space="preserve">
+    <value>Bu, bu cihazdaki etkin profil iÃƒÂ§in kayÃ„Â±tlÃ„Â± tÃƒÂ¼m canlÃ„Â± ÃƒÂ¶zgeÃƒÂ§miÃ…Å¸ giriÃ…Å¸lerini kaldÃ„Â±rÃ„Â±r.</value>
+  </data>
+  <data name="ContinueWatching.ClearLiveTitle" xml:space="preserve">
+    <value>TÃƒÂ¼m canlÃ„Â± ÃƒÂ¶zgeÃƒÂ§miÃ…Å¸ ÃƒÂ¶Ã„Å¸eleri temizlensin mi?</value>
+  </data>
+  <data name="ContinueWatching.ClearMoviesMessage" xml:space="preserve">
+    <value>Bu, bu cihazdaki etkin profil iÃƒÂ§in kayÃ„Â±tlÃ„Â± tÃƒÂ¼m film ÃƒÂ¶zgeÃƒÂ§miÃ…Å¸ giriÃ…Å¸lerini kaldÃ„Â±rÃ„Â±r.</value>
+  </data>
+  <data name="ContinueWatching.ClearMoviesTitle" xml:space="preserve">
+    <value>TÃƒÂ¼m film kuyruÃ„Å¸u ÃƒÂ¶Ã„Å¸eleri temizlensin mi?</value>
+  </data>
+  <data name="ContinueWatching.ClearSeriesMessage" xml:space="preserve">
+    <value>Bu, bu cihazdaki etkin profil iÃƒÂ§in kaydedilen tÃƒÂ¼m bÃƒÂ¶lÃƒÂ¼m ÃƒÂ¶zgeÃƒÂ§miÃ…Å¸ giriÃ…Å¸lerini kaldÃ„Â±rÃ„Â±r.</value>
+  </data>
+  <data name="ContinueWatching.ClearSeriesTitle" xml:space="preserve">
+    <value>TÃƒÂ¼m seri kuyruÃ„Å¸u ÃƒÂ¶Ã„Å¸eleri temizlensin mi?</value>
+  </data>
+  <data name="ContinueWatchingLiveResumeSubtitle.Text" xml:space="preserve">
+    <value>KayÃ„Â±tlÃ„Â± canlÃ„Â± kaynaklara dÃƒÂ¶n</value>
+  </data>
+  <data name="ContinueWatchingLiveResumeTitle.Text" xml:space="preserve">
+    <value>CanlÃ„Â± Devam</value>
+  </data>
+  <data name="ContinueWatchingMovieQueueSubtitle.Text" xml:space="preserve">
+    <value>Kaydedilen film konumlarÃ„Â±</value>
+  </data>
+  <data name="ContinueWatchingMovieQueueTitle.Text" xml:space="preserve">
+    <value>Film SÃ„Â±rasÃ„Â±</value>
+  </data>
+  <data name="ContinueWatchingNoEpisodesEmpty.Message" xml:space="preserve">
+    <value>Kaydedilen bÃƒÂ¶lÃƒÂ¼mÃƒÂ¼n ilerleme durumu kompakt bir sÃ„Â±ra olarak gÃƒÂ¶rÃƒÂ¼necektir.</value>
+  </data>
+  <data name="ContinueWatchingNoEpisodesEmpty.Title" xml:space="preserve">
+    <value>Devam edecek bÃƒÂ¶lÃƒÂ¼m yok</value>
+  </data>
+  <data name="ContinueWatchingNoLiveResumeEmpty.Message" xml:space="preserve">
+    <value>Kaydedilen ilerleme mevcut olduÃ„Å¸unda canlÃ„Â± oynatma giriÃ…Å¸leri burada gÃƒÂ¶rÃƒÂ¼nÃƒÂ¼r.</value>
+  </data>
+  <data name="ContinueWatchingNoLiveResumeEmpty.Title" xml:space="preserve">
+    <value>CanlÃ„Â± ÃƒÂ¶zgeÃƒÂ§miÃ…Å¸ ÃƒÂ¶Ã„Å¸esi yok</value>
+  </data>
+  <data name="ContinueWatchingNoMoviesEmpty.Message" xml:space="preserve">
+    <value>KÃ„Â±smen izlenen filmler burada toplanacak.</value>
+  </data>
+  <data name="ContinueWatchingNoMoviesEmpty.Title" xml:space="preserve">
+    <value>Devam ettirilecek film yok</value>
+  </data>
+  <data name="ContinueWatchingPageSubtitle.Text" xml:space="preserve">
+    <value>CanlÃ„Â± kaynaklarÃ„Â±, filmleri ve bÃƒÂ¶lÃƒÂ¼mleri ÃƒÂ¶zel kuyruklardan devam ettirin.</value>
+  </data>
+  <data name="ContinueWatchingPageTitle.Text" xml:space="preserve">
+    <value>Ã„Â°zlemeye Devam Et</value>
+  </data>
+  <data name="ContinueWatchingResumeHubLabel.Text" xml:space="preserve">
+    <value>DEVAM ETME MERKEZÃ„Â°</value>
+  </data>
+  <data name="ContinueWatchingSeriesQueueSubtitle.Text" xml:space="preserve">
+    <value>BÃƒÂ¶lÃƒÂ¼m ÃƒÂ¶zgeÃƒÂ§miÃ…Å¸ ÃƒÂ¶Ã„Å¸eleri</value>
+  </data>
+  <data name="ContinueWatchingSeriesQueueTitle.Text" xml:space="preserve">
+    <value>Seri SÃ„Â±rasÃ„Â±</value>
+  </data>
+  <data name="EpgAddUrlButton.Text" xml:space="preserve">
+    <value>URL ekle</value>
+  </data>
+  <data name="EpgApproveButton.Content" xml:space="preserve">
+    <value>Onayla</value>
+  </data>
+  <data name="EpgCenterPageTitle.Text" xml:space="preserve">
+    <value>EPG Merkezi</value>
+  </data>
+  <data name="EpgClearButton.Content" xml:space="preserve">
+    <value>Temizle</value>
+  </data>
+  <data name="EpgClearOverrideButton.Text" xml:space="preserve">
+    <value>GeÃƒÂ§ersiz KÃ„Â±lmayÃ„Â± Temizle</value>
+  </data>
+  <data name="EpgClearPublicPresetsButton.Text" xml:space="preserve">
+    <value>IPTV-EPG.org Ãƒâ€“n AyarlarÃ„Â±nÃ„Â± Temizle</value>
+  </data>
+  <data name="EpgClearReviewDecisionsButton.Text" xml:space="preserve">
+    <value>Ã„Â°nceleme KararlarÃ„Â±nÃ„Â± Temizle</value>
+  </data>
+  <data name="EpgGuideSourcesTitle.Text" xml:space="preserve">
+    <value>KÃ„Â±lavuz KaynaklarÃ„Â±</value>
+  </data>
+  <data name="EpgGuideTimelineTitle.Text" xml:space="preserve">
+    <value>KÃ„Â±lavuz Zaman Ãƒâ€¡izelgesi</value>
+  </data>
+  <data name="EpgJumpToNowButton.Text" xml:space="preserve">
+    <value>Ã…Âimdi'ye Git</value>
+  </data>
+  <data name="EpgManualMatchingTitle.Text" xml:space="preserve">
+    <value>Manuel EPG EÃ…Å¸leÃ…Å¸tirme</value>
+  </data>
+  <data name="EpgNoGuideInRangeText.Text" xml:space="preserve">
+    <value>Bu aralÃ„Â±kta kÃ„Â±lavuz yok</value>
+  </data>
+  <data name="EpgNoProgrammesText.Text" xml:space="preserve">
+    <value>SeÃƒÂ§ilen filtreler ve zaman aralÃ„Â±Ã„Å¸Ã„Â± iÃƒÂ§in rehber program mevcut deÃ„Å¸il.</value>
+  </data>
+  <data name="EpgNoSourcesText.Text" xml:space="preserve">
+    <value>HenÃƒÂ¼z hiÃƒÂ§bir EPG kaynaÃ„Å¸Ã„Â± yapÃ„Â±landÃ„Â±rÃ„Â±lmadÃ„Â± veya algÃ„Â±lanmadÃ„Â±.</value>
+  </data>
+  <data name="EpgNoUnmatchedChannelsText.Text" xml:space="preserve">
+    <value>EÃ…Å¸leÃ…Å¸meyen kanal bulunamadÃ„Â±.</value>
+  </data>
+  <data name="EpgNoWeakMatchesText.Text" xml:space="preserve">
+    <value>ZayÃ„Â±f eÃ…Å¸leÃ…Å¸me bulunamadÃ„Â±.</value>
+  </data>
+  <data name="EpgPublicCountryCombo.Header" xml:space="preserve">
+    <value>IPTV-EPG.org ÃƒÂ¼lkesi</value>
+  </data>
+  <data name="EpgPublicGuideSourceTitle.Text" xml:space="preserve">
+    <value>Genel Rehber KaynaÃ„Å¸Ã„Â±</value>
+  </data>
+  <data name="EpgPublicXmltvUrlBox.Header" xml:space="preserve">
+    <value>Genel XMLTV URL'si</value>
+  </data>
+  <data name="EpgPublicXmltvUrlBox.PlaceholderText" xml:space="preserve">
+    <value>https://iptv-epg.org/files/epg-tr.xml</value>
+  </data>
+  <data name="EpgRejectButton.Content" xml:space="preserve">
+    <value>Reddet</value>
+  </data>
+  <data name="EpgReplaceWithAutoDetectedButton.Text" xml:space="preserve">
+    <value>Otomatik AlgÃ„Â±lananla DeÃ„Å¸iÃ…Å¸tir</value>
+  </data>
+  <data name="EpgSearchingMatchesText.Text" xml:space="preserve">
+    <value>EÃ…Å¸leÃ…Å¸meler aranÃ„Â±yor...</value>
+  </data>
+  <data name="EpgSearchUnmatchedBox.PlaceholderText" xml:space="preserve">
+    <value>EÃ…Å¸siz kanallarÃ„Â± arayÃ„Â±n</value>
+  </data>
+  <data name="EpgSearchWeakMatchesBox.PlaceholderText" xml:space="preserve">
+    <value>ZayÃ„Â±f eÃ…Å¸leÃ…Å¸meleri ara</value>
+  </data>
+  <data name="EpgSetOverrideButton.Text" xml:space="preserve">
+    <value>GeÃƒÂ§ersiz KÃ„Â±lmayÃ„Â± Ayarla</value>
+  </data>
+  <data name="EpgTimelineLoadingText.Text" xml:space="preserve">
+    <value>KÃ„Â±lavuz zaman ÃƒÂ§izelgesi yÃƒÂ¼kleniyor...</value>
+  </data>
+  <data name="EpgUnmatchedChannelsTitle.Text" xml:space="preserve">
+    <value>EÃ…Å¸siz Kanallar</value>
+  </data>
+  <data name="EpgWarningsTitle.Text" xml:space="preserve">
+    <value>UyarÃ„Â±lar</value>
+  </data>
+  <data name="EpgWeakMatchesTitle.Text" xml:space="preserve">
+    <value>ZayÃ„Â±f MaÃƒÂ§lar</value>
+  </data>
+  <data name="EpgXmltvChannelSearchBox.Header" xml:space="preserve">
+    <value>XMLTV kanal arama</value>
+  </data>
+  <data name="EpgXmltvChannelSearchBox.PlaceholderText" xml:space="preserve">
+    <value>GÃƒÂ¶rÃƒÂ¼nen adÃ„Â± arayÃ„Â±n veya tam XMLTV kimliÃ„Å¸ini girin</value>
+  </data>
+  <data name="Favorites.ClearChannelsMessage" xml:space="preserve">
+    <value>Bu, bu cihazdaki etkin profil iÃƒÂ§in favori olarak kaydedilen tÃƒÂ¼m canlÃ„Â± kanallarÃ„Â± kaldÃ„Â±rÃ„Â±r.</value>
+  </data>
+  <data name="Favorites.ClearChannelsTitle" xml:space="preserve">
+    <value>TÃƒÂ¼m favori canlÃ„Â± kanallar temizlensin mi?</value>
+  </data>
+  <data name="Favorites.ClearMoviesMessage" xml:space="preserve">
+    <value>Bu, bu cihazdaki etkin profil iÃƒÂ§in kayÃ„Â±tlÃ„Â± tÃƒÂ¼m favori filmleri kaldÃ„Â±rÃ„Â±r.</value>
+  </data>
+  <data name="Favorites.ClearMoviesTitle" xml:space="preserve">
+    <value>TÃƒÂ¼m favori filmler temizlensin mi?</value>
+  </data>
+  <data name="Favorites.ClearSeriesMessage" xml:space="preserve">
+    <value>Bu, bu cihazdaki etkin profil iÃƒÂ§in kayÃ„Â±tlÃ„Â± tÃƒÂ¼m favori serileri kaldÃ„Â±rÃ„Â±r.</value>
+  </data>
+  <data name="Favorites.ClearSeriesTitle" xml:space="preserve">
+    <value>TÃƒÂ¼m favori diziler temizlensin mi?</value>
+  </data>
+  <data name="FavoritesLiveTvTitle.Text" xml:space="preserve">
+    <value>CanlÃ„Â± TV</value>
+  </data>
+  <data name="FavoritesMoviesTitle.Text" xml:space="preserve">
+    <value>Filmler</value>
+  </data>
+  <data name="FavoritesNoPlayableEpisodesEmpty.Message" xml:space="preserve">
+    <value>Kaydedilen bu dizi Ã…Å¸u anda yerel kitaplÃ„Â±kta oynatÃ„Â±labilir bÃƒÂ¶lÃƒÂ¼m verisine sahip deÃ„Å¸il.</value>
+  </data>
+  <data name="FavoritesNoPlayableEpisodesEmpty.Title" xml:space="preserve">
+    <value>Oynanabilir bÃƒÂ¶lÃƒÂ¼m yok</value>
+  </data>
+  <data name="FavoritesNoSavedChannelsEmpty.Message" xml:space="preserve">
+    <value>HÃ„Â±zlÃ„Â± bir baÃ…Å¸latma Ã…Å¸eridi oluÃ…Å¸turmak iÃƒÂ§in CanlÃ„Â± TV'den kanallara yÃ„Â±ldÃ„Â±z verin.</value>
+  </data>
+  <data name="FavoritesNoSavedChannelsEmpty.Title" xml:space="preserve">
+    <value>KayÃ„Â±tlÃ„Â± kanal yok</value>
+  </data>
+  <data name="FavoritesNoSavedMoviesEmpty.Message" xml:space="preserve">
+    <value>OdaklanmÃ„Â±Ã…Å¸ bir izleme listesini burada tutmak iÃƒÂ§in film kartlarÃ„Â±nÃ„Â± kaydedin.</value>
+  </data>
+  <data name="FavoritesNoSavedMoviesEmpty.Title" xml:space="preserve">
+    <value>KayÃ„Â±tlÃ„Â± film yok</value>
+  </data>
+  <data name="FavoritesNoSavedSeriesEmpty.Message" xml:space="preserve">
+    <value>Kaydedilen seriler burada ÃƒÂ¶zel bir gÃƒÂ¶steri Ã…Å¸eridi olarak gÃƒÂ¶rÃƒÂ¼nÃƒÂ¼r.</value>
+  </data>
+  <data name="FavoritesNoSavedSeriesEmpty.Title" xml:space="preserve">
+    <value>KayÃ„Â±tlÃ„Â± seri yok</value>
+  </data>
+  <data name="FavoritesOpenSeriesPageButton.Content" xml:space="preserve">
+    <value>Seri sayfasÃ„Â±nÃ„Â± aÃƒÂ§</value>
+  </data>
+  <data name="FavoritesPageSubtitle.Text" xml:space="preserve">
+    <value>Kaydedilen CanlÃ„Â± TV'niz, Filmleriniz ve Dizileriniz ÃƒÂ¶zel medya Ã…Å¸eritlerinde.</value>
+  </data>
+  <data name="FavoritesPageTitle.Text" xml:space="preserve">
+    <value>Favoriler</value>
+  </data>
+  <data name="FavoritesSavedChannelsSubtitle.Text" xml:space="preserve">
+    <value>KayÃ„Â±tlÃ„Â± kanallar</value>
+  </data>
+  <data name="FavoritesSavedFilmsSubtitle.Text" xml:space="preserve">
+    <value>KayÃ„Â±tlÃ„Â± filmler</value>
+  </data>
+  <data name="FavoritesSavedSeriesLabel.Text" xml:space="preserve">
+    <value>KAYITLI SERÃ„Â°</value>
+  </data>
+  <data name="FavoritesSavedShowsSubtitle.Text" xml:space="preserve">
+    <value>KayÃ„Â±tlÃ„Â± Ã…Å¸ovlar</value>
+  </data>
+  <data name="FavoritesSeriesDetailsTitle.Text" xml:space="preserve">
+    <value>Seri ayrÃ„Â±ntÃ„Â±larÃ„Â±</value>
+  </data>
+  <data name="FavoritesSeriesTitle.Text" xml:space="preserve">
+    <value>Serisi</value>
+  </data>
+  <data name="General.Available" xml:space="preserve">
+    <value>Mevcut</value>
+  </data>
+  <data name="General.Cancel" xml:space="preserve">
+    <value>Ã„Â°ptal</value>
+  </data>
+  <data name="General.ClearAll" xml:space="preserve">
+    <value>TÃƒÂ¼mÃƒÂ¼nÃƒÂ¼ temizle</value>
+  </data>
+  <data name="General.Close" xml:space="preserve">
+    <value>Kapat</value>
+  </data>
+  <data name="General.Delete" xml:space="preserve">
+    <value>Sil</value>
+  </data>
+  <data name="General.Disabled" xml:space="preserve">
+    <value>Devre dÃ„Â±Ã…Å¸Ã„Â±</value>
+  </data>
+  <data name="General.NotAvailable" xml:space="preserve">
+    <value>MÃƒÂ¼sait deÃ„Å¸il</value>
+  </data>
+  <data name="General.OpenLibrary" xml:space="preserve">
+    <value>KitaplÃ„Â±Ã„Å¸Ã„Â± aÃƒÂ§</value>
+  </data>
+  <data name="General.Reset" xml:space="preserve">
+    <value>SÃ„Â±fÃ„Â±rla</value>
+  </data>
+  <data name="General.Restore" xml:space="preserve">
+    <value>Geri yÃƒÂ¼kle</value>
+  </data>
+  <data name="General.Save" xml:space="preserve">
+    <value>Kaydet</value>
+  </data>
+  <data name="General.Unknown" xml:space="preserve">
+    <value>Bilinmiyor</value>
+  </data>
+  <data name="GeneralAddSourceButton.Content" xml:space="preserve">
+    <value>Kaynak Ekle</value>
+  </data>
+  <data name="GeneralAddSourceText.Text" xml:space="preserve">
+    <value>Kaynak Ekle</value>
+  </data>
+  <data name="GeneralBackButton.Content" xml:space="preserve">
+    <value>Geri</value>
+  </data>
+  <data name="GeneralBackButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Geri</value>
+  </data>
+  <data name="GeneralBrowseText.Text" xml:space="preserve">
+    <value>GÃƒÂ¶z at</value>
+  </data>
+  <data name="GeneralCancelButton.Content" xml:space="preserve">
+    <value>Ã„Â°ptal</value>
+  </data>
+  <data name="GeneralCancelButton2.Content" xml:space="preserve">
+    <value>Ã„Â°ptal</value>
+  </data>
+  <data name="GeneralCatchupBadge.Text" xml:space="preserve">
+    <value>YAKALAMA</value>
+  </data>
+  <data name="GeneralCategoryCombo.Header" xml:space="preserve">
+    <value>Kategori</value>
+  </data>
+  <data name="GeneralChannelCombo.Header" xml:space="preserve">
+    <value>Kanal</value>
+  </data>
+  <data name="GeneralChannelLabel.Text" xml:space="preserve">
+    <value>Kanal</value>
+  </data>
+  <data name="GeneralChannelsText.Text" xml:space="preserve">
+    <value>Kanallar</value>
+  </data>
+  <data name="GeneralClearAllButton.Content" xml:space="preserve">
+    <value>TÃƒÂ¼mÃƒÂ¼nÃƒÂ¼ temizle</value>
+  </data>
+  <data name="GeneralClearAllButton2.Content" xml:space="preserve">
+    <value>TÃƒÂ¼mÃƒÂ¼nÃƒÂ¼ temizle</value>
+  </data>
+  <data name="GeneralClearAllButton3.Content" xml:space="preserve">
+    <value>TÃƒÂ¼mÃƒÂ¼nÃƒÂ¼ temizle</value>
+  </data>
+  <data name="GeneralClearRecentButton.Content" xml:space="preserve">
+    <value>Son zamanlarÃ„Â± temizle</value>
+  </data>
+  <data name="GeneralClearRecentButton2.Content" xml:space="preserve">
+    <value>Son zamanlarÃ„Â± temizle</value>
+  </data>
+  <data name="GeneralCloseButton.Content" xml:space="preserve">
+    <value>Kapat</value>
+  </data>
+  <data name="GeneralCopySafeReportButton.Content" xml:space="preserve">
+    <value>GÃƒÂ¼venli Raporu Kopyala</value>
+  </data>
+  <data name="GeneralCopySafeReportText.Text" xml:space="preserve">
+    <value>GÃƒÂ¼venli Raporu Kopyala</value>
+  </data>
+  <data name="GeneralCopySafeReportText2.Text" xml:space="preserve">
+    <value>GÃƒÂ¼venli Raporu Kopyala</value>
+  </data>
+  <data name="GeneralDeleteButton.Content" xml:space="preserve">
+    <value>Sil</value>
+  </data>
+  <data name="GeneralDeleteButton2.Content" xml:space="preserve">
+    <value>Sil</value>
+  </data>
+  <data name="GeneralDetailsButton.Content" xml:space="preserve">
+    <value>AyrÃ„Â±ntÃ„Â±lar</value>
+  </data>
+  <data name="GeneralDetailsText.Text" xml:space="preserve">
+    <value>AyrÃ„Â±ntÃ„Â±lar</value>
+  </data>
+  <data name="GeneralDisabledRadio.Content" xml:space="preserve">
+    <value>Devre dÃ„Â±Ã…Å¸Ã„Â±</value>
+  </data>
+  <data name="GeneralDownloadButton.Content" xml:space="preserve">
+    <value>Ã„Â°ndir</value>
+  </data>
+  <data name="GeneralDownloadText.Text" xml:space="preserve">
+    <value>Ã„Â°ndir</value>
+  </data>
+  <data name="GeneralEpisodesText.Text" xml:space="preserve">
+    <value>BÃƒÂ¶lÃƒÂ¼mler</value>
+  </data>
+  <data name="GeneralFavoritesFilter.Content" xml:space="preserve">
+    <value>Favoriler</value>
+  </data>
+  <data name="GeneralGoBackButton.Content" xml:space="preserve">
+    <value>Geri dÃƒÂ¶n</value>
+  </data>
+  <data name="GeneralGuideButton.Content" xml:space="preserve">
+    <value>Rehber</value>
+  </data>
+  <data name="GeneralGuideLabel.Text" xml:space="preserve">
+    <value>Rehber</value>
+  </data>
+  <data name="GeneralGuideText.Text" xml:space="preserve">
+    <value>Rehber</value>
+  </data>
+  <data name="GeneralGuideText2.Text" xml:space="preserve">
+    <value>Rehber</value>
+  </data>
+  <data name="GeneralInfoButton.Content" xml:space="preserve">
+    <value>Bilgi</value>
+  </data>
+  <data name="GeneralInfoText.Text" xml:space="preserve">
+    <value>Bilgi</value>
+  </data>
+  <data name="GeneralLiveBadge.Text" xml:space="preserve">
+    <value>CANLI</value>
+  </data>
+  <data name="GeneralModeCombo.Header" xml:space="preserve">
+    <value>Mod</value>
+  </data>
+  <data name="GeneralMoreText.Text" xml:space="preserve">
+    <value>Daha Fazla</value>
+  </data>
+  <data name="GeneralOffButton.Content" xml:space="preserve">
+    <value>KapalÃ„Â±</value>
+  </data>
+  <data name="GeneralPasswordBox.Header" xml:space="preserve">
+    <value>Ã…Âifre</value>
+  </data>
+  <data name="GeneralPlayButton.Content" xml:space="preserve">
+    <value>Oyna</value>
+  </data>
+  <data name="GeneralPlayButton2.Content" xml:space="preserve">
+    <value>Oyna</value>
+  </data>
+  <data name="GeneralPlayText.Text" xml:space="preserve">
+    <value>Oyna</value>
+  </data>
+  <data name="GeneralPrimaryOnlyFilter.Content" xml:space="preserve">
+    <value>YalnÃ„Â±zca birincil</value>
+  </data>
+  <data name="GeneralRefreshButton.Content" xml:space="preserve">
+    <value>Yenile</value>
+  </data>
+  <data name="GeneralRefreshText.Text" xml:space="preserve">
+    <value>Yenile</value>
+  </data>
+  <data name="GeneralReloadText.Text" xml:space="preserve">
+    <value>Yeniden yÃƒÂ¼kle</value>
+  </data>
+  <data name="GeneralResetButton.Content" xml:space="preserve">
+    <value>SÃ„Â±fÃ„Â±rla</value>
+  </data>
+  <data name="GeneralResetButton2.Content" xml:space="preserve">
+    <value>SÃ„Â±fÃ„Â±rla</value>
+  </data>
+  <data name="GeneralResetButton3.Content" xml:space="preserve">
+    <value>SÃ„Â±fÃ„Â±rla</value>
+  </data>
+  <data name="GeneralResumeBadge.Text" xml:space="preserve">
+    <value>DEVAM ET</value>
+  </data>
+  <data name="GeneralRetryButton.Content" xml:space="preserve">
+    <value>Yeniden dene</value>
+  </data>
+  <data name="GeneralRetryButton2.Content" xml:space="preserve">
+    <value>Yeniden dene</value>
+  </data>
+  <data name="GeneralRetryErrorState.RetryActionLabel" xml:space="preserve">
+    <value>Yeniden dene</value>
+  </data>
+  <data name="GeneralSaveButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Kaydet</value>
+  </data>
+  <data name="GeneralSearchBoxHeader.Header" xml:space="preserve">
+    <value>Ara</value>
+  </data>
+  <data name="GeneralSearchBoxHeader.PlaceholderText" xml:space="preserve">
+    <value>KanallarÃ„Â±, kategorileri veya kaynaklarÃ„Â± filtreleyin</value>
+  </data>
+  <data name="GeneralServerUrlBox.Header" xml:space="preserve">
+    <value>Sunucu URL'si</value>
+  </data>
+  <data name="GeneralServerUrlBox.PlaceholderText" xml:space="preserve">
+    <value>http://alan.com:8080</value>
+  </data>
+  <data name="GeneralSourceCombo.Header" xml:space="preserve">
+    <value>Kaynak</value>
+  </data>
+  <data name="GeneralSourceCombo2.Header" xml:space="preserve">
+    <value>Kaynak</value>
+  </data>
+  <data name="GeneralSourceCombo3.Header" xml:space="preserve">
+    <value>Kaynak</value>
+  </data>
+  <data name="GeneralSourceLabel.Text" xml:space="preserve">
+    <value>Kaynak</value>
+  </data>
+  <data name="GeneralUsernameBox.Header" xml:space="preserve">
+    <value>KullanÃ„Â±cÃ„Â± adÃ„Â±</value>
+  </data>
+  <data name="HomeAllChannelsSubtitle.Text" xml:space="preserve">
+    <value>TÃƒÂ¼m canlÃ„Â± kadroya gÃƒÂ¶z atÃ„Â±n</value>
+  </data>
+  <data name="HomeAllChannelsTitle.Text" xml:space="preserve">
+    <value>TÃƒÂ¼m Kanallar</value>
+  </data>
+  <data name="HomeAllLiveTvButton.Content" xml:space="preserve">
+    <value>TÃƒÂ¼m canlÃ„Â± TV</value>
+  </data>
+  <data name="HomeAllLiveTvButton2.Content" xml:space="preserve">
+    <value>TÃƒÂ¼m canlÃ„Â± TV</value>
+  </data>
+  <data name="HomeBrowseCatalogButton.Content" xml:space="preserve">
+    <value>KataloÃ„Å¸a gÃƒÂ¶z atÃ„Â±n</value>
+  </data>
+  <data name="HomeContinueWatchingTitle.Text" xml:space="preserve">
+    <value>Ã„Â°zlemeye Devam Et</value>
+  </data>
+  <data name="HomeFavoritesSubtitle.Text" xml:space="preserve">
+    <value>KayÃ„Â±tlÃ„Â± kanallarÃ„Â± aÃƒÂ§</value>
+  </data>
+  <data name="HomeFavoritesTitle.Text" xml:space="preserve">
+    <value>Favoriler</value>
+  </data>
+  <data name="HomeHeroLiveTvSubtitle.Text" xml:space="preserve">
+    <value>Tek adÃ„Â±mda spor kanallarÃ„Â±, canlÃ„Â± etkinlikler ve maÃƒÂ§ gecesi izleme.</value>
+  </data>
+  <data name="HomeHeroLiveTvTitle.Text" xml:space="preserve">
+    <value>CanlÃ„Â± TV</value>
+  </data>
+  <data name="HomeLibraryAtGlanceTitle.Text" xml:space="preserve">
+    <value>Bir bakÃ„Â±Ã…Å¸ta kÃƒÂ¼tÃƒÂ¼phane</value>
+  </data>
+  <data name="HomeLiveNowTitle.Text" xml:space="preserve">
+    <value>Ã…Âimdi YaÃ…Å¸a</value>
+  </data>
+  <data name="HomeLiveSportsBadge.Text" xml:space="preserve">
+    <value>CANLI SPOR</value>
+  </data>
+  <data name="HomeLiveSportsNowTitle.Text" xml:space="preserve">
+    <value>Ã…Âimdi CanlÃ„Â± Spor</value>
+  </data>
+  <data name="HomeLiveTvShortcutsTitle.Text" xml:space="preserve">
+    <value>CanlÃ„Â± TV KÃ„Â±sayollarÃ„Â±</value>
+  </data>
+  <data name="HomeMatchCenterSubtitle.Text" xml:space="preserve">
+    <value>AnÃ„Â±nda canlÃ„Â± spora katÃ„Â±lÃ„Â±n.</value>
+  </data>
+  <data name="HomeMatchCenterTitle.Text" xml:space="preserve">
+    <value>MaÃƒÂ§ Merkezi</value>
+  </data>
+  <data name="HomeMatchReadyText.Text" xml:space="preserve">
+    <value>MaÃƒÂ§ baÃ…Å¸ladÃ„Â±Ã„Å¸Ã„Â±nda hazÃ„Â±rÃ„Â±z</value>
+  </data>
+  <data name="HomeNothingToResumeEmpty.Message" xml:space="preserve">
+    <value>Bir kanalÃ„Â±, filmi veya bÃƒÂ¶lÃƒÂ¼mÃƒÂ¼ izlemeye baÃ…Å¸ladÃ„Â±Ã„Å¸Ã„Â±nÃ„Â±zda burada gÃƒÂ¶rÃƒÂ¼necektir.</value>
+  </data>
+  <data name="HomeNothingToResumeEmpty.Title" xml:space="preserve">
+    <value>HenÃƒÂ¼z devam ettirilecek bir Ã…Å¸ey yok</value>
+  </data>
+  <data name="HomeRecentlyAddedTitle.Text" xml:space="preserve">
+    <value>Son Eklenenler</value>
+  </data>
+  <data name="HomeRecentlyWatchedSubtitle.Text" xml:space="preserve">
+    <value>Son gÃƒÂ¶rÃƒÂ¼ntÃƒÂ¼lemeye dÃƒÂ¶n</value>
+  </data>
+  <data name="HomeRecentlyWatchedTitle.Text" xml:space="preserve">
+    <value>Son Ã„Â°zlenenler</value>
+  </data>
+  <data name="HomeRecommendedForYouTitle.Text" xml:space="preserve">
+    <value>Sizin Ã„Â°ÃƒÂ§in Ãƒâ€“nerilenler</value>
+  </data>
+  <data name="HomeSportsSubtitle.Text" xml:space="preserve">
+    <value>Spor izleme bÃƒÂ¶lÃƒÂ¼mÃƒÂ¼ne geÃƒÂ§in</value>
+  </data>
+  <data name="HomeSportsTitle.Text" xml:space="preserve">
+    <value>Spor</value>
+  </data>
+  <data name="HomeTopRatedTitle.Text" xml:space="preserve">
+    <value>En Ãƒâ€¡ok Oy Alan</value>
+  </data>
+  <data name="HomeViewAllButton.Content" xml:space="preserve">
+    <value>TÃƒÂ¼mÃƒÂ¼nÃƒÂ¼ gÃƒÂ¶rÃƒÂ¼ntÃƒÂ¼le</value>
+  </data>
+  <data name="HomeWatchLiveTvButton.Text" xml:space="preserve">
+    <value>CanlÃ„Â± TV izleyin</value>
+  </data>
+  <data name="Language.Arabic" xml:space="preserve">
+    <value>ArapÃƒÂ§a</value>
+  </data>
+  <data name="Language.ChineseSimplified" xml:space="preserve">
+    <value>BasitleÃ…Å¸tirilmiÃ…Å¸ Ãƒâ€¡ince</value>
+  </data>
+  <data name="Language.English" xml:space="preserve">
+    <value>Ã„Â°ngilizce</value>
+  </data>
+  <data name="Language.French" xml:space="preserve">
+    <value>FransÃ„Â±zca</value>
+  </data>
+  <data name="Language.German" xml:space="preserve">
+    <value>Almanca</value>
+  </data>
+  <data name="Language.Hindi" xml:space="preserve">
+    <value>HintÃƒÂ§e</value>
+  </data>
+  <data name="Language.Japanese" xml:space="preserve">
+    <value>Japonca</value>
+  </data>
+  <data name="Language.Korean" xml:space="preserve">
+    <value>Korece</value>
+  </data>
+  <data name="Language.PortugueseBrazil" xml:space="preserve">
+    <value>Portekiz Brezilya</value>
+  </data>
+  <data name="Language.Spanish" xml:space="preserve">
+    <value>Ã„Â°spanyolca</value>
+  </data>
+  <data name="Language.SystemDefault" xml:space="preserve">
+    <value>Sistem varsayÃ„Â±lanÃ„Â±</value>
+  </data>
+  <data name="Language.Turkish" xml:space="preserve">
+    <value>TÃƒÂ¼rkÃƒÂ§e</value>
+  </data>
+  <data name="MediaLibraryCaptureLibraryLabel.Text" xml:space="preserve">
+    <value>YAKALAMA KÃƒÅ“TÃƒÅ“PHANESÃ„Â°</value>
+  </data>
+  <data name="MediaLibraryLiveRecordingsLabel.Text" xml:space="preserve">
+    <value>CANLI KAYITLAR</value>
+  </data>
+  <data name="MediaLibraryNoItemsSubtitle.Text" xml:space="preserve">
+    <value>CanlÃ„Â± TV'den canlÃ„Â± kayÃ„Â±t planlayÃ„Â±n veya Filmler veya Dizilerden VOD indirmesini sÃ„Â±raya koyun.</value>
+  </data>
+  <data name="MediaLibraryNoItemsTitle.Text" xml:space="preserve">
+    <value>HenÃƒÂ¼z kayÃ„Â±t veya indirme yok</value>
+  </data>
+  <data name="MediaLibraryPageSubtitle.Text" xml:space="preserve">
+    <value>PlanlanmÃ„Â±Ã…Å¸ canlÃ„Â± kayÃ„Â±tlarÃ„Â±, sÃ„Â±radaki VOD indirmelerini ve tamamlanan dosyalarÃ„Â± tek yerden izleyin.</value>
+  </data>
+  <data name="MediaLibraryPageTitle.Text" xml:space="preserve">
+    <value>KayÃ„Â±tlar ve Ã„Â°ndirmeler</value>
+  </data>
+  <data name="MediaLibraryStoragePathLabel.Text" xml:space="preserve">
+    <value>Depolama yolu</value>
+  </data>
+  <data name="MediaLibraryVodDownloadsLabel.Text" xml:space="preserve">
+    <value>VOD Ã„Â°NDÃ„Â°RMELERÃ„Â°</value>
+  </data>
+  <data name="Movies.ChooseSource.Download" xml:space="preserve">
+    <value>Ã„Â°ndirilecek kaynaÃ„Å¸Ã„Â± seÃƒÂ§in.</value>
+  </data>
+  <data name="Movies.ChooseSource.Inspect" xml:space="preserve">
+    <value>Ã„Â°ncelenecek kaynaÃ„Å¸Ã„Â± seÃƒÂ§in.</value>
+  </data>
+  <data name="Movies.ChooseSource.Playback" xml:space="preserve">
+    <value>Oynatma iÃƒÂ§in bir kaynak seÃƒÂ§in.</value>
+  </data>
+  <data name="Movies.DownloadFailedTitle" xml:space="preserve">
+    <value>Ã„Â°ndirme baÃ…Å¸arÃ„Â±sÃ„Â±z oldu</value>
+  </data>
+  <data name="MoviesFeaturedFilmLabel.Text" xml:space="preserve">
+    <value>Ãƒâ€“NE Ãƒâ€¡IKAN FÃ„Â°LM</value>
+  </data>
+  <data name="MoviesLibraryLabel.Text" xml:space="preserve">
+    <value>FÃ„Â°LM KÃƒÅ“TÃƒÅ“PHANESÃ„Â°</value>
+  </data>
+  <data name="MoviesPageSubtitle.Text" xml:space="preserve">
+    <value>KaynaklarÃ„Â±nÃ„Â±zdan bir filmi arayÃ„Â±n, filtreleyin ve seÃƒÂ§in.</value>
+  </data>
+  <data name="MoviesPageTitle.Text" xml:space="preserve">
+    <value>Filmler</value>
+  </data>
+  <data name="MoviesPlayMovieButton.Text" xml:space="preserve">
+    <value>Filmi oynat</value>
+  </data>
+  <data name="MoviesSearchBox.PlaceholderText" xml:space="preserve">
+    <value>Film ara</value>
+  </data>
+  <data name="Player.Aspect.Automatic" xml:space="preserve">
+    <value>Otomatik</value>
+  </data>
+  <data name="Player.Aspect.FillWindow" xml:space="preserve">
+    <value>Doldurma penceresi</value>
+  </data>
+  <data name="Player.AudioDelay.Value" xml:space="preserve">
+    <value>Ses gecikmesi {0}</value>
+  </data>
+  <data name="Player.Button.ExitPip" xml:space="preserve">
+    <value>PiP'dan ÃƒÂ§Ã„Â±k</value>
+  </data>
+  <data name="Player.Button.Pip" xml:space="preserve">
+    <value>PiP</value>
+  </data>
+  <data name="Player.Catchup.Playback" xml:space="preserve">
+    <value>Yakalama oynatma</value>
+  </data>
+  <data name="Player.ChannelSearch.NoMatches" xml:space="preserve">
+    <value>AramanÃ„Â±zla eÃ…Å¸leÃ…Å¸en kanal yok.</value>
+  </data>
+  <data name="Player.ChannelSearch.Ready" xml:space="preserve">
+    <value>{0:N0} kanal hazÃ„Â±r.</value>
+  </data>
+  <data name="Player.Display.Summary" xml:space="preserve">
+    <value>{0} - YakÃ„Â±nlaÃ…Å¸tÃ„Â±r {1} - {2} derece dÃƒÂ¶ndÃƒÂ¼rme</value>
+  </data>
+  <data name="Player.Episodes.PanelHeader" xml:space="preserve">
+    <value>Sezon / bÃƒÂ¶lÃƒÂ¼m hÃ„Â±zlÃ„Â± paneli</value>
+  </data>
+  <data name="Player.Episodes.PanelStatus" xml:space="preserve">
+    <value>Bu seride {0:N0} oynanabilir bÃƒÂ¶lÃƒÂ¼m.</value>
+  </data>
+  <data name="Player.External.Unavailable" xml:space="preserve">
+    <value>Harici oynatÃ„Â±cÃ„Â± kullanÃ„Â±lamÃ„Â±yor</value>
+  </data>
+  <data name="Player.Favorite.RemoveTooltip" xml:space="preserve">
+    <value>Kaydedilen ÃƒÂ¶Ã„Å¸elerden kaldÃ„Â±r</value>
+  </data>
+  <data name="Player.Favorite.SaveTooltip" xml:space="preserve">
+    <value>Bu ÃƒÂ¶Ã„Å¸eyi kaydet</value>
+  </data>
+  <data name="Player.Guide.NoCurrentProgramme" xml:space="preserve">
+    <value>Mevcut program yok</value>
+  </data>
+  <data name="Player.Guide.NotAvailable" xml:space="preserve">
+    <value>KÃ„Â±lavuz mevcut deÃ„Å¸il.</value>
+  </data>
+  <data name="Player.Guide.NoUpcomingProgramme" xml:space="preserve">
+    <value>YaklaÃ…Å¸an program yok</value>
+  </data>
+  <data name="Player.Guide.NowProgram" xml:space="preserve">
+    <value>Ã…Âimdi - {0}</value>
+  </data>
+  <data name="Player.Hint.SeekUnavailable" xml:space="preserve">
+    <value>Arama bu canlÃ„Â± yayÃ„Â±nda kullanÃ„Â±lamÃ„Â±yor.</value>
+  </data>
+  <data name="Player.Hint.SleepTimer" xml:space="preserve">
+    <value>Uyku zamanlayÃ„Â±cÃ„Â±sÃ„Â± {0}</value>
+  </data>
+  <data name="Player.Info.CatchupNotSeekable" xml:space="preserve">
+    <value>Yakalama aranamÃ„Â±yor</value>
+  </data>
+  <data name="Player.Info.CatchupReplay" xml:space="preserve">
+    <value>Yakalama tekrarÃ„Â±</value>
+  </data>
+  <data name="Player.Info.CatchupSummary" xml:space="preserve">
+    <value>Yakalama tekrarÃ„Â± canlÃ„Â± kanal yolunda etkindir.</value>
+  </data>
+  <data name="Player.Info.LiveSummary" xml:space="preserve">
+    <value>CanlÃ„Â± oynatma araÃƒÂ§larÃ„Â± gerÃƒÂ§ek akÃ„Â±Ã…Å¸ durumunu yansÃ„Â±tÃ„Â±r ve gÃƒÂ¼veni yÃƒÂ¶nlendirir.</value>
+  </data>
+  <data name="Player.Info.NoGuideStatus" xml:space="preserve">
+    <value>Rehber durumu yok</value>
+  </data>
+  <data name="Player.Info.NotSeekable" xml:space="preserve">
+    <value>Aranamaz</value>
+  </data>
+  <data name="Player.Info.Seekable" xml:space="preserve">
+    <value>aranabilir</value>
+  </data>
+  <data name="Player.Info.SeekableSummary" xml:space="preserve">
+    <value>Bu baÃ…Å¸lÃ„Â±k iÃƒÂ§in aranabilir oynatma kontrolleri etkin.</value>
+  </data>
+  <data name="Player.Menu.AlwaysOnTop" xml:space="preserve">
+    <value>Her zaman zirvede</value>
+  </data>
+  <data name="Player.Menu.AudioAndSubtitles" xml:space="preserve">
+    <value>Ses ve altyazÃ„Â±lar</value>
+  </data>
+  <data name="Player.Menu.AudioDelay" xml:space="preserve">
+    <value>Ses gecikmesi {0}</value>
+  </data>
+  <data name="Player.Menu.Channels" xml:space="preserve">
+    <value>Kanallar</value>
+  </data>
+  <data name="Player.Menu.Deinterlace" xml:space="preserve">
+    <value>TaramasÃ„Â±zlaÃ…Å¸tÃ„Â±rma</value>
+  </data>
+  <data name="Player.Menu.Display" xml:space="preserve">
+    <value>Ekran</value>
+  </data>
+  <data name="Player.Menu.Episodes" xml:space="preserve">
+    <value>BÃƒÂ¶lÃƒÂ¼mler</value>
+  </data>
+  <data name="Player.Menu.ExitPictureInPicture" xml:space="preserve">
+    <value>Resim iÃƒÂ§inde resimden ÃƒÂ§Ã„Â±k</value>
+  </data>
+  <data name="Player.Menu.Guide" xml:space="preserve">
+    <value>Rehber</value>
+  </data>
+  <data name="Player.Menu.Info" xml:space="preserve">
+    <value>Bilgi</value>
+  </data>
+  <data name="Player.Menu.JumpToLive" xml:space="preserve">
+    <value>CanlÃ„Â± yayÃ„Â±na atla</value>
+  </data>
+  <data name="Player.Menu.PictureInPicture" xml:space="preserve">
+    <value>Resim iÃƒÂ§inde resim</value>
+  </data>
+  <data name="Player.Menu.ResetAudioDelay" xml:space="preserve">
+    <value>Ses gecikmesini sÃ„Â±fÃ„Â±rla</value>
+  </data>
+  <data name="Player.Menu.ResetSubtitleDelay" xml:space="preserve">
+    <value>AltyazÃ„Â± gecikmesini sÃ„Â±fÃ„Â±rla</value>
+  </data>
+  <data name="Player.Menu.ResetZoom" xml:space="preserve">
+    <value>YakÃ„Â±nlaÃ…Å¸tÃ„Â±rmayÃ„Â± sÃ„Â±fÃ„Â±rla</value>
+  </data>
+  <data name="Player.Menu.Restart" xml:space="preserve">
+    <value>Yeniden baÃ…Å¸lat</value>
+  </data>
+  <data name="Player.Menu.RetryStream" xml:space="preserve">
+    <value>AkÃ„Â±Ã…Å¸Ã„Â± yeniden dene</value>
+  </data>
+  <data name="Player.Menu.RotationDegrees" xml:space="preserve">
+    <value>{0} derece dÃƒÂ¶nÃƒÂ¼Ã…Å¸</value>
+  </data>
+  <data name="Player.Menu.Screenshot" xml:space="preserve">
+    <value>Ekran gÃƒÂ¶rÃƒÂ¼ntÃƒÂ¼sÃƒÂ¼</value>
+  </data>
+  <data name="Player.Menu.Session" xml:space="preserve">
+    <value>Oturum</value>
+  </data>
+  <data name="Player.Menu.SleepMinutes" xml:space="preserve">
+    <value>{0} dakika</value>
+  </data>
+  <data name="Player.Menu.SleepTimerOff" xml:space="preserve">
+    <value>Uyku zamanlayÃ„Â±cÃ„Â±sÃ„Â± kapalÃ„Â±</value>
+  </data>
+  <data name="Player.Menu.StopPlayback" xml:space="preserve">
+    <value>OynatmayÃ„Â± durdur</value>
+  </data>
+  <data name="Player.Menu.SubtitleDelay" xml:space="preserve">
+    <value>AltyazÃ„Â± gecikmesi {0}</value>
+  </data>
+  <data name="Player.Menu.SubtitleHigh" xml:space="preserve">
+    <value>AltyazÃ„Â± yÃƒÂ¼ksek</value>
+  </data>
+  <data name="Player.Menu.SubtitleLow" xml:space="preserve">
+    <value>AltyazÃ„Â± dÃƒÂ¼Ã…Å¸ÃƒÂ¼k</value>
+  </data>
+  <data name="Player.Menu.SubtitleMiddle" xml:space="preserve">
+    <value>AltyazÃ„Â± ortasÃ„Â±</value>
+  </data>
+  <data name="Player.Menu.SubtitleSizeLarge" xml:space="preserve">
+    <value>AltyazÃ„Â± boyutu bÃƒÂ¼yÃƒÂ¼k</value>
+  </data>
+  <data name="Player.Menu.SubtitleSizeMedium" xml:space="preserve">
+    <value>AltyazÃ„Â± boyutu orta</value>
+  </data>
+  <data name="Player.Menu.SubtitleSizeSmall" xml:space="preserve">
+    <value>AltyazÃ„Â± boyutu kÃƒÂ¼ÃƒÂ§ÃƒÂ¼k</value>
+  </data>
+  <data name="Player.Menu.Tracks" xml:space="preserve">
+    <value>ParÃƒÂ§alar</value>
+  </data>
+  <data name="Player.Menu.ZoomIn" xml:space="preserve">
+    <value>YakÃ„Â±nlaÃ…Å¸tÃ„Â±r</value>
+  </data>
+  <data name="Player.Menu.ZoomOut" xml:space="preserve">
+    <value>UzaklaÃ…Å¸tÃ„Â±r</value>
+  </data>
+  <data name="Player.Meta.Now" xml:space="preserve">
+    <value>Ã…Âimdi: {0}</value>
+  </data>
+  <data name="Player.Meta.NowNext" xml:space="preserve">
+    <value>Ã…Âimdi: {0} - Sonraki: {1}</value>
+  </data>
+  <data name="Player.Sleep.In" xml:space="preserve">
+    <value>{0}'da uyuyun</value>
+  </data>
+  <data name="Player.Sleep.Off" xml:space="preserve">
+    <value>Uyku zamanlayÃ„Â±cÃ„Â±sÃ„Â± kapalÃ„Â±.</value>
+  </data>
+  <data name="Player.Subtitle.Summary" xml:space="preserve">
+    <value>AltyazÃ„Â± boyutu {0} - Konum {1}</value>
+  </data>
+  <data name="Player.SubtitleDelay.Value" xml:space="preserve">
+    <value>AltyazÃ„Â± gecikmesi {0}</value>
+  </data>
+  <data name="Player.SubtitlePosition.High" xml:space="preserve">
+    <value>YÃƒÂ¼ksek</value>
+  </data>
+  <data name="Player.SubtitlePosition.Low" xml:space="preserve">
+    <value>DÃƒÂ¼Ã…Å¸ÃƒÂ¼k</value>
+  </data>
+  <data name="Player.SubtitlePosition.Mid" xml:space="preserve">
+    <value>Orta</value>
+  </data>
+  <data name="Player.SubtitleSize.Large" xml:space="preserve">
+    <value>BÃƒÂ¼yÃƒÂ¼k</value>
+  </data>
+  <data name="Player.SubtitleSize.Medium" xml:space="preserve">
+    <value>Orta</value>
+  </data>
+  <data name="Player.SubtitleSize.Small" xml:space="preserve">
+    <value>KÃƒÂ¼ÃƒÂ§ÃƒÂ¼k</value>
+  </data>
+  <data name="Player.Tools.Summary.Catchup" xml:space="preserve">
+    <value>Yakalama tekrarÃ„Â± canlÃ„Â± kanal yolunda kalÃ„Â±r, bÃƒÂ¶ylece anÃ„Â±nda canlÃ„Â± yayÃ„Â±na geri dÃƒÂ¶nebilirsiniz.</value>
+  </data>
+  <data name="Player.Tools.Summary.Default" xml:space="preserve">
+    <value>GÃƒÂ¶rÃƒÂ¼ntÃƒÂ¼leme, altyazÃ„Â±lar, kurtarma ve oturum araÃƒÂ§larÃ„Â± iÃƒÂ§in kompakt oynatma ayarÃ„Â±.</value>
+  </data>
+  <data name="Player.Tools.Summary.Live" xml:space="preserve">
+    <value>Kanal, altyazÃ„Â± ve ekran kontrolleri ÃƒÂ§erÃƒÂ§evede kalÃ„Â±rken canlÃ„Â± araÃƒÂ§lar etkileÃ…Å¸imli kalÃ„Â±r.</value>
+  </data>
+  <data name="Player.Window.AlwaysOnTopEnabled" xml:space="preserve">
+    <value>Her zaman ÃƒÂ¼stte etkin.</value>
+  </data>
+  <data name="Player.Window.NormalStacking" xml:space="preserve">
+    <value>Pencere normal istiflemeyi takip eder.</value>
+  </data>
+  <data name="PlayerAlwaysOnTopButton.Content" xml:space="preserve">
+    <value>Her zaman zirvede</value>
+  </data>
+  <data name="PlayerAudioLabel.Text" xml:space="preserve">
+    <value>Ses</value>
+  </data>
+  <data name="PlayerAudioSubtitlesTitle.Text" xml:space="preserve">
+    <value>Ses ve altyazÃ„Â±lar</value>
+  </data>
+  <data name="PlayerAutoButton.Content" xml:space="preserve">
+    <value>Otomatik</value>
+  </data>
+  <data name="PlayerBack10Button.ToolTipService.ToolTip" xml:space="preserve">
+    <value>10 saniye geri</value>
+  </data>
+  <data name="PlayerBack30Button.ToolTipService.ToolTip" xml:space="preserve">
+    <value>30 saniye geri</value>
+  </data>
+  <data name="PlayerChannelListButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Kanal listesi</value>
+  </data>
+  <data name="PlayerChannelsButton.Content" xml:space="preserve">
+    <value>Kanallar</value>
+  </data>
+  <data name="PlayerChannelSurfTitle.Text" xml:space="preserve">
+    <value>Kanal sÃƒÂ¶rfÃƒÂ¼</value>
+  </data>
+  <data name="PlayerCloseToolsButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>AraÃƒÂ§larÃ„Â± kapat</value>
+  </data>
+  <data name="PlayerDeinterlaceButton.Content" xml:space="preserve">
+    <value>TaramasÃ„Â±zlaÃ…Å¸tÃ„Â±rma</value>
+  </data>
+  <data name="PlayerDisplaySummary.Text" xml:space="preserve">
+    <value>Otomatik ÃƒÂ§erÃƒÂ§eveleme, nÃƒÂ¶tr yakÃ„Â±nlaÃ…Å¸tÃ„Â±rma ve standart dÃƒÂ¶ndÃƒÂ¼rme.</value>
+  </data>
+  <data name="PlayerDisplayTitle.Text" xml:space="preserve">
+    <value>Ekran</value>
+  </data>
+  <data name="PlayerEpisodesButton.Content" xml:space="preserve">
+    <value>BÃƒÂ¶lÃƒÂ¼mler</value>
+  </data>
+  <data name="PlayerFillButton.Content" xml:space="preserve">
+    <value>Doldur</value>
+  </data>
+  <data name="PlayerForward10Button.ToolTipService.ToolTip" xml:space="preserve">
+    <value>10 saniye ileri sar</value>
+  </data>
+  <data name="PlayerForward30Button.ToolTipService.ToolTip" xml:space="preserve">
+    <value>30 saniye ileri sar</value>
+  </data>
+  <data name="PlayerFpsLabel.Text" xml:space="preserve">
+    <value>FPS</value>
+  </data>
+  <data name="PlayerFullscreenButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Tam ekran</value>
+  </data>
+  <data name="PlayerGoLiveButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>CanlÃ„Â± yayÃ„Â±na atla</value>
+  </data>
+  <data name="PlayerHighButton.Content" xml:space="preserve">
+    <value>YÃƒÂ¼ksek</value>
+  </data>
+  <data name="PlayerLargeButton.Content" xml:space="preserve">
+    <value>BÃƒÂ¼yÃƒÂ¼k</value>
+  </data>
+  <data name="PlayerLastChannelButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Son kanal</value>
+  </data>
+  <data name="PlayerLiveButton.Content" xml:space="preserve">
+    <value>CanlÃ„Â±</value>
+  </data>
+  <data name="PlayerLiveNowLabel.Text" xml:space="preserve">
+    <value>Ã…Âimdi YaÃ…Å¸a</value>
+  </data>
+  <data name="PlayerLowButton.Content" xml:space="preserve">
+    <value>DÃƒÂ¼Ã…Å¸ÃƒÂ¼k</value>
+  </data>
+  <data name="PlayerMediumButton.Content" xml:space="preserve">
+    <value>Orta</value>
+  </data>
+  <data name="PlayerMidButton.Content" xml:space="preserve">
+    <value>Orta</value>
+  </data>
+  <data name="PlayerMiniGuideButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Mini rehber</value>
+  </data>
+  <data name="PlayerMoreButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Daha Fazla</value>
+  </data>
+  <data name="PlayerMuteButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Sessiz</value>
+  </data>
+  <data name="PlayerNextChannelButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Sonraki kanal</value>
+  </data>
+  <data name="PlayerNowNextTitle.Text" xml:space="preserve">
+    <value>Ã…Âimdi / Sonraki</value>
+  </data>
+  <data name="PlayerOpenExternalButton.Content" xml:space="preserve">
+    <value>Harici aÃƒÂ§</value>
+  </data>
+  <data name="PlayerPipButton.Content" xml:space="preserve">
+    <value>PiP</value>
+  </data>
+  <data name="PlayerPipText.Text" xml:space="preserve">
+    <value>PIP</value>
+  </data>
+  <data name="PlayerPlaybackErrorTitle.Text" xml:space="preserve">
+    <value>Oynatma hatasÃ„Â±</value>
+  </data>
+  <data name="PlayerPlaybackInfoTitle.Text" xml:space="preserve">
+    <value>Oynatma bilgisi</value>
+  </data>
+  <data name="PlayerPlaybackToolsSummary.Text" xml:space="preserve">
+    <value>GÃƒÂ¶rÃƒÂ¼ntÃƒÂ¼leme, altyazÃ„Â±lar ve oturum eylemleri iÃƒÂ§in kompakt canlÃ„Â± kontroller.</value>
+  </data>
+  <data name="PlayerPlaybackToolsTitle.Text" xml:space="preserve">
+    <value>Oynatma araÃƒÂ§larÃ„Â±</value>
+  </data>
+  <data name="PlayerPlayPauseButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Oynat veya duraklat</value>
+  </data>
+  <data name="PlayerPreviousChannelButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Ãƒâ€“nceki kanal</value>
+  </data>
+  <data name="PlayerQuickActionsSummary.Text" xml:space="preserve">
+    <value>Paneller, kurtarma, yakalama ve resim iÃƒÂ§inde resim.</value>
+  </data>
+  <data name="PlayerQuickActionsTitle.Text" xml:space="preserve">
+    <value>HÃ„Â±zlÃ„Â± eylemler</value>
+  </data>
+  <data name="PlayerResolutionLabel.Text" xml:space="preserve">
+    <value>Ãƒâ€¡ÃƒÂ¶zÃƒÂ¼nÃƒÂ¼rlÃƒÂ¼k</value>
+  </data>
+  <data name="PlayerRestartButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>BaÃ…Å¸tan yeniden baÃ…Å¸lat</value>
+  </data>
+  <data name="PlayerRestartContentButton.Content" xml:space="preserve">
+    <value>Yeniden baÃ…Å¸lat</value>
+  </data>
+  <data name="PlayerSeekLabel.Text" xml:space="preserve">
+    <value>Ara</value>
+  </data>
+  <data name="PlayerSessionSummary.Text" xml:space="preserve">
+    <value>Uyku zamanlayÃ„Â±cÃ„Â±sÃ„Â± kapalÃ„Â±. Pencere normal istiflemeyi takip eder.</value>
+  </data>
+  <data name="PlayerSessionTitle.Text" xml:space="preserve">
+    <value>Oturum</value>
+  </data>
+  <data name="PlayerShotButton.Content" xml:space="preserve">
+    <value>atÃ„Â±Ã…Å¸</value>
+  </data>
+  <data name="PlayerSmallButton.Content" xml:space="preserve">
+    <value>KÃƒÂ¼ÃƒÂ§ÃƒÂ¼k</value>
+  </data>
+  <data name="PlayerSpeedButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Oynatma hÃ„Â±zÃ„Â±</value>
+  </data>
+  <data name="PlayerSpeedLabel.Text" xml:space="preserve">
+    <value>HÃ„Â±z</value>
+  </data>
+  <data name="PlayerStopButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>OynatmayÃ„Â± durdur</value>
+  </data>
+  <data name="PlayerStopContentButton.Content" xml:space="preserve">
+    <value>Durdur</value>
+  </data>
+  <data name="PlayerSubtitleSummary.Text" xml:space="preserve">
+    <value>AltyazÃ„Â± ÃƒÂ¶lÃƒÂ§eÃ„Å¸i ve yerleÃ…Å¸imi aktif oynatÃ„Â±cÃ„Â± durumunu takip eder.</value>
+  </data>
+  <data name="PlayerTracksButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Ses ve altyazÃ„Â±lar</value>
+  </data>
+  <data name="PlayerVideoLabel.Text" xml:space="preserve">
+    <value>video</value>
+  </data>
+  <data name="Profile.DeleteConfirmMessage" xml:space="preserve">
+    <value>Bu geri alÃ„Â±namaz.</value>
+  </data>
+  <data name="Profile.DeleteConfirmTitle" xml:space="preserve">
+    <value>Bu profil silinsin mi?</value>
+  </data>
+  <data name="ProfileAccessBehaviorTitle.Text" xml:space="preserve">
+    <value>EriÃ…Å¸im davranÃ„Â±Ã…Å¸Ã„Â±</value>
+  </data>
+  <data name="ProfileAddKidsProfileButton.Content" xml:space="preserve">
+    <value>Ãƒâ€¡ocuk profili ekle</value>
+  </data>
+  <data name="ProfileAddProfileButton.Content" xml:space="preserve">
+    <value>Profil ekle</value>
+  </data>
+  <data name="ProfileClearPinButton.Content" xml:space="preserve">
+    <value>PIN'i temizle</value>
+  </data>
+  <data name="ProfileDeleteProfileButton.Content" xml:space="preserve">
+    <value>Profili sil</value>
+  </data>
+  <data name="ProfileHideLockedContentSwitch.Header" xml:space="preserve">
+    <value>Kilit aÃƒÂ§Ã„Â±lana kadar kilitli iÃƒÂ§eriÃ„Å¸i gizle</value>
+  </data>
+  <data name="ProfileKidsSafeModeSwitch.Header" xml:space="preserve">
+    <value>Ãƒâ€¡ocuklar iÃƒÂ§in gÃƒÂ¼venli mod</value>
+  </data>
+  <data name="ProfileLocalManagementTitle.Text" xml:space="preserve">
+    <value>Yerel profil yÃƒÂ¶netimi</value>
+  </data>
+  <data name="ProfileLockedCategoriesTitle.Text" xml:space="preserve">
+    <value>Kilitli kategoriler</value>
+  </data>
+  <data name="ProfileLockedSourcesTitle.Text" xml:space="preserve">
+    <value>Kilitli kaynaklar</value>
+  </data>
+  <data name="ProfileNameBox.Header" xml:space="preserve">
+    <value>Profil adÃ„Â±</value>
+  </data>
+  <data name="ProfileNameBox.PlaceholderText" xml:space="preserve">
+    <value>Profil adÃ„Â±</value>
+  </data>
+  <data name="ProfileNoCategoriesText.Text" xml:space="preserve">
+    <value>Kaynaklar iÃƒÂ§e aktarÃ„Â±ldÃ„Â±ktan sonra kategoriler burada gÃƒÂ¶rÃƒÂ¼necektir.</value>
+  </data>
+  <data name="ProfileNoSourcesText.Text" xml:space="preserve">
+    <value>Kaynak yok. Ãƒâ€“nce bir kaynak ekleyin.</value>
+  </data>
+  <data name="ProfilePageSubtitle.Text" xml:space="preserve">
+    <value>AyrÃ„Â± kitaplÃ„Â±k durumu, favoriler, ÃƒÂ¶zgeÃƒÂ§miÃ…Å¸ verileri ve aile iÃƒÂ§in gÃƒÂ¼venli eriÃ…Å¸im kontrolleri.</value>
+  </data>
+  <data name="ProfilePageTitle.Text" xml:space="preserve">
+    <value>Profiller</value>
+  </data>
+  <data name="ProfilePinTitle.Text" xml:space="preserve">
+    <value>PIN</value>
+  </data>
+  <data name="ProfileRelockButton.Content" xml:space="preserve">
+    <value>Kilitli iÃƒÂ§eriÃ„Å¸i gizle</value>
+  </data>
+  <data name="ProfileReplacePinButton.Content" xml:space="preserve">
+    <value>PIN'i deÃ„Å¸iÃ…Å¸tir</value>
+  </data>
+  <data name="ProfileSaveNameButton.Content" xml:space="preserve">
+    <value>AdÃ„Â± kaydet</value>
+  </data>
+  <data name="ProfileSavePinButton.Content" xml:space="preserve">
+    <value>PIN'i kaydet</value>
+  </data>
+  <data name="ProfileSetPinBox.Header" xml:space="preserve">
+    <value>PIN'i ayarlayÃ„Â±n veya deÃ„Å¸iÃ…Å¸tirin</value>
+  </data>
+  <data name="ProfileSetPinBox.PlaceholderText" xml:space="preserve">
+    <value>PIN rakamlarÃ„Â±nÃ„Â± girin</value>
+  </data>
+  <data name="ProfileUnlockButton.Content" xml:space="preserve">
+    <value>Kilidi aÃƒÂ§</value>
+  </data>
+  <data name="ProfileUnlockContentBox.Header" xml:space="preserve">
+    <value>Kilitli iÃƒÂ§eriÃ„Å¸in kilidini aÃƒÂ§</value>
+  </data>
+  <data name="ProfileUnlockContentBox.PlaceholderText" xml:space="preserve">
+    <value>Bu oturum iÃƒÂ§in PIN'i girin</value>
+  </data>
+  <data name="SearchMediaBox.PlaceholderText" xml:space="preserve">
+    <value>Medya ara</value>
+  </data>
+  <data name="SearchPageSubtitle.Text" xml:space="preserve">
+    <value>Senkronize edilmiÃ…Å¸ canlÃ„Â± kanallarÃ„Â±, filmleri, dizileri ve oynanabilir bÃƒÂ¶lÃƒÂ¼mleri bulun.</value>
+  </data>
+  <data name="SearchPageTitle.Text" xml:space="preserve">
+    <value>Ara</value>
+  </data>
+  <data name="Series.EpisodeNumber" xml:space="preserve">
+    <value>BÃƒÂ¶lÃƒÂ¼m {0}</value>
+  </data>
+  <data name="Series.SeasonEpisodeLabel" xml:space="preserve">
+    <value>Sezon {0} BÃƒÂ¶lÃƒÂ¼m {1}</value>
+  </data>
+  <data name="Series.SeasonNumber" xml:space="preserve">
+    <value>Sezon {0}</value>
+  </data>
+  <data name="SeriesEpisodesLabel.Text" xml:space="preserve">
+    <value>BÃƒâ€“LÃƒÅ“MLER</value>
+  </data>
+  <data name="SeriesHideWatchedSwitch.Header" xml:space="preserve">
+    <value>Ã„Â°zlenen bÃƒÂ¶lÃƒÂ¼mleri gizle</value>
+  </data>
+  <data name="SeriesLibraryLabel.Text" xml:space="preserve">
+    <value>KÃƒÅ“TÃƒÅ“PHANEYÃ„Â° GÃƒâ€“STERÃ„Â°R</value>
+  </data>
+  <data name="SeriesNoPlayableEpisodesEmpty.Message" xml:space="preserve">
+    <value>Bu sezon iÃƒÂ§in bÃƒÂ¶lÃƒÂ¼m yayÃ„Â±n verileri henÃƒÂ¼z mevcut deÃ„Å¸il. VOD kaynaÃ„Å¸Ã„Â±nÃ„Â± yeniden senkronize edin veya farklÃ„Â± bir sezon seÃƒÂ§in.</value>
+  </data>
+  <data name="SeriesNoPlayableEpisodesEmpty.Title" xml:space="preserve">
+    <value>Oynanabilir bÃƒÂ¶lÃƒÂ¼m yok</value>
+  </data>
+  <data name="SeriesPageSubtitle.Text" xml:space="preserve">
+    <value>Sezonlara ve bÃƒÂ¶lÃƒÂ¼mlere gÃƒÂ¶z atmak iÃƒÂ§in bir program seÃƒÂ§in.</value>
+  </data>
+  <data name="SeriesPageTitle.Text" xml:space="preserve">
+    <value>Serisi</value>
+  </data>
+  <data name="SeriesSearchBox.PlaceholderText" xml:space="preserve">
+    <value>Arama serisi</value>
+  </data>
+  <data name="SeriesSeasonLabel.Text" xml:space="preserve">
+    <value>SEZON</value>
+  </data>
+  <data name="SeriesSourceLabel.Text" xml:space="preserve">
+    <value>Kaynak</value>
+  </data>
+  <data name="SeriesUnwatchedButton.Content" xml:space="preserve">
+    <value>izlenmedi</value>
+  </data>
+  <data name="SeriesUnwatchedButton2.Content" xml:space="preserve">
+    <value>izlenmedi</value>
+  </data>
+  <data name="SeriesWatchedButton.Content" xml:space="preserve">
+    <value>izlendi</value>
+  </data>
+  <data name="SeriesWatchedButton2.Content" xml:space="preserve">
+    <value>izlendi</value>
+  </data>
+  <data name="Settings.Appearance.Status.Active" xml:space="preserve">
+    <value>Tema: {0}. Aksan: {1}.</value>
+  </data>
+  <data name="Settings.Appearance.Status.Initial" xml:space="preserve">
+    <value>Bir tema ve vurgu paketi seÃƒÂ§in.</value>
+  </data>
+  <data name="Settings.AutoRefresh.EveryHour" xml:space="preserve">
+    <value>her saat</value>
+  </data>
+  <data name="Settings.AutoRefresh.EveryHours" xml:space="preserve">
+    <value>her {0} saatte bir</value>
+  </data>
+  <data name="Settings.AutoRefresh.Status.Initial" xml:space="preserve">
+    <value>Otomatik yenileme, kaynaklarÃ„Â± arka planda gÃƒÂ¼ncel tutar.</value>
+  </data>
+  <data name="Settings.AutoRefresh.Status.Off" xml:space="preserve">
+    <value>Otomatik yenileme kapalÃ„Â±.</value>
+  </data>
+  <data name="Settings.AutoRefresh.Status.Running" xml:space="preserve">
+    <value>Her {0}'Ã„Â± otomatik olarak yenileyin.</value>
+  </data>
+  <data name="Settings.Backup.Description.Export" xml:space="preserve">
+    <value>PaylaÃ…Å¸Ã„Â±m gÃƒÂ¼venli bir KROIRA yedekleme dosyasÃ„Â±nÃ„Â± kaydedin.</value>
+  </data>
+  <data name="Settings.Backup.Description.Restore" xml:space="preserve">
+    <value>Daha ÃƒÂ¶nce dÃ„Â±Ã…Å¸a aktarÃ„Â±lan bir KROIRA yedeÃ„Å¸ini iÃƒÂ§e aktarÃ„Â±n.</value>
+  </data>
+  <data name="Settings.Backup.Export.Failed" xml:space="preserve">
+    <value>Yedekleme dÃ„Â±Ã…Å¸a aktarÃ„Â±mÃ„Â± baÃ…Å¸arÃ„Â±sÃ„Â±z oldu: {0}</value>
+  </data>
+  <data name="Settings.Backup.Export.NotAvailable" xml:space="preserve">
+    <value>Yedeklemeyi dÃ„Â±Ã…Å¸a aktarma bu planda mevcut deÃ„Å¸ildir.</value>
+  </data>
+  <data name="Settings.Backup.Export.Success" xml:space="preserve">
+    <value>DÃ„Â±Ã…Å¸a aktarÃ„Â±lan yedekleme: {0} kaynaklarÃ„Â±, {1} ayarlarÃ„Â±, {2} favorileri, {3} ilerleme ÃƒÂ¶Ã„Å¸eleri.</value>
+  </data>
+  <data name="Settings.Backup.Exporting" xml:space="preserve">
+    <value>Yedekleme dÃ„Â±Ã…Å¸a aktarÃ„Â±lÃ„Â±yor...</value>
+  </data>
+  <data name="Settings.Backup.FileType" xml:space="preserve">
+    <value>KROIRA yedekleme JSON</value>
+  </data>
+  <data name="Settings.Backup.Restore.ConfirmMessage" xml:space="preserve">
+    <value>Bu, yedeklenen ayarlarÃ„Â± ve kaynaklarÃ„Â± bu cihazda birleÃ…Å¸tirecektir.</value>
+  </data>
+  <data name="Settings.Backup.Restore.ConfirmTitle" xml:space="preserve">
+    <value>Bu yedekleme geri yÃƒÂ¼klensin mi?</value>
+  </data>
+  <data name="Settings.Backup.Restore.Failed" xml:space="preserve">
+    <value>Yedekleme geri yÃƒÂ¼klemesi baÃ…Å¸arÃ„Â±sÃ„Â±z oldu: {0}</value>
+  </data>
+  <data name="Settings.Backup.Restore.NotAvailable" xml:space="preserve">
+    <value>Yedekleme geri yÃƒÂ¼klemesi bu planda mevcut deÃ„Å¸ildir.</value>
+  </data>
+  <data name="Settings.Backup.Restore.SourceFailures" xml:space="preserve">
+    <value>BazÃ„Â± kaynaklar geri yÃƒÂ¼klenemedi: {0}</value>
+  </data>
+  <data name="Settings.Backup.Restore.Success" xml:space="preserve">
+    <value>Yedekleme geri yÃƒÂ¼klendi: {0} kaynaklarÃ„Â±, {1} ayarlarÃ„Â±, {2} favorileri, {3} ilerleme ÃƒÂ¶Ã„Å¸eleri.</value>
+  </data>
+  <data name="Settings.Backup.Restoring" xml:space="preserve">
+    <value>Yedekleme geri yÃƒÂ¼kleniyor...</value>
+  </data>
+  <data name="Settings.Backup.Status.Initial" xml:space="preserve">
+    <value>Yerel KROIRA ayarlarÃ„Â±nÃ„Â± ve tercihlerini dÃ„Â±Ã…Å¸a aktarÃ„Â±n veya geri yÃƒÂ¼kleyin.</value>
+  </data>
+  <data name="Settings.Backup.Title.Export" xml:space="preserve">
+    <value>YedeÃ„Å¸i dÃ„Â±Ã…Å¸a aktar</value>
+  </data>
+  <data name="Settings.Backup.Title.Restore" xml:space="preserve">
+    <value>YedeÃ„Å¸i geri yÃƒÂ¼kle</value>
+  </data>
+  <data name="Settings.Language.Status.Initial" xml:space="preserve">
+    <value>KROIRA'Ã„Â±n uygulama kontrollerini ve mesajlarÃ„Â±nÃ„Â± nasÃ„Â±l gÃƒÂ¶rÃƒÂ¼ntÃƒÂ¼leyeceÃ„Å¸ini seÃƒÂ§in.</value>
+  </data>
+  <data name="Settings.Language.Status.RestartRequired" xml:space="preserve">
+    <value>Dil kaydedildi. TÃƒÂ¼m uygulama metnini yenilemek iÃƒÂ§in KROIRA'Ã„Â± yeniden baÃ…Å¸latÃ„Â±n.</value>
+  </data>
+  <data name="Settings.Language.Status.Selected" xml:space="preserve">
+    <value>SeÃƒÂ§ilen dil: {0}.</value>
+  </data>
+  <data name="Settings.Language.Status.System" xml:space="preserve">
+    <value>Windows sistem dilini kullanma.</value>
+  </data>
+  <data name="Settings.License.Status" xml:space="preserve">
+    <value>Plan: {0}. Yedekleme: {1}. GÃƒÂ¶rÃƒÂ¼nÃƒÂ¼m: {2}.</value>
+  </data>
+  <data name="Settings.Privacy.Missing" xml:space="preserve">
+    <value>Gizlilik politikasÃ„Â± baÃ„Å¸lantÃ„Â±sÃ„Â± mevcut deÃ„Å¸il.</value>
+  </data>
+  <data name="Settings.Privacy.OpenFailed" xml:space="preserve">
+    <value>Gizlilik politikasÃ„Â± aÃƒÂ§Ã„Â±lamadÃ„Â±.</value>
+  </data>
+  <data name="Settings.RemoteMode.Status.Initial" xml:space="preserve">
+    <value>Uzaktan ÃƒÂ¶ncelikli gezinme yÃƒÂ¼zeylerinin etkinleÃ…Å¸tirilip etkinleÃ…Å¸tirilmeyeceÃ„Å¸ini seÃƒÂ§in.</value>
+  </data>
+  <data name="Settings.RemoteMode.Status.Off" xml:space="preserve">
+    <value>Uzaktan ÃƒÂ¶ncelikli navigasyon kapalÃ„Â±.</value>
+  </data>
+  <data name="Settings.RemoteMode.Status.On" xml:space="preserve">
+    <value>Uzaktan ÃƒÂ¶ncelikli navigasyon aÃƒÂ§Ã„Â±k.</value>
+  </data>
+  <data name="Settings.Resources.Status.Ready" xml:space="preserve">
+    <value>Kaynaklar hazÃ„Â±r.</value>
+  </data>
+  <data name="Settings.Support.Missing" xml:space="preserve">
+    <value>Destek sayfasÃ„Â± baÃ„Å¸lantÃ„Â±sÃ„Â± kullanÃ„Â±lamÃ„Â±yor.</value>
+  </data>
+  <data name="Settings.Support.OpenFailed" xml:space="preserve">
+    <value>Destek sayfasÃ„Â± aÃƒÂ§Ã„Â±lamadÃ„Â±.</value>
+  </data>
+  <data name="Settings.SupportEmail.Missing" xml:space="preserve">
+    <value>Destek e-postasÃ„Â± kullanÃ„Â±lamÃ„Â±yor.</value>
+  </data>
+  <data name="Settings.SupportEmail.OpenFailed" xml:space="preserve">
+    <value>Destek e-postasÃ„Â± aÃƒÂ§Ã„Â±lamadÃ„Â±.</value>
+  </data>
+  <data name="SettingsAboutSubtitle.Text" xml:space="preserve">
+    <value>YÃƒÂ¼klÃƒÂ¼ derleme ve sÃƒÂ¼rÃƒÂ¼m bilgileri.</value>
+  </data>
+  <data name="SettingsAboutTitle.Text" xml:space="preserve">
+    <value>HakkÃ„Â±nda</value>
+  </data>
+  <data name="SettingsAccentPackSubtitle.Text" xml:space="preserve">
+    <value>Uygulama genelinde eylem kromunu yeniden ayarlayÃ„Â±n, rengi odaklayÃ„Â±n ve vurgularÃ„Â± vurgulayÃ„Â±n.</value>
+  </data>
+  <data name="SettingsAccentPackTitle.Text" xml:space="preserve">
+    <value>Vurgu paketi</value>
+  </data>
+  <data name="SettingsAppearanceSubtitle.Text" xml:space="preserve">
+    <value>Kurulumunuza uygun gÃƒÂ¶rsel ÃƒÂ¶n ayar ve vurgu kombinasyonunu seÃƒÂ§in.</value>
+  </data>
+  <data name="SettingsAppearanceTitle.Text" xml:space="preserve">
+    <value>GÃƒÂ¶rÃƒÂ¼nÃƒÂ¼m</value>
+  </data>
+  <data name="SettingsAppInformationOpenButton.Content" xml:space="preserve">
+    <value>AÃƒÂ§Ã„Â±k</value>
+  </data>
+  <data name="SettingsAppInformationSubtitle.Text" xml:space="preserve">
+    <value>HakkÃ„Â±nda, yardÃ„Â±m, gizlilik, destek, sÃƒÂ¼rÃƒÂ¼m ve yasal bilgiler ayrÃ„Â± bir bilgi sayfasÃ„Â±nda yayÃ„Â±nlanmaktadÃ„Â±r.</value>
+  </data>
+  <data name="SettingsAppInformationTitle.Text" xml:space="preserve">
+    <value>Uygulama bilgileri</value>
+  </data>
+  <data name="SettingsAppLabel.Text" xml:space="preserve">
+    <value>Uygulama</value>
+  </data>
+  <data name="SettingsApplicationSubtitle.Text" xml:space="preserve">
+    <value>Yerel kÃƒÂ¼tÃƒÂ¼phane deneyiminizi Ã…Å¸ekillendiren tercihler.</value>
+  </data>
+  <data name="SettingsApplicationTitle.Text" xml:space="preserve">
+    <value>BaÃ…Å¸vuru</value>
+  </data>
+  <data name="SettingsAutoRefreshSubtitle.Text" xml:space="preserve">
+    <value>Uygulama aÃƒÂ§Ã„Â±kken kaynaklarÃ„Â± sÃ„Â±nÃ„Â±rlÃ„Â± bir tempoda gÃƒÂ¼ncel tutun. GÃƒÂ¼ncelleme kÃ„Â±lavuzu verilerini, ÃƒÂ§izimlerini ve kitaplÃ„Â±k kullanÃ„Â±labilirliÃ„Å¸ini yeniler.</value>
+  </data>
+  <data name="SettingsAutoRefreshTitle.Text" xml:space="preserve">
+    <value>Otomatik yenileme</value>
+  </data>
+  <data name="SettingsCommonSupportTopicsTitle.Text" xml:space="preserve">
+    <value>Ortak destek konularÃ„Â±</value>
+  </data>
+  <data name="SettingsCopyright.Text" xml:space="preserve">
+    <value>Telif HakkÃ„Â± 2026 KROIRA.</value>
+  </data>
+  <data name="SettingsDiagnosticsExportSubtitle.Text" xml:space="preserve">
+    <value>TemizlenmiÃ…Å¸ kaynak raporlarÃ„Â± kaynak baÃ…Å¸Ã„Â±na mevcuttur ve kimlik bilgilerini veya saÃ„Å¸layÃ„Â±cÃ„Â± belirteÃƒÂ§lerini iÃƒÂ§ermez.</value>
+  </data>
+  <data name="SettingsDiagnosticsExportTitle.Text" xml:space="preserve">
+    <value>TanÃ„Â±lamayÃ„Â± dÃ„Â±Ã…Å¸a aktarma</value>
+  </data>
+  <data name="SettingsDisclaimerSubtitle.Text" xml:space="preserve">
+    <value>Ã„Â°ÃƒÂ§erik ve kaynak sorumluluÃ„Å¸u.</value>
+  </data>
+  <data name="SettingsDisclaimerTitle.Text" xml:space="preserve">
+    <value>Sorumluluk reddi beyanÃ„Â±</value>
+  </data>
+  <data name="SettingsEnableAutoRefreshTitle.Text" xml:space="preserve">
+    <value>Otomatik yenilemeyi etkinleÃ…Å¸tir</value>
+  </data>
+  <data name="SettingsEpgPreferencesSubtitle.Text" xml:space="preserve">
+    <value>KÃ„Â±lavuz kaynaklarÃ„Â±, eski kÃ„Â±lavuz uyarÃ„Â±larÃ„Â± ve manuel kanal eÃ…Å¸leÃ…Å¸tirme, kÃ„Â±lavuz ve kaynak tanÃ„Â±lama yÃƒÂ¼zeylerinden yÃƒÂ¶netilir.</value>
+  </data>
+  <data name="SettingsEpgPreferencesTitle.Text" xml:space="preserve">
+    <value>EPG tercihleri</value>
+  </data>
+  <data name="SettingsExportButton.Content" xml:space="preserve">
+    <value>Ã„Â°hracat</value>
+  </data>
+  <data name="SettingsHelpSubtitle.Text" xml:space="preserve">
+    <value>Kendi kaynaklarÃ„Â±nÃ„Â±zÃ„Â± getirmek iÃƒÂ§in hÃ„Â±zlÃ„Â± baÃ…Å¸langÃ„Â±ÃƒÂ§.</value>
+  </data>
+  <data name="SettingsHelpTitle.Text" xml:space="preserve">
+    <value>YardÃ„Â±m</value>
+  </data>
+  <data name="SettingsInstalledPackageLabel.Text" xml:space="preserve">
+    <value>Kurulu paket</value>
+  </data>
+  <data name="SettingsLanguageTitle.Text" xml:space="preserve">
+    <value>Uygulama dili</value>
+  </data>
+  <data name="SettingsLocalResumeRouting.Text" xml:space="preserve">
+    <value>Yerel ÃƒÂ¶zgeÃƒÂ§miÃ…Å¸ ve yÃƒÂ¶nlendirme</value>
+  </data>
+  <data name="SettingsMetadataPreferencesSubtitle.Text" xml:space="preserve">
+    <value>TMDb zenginleÃ…Å¸tirmesi, yerel saÃ„Å¸layÃ„Â±cÃ„Â±nÃ„Â±n ÃƒÂ§izimleri veya baÃ…Å¸lÃ„Â±klarÃ„Â± eksik olduÃ„Å¸unda bir arka plan geri dÃƒÂ¶nÃƒÂ¼Ã…Å¸ÃƒÂ¼dÃƒÂ¼r.</value>
+  </data>
+  <data name="SettingsMetadataPreferencesTitle.Text" xml:space="preserve">
+    <value>Meta veri tercihleri</value>
+  </data>
+  <data name="SettingsNameLabel.Text" xml:space="preserve">
+    <value>Ã„Â°sim</value>
+  </data>
+  <data name="SettingsOpenGuideButton.Content" xml:space="preserve">
+    <value>KÃ„Â±lavuzu AÃƒÂ§</value>
+  </data>
+  <data name="SettingsOpenSourcesButton.Content" xml:space="preserve">
+    <value>AÃƒÂ§Ã„Â±k Kaynaklar</value>
+  </data>
+  <data name="SettingsPageSubtitle.Text" xml:space="preserve">
+    <value>Oynatma, kitaplÃ„Â±k, gÃƒÂ¶rÃƒÂ¼nÃƒÂ¼m ve destek ayarlarÃ„Â±.</value>
+  </data>
+  <data name="SettingsPageTitle.Text" xml:space="preserve">
+    <value>Ayarlar</value>
+  </data>
+  <data name="SettingsPlaybackPreferencesSubtitle.Text" xml:space="preserve">
+    <value>Devam durumu, favoriler ve oynatma yÃƒÂ¶nlendirmesi yerel kalÃ„Â±r ve uygulamanÃ„Â±n baÃ…Å¸latÃ„Â±lmasÃ„Â±nÃ„Â± engellemeden uygulanÃ„Â±r.</value>
+  </data>
+  <data name="SettingsPlaybackPreferencesTitle.Text" xml:space="preserve">
+    <value>Oynatma tercihleri</value>
+  </data>
+  <data name="SettingsPrivacyPolicyOpenButton.Content" xml:space="preserve">
+    <value>AÃƒÂ§Ã„Â±k</value>
+  </data>
+  <data name="SettingsPrivacyPolicyTitle.Text" xml:space="preserve">
+    <value>Gizlilik politikasÃ„Â±</value>
+  </data>
+  <data name="SettingsPrivacySupportSubtitle.Text" xml:space="preserve">
+    <value>DesteÃ„Å¸i, gizliliÃ„Å¸i ve iletiÃ…Å¸im bilgilerini bÃ„Â±rakÃ„Â±n.</value>
+  </data>
+  <data name="SettingsPrivacySupportTitle.Text" xml:space="preserve">
+    <value>Gizlilik ve Destek</value>
+  </data>
+  <data name="SettingsProviderMetadataFirst.Text" xml:space="preserve">
+    <value>Ãƒâ€“nce saÃ„Å¸layÃ„Â±cÃ„Â± meta verileri</value>
+  </data>
+  <data name="SettingsRefreshCadenceSubtitle.Text" xml:space="preserve">
+    <value>Uygulama aÃƒÂ§Ã„Â±k kaldÃ„Â±Ã„Å¸Ã„Â± sÃƒÂ¼rece kaynaklarÃ„Â±n ne sÃ„Â±klÃ„Â±kta teslim edileceÃ„Å¸ini seÃƒÂ§in.</value>
+  </data>
+  <data name="SettingsRefreshCadenceTitle.Text" xml:space="preserve">
+    <value>KadansÃ„Â± yenile</value>
+  </data>
+  <data name="SettingsReleaseLabel.Text" xml:space="preserve">
+    <value>SÃƒÂ¼rÃƒÂ¼m</value>
+  </data>
+  <data name="SettingsRemoteModeTitle.Text" xml:space="preserve">
+    <value>Uzaktan dostu mod</value>
+  </data>
+  <data name="SettingsRestoreButton.Content" xml:space="preserve">
+    <value>Geri yÃƒÂ¼kle</value>
+  </data>
+  <data name="SettingsRestoreWarning.Text" xml:space="preserve">
+    <value>Geri yÃƒÂ¼kleme, geÃƒÂ§erli yerel kurulumun yerini alÃ„Â±r ve ardÃ„Â±ndan kitaplÃ„Â±Ã„Å¸Ã„Â± bu cihazdaki geri yÃƒÂ¼klenen kaynaklardan yeniden oluÃ…Å¸turur.</value>
+  </data>
+  <data name="SettingsRunRefreshAfterLaunchSwitch.Header" xml:space="preserve">
+    <value>LansmanÃ„Â±ndan kÃ„Â±sa bir sÃƒÂ¼re sonra ÃƒÂ§alÃ„Â±Ã…Å¸tÃ„Â±rÃ„Â±n</value>
+  </data>
+  <data name="SettingsSourcesButton.Content" xml:space="preserve">
+    <value>Kaynaklar</value>
+  </data>
+  <data name="SettingsStoreSubmissionVersionLabel.Text" xml:space="preserve">
+    <value>GÃƒÂ¶nderim sÃƒÂ¼rÃƒÂ¼mÃƒÂ¼nÃƒÂ¼ saklayÃ„Â±n</value>
+  </data>
+  <data name="SettingsSupportEmailButton.Content" xml:space="preserve">
+    <value>E-posta</value>
+  </data>
+  <data name="SettingsSupportEmailTitle.Text" xml:space="preserve">
+    <value>Destek e-postasÃ„Â±</value>
+  </data>
+  <data name="SettingsSupportOpenButton.Content" xml:space="preserve">
+    <value>AÃƒÂ§Ã„Â±k</value>
+  </data>
+  <data name="SettingsSupportPageTitle.Text" xml:space="preserve">
+    <value>Destek sayfasÃ„Â±</value>
+  </data>
+  <data name="SettingsThemePresetSubtitle.Text" xml:space="preserve">
+    <value>Sayfa atmosferini ve yÃƒÂ¼zey gradyan ailesini ayarlayÃ„Â±n.</value>
+  </data>
+  <data name="SettingsThemePresetTitle.Text" xml:space="preserve">
+    <value>Tema ÃƒÂ¶n ayarÃ„Â±</value>
+  </data>
+  <data name="SettingsVersionBuildLabel.Text" xml:space="preserve">
+    <value>SÃƒÂ¼rÃƒÂ¼m / yapÃ„Â±</value>
+  </data>
+  <data name="SourceOnboardingAllRequestsRadio.Content" xml:space="preserve">
+    <value>TÃƒÂ¼m istekler</value>
+  </data>
+  <data name="SourceOnboardingBrowseFileButton.Content" xml:space="preserve">
+    <value>Dosyaya GÃƒÂ¶zat...</value>
+  </data>
+  <data name="SourceOnboardingBufferedRelayRadio.Content" xml:space="preserve">
+    <value>ArabelleÃ„Å¸e alÃ„Â±nmÃ„Â±Ã…Å¸ rÃƒÂ¶le</value>
+  </data>
+  <data name="SourceOnboardingCompanionEndpointBox.Header" xml:space="preserve">
+    <value>TamamlayÃ„Â±cÃ„Â± uÃƒÂ§ nokta</value>
+  </data>
+  <data name="SourceOnboardingCompanionEndpointBox.PlaceholderText" xml:space="preserve">
+    <value>http://127.0.0.1:9318/kroira-companion</value>
+  </data>
+  <data name="SourceOnboardingCompanionRelayTitle.Text" xml:space="preserve">
+    <value>Yerel yardÃ„Â±mcÃ„Â± rÃƒÂ¶lesi</value>
+  </data>
+  <data name="SourceOnboardingDeviceIdBox.Header" xml:space="preserve">
+    <value>Cihaz KimliÃ„Å¸i (Ã„Â°steÃ„Å¸e baÃ„Å¸lÃ„Â±)</value>
+  </data>
+  <data name="SourceOnboardingDeviceIdBox.PlaceholderText" xml:space="preserve">
+    <value>MAC adresinden tÃƒÂ¼retmek iÃƒÂ§in boÃ…Å¸ bÃ„Â±rakÃ„Â±n</value>
+  </data>
+  <data name="SourceOnboardingDirectRoutingRadio.Content" xml:space="preserve">
+    <value>DoÃ„Å¸rudan yÃƒÂ¶nlendirme</value>
+  </data>
+  <data name="SourceOnboardingFallbackXmltvUrlsBox.Header" xml:space="preserve">
+    <value>Geri dÃƒÂ¶nÃƒÂ¼Ã…Å¸/zenginleÃ…Å¸tirme XMLTV URL'leri</value>
+  </data>
+  <data name="SourceOnboardingFallbackXmltvUrlsBox.PlaceholderText" xml:space="preserve">
+    <value>SatÃ„Â±r baÃ…Å¸Ã„Â±na bir XMLTV URL'si. Herkese aÃƒÂ§Ã„Â±k yayÃ„Â±nlar isteÃ„Å¸e baÃ„Å¸lÃ„Â±dÃ„Â±r.</value>
+  </data>
+  <data name="SourceOnboardingGuideModeTitle.Text" xml:space="preserve">
+    <value>KÃ„Â±lavuz modu</value>
+  </data>
+  <data name="SourceOnboardingLocaleBox.Header" xml:space="preserve">
+    <value>Yerel ayar</value>
+  </data>
+  <data name="SourceOnboardingM3uRadio.Content" xml:space="preserve">
+    <value>M3U (URL veya Yerel Dosya)</value>
+  </data>
+  <data name="SourceOnboardingM3uTitle.Text" xml:space="preserve">
+    <value>M3U ÃƒÂ§alma listesi</value>
+  </data>
+  <data name="SourceOnboardingMacAddressBox.Header" xml:space="preserve">
+    <value>MAC Adresi</value>
+  </data>
+  <data name="SourceOnboardingMacAddressBox.PlaceholderText" xml:space="preserve">
+    <value>00:1A:79:00:00:01</value>
+  </data>
+  <data name="SourceOnboardingManualXmltvRadio.Content" xml:space="preserve">
+    <value>Manuel XMLTV geÃƒÂ§ersiz kÃ„Â±lma</value>
+  </data>
+  <data name="SourceOnboardingManualXmltvUrlBox.Header" xml:space="preserve">
+    <value>Manuel XMLTV URL'si</value>
+  </data>
+  <data name="SourceOnboardingManualXmltvUrlBox.PlaceholderText" xml:space="preserve">
+    <value>http://.../epg.xml veya C:\guide.xml</value>
+  </data>
+  <data name="SourceOnboardingNoGuideRadio.Content" xml:space="preserve">
+    <value>KÃ„Â±lavuz yok</value>
+  </data>
+  <data name="SourceOnboardingPageSubtitle.Text" xml:space="preserve">
+    <value>CanlÃ„Â± TV, filmler, diziler ve rehber verileri iÃƒÂ§in kendi M3U ÃƒÂ§alma listenizi, Xtream saÃ„Å¸layÃ„Â±cÃ„Â±nÃ„Â±zÃ„Â± veya Stalker portalÃ„Â±nÃ„Â±zÃ„Â± baÃ„Å¸layÃ„Â±n.</value>
+  </data>
+  <data name="SourceOnboardingPageTitle.Text" xml:space="preserve">
+    <value>Kaynak Ekle</value>
+  </data>
+  <data name="SourceOnboardingPassThroughRelayRadio.Content" xml:space="preserve">
+    <value>GeÃƒÂ§iÃ…Å¸ rÃƒÂ¶lesi</value>
+  </data>
+  <data name="SourceOnboardingPlaybackOnlyRadio.Content" xml:space="preserve">
+    <value>YalnÃ„Â±zca oynatma</value>
+  </data>
+  <data name="SourceOnboardingPlaybackOnlyRadio2.Content" xml:space="preserve">
+    <value>YalnÃ„Â±zca oynatma</value>
+  </data>
+  <data name="SourceOnboardingPlaybackProbesRadio.Content" xml:space="preserve">
+    <value>Oynatma + problar</value>
+  </data>
+  <data name="SourceOnboardingPlaybackProbesRadio2.Content" xml:space="preserve">
+    <value>Oynatma + problar</value>
+  </data>
+  <data name="SourceOnboardingPortalUrlBox.Header" xml:space="preserve">
+    <value>Portal URL'si</value>
+  </data>
+  <data name="SourceOnboardingPortalUrlBox.PlaceholderText" xml:space="preserve">
+    <value>http://portal.example.com/c/</value>
+  </data>
+  <data name="SourceOnboardingProxyUrlBox.Header" xml:space="preserve">
+    <value>Proxy URL'si</value>
+  </data>
+  <data name="SourceOnboardingProxyUrlBox.PlaceholderText" xml:space="preserve">
+    <value>http://proxy-ana bilgisayar:baÃ„Å¸lantÃ„Â± noktasÃ„Â± veya ÃƒÂ§oraplar5://proxy-ana bilgisayar:baÃ„Å¸lantÃ„Â± noktasÃ„Â±</value>
+  </data>
+  <data name="SourceOnboardingRoutingTitle.Text" xml:space="preserve">
+    <value>YÃƒÂ¶nlendirme</value>
+  </data>
+  <data name="SourceOnboardingSaveAndSyncButton.Content" xml:space="preserve">
+    <value>Kaydet ve senkronize et</value>
+  </data>
+  <data name="SourceOnboardingSerialNumberBox.Header" xml:space="preserve">
+    <value>Seri NumarasÃ„Â± (Ã„Â°steÃ„Å¸e baÃ„Å¸lÃ„Â±)</value>
+  </data>
+  <data name="SourceOnboardingSerialNumberBox.PlaceholderText" xml:space="preserve">
+    <value>MAC adresinden tÃƒÂ¼retmek iÃƒÂ§in boÃ…Å¸ bÃ„Â±rakÃ„Â±n</value>
+  </data>
+  <data name="SourceOnboardingSourceFormatRadio.Header" xml:space="preserve">
+    <value>Kaynak FormatÃ„Â±</value>
+  </data>
+  <data name="SourceOnboardingSourceNameBox.Header" xml:space="preserve">
+    <value>Kaynak AdÃ„Â±</value>
+  </data>
+  <data name="SourceOnboardingSourceNameBox.PlaceholderText" xml:space="preserve">
+    <value>ÃƒÂ¶rneÃ„Å¸in Ãƒâ€“zel Listem</value>
+  </data>
+  <data name="SourceOnboardingStalkerRadio.Content" xml:space="preserve">
+    <value>Stalker PortalÃ„Â±</value>
+  </data>
+  <data name="SourceOnboardingStalkerTitle.Text" xml:space="preserve">
+    <value>Stalker PortalÃ„Â±</value>
+  </data>
+  <data name="SourceOnboardingTestSourceButton.Content" xml:space="preserve">
+    <value>Test KaynaÃ„Å¸Ã„Â±</value>
+  </data>
+  <data name="SourceOnboardingTimezoneBox.Header" xml:space="preserve">
+    <value>Saat dilimi</value>
+  </data>
+  <data name="SourceOnboardingUseProviderGuideRadio.Content" xml:space="preserve">
+    <value>SaÃ„Å¸layÃ„Â±cÃ„Â± kÃ„Â±lavuzunu kullanÃ„Â±n</value>
+  </data>
+  <data name="SourceOnboardingXtreamRadio.Content" xml:space="preserve">
+    <value>Xtream KodlarÃ„Â±</value>
+  </data>
+  <data name="SourceOnboardingXtreamTitle.Text" xml:space="preserve">
+    <value>Xtream saÃ„Å¸layÃ„Â±cÃ„Â±sÃ„Â±</value>
+  </data>
+  <data name="Sources.ActivityReportUnavailableMessage" xml:space="preserve">
+    <value>Bu kaynaÃ„Å¸Ã„Â±n henÃƒÂ¼z paylaÃ…Å¸Ã„Â±m iÃƒÂ§in gÃƒÂ¼venli bir etkinlik ÃƒÂ¶zeti yok.</value>
+  </data>
+  <data name="Sources.ActivityReportUnavailableTitle" xml:space="preserve">
+    <value>Etkinlik raporu kullanÃ„Â±lamÃ„Â±yor</value>
+  </data>
+  <data name="Sources.Companion.Disabled.Description" xml:space="preserve">
+    <value>DoÃ„Å¸rudan oynatmayÃ„Â± bu kaynak iÃƒÂ§in tek yol olarak tutun.</value>
+  </data>
+  <data name="Sources.Companion.PlaybackOnly.Description" xml:space="preserve">
+    <value>Ãƒâ€“nce saÃ„Å¸layÃ„Â±cÃ„Â± akÃ„Â±Ã…Å¸Ã„Â±nÃ„Â± ÃƒÂ§ÃƒÂ¶zÃƒÂ¼mleyin, ardÃ„Â±ndan oynatmayÃ„Â± yerel yardÃ„Â±mcÃ„Â± aktarÃ„Â±cÃ„Â±ya aktarÃ„Â±n.</value>
+  </data>
+  <data name="Sources.Companion.PlaybackProbes.Description" xml:space="preserve">
+    <value>Ãƒâ€“nce saÃ„Å¸layÃ„Â±cÃ„Â± akÃ„Â±Ã…Å¸Ã„Â±nÃ„Â± ÃƒÂ§ÃƒÂ¶zÃƒÂ¼mleyin, ardÃ„Â±ndan oynatma ve sÃ„Â±nÃ„Â±rlanmÃ„Â±Ã…Å¸ durum araÃ…Å¸tÃ„Â±rmalarÃ„Â± iÃƒÂ§in yerel yardÃ„Â±mcÃ„Â± geÃƒÂ§iÃ…Å¸ini kullanÃ„Â±n.</value>
+  </data>
+  <data name="Sources.CompanionBehaviorHeader" xml:space="preserve">
+    <value>ArkadaÃ…Å¸ davranÃ„Â±Ã…Å¸Ã„Â±</value>
+  </data>
+  <data name="Sources.CompanionEndpointHeader" xml:space="preserve">
+    <value>TamamlayÃ„Â±cÃ„Â± uÃƒÂ§ nokta</value>
+  </data>
+  <data name="Sources.CompanionMode.Buffered.Label" xml:space="preserve">
+    <value>ArabelleÃ„Å¸e alÃ„Â±nmÃ„Â±Ã…Å¸ rÃƒÂ¶le</value>
+  </data>
+  <data name="Sources.CompanionMode.Buffered.Description" xml:space="preserve">
+    <value>ArkadaÃ…Å¸Ã„Â±nÃ„Â±zdan, halihazÃ„Â±rda ÃƒÂ§ÃƒÂ¶zÃƒÂ¼mlenmiÃ…Å¸ yukarÃ„Â± akÃ„Â±Ã…Å¸ akÃ„Â±Ã…Å¸Ã„Â±nÃ„Â± arabelleÃ„Å¸e alÃ„Â±nmÃ„Â±Ã…Å¸ bir rÃƒÂ¶le aracÃ„Â±lÃ„Â±Ã„Å¸Ã„Â±yla stabilize etmesini isteyin.</value>
+  </data>
+  <data name="Sources.CompanionMode.Relay.Label" xml:space="preserve">
+    <value>GeÃƒÂ§iÃ…Å¸ rÃƒÂ¶lesi</value>
+  </data>
+  <data name="Sources.CompanionMode.Relay.Description" xml:space="preserve">
+    <value>TamamlayÃ„Â±cÃ„Â±dan, ipuÃƒÂ§larÃ„Â±nÃ„Â± ara belleÃ„Å¸e almadan, zaten ÃƒÂ§ÃƒÂ¶zÃƒÂ¼mlenmiÃ…Å¸ olan yukarÃ„Â± akÃ„Â±Ã…Å¸ akÃ„Â±Ã…Å¸Ã„Â±nÃ„Â± aktarmasÃ„Â±nÃ„Â± isteyin.</value>
+  </data>
+  <data name="Sources.CompanionRelayHeader" xml:space="preserve">
+    <value>Yerel yardÃ„Â±mcÃ„Â± rÃƒÂ¶lesi</value>
+  </data>
+  <data name="Sources.CopyFailedTitle" xml:space="preserve">
+    <value>Kopyalama baÃ…Å¸arÃ„Â±sÃ„Â±z oldu</value>
+  </data>
+  <data name="Sources.DetectedXmltvNone" xml:space="preserve">
+    <value>XMLTV URL'si algÃ„Â±landÃ„Â±: henÃƒÂ¼z kaydedilmedi</value>
+  </data>
+  <data name="Sources.DetectedXmltvUrl" xml:space="preserve">
+    <value>AlgÃ„Â±lanan XMLTV URL'si: {0}</value>
+  </data>
+  <data name="Sources.DiagnosticsReportUnavailableMessage" xml:space="preserve">
+    <value>Bu kaynaÃ„Å¸Ã„Â±n henÃƒÂ¼z paylaÃ…Å¸Ã„Â±m iÃƒÂ§in gÃƒÂ¼venli bir teÃ…Å¸his ÃƒÂ¶zeti yok.</value>
+  </data>
+  <data name="Sources.DiagnosticsReportUnavailableTitle" xml:space="preserve">
+    <value>TeÃ…Å¸his raporu kullanÃ„Â±lamÃ„Â±yor</value>
+  </data>
+  <data name="Sources.FallbackXmltvUrlsHeader" xml:space="preserve">
+    <value>Geri dÃƒÂ¶nÃƒÂ¼Ã…Å¸/zenginleÃ…Å¸tirme XMLTV URL'leri</value>
+  </data>
+  <data name="Sources.FallbackXmltvUrlsPlaceholder" xml:space="preserve">
+    <value>SatÃ„Â±r baÃ…Å¸Ã„Â±na bir XMLTV URL'si. Herkese aÃƒÂ§Ã„Â±k yayÃ„Â±nlar isteÃ„Å¸e baÃ„Å¸lÃ„Â±dÃ„Â±r.</value>
+  </data>
+  <data name="Sources.GuideMode.Detected.Label" xml:space="preserve">
+    <value>SaÃ„Å¸layÃ„Â±cÃ„Â±dan algÃ„Â±landÃ„Â±</value>
+  </data>
+  <data name="Sources.GuideMode.Detected.Description" xml:space="preserve">
+    <value>Ãƒâ€“nce XMLTV saÃ„Å¸layÃ„Â±cÃ„Â±sÃ„Â±nÃ„Â±, ardÃ„Â±ndan isteÃ„Å¸e baÃ„Å¸lÃ„Â± yedek/zenginleÃ…Å¸tirme URL'lerini kullanÃ„Â±n.</value>
+  </data>
+  <data name="Sources.GuideMode.Manual.Label" xml:space="preserve">
+    <value>Manuel geÃƒÂ§ersiz kÃ„Â±lma</value>
+  </data>
+  <data name="Sources.GuideMode.Manual.Description" xml:space="preserve">
+    <value>Ãƒâ€“nce kendi XMLTV URL'nizi kullanÃ„Â±n ve tespit edilen saÃ„Å¸layÃ„Â±cÃ„Â± verilerini dosyada tutun.</value>
+  </data>
+  <data name="Sources.GuideMode.None.Label" xml:space="preserve">
+    <value>KÃ„Â±lavuz yok</value>
+  </data>
+  <data name="Sources.GuideMode.None.Description" xml:space="preserve">
+    <value>Bu kaynak iÃƒÂ§in kÃ„Â±lavuz senkronizasyonunu devre dÃ„Â±Ã…Å¸Ã„Â± bÃ„Â±rakÃ„Â±n.</value>
+  </data>
+  <data name="Sources.GuideSettings.DefaultMessage" xml:space="preserve">
+    <value>KÃ„Â±lavuz verilerinin saÃ„Å¸layÃ„Â±cÃ„Â±dan mÃ„Â± yoksa manuel XMLTV geÃƒÂ§ersiz kÃ„Â±lmasÃ„Â±ndan mÃ„Â± geleceÃ„Å¸ini seÃƒÂ§in, ardÃ„Â±ndan yÃƒÂ¶nlendirmenin nasÃ„Â±l davranmasÃ„Â± gerektiÃ„Å¸ine karar verin.</value>
+  </data>
+  <data name="Sources.GuideSettings.M3uMessage" xml:space="preserve">
+    <value>Bu oynatma listesinin XMLTV kÃ„Â±lavuz verilerini nasÃ„Â±l ÃƒÂ§ÃƒÂ¶zeceÃ„Å¸ini ve kaynaÃ„Å¸Ã„Â±n operasyonel olarak nasÃ„Â±l yÃƒÂ¶nlendirileceÃ„Å¸ini seÃƒÂ§in.</value>
+  </data>
+  <data name="Sources.GuideSettings.StalkerMessage" xml:space="preserve">
+    <value>Bu Stalker portalÃ„Â±nÃ„Â±n manuel bir XMLTV yayÃ„Â±nÃ„Â± kullanÃ„Â±p kullanmayacaÃ„Å¸Ã„Â±nÃ„Â± ve isteklerinin operasyonel olarak nasÃ„Â±l yÃƒÂ¶nlendirileceÃ„Å¸ini seÃƒÂ§in.</value>
+  </data>
+  <data name="Sources.GuideSettingsFailedTitle" xml:space="preserve">
+    <value>KÃ„Â±lavuz ayarlarÃ„Â± baÃ…Å¸arÃ„Â±sÃ„Â±z oldu</value>
+  </data>
+  <data name="Sources.GuideSettingsForTitle" xml:space="preserve">
+    <value>KÃ„Â±lavuz ayarlarÃ„Â± - {0}</value>
+  </data>
+  <data name="Sources.GuideSettingsLoadFailed" xml:space="preserve">
+    <value>Kaynak kÃ„Â±lavuzu ayarlarÃ„Â± yÃƒÂ¼klenemedi.</value>
+  </data>
+  <data name="Sources.GuideSettingsTitle" xml:space="preserve">
+    <value>KÃ„Â±lavuz ayarlarÃ„Â±</value>
+  </data>
+  <data name="Sources.ManualXmltvUrlHeader" xml:space="preserve">
+    <value>Manuel XMLTV URL'si</value>
+  </data>
+  <data name="Sources.NothingSafeToCopy" xml:space="preserve">
+    <value>HenÃƒÂ¼z kopyalanacak gÃƒÂ¼venli bir Ã…Å¸ey yok.</value>
+  </data>
+  <data name="Sources.ProxyMode.AllRequests.Label" xml:space="preserve">
+    <value>TÃƒÂ¼m istekler</value>
+  </data>
+  <data name="Sources.ProxyMode.AllRequests.Description" xml:space="preserve">
+    <value>Proxy aracÃ„Â±lÃ„Â±Ã„Å¸Ã„Â±yla iÃƒÂ§e aktarma, yÃƒÂ¶nlendirme, araÃ…Å¸tÃ„Â±rma ve oynatma trafiÃ„Å¸ini yÃƒÂ¶nlendirin.</value>
+  </data>
+  <data name="Sources.ProxyMode.Direct.Label" xml:space="preserve">
+    <value>DoÃ„Å¸rudan yÃƒÂ¶nlendirme</value>
+  </data>
+  <data name="Sources.ProxyMode.Direct.Description" xml:space="preserve">
+    <value>Ã„Â°ÃƒÂ§e aktarma, yÃƒÂ¶nlendirme, araÃ…Å¸tÃ„Â±rma ve oynatma istekleri iÃƒÂ§in doÃ„Å¸rudan saÃ„Å¸layÃ„Â±cÃ„Â± yÃƒÂ¶nlendirmesini kullanÃ„Â±n.</value>
+  </data>
+  <data name="Sources.ProxyMode.PlaybackOnly.Label" xml:space="preserve">
+    <value>YalnÃ„Â±zca oynatma</value>
+  </data>
+  <data name="Sources.ProxyMode.PlaybackOnly.Description" xml:space="preserve">
+    <value>Yenilerken oynatmayÃ„Â± proxy ÃƒÂ¼zerinden yÃƒÂ¶nlendirin ve trafiÃ„Å¸i doÃ„Å¸rudan yÃƒÂ¶nlendirin.</value>
+  </data>
+  <data name="Sources.ProxyMode.PlaybackProbes.Label" xml:space="preserve">
+    <value>Oynatma + problar</value>
+  </data>
+  <data name="Sources.ProxyMode.PlaybackProbes.Description" xml:space="preserve">
+    <value>OynatmayÃ„Â± ve sÃ„Â±nÃ„Â±rlÃ„Â± operasyonel araÃ…Å¸tÃ„Â±rmalarÃ„Â± proxy ÃƒÂ¼zerinden yÃƒÂ¶nlendirin.</value>
+  </data>
+  <data name="Sources.ProxyUrlHeader" xml:space="preserve">
+    <value>Proxy URL'si</value>
+  </data>
+  <data name="Sources.RepairAttemptFailedTitle" xml:space="preserve">
+    <value>OnarÃ„Â±m giriÃ…Å¸imi baÃ…Å¸arÃ„Â±sÃ„Â±z oldu</value>
+  </data>
+  <data name="Sources.RepairReportUnavailableMessage" xml:space="preserve">
+    <value>Bu kaynaÃ„Å¸Ã„Â±n henÃƒÂ¼z paylaÃ…Å¸Ã„Â±m iÃƒÂ§in gÃƒÂ¼venli bir onarÃ„Â±m ÃƒÂ¶zeti yok.</value>
+  </data>
+  <data name="Sources.RepairReportUnavailableTitle" xml:space="preserve">
+    <value>OnarÃ„Â±m raporu mevcut deÃ„Å¸il</value>
+  </data>
+  <data name="Sources.RoutingPolicyHeader" xml:space="preserve">
+    <value>YÃƒÂ¶nlendirme politikasÃ„Â±</value>
+  </data>
+  <data name="Sources.SaveAndSync" xml:space="preserve">
+    <value>Kaydet ve senkronize et</value>
+  </data>
+  <data name="Sources.StreamProbeFailedTitle" xml:space="preserve">
+    <value>AkÃ„Â±Ã…Å¸ araÃ…Å¸tÃ„Â±rmasÃ„Â± baÃ…Å¸arÃ„Â±sÃ„Â±z oldu</value>
+  </data>
+  <data name="SourcesAcquisitionProfileTitle.Text" xml:space="preserve">
+    <value>Edinme profili</value>
+  </data>
+  <data name="SourcesActiveSourcesLabel.Text" xml:space="preserve">
+    <value>AKTÃ„Â°F KAYNAKLAR</value>
+  </data>
+  <data name="SourcesActivityCenterExpander.Header" xml:space="preserve">
+    <value>Aktivite merkezi</value>
+  </data>
+  <data name="SourcesAutomaticRefreshLabel.Text" xml:space="preserve">
+    <value>Otomatik yenileme</value>
+  </data>
+  <data name="SourcesCatalogIndexLabel.Text" xml:space="preserve">
+    <value>KATALOG DÃ„Â°ZÃ„Â°NÃ„Â°</value>
+  </data>
+  <data name="SourcesCatalogLabel.Text" xml:space="preserve">
+    <value>KATALOG</value>
+  </data>
+  <data name="SourcesContentDeliveryLabel.Text" xml:space="preserve">
+    <value>Ã„Â°Ãƒâ€¡ERÃ„Â°K SUNUMU</value>
+  </data>
+  <data name="SourcesCurrentCapabilityTitle.Text" xml:space="preserve">
+    <value>Mevcut yetenek gÃƒÂ¶rÃƒÂ¼nÃƒÂ¼mÃƒÂ¼</value>
+  </data>
+  <data name="SourcesDeleteSourceMenuItem.Text" xml:space="preserve">
+    <value>KaynaÃ„Å¸Ã„Â± Sil</value>
+  </data>
+  <data name="SourcesDetailsExpander.Header" xml:space="preserve">
+    <value>Kaynak ve kÃ„Â±lavuz ayrÃ„Â±ntÃ„Â±larÃ„Â±</value>
+  </data>
+  <data name="SourcesDiagnosticsMetricsTitle.Text" xml:space="preserve">
+    <value>TeÃ…Å¸his metrikleri</value>
+  </data>
+  <data name="SourcesGuideCoverageLabel.Text" xml:space="preserve">
+    <value>KILAVUZ KAPSAMI</value>
+  </data>
+  <data name="SourcesGuideDetailsLabel.Text" xml:space="preserve">
+    <value>KÃ„Â±lavuz ayrÃ„Â±ntÃ„Â±larÃ„Â±</value>
+  </data>
+  <data name="SourcesGuideMappingLabel.Text" xml:space="preserve">
+    <value>KILAVUZ HARÃ„Â°TALAMA</value>
+  </data>
+  <data name="SourcesGuideSnapshotLabel.Text" xml:space="preserve">
+    <value>KILAVUZUN ANLIK GÃƒâ€“RÃƒÅ“NTÃƒÅ“SÃƒÅ“</value>
+  </data>
+  <data name="SourcesGuideSyncMenuItem.Text" xml:space="preserve">
+    <value>KÃ„Â±lavuz Senkronizasyonu</value>
+  </data>
+  <data name="SourcesLastSuccessLabel.Text" xml:space="preserve">
+    <value>SON BAÃ…ÂARI</value>
+  </data>
+  <data name="SourcesLiveChannelsLabel.Text" xml:space="preserve">
+    <value>CANLI KANALLAR</value>
+  </data>
+  <data name="SourcesManagedSourcesLabel.Text" xml:space="preserve">
+    <value>YÃƒâ€“NETÃ„Â°LEN KAYNAKLAR</value>
+  </data>
+  <data name="SourcesOperationalRoutingLabel.Text" xml:space="preserve">
+    <value>Operasyonel yÃƒÂ¶nlendirme</value>
+  </data>
+  <data name="SourcesOverviewTitle.Text" xml:space="preserve">
+    <value>KaynaÃ„Å¸a Genel BakÃ„Â±Ã…Å¸</value>
+  </data>
+  <data name="SourcesPageSubtitle.Text" xml:space="preserve">
+    <value>KaynaklarÃ„Â±, kÃ„Â±lavuz kapsamÃ„Â±nÃ„Â± ve son gÃƒÂ¼ncellemeleri yÃƒÂ¶netin.</value>
+  </data>
+  <data name="SourcesPageTitle.Text" xml:space="preserve">
+    <value>Kaynaklar</value>
+  </data>
+  <data name="SourcesRecentActivityLabel.Text" xml:space="preserve">
+    <value>SON AKTÃ„Â°VÃ„Â°TE</value>
+  </data>
+  <data name="SourcesRecentSyncActivitySubtitle.Text" xml:space="preserve">
+    <value>En son kaynak iÃƒÂ§e aktarmalarÃ„Â±, kÃ„Â±lavuz gÃƒÂ¼ncellemeleri ve kurtarma etkinliÃ„Å¸i.</value>
+  </data>
+  <data name="SourcesRecentSyncActivityTitle.Text" xml:space="preserve">
+    <value>Son Senkronizasyon EtkinliÃ„Å¸i</value>
+  </data>
+  <data name="SourcesRecommendedActionsTitle.Text" xml:space="preserve">
+    <value>Ãƒâ€“nerilen eylemler</value>
+  </data>
+  <data name="SourcesRepairAssistantExpander.Header" xml:space="preserve">
+    <value>Tamir asistanÃ„Â±</value>
+  </data>
+  <data name="SourcesSearchBox.PlaceholderText" xml:space="preserve">
+    <value>KaynaklarÃ„Â±, kÃ„Â±lavuz modunu veya durumu arayÃ„Â±n</value>
+  </data>
+  <data name="SourcesSourceStatusLabel.Text" xml:space="preserve">
+    <value>KAYNAK DURUMU</value>
+  </data>
+  <data name="SourcesStatusSummaryLabel.Text" xml:space="preserve">
+    <value>DURUM Ãƒâ€“ZETÃ„Â°</value>
+  </data>
+  <data name="SourcesSuggestedActionsTitle.Text" xml:space="preserve">
+    <value>Ãƒâ€“nerilen sonraki eylemler</value>
+  </data>
+  <data name="SourcesSyncValidationLabel.Text" xml:space="preserve">
+    <value>Senkronizasyon ve doÃ„Å¸rulama</value>
+  </data>
+  <data name="SourcesTopIssuesTitle.Text" xml:space="preserve">
+    <value>En ÃƒÂ¶nemli sorunlar</value>
+  </data>
+  <data name="SourcesVodOnlyMenuItem.Text" xml:space="preserve">
+    <value>YalnÃ„Â±zca VOD</value>
+  </data>
+  <data name="Submission.CredentialHandlingSummary" xml:space="preserve">
+    <value>SaÃ„Å¸layÃ„Â±cÃ„Â± kimlik bilgileri bu cihazda kalÃ„Â±r ve paylaÃ…Å¸Ã„Â±m gÃƒÂ¼venli raporlardan ÃƒÂ§Ã„Â±karÃ„Â±lÃ„Â±r.</value>
+  </data>
+  <data name="Submission.Help.Step1" xml:space="preserve">
+    <value>Kaynaklardan bir M3U, Xtream veya Stalker kaynaÃ„Å¸Ã„Â± ekleyin.</value>
+  </data>
+  <data name="Submission.Help.Step2" xml:space="preserve">
+    <value>Ã„Â°ÃƒÂ§e aktarÃ„Â±lan saÃ„Å¸layÃ„Â±cÃ„Â± iÃƒÂ§eriÃ„Å¸ine gÃƒÂ¶z atmak iÃƒÂ§in CanlÃ„Â± TV, Filmler ve Dizileri kullanÃ„Â±n.</value>
+  </data>
+  <data name="Submission.Help.Step3" xml:space="preserve">
+    <value>GÃƒÂ¶rÃƒÂ¼nÃƒÂ¼mÃƒÂ¼, dili, yedeklemeleri ve kaynak yenilemeyi ayarlamak iÃƒÂ§in Ayarlar'Ã„Â± aÃƒÂ§Ã„Â±n.</value>
+  </data>
+  <data name="Submission.Help.Step4" xml:space="preserve">
+    <value>Destek ayrÃ„Â±ntÃ„Â±larÃ„Â±nÃ„Â± paylaÃ…Å¸Ã„Â±rken tanÃ„Â±lama dÃ„Â±Ã…Å¸a aktarÃ„Â±mlarÃ„Â±nÃ„Â± kullanÃ„Â±n.</value>
+  </data>
+  <data name="Submission.LegalDisclaimer" xml:space="preserve">
+    <value>KROIRA kanallar, oynatma listeleri, abonelikler veya medya iÃƒÂ§eriÃ„Å¸i saÃ„Å¸lamaz.</value>
+  </data>
+  <data name="Submission.LongDescription" xml:space="preserve">
+    <value>KROIRA IPTV, canlÃ„Â± kanallar, VOD, diziler, EPG, favoriler, izlemeye devam etme, profiller ve yerel kaynak teÃ…Å¸hisi iÃƒÂ§in bir Windows masaÃƒÂ¼stÃƒÂ¼ IPTV istemcisidir.</value>
+  </data>
+  <data name="Submission.MetadataProviderSummary" xml:space="preserve">
+    <value>TMDb meta verileri, yerel katalog taramasÃ„Â± iÃƒÂ§in isteÃ„Å¸e baÃ„Å¸lÃ„Â± bir zenginleÃ…Å¸tirmedir.</value>
+  </data>
+  <data name="Submission.PrivacyPolicyUnavailable" xml:space="preserve">
+    <value>Gizlilik politikasÃ„Â± mevcut deÃ„Å¸il.</value>
+  </data>
+  <data name="Submission.PrivacySummary" xml:space="preserve">
+    <value>KROIRA kaynak ayarlarÃ„Â±nÃ„Â± yerel olarak saklar ve kiÃ…Å¸isel verileri satmaz.</value>
+  </data>
+  <data name="Submission.RunFullTrustJustification" xml:space="preserve">
+    <value>WinUI paketlemesinin gerektirdiÃ„Å¸i masaÃƒÂ¼stÃƒÂ¼ oynatma entegrasyonu ve yerel dosya eriÃ…Å¸imi iÃƒÂ§in tam gÃƒÂ¼ven kullanÃ„Â±lÃ„Â±r.</value>
+  </data>
+  <data name="Submission.SanitizedLogsSummary" xml:space="preserve">
+    <value>TanÃ„Â±lamalar, kopyalamadan veya dÃ„Â±Ã…Å¸a aktarmadan ÃƒÂ¶nce sterilize edilir.</value>
+  </data>
+  <data name="Submission.ShortDescription" xml:space="preserve">
+    <value>CanlÃ„Â± TV, filmler, diziler, EPG ve yerel kaynak yÃƒÂ¶netimi iÃƒÂ§in cilalanmÃ„Â±Ã…Å¸ IPTV oynatÃ„Â±cÃ„Â±.</value>
+  </data>
+  <data name="Submission.Support.AuthenticationFailure" xml:space="preserve">
+    <value>Sunucu URL'sini, kullanÃ„Â±cÃ„Â± adÃ„Â±nÃ„Â±, Ã…Å¸ifreyi ve saÃ„Å¸layÃ„Â±cÃ„Â± eriÃ…Å¸imini kontrol edin.</value>
+  </data>
+  <data name="Submission.Support.ExportDiagnostics" xml:space="preserve">
+    <value>Kaynaklar veya Ayarlar'dan paylaÃ…Å¸Ã„Â±m gÃƒÂ¼venli tanÃ„Â±lama raporunu kopyalayÃ„Â±n.</value>
+  </data>
+  <data name="Submission.Support.NoChannels" xml:space="preserve">
+    <value>KaynaÃ„Å¸Ã„Â± yenileyin ve saÃ„Å¸layÃ„Â±cÃ„Â± ÃƒÂ§alma listesinin hÃƒÂ¢lÃƒÂ¢ etkin olduÃ„Å¸unu doÃ„Å¸rulayÃ„Â±n.</value>
+  </data>
+  <data name="Submission.Support.NoEpg" xml:space="preserve">
+    <value>EPG Center'Ã„Â± aÃƒÂ§Ã„Â±n ve kÃ„Â±lavuz kaynaÃ„Å¸Ã„Â± eÃ…Å¸leÃ…Å¸mesini inceleyin.</value>
+  </data>
+  <data name="Submission.Support.ResetAppData" xml:space="preserve">
+    <value>BaÃ…Å¸latma engellenmiÃ…Å¸se yerel uygulama verilerini sÃ„Â±fÃ„Â±rlamak iÃƒÂ§in Windows uygulama ayarlarÃ„Â±nÃ„Â± kullanÃ„Â±n.</value>
+  </data>
+  <data name="Submission.Support.StoreInstall" xml:space="preserve">
+    <value>Windows'u yeniden baÃ…Å¸latÃ„Â±n, Microsoft Store'u gÃƒÂ¼ncelleyin ve kitaplÃ„Â±Ã„Å¸Ã„Â±nÃ„Â±zdan tekrar yÃƒÂ¼kleyin.</value>
+  </data>
+  <data name="Submission.Support.StreamDoesNotPlay" xml:space="preserve">
+    <value>SaÃ„Å¸layÃ„Â±cÃ„Â± sorunlarÃ„Â±nÃ„Â± yalÃ„Â±tmak iÃƒÂ§in akÃ„Â±Ã…Å¸ araÃ…Å¸tÃ„Â±rmasÃ„Â± teÃ…Å¸hisini veya harici bir oynatÃ„Â±cÃ„Â±yÃ„Â± deneyin.</value>
+  </data>
+  <data name="Submission.Support.WrongEpg" xml:space="preserve">
+    <value>KÃ„Â±lavuz eÃ…Å¸lemelerini dÃƒÂ¼zeltmek iÃƒÂ§in EPG Center'da manuel eÃ…Å¸leÃ…Å¸tirmeyi kullanÃ„Â±n.</value>
+  </data>
+  <data name="Submission.SupportEmailUnavailable" xml:space="preserve">
+    <value>Destek e-postasÃ„Â± kullanÃ„Â±lamÃ„Â±yor.</value>
+  </data>
+  <data name="Submission.SupportPageUnavailable" xml:space="preserve">
+    <value>Destek sayfasÃ„Â± kullanÃ„Â±lamÃ„Â±yor.</value>
+  </data>
+  <data name="Submission.SupportSummary" xml:space="preserve">
+    <value>Destek; kurulum, kaynak teÃ…Å¸hisi ve MaÃ„Å¸aza yÃƒÂ¼kleme sorunlarÃ„Â± konusunda yardÃ„Â±mcÃ„Â± olabilir.</value>
+  </data>
+  <data name="Submission.TelemetrySummary" xml:space="preserve">
+    <value>Oynatma veya kaynak iÃƒÂ§e aktarma iÃƒÂ§in ÃƒÂ¼ÃƒÂ§ÃƒÂ¼ncÃƒÂ¼ taraf telemetrisine gerek yoktur.</value>
+  </data>
+  <data name="SourceLifecycle.GuideSource.ManualXmltvOverride" xml:space="preserve">
+    <value>Manuel XMLTV geçersiz kılma</value>
+  </data>
+  <data name="SourceGuidance.Action.RefreshPortalProfile.Title" xml:space="preserve">
+    <value>Portal profilini yenile</value>
+  </data>
+  <data name="SourceLifecycle.Error.CredentialsNotFound" xml:space="preserve">
+    <value>Kaynak kimlik bilgileri bulunamadı.</value>
+  </data>
+  <data name="SourceGuidance.Capability.Connection.Label" xml:space="preserve">
+    <value>Bağlantı</value>
+  </data>
+  <data name="SourceGuidance.Catalog.Series" xml:space="preserve">
+    <value>Serisi</value>
+  </data>
+  <data name="SourceLifecycle.Delete.Deleted" xml:space="preserve">
+    <value>'{0}' kaynağı silindi.</value>
+  </data>
+  <data name="SourceGuidance.Action.RetestPortal.Title" xml:space="preserve">
+    <value>Portal senkronizasyonunu yeniden test edin</value>
+  </data>
+  <data name="SourceGuidance.Action.ReviewGuideSettings.Title" xml:space="preserve">
+    <value>Kılavuz ayarlarını inceleyin</value>
+  </data>
+  <data name="SourcesSummaryLibraryRun.Text" xml:space="preserve">
+    <value> kütüphane</value>
+  </data>
+  <data name="EpgCoverage.ReviewStatus.NoGuideMatch" xml:space="preserve">
+    <value>Kılavuz eşleşmesi yok</value>
+  </data>
+  <data name="SourceLifecycle.Validation.M3uUrlRequired" xml:space="preserve">
+    <value>M3U URL veya dosya yolu gereklidir.</value>
+  </data>
+  <data name="SourceLifecycle.GuideSource.ProviderXmltv" xml:space="preserve">
+    <value>Sağlayıcı XMLTV</value>
+  </data>
+  <data name="SourceLifecycle.GuideSource.ConfiguredSyncPending" xml:space="preserve">
+    <value>Yapılandırılmış. Senkronizasyon beklemede.</value>
+  </data>
+  <data name="SourceLifecycle.Validation.ProxyUrlRequired" xml:space="preserve">
+    <value>Proxy yönlendirmesi bir proxy URL gerektirir.</value>
+  </data>
+  <data name="EpgCoverage.MatchType.WeakAlias" xml:space="preserve">
+    <value>Zayıf takma ad</value>
+  </data>
+  <data name="SourceGuidance.Action.RepairRuntimeState.Title" xml:space="preserve">
+    <value>Kaydedilen kaynak durumunu onar</value>
+  </data>
+  <data name="EpgCoverage.MatchType.WeakRegex" xml:space="preserve">
+    <value>Zayıf normal ifade</value>
+  </data>
+  <data name="SourceGuidance.Action.RunStreamProbe.Title" xml:space="preserve">
+    <value>Sınırlı akış araştırmasını çalıştır</value>
+  </data>
+  <data name="EpgCoverage.ReviewStatus.ApprovedRefresh" xml:space="preserve">
+    <value>Onaylandı - bu eşlemeyi etkinleştirmek için EPG'yi yenileyin</value>
+  </data>
+  <data name="SourcesLastAttemptRun.Text" xml:space="preserve">
+    <value>Son deneme </value>
+  </data>
+  <data name="EpgCoverage.GuideSource.ConfiguredSyncToTest" xml:space="preserve">
+    <value>Yapılandırılmış. Bu kaynağı test etmek için senkronize edin.</value>
+  </data>
+  <data name="SourceLifecycle.Validation.XtreamRequired" xml:space="preserve">
+    <value>Xtream sunucusu, kullanıcı adı ve şifre Xtream için gereklidir.</value>
+  </data>
+  <data name="SourcesCatalogSeriesRun.Text" xml:space="preserve">
+    <value> serisi</value>
+  </data>
+  <data name="SourceLifecycle.Repair.BrowseReferences" xml:space="preserve">
+    <value>referanslara göz at</value>
+  </data>
+  <data name="SourceGuidance.Capability.PortalProfile.Label" xml:space="preserve">
+    <value>Portal profili</value>
+  </data>
+  <data name="SourceGuidance.Capability.Hints" xml:space="preserve">
+    <value>{0:N0} ipuçları</value>
+  </data>
+  <data name="SourceGuidance.Action.DisableCompanion.Button" xml:space="preserve">
+    <value>Tamamlayıcıyı devre dışı bırak</value>
+  </data>
+  <data name="EpgCoverage.MatchType.Fuzzy" xml:space="preserve">
+    <value>Bulanık</value>
+  </data>
+  <data name="SourceGuidance.Capability.PlaylistReachable" xml:space="preserve">
+    <value>Oynatma listesine ulaşılabilir</value>
+  </data>
+  <data name="SourceLifecycle.Validation.CompanionEndpointRequired" xml:space="preserve">
+    <value>Tamamlayıcı aktarma modu, tamamlayıcı bir uç nokta URL gerektirir.</value>
+  </data>
+  <data name="EpgCoverage.MatchType.Unmatched" xml:space="preserve">
+    <value>Eşsiz</value>
+  </data>
+  <data name="SourceLifecycle.Repair.LogicalStateReconciliation" xml:space="preserve">
+    <value>mantıksal durum uzlaşması</value>
+  </data>
+  <data name="SourceGuidance.Capability.Catalog.Label" xml:space="preserve">
+    <value>Katalog</value>
+  </data>
+  <data name="EpgCoverage.MatchType.Approved" xml:space="preserve">
+    <value>Onaylandı</value>
+  </data>
+  <data name="SourceLifecycle.Guide.RoutingSaved" xml:space="preserve">
+    <value>Yönlendirme kaydedildi. Mevcut kılavuz verileri bir sonraki senkronizasyona kadar değişmez.</value>
+  </data>
+  <data name="SourceLifecycle.Validation.StalkerRequired" xml:space="preserve">
+    <value>Stalker için portal URL ve MAC adresi gereklidir.</value>
+  </data>
+  <data name="SourceGuidance.Action.RunStreamProbe.Summary" xml:space="preserve">
+    <value>Sağlayıcıyı aşırı yüklemek yerine istek başına zaman aşımı ile küçük bir örnek kümeyi inceleyin.</value>
+  </data>
+  <data name="SourceGuidance.Action.RetestPortal.Summary" xml:space="preserve">
+    <value>Yeni bir portal senkronizasyonu ve doğrulama geçişi çalıştırın.</value>
+  </data>
+  <data name="SourceGuidance.Capability.Companion.Label" xml:space="preserve">
+    <value>Refakatçi</value>
+  </data>
+  <data name="SourceGuidance.Capability.ManualGuideSet" xml:space="preserve">
+    <value>Manuel kılavuz seti</value>
+  </data>
+  <data name="SourceGuidance.Capability.NoAdvertisedSupport" xml:space="preserve">
+    <value>Reklamı yapılan destek yok</value>
+  </data>
+  <data name="SourceGuidance.Capability.Proxy.Label" xml:space="preserve">
+    <value>vekil</value>
+  </data>
+  <data name="SourceGuidance.Catalog.Live" xml:space="preserve">
+    <value>Canlı</value>
+  </data>
+  <data name="SourceGuidance.Action.RefreshPortalProfile.Summary" xml:space="preserve">
+    <value>Yeni bir Stalker anlaşması yapın, profil verilerini yeniden yükleyin ve portal kataloğunu yeniden test edin.</value>
+  </data>
+  <data name="SourceGuidance.Action.DisableCompanion.Title" xml:space="preserve">
+    <value>Yerel tamamlayıcı geçişini devre dışı bırak</value>
+  </data>
+  <data name="SourceGuidance.Action.DisableCompanion.Summary" xml:space="preserve">
+    <value>Sağlayıcı yolunu bu kaynak için doğrudan tutun, ardından yenileme ve doğrulamayı yeniden çalıştırın.</value>
+  </data>
+  <data name="SourceLifecycle.Create.DuplicateHint" xml:space="preserve">
+    <value>Benzer bir kaynak zaten yapılandırılmıştır. Çakışan öğeler yansıtılmış adaylar olarak değerlendirilecektir.</value>
+  </data>
+  <data name="SourceGuidance.Action.RefreshPortalProfile.Button" xml:space="preserve">
+    <value>Portalı yenile</value>
+  </data>
+  <data name="SourceGuidance.Action.RetestGuide.Button" xml:space="preserve">
+    <value>Kılavuzu yeniden test edin</value>
+  </data>
+  <data name="EpgCoverage.ReviewStatus.TrustedNoProgrammes" xml:space="preserve">
+    <value>Güvenilir eşleşme, etkin pencerede program yok</value>
+  </data>
+  <data name="EpgCoverage.MatchType.Reused" xml:space="preserve">
+    <value>Yeniden kullanıldı</value>
+  </data>
+  <data name="EpgCoverage.ReviewStatus.SuggestionOnly" xml:space="preserve">
+    <value>Yalnızca öneri - geçerli/sonraki kılavuz ekranı için kullanılmaz</value>
+  </data>
+  <data name="SourceLifecycle.Repair.OperationalMirrorRebuild" xml:space="preserve">
+    <value>operasyonel ayna yeniden inşası</value>
+  </data>
+  <data name="SourceLifecycle.Guide.Pending" xml:space="preserve">
+    <value>Kılavuz ayarları güncellendi. Senkronizasyon beklemede.</value>
+  </data>
+  <data name="EpgCoverage.MatchType.Normalized" xml:space="preserve">
+    <value>Normalleştirilmiş</value>
+  </data>
+  <data name="SourceLifecycle.GuideSource.FallbackXmltv" xml:space="preserve">
+    <value>Geri dönüş XMLTV</value>
+  </data>
+  <data name="SourceGuidance.Capability.NoGuideAdvertised" xml:space="preserve">
+    <value>Hiçbir rehberin reklamı yapılmadı</value>
+  </data>
+  <data name="SourcesCatalogMoviesSeparatorRun.Text" xml:space="preserve">
+    <value> filmler / </value>
+  </data>
+  <data name="SourceGuidance.Capability.Catchup.Label" xml:space="preserve">
+    <value>Yakalama</value>
+  </data>
+  <data name="SourceGuidance.Capability.Guide.Label" xml:space="preserve">
+    <value>Rehber</value>
+  </data>
+  <data name="SourceGuidance.Action.RepairRuntimeState.Summary" xml:space="preserve">
+    <value>Sağlayıcı kimlik bilgilerini değiştirmeden kaynak durumunu, mantıksal durumu ve operasyonel adayları yeniden oluşturun.</value>
+  </data>
+  <data name="SourceGuidance.Capability.Channels" xml:space="preserve">
+    <value>{0:N0} kanalları</value>
+  </data>
+  <data name="SourcesLastAttemptDetailsRun.Text" xml:space="preserve">
+    <value>Son deneme </value>
+  </data>
+  <data name="SourceGuidance.Catalog.Movies" xml:space="preserve">
+    <value>Filmler</value>
+  </data>
+  <data name="SourceLifecycle.Guide.SettingsSaved" xml:space="preserve">
+    <value>Kılavuz ayarları kaydedildi. Mevcut kılavuz verileri bir sonraki senkronizasyona kadar hâlâ kullanılabilir durumdadır.</value>
+  </data>
+  <data name="SourceLifecycle.Create.ImportFailed" xml:space="preserve">
+    <value>Kaynak kaydedildi ancak içe aktarma başarısız oldu: {0}</value>
+  </data>
+  <data name="SourceGuidance.Action.RepairRuntimeState.Button" xml:space="preserve">
+    <value>Onarım durumu</value>
+  </data>
+  <data name="SourceGuidance.Capability.NoClearHints" xml:space="preserve">
+    <value>Net ipucu yok</value>
+  </data>
+  <data name="SourceGuidance.Action.ReviewGuideSettings.Summary" xml:space="preserve">
+    <value>Bir sonraki kılavuz senkronizasyonundan önce algılananları manuel XMLTV ve yönlendirme seçeneklerini kontrol edin.</value>
+  </data>
+  <data name="SourceGuidance.Capability.Routing.Label" xml:space="preserve">
+    <value>Yönlendirme</value>
+  </data>
+  <data name="SourceGuidance.Action.RetestSource.Summary" xml:space="preserve">
+    <value>Bu kaynak için yeni bir senkronizasyon ve doğrulama geçişi çalıştırın.</value>
+  </data>
+  <data name="SourceGuidance.Action.RetestGuide.Title" xml:space="preserve">
+    <value>Kılavuz akışını yeniden test edin</value>
+  </data>
+  <data name="EpgCoverage.ReviewStatus.ActiveAssignment" xml:space="preserve">
+    <value>Aktif rehber ataması</value>
+  </data>
+  <data name="SourceLifecycle.Repair.AutoRefreshRuntimeRepair" xml:space="preserve">
+    <value>otomatik yenileme çalışma zamanı onarımı</value>
+  </data>
+  <data name="SourceLifecycle.Validation.ManualXmltvRequired" xml:space="preserve">
+    <value>Manuel XMLTV modu, manuel XMLTV URL gerektirir.</value>
+  </data>
+  <data name="EpgCoverage.GuideSource.ActiveXmltv" xml:space="preserve">
+    <value>Aktif XMLTV</value>
+  </data>
+  <data name="SourceGuidance.Action.RunStreamProbe.Button" xml:space="preserve">
+    <value>Probu çalıştır</value>
+  </data>
+  <data name="SourceGuidance.Catalog.NoneConfirmed" xml:space="preserve">
+    <value>Onaylanmış katalog yok</value>
+  </data>
+  <data name="SourceLifecycle.Guide.PendingPreserved" xml:space="preserve">
+    <value>Kılavuz ayarları değiştirildi. Senkronizasyon beklemede; Son başarılı kılavuz verileri hâlâ mevcuttur.</value>
+  </data>
+  <data name="SourceLifecycle.Validation.NameUnresolved" xml:space="preserve">
+    <value>Kaynak adı çözümlenemedi.</value>
+  </data>
+  <data name="SourceGuidance.Capability.GuideDisabled" xml:space="preserve">
+    <value>Kılavuz devre dışı bırakıldı</value>
+  </data>
+  <data name="SourceLifecycle.Guide.Unchanged" xml:space="preserve">
+    <value>Kılavuz ayarları değişmedi.</value>
+  </data>
+  <data name="SourceGuidance.Action.RetestSource.Title" xml:space="preserve">
+    <value>Kaynağı yeniden test edin</value>
+  </data>
+  <data name="SourceGuidance.Capability.GuideFound" xml:space="preserve">
+    <value>Kılavuz bulundu</value>
+  </data>
+  <data name="SourceLifecycle.Delete.DeletedCleanupDeferred" xml:space="preserve">
+    <value>'{0}' kaynağı silindi. Bazı temizlik işleri ertelendi.</value>
+  </data>
+  <data name="SourceLifecycle.Delete.NotFound" xml:space="preserve">
+    <value>Kaynak bulunamadı.</value>
+  </data>
+  <data name="SourceGuidance.Action.ReviewGuideSettings.Button" xml:space="preserve">
+    <value>Kılavuz ayarları</value>
+  </data>
+  <data name="SourcesSummaryLiveSeparatorRun.Text" xml:space="preserve">
+    <value> canlı / </value>
+  </data>
+  <data name="SourceGuidance.Action.RetestSource.Button" xml:space="preserve">
+    <value>Kaynağı yeniden test edin</value>
+  </data>
+  <data name="SourceGuidance.Action.RetestGuide.Summary" xml:space="preserve">
+    <value>Katalog ayarlarını değiştirmeden XMLTV'yi getirmeyi ve yeniden eşleştirmeyi yeniden deneyin.</value>
+  </data>
+  <data name="SourceLifecycle.Repair.Deferred" xml:space="preserve">
+    <value>{0} ertelendi.</value>
+  </data>
+  <data name="EpgCoverage.MatchType.Exact" xml:space="preserve">
+    <value>tam</value>
+  </data>
+  <data name="SourceGuidance.Action.RetestPortal.Button" xml:space="preserve">
+    <value>Portalı yeniden test edin</value>
+  </data>
+  <data name="SourceGuidance.Routing.BufferedRelay" xml:space="preserve">
+    <value>Arabelleğe alınmış röle</value>
+  </data>
+  <data name="SourceGuidance.Validation.PlaylistUrlRequired" xml:space="preserve">
+    <value>Çalma listesi URL veya dosya yolu gereklidir.</value>
+  </data>
+  <data name="SourceGuidance.TypeHint.Mismatch" xml:space="preserve">
+    <value>Bu, {1}'den çok {0}'ye benziyor. Kaydetmeden önce seçilen kaynak türünü inceleyin.</value>
+  </data>
+  <data name="SourceGuidance.Xtream.Error.NoCategories" xml:space="preserve">
+    <value>Xtream uç noktası yanıt verdi ancak herhangi bir katalog kategorisi döndürmedi.</value>
+  </data>
+  <data name="SourceGuidance.Routing.PlaybackProbes" xml:space="preserve">
+    <value>Oynatma + problar</value>
+  </data>
+  <data name="SourceGuidance.Routing.ProxyEnabled" xml:space="preserve">
+    <value>Proxy etkin</value>
+  </data>
+  <data name="SourceGuidance.Repair.Detail.StreamProbeRan" xml:space="preserve">
+    <value>Bu kaynak için sınırlı bir örneklenmiş akış probu çalıştırıldı.</value>
+  </data>
+  <data name="SourceGuidance.Repair.Detail.CompanionAlreadyDisabled" xml:space="preserve">
+    <value>Yerel tamamlayıcı aktarma zaten devre dışıydı.</value>
+  </data>
+  <data name="SourceGuidance.Repair.Detail.StateRebuilt" xml:space="preserve">
+    <value>Kaydedilen durum, operasyonel adaylar ve kaynak sağlığı yeniden oluşturuldu.</value>
+  </data>
+  <data name="SourceGuidance.Validation.XtreamRequired" xml:space="preserve">
+    <value>Xtream sunucusu, kullanıcı adı ve şifre Xtream için gereklidir.</value>
+  </data>
+  <data name="SourceGuidance.Issue.MovieCatalogNotConfirmed.Detail" xml:space="preserve">
+    <value>Bu Xtream sağlayıcısı hâlâ yalnızca canlı yayında olabilir veya VOD uç noktası kısıtlanmış olabilir.</value>
+  </data>
+  <data name="SourceGuidance.Routing.BufferedRelayLower" xml:space="preserve">
+    <value>tamponlu röle</value>
+  </data>
+  <data name="SourceGuidance.Stalker.Value.PortalReachable" xml:space="preserve">
+    <value>Portala ulaşılabilir</value>
+  </data>
+  <data name="SourceGuidance.Report.Capabilities" xml:space="preserve">
+    <value>Yetenekler</value>
+  </data>
+  <data name="SourceGuidance.Report.ActivityFocus" xml:space="preserve">
+    <value>Faaliyet odağı: {0}</value>
+  </data>
+  <data name="SourceGuidance.Repair.Change.TopFocus" xml:space="preserve">
+    <value>Üst onarım odağı {0}'den {1}'ye değiştirildi.</value>
+  </data>
+  <data name="SourceGuidance.Repair.Detail.CatalogCounts" xml:space="preserve">
+    <value>{0:N0} canlı, {1:N0} filmler, {2:N0} serisi.</value>
+  </data>
+  <data name="SourceGuidance.Report.Health" xml:space="preserve">
+    <value>Sağlık: {0} / {1}/100</value>
+  </data>
+  <data name="SourceGuidance.Setup.InputNeedsAttention" xml:space="preserve">
+    <value>Kurulum girişine dikkat edilmesi gerekiyor</value>
+  </data>
+  <data name="SourceGuidance.Report.SetupTitle" xml:space="preserve">
+    <value>KROIRA kaynak kurulum raporu</value>
+  </data>
+  <data name="SourceGuidance.Routing.PassThroughRelay" xml:space="preserve">
+    <value>Geçiş rölesi</value>
+  </data>
+  <data name="SourceGuidance.Report.RepairTitle" xml:space="preserve">
+    <value>KROIRA kaynak onarım raporu</value>
+  </data>
+  <data name="SourceGuidance.Stalker.Value.ManualGuideOptional" xml:space="preserve">
+    <value>Manuel kılavuz isteğe bağlı</value>
+  </data>
+  <data name="SourceGuidance.Issue.SeriesCatalogNotConfirmed.Title" xml:space="preserve">
+    <value>Seri kataloğu onaylanmadı</value>
+  </data>
+  <data name="SourceGuidance.Report.RequestedType" xml:space="preserve">
+    <value>Talep edilen tür: {0}</value>
+  </data>
+  <data name="SourceGuidance.Repair.Headline.CompanionProblem" xml:space="preserve">
+    <value>Tamamlayıcı yönlendirme engel oluyor</value>
+  </data>
+  <data name="SourceGuidance.M3u.Error.NoEntries" xml:space="preserve">
+    <value>Çalma listesine ulaşılabilirdi ancak çalınabilir herhangi bir giriş gösterilmiyordu.</value>
+  </data>
+  <data name="SourceGuidance.Report.CurrentStatus" xml:space="preserve">
+    <value>Mevcut durum: {0}</value>
+  </data>
+  <data name="SourceGuidance.Xtream.Detail.LiveRowsReachable" xml:space="preserve">
+    <value>Önizleme sırasında {0:N0} canlı yayın satırlarına ulaşılabildi.</value>
+  </data>
+  <data name="SourceGuidance.Stalker.Headline.HandshakeCompleted" xml:space="preserve">
+    <value>Portal el sıkışması tamamlandı</value>
+  </data>
+  <data name="SourceGuidance.Report.Type" xml:space="preserve">
+    <value>Tür: {0}</value>
+  </data>
+  <data name="SourceGuidance.Issue.PartialCatalog.Title" xml:space="preserve">
+    <value>Portal kısmi bir katalog döndürdü</value>
+  </data>
+  <data name="SourceGuidance.Xtream.Summary.PlayerApiConfirmed" xml:space="preserve">
+    <value>{0}, player_api önizleme çağrıları aracılığıyla doğrulandı.</value>
+  </data>
+  <data name="SourceGuidance.Routing.CompanionEnabledVia" xml:space="preserve">
+    <value>Tamamlayıcı, {1} aracılığıyla etkinleştirildi ({0}).</value>
+  </data>
+  <data name="SourceGuidance.Report.Connection" xml:space="preserve">
+    <value>Bağlantı: {0}</value>
+  </data>
+  <data name="SourceGuidance.Xtream.Value.ArchiveHints" xml:space="preserve">
+    <value>{0:N0} arşiv ipuçları</value>
+  </data>
+  <data name="SourceGuidance.Routing.Direct" xml:space="preserve">
+    <value>Doğrudan</value>
+  </data>
+  <data name="SourceGuidance.Issue.UnsupportedSourceType.Title" xml:space="preserve">
+    <value>Desteklenmeyen kaynak türü</value>
+  </data>
+  <data name="SourceGuidance.Routing.AllRequests" xml:space="preserve">
+    <value>Tüm istekler</value>
+  </data>
+  <data name="SourceGuidance.Xtream.Value.GuideDerived" xml:space="preserve">
+    <value>Kılavuz türetildi</value>
+  </data>
+  <data name="SourceGuidance.Repair.Result.AppliedNeedsAttention" xml:space="preserve">
+    <value>Onarım uygulandı ancak kaynakla hâlâ ilgilenilmesi gerekiyor</value>
+  </data>
+  <data name="SourceGuidance.Report.Result" xml:space="preserve">
+    <value>Sonuç: {0}</value>
+  </data>
+  <data name="SourceGuidance.Routing.CompanionConfigured" xml:space="preserve">
+    <value>Tamamlayıcı yapılandırıldı.</value>
+  </data>
+  <data name="SourceGuidance.Report.Change" xml:space="preserve">
+    <value>Değişiklik: {0}</value>
+  </data>
+  <data name="SourceGuidance.Stalker.Detail.HandshakeCompleted" xml:space="preserve">
+    <value>El sıkışma ve profil keşfi tamamlandı.</value>
+  </data>
+  <data name="SourceGuidance.TypeHint.Unclassified" xml:space="preserve">
+    <value>KROIRA bu kaynağı henüz güvenle sınıflandıramadı.</value>
+  </data>
+  <data name="SourceGuidance.Xtream.Headline.Reachable" xml:space="preserve">
+    <value>Xtream sağlayıcısı ulaşılabilir görünüyor</value>
+  </data>
+  <data name="SourceGuidance.Issue.NoGuideUrlDetected.Title" xml:space="preserve">
+    <value>Henüz URL kılavuzu algılanmadı</value>
+  </data>
+  <data name="SourceGuidance.M3u.Detail.CatalogCounts" xml:space="preserve">
+    <value>Örneklenen dilimde {0:N0} canlı, {1:N0} VOD, {2:N0} epizodik ipuçları.</value>
+  </data>
+  <data name="SourceGuidance.Stalker.Detail.ManualGuideOptional" xml:space="preserve">
+    <value>Stalker portalları her zaman XMLTV'yi doğrudan açığa çıkarmaz. Yalnızca bir tane varsa manuel kılavuz ekleyin.</value>
+  </data>
+  <data name="SourceGuidance.TypeHint.Consistent" xml:space="preserve">
+    <value>{0} kurulumu ve test edilen uç nokta tutarlı görünüyor.</value>
+  </data>
+  <data name="SourceGuidance.Report.Headline" xml:space="preserve">
+    <value>Başlık: {0}</value>
+  </data>
+  <data name="SourceGuidance.Setup.NoValidationPath" xml:space="preserve">
+    <value>Doğrulama yolu mevcut değil.</value>
+  </data>
+  <data name="SourceGuidance.Xtream.Detail.ArchiveNotAdvertised" xml:space="preserve">
+    <value>Örneklenen canlı yayın listesinde arşiv oynatımının reklamı net bir şekilde yapılmıyordu.</value>
+  </data>
+  <data name="SourceGuidance.Validation.CompanionEndpointRequired" xml:space="preserve">
+    <value>Tamamlayıcı aktarma modu, tamamlayıcı bir uç nokta URL gerektirir.</value>
+  </data>
+  <data name="SourceGuidance.Validation.ManualXmltvRequired" xml:space="preserve">
+    <value>Manuel kılavuz modu, manuel XMLTV URL gerektirir.</value>
+  </data>
+  <data name="SourceGuidance.Xtream.Value.CredentialsAccepted" xml:space="preserve">
+    <value>Kimlik bilgileri kabul edildi</value>
+  </data>
+  <data name="SourceGuidance.Report.Completed" xml:space="preserve">
+    <value>Tamamlandı</value>
+  </data>
+  <data name="SourceGuidance.Validation.ProxyUrlRequired" xml:space="preserve">
+    <value>Proxy yönlendirmesi bir proxy URL gerektirir.</value>
+  </data>
+  <data name="SourceGuidance.Routing.PassThroughRelayLower" xml:space="preserve">
+    <value>geçiş rölesi</value>
+  </data>
+  <data name="SourceGuidance.Stalker.Detail.PortalHandshakeCompleted" xml:space="preserve">
+    <value>Portal el sıkışması tamamlandı.</value>
+  </data>
+  <data name="SourceGuidance.Issue.ConnectionTestFailed.Title" xml:space="preserve">
+    <value>Bağlantı testi başarısız oldu</value>
+  </data>
+  <data name="SourceGuidance.Routing.ProxyConfigured" xml:space="preserve">
+    <value>Proxy yapılandırıldı.</value>
+  </data>
+  <data name="SourceGuidance.Report.SuggestedActions" xml:space="preserve">
+    <value>Önerilen eylemler</value>
+  </data>
+  <data name="SourceGuidance.Xtream.Detail.CategoryCounts" xml:space="preserve">
+    <value>{0:N0} canlı kategorileri, {1:N0} film kategorileri, {2:N0} serisi kategorileri.</value>
+  </data>
+  <data name="SourceGuidance.Repair.Error.ActionNotDirect" xml:space="preserve">
+    <value>Bu onarım eylemi doğrudan asistandan uygulanmaz.</value>
+  </data>
+  <data name="SourceGuidance.Repair.Result.NeedsReview" xml:space="preserve">
+    <value>Onarım girişiminin incelenmesi gerekiyor</value>
+  </data>
+  <data name="SourceGuidance.Issue.AllRequestsProxyBroad.Title" xml:space="preserve">
+    <value>Tüm istekler proxy modu geniştir</value>
+  </data>
+  <data name="SourceGuidance.Xtream.Detail.ArchiveDetected" xml:space="preserve">
+    <value>Örneklenen canlı yayın listesinde arşiv özellikli kanallar tespit edildi.</value>
+  </data>
+  <data name="SourceGuidance.Stalker.Summary.PreviewConfirmed" xml:space="preserve">
+    <value>{0}, portal önizlemesi aracılığıyla doğrulandı.</value>
+  </data>
+  <data name="SourceGuidance.M3u.Detail.SampledEntries" xml:space="preserve">
+    <value>Sağlayıcı kimlik doğrulama hataları olmadan örneklenmiş {0:N0} girişleri.</value>
+  </data>
+  <data name="SourceGuidance.Report.Summary" xml:space="preserve">
+    <value>Özet: {0}</value>
+  </data>
+  <data name="SourceGuidance.Routing.PlaybackOnly" xml:space="preserve">
+    <value>Yalnızca oynatma</value>
+  </data>
+  <data name="SourceGuidance.Setup.UnsupportedFormatHeadline" xml:space="preserve">
+    <value>Kaynak formatı desteklenmiyor</value>
+  </data>
+  <data name="SourceGuidance.Issue.NoGuideUrlDetected.Detail" xml:space="preserve">
+    <value>Çalma listesi hâlâ kaydedilebilir ancak manuel XMLTV beslemesi eklemediğiniz sürece kılavuz senkronizasyonu kapalı kalacaktır.</value>
+  </data>
+  <data name="SourceGuidance.Repair.Change.CompanionPolicy" xml:space="preserve">
+    <value>Tamamlayıcı politika {0}'den {1}'ye değiştirildi.</value>
+  </data>
+  <data name="SourceGuidance.M3u.Error.NotPlaylist" xml:space="preserve">
+    <value>Uç nokta yanıt verdi ancak M3U çalma listesine benzemiyordu.</value>
+  </data>
+  <data name="SourceGuidance.Stalker.Connection.Success" xml:space="preserve">
+    <value>KROIRA, sağlanan portal kimliğiyle el sıkışma ve profil keşfini tamamladı.</value>
+  </data>
+  <data name="SourceGuidance.Stalker.Detail.CatalogCounts" xml:space="preserve">
+    <value>{0:N0} canlı, {1:N0} filmleri, {2:N0} serisi öğeleri keşfedildi.</value>
+  </data>
+  <data name="SourceGuidance.Repair.Headline.StoredStateNeedsRepair" xml:space="preserve">
+    <value>Saklanan kaynak durumunun onarılması gerekiyor</value>
+  </data>
+  <data name="SourceGuidance.Issue.NoCatalogFamilies.Title" xml:space="preserve">
+    <value>Hiçbir katalog ailesi doğrulanmadı</value>
+  </data>
+  <data name="SourceGuidance.Setup.NeedsAttention" xml:space="preserve">
+    <value>Kaynak kurulumuna dikkat edilmesi gerekiyor</value>
+  </data>
+  <data name="SourceGuidance.M3u.Summary.SampledCatalog" xml:space="preserve">
+    <value>Örneklenen oynatma listesi önizlemesinde {0} algılandı.</value>
+  </data>
+  <data name="SourceGuidance.Report.LatestAttempt" xml:space="preserve">
+    <value>Son deneme: {0}</value>
+  </data>
+  <data name="SourceGuidance.Report.TypeHint" xml:space="preserve">
+    <value>Tip ipucu: {0}</value>
+  </data>
+  <data name="SourceGuidance.M3u.Connection.Success" xml:space="preserve">
+    <value>KROIRA çalma listesine ulaştı ve temsili bir dilimi başarıyla ayrıştırdı.</value>
+  </data>
+  <data name="SourceGuidance.Validation.StalkerRequired" xml:space="preserve">
+    <value>Stalker için portal URL ve MAC adresi gereklidir.</value>
+  </data>
+  <data name="SourceGuidance.Validation.SourceTypeAbsoluteUrl" xml:space="preserve">
+    <value>Bu kaynak türü mutlak bir URL gerektirir.</value>
+  </data>
+  <data name="SourceGuidance.Repair.Headline.FreshConnectionTest" xml:space="preserve">
+    <value>Kaynak kurulumunun yeni bir bağlantı testine ihtiyacı var</value>
+  </data>
+  <data name="SourceGuidance.Validation.ProxyUrlAbsolute" xml:space="preserve">
+    <value>Proxy URL, mutlak bir URL olmalıdır.</value>
+  </data>
+  <data name="SourceGuidance.Setup.ConnectionTestIncomplete" xml:space="preserve">
+    <value>Bağlantı testi başarıyla tamamlanmadı.</value>
+  </data>
+  <data name="SourceGuidance.Validation.CompanionEndpointAbsolute" xml:space="preserve">
+    <value>Tamamlayıcı uç nokta mutlak bir URL olmalıdır.</value>
+  </data>
+  <data name="SourceGuidance.Routing.CompanionEnabledMode" xml:space="preserve">
+    <value>Tamamlayıcı etkin ({0}).</value>
+  </data>
+  <data name="SourceGuidance.Routing.CompanionEnabled" xml:space="preserve">
+    <value>Tamamlayıcı etkin</value>
+  </data>
+  <data name="SourceGuidance.M3u.Detail.NoXmltvAdvertised" xml:space="preserve">
+    <value>Çalma listesi başlığı önizlemesinde hiçbir XMLTV URL reklamı yapılmadı.</value>
+  </data>
+  <data name="SourceGuidance.Stalker.Value.ProfileDiscovered" xml:space="preserve">
+    <value>Profil keşfedildi</value>
+  </data>
+  <data name="SourceGuidance.Setup.CouldNotVerify" xml:space="preserve">
+    <value>KROIRA bu kaynağı henüz doğrulayamadı.</value>
+  </data>
+  <data name="SourceGuidance.Repair.Headline.PortalNeedsAttention" xml:space="preserve">
+    <value>Portal bağlantısına dikkat edilmesi gerekiyor</value>
+  </data>
+  <data name="SourceGuidance.Repair.Headline.GuideNeedsAttention" xml:space="preserve">
+    <value>Kılavuz verilerine dikkat edilmesi gerekiyor</value>
+  </data>
+  <data name="SourceGuidance.Issue.CompanionOptional.Detail" xml:space="preserve">
+    <value>Bu sağlayıcı yerel bir aktarmanın arkasında daha iyi davranmadığı sürece, doğrudan oynatmayı normal yol olarak tutun.</value>
+  </data>
+  <data name="SourceGuidance.Issue.SourceStable.Title" xml:space="preserve">
+    <value>Kaynak durumu stabil</value>
+  </data>
+  <data name="SourceGuidance.Report.RedactedNotice" xml:space="preserve">
+    <value>Hassas değerler düzeltilir.</value>
+  </data>
+  <data name="SourceGuidance.Issue.UnsupportedSourceType.Detail" xml:space="preserve">
+    <value>M3U, Xtream veya Stalker'yi seçin.</value>
+  </data>
+  <data name="SourceGuidance.Setup.UnsupportedFormatSummary" xml:space="preserve">
+    <value>KROIRA seçilen kaynak biçimini doğrulayamadı.</value>
+  </data>
+  <data name="SourceGuidance.M3u.Headline.Importable" xml:space="preserve">
+    <value>Oynatma listesi içe aktarılabilir görünüyor</value>
+  </data>
+  <data name="SourceGuidance.Repair.Change.NoMaterialMovement" xml:space="preserve">
+    <value>Onarım tamamlandı ancak kaynak durumu özeti henüz somut olarak ilerlemedi.</value>
+  </data>
+  <data name="SourceGuidance.Repair.Change.HealthMoved" xml:space="preserve">
+    <value>Sağlık {0}/100'den {1}/100'e ({2}{3}) taşındı.</value>
+  </data>
+  <data name="SourceGuidance.Issue.CompanionOptional.Title" xml:space="preserve">
+    <value>Yardımcı röle isteğe bağlıdır</value>
+  </data>
+  <data name="SourceGuidance.Issue.SeriesCatalogNotConfirmed.Detail" xml:space="preserve">
+    <value>Sağlayıcı seri kategorilerini göstermediği sürece seri desteği isteğe bağlı kalacaktır.</value>
+  </data>
+  <data name="SourceGuidance.Report.LastSuccess" xml:space="preserve">
+    <value>Son başarı: {0}</value>
+  </data>
+  <data name="SourceGuidance.M3u.Detail.CatchupDetected" xml:space="preserve">
+    <value>Örneklenen dilimde yakalama nitelikleri veya arşiv tarzı akış desenleri bulundu.</value>
+  </data>
+  <data name="SourceGuidance.Xtream.Connection.Success" xml:space="preserve">
+    <value>KROIRA, sağlanan kimlik bilgileriyle Xtream player_api uç noktalarına ulaştı.</value>
+  </data>
+  <data name="SourceGuidance.M3u.Detail.CatchupNotAdvertised" xml:space="preserve">
+    <value>Yakalama desteği daha sonra da görünebilir, ancak örneklenen dilim bunu net bir şekilde tanıtmamıştır.</value>
+  </data>
+  <data name="SourceGuidance.Repair.Result.AppliedCleanly" xml:space="preserve">
+    <value>Onarım temiz bir şekilde uygulandı</value>
+  </data>
+  <data name="SourceGuidance.Issue.AllRequestsProxyBroad.Detail" xml:space="preserve">
+    <value>İçe aktarma, yönlendirme, araştırma ve oynatma trafiğinin tamamı proxy üzerinden yönlendirilecektir. Bunu yalnızca sağlayıcının gerçekten ihtiyacı olduğunda kullanın.</value>
+  </data>
+  <data name="SourceGuidance.Report.RepairExecutionTitle" xml:space="preserve">
+    <value>KROIRA onarımının yürütülmesi</value>
+  </data>
+  <data name="SourceGuidance.Repair.Headline.ConnectedUsable" xml:space="preserve">
+    <value>Kaynak bağlı ve şu anda kullanılabilir</value>
+  </data>
+  <data name="SourceGuidance.Routing.DirectRouting" xml:space="preserve">
+    <value>Doğrudan yönlendirme</value>
+  </data>
+  <data name="SourceGuidance.Report.NeedsReview" xml:space="preserve">
+    <value>İncelenmesi gerekiyor</value>
+  </data>
+  <data name="SourceGuidance.Report.Detail" xml:space="preserve">
+    <value>Detay: {0}</value>
+  </data>
+  <data name="SourceGuidance.Issue.MovieCatalogNotConfirmed.Title" xml:space="preserve">
+    <value>Film kataloğu onaylanmadı</value>
+  </data>
+  <data name="SourceGuidance.Report.Action" xml:space="preserve">
+    <value>Eylem: {0}</value>
+  </data>
+  <data name="SourceGuidance.Issue.NoCatalogFamilies.Detail" xml:space="preserve">
+    <value>Portal anlaşması işe yaradı ancak bu önizlemede canlı, film veya dizi verilerini döndürmedi.</value>
+  </data>
+  <data name="SourceGuidance.Report.Source" xml:space="preserve">
+    <value>Kaynak: {0}</value>
+  </data>
+  <data name="SourceGuidance.Report.Issues" xml:space="preserve">
+    <value>Sorunlar</value>
+  </data>
+  <data name="SourceGuidance.Report.CurrentIssues" xml:space="preserve">
+    <value>Güncel sorunlar</value>
+  </data>
+  <data name="SourceGuidance.Repair.Change.GuideState" xml:space="preserve">
+    <value>Kılavuz durumu {0}'den {1}'ye değiştirildi.</value>
+  </data>
+  <data name="PlayableInspection.Field.EpgMatchSummary" xml:space="preserve">
+    <value>EPG maç özeti</value>
+  </data>
+  <data name="PlayableInspection.Field.Series" xml:space="preserve">
+    <value>Serisi</value>
+  </data>
+  <data name="PlayableInspection.Field.SourceProxyPolicy" xml:space="preserve">
+    <value>Kaynak proxy politikası</value>
+  </data>
+  <data name="PlayableInspection.Field.PixelFormat" xml:space="preserve">
+    <value>Piksel formatı</value>
+  </data>
+  <data name="PlayableInspection.Field.AcquisitionProfile" xml:space="preserve">
+    <value>Edinme profili</value>
+  </data>
+  <data name="PlayableInspection.Field.CurrentPlaybackCatchup" xml:space="preserve">
+    <value>Mevcut oynatma yakalaması</value>
+  </data>
+  <data name="PlayableInspection.Field.SourceEndpoint" xml:space="preserve">
+    <value>Kaynak uç noktası</value>
+  </data>
+  <data name="PlayableInspection.Field.SessionState" xml:space="preserve">
+    <value>Oturum durumu</value>
+  </data>
+  <data name="PlayableInspection.Field.OperationalSummary" xml:space="preserve">
+    <value>Operasyonel özet</value>
+  </data>
+  <data name="PlayableInspection.Field.LatestCatchupAttempt" xml:space="preserve">
+    <value>En son yakalama girişimi</value>
+  </data>
+  <data name="PlayableInspection.Field.PlaybackMode" xml:space="preserve">
+    <value>Oynatma modu</value>
+  </data>
+  <data name="PlayableInspection.Field.VideoCodec" xml:space="preserve">
+    <value>Video codec'i</value>
+  </data>
+  <data name="PlayableInspection.Field.DedupFingerprint" xml:space="preserve">
+    <value>Tekilleştirilmiş parmak izi</value>
+  </data>
+  <data name="PlayableInspection.Field.LaunchStream" xml:space="preserve">
+    <value>Akışı başlat</value>
+  </data>
+  <data name="PlayableInspection.Field.LogicalContentKey" xml:space="preserve">
+    <value>Mantıksal içerik anahtarı</value>
+  </data>
+  <data name="PlayableInspection.Field.LogicalIdentity" xml:space="preserve">
+    <value>Mantıksal kimlik</value>
+  </data>
+  <data name="PlayableInspection.Field.CatchupSummary" xml:space="preserve">
+    <value>Yakalama özeti</value>
+  </data>
+  <data name="PlayableInspection.Field.AudioCodec" xml:space="preserve">
+    <value>Ses codec'i</value>
+  </data>
+  <data name="PlayableInspection.Field.SessionMessage" xml:space="preserve">
+    <value>Oturum mesajı</value>
+  </data>
+  <data name="PlayableInspection.Field.RawProviderName" xml:space="preserve">
+    <value>Ham sağlayıcı adı</value>
+  </data>
+  <data name="PlayableInspection.Field.Source" xml:space="preserve">
+    <value>Kaynak</value>
+  </data>
+  <data name="PlayableInspection.Field.ProviderSummary" xml:space="preserve">
+    <value>Sağlayıcı özeti</value>
+  </data>
+  <data name="PlayableInspection.Field.ProbeSummary" xml:space="preserve">
+    <value>Prob özeti</value>
+  </data>
+  <data name="PlayableInspection.Field.ContentType" xml:space="preserve">
+    <value>İçerik türü</value>
+  </data>
+  <data name="PlayableInspection.Field.UpstreamStream" xml:space="preserve">
+    <value>Yukarı akış akışı</value>
+  </data>
+  <data name="PlayableInspection.Field.CompanionEndpoint" xml:space="preserve">
+    <value>Tamamlayıcı uç nokta</value>
+  </data>
+  <data name="PlayableInspection.Field.ProviderProfile" xml:space="preserve">
+    <value>Sağlayıcı profili</value>
+  </data>
+  <data name="PlayableInspection.Field.PositionDuration" xml:space="preserve">
+    <value>Pozisyon / süre</value>
+  </data>
+  <data name="PlayableInspection.Field.CatchupStatus" xml:space="preserve">
+    <value>Yakalama durumu</value>
+  </data>
+  <data name="PlayableInspection.Field.Resolution" xml:space="preserve">
+    <value>Çözünürlük</value>
+  </data>
+  <data name="PlayableInspection.Field.SeriesCanonicalKey" xml:space="preserve">
+    <value>Seri kanonik anahtarı</value>
+  </data>
+  <data name="PlayableInspection.Field.GuideSummary" xml:space="preserve">
+    <value>Kılavuz özeti</value>
+  </data>
+  <data name="PlayableInspection.Field.Category" xml:space="preserve">
+    <value>Kategori</value>
+  </data>
+  <data name="PlayableInspection.Field.SeriesProviderId" xml:space="preserve">
+    <value>Seri sağlayıcı kimliği</value>
+  </data>
+  <data name="PlayableInspection.Field.PortalStatus" xml:space="preserve">
+    <value>Portal durumu</value>
+  </data>
+  <data name="PlayableInspection.Field.SourceType" xml:space="preserve">
+    <value>Kaynak türü</value>
+  </data>
+  <data name="PlayableInspection.Field.NormalizedName" xml:space="preserve">
+    <value>Normalleştirilmiş ad</value>
+  </data>
+  <data name="PlayableInspection.Field.AcquisitionStats" xml:space="preserve">
+    <value>Edinme istatistikleri</value>
+  </data>
+  <data name="PlayableInspection.Field.GuideStatus" xml:space="preserve">
+    <value>Rehber durumu</value>
+  </data>
+  <data name="PlayableInspection.Field.TopIssue" xml:space="preserve">
+    <value>En önemli sorun</value>
+  </data>
+  <data name="PlayableInspection.Field.ProviderItemId" xml:space="preserve">
+    <value>Sağlayıcı öğe kimliği</value>
+  </data>
+  <data name="PlayableInspection.Field.ProviderResolution" xml:space="preserve">
+    <value>Sağlayıcı çözünürlüğü</value>
+  </data>
+  <data name="PlayableInspection.Field.MirrorCandidates" xml:space="preserve">
+    <value>Ayna adayları</value>
+  </data>
+  <data name="PlayableInspection.Field.CatchupProgram" xml:space="preserve">
+    <value>Yakalama programı</value>
+  </data>
+  <data name="PlayableInspection.Field.CatchupWindow" xml:space="preserve">
+    <value>Yakalama penceresi</value>
+  </data>
+  <data name="PlayableInspection.Field.CatchupRequest" xml:space="preserve">
+    <value>Yakalama isteği</value>
+  </data>
+  <data name="PlayableInspection.Field.SourceProfileId" xml:space="preserve">
+    <value>Kaynak profil kimliği</value>
+  </data>
+  <data name="PlayableInspection.Field.RecoverySummary" xml:space="preserve">
+    <value>Kurtarma özeti</value>
+  </data>
+  <data name="PlayableInspection.Field.HardwareDecode" xml:space="preserve">
+    <value>Donanım kod çözme</value>
+  </data>
+  <data name="PlayableInspection.Field.CandidateRanking" xml:space="preserve">
+    <value>Aday sıralaması</value>
+  </data>
+  <data name="PlayableInspection.Field.CompanionStatus" xml:space="preserve">
+    <value>Tamamlayıcı durumu</value>
+  </data>
+  <data name="PlayableInspection.Field.Validation" xml:space="preserve">
+    <value>Doğrulama</value>
+  </data>
+  <data name="PlayableInspection.Field.CatchupSupport" xml:space="preserve">
+    <value>Yakalama desteği</value>
+  </data>
+  <data name="PlayableInspection.Field.CanonicalKey" xml:space="preserve">
+    <value>Kanonik anahtar</value>
+  </data>
+  <data name="PlayableInspection.Field.CatchupDiagnostics" xml:space="preserve">
+    <value>Yakalama teşhisi</value>
+  </data>
+  <data name="PlayableInspection.Field.SeriesDedupFingerprint" xml:space="preserve">
+    <value>Seri yinelenen parmak izi</value>
+  </data>
+  <data name="PlayableInspection.Field.Container" xml:space="preserve">
+    <value>Konteyner</value>
+  </data>
+  <data name="PlayableInspection.Field.ProviderEpgId" xml:space="preserve">
+    <value>Sağlayıcı EPG kimliği</value>
+  </data>
+  <data name="PlayableInspection.Field.PortalProfile" xml:space="preserve">
+    <value>Portal profili</value>
+  </data>
+  <data name="PlayableInspection.Field.AcquisitionRun" xml:space="preserve">
+    <value>Edinim çalıştırması</value>
+  </data>
+  <data name="PlayableInspection.Field.RawProviderTitle" xml:space="preserve">
+    <value>Ham sağlayıcı unvanı</value>
+  </data>
+  <data name="PlayableInspection.Field.Routing" xml:space="preserve">
+    <value>Yönlendirme</value>
+  </data>
+  <data name="PlayableInspection.Field.CompanionPolicy" xml:space="preserve">
+    <value>Tamamlayıcı politika</value>
+  </data>
+  <data name="PlayableInspection.Field.CatchupWindowHours" xml:space="preserve">
+    <value>Yakalama aralığı saatleri</value>
+  </data>
+  <data name="PlayableInspection.Field.EpisodeProviderId" xml:space="preserve">
+    <value>Bölüm sağlayıcı kimliği</value>
+  </data>
+  <data name="PlayableInspection.Field.LiveStream" xml:space="preserve">
+    <value>Canlı yayın</value>
+  </data>
+  <data name="PlayableInspection.Field.ProxyEndpoint" xml:space="preserve">
+    <value>Proxy uç noktası</value>
+  </data>
+  <data name="PlayableInspection.Field.PreferredSourceProfile" xml:space="preserve">
+    <value>Tercih edilen kaynak profili</value>
+  </data>
+  <data name="PlayableInspection.Field.CandidateCount" xml:space="preserve">
+    <value>Aday sayısı</value>
+  </data>
+  <data name="PlayableInspection.Field.MatchedEpgId" xml:space="preserve">
+    <value>Eşleşen EPG kimliği</value>
+  </data>
+  <data name="PlayableInspection.Field.Health" xml:space="preserve">
+    <value>Sağlık</value>
+  </data>
+  <data name="PlayableInspection.Field.OperationalSelection" xml:space="preserve">
+    <value>Operasyonel seçim</value>
+  </data>
+  <data name="PlayableInspection.Field.SeasonEpisode" xml:space="preserve">
+    <value>Sezon / bölüm</value>
+  </data>
+  <data name="PlayableInspection.Field.WarningSummary" xml:space="preserve">
+    <value>Uyarı özeti</value>
+  </data>
+  <data name="PlayableInspection.Field.Seekability" xml:space="preserve">
+    <value>Aranabilirlik</value>
+  </data>
+  <data name="PlayableInspection.Field.NormalizedIdentity" xml:space="preserve">
+    <value>Normalleştirilmiş kimlik</value>
+  </data>
+  <data name="PlayableInspection.Field.CatalogStream" xml:space="preserve">
+    <value>Katalog akışı</value>
+  </data>
+  <data name="PlayableInspection.Field.RoutingSummary" xml:space="preserve">
+    <value>Yönlendirme özeti</value>
+  </data>
+  <data name="PlayableInspection.Field.LastKnownGood" xml:space="preserve">
+    <value>Son bilinen iyi</value>
+  </data>
+  <data name="PlayableInspection.Field.LaunchPath" xml:space="preserve">
+    <value>Başlatma yolu</value>
+  </data>
+  <data name="PlayableInspection.Field.AliasKeys" xml:space="preserve">
+    <value>Takma ad anahtarları</value>
+  </data>
+  <data name="PlayableInspection.Field.CatchupSource" xml:space="preserve">
+    <value>Yakalama kaynağı</value>
+  </data>
+  <data name="PlayableInspection.Field.RelevantEvidence" xml:space="preserve">
+    <value>İlgili kanıtlar</value>
+  </data>
+  <data name="PlayableInspection.Value.Selected" xml:space="preserve">
+    <value>seçilmiş</value>
+  </data>
+  <data name="PlayableInspection.Section.Identity" xml:space="preserve">
+    <value>Kimlik</value>
+  </data>
+  <data name="PlayableInspection.Fallback.Item" xml:space="preserve">
+    <value>Öğe</value>
+  </data>
+  <data name="PlayableInspection.Section.SourceDiagnostics" xml:space="preserve">
+    <value>Kaynak teşhisi</value>
+  </data>
+  <data name="PlayableInspection.Status.CatchupCompanion" xml:space="preserve">
+    <value>Bu yakalama isteği için katalog, yukarı akış tekrar oynatma akışı ve tamamlayıcı aktarma başlatma bağlamı gösteriliyor.</value>
+  </data>
+  <data name="PlayableInspection.Report.NoPlaybackContext" xml:space="preserve">
+    <value>Oynatma bağlamı mevcut değildi.</value>
+  </data>
+  <data name="PlayableInspection.Value.Applied" xml:space="preserve">
+    <value>Uygulandı</value>
+  </data>
+  <data name="PlayableInspection.Value.Seekable" xml:space="preserve">
+    <value>aranabilir</value>
+  </data>
+  <data name="PlayableInspection.Value.NotSeekable" xml:space="preserve">
+    <value>Aranamaz</value>
+  </data>
+  <data name="PlayableInspection.Value.CompanionPolicyFormat" xml:space="preserve">
+    <value>{0} - {1}</value>
+  </data>
+  <data name="PlayableInspection.Value.Pending" xml:space="preserve">
+    <value>Beklemede</value>
+  </data>
+  <data name="PlayableInspection.Value.CatchupReplay" xml:space="preserve">
+    <value>Yakalama tekrarı</value>
+  </data>
+  <data name="PlayableInspection.Value.Rank" xml:space="preserve">
+    <value>rütbe {0}</value>
+  </data>
+  <data name="PlayableInspection.Status.NoPlaybackContext" xml:space="preserve">
+    <value>İnceleme için oynatma bağlamı mevcut değildi.</value>
+  </data>
+  <data name="PlayableInspection.Status.CatalogCompanion" xml:space="preserve">
+    <value>Yukarı akış sağlayıcı akışı ve yerel yardımcı geçiş başlatma yolu da dahil olmak üzere bu öğenin katalog düzeyinde görünümü gösteriliyor.</value>
+  </data>
+  <data name="PlayableInspection.Value.StalkerLocator" xml:space="preserve">
+    <value>Stalker konumlayıcı</value>
+  </data>
+  <data name="PlayableInspection.Value.BufferedRelayLower" xml:space="preserve">
+    <value>tamponlu röle</value>
+  </data>
+  <data name="PlayableInspection.Value.Failed" xml:space="preserve">
+    <value>Başarısız</value>
+  </data>
+  <data name="PlayableInspection.Section.Streams" xml:space="preserve">
+    <value>Akışlar</value>
+  </data>
+  <data name="PlayableInspection.Report.Title" xml:space="preserve">
+    <value>KROIRA ürün incelemesi</value>
+  </data>
+  <data name="PlayableInspection.Value.CompanionFallbackDirect" xml:space="preserve">
+    <value>Yönetmenliğe tamamlayıcı geri dönüş</value>
+  </data>
+  <data name="PlayableInspection.Report.RedactedNotice" xml:space="preserve">
+    <value>Hassas değerler düzeltilir.</value>
+  </data>
+  <data name="PlayableInspection.Value.FallbackToDirect" xml:space="preserve">
+    <value>Yönlendirmeye geri dönüş</value>
+  </data>
+  <data name="PlayableInspection.Fallback.Episode" xml:space="preserve">
+    <value>Bölüm</value>
+  </data>
+  <data name="PlayableInspection.Value.CatalogUrl" xml:space="preserve">
+    <value>Katalog URL</value>
+  </data>
+  <data name="PlayableInspection.Section.RoutingFallback" xml:space="preserve">
+    <value>Yönlendirme ve geri dönüş</value>
+  </data>
+  <data name="PlayableInspection.Value.UpstreamResolvedRelayed" xml:space="preserve">
+    <value>Yukarı akış çözüldü ve aktarıldı</value>
+  </data>
+  <data name="PlayableInspection.Fallback.Movie" xml:space="preserve">
+    <value>Film</value>
+  </data>
+  <data name="PlayableInspection.Value.DirectStreamUrl" xml:space="preserve">
+    <value>Doğrudan akış URL</value>
+  </data>
+  <data name="PlayableInspection.Value.PlaybackOnly" xml:space="preserve">
+    <value>Yalnızca oynatma</value>
+  </data>
+  <data name="PlayableInspection.Status.ActiveRouting" xml:space="preserve">
+    <value>Kaynağa duyarlı yönlendirme ayrıntılarıyla birlikte etkin oynatma bağlamı gösteriliyor.</value>
+  </data>
+  <data name="PlayableInspection.Section.GuideCatchup" xml:space="preserve">
+    <value>Rehberlik ve yakalama</value>
+  </data>
+  <data name="PlayableInspection.Fallback.Channel" xml:space="preserve">
+    <value>Kanal</value>
+  </data>
+  <data name="PlayableInspection.Status.CatchupCatalog" xml:space="preserve">
+    <value>Bu öğenin kataloğu ve yakalama içeriği gösteriliyor. Tekrar oynatma URL yalnızca yakalama başlatıldığında çözümlenir.</value>
+  </data>
+  <data name="PlayableInspection.Status.ActiveResolved" xml:space="preserve">
+    <value>Şu anda kullanımda olan çözümlenmiş başlatma URL dahil olmak üzere aktif oynatma bağlamı gösteriliyor.</value>
+  </data>
+  <data name="PlayableInspection.Value.CompanionRelay" xml:space="preserve">
+    <value>Yardımcı röle</value>
+  </data>
+  <data name="PlayableInspection.Value.ResolvedLaunchUrl" xml:space="preserve">
+    <value>URL başlatma sorunu çözüldü</value>
+  </data>
+  <data name="PlayableInspection.Value.DirectRouting" xml:space="preserve">
+    <value>Doğrudan yönlendirme</value>
+  </data>
+  <data name="PlayableInspection.Value.Active" xml:space="preserve">
+    <value>Aktif</value>
+  </data>
+  <data name="PlayableInspection.Value.EpisodeNumber" xml:space="preserve">
+    <value>Bölüm {0}</value>
+  </data>
+  <data name="PlayableInspection.Value.PassThroughRelayLower" xml:space="preserve">
+    <value>geçiş rölesi</value>
+  </data>
+  <data name="PlayableInspection.Value.NotResolvedUntilLaunch" xml:space="preserve">
+    <value>Lansmana kadar çözülmedi</value>
+  </data>
+  <data name="PlayableInspection.Value.NotAdvertised" xml:space="preserve">
+    <value>Reklamı yapılmadı</value>
+  </data>
+  <data name="PlayableInspection.Value.Skipped" xml:space="preserve">
+    <value>Atlandı</value>
+  </data>
+  <data name="PlayableInspection.Value.PlaybackProbes" xml:space="preserve">
+    <value>Oynatma + problar</value>
+  </data>
+  <data name="PlayableInspection.Title.ItemUnavailable" xml:space="preserve">
+    <value>Öğe kullanılamıyor</value>
+  </data>
+  <data name="PlayableInspection.Section.CurrentPlayback" xml:space="preserve">
+    <value>Geçerli oynatma</value>
+  </data>
+  <data name="PlayableInspection.Value.Supported" xml:space="preserve">
+    <value>Destekleniyor</value>
+  </data>
+  <data name="PlayableInspection.Value.LastGood" xml:space="preserve">
+    <value>son iyi</value>
+  </data>
+  <data name="PlayableInspection.Status.ActiveCompanion" xml:space="preserve">
+    <value>Yukarı akış sağlayıcı akışı ve şu anda kullanımda olan yerel yardımcı geçiş başlatması URL dahil olmak üzere aktif oynatma bağlamını gösteriyor.</value>
+  </data>
+  <data name="PlayableInspection.Status.CatalogDeferred" xml:space="preserve">
+    <value>Bu öğenin katalog düzeyinde görünümü gösteriliyor. Sağlayıcıya özel URL'ler yalnızca başlatma sırasında çözümlenir.</value>
+  </data>
+  <data name="App.StartupError.ErrorPath" xml:space="preserve">
+    <value>Başlangıç ​​hatası: {0}</value>
+  </data>
+  <data name="App.StartupError.Title" xml:space="preserve">
+    <value>KROIRA başlatma hatası</value>
+  </data>
+  <data name="App.StartupError.LogPath" xml:space="preserve">
+    <value>Başlangıç ​​günlüğü: {0}</value>
+  </data>
+
+  <data name="Player.Hint.ReadyLiveSource" xml:space="preserve"><value>Canlı kaynak hazır</value></data>
+  <data name="Player.Error.StreamEnded.Message" xml:space="preserve"><value>Sağlayıcı yayını sonlandırdı.</value></data>
+  <data name="Player.Title.Movie" xml:space="preserve"><value>Film</value></data>
+  <data name="Player.Error.Unreachable.Message" xml:space="preserve"><value>Yayın sunucusuna bu cihazdan ulaşılamadı.</value></data>
+  <data name="Player.Aspect.Tooltip" xml:space="preserve"><value>En-boy oranı: {0}</value></data>
+  <data name="General.Resume" xml:space="preserve"><value>Sürdür</value></data>
+  <data name="Home.Error.DispatcherUnavailable" xml:space="preserve"><value>Ana sayfa yüklemesi için UI dispatcher kuyruğu kullanılamıyor.</value></data>
+  <data name="Player.Error.MissingContext" xml:space="preserve"><value>Oynatma bağlamı eksik.</value></data>
+  <data name="Player.Track.SubtitlesFormat" xml:space="preserve"><value>Altyazılar: {0}</value></data>
+  <data name="Player.Fullscreen.Exit" xml:space="preserve"><value>Tam ekrandan çık</value></data>
+  <data name="Player.Error.StreamStartTimedOut" xml:space="preserve"><value>Yayın başlatılırken zaman aşımına uğradı.</value></data>
+  <data name="Search.OpenMovies" xml:space="preserve"><value>Filmleri aç</value></data>
+  <data name="Player.Error.StreamEndedUnexpectedly" xml:space="preserve"><value>Yayın beklenmedik şekilde sona erdi.</value></data>
+  <data name="Player.Track.AudioFormat" xml:space="preserve"><value>Ses: {0}</value></data>
+  <data name="Player.Hint.DescriptionAvailable" xml:space="preserve"><value>Açıklama hazır</value></data>
+  <data name="Player.Hint.PlaybackReady" xml:space="preserve"><value>Oynatma hazır</value></data>
+  <data name="Player.Title.Episode" xml:space="preserve"><value>Bölüm</value></data>
+  <data name="Player.Seek.LiveBufferUnavailable" xml:space="preserve"><value>Canlı yayında aranabilir arabellek yok</value></data>
+  <data name="Player.Title.Live" xml:space="preserve"><value>Canlı</value></data>
+  <data name="Player.Error.AppServicesUnavailable" xml:space="preserve"><value>Uygulama hizmetleri kullanılamıyor.</value></data>
+  <data name="Player.Hint.MetadataAvailable" xml:space="preserve"><value>Meta veri hazır</value></data>
+  <data name="ItemInspector.CopiedSafeReport" xml:space="preserve"><value>Paylaşımı güvenli inceleme raporu panoya kopyalandı.</value></data>
+  <data name="Player.Button.ReturnToPlayer" xml:space="preserve"><value>Oynatıcıya dön</value></data>
+  <data name="Player.Error.Authorization.Title" xml:space="preserve"><value>Yayın yetkilendirmesi başarısız</value></data>
+  <data name="General.Download" xml:space="preserve"><value>İndir</value></data>
+  <data name="Player.Seek.Unavailable" xml:space="preserve"><value>Arama kullanılamıyor</value></data>
+  <data name="Player.Error.Timeout.Message" xml:space="preserve"><value>Yayın, oynatma zaman aşımı dolmadan yanıt vermedi.</value></data>
+  <data name="Player.Seek.LiveBuffer" xml:space="preserve"><value>Canlı arabellekte ara</value></data>
+  <data name="Player.Error.LiveUnavailable" xml:space="preserve"><value>Canlı yayın kullanılamıyor</value></data>
+  <data name="Player.Error.LiveResolveFailed" xml:space="preserve"><value>Bu kanal için canlı yayın çözülemedi.</value></data>
+  <data name="Player.Status.RecoveringStream" xml:space="preserve"><value>Yayın kurtarılmaya çalışılıyor.</value></data>
+  <data name="Player.Hint.ConnectionMayVary" xml:space="preserve"><value>Bağlantı değişken olabilir</value></data>
+  <data name="Player.Error.InvalidStreamUrl.Title" xml:space="preserve"><value>Geçersiz yayın URL'si</value></data>
+  <data name="Player.Error.Authorization.Message" xml:space="preserve"><value>Sağlayıcı yayın isteğini reddetti veya kaynak kimlik bilgileri artık kabul edilmiyor.</value></data>
+  <data name="Player.Hint.ArtworkAvailable" xml:space="preserve"><value>Görsel hazır</value></data>
+  <data name="ItemInspector.CopyFailed" xml:space="preserve"><value>Kopyalama başarısız. {0}</value></data>
+  <data name="Player.ScreenshotSaved" xml:space="preserve"><value>Ekran görüntüsü kaydedildi</value></data>
+  <data name="Player.Hint.LogoAvailable" xml:space="preserve"><value>Logo hazır</value></data>
+  <data name="Player.Status.Reconnecting" xml:space="preserve"><value>Yeniden bağlanıyor</value></data>
+  <data name="Search.OpenSeries" xml:space="preserve"><value>Dizileri aç</value></data>
+  <data name="Player.Status.Buffering" xml:space="preserve"><value>Arabelleğe alınıyor</value></data>
+  <data name="Player.Error.Timeout.Title" xml:space="preserve"><value>Yayın zaman aşımına uğradı</value></data>
+  <data name="Player.Hint.OptimizedRoute" xml:space="preserve"><value>En iyi rota</value></data>
+  <data name="Player.Error.StreamEnded.Title" xml:space="preserve"><value>Yayın sona erdi</value></data>
+  <data name="Player.Fullscreen.Enter" xml:space="preserve"><value>Tam ekran</value></data>
+  <data name="Player.PipWindowTitle" xml:space="preserve"><value>KROIRA PiP</value></data>
+  <data name="ItemInspector.Title" xml:space="preserve"><value>Öğe denetleyicisi</value></data>
+  <data name="Player.Error.StreamBufferStalled" xml:space="preserve"><value>Yayın arabelleğe alınırken durdu.</value></data>
+  <data name="Player.Seek.Seek" xml:space="preserve"><value>Ara</value></data>
+  <data name="Player.Hint.ReadyMovieSource" xml:space="preserve"><value>Film kaynağı hazır</value></data>
+  <data name="Player.Error.MainWindowUnavailable" xml:space="preserve"><value>Ana pencere kullanılamıyor.</value></data>
+  <data name="Player.Error.UnsupportedMedia.Title" xml:space="preserve"><value>Desteklenmeyen medya</value></data>
+  <data name="Player.Status.Loading" xml:space="preserve"><value>Yükleniyor</value></data>
+  <data name="General.Inspect" xml:space="preserve"><value>İncele</value></data>
+  <data name="Player.Error.Cancelled.Message" xml:space="preserve"><value>Yayın açılmadan önce oynatma iptal edildi.</value></data>
+  <data name="Player.Hint.GuideAvailable" xml:space="preserve"><value>Rehber hazır</value></data>
+  <data name="Player.Hint.RefreshSuggested" xml:space="preserve"><value>Yenileme önerilir</value></data>
+  <data name="Player.Error.UnsupportedMedia.Message" xml:space="preserve"><value>Yayın biçimi veya codec geçerli oynatıcı çalışma zamanı tarafından desteklenmiyor.</value></data>
+  <data name="Player.Error.UnableToStart" xml:space="preserve"><value>Oynatma başlatılamıyor.</value></data>
+  <data name="Player.Error.PlaybackFailed" xml:space="preserve"><value>Oynatma başarısız</value></data>
+  <data name="Player.Button.Return" xml:space="preserve"><value>Dön</value></data>
+  <data name="Player.Error.Unknown.Message" xml:space="preserve"><value>Oynatıcı, oynatma hatasını sınıflandıramadı.</value></data>
+  <data name="Player.Error.Unreachable.Title" xml:space="preserve"><value>Yayına ulaşılamıyor</value></data>
+  <data name="General.Play" xml:space="preserve"><value>Oynat</value></data>
+  <data name="Player.Error.Cancelled.Title" xml:space="preserve"><value>Oynatma iptal edildi</value></data>
+  <data name="Player.Error.InvalidStreamUrl.Message" xml:space="preserve"><value>Yayın URL'si boş veya mutlak URL değil.</value></data>
+  <data name="Player.Status.RecoveredBackupMirror" xml:space="preserve"><value>Yedek kaynaktan kurtarıldı.</value></data>
+  <data name="Player.Status.ReturnedToLive" xml:space="preserve"><value>Canlı oynatmaya dönüldü.</value></data>
+  <data name="AboutBackToSettingsButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Ayarlara dön</value></data>
+  <data name="ChannelsCategoryList.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Canlı kanal kategorileri</value></data>
+  <data name="ChannelsChannelList.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Canlı kanallar</value></data>
+  <data name="ChannelsDetailsButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Kanal ayrıntıları</value></data>
+  <data name="ChannelsDetailsButton.ToolTipService.ToolTip" xml:space="preserve"><value>Ayrıntılar</value></data>
+  <data name="ChannelsFavoriteButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Favoriyi değiştir</value></data>
+  <data name="ChannelsFavoriteButton.ToolTipService.ToolTip" xml:space="preserve"><value>Favoriyi değiştir</value></data>
+  <data name="ChannelsFavoritesFilter.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Yalnızca favori kanalları göster</value></data>
+  <data name="ChannelsFavoritesFilter.Content" xml:space="preserve"><value>Favoriler</value></data>
+  <data name="ChannelsGuideMatchedFilter.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Yalnızca rehberle eşleşen kanalları göster</value></data>
+  <data name="ChannelsProviderComboBox.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Kanal sağlayıcısı</value></data>
+  <data name="ChannelsScheduleRecordingButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Kaydı zamanla</value></data>
+  <data name="ChannelsScheduleRecordingButton.Content" xml:space="preserve"><value>●</value></data>
+  <data name="ChannelsScheduleRecordingButton.ToolTipService.ToolTip" xml:space="preserve"><value>Kaydı zamanla</value></data>
+  <data name="ChannelsSearchBox.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Kanallarda ara</value></data>
+  <data name="ChannelsSortComboBox.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Kanal sıralaması</value></data>
+  <data name="ChannelsStartOverButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Baştan başlat</value></data>
+  <data name="ContinueWatchingClearLiveButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Tüm canlı sürdürme öğelerini temizle</value></data>
+  <data name="ContinueWatchingClearLiveButton.Content" xml:space="preserve"><value>Tümünü temizle</value></data>
+  <data name="ContinueWatchingClearMoviesButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Tüm film kuyruğu öğelerini temizle</value></data>
+  <data name="ContinueWatchingClearMoviesButton.Content" xml:space="preserve"><value>Tümünü temizle</value></data>
+  <data name="ContinueWatchingClearSeriesButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Tüm dizi kuyruğu öğelerini temizle</value></data>
+  <data name="ContinueWatchingClearSeriesButton.Content" xml:space="preserve"><value>Tümünü temizle</value></data>
+  <data name="ContinueWatchingHideWatchedToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>İzlenmiş sürdürme öğelerini gizle</value></data>
+  <data name="ContinueWatchingHideWatchedToggle.Header" xml:space="preserve"><value>İzlenmişleri gizle</value></data>
+  <data name="ContinueWatchingLiveRemoveButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Sürdürmeden kaldır</value></data>
+  <data name="ContinueWatchingLiveRemoveButton.ToolTipService.ToolTip" xml:space="preserve"><value>Kaldır</value></data>
+  <data name="ContinueWatchingMarkEpisodeUnwatchedButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Bölümü izlenmemiş işaretle</value></data>
+  <data name="ContinueWatchingMarkEpisodeUnwatchedButton.Content" xml:space="preserve"><value>İzlenmedi</value></data>
+  <data name="ContinueWatchingMarkEpisodeWatchedButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Bölümü izlendi işaretle</value></data>
+  <data name="ContinueWatchingMarkEpisodeWatchedButton.Content" xml:space="preserve"><value>İzlendi</value></data>
+  <data name="ContinueWatchingMarkMovieUnwatchedButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Filmi izlenmemiş işaretle</value></data>
+  <data name="ContinueWatchingMarkMovieUnwatchedButton.Content" xml:space="preserve"><value>İzlenmedi</value></data>
+  <data name="ContinueWatchingMarkMovieWatchedButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Filmi izlendi işaretle</value></data>
+  <data name="ContinueWatchingMarkMovieWatchedButton.Content" xml:space="preserve"><value>İzlendi</value></data>
+  <data name="ContinueWatchingMovieRemoveButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Sürdürmeden kaldır</value></data>
+  <data name="ContinueWatchingMovieRemoveButton.ToolTipService.ToolTip" xml:space="preserve"><value>Kaldır</value></data>
+  <data name="ContinueWatchingSeriesRemoveButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Sürdürmeden kaldır</value></data>
+  <data name="ContinueWatchingSeriesRemoveButton.ToolTipService.ToolTip" xml:space="preserve"><value>Kaldır</value></data>
+  <data name="FavoritesClearLiveButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Tüm favori canlı kanalları temizle</value></data>
+  <data name="FavoritesClearLiveButton.Content" xml:space="preserve"><value>Tümünü temizle</value></data>
+  <data name="FavoritesClearMoviesButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Tüm favori filmleri temizle</value></data>
+  <data name="FavoritesClearMoviesButton.Content" xml:space="preserve"><value>Tümünü temizle</value></data>
+  <data name="FavoritesClearSeriesButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Tüm favori dizileri temizle</value></data>
+  <data name="FavoritesClearSeriesButton.Content" xml:space="preserve"><value>Tümünü temizle</value></data>
+  <data name="FavoritesLiveFavoriteMeta.Text" xml:space="preserve"><value>Canlı favori</value></data>
+  <data name="FavoritesPlaySelectedEpisodeButton.Content" xml:space="preserve"><value>Oynat</value></data>
+  <data name="FavoritesRemoveChannelButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Favoriyi kaldır</value></data>
+  <data name="FavoritesRemoveChannelButton.ToolTipService.ToolTip" xml:space="preserve"><value>Kaldır</value></data>
+  <data name="FavoritesRemoveMovieButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Favoriyi kaldır</value></data>
+  <data name="FavoritesRemoveMovieButton.ToolTipService.ToolTip" xml:space="preserve"><value>Kaldır</value></data>
+  <data name="FavoritesRemoveSeriesButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Favoriyi kaldır</value></data>
+  <data name="FavoritesRemoveSeriesButton.ToolTipService.ToolTip" xml:space="preserve"><value>Kaldır</value></data>
+  <data name="GeneralClearRecentButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Son izlenen kanalları temizle</value></data>
+  <data name="GeneralGuideButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Rehberi aç</value></data>
+  <data name="GeneralMovieMeta.Text" xml:space="preserve"><value>Film</value></data>
+  <data name="GeneralSeriesMeta.Text" xml:space="preserve"><value>Dizi</value></data>
+  <data name="HomeAllChannelsButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Tüm kanallar</value></data>
+  <data name="HomeAllLiveTvButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Tüm canlı TV&apos;yi aç</value></data>
+  <data name="HomeBrowseCatalogButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Kataloğa göz at</value></data>
+  <data name="HomeFavoritesButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Favoriler</value></data>
+  <data name="HomeRecentlyWatchedButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Son izlenenler</value></data>
+  <data name="HomeSportsButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Spor</value></data>
+  <data name="HomeWatchLiveTvButtonControl.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Canlı TV izle</value></data>
+  <data name="MoviesCategoryList.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Film kategorileri</value></data>
+  <data name="MoviesDetailsButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Film ayrıntıları</value></data>
+  <data name="MoviesDetailsButton.ToolTipService.ToolTip" xml:space="preserve"><value>Ayrıntılar</value></data>
+  <data name="MoviesDownloadButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>İndir</value></data>
+  <data name="MoviesDownloadButton.ToolTipService.ToolTip" xml:space="preserve"><value>İndir</value></data>
+  <data name="MoviesFavoritesFilter.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Yalnızca favori filmleri göster</value></data>
+  <data name="MoviesFavoritesFilter.Content" xml:space="preserve"><value>Favoriler</value></data>
+  <data name="MoviesPrimaryOnlyFilter.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Yalnızca birincil film kayıtlarını göster</value></data>
+  <data name="MoviesPrimaryOnlyFilter.Content" xml:space="preserve"><value>Yalnızca birincil</value></data>
+  <data name="MoviesProviderComboBox.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Film sağlayıcısı</value></data>
+  <data name="MoviesSearchBox.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Filmlerde ara</value></data>
+  <data name="MoviesSortComboBox.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Film sıralaması</value></data>
+  <data name="PlayerAudioDelayValueText.Text" xml:space="preserve"><value>Ses gecikmesi 0,0 sn</value></data>
+  <data name="PlayerRotation0Button.Content" xml:space="preserve"><value>0 derece</value></data>
+  <data name="PlayerRotation180Button.Content" xml:space="preserve"><value>180 derece</value></data>
+  <data name="PlayerRotation270Button.Content" xml:space="preserve"><value>270 derece</value></data>
+  <data name="PlayerRotation90Button.Content" xml:space="preserve"><value>90 derece</value></data>
+  <data name="PlayerSubtitleDelayValueText.Text" xml:space="preserve"><value>Altyazı gecikmesi 0,0 sn</value></data>
+  <data name="SeriesCategoryList.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Dizi kategorileri</value></data>
+  <data name="SeriesEpisodeDetailsButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Bölüm ayrıntıları</value></data>
+  <data name="SeriesEpisodeDetailsButton.ToolTipService.ToolTip" xml:space="preserve"><value>Ayrıntılar</value></data>
+  <data name="SeriesEpisodeDownloadButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Bölümü indir</value></data>
+  <data name="SeriesEpisodeDownloadButton.ToolTipService.ToolTip" xml:space="preserve"><value>İndir</value></data>
+  <data name="SeriesEpisodeSourceComboBox.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Bölüm kaynağı</value></data>
+  <data name="SeriesFavoritesFilter.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Yalnızca favori dizileri göster</value></data>
+  <data name="SeriesFavoritesFilter.Content" xml:space="preserve"><value>Favoriler</value></data>
+  <data name="SeriesHideWatchedSwitch.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>İzlenmiş bölümleri gizle</value></data>
+  <data name="SeriesPlaySelectedEpisodeButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Seçili bölümü oynat</value></data>
+  <data name="SeriesPlaySelectedEpisodeButton.Content" xml:space="preserve"><value>Oynat</value></data>
+  <data name="SeriesPrimaryOnlyFilter.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Yalnızca birincil dizi kayıtlarını göster</value></data>
+  <data name="SeriesPrimaryOnlyFilter.Content" xml:space="preserve"><value>Yalnızca birincil</value></data>
+  <data name="SeriesProviderComboBox.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Dizi sağlayıcısı</value></data>
+  <data name="SeriesSearchBox.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Dizilerde ara</value></data>
+  <data name="SeriesSeasonComboBox.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Sezon</value></data>
+  <data name="SeriesSortComboBox.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Dizi sıralaması</value></data>
+  <data name="SettingsAccentPackComboBox.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Vurgu paketi</value></data>
+  <data name="SettingsAppInformationOpenButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Uygulama bilgilerini aç</value></data>
+  <data name="SettingsEnableAutoRefreshToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Otomatik yenilemeyi etkinleştir</value></data>
+  <data name="SettingsExportButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Yedeği dışa aktar</value></data>
+  <data name="SettingsLanguageComboBox.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Uygulama dili</value></data>
+  <data name="SettingsOpenGuideButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Rehber ayarlarını aç</value></data>
+  <data name="SettingsOpenSourcesButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Tanılama dışa aktarımını aç</value></data>
+  <data name="SettingsPrivacyPolicyOpenButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Gizlilik politikasını aç</value></data>
+  <data name="SettingsRefreshCadenceComboBox.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Yenileme aralığı</value></data>
+  <data name="SettingsRemoteModeToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Kumanda uyumlu mod</value></data>
+  <data name="SettingsRestoreButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Yedeği geri yükle</value></data>
+  <data name="SettingsRunRefreshAfterLaunchSwitch.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Başlatmadan kısa süre sonra yenile</value></data>
+  <data name="SettingsSourcesButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Kaynak tanılamalarını aç</value></data>
+  <data name="SettingsSupportEmailButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Destek e-postası</value></data>
+  <data name="SettingsSupportOpenButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Destek sayfasını aç</value></data>
+  <data name="SettingsThemePresetComboBox.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Tema ön ayarı</value></data>
+  <data name="SourcesSyncAllButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Tüm yapılandırılmış kaynakları eşitle</value></data>
+  <data name="SeriesPickShowTitle.Text" xml:space="preserve"><value>Bir dizi seç</value></data>
+  <data name="SeriesPickShowMessage.Text" xml:space="preserve"><value>Kapak görseli, sezonlar ve bölüm oynatmayı burada yüklemek için kitaplıktan bir başlık seçin.</value></data>
+  <data name="SourceOnboardingM3uPathBox.PlaceholderText" xml:space="preserve"><value>http://... veya C:\...</value></data>
+  <data name="AppDisplayName" xml:space="preserve"><value>KROIRA IPTV</value></data>
+  <data name="AppDescription" xml:space="preserve"><value>KROIRA IPTV canlı TV, film, dizi, EPG ve kaynak yönetimini tek bir özenli Windows uygulamasında birleştirir.</value></data>
+</root>

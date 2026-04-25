@@ -1,0 +1,3375 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="AboutAppLabel.Text" xml:space="preserve">
+    <value>App</value>
+  </data>
+  <data name="AboutBackToSettingsButton.Content" xml:space="preserve">
+    <value>Settings</value>
+  </data>
+  <data name="AboutBuildTitle.Text" xml:space="preserve">
+    <value>Build</value>
+  </data>
+  <data name="AboutHelpTitle.Text" xml:space="preserve">
+    <value>Help</value>
+  </data>
+  <data name="AboutLegalTitle.Text" xml:space="preserve">
+    <value>Legal</value>
+  </data>
+  <data name="AboutPrivacyTitle.Text" xml:space="preserve">
+    <value>Privacy</value>
+  </data>
+  <data name="AboutReleaseLabel.Text" xml:space="preserve">
+    <value>Release</value>
+  </data>
+  <data name="AboutSectionTitle.Text" xml:space="preserve">
+    <value>About</value>
+  </data>
+  <data name="AboutSupportTitle.Text" xml:space="preserve">
+    <value>Support</value>
+  </data>
+  <data name="Appearance.Accent.Ember.Name" xml:space="preserve">
+    <value>Ember</value>
+  </data>
+  <data name="Appearance.Accent.Ember.Description" xml:space="preserve">
+    <value>Warm red accents for live and alert states.</value>
+  </data>
+  <data name="Appearance.Accent.Gold.Name" xml:space="preserve">
+    <value>Gold</value>
+  </data>
+  <data name="Appearance.Accent.Gold.Description" xml:space="preserve">
+    <value>KROIRA gold emphasis across primary actions.</value>
+  </data>
+  <data name="Appearance.Accent.Signal.Name" xml:space="preserve">
+    <value>Signal</value>
+  </data>
+  <data name="Appearance.Accent.Signal.Description" xml:space="preserve">
+    <value>Cool blue controls for technical playback surfaces.</value>
+  </data>
+  <data name="Appearance.Theme.Archive.Name" xml:space="preserve">
+    <value>Archive</value>
+  </data>
+  <data name="Appearance.Theme.Archive.Description" xml:space="preserve">
+    <value>Quiet neutral surfaces for library browsing.</value>
+  </data>
+  <data name="Appearance.Theme.Broadcast.Name" xml:space="preserve">
+    <value>Broadcast</value>
+  </data>
+  <data name="Appearance.Theme.Broadcast.Description" xml:space="preserve">
+    <value>Sharper contrast for guide-heavy live TV sessions.</value>
+  </data>
+  <data name="Appearance.Theme.Cinema.Name" xml:space="preserve">
+    <value>Cinema</value>
+  </data>
+  <data name="Appearance.Theme.Cinema.Description" xml:space="preserve">
+    <value>Deep surfaces with gold focus for evening viewing.</value>
+  </data>
+  <data name="ChannelBrowserPageSubtitle.Text" xml:space="preserve">
+    <value>Source-level channel browser with guide-aware context.</value>
+  </data>
+  <data name="ChannelBrowserPageTitle.Text" xml:space="preserve">
+    <value>Browser</value>
+  </data>
+  <data name="ChannelBrowserSearchBox.PlaceholderText" xml:space="preserve">
+    <value>Search channels...</value>
+  </data>
+  <data name="Channels.CatchupUnavailableTitle" xml:space="preserve">
+    <value>Catchup unavailable</value>
+  </data>
+  <data name="Channels.Recording.FailedTitle" xml:space="preserve">
+    <value>Recording failed</value>
+  </data>
+  <data name="Channels.Recording.ScheduledMessage" xml:space="preserve">
+    <value>{0} is scheduled for {1:g}.</value>
+  </data>
+  <data name="Channels.Recording.ScheduledTitle" xml:space="preserve">
+    <value>Recording scheduled</value>
+  </data>
+  <data name="Channels.Recording.ScheduleMessage" xml:space="preserve">
+    <value>Choose a local start time and duration.</value>
+  </data>
+  <data name="Channels.Recording.ScheduleTitle" xml:space="preserve">
+    <value>Schedule recording</value>
+  </data>
+  <data name="ChannelsBroadcastLabel.Text" xml:space="preserve">
+    <value>BROADCAST</value>
+  </data>
+  <data name="ChannelsBrowserLabel.Text" xml:space="preserve">
+    <value>CHANNEL BROWSER</value>
+  </data>
+  <data name="ChannelsGuideMatchedFilter.Content" xml:space="preserve">
+    <value>Guide matched</value>
+  </data>
+  <data name="ChannelsLastBadge.Text" xml:space="preserve">
+    <value>LAST</value>
+  </data>
+  <data name="ChannelsPageSubtitle.Text" xml:space="preserve">
+    <value>Browse live channels, guide times, favorites, and catch-up.</value>
+  </data>
+  <data name="ChannelsPageTitle.Text" xml:space="preserve">
+    <value>Live TV</value>
+  </data>
+  <data name="ChannelsSearchBox.PlaceholderText" xml:space="preserve">
+    <value>Search channels</value>
+  </data>
+  <data name="ContinueWatching.ClearLiveMessage" xml:space="preserve">
+    <value>This removes every saved live resume entry for the active profile on this device.</value>
+  </data>
+  <data name="ContinueWatching.ClearLiveTitle" xml:space="preserve">
+    <value>Clear all live resume items?</value>
+  </data>
+  <data name="ContinueWatching.ClearMoviesMessage" xml:space="preserve">
+    <value>This removes every saved movie resume entry for the active profile on this device.</value>
+  </data>
+  <data name="ContinueWatching.ClearMoviesTitle" xml:space="preserve">
+    <value>Clear all movie queue items?</value>
+  </data>
+  <data name="ContinueWatching.ClearSeriesMessage" xml:space="preserve">
+    <value>This removes every saved episode resume entry for the active profile on this device.</value>
+  </data>
+  <data name="ContinueWatching.ClearSeriesTitle" xml:space="preserve">
+    <value>Clear all series queue items?</value>
+  </data>
+  <data name="ContinueWatchingLiveResumeSubtitle.Text" xml:space="preserve">
+    <value>Return to saved live sources</value>
+  </data>
+  <data name="ContinueWatchingLiveResumeTitle.Text" xml:space="preserve">
+    <value>Live Resume</value>
+  </data>
+  <data name="ContinueWatchingMovieQueueSubtitle.Text" xml:space="preserve">
+    <value>Saved film positions</value>
+  </data>
+  <data name="ContinueWatchingMovieQueueTitle.Text" xml:space="preserve">
+    <value>Movie Queue</value>
+  </data>
+  <data name="ContinueWatchingNoEpisodesEmpty.Message" xml:space="preserve">
+    <value>Saved episode progress will appear as a compact queue.</value>
+  </data>
+  <data name="ContinueWatchingNoEpisodesEmpty.Title" xml:space="preserve">
+    <value>No episodes to resume</value>
+  </data>
+  <data name="ContinueWatchingNoLiveResumeEmpty.Message" xml:space="preserve">
+    <value>Live playback entries appear here when saved progress exists.</value>
+  </data>
+  <data name="ContinueWatchingNoLiveResumeEmpty.Title" xml:space="preserve">
+    <value>No live resume items</value>
+  </data>
+  <data name="ContinueWatchingNoMoviesEmpty.Message" xml:space="preserve">
+    <value>Partially watched movies will collect here.</value>
+  </data>
+  <data name="ContinueWatchingNoMoviesEmpty.Title" xml:space="preserve">
+    <value>No movies to resume</value>
+  </data>
+  <data name="ContinueWatchingPageSubtitle.Text" xml:space="preserve">
+    <value>Resume live sources, movies, and episodes from dedicated queues.</value>
+  </data>
+  <data name="ContinueWatchingPageTitle.Text" xml:space="preserve">
+    <value>Continue Watching</value>
+  </data>
+  <data name="ContinueWatchingResumeHubLabel.Text" xml:space="preserve">
+    <value>RESUME HUB</value>
+  </data>
+  <data name="ContinueWatchingSeriesQueueSubtitle.Text" xml:space="preserve">
+    <value>Episode resume items</value>
+  </data>
+  <data name="ContinueWatchingSeriesQueueTitle.Text" xml:space="preserve">
+    <value>Series Queue</value>
+  </data>
+  <data name="EpgAddUrlButton.Text" xml:space="preserve">
+    <value>Add URL</value>
+  </data>
+  <data name="EpgApproveButton.Content" xml:space="preserve">
+    <value>Approve</value>
+  </data>
+  <data name="EpgCenterPageTitle.Text" xml:space="preserve">
+    <value>EPG Center</value>
+  </data>
+  <data name="EpgClearButton.Content" xml:space="preserve">
+    <value>Clear</value>
+  </data>
+  <data name="EpgClearOverrideButton.Text" xml:space="preserve">
+    <value>Clear Override</value>
+  </data>
+  <data name="EpgClearPublicPresetsButton.Text" xml:space="preserve">
+    <value>Clear IPTV-EPG.org Presets</value>
+  </data>
+  <data name="EpgClearReviewDecisionsButton.Text" xml:space="preserve">
+    <value>Clear Review Decisions</value>
+  </data>
+  <data name="EpgGuideSourcesTitle.Text" xml:space="preserve">
+    <value>Guide Sources</value>
+  </data>
+  <data name="EpgGuideTimelineTitle.Text" xml:space="preserve">
+    <value>Guide Timeline</value>
+  </data>
+  <data name="EpgJumpToNowButton.Text" xml:space="preserve">
+    <value>Jump to Now</value>
+  </data>
+  <data name="EpgManualMatchingTitle.Text" xml:space="preserve">
+    <value>Manual EPG Matching</value>
+  </data>
+  <data name="EpgNoGuideInRangeText.Text" xml:space="preserve">
+    <value>No guide in this range</value>
+  </data>
+  <data name="EpgNoProgrammesText.Text" xml:space="preserve">
+    <value>No guide programmes are available for the selected filters and time range.</value>
+  </data>
+  <data name="EpgNoSourcesText.Text" xml:space="preserve">
+    <value>No EPG sources have been configured or detected yet.</value>
+  </data>
+  <data name="EpgNoUnmatchedChannelsText.Text" xml:space="preserve">
+    <value>No unmatched channels found.</value>
+  </data>
+  <data name="EpgNoWeakMatchesText.Text" xml:space="preserve">
+    <value>No weak matches found.</value>
+  </data>
+  <data name="EpgPublicCountryCombo.Header" xml:space="preserve">
+    <value>IPTV-EPG.org country</value>
+  </data>
+  <data name="EpgPublicGuideSourceTitle.Text" xml:space="preserve">
+    <value>Public Guide Source</value>
+  </data>
+  <data name="EpgPublicXmltvUrlBox.Header" xml:space="preserve">
+    <value>Public XMLTV URL</value>
+  </data>
+  <data name="EpgPublicXmltvUrlBox.PlaceholderText" xml:space="preserve">
+    <value>https://iptv-epg.org/files/epg-tr.xml</value>
+  </data>
+  <data name="EpgRejectButton.Content" xml:space="preserve">
+    <value>Reject</value>
+  </data>
+  <data name="EpgReplaceWithAutoDetectedButton.Text" xml:space="preserve">
+    <value>Replace with Auto-Detected</value>
+  </data>
+  <data name="EpgSearchingMatchesText.Text" xml:space="preserve">
+    <value>Searching matches...</value>
+  </data>
+  <data name="EpgSearchUnmatchedBox.PlaceholderText" xml:space="preserve">
+    <value>Search unmatched channels</value>
+  </data>
+  <data name="EpgSearchWeakMatchesBox.PlaceholderText" xml:space="preserve">
+    <value>Search weak matches</value>
+  </data>
+  <data name="EpgSetOverrideButton.Text" xml:space="preserve">
+    <value>Set Override</value>
+  </data>
+  <data name="EpgTimelineLoadingText.Text" xml:space="preserve">
+    <value>Loading guide timeline...</value>
+  </data>
+  <data name="EpgUnmatchedChannelsTitle.Text" xml:space="preserve">
+    <value>Unmatched Channels</value>
+  </data>
+  <data name="EpgWarningsTitle.Text" xml:space="preserve">
+    <value>Warnings</value>
+  </data>
+  <data name="EpgWeakMatchesTitle.Text" xml:space="preserve">
+    <value>Weak Matches</value>
+  </data>
+  <data name="EpgXmltvChannelSearchBox.Header" xml:space="preserve">
+    <value>XMLTV channel search</value>
+  </data>
+  <data name="EpgXmltvChannelSearchBox.PlaceholderText" xml:space="preserve">
+    <value>Search display name or enter an exact XMLTV id</value>
+  </data>
+  <data name="Favorites.ClearChannelsMessage" xml:space="preserve">
+    <value>This removes every saved live channel favorite for the active profile on this device.</value>
+  </data>
+  <data name="Favorites.ClearChannelsTitle" xml:space="preserve">
+    <value>Clear all favorite live channels?</value>
+  </data>
+  <data name="Favorites.ClearMoviesMessage" xml:space="preserve">
+    <value>This removes every saved movie favorite for the active profile on this device.</value>
+  </data>
+  <data name="Favorites.ClearMoviesTitle" xml:space="preserve">
+    <value>Clear all favorite movies?</value>
+  </data>
+  <data name="Favorites.ClearSeriesMessage" xml:space="preserve">
+    <value>This removes every saved series favorite for the active profile on this device.</value>
+  </data>
+  <data name="Favorites.ClearSeriesTitle" xml:space="preserve">
+    <value>Clear all favorite series?</value>
+  </data>
+  <data name="FavoritesLiveTvTitle.Text" xml:space="preserve">
+    <value>Live TV</value>
+  </data>
+  <data name="FavoritesMoviesTitle.Text" xml:space="preserve">
+    <value>Movies</value>
+  </data>
+  <data name="FavoritesNoPlayableEpisodesEmpty.Message" xml:space="preserve">
+    <value>This saved series does not currently have playable episode data in the local library.</value>
+  </data>
+  <data name="FavoritesNoPlayableEpisodesEmpty.Title" xml:space="preserve">
+    <value>No playable episodes</value>
+  </data>
+  <data name="FavoritesNoSavedChannelsEmpty.Message" xml:space="preserve">
+    <value>Star channels from Live TV to build a quick launch lane.</value>
+  </data>
+  <data name="FavoritesNoSavedChannelsEmpty.Title" xml:space="preserve">
+    <value>No saved channels</value>
+  </data>
+  <data name="FavoritesNoSavedMoviesEmpty.Message" xml:space="preserve">
+    <value>Save movie cards to keep a focused watchlist here.</value>
+  </data>
+  <data name="FavoritesNoSavedMoviesEmpty.Title" xml:space="preserve">
+    <value>No saved movies</value>
+  </data>
+  <data name="FavoritesNoSavedSeriesEmpty.Message" xml:space="preserve">
+    <value>Saved series appear here as a dedicated show lane.</value>
+  </data>
+  <data name="FavoritesNoSavedSeriesEmpty.Title" xml:space="preserve">
+    <value>No saved series</value>
+  </data>
+  <data name="FavoritesOpenSeriesPageButton.Content" xml:space="preserve">
+    <value>Open Series page</value>
+  </data>
+  <data name="FavoritesPageSubtitle.Text" xml:space="preserve">
+    <value>Your saved Live TV, Movies, and Series in dedicated media lanes.</value>
+  </data>
+  <data name="FavoritesPageTitle.Text" xml:space="preserve">
+    <value>Favorites</value>
+  </data>
+  <data name="FavoritesSavedChannelsSubtitle.Text" xml:space="preserve">
+    <value>Saved channels</value>
+  </data>
+  <data name="FavoritesSavedFilmsSubtitle.Text" xml:space="preserve">
+    <value>Saved films</value>
+  </data>
+  <data name="FavoritesSavedSeriesLabel.Text" xml:space="preserve">
+    <value>SAVED SERIES</value>
+  </data>
+  <data name="FavoritesSavedShowsSubtitle.Text" xml:space="preserve">
+    <value>Saved shows</value>
+  </data>
+  <data name="FavoritesSeriesDetailsTitle.Text" xml:space="preserve">
+    <value>Series details</value>
+  </data>
+  <data name="FavoritesSeriesTitle.Text" xml:space="preserve">
+    <value>Series</value>
+  </data>
+  <data name="General.Available" xml:space="preserve">
+    <value>Available</value>
+  </data>
+  <data name="General.Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="General.ClearAll" xml:space="preserve">
+    <value>Clear all</value>
+  </data>
+  <data name="General.Close" xml:space="preserve">
+    <value>Close</value>
+  </data>
+  <data name="General.Delete" xml:space="preserve">
+    <value>Delete</value>
+  </data>
+  <data name="General.Disabled" xml:space="preserve">
+    <value>Disabled</value>
+  </data>
+  <data name="General.NotAvailable" xml:space="preserve">
+    <value>Not available</value>
+  </data>
+  <data name="General.OpenLibrary" xml:space="preserve">
+    <value>Open library</value>
+  </data>
+  <data name="General.Reset" xml:space="preserve">
+    <value>Reset</value>
+  </data>
+  <data name="General.Restore" xml:space="preserve">
+    <value>Restore</value>
+  </data>
+  <data name="General.Save" xml:space="preserve">
+    <value>Save</value>
+  </data>
+  <data name="General.Unknown" xml:space="preserve">
+    <value>Unknown</value>
+  </data>
+  <data name="GeneralAddSourceButton.Content" xml:space="preserve">
+    <value>Add Source</value>
+  </data>
+  <data name="GeneralAddSourceText.Text" xml:space="preserve">
+    <value>Add Source</value>
+  </data>
+  <data name="GeneralBackButton.Content" xml:space="preserve">
+    <value>Back</value>
+  </data>
+  <data name="GeneralBackButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Back</value>
+  </data>
+  <data name="GeneralBrowseText.Text" xml:space="preserve">
+    <value>Browse</value>
+  </data>
+  <data name="GeneralCancelButton.Content" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="GeneralCancelButton2.Content" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="GeneralCatchupBadge.Text" xml:space="preserve">
+    <value>CATCHUP</value>
+  </data>
+  <data name="GeneralCategoryCombo.Header" xml:space="preserve">
+    <value>Category</value>
+  </data>
+  <data name="GeneralChannelCombo.Header" xml:space="preserve">
+    <value>Channel</value>
+  </data>
+  <data name="GeneralChannelLabel.Text" xml:space="preserve">
+    <value>Channel</value>
+  </data>
+  <data name="GeneralChannelsText.Text" xml:space="preserve">
+    <value>Channels</value>
+  </data>
+  <data name="GeneralClearAllButton.Content" xml:space="preserve">
+    <value>Clear all</value>
+  </data>
+  <data name="GeneralClearAllButton2.Content" xml:space="preserve">
+    <value>Clear all</value>
+  </data>
+  <data name="GeneralClearAllButton3.Content" xml:space="preserve">
+    <value>Clear all</value>
+  </data>
+  <data name="GeneralClearRecentButton.Content" xml:space="preserve">
+    <value>Clear recent</value>
+  </data>
+  <data name="GeneralClearRecentButton2.Content" xml:space="preserve">
+    <value>Clear recent</value>
+  </data>
+  <data name="GeneralCloseButton.Content" xml:space="preserve">
+    <value>Close</value>
+  </data>
+  <data name="GeneralCopySafeReportButton.Content" xml:space="preserve">
+    <value>Copy Safe Report</value>
+  </data>
+  <data name="GeneralCopySafeReportText.Text" xml:space="preserve">
+    <value>Copy safe report</value>
+  </data>
+  <data name="GeneralCopySafeReportText2.Text" xml:space="preserve">
+    <value>Copy safe report</value>
+  </data>
+  <data name="GeneralDeleteButton.Content" xml:space="preserve">
+    <value>Delete</value>
+  </data>
+  <data name="GeneralDeleteButton2.Content" xml:space="preserve">
+    <value>Delete</value>
+  </data>
+  <data name="GeneralDetailsButton.Content" xml:space="preserve">
+    <value>Details</value>
+  </data>
+  <data name="GeneralDetailsText.Text" xml:space="preserve">
+    <value>Details</value>
+  </data>
+  <data name="GeneralDisabledRadio.Content" xml:space="preserve">
+    <value>Disabled</value>
+  </data>
+  <data name="GeneralDownloadButton.Content" xml:space="preserve">
+    <value>Download</value>
+  </data>
+  <data name="GeneralDownloadText.Text" xml:space="preserve">
+    <value>Download</value>
+  </data>
+  <data name="GeneralEpisodesText.Text" xml:space="preserve">
+    <value>Episodes</value>
+  </data>
+  <data name="GeneralFavoritesFilter.Content" xml:space="preserve">
+    <value>Favorites</value>
+  </data>
+  <data name="GeneralGoBackButton.Content" xml:space="preserve">
+    <value>Go back</value>
+  </data>
+  <data name="GeneralGuideButton.Content" xml:space="preserve">
+    <value>Guide</value>
+  </data>
+  <data name="GeneralGuideLabel.Text" xml:space="preserve">
+    <value>Guide</value>
+  </data>
+  <data name="GeneralGuideText.Text" xml:space="preserve">
+    <value>Guide</value>
+  </data>
+  <data name="GeneralGuideText2.Text" xml:space="preserve">
+    <value>Guide</value>
+  </data>
+  <data name="GeneralInfoButton.Content" xml:space="preserve">
+    <value>Info</value>
+  </data>
+  <data name="GeneralInfoText.Text" xml:space="preserve">
+    <value>Info</value>
+  </data>
+  <data name="GeneralLiveBadge.Text" xml:space="preserve">
+    <value>LIVE</value>
+  </data>
+  <data name="GeneralModeCombo.Header" xml:space="preserve">
+    <value>Mode</value>
+  </data>
+  <data name="GeneralMoreText.Text" xml:space="preserve">
+    <value>More</value>
+  </data>
+  <data name="GeneralOffButton.Content" xml:space="preserve">
+    <value>Off</value>
+  </data>
+  <data name="GeneralPasswordBox.Header" xml:space="preserve">
+    <value>Password</value>
+  </data>
+  <data name="GeneralPlayButton.Content" xml:space="preserve">
+    <value>Play</value>
+  </data>
+  <data name="GeneralPlayButton2.Content" xml:space="preserve">
+    <value>Play</value>
+  </data>
+  <data name="GeneralPlayText.Text" xml:space="preserve">
+    <value>Play</value>
+  </data>
+  <data name="GeneralPrimaryOnlyFilter.Content" xml:space="preserve">
+    <value>Primary only</value>
+  </data>
+  <data name="GeneralRefreshButton.Content" xml:space="preserve">
+    <value>Refresh</value>
+  </data>
+  <data name="GeneralRefreshText.Text" xml:space="preserve">
+    <value>Refresh</value>
+  </data>
+  <data name="GeneralReloadText.Text" xml:space="preserve">
+    <value>Reload</value>
+  </data>
+  <data name="GeneralResetButton.Content" xml:space="preserve">
+    <value>Reset</value>
+  </data>
+  <data name="GeneralResetButton2.Content" xml:space="preserve">
+    <value>Reset</value>
+  </data>
+  <data name="GeneralResetButton3.Content" xml:space="preserve">
+    <value>Reset</value>
+  </data>
+  <data name="GeneralResumeBadge.Text" xml:space="preserve">
+    <value>RESUME</value>
+  </data>
+  <data name="GeneralRetryButton.Content" xml:space="preserve">
+    <value>Retry</value>
+  </data>
+  <data name="GeneralRetryButton2.Content" xml:space="preserve">
+    <value>Retry</value>
+  </data>
+  <data name="GeneralRetryErrorState.RetryActionLabel" xml:space="preserve">
+    <value>Retry</value>
+  </data>
+  <data name="GeneralSaveButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Save</value>
+  </data>
+  <data name="GeneralSearchBoxHeader.Header" xml:space="preserve">
+    <value>Search</value>
+  </data>
+  <data name="GeneralSearchBoxHeader.PlaceholderText" xml:space="preserve">
+    <value>Filter channels, categories, or sources</value>
+  </data>
+  <data name="GeneralServerUrlBox.Header" xml:space="preserve">
+    <value>Server URL</value>
+  </data>
+  <data name="GeneralServerUrlBox.PlaceholderText" xml:space="preserve">
+    <value>http://domain.com:8080</value>
+  </data>
+  <data name="GeneralSourceCombo.Header" xml:space="preserve">
+    <value>Source</value>
+  </data>
+  <data name="GeneralSourceCombo2.Header" xml:space="preserve">
+    <value>Source</value>
+  </data>
+  <data name="GeneralSourceCombo3.Header" xml:space="preserve">
+    <value>Source</value>
+  </data>
+  <data name="GeneralSourceLabel.Text" xml:space="preserve">
+    <value>Source</value>
+  </data>
+  <data name="GeneralUsernameBox.Header" xml:space="preserve">
+    <value>Username</value>
+  </data>
+  <data name="HomeAllChannelsSubtitle.Text" xml:space="preserve">
+    <value>Browse the full live lineup</value>
+  </data>
+  <data name="HomeAllChannelsTitle.Text" xml:space="preserve">
+    <value>All Channels</value>
+  </data>
+  <data name="HomeAllLiveTvButton.Content" xml:space="preserve">
+    <value>All live TV</value>
+  </data>
+  <data name="HomeAllLiveTvButton2.Content" xml:space="preserve">
+    <value>All live TV</value>
+  </data>
+  <data name="HomeBrowseCatalogButton.Content" xml:space="preserve">
+    <value>Browse catalog</value>
+  </data>
+  <data name="HomeContinueWatchingTitle.Text" xml:space="preserve">
+    <value>Continue Watching</value>
+  </data>
+  <data name="HomeFavoritesSubtitle.Text" xml:space="preserve">
+    <value>Open saved channels</value>
+  </data>
+  <data name="HomeFavoritesTitle.Text" xml:space="preserve">
+    <value>Favorites</value>
+  </data>
+  <data name="HomeHeroLiveTvSubtitle.Text" xml:space="preserve">
+    <value>Sports channels, live events, and match-night viewing in one jump.</value>
+  </data>
+  <data name="HomeHeroLiveTvTitle.Text" xml:space="preserve">
+    <value>Live TV</value>
+  </data>
+  <data name="HomeLibraryAtGlanceTitle.Text" xml:space="preserve">
+    <value>Library at a glance</value>
+  </data>
+  <data name="HomeLiveNowTitle.Text" xml:space="preserve">
+    <value>Live Now</value>
+  </data>
+  <data name="HomeLiveSportsBadge.Text" xml:space="preserve">
+    <value>LIVE SPORTS</value>
+  </data>
+  <data name="HomeLiveSportsNowTitle.Text" xml:space="preserve">
+    <value>Live Sports Now</value>
+  </data>
+  <data name="HomeLiveTvShortcutsTitle.Text" xml:space="preserve">
+    <value>Live TV Shortcuts</value>
+  </data>
+  <data name="HomeMatchCenterSubtitle.Text" xml:space="preserve">
+    <value>Jump into live sports instantly.</value>
+  </data>
+  <data name="HomeMatchCenterTitle.Text" xml:space="preserve">
+    <value>Match Center</value>
+  </data>
+  <data name="HomeMatchReadyText.Text" xml:space="preserve">
+    <value>Ready when the match starts</value>
+  </data>
+  <data name="HomeNothingToResumeEmpty.Message" xml:space="preserve">
+    <value>Start watching a channel, movie, or episode and it will appear here.</value>
+  </data>
+  <data name="HomeNothingToResumeEmpty.Title" xml:space="preserve">
+    <value>Nothing to resume yet</value>
+  </data>
+  <data name="HomeRecentlyAddedTitle.Text" xml:space="preserve">
+    <value>Recently Added</value>
+  </data>
+  <data name="HomeRecentlyWatchedSubtitle.Text" xml:space="preserve">
+    <value>Return to recent viewing</value>
+  </data>
+  <data name="HomeRecentlyWatchedTitle.Text" xml:space="preserve">
+    <value>Recently Watched</value>
+  </data>
+  <data name="HomeRecommendedForYouTitle.Text" xml:space="preserve">
+    <value>Recommended For You</value>
+  </data>
+  <data name="HomeSportsSubtitle.Text" xml:space="preserve">
+    <value>Jump to sports viewing</value>
+  </data>
+  <data name="HomeSportsTitle.Text" xml:space="preserve">
+    <value>Sports</value>
+  </data>
+  <data name="HomeTopRatedTitle.Text" xml:space="preserve">
+    <value>Top Rated</value>
+  </data>
+  <data name="HomeViewAllButton.Content" xml:space="preserve">
+    <value>View all</value>
+  </data>
+  <data name="HomeWatchLiveTvButton.Text" xml:space="preserve">
+    <value>Watch Live TV</value>
+  </data>
+  <data name="Language.Arabic" xml:space="preserve">
+    <value>Arabic</value>
+  </data>
+  <data name="Language.ChineseSimplified" xml:space="preserve">
+    <value>Chinese Simplified</value>
+  </data>
+  <data name="Language.English" xml:space="preserve">
+    <value>English</value>
+  </data>
+  <data name="Language.French" xml:space="preserve">
+    <value>French</value>
+  </data>
+  <data name="Language.German" xml:space="preserve">
+    <value>German</value>
+  </data>
+  <data name="Language.Hindi" xml:space="preserve">
+    <value>Hindi</value>
+  </data>
+  <data name="Language.Japanese" xml:space="preserve">
+    <value>Japanese</value>
+  </data>
+  <data name="Language.Korean" xml:space="preserve">
+    <value>Korean</value>
+  </data>
+  <data name="Language.PortugueseBrazil" xml:space="preserve">
+    <value>Portuguese Brazil</value>
+  </data>
+  <data name="Language.Spanish" xml:space="preserve">
+    <value>Spanish</value>
+  </data>
+  <data name="Language.SystemDefault" xml:space="preserve">
+    <value>System default</value>
+  </data>
+  <data name="Language.Turkish" xml:space="preserve">
+    <value>Turkish</value>
+  </data>
+  <data name="MediaLibraryCaptureLibraryLabel.Text" xml:space="preserve">
+    <value>CAPTURE LIBRARY</value>
+  </data>
+  <data name="MediaLibraryLiveRecordingsLabel.Text" xml:space="preserve">
+    <value>LIVE RECORDINGS</value>
+  </data>
+  <data name="MediaLibraryNoItemsSubtitle.Text" xml:space="preserve">
+    <value>Schedule a live recording from Live TV or queue a VOD download from Movies or Series.</value>
+  </data>
+  <data name="MediaLibraryNoItemsTitle.Text" xml:space="preserve">
+    <value>No recordings or downloads yet</value>
+  </data>
+  <data name="MediaLibraryPageSubtitle.Text" xml:space="preserve">
+    <value>Monitor scheduled live recordings, queued VOD downloads, and completed files from one place.</value>
+  </data>
+  <data name="MediaLibraryPageTitle.Text" xml:space="preserve">
+    <value>Recordings &amp; Downloads</value>
+  </data>
+  <data name="MediaLibraryStoragePathLabel.Text" xml:space="preserve">
+    <value>Storage path</value>
+  </data>
+  <data name="MediaLibraryVodDownloadsLabel.Text" xml:space="preserve">
+    <value>VOD DOWNLOADS</value>
+  </data>
+  <data name="Movies.ChooseSource.Download" xml:space="preserve">
+    <value>Choose a source to download.</value>
+  </data>
+  <data name="Movies.ChooseSource.Inspect" xml:space="preserve">
+    <value>Choose a source to inspect.</value>
+  </data>
+  <data name="Movies.ChooseSource.Playback" xml:space="preserve">
+    <value>Choose a source for playback.</value>
+  </data>
+  <data name="Movies.DownloadFailedTitle" xml:space="preserve">
+    <value>Download failed</value>
+  </data>
+  <data name="MoviesFeaturedFilmLabel.Text" xml:space="preserve">
+    <value>FEATURED FILM</value>
+  </data>
+  <data name="MoviesLibraryLabel.Text" xml:space="preserve">
+    <value>MOVIES LIBRARY</value>
+  </data>
+  <data name="MoviesPageSubtitle.Text" xml:space="preserve">
+    <value>Search, filter, and pick a film from your sources.</value>
+  </data>
+  <data name="MoviesPageTitle.Text" xml:space="preserve">
+    <value>Movies</value>
+  </data>
+  <data name="MoviesPlayMovieButton.Text" xml:space="preserve">
+    <value>Play movie</value>
+  </data>
+  <data name="MoviesSearchBox.PlaceholderText" xml:space="preserve">
+    <value>Search movies</value>
+  </data>
+  <data name="Player.Aspect.Automatic" xml:space="preserve">
+    <value>Automatic</value>
+  </data>
+  <data name="Player.Aspect.FillWindow" xml:space="preserve">
+    <value>Fill window</value>
+  </data>
+  <data name="Player.AudioDelay.Value" xml:space="preserve">
+    <value>Audio delay {0}</value>
+  </data>
+  <data name="Player.Button.ExitPip" xml:space="preserve">
+    <value>Exit PiP</value>
+  </data>
+  <data name="Player.Button.Pip" xml:space="preserve">
+    <value>PiP</value>
+  </data>
+  <data name="Player.Catchup.Playback" xml:space="preserve">
+    <value>Catchup playback</value>
+  </data>
+  <data name="Player.ChannelSearch.NoMatches" xml:space="preserve">
+    <value>No channels match your search.</value>
+  </data>
+  <data name="Player.ChannelSearch.Ready" xml:space="preserve">
+    <value>{0:N0} channels ready.</value>
+  </data>
+  <data name="Player.Display.Summary" xml:space="preserve">
+    <value>{0} - Zoom {1} - Rotation {2} deg</value>
+  </data>
+  <data name="Player.Episodes.PanelHeader" xml:space="preserve">
+    <value>Season / episode quick panel</value>
+  </data>
+  <data name="Player.Episodes.PanelStatus" xml:space="preserve">
+    <value>{0:N0} playable episodes in this series.</value>
+  </data>
+  <data name="Player.External.Unavailable" xml:space="preserve">
+    <value>External player unavailable</value>
+  </data>
+  <data name="Player.Favorite.RemoveTooltip" xml:space="preserve">
+    <value>Remove from saved items</value>
+  </data>
+  <data name="Player.Favorite.SaveTooltip" xml:space="preserve">
+    <value>Save this item</value>
+  </data>
+  <data name="Player.Guide.NoCurrentProgramme" xml:space="preserve">
+    <value>No current programme</value>
+  </data>
+  <data name="Player.Guide.NotAvailable" xml:space="preserve">
+    <value>Guide not available.</value>
+  </data>
+  <data name="Player.Guide.NoUpcomingProgramme" xml:space="preserve">
+    <value>No upcoming programme</value>
+  </data>
+  <data name="Player.Guide.NowProgram" xml:space="preserve">
+    <value>Now - {0}</value>
+  </data>
+  <data name="Player.Hint.SeekUnavailable" xml:space="preserve">
+    <value>Seek unavailable on this live stream.</value>
+  </data>
+  <data name="Player.Hint.SleepTimer" xml:space="preserve">
+    <value>Sleep timer {0}</value>
+  </data>
+  <data name="Player.Info.CatchupNotSeekable" xml:space="preserve">
+    <value>Catchup not seekable</value>
+  </data>
+  <data name="Player.Info.CatchupReplay" xml:space="preserve">
+    <value>Catchup replay</value>
+  </data>
+  <data name="Player.Info.CatchupSummary" xml:space="preserve">
+    <value>Catchup replay is active on the live channel path.</value>
+  </data>
+  <data name="Player.Info.LiveSummary" xml:space="preserve">
+    <value>Live playback tools reflect real stream state and guide confidence.</value>
+  </data>
+  <data name="Player.Info.NoGuideStatus" xml:space="preserve">
+    <value>No guide status</value>
+  </data>
+  <data name="Player.Info.NotSeekable" xml:space="preserve">
+    <value>Not seekable</value>
+  </data>
+  <data name="Player.Info.Seekable" xml:space="preserve">
+    <value>Seekable</value>
+  </data>
+  <data name="Player.Info.SeekableSummary" xml:space="preserve">
+    <value>Seekable playback controls are active for this title.</value>
+  </data>
+  <data name="Player.Menu.AlwaysOnTop" xml:space="preserve">
+    <value>Always on top</value>
+  </data>
+  <data name="Player.Menu.AudioAndSubtitles" xml:space="preserve">
+    <value>Audio and subtitles</value>
+  </data>
+  <data name="Player.Menu.AudioDelay" xml:space="preserve">
+    <value>Audio delay {0}</value>
+  </data>
+  <data name="Player.Menu.Channels" xml:space="preserve">
+    <value>Channels</value>
+  </data>
+  <data name="Player.Menu.Deinterlace" xml:space="preserve">
+    <value>Deinterlace</value>
+  </data>
+  <data name="Player.Menu.Display" xml:space="preserve">
+    <value>Display</value>
+  </data>
+  <data name="Player.Menu.Episodes" xml:space="preserve">
+    <value>Episodes</value>
+  </data>
+  <data name="Player.Menu.ExitPictureInPicture" xml:space="preserve">
+    <value>Exit picture in picture</value>
+  </data>
+  <data name="Player.Menu.Guide" xml:space="preserve">
+    <value>Guide</value>
+  </data>
+  <data name="Player.Menu.Info" xml:space="preserve">
+    <value>Info</value>
+  </data>
+  <data name="Player.Menu.JumpToLive" xml:space="preserve">
+    <value>Jump to live</value>
+  </data>
+  <data name="Player.Menu.PictureInPicture" xml:space="preserve">
+    <value>Picture in picture</value>
+  </data>
+  <data name="Player.Menu.ResetAudioDelay" xml:space="preserve">
+    <value>Reset audio delay</value>
+  </data>
+  <data name="Player.Menu.ResetSubtitleDelay" xml:space="preserve">
+    <value>Reset subtitle delay</value>
+  </data>
+  <data name="Player.Menu.ResetZoom" xml:space="preserve">
+    <value>Reset zoom</value>
+  </data>
+  <data name="Player.Menu.Restart" xml:space="preserve">
+    <value>Restart</value>
+  </data>
+  <data name="Player.Menu.RetryStream" xml:space="preserve">
+    <value>Retry stream</value>
+  </data>
+  <data name="Player.Menu.RotationDegrees" xml:space="preserve">
+    <value>Rotation {0} deg</value>
+  </data>
+  <data name="Player.Menu.Screenshot" xml:space="preserve">
+    <value>Screenshot</value>
+  </data>
+  <data name="Player.Menu.Session" xml:space="preserve">
+    <value>Session</value>
+  </data>
+  <data name="Player.Menu.SleepMinutes" xml:space="preserve">
+    <value>{0} minutes</value>
+  </data>
+  <data name="Player.Menu.SleepTimerOff" xml:space="preserve">
+    <value>Sleep timer off</value>
+  </data>
+  <data name="Player.Menu.StopPlayback" xml:space="preserve">
+    <value>Stop playback</value>
+  </data>
+  <data name="Player.Menu.SubtitleDelay" xml:space="preserve">
+    <value>Subtitle delay {0}</value>
+  </data>
+  <data name="Player.Menu.SubtitleHigh" xml:space="preserve">
+    <value>Subtitle high</value>
+  </data>
+  <data name="Player.Menu.SubtitleLow" xml:space="preserve">
+    <value>Subtitle low</value>
+  </data>
+  <data name="Player.Menu.SubtitleMiddle" xml:space="preserve">
+    <value>Subtitle middle</value>
+  </data>
+  <data name="Player.Menu.SubtitleSizeLarge" xml:space="preserve">
+    <value>Subtitle size large</value>
+  </data>
+  <data name="Player.Menu.SubtitleSizeMedium" xml:space="preserve">
+    <value>Subtitle size medium</value>
+  </data>
+  <data name="Player.Menu.SubtitleSizeSmall" xml:space="preserve">
+    <value>Subtitle size small</value>
+  </data>
+  <data name="Player.Menu.Tracks" xml:space="preserve">
+    <value>Tracks</value>
+  </data>
+  <data name="Player.Menu.ZoomIn" xml:space="preserve">
+    <value>Zoom in</value>
+  </data>
+  <data name="Player.Menu.ZoomOut" xml:space="preserve">
+    <value>Zoom out</value>
+  </data>
+  <data name="Player.Meta.Now" xml:space="preserve">
+    <value>Now: {0}</value>
+  </data>
+  <data name="Player.Meta.NowNext" xml:space="preserve">
+    <value>Now: {0} - Next: {1}</value>
+  </data>
+  <data name="Player.Sleep.In" xml:space="preserve">
+    <value>Sleep in {0}</value>
+  </data>
+  <data name="Player.Sleep.Off" xml:space="preserve">
+    <value>Sleep timer off.</value>
+  </data>
+  <data name="Player.Subtitle.Summary" xml:space="preserve">
+    <value>Subtitle size {0} - Position {1}</value>
+  </data>
+  <data name="Player.SubtitleDelay.Value" xml:space="preserve">
+    <value>Subtitle delay {0}</value>
+  </data>
+  <data name="Player.SubtitlePosition.High" xml:space="preserve">
+    <value>High</value>
+  </data>
+  <data name="Player.SubtitlePosition.Low" xml:space="preserve">
+    <value>Low</value>
+  </data>
+  <data name="Player.SubtitlePosition.Mid" xml:space="preserve">
+    <value>Mid</value>
+  </data>
+  <data name="Player.SubtitleSize.Large" xml:space="preserve">
+    <value>Large</value>
+  </data>
+  <data name="Player.SubtitleSize.Medium" xml:space="preserve">
+    <value>Medium</value>
+  </data>
+  <data name="Player.SubtitleSize.Small" xml:space="preserve">
+    <value>Small</value>
+  </data>
+  <data name="Player.Tools.Summary.Catchup" xml:space="preserve">
+    <value>Catchup replay stays on the live-channel path so you can jump back to live instantly.</value>
+  </data>
+  <data name="Player.Tools.Summary.Default" xml:space="preserve">
+    <value>Compact playback tuning for display, subtitles, recovery, and session tools.</value>
+  </data>
+  <data name="Player.Tools.Summary.Live" xml:space="preserve">
+    <value>Live tools stay interactive while channel, subtitle, and display controls remain in frame.</value>
+  </data>
+  <data name="Player.Window.AlwaysOnTopEnabled" xml:space="preserve">
+    <value>Always on top enabled.</value>
+  </data>
+  <data name="Player.Window.NormalStacking" xml:space="preserve">
+    <value>Window follows normal stacking.</value>
+  </data>
+  <data name="PlayerAlwaysOnTopButton.Content" xml:space="preserve">
+    <value>Always on top</value>
+  </data>
+  <data name="PlayerAudioLabel.Text" xml:space="preserve">
+    <value>Audio</value>
+  </data>
+  <data name="PlayerAudioSubtitlesTitle.Text" xml:space="preserve">
+    <value>Audio &amp; subtitles</value>
+  </data>
+  <data name="PlayerAutoButton.Content" xml:space="preserve">
+    <value>Auto</value>
+  </data>
+  <data name="PlayerBack10Button.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Back 10 seconds</value>
+  </data>
+  <data name="PlayerBack30Button.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Back 30 seconds</value>
+  </data>
+  <data name="PlayerChannelListButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Channel list</value>
+  </data>
+  <data name="PlayerChannelsButton.Content" xml:space="preserve">
+    <value>Channels</value>
+  </data>
+  <data name="PlayerChannelSurfTitle.Text" xml:space="preserve">
+    <value>Channel surf</value>
+  </data>
+  <data name="PlayerCloseToolsButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Close tools</value>
+  </data>
+  <data name="PlayerDeinterlaceButton.Content" xml:space="preserve">
+    <value>Deinterlace</value>
+  </data>
+  <data name="PlayerDisplaySummary.Text" xml:space="preserve">
+    <value>Auto framing, neutral zoom, and standard rotation.</value>
+  </data>
+  <data name="PlayerDisplayTitle.Text" xml:space="preserve">
+    <value>Display</value>
+  </data>
+  <data name="PlayerEpisodesButton.Content" xml:space="preserve">
+    <value>Episodes</value>
+  </data>
+  <data name="PlayerFillButton.Content" xml:space="preserve">
+    <value>Fill</value>
+  </data>
+  <data name="PlayerForward10Button.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Forward 10 seconds</value>
+  </data>
+  <data name="PlayerForward30Button.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Forward 30 seconds</value>
+  </data>
+  <data name="PlayerFpsLabel.Text" xml:space="preserve">
+    <value>FPS</value>
+  </data>
+  <data name="PlayerFullscreenButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Fullscreen</value>
+  </data>
+  <data name="PlayerGoLiveButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Jump to live</value>
+  </data>
+  <data name="PlayerHighButton.Content" xml:space="preserve">
+    <value>High</value>
+  </data>
+  <data name="PlayerLargeButton.Content" xml:space="preserve">
+    <value>Large</value>
+  </data>
+  <data name="PlayerLastChannelButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Last channel</value>
+  </data>
+  <data name="PlayerLiveButton.Content" xml:space="preserve">
+    <value>Live</value>
+  </data>
+  <data name="PlayerLiveNowLabel.Text" xml:space="preserve">
+    <value>Live now</value>
+  </data>
+  <data name="PlayerLowButton.Content" xml:space="preserve">
+    <value>Low</value>
+  </data>
+  <data name="PlayerMediumButton.Content" xml:space="preserve">
+    <value>Medium</value>
+  </data>
+  <data name="PlayerMidButton.Content" xml:space="preserve">
+    <value>Mid</value>
+  </data>
+  <data name="PlayerMiniGuideButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Mini guide</value>
+  </data>
+  <data name="PlayerMoreButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>More</value>
+  </data>
+  <data name="PlayerMuteButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Mute</value>
+  </data>
+  <data name="PlayerNextChannelButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Next channel</value>
+  </data>
+  <data name="PlayerNowNextTitle.Text" xml:space="preserve">
+    <value>Now / Next</value>
+  </data>
+  <data name="PlayerOpenExternalButton.Content" xml:space="preserve">
+    <value>Open external</value>
+  </data>
+  <data name="PlayerPipButton.Content" xml:space="preserve">
+    <value>PiP</value>
+  </data>
+  <data name="PlayerPipText.Text" xml:space="preserve">
+    <value>PIP</value>
+  </data>
+  <data name="PlayerPlaybackErrorTitle.Text" xml:space="preserve">
+    <value>Playback error</value>
+  </data>
+  <data name="PlayerPlaybackInfoTitle.Text" xml:space="preserve">
+    <value>Playback info</value>
+  </data>
+  <data name="PlayerPlaybackToolsSummary.Text" xml:space="preserve">
+    <value>Compact live controls for display, subtitles, and session actions.</value>
+  </data>
+  <data name="PlayerPlaybackToolsTitle.Text" xml:space="preserve">
+    <value>Playback tools</value>
+  </data>
+  <data name="PlayerPlayPauseButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Play or pause</value>
+  </data>
+  <data name="PlayerPreviousChannelButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Previous channel</value>
+  </data>
+  <data name="PlayerQuickActionsSummary.Text" xml:space="preserve">
+    <value>Panels, recovery, capture, and picture-in-picture.</value>
+  </data>
+  <data name="PlayerQuickActionsTitle.Text" xml:space="preserve">
+    <value>Quick actions</value>
+  </data>
+  <data name="PlayerResolutionLabel.Text" xml:space="preserve">
+    <value>Resolution</value>
+  </data>
+  <data name="PlayerRestartButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Restart from beginning</value>
+  </data>
+  <data name="PlayerRestartContentButton.Content" xml:space="preserve">
+    <value>Restart</value>
+  </data>
+  <data name="PlayerSeekLabel.Text" xml:space="preserve">
+    <value>Seek</value>
+  </data>
+  <data name="PlayerSessionSummary.Text" xml:space="preserve">
+    <value>Sleep timer off. Window follows normal stacking.</value>
+  </data>
+  <data name="PlayerSessionTitle.Text" xml:space="preserve">
+    <value>Session</value>
+  </data>
+  <data name="PlayerShotButton.Content" xml:space="preserve">
+    <value>Shot</value>
+  </data>
+  <data name="PlayerSmallButton.Content" xml:space="preserve">
+    <value>Small</value>
+  </data>
+  <data name="PlayerSpeedButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Playback speed</value>
+  </data>
+  <data name="PlayerSpeedLabel.Text" xml:space="preserve">
+    <value>Speed</value>
+  </data>
+  <data name="PlayerStopButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Stop playback</value>
+  </data>
+  <data name="PlayerStopContentButton.Content" xml:space="preserve">
+    <value>Stop</value>
+  </data>
+  <data name="PlayerSubtitleSummary.Text" xml:space="preserve">
+    <value>Subtitle scale and placement follow the active player state.</value>
+  </data>
+  <data name="PlayerTracksButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Audio and subtitles</value>
+  </data>
+  <data name="PlayerVideoLabel.Text" xml:space="preserve">
+    <value>Video</value>
+  </data>
+  <data name="Profile.DeleteConfirmMessage" xml:space="preserve">
+    <value>This cannot be undone.</value>
+  </data>
+  <data name="Profile.DeleteConfirmTitle" xml:space="preserve">
+    <value>Delete this profile?</value>
+  </data>
+  <data name="ProfileAccessBehaviorTitle.Text" xml:space="preserve">
+    <value>Access behavior</value>
+  </data>
+  <data name="ProfileAddKidsProfileButton.Content" xml:space="preserve">
+    <value>Add kids profile</value>
+  </data>
+  <data name="ProfileAddProfileButton.Content" xml:space="preserve">
+    <value>Add profile</value>
+  </data>
+  <data name="ProfileClearPinButton.Content" xml:space="preserve">
+    <value>Clear PIN</value>
+  </data>
+  <data name="ProfileDeleteProfileButton.Content" xml:space="preserve">
+    <value>Delete profile</value>
+  </data>
+  <data name="ProfileHideLockedContentSwitch.Header" xml:space="preserve">
+    <value>Hide locked content until unlocked</value>
+  </data>
+  <data name="ProfileKidsSafeModeSwitch.Header" xml:space="preserve">
+    <value>Kids-safe mode</value>
+  </data>
+  <data name="ProfileLocalManagementTitle.Text" xml:space="preserve">
+    <value>Local profile management</value>
+  </data>
+  <data name="ProfileLockedCategoriesTitle.Text" xml:space="preserve">
+    <value>Locked categories</value>
+  </data>
+  <data name="ProfileLockedSourcesTitle.Text" xml:space="preserve">
+    <value>Locked sources</value>
+  </data>
+  <data name="ProfileNameBox.Header" xml:space="preserve">
+    <value>Profile name</value>
+  </data>
+  <data name="ProfileNameBox.PlaceholderText" xml:space="preserve">
+    <value>Profile name</value>
+  </data>
+  <data name="ProfileNoCategoriesText.Text" xml:space="preserve">
+    <value>Categories will appear here after sources are imported.</value>
+  </data>
+  <data name="ProfileNoSourcesText.Text" xml:space="preserve">
+    <value>No sources available. Add a source first.</value>
+  </data>
+  <data name="ProfilePageSubtitle.Text" xml:space="preserve">
+    <value>Separate library state, favorites, resume data, and family-safe access controls.</value>
+  </data>
+  <data name="ProfilePageTitle.Text" xml:space="preserve">
+    <value>Profiles</value>
+  </data>
+  <data name="ProfilePinTitle.Text" xml:space="preserve">
+    <value>PIN</value>
+  </data>
+  <data name="ProfileRelockButton.Content" xml:space="preserve">
+    <value>Hide locked content</value>
+  </data>
+  <data name="ProfileReplacePinButton.Content" xml:space="preserve">
+    <value>Replace PIN</value>
+  </data>
+  <data name="ProfileSaveNameButton.Content" xml:space="preserve">
+    <value>Save name</value>
+  </data>
+  <data name="ProfileSavePinButton.Content" xml:space="preserve">
+    <value>Save PIN</value>
+  </data>
+  <data name="ProfileSetPinBox.Header" xml:space="preserve">
+    <value>Set or replace PIN</value>
+  </data>
+  <data name="ProfileSetPinBox.PlaceholderText" xml:space="preserve">
+    <value>Enter PIN digits</value>
+  </data>
+  <data name="ProfileUnlockButton.Content" xml:space="preserve">
+    <value>Unlock</value>
+  </data>
+  <data name="ProfileUnlockContentBox.Header" xml:space="preserve">
+    <value>Unlock locked content</value>
+  </data>
+  <data name="ProfileUnlockContentBox.PlaceholderText" xml:space="preserve">
+    <value>Enter PIN for this session</value>
+  </data>
+  <data name="SearchMediaBox.PlaceholderText" xml:space="preserve">
+    <value>Search media</value>
+  </data>
+  <data name="SearchPageSubtitle.Text" xml:space="preserve">
+    <value>Find synced live channels, movies, series, and playable episodes.</value>
+  </data>
+  <data name="SearchPageTitle.Text" xml:space="preserve">
+    <value>Search</value>
+  </data>
+  <data name="Series.EpisodeNumber" xml:space="preserve">
+    <value>Episode {0}</value>
+  </data>
+  <data name="Series.SeasonEpisodeLabel" xml:space="preserve">
+    <value>Season {0} Episode {1}</value>
+  </data>
+  <data name="Series.SeasonNumber" xml:space="preserve">
+    <value>Season {0}</value>
+  </data>
+  <data name="SeriesEpisodesLabel.Text" xml:space="preserve">
+    <value>EPISODES</value>
+  </data>
+  <data name="SeriesHideWatchedSwitch.Header" xml:space="preserve">
+    <value>Hide watched episodes</value>
+  </data>
+  <data name="SeriesLibraryLabel.Text" xml:space="preserve">
+    <value>SHOWS LIBRARY</value>
+  </data>
+  <data name="SeriesNoPlayableEpisodesEmpty.Message" xml:space="preserve">
+    <value>Episode stream data is not available for this season yet. Re-sync the VOD source or select a different season.</value>
+  </data>
+  <data name="SeriesNoPlayableEpisodesEmpty.Title" xml:space="preserve">
+    <value>No playable episodes</value>
+  </data>
+  <data name="SeriesPageSubtitle.Text" xml:space="preserve">
+    <value>Pick a show to browse seasons and episodes.</value>
+  </data>
+  <data name="SeriesPageTitle.Text" xml:space="preserve">
+    <value>Series</value>
+  </data>
+  <data name="SeriesSearchBox.PlaceholderText" xml:space="preserve">
+    <value>Search series</value>
+  </data>
+  <data name="SeriesSeasonLabel.Text" xml:space="preserve">
+    <value>SEASON</value>
+  </data>
+  <data name="SeriesSourceLabel.Text" xml:space="preserve">
+    <value>SOURCE</value>
+  </data>
+  <data name="SeriesUnwatchedButton.Content" xml:space="preserve">
+    <value>Unwatched</value>
+  </data>
+  <data name="SeriesUnwatchedButton2.Content" xml:space="preserve">
+    <value>Unwatched</value>
+  </data>
+  <data name="SeriesWatchedButton.Content" xml:space="preserve">
+    <value>Watched</value>
+  </data>
+  <data name="SeriesWatchedButton2.Content" xml:space="preserve">
+    <value>Watched</value>
+  </data>
+  <data name="Settings.Appearance.Status.Active" xml:space="preserve">
+    <value>Theme: {0}. Accent: {1}.</value>
+  </data>
+  <data name="Settings.Appearance.Status.Initial" xml:space="preserve">
+    <value>Choose a theme and accent pack.</value>
+  </data>
+  <data name="Settings.AutoRefresh.EveryHour" xml:space="preserve">
+    <value>every hour</value>
+  </data>
+  <data name="Settings.AutoRefresh.EveryHours" xml:space="preserve">
+    <value>every {0} hours</value>
+  </data>
+  <data name="Settings.AutoRefresh.Status.Initial" xml:space="preserve">
+    <value>Automatic refresh keeps sources current in the background.</value>
+  </data>
+  <data name="Settings.AutoRefresh.Status.Off" xml:space="preserve">
+    <value>Automatic refresh is off.</value>
+  </data>
+  <data name="Settings.AutoRefresh.Status.Running" xml:space="preserve">
+    <value>Automatic refresh every {0}.</value>
+  </data>
+  <data name="Settings.Backup.Description.Export" xml:space="preserve">
+    <value>Save a share-safe KROIRA backup file.</value>
+  </data>
+  <data name="Settings.Backup.Description.Restore" xml:space="preserve">
+    <value>Import a previously exported KROIRA backup.</value>
+  </data>
+  <data name="Settings.Backup.Export.Failed" xml:space="preserve">
+    <value>Backup export failed: {0}</value>
+  </data>
+  <data name="Settings.Backup.Export.NotAvailable" xml:space="preserve">
+    <value>Backup export is not available in this plan.</value>
+  </data>
+  <data name="Settings.Backup.Export.Success" xml:space="preserve">
+    <value>Backup exported: {0} sources, {1} settings, {2} favorites, {3} progress items.</value>
+  </data>
+  <data name="Settings.Backup.Exporting" xml:space="preserve">
+    <value>Exporting backup...</value>
+  </data>
+  <data name="Settings.Backup.FileType" xml:space="preserve">
+    <value>KROIRA backup JSON</value>
+  </data>
+  <data name="Settings.Backup.Restore.ConfirmMessage" xml:space="preserve">
+    <value>This will merge backed-up settings and sources into this device.</value>
+  </data>
+  <data name="Settings.Backup.Restore.ConfirmTitle" xml:space="preserve">
+    <value>Restore this backup?</value>
+  </data>
+  <data name="Settings.Backup.Restore.Failed" xml:space="preserve">
+    <value>Backup restore failed: {0}</value>
+  </data>
+  <data name="Settings.Backup.Restore.NotAvailable" xml:space="preserve">
+    <value>Backup restore is not available in this plan.</value>
+  </data>
+  <data name="Settings.Backup.Restore.SourceFailures" xml:space="preserve">
+    <value>Some sources could not be restored: {0}</value>
+  </data>
+  <data name="Settings.Backup.Restore.Success" xml:space="preserve">
+    <value>Backup restored: {0} sources, {1} settings, {2} favorites, {3} progress items.</value>
+  </data>
+  <data name="Settings.Backup.Restoring" xml:space="preserve">
+    <value>Restoring backup...</value>
+  </data>
+  <data name="Settings.Backup.Status.Initial" xml:space="preserve">
+    <value>Export or restore local KROIRA settings and preferences.</value>
+  </data>
+  <data name="Settings.Backup.Title.Export" xml:space="preserve">
+    <value>Export backup</value>
+  </data>
+  <data name="Settings.Backup.Title.Restore" xml:space="preserve">
+    <value>Restore backup</value>
+  </data>
+  <data name="Settings.Language.Status.Initial" xml:space="preserve">
+    <value>Choose how KROIRA displays app controls and messages.</value>
+  </data>
+  <data name="Settings.Language.Status.RestartRequired" xml:space="preserve">
+    <value>Language saved. Restart KROIRA to refresh all app text.</value>
+  </data>
+  <data name="Settings.Language.Status.Selected" xml:space="preserve">
+    <value>Selected language: {0}.</value>
+  </data>
+  <data name="Settings.Language.Status.System" xml:space="preserve">
+    <value>Using Windows system language.</value>
+  </data>
+  <data name="Settings.License.Status" xml:space="preserve">
+    <value>Plan: {0}. Backup: {1}. Appearance: {2}.</value>
+  </data>
+  <data name="Settings.Privacy.Missing" xml:space="preserve">
+    <value>Privacy policy link is unavailable.</value>
+  </data>
+  <data name="Settings.Privacy.OpenFailed" xml:space="preserve">
+    <value>Could not open the privacy policy.</value>
+  </data>
+  <data name="Settings.RemoteMode.Status.Initial" xml:space="preserve">
+    <value>Choose whether remote-first navigation surfaces are enabled.</value>
+  </data>
+  <data name="Settings.RemoteMode.Status.Off" xml:space="preserve">
+    <value>Remote-first navigation is off.</value>
+  </data>
+  <data name="Settings.RemoteMode.Status.On" xml:space="preserve">
+    <value>Remote-first navigation is on.</value>
+  </data>
+  <data name="Settings.Resources.Status.Ready" xml:space="preserve">
+    <value>Resources are ready.</value>
+  </data>
+  <data name="Settings.Support.Missing" xml:space="preserve">
+    <value>Support page link is unavailable.</value>
+  </data>
+  <data name="Settings.Support.OpenFailed" xml:space="preserve">
+    <value>Could not open the support page.</value>
+  </data>
+  <data name="Settings.SupportEmail.Missing" xml:space="preserve">
+    <value>Support email is unavailable.</value>
+  </data>
+  <data name="Settings.SupportEmail.OpenFailed" xml:space="preserve">
+    <value>Could not open the support email.</value>
+  </data>
+  <data name="SettingsAboutSubtitle.Text" xml:space="preserve">
+    <value>Installed build and release information.</value>
+  </data>
+  <data name="SettingsAboutTitle.Text" xml:space="preserve">
+    <value>About</value>
+  </data>
+  <data name="SettingsAccentPackSubtitle.Text" xml:space="preserve">
+    <value>Retune action chrome, focus color, and highlight accents across the app.</value>
+  </data>
+  <data name="SettingsAccentPackTitle.Text" xml:space="preserve">
+    <value>Accent pack</value>
+  </data>
+  <data name="SettingsAppearanceSubtitle.Text" xml:space="preserve">
+    <value>Choose the visual preset and accent combination that fits your setup.</value>
+  </data>
+  <data name="SettingsAppearanceTitle.Text" xml:space="preserve">
+    <value>Appearance</value>
+  </data>
+  <data name="SettingsAppInformationOpenButton.Content" xml:space="preserve">
+    <value>Open</value>
+  </data>
+  <data name="SettingsAppInformationSubtitle.Text" xml:space="preserve">
+    <value>About, help, privacy, support, version, and legal information live on a separate information page.</value>
+  </data>
+  <data name="SettingsAppInformationTitle.Text" xml:space="preserve">
+    <value>App information</value>
+  </data>
+  <data name="SettingsAppLabel.Text" xml:space="preserve">
+    <value>App</value>
+  </data>
+  <data name="SettingsApplicationSubtitle.Text" xml:space="preserve">
+    <value>Preferences that shape your local library experience.</value>
+  </data>
+  <data name="SettingsApplicationTitle.Text" xml:space="preserve">
+    <value>Application</value>
+  </data>
+  <data name="SettingsAutoRefreshSubtitle.Text" xml:space="preserve">
+    <value>Keep sources current on a bounded cadence while the app is open. Refreshes update guide data, artwork, and library availability.</value>
+  </data>
+  <data name="SettingsAutoRefreshTitle.Text" xml:space="preserve">
+    <value>Automatic refresh</value>
+  </data>
+  <data name="SettingsCommonSupportTopicsTitle.Text" xml:space="preserve">
+    <value>Common support topics</value>
+  </data>
+  <data name="SettingsCopyright.Text" xml:space="preserve">
+    <value>Copyright 2026 KROIRA.</value>
+  </data>
+  <data name="SettingsDiagnosticsExportSubtitle.Text" xml:space="preserve">
+    <value>Sanitized source reports are available per source and do not include credentials or provider tokens.</value>
+  </data>
+  <data name="SettingsDiagnosticsExportTitle.Text" xml:space="preserve">
+    <value>Diagnostics export</value>
+  </data>
+  <data name="SettingsDisclaimerSubtitle.Text" xml:space="preserve">
+    <value>Content and source responsibility.</value>
+  </data>
+  <data name="SettingsDisclaimerTitle.Text" xml:space="preserve">
+    <value>Disclaimer</value>
+  </data>
+  <data name="SettingsEnableAutoRefreshTitle.Text" xml:space="preserve">
+    <value>Enable automatic refresh</value>
+  </data>
+  <data name="SettingsEpgPreferencesSubtitle.Text" xml:space="preserve">
+    <value>Guide sources, stale guide warnings, and manual channel matching are managed from the guide and source diagnostics surfaces.</value>
+  </data>
+  <data name="SettingsEpgPreferencesTitle.Text" xml:space="preserve">
+    <value>EPG preferences</value>
+  </data>
+  <data name="SettingsExportButton.Content" xml:space="preserve">
+    <value>Export</value>
+  </data>
+  <data name="SettingsHelpSubtitle.Text" xml:space="preserve">
+    <value>Quick start for bringing your own sources.</value>
+  </data>
+  <data name="SettingsHelpTitle.Text" xml:space="preserve">
+    <value>Help</value>
+  </data>
+  <data name="SettingsInstalledPackageLabel.Text" xml:space="preserve">
+    <value>Installed package</value>
+  </data>
+  <data name="SettingsLanguageTitle.Text" xml:space="preserve">
+    <value>App language</value>
+  </data>
+  <data name="SettingsLocalResumeRouting.Text" xml:space="preserve">
+    <value>Local resume and routing</value>
+  </data>
+  <data name="SettingsMetadataPreferencesSubtitle.Text" xml:space="preserve">
+    <value>TMDb enrichment is a background fallback when local provider artwork or titles are incomplete.</value>
+  </data>
+  <data name="SettingsMetadataPreferencesTitle.Text" xml:space="preserve">
+    <value>Metadata preferences</value>
+  </data>
+  <data name="SettingsNameLabel.Text" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="SettingsOpenGuideButton.Content" xml:space="preserve">
+    <value>Open Guide</value>
+  </data>
+  <data name="SettingsOpenSourcesButton.Content" xml:space="preserve">
+    <value>Open Sources</value>
+  </data>
+  <data name="SettingsPageSubtitle.Text" xml:space="preserve">
+    <value>Playback, library, appearance, and support settings.</value>
+  </data>
+  <data name="SettingsPageTitle.Text" xml:space="preserve">
+    <value>Settings</value>
+  </data>
+  <data name="SettingsPlaybackPreferencesSubtitle.Text" xml:space="preserve">
+    <value>Resume state, favorites, and playback routing stay local and are applied without blocking app launch.</value>
+  </data>
+  <data name="SettingsPlaybackPreferencesTitle.Text" xml:space="preserve">
+    <value>Playback preferences</value>
+  </data>
+  <data name="SettingsPrivacyPolicyOpenButton.Content" xml:space="preserve">
+    <value>Open</value>
+  </data>
+  <data name="SettingsPrivacyPolicyTitle.Text" xml:space="preserve">
+    <value>Privacy policy</value>
+  </data>
+  <data name="SettingsPrivacySupportSubtitle.Text" xml:space="preserve">
+    <value>Release support, privacy, and contact details.</value>
+  </data>
+  <data name="SettingsPrivacySupportTitle.Text" xml:space="preserve">
+    <value>Privacy &amp; Support</value>
+  </data>
+  <data name="SettingsProviderMetadataFirst.Text" xml:space="preserve">
+    <value>Provider metadata first</value>
+  </data>
+  <data name="SettingsRefreshCadenceSubtitle.Text" xml:space="preserve">
+    <value>Choose how often sources become due while the app stays open.</value>
+  </data>
+  <data name="SettingsRefreshCadenceTitle.Text" xml:space="preserve">
+    <value>Refresh cadence</value>
+  </data>
+  <data name="SettingsReleaseLabel.Text" xml:space="preserve">
+    <value>Release</value>
+  </data>
+  <data name="SettingsRemoteModeTitle.Text" xml:space="preserve">
+    <value>Remote-friendly mode</value>
+  </data>
+  <data name="SettingsRestoreButton.Content" xml:space="preserve">
+    <value>Restore</value>
+  </data>
+  <data name="SettingsRestoreWarning.Text" xml:space="preserve">
+    <value>Restore replaces the current local setup, then rebuilds the library from the restored sources on this device.</value>
+  </data>
+  <data name="SettingsRunRefreshAfterLaunchSwitch.Header" xml:space="preserve">
+    <value>Run shortly after launch</value>
+  </data>
+  <data name="SettingsSourcesButton.Content" xml:space="preserve">
+    <value>Sources</value>
+  </data>
+  <data name="SettingsStoreSubmissionVersionLabel.Text" xml:space="preserve">
+    <value>Store submission version</value>
+  </data>
+  <data name="SettingsSupportEmailButton.Content" xml:space="preserve">
+    <value>Email</value>
+  </data>
+  <data name="SettingsSupportEmailTitle.Text" xml:space="preserve">
+    <value>Support email</value>
+  </data>
+  <data name="SettingsSupportOpenButton.Content" xml:space="preserve">
+    <value>Open</value>
+  </data>
+  <data name="SettingsSupportPageTitle.Text" xml:space="preserve">
+    <value>Support page</value>
+  </data>
+  <data name="SettingsThemePresetSubtitle.Text" xml:space="preserve">
+    <value>Adjust the page atmosphere and surface gradient family.</value>
+  </data>
+  <data name="SettingsThemePresetTitle.Text" xml:space="preserve">
+    <value>Theme preset</value>
+  </data>
+  <data name="SettingsVersionBuildLabel.Text" xml:space="preserve">
+    <value>Version / build</value>
+  </data>
+  <data name="SourceOnboardingAllRequestsRadio.Content" xml:space="preserve">
+    <value>All requests</value>
+  </data>
+  <data name="SourceOnboardingBrowseFileButton.Content" xml:space="preserve">
+    <value>Browse File...</value>
+  </data>
+  <data name="SourceOnboardingBufferedRelayRadio.Content" xml:space="preserve">
+    <value>Buffered relay</value>
+  </data>
+  <data name="SourceOnboardingCompanionEndpointBox.Header" xml:space="preserve">
+    <value>Companion endpoint</value>
+  </data>
+  <data name="SourceOnboardingCompanionEndpointBox.PlaceholderText" xml:space="preserve">
+    <value>http://127.0.0.1:9318/kroira-companion</value>
+  </data>
+  <data name="SourceOnboardingCompanionRelayTitle.Text" xml:space="preserve">
+    <value>Local companion relay</value>
+  </data>
+  <data name="SourceOnboardingDeviceIdBox.Header" xml:space="preserve">
+    <value>Device ID (Optional)</value>
+  </data>
+  <data name="SourceOnboardingDeviceIdBox.PlaceholderText" xml:space="preserve">
+    <value>Leave blank to derive from the MAC address</value>
+  </data>
+  <data name="SourceOnboardingDirectRoutingRadio.Content" xml:space="preserve">
+    <value>Direct routing</value>
+  </data>
+  <data name="SourceOnboardingFallbackXmltvUrlsBox.Header" xml:space="preserve">
+    <value>Fallback/enrichment XMLTV URLs</value>
+  </data>
+  <data name="SourceOnboardingFallbackXmltvUrlsBox.PlaceholderText" xml:space="preserve">
+    <value>One XMLTV URL per line. Public feeds are optional.</value>
+  </data>
+  <data name="SourceOnboardingGuideModeTitle.Text" xml:space="preserve">
+    <value>Guide mode</value>
+  </data>
+  <data name="SourceOnboardingLocaleBox.Header" xml:space="preserve">
+    <value>Locale</value>
+  </data>
+  <data name="SourceOnboardingM3uRadio.Content" xml:space="preserve">
+    <value>M3U (URL or Local File)</value>
+  </data>
+  <data name="SourceOnboardingM3uTitle.Text" xml:space="preserve">
+    <value>M3U playlist</value>
+  </data>
+  <data name="SourceOnboardingMacAddressBox.Header" xml:space="preserve">
+    <value>MAC Address</value>
+  </data>
+  <data name="SourceOnboardingMacAddressBox.PlaceholderText" xml:space="preserve">
+    <value>00:1A:79:00:00:01</value>
+  </data>
+  <data name="SourceOnboardingManualXmltvRadio.Content" xml:space="preserve">
+    <value>Manual XMLTV override</value>
+  </data>
+  <data name="SourceOnboardingManualXmltvUrlBox.Header" xml:space="preserve">
+    <value>Manual XMLTV URL</value>
+  </data>
+  <data name="SourceOnboardingManualXmltvUrlBox.PlaceholderText" xml:space="preserve">
+    <value>http://.../epg.xml or C:\guide.xml</value>
+  </data>
+  <data name="SourceOnboardingNoGuideRadio.Content" xml:space="preserve">
+    <value>No guide</value>
+  </data>
+  <data name="SourceOnboardingPageSubtitle.Text" xml:space="preserve">
+    <value>Connect your own M3U playlist, Xtream provider, or Stalker portal for live TV, movies, series, and guide data.</value>
+  </data>
+  <data name="SourceOnboardingPageTitle.Text" xml:space="preserve">
+    <value>Add Source</value>
+  </data>
+  <data name="SourceOnboardingPassThroughRelayRadio.Content" xml:space="preserve">
+    <value>Pass-through relay</value>
+  </data>
+  <data name="SourceOnboardingPlaybackOnlyRadio.Content" xml:space="preserve">
+    <value>Playback only</value>
+  </data>
+  <data name="SourceOnboardingPlaybackOnlyRadio2.Content" xml:space="preserve">
+    <value>Playback only</value>
+  </data>
+  <data name="SourceOnboardingPlaybackProbesRadio.Content" xml:space="preserve">
+    <value>Playback + probes</value>
+  </data>
+  <data name="SourceOnboardingPlaybackProbesRadio2.Content" xml:space="preserve">
+    <value>Playback + probes</value>
+  </data>
+  <data name="SourceOnboardingPortalUrlBox.Header" xml:space="preserve">
+    <value>Portal URL</value>
+  </data>
+  <data name="SourceOnboardingPortalUrlBox.PlaceholderText" xml:space="preserve">
+    <value>http://portal.example.com/c/</value>
+  </data>
+  <data name="SourceOnboardingProxyUrlBox.Header" xml:space="preserve">
+    <value>Proxy URL</value>
+  </data>
+  <data name="SourceOnboardingProxyUrlBox.PlaceholderText" xml:space="preserve">
+    <value>http://proxy-host:port or socks5://proxy-host:port</value>
+  </data>
+  <data name="SourceOnboardingRoutingTitle.Text" xml:space="preserve">
+    <value>Routing</value>
+  </data>
+  <data name="SourceOnboardingSaveAndSyncButton.Content" xml:space="preserve">
+    <value>Save and sync</value>
+  </data>
+  <data name="SourceOnboardingSerialNumberBox.Header" xml:space="preserve">
+    <value>Serial Number (Optional)</value>
+  </data>
+  <data name="SourceOnboardingSerialNumberBox.PlaceholderText" xml:space="preserve">
+    <value>Leave blank to derive from the MAC address</value>
+  </data>
+  <data name="SourceOnboardingSourceFormatRadio.Header" xml:space="preserve">
+    <value>Source Format</value>
+  </data>
+  <data name="SourceOnboardingSourceNameBox.Header" xml:space="preserve">
+    <value>Source Name</value>
+  </data>
+  <data name="SourceOnboardingSourceNameBox.PlaceholderText" xml:space="preserve">
+    <value>e.g. My Custom List</value>
+  </data>
+  <data name="SourceOnboardingStalkerRadio.Content" xml:space="preserve">
+    <value>Stalker Portal</value>
+  </data>
+  <data name="SourceOnboardingStalkerTitle.Text" xml:space="preserve">
+    <value>Stalker portal</value>
+  </data>
+  <data name="SourceOnboardingTestSourceButton.Content" xml:space="preserve">
+    <value>Test Source</value>
+  </data>
+  <data name="SourceOnboardingTimezoneBox.Header" xml:space="preserve">
+    <value>Timezone</value>
+  </data>
+  <data name="SourceOnboardingUseProviderGuideRadio.Content" xml:space="preserve">
+    <value>Use provider guide</value>
+  </data>
+  <data name="SourceOnboardingXtreamRadio.Content" xml:space="preserve">
+    <value>Xtream Codes</value>
+  </data>
+  <data name="SourceOnboardingXtreamTitle.Text" xml:space="preserve">
+    <value>Xtream provider</value>
+  </data>
+  <data name="Sources.ActivityReportUnavailableMessage" xml:space="preserve">
+    <value>This source does not have a share-safe activity summary yet.</value>
+  </data>
+  <data name="Sources.ActivityReportUnavailableTitle" xml:space="preserve">
+    <value>Activity report unavailable</value>
+  </data>
+  <data name="Sources.Companion.Disabled.Description" xml:space="preserve">
+    <value>Keep direct playback as the only path for this source.</value>
+  </data>
+  <data name="Sources.Companion.PlaybackOnly.Description" xml:space="preserve">
+    <value>Resolve the provider stream first, then hand playback to the local companion relay.</value>
+  </data>
+  <data name="Sources.Companion.PlaybackProbes.Description" xml:space="preserve">
+    <value>Resolve the provider stream first, then use the local companion relay for playback and bounded health probes.</value>
+  </data>
+  <data name="Sources.CompanionBehaviorHeader" xml:space="preserve">
+    <value>Companion behavior</value>
+  </data>
+  <data name="Sources.CompanionEndpointHeader" xml:space="preserve">
+    <value>Companion endpoint</value>
+  </data>
+  <data name="Sources.CompanionMode.Buffered.Label" xml:space="preserve">
+    <value>Buffered relay</value>
+  </data>
+  <data name="Sources.CompanionMode.Buffered.Description" xml:space="preserve">
+    <value>Ask the companion to stabilize the already resolved upstream stream through a buffered relay.</value>
+  </data>
+  <data name="Sources.CompanionMode.Relay.Label" xml:space="preserve">
+    <value>Pass-through relay</value>
+  </data>
+  <data name="Sources.CompanionMode.Relay.Description" xml:space="preserve">
+    <value>Ask the companion to relay the already resolved upstream stream without buffering hints.</value>
+  </data>
+  <data name="Sources.CompanionRelayHeader" xml:space="preserve">
+    <value>Local companion relay</value>
+  </data>
+  <data name="Sources.CopyFailedTitle" xml:space="preserve">
+    <value>Copy failed</value>
+  </data>
+  <data name="Sources.DetectedXmltvNone" xml:space="preserve">
+    <value>Detected XMLTV URL: none recorded yet</value>
+  </data>
+  <data name="Sources.DetectedXmltvUrl" xml:space="preserve">
+    <value>Detected XMLTV URL: {0}</value>
+  </data>
+  <data name="Sources.DiagnosticsReportUnavailableMessage" xml:space="preserve">
+    <value>This source does not have a share-safe diagnostics summary yet.</value>
+  </data>
+  <data name="Sources.DiagnosticsReportUnavailableTitle" xml:space="preserve">
+    <value>Diagnostics report unavailable</value>
+  </data>
+  <data name="Sources.FallbackXmltvUrlsHeader" xml:space="preserve">
+    <value>Fallback/enrichment XMLTV URLs</value>
+  </data>
+  <data name="Sources.FallbackXmltvUrlsPlaceholder" xml:space="preserve">
+    <value>One XMLTV URL per line. Public feeds are optional.</value>
+  </data>
+  <data name="Sources.GuideMode.Detected.Label" xml:space="preserve">
+    <value>Detected from provider</value>
+  </data>
+  <data name="Sources.GuideMode.Detected.Description" xml:space="preserve">
+    <value>Use provider XMLTV first, then optional fallback/enrichment URLs.</value>
+  </data>
+  <data name="Sources.GuideMode.Manual.Label" xml:space="preserve">
+    <value>Manual override</value>
+  </data>
+  <data name="Sources.GuideMode.Manual.Description" xml:space="preserve">
+    <value>Use your own XMLTV URL first and keep detected provider data on file.</value>
+  </data>
+  <data name="Sources.GuideMode.None.Label" xml:space="preserve">
+    <value>No guide</value>
+  </data>
+  <data name="Sources.GuideMode.None.Description" xml:space="preserve">
+    <value>Disable guide syncing for this source.</value>
+  </data>
+  <data name="Sources.GuideSettings.DefaultMessage" xml:space="preserve">
+    <value>Choose whether guide data should come from the provider or a manual XMLTV override, then decide how routing should behave.</value>
+  </data>
+  <data name="Sources.GuideSettings.M3uMessage" xml:space="preserve">
+    <value>Choose how this playlist should resolve XMLTV guide data and how the source should be routed operationally.</value>
+  </data>
+  <data name="Sources.GuideSettings.StalkerMessage" xml:space="preserve">
+    <value>Choose whether this Stalker portal should use a manual XMLTV feed and how its requests should be routed operationally.</value>
+  </data>
+  <data name="Sources.GuideSettingsFailedTitle" xml:space="preserve">
+    <value>Guide settings failed</value>
+  </data>
+  <data name="Sources.GuideSettingsForTitle" xml:space="preserve">
+    <value>Guide settings - {0}</value>
+  </data>
+  <data name="Sources.GuideSettingsLoadFailed" xml:space="preserve">
+    <value>Source guide settings could not be loaded.</value>
+  </data>
+  <data name="Sources.GuideSettingsTitle" xml:space="preserve">
+    <value>Guide settings</value>
+  </data>
+  <data name="Sources.ManualXmltvUrlHeader" xml:space="preserve">
+    <value>Manual XMLTV URL</value>
+  </data>
+  <data name="Sources.NothingSafeToCopy" xml:space="preserve">
+    <value>Nothing safe to copy yet.</value>
+  </data>
+  <data name="Sources.ProxyMode.AllRequests.Label" xml:space="preserve">
+    <value>All requests</value>
+  </data>
+  <data name="Sources.ProxyMode.AllRequests.Description" xml:space="preserve">
+    <value>Route import, guide, probe, and playback traffic through the proxy.</value>
+  </data>
+  <data name="Sources.ProxyMode.Direct.Label" xml:space="preserve">
+    <value>Direct routing</value>
+  </data>
+  <data name="Sources.ProxyMode.Direct.Description" xml:space="preserve">
+    <value>Use direct provider routing for import, guide, probe, and playback requests.</value>
+  </data>
+  <data name="Sources.ProxyMode.PlaybackOnly.Label" xml:space="preserve">
+    <value>Playback only</value>
+  </data>
+  <data name="Sources.ProxyMode.PlaybackOnly.Description" xml:space="preserve">
+    <value>Route playback through the proxy while refresh and guide traffic stay direct.</value>
+  </data>
+  <data name="Sources.ProxyMode.PlaybackProbes.Label" xml:space="preserve">
+    <value>Playback + probes</value>
+  </data>
+  <data name="Sources.ProxyMode.PlaybackProbes.Description" xml:space="preserve">
+    <value>Route playback and bounded operational probes through the proxy.</value>
+  </data>
+  <data name="Sources.ProxyUrlHeader" xml:space="preserve">
+    <value>Proxy URL</value>
+  </data>
+  <data name="Sources.RepairAttemptFailedTitle" xml:space="preserve">
+    <value>Repair attempt failed</value>
+  </data>
+  <data name="Sources.RepairReportUnavailableMessage" xml:space="preserve">
+    <value>This source does not have a share-safe repair summary yet.</value>
+  </data>
+  <data name="Sources.RepairReportUnavailableTitle" xml:space="preserve">
+    <value>Repair report unavailable</value>
+  </data>
+  <data name="Sources.RoutingPolicyHeader" xml:space="preserve">
+    <value>Routing policy</value>
+  </data>
+  <data name="Sources.SaveAndSync" xml:space="preserve">
+    <value>Save and sync</value>
+  </data>
+  <data name="Sources.StreamProbeFailedTitle" xml:space="preserve">
+    <value>Stream probe failed</value>
+  </data>
+  <data name="SourcesAcquisitionProfileTitle.Text" xml:space="preserve">
+    <value>Acquisition profile</value>
+  </data>
+  <data name="SourcesActiveSourcesLabel.Text" xml:space="preserve">
+    <value>ACTIVE SOURCES</value>
+  </data>
+  <data name="SourcesActivityCenterExpander.Header" xml:space="preserve">
+    <value>Activity center</value>
+  </data>
+  <data name="SourcesAutomaticRefreshLabel.Text" xml:space="preserve">
+    <value>Automatic refresh</value>
+  </data>
+  <data name="SourcesCatalogIndexLabel.Text" xml:space="preserve">
+    <value>CATALOG INDEX</value>
+  </data>
+  <data name="SourcesCatalogLabel.Text" xml:space="preserve">
+    <value>CATALOG</value>
+  </data>
+  <data name="SourcesContentDeliveryLabel.Text" xml:space="preserve">
+    <value>CONTENT DELIVERY</value>
+  </data>
+  <data name="SourcesCurrentCapabilityTitle.Text" xml:space="preserve">
+    <value>Current capability view</value>
+  </data>
+  <data name="SourcesDeleteSourceMenuItem.Text" xml:space="preserve">
+    <value>Delete Source</value>
+  </data>
+  <data name="SourcesDetailsExpander.Header" xml:space="preserve">
+    <value>Source and guide details</value>
+  </data>
+  <data name="SourcesDiagnosticsMetricsTitle.Text" xml:space="preserve">
+    <value>Diagnostics metrics</value>
+  </data>
+  <data name="SourcesGuideCoverageLabel.Text" xml:space="preserve">
+    <value>GUIDE COVERAGE</value>
+  </data>
+  <data name="SourcesGuideDetailsLabel.Text" xml:space="preserve">
+    <value>Guide details</value>
+  </data>
+  <data name="SourcesGuideMappingLabel.Text" xml:space="preserve">
+    <value>GUIDE MAPPING</value>
+  </data>
+  <data name="SourcesGuideSnapshotLabel.Text" xml:space="preserve">
+    <value>GUIDE SNAPSHOT</value>
+  </data>
+  <data name="SourcesGuideSyncMenuItem.Text" xml:space="preserve">
+    <value>Guide Sync</value>
+  </data>
+  <data name="SourcesLastSuccessLabel.Text" xml:space="preserve">
+    <value>LAST SUCCESS</value>
+  </data>
+  <data name="SourcesLiveChannelsLabel.Text" xml:space="preserve">
+    <value>LIVE CHANNELS</value>
+  </data>
+  <data name="SourcesManagedSourcesLabel.Text" xml:space="preserve">
+    <value>MANAGED SOURCES</value>
+  </data>
+  <data name="SourcesOperationalRoutingLabel.Text" xml:space="preserve">
+    <value>Operational routing</value>
+  </data>
+  <data name="SourcesOverviewTitle.Text" xml:space="preserve">
+    <value>Source Overview</value>
+  </data>
+  <data name="SourcesPageSubtitle.Text" xml:space="preserve">
+    <value>Manage sources, guide coverage, and recent updates.</value>
+  </data>
+  <data name="SourcesPageTitle.Text" xml:space="preserve">
+    <value>Sources</value>
+  </data>
+  <data name="SourcesRecentActivityLabel.Text" xml:space="preserve">
+    <value>RECENT ACTIVITY</value>
+  </data>
+  <data name="SourcesRecentSyncActivitySubtitle.Text" xml:space="preserve">
+    <value>Latest source imports, guide updates, and recovery activity.</value>
+  </data>
+  <data name="SourcesRecentSyncActivityTitle.Text" xml:space="preserve">
+    <value>Recent Sync Activity</value>
+  </data>
+  <data name="SourcesRecommendedActionsTitle.Text" xml:space="preserve">
+    <value>Recommended actions</value>
+  </data>
+  <data name="SourcesRepairAssistantExpander.Header" xml:space="preserve">
+    <value>Repair assistant</value>
+  </data>
+  <data name="SourcesSearchBox.PlaceholderText" xml:space="preserve">
+    <value>Search sources, guide mode, or status</value>
+  </data>
+  <data name="SourcesSourceStatusLabel.Text" xml:space="preserve">
+    <value>SOURCE STATUS</value>
+  </data>
+  <data name="SourcesStatusSummaryLabel.Text" xml:space="preserve">
+    <value>STATUS SUMMARY</value>
+  </data>
+  <data name="SourcesSuggestedActionsTitle.Text" xml:space="preserve">
+    <value>Suggested next actions</value>
+  </data>
+  <data name="SourcesSyncValidationLabel.Text" xml:space="preserve">
+    <value>Sync and validation</value>
+  </data>
+  <data name="SourcesTopIssuesTitle.Text" xml:space="preserve">
+    <value>Top issues</value>
+  </data>
+  <data name="SourcesVodOnlyMenuItem.Text" xml:space="preserve">
+    <value>VOD Only</value>
+  </data>
+  <data name="Submission.CredentialHandlingSummary" xml:space="preserve">
+    <value>Source credentials are used only to connect to sources the user configures. Protected credential copies use Windows DPAPI CurrentUser scope when available, with plaintext compatibility retained for existing import and parser flows.</value>
+  </data>
+  <data name="Submission.Help.Step1" xml:space="preserve">
+    <value>1. Add an M3U playlist, Xtream provider, or Stalker portal.</value>
+  </data>
+  <data name="Submission.Help.Step2" xml:space="preserve">
+    <value>2. Let KROIRA complete the first sync and health check.</value>
+  </data>
+  <data name="Submission.Help.Step3" xml:space="preserve">
+    <value>3. Browse Live TV, Movies, Series, Favorites, or Continue Watching.</value>
+  </data>
+  <data name="Submission.Help.Step4" xml:space="preserve">
+    <value>4. If guide coverage looks weak, review the source in Sources and adjust guide settings there.</value>
+  </data>
+  <data name="Submission.LegalDisclaimer" xml:space="preserve">
+    <value>KROIRA is a media player and source manager. KROIRA does not provide channels, streams, playlists, subscriptions, or media content. Users are responsible for adding only authorized sources and for complying with applicable provider terms and laws. KROIRA does not bypass DRM, paywalls, authentication, or access controls.</value>
+  </data>
+  <data name="Submission.LongDescription" xml:space="preserve">
+    <value>KROIRA IPTV is a Windows media player and source manager for user-provided M3U playlists, Xtream providers, and Stalker portals. It helps organize live channels, VOD libraries, guide data, favorites, continue-watching state, and source diagnostics on this device. KROIRA does not provide channels, streams, playlists, subscriptions, accounts, credentials, or media content.</value>
+  </data>
+  <data name="Submission.MetadataProviderSummary" xml:space="preserve">
+    <value>When metadata enrichment is used, KROIRA may contact metadata or artwork providers such as TMDb, plus image URLs supplied by user-configured sources. KROIRA does not send source passwords or provider tokens to TMDb.</value>
+  </data>
+  <data name="Submission.PrivacyPolicyUnavailable" xml:space="preserve">
+    <value>Privacy policy unavailable.</value>
+  </data>
+  <data name="Submission.PrivacySummary" xml:space="preserve">
+    <value>KROIRA stores source settings, guide state, favorites, playback progress, diagnostics, and local preferences on this device. The app does not include bundled telemetry or advertising analytics.</value>
+  </data>
+  <data name="Submission.RunFullTrustJustification" xml:space="preserve">
+    <value>KROIRA is a packaged WinUI 3 desktop application that uses the Windows App SDK full-trust desktop entry point and local native playback components. The runFullTrust capability is required for the packaged desktop app launch model and native media playback integration; it is not used to bypass DRM, paywalls, authentication, or access controls.</value>
+  </data>
+  <data name="Submission.SanitizedLogsSummary" xml:space="preserve">
+    <value>Sanitized diagnostics and exported source reports are designed to mask playlist URLs, usernames, passwords, tokens, keys, MAC-like values, and loose secrets before display or export.</value>
+  </data>
+  <data name="Submission.ShortDescription" xml:space="preserve">
+    <value>Bring your own IPTV sources to a local-first Windows media player and source manager.</value>
+  </data>
+  <data name="Submission.Support.AuthenticationFailure" xml:space="preserve">
+    <value>Authentication failure: verify the provider URL, username, password, account status, and any portal/MAC details with the source provider. KROIRA cannot recover or issue provider credentials.</value>
+  </data>
+  <data name="Submission.Support.ExportDiagnostics" xml:space="preserve">
+    <value>Export diagnostics: use the source diagnostics export action. Exports are sanitized, but review files before sharing because provider names and non-secret configuration may remain.</value>
+  </data>
+  <data name="Submission.Support.NoChannels" xml:space="preserve">
+    <value>No channels: resync the source, confirm the playlist or provider account has active live/VOD/series entries, and review source diagnostics for invalid, duplicate, or filtered entries.</value>
+  </data>
+  <data name="Submission.Support.NoEpg" xml:space="preserve">
+    <value>No EPG: confirm the source advertises an XMLTV URL or configure a manual EPG URL, then run an EPG sync from Sources or Guide.</value>
+  </data>
+  <data name="Submission.Support.ResetAppData" xml:space="preserve">
+    <value>Reset app data: use Windows Settings &gt; Apps &gt; Installed apps &gt; KROIRA IPTV &gt; Advanced options &gt; Reset. This removes local sources, credentials, guide data, favorites, and preferences.</value>
+  </data>
+  <data name="Submission.Support.StoreInstall" xml:space="preserve">
+    <value>Store or MSIX install: install from Microsoft Store or a trusted signed package, then restart Windows if the Windows App SDK runtime was updated.</value>
+  </data>
+  <data name="Submission.Support.StreamDoesNotPlay" xml:space="preserve">
+    <value>Stream does not play: verify the stream URL works for the account, check whether the source requires authentication, proxy, or companion routing, and run a limited source probe from diagnostics.</value>
+  </data>
+  <data name="Submission.Support.WrongEpg" xml:space="preserve">
+    <value>Wrong EPG: open manual EPG matching from Guide or source diagnostics, search the XMLTV channel, set or clear an override, and resync guide data.</value>
+  </data>
+  <data name="Submission.SupportEmailUnavailable" xml:space="preserve">
+    <value>Support email unavailable.</value>
+  </data>
+  <data name="Submission.SupportPageUnavailable" xml:space="preserve">
+    <value>Support page unavailable.</value>
+  </data>
+  <data name="Submission.SupportSummary" xml:space="preserve">
+    <value>When reporting an issue, include the source type, affected area, latest sync or health status, and a sanitized diagnostics export when available.</value>
+  </data>
+  <data name="Submission.TelemetrySummary" xml:space="preserve">
+    <value>KROIRA does not bundle app telemetry, advertising analytics, or a vendor-operated media URL collection service in this release.</value>
+  </data>
+  <data name="SourceLifecycle.GuideSource.ManualXmltvOverride" xml:space="preserve">
+    <value>Manual XMLTV override</value>
+  </data>
+  <data name="SourceGuidance.Action.RefreshPortalProfile.Title" xml:space="preserve">
+    <value>Refresh portal profile</value>
+  </data>
+  <data name="SourceLifecycle.Error.CredentialsNotFound" xml:space="preserve">
+    <value>Source credentials were not found.</value>
+  </data>
+  <data name="SourceGuidance.Capability.Connection.Label" xml:space="preserve">
+    <value>Connection</value>
+  </data>
+  <data name="SourceGuidance.Catalog.Series" xml:space="preserve">
+    <value>Series</value>
+  </data>
+  <data name="SourceLifecycle.Delete.Deleted" xml:space="preserve">
+    <value>Deleted source '{0}'.</value>
+  </data>
+  <data name="SourceGuidance.Action.RetestPortal.Title" xml:space="preserve">
+    <value>Retest portal sync</value>
+  </data>
+  <data name="SourceGuidance.Action.ReviewGuideSettings.Title" xml:space="preserve">
+    <value>Review guide settings</value>
+  </data>
+  <data name="SourcesSummaryLibraryRun.Text" xml:space="preserve">
+    <value> library</value>
+  </data>
+  <data name="EpgCoverage.ReviewStatus.NoGuideMatch" xml:space="preserve">
+    <value>No guide match</value>
+  </data>
+  <data name="SourceLifecycle.Validation.M3uUrlRequired" xml:space="preserve">
+    <value>M3U URL or file path is required.</value>
+  </data>
+  <data name="SourceLifecycle.GuideSource.ProviderXmltv" xml:space="preserve">
+    <value>Provider XMLTV</value>
+  </data>
+  <data name="SourceLifecycle.GuideSource.ConfiguredSyncPending" xml:space="preserve">
+    <value>Configured. Sync pending.</value>
+  </data>
+  <data name="SourceLifecycle.Validation.ProxyUrlRequired" xml:space="preserve">
+    <value>Proxy routing requires a proxy URL.</value>
+  </data>
+  <data name="EpgCoverage.MatchType.WeakAlias" xml:space="preserve">
+    <value>Weak alias</value>
+  </data>
+  <data name="SourceGuidance.Action.RepairRuntimeState.Title" xml:space="preserve">
+    <value>Repair saved source state</value>
+  </data>
+  <data name="EpgCoverage.MatchType.WeakRegex" xml:space="preserve">
+    <value>Weak regex</value>
+  </data>
+  <data name="SourceGuidance.Action.RunStreamProbe.Title" xml:space="preserve">
+    <value>Run bounded stream probe</value>
+  </data>
+  <data name="EpgCoverage.ReviewStatus.ApprovedRefresh" xml:space="preserve">
+    <value>Approved - refresh EPG to activate this mapping</value>
+  </data>
+  <data name="SourcesLastAttemptRun.Text" xml:space="preserve">
+    <value>Last attempt </value>
+  </data>
+  <data name="EpgCoverage.GuideSource.ConfiguredSyncToTest" xml:space="preserve">
+    <value>Configured. Sync to test this source.</value>
+  </data>
+  <data name="SourceLifecycle.Validation.XtreamRequired" xml:space="preserve">
+    <value>Server URL, username, and password are required for Xtream.</value>
+  </data>
+  <data name="SourcesCatalogSeriesRun.Text" xml:space="preserve">
+    <value> series</value>
+  </data>
+  <data name="SourceLifecycle.Repair.BrowseReferences" xml:space="preserve">
+    <value>browse references</value>
+  </data>
+  <data name="SourceGuidance.Capability.PortalProfile.Label" xml:space="preserve">
+    <value>Portal profile</value>
+  </data>
+  <data name="SourceGuidance.Capability.Hints" xml:space="preserve">
+    <value>{0:N0} hints</value>
+  </data>
+  <data name="SourceGuidance.Action.DisableCompanion.Button" xml:space="preserve">
+    <value>Disable companion</value>
+  </data>
+  <data name="EpgCoverage.MatchType.Fuzzy" xml:space="preserve">
+    <value>Fuzzy</value>
+  </data>
+  <data name="SourceGuidance.Capability.PlaylistReachable" xml:space="preserve">
+    <value>Playlist reachable</value>
+  </data>
+  <data name="SourceLifecycle.Validation.CompanionEndpointRequired" xml:space="preserve">
+    <value>Companion relay mode requires a companion endpoint URL.</value>
+  </data>
+  <data name="EpgCoverage.MatchType.Unmatched" xml:space="preserve">
+    <value>Unmatched</value>
+  </data>
+  <data name="SourceLifecycle.Repair.LogicalStateReconciliation" xml:space="preserve">
+    <value>logical state reconciliation</value>
+  </data>
+  <data name="SourceGuidance.Capability.Catalog.Label" xml:space="preserve">
+    <value>Catalog</value>
+  </data>
+  <data name="EpgCoverage.MatchType.Approved" xml:space="preserve">
+    <value>Approved</value>
+  </data>
+  <data name="SourceLifecycle.Guide.RoutingSaved" xml:space="preserve">
+    <value>Routing saved. Existing guide data is unchanged until the next sync.</value>
+  </data>
+  <data name="SourceLifecycle.Validation.StalkerRequired" xml:space="preserve">
+    <value>Portal URL and MAC address are required for Stalker.</value>
+  </data>
+  <data name="SourceGuidance.Action.RunStreamProbe.Summary" xml:space="preserve">
+    <value>Probe a small sampled set with per-request timeout instead of hammering the provider.</value>
+  </data>
+  <data name="SourceGuidance.Action.RetestPortal.Summary" xml:space="preserve">
+    <value>Run a fresh portal sync and validation pass.</value>
+  </data>
+  <data name="SourceGuidance.Capability.Companion.Label" xml:space="preserve">
+    <value>Companion</value>
+  </data>
+  <data name="SourceGuidance.Capability.ManualGuideSet" xml:space="preserve">
+    <value>Manual guide set</value>
+  </data>
+  <data name="SourceGuidance.Capability.NoAdvertisedSupport" xml:space="preserve">
+    <value>No advertised support</value>
+  </data>
+  <data name="SourceGuidance.Capability.Proxy.Label" xml:space="preserve">
+    <value>Proxy</value>
+  </data>
+  <data name="SourceGuidance.Catalog.Live" xml:space="preserve">
+    <value>Live</value>
+  </data>
+  <data name="SourceGuidance.Action.RefreshPortalProfile.Summary" xml:space="preserve">
+    <value>Run a fresh Stalker handshake, reload profile data, and retest the portal catalog.</value>
+  </data>
+  <data name="SourceGuidance.Action.DisableCompanion.Title" xml:space="preserve">
+    <value>Disable local companion relay</value>
+  </data>
+  <data name="SourceGuidance.Action.DisableCompanion.Summary" xml:space="preserve">
+    <value>Keep the provider path direct for this source, then rerun refresh and validation.</value>
+  </data>
+  <data name="SourceLifecycle.Create.DuplicateHint" xml:space="preserve">
+    <value>A similar source is already configured. Overlapping items will be treated as mirrored candidates.</value>
+  </data>
+  <data name="SourceGuidance.Action.RefreshPortalProfile.Button" xml:space="preserve">
+    <value>Refresh portal</value>
+  </data>
+  <data name="SourceGuidance.Action.RetestGuide.Button" xml:space="preserve">
+    <value>Retest guide</value>
+  </data>
+  <data name="EpgCoverage.ReviewStatus.TrustedNoProgrammes" xml:space="preserve">
+    <value>Trusted match, no programmes in the active window</value>
+  </data>
+  <data name="EpgCoverage.MatchType.Reused" xml:space="preserve">
+    <value>Reused</value>
+  </data>
+  <data name="EpgCoverage.ReviewStatus.SuggestionOnly" xml:space="preserve">
+    <value>Suggestion only - not used for current/next guide display</value>
+  </data>
+  <data name="SourceLifecycle.Repair.OperationalMirrorRebuild" xml:space="preserve">
+    <value>operational mirror rebuild</value>
+  </data>
+  <data name="SourceLifecycle.Guide.Pending" xml:space="preserve">
+    <value>Guide settings updated. Sync pending.</value>
+  </data>
+  <data name="EpgCoverage.MatchType.Normalized" xml:space="preserve">
+    <value>Normalized</value>
+  </data>
+  <data name="SourceLifecycle.GuideSource.FallbackXmltv" xml:space="preserve">
+    <value>Fallback XMLTV</value>
+  </data>
+  <data name="SourceGuidance.Capability.NoGuideAdvertised" xml:space="preserve">
+    <value>No guide advertised</value>
+  </data>
+  <data name="SourcesCatalogMoviesSeparatorRun.Text" xml:space="preserve">
+    <value> movies / </value>
+  </data>
+  <data name="SourceGuidance.Capability.Catchup.Label" xml:space="preserve">
+    <value>Catchup</value>
+  </data>
+  <data name="SourceGuidance.Capability.Guide.Label" xml:space="preserve">
+    <value>Guide</value>
+  </data>
+  <data name="SourceGuidance.Action.RepairRuntimeState.Summary" xml:space="preserve">
+    <value>Rebuild source health, logical state, and operational candidates without changing provider credentials.</value>
+  </data>
+  <data name="SourceGuidance.Capability.Channels" xml:space="preserve">
+    <value>{0:N0} channels</value>
+  </data>
+  <data name="SourcesLastAttemptDetailsRun.Text" xml:space="preserve">
+    <value>Last attempt </value>
+  </data>
+  <data name="SourceGuidance.Catalog.Movies" xml:space="preserve">
+    <value>Movies</value>
+  </data>
+  <data name="SourceLifecycle.Guide.SettingsSaved" xml:space="preserve">
+    <value>Guide settings saved. Existing guide data is still available until the next sync.</value>
+  </data>
+  <data name="SourceLifecycle.Create.ImportFailed" xml:space="preserve">
+    <value>Source saved, but import failed: {0}</value>
+  </data>
+  <data name="SourceGuidance.Action.RepairRuntimeState.Button" xml:space="preserve">
+    <value>Repair state</value>
+  </data>
+  <data name="SourceGuidance.Capability.NoClearHints" xml:space="preserve">
+    <value>No clear hints</value>
+  </data>
+  <data name="SourceGuidance.Action.ReviewGuideSettings.Summary" xml:space="preserve">
+    <value>Check detected versus manual XMLTV and routing choices before the next guide sync.</value>
+  </data>
+  <data name="SourceGuidance.Capability.Routing.Label" xml:space="preserve">
+    <value>Routing</value>
+  </data>
+  <data name="SourceGuidance.Action.RetestSource.Summary" xml:space="preserve">
+    <value>Run a fresh sync and validation pass for this source.</value>
+  </data>
+  <data name="SourceGuidance.Action.RetestGuide.Title" xml:space="preserve">
+    <value>Retest guide feed</value>
+  </data>
+  <data name="EpgCoverage.ReviewStatus.ActiveAssignment" xml:space="preserve">
+    <value>Active guide assignment</value>
+  </data>
+  <data name="SourceLifecycle.Repair.AutoRefreshRuntimeRepair" xml:space="preserve">
+    <value>auto-refresh runtime repair</value>
+  </data>
+  <data name="SourceLifecycle.Validation.ManualXmltvRequired" xml:space="preserve">
+    <value>Manual XMLTV mode requires a manual XMLTV URL.</value>
+  </data>
+  <data name="EpgCoverage.GuideSource.ActiveXmltv" xml:space="preserve">
+    <value>Active XMLTV</value>
+  </data>
+  <data name="SourceGuidance.Action.RunStreamProbe.Button" xml:space="preserve">
+    <value>Run probe</value>
+  </data>
+  <data name="SourceGuidance.Catalog.NoneConfirmed" xml:space="preserve">
+    <value>No catalog confirmed</value>
+  </data>
+  <data name="SourceLifecycle.Guide.PendingPreserved" xml:space="preserve">
+    <value>Guide settings changed. Sync pending; last successful guide data is still available.</value>
+  </data>
+  <data name="SourceLifecycle.Validation.NameUnresolved" xml:space="preserve">
+    <value>Source name could not be resolved.</value>
+  </data>
+  <data name="SourceGuidance.Capability.GuideDisabled" xml:space="preserve">
+    <value>Guide disabled</value>
+  </data>
+  <data name="SourceLifecycle.Guide.Unchanged" xml:space="preserve">
+    <value>Guide settings were unchanged.</value>
+  </data>
+  <data name="SourceGuidance.Action.RetestSource.Title" xml:space="preserve">
+    <value>Retest source</value>
+  </data>
+  <data name="SourceGuidance.Capability.GuideFound" xml:space="preserve">
+    <value>Guide found</value>
+  </data>
+  <data name="SourceLifecycle.Delete.DeletedCleanupDeferred" xml:space="preserve">
+    <value>Deleted source '{0}'. Some cleanup was deferred.</value>
+  </data>
+  <data name="SourceLifecycle.Delete.NotFound" xml:space="preserve">
+    <value>Source not found.</value>
+  </data>
+  <data name="SourceGuidance.Action.ReviewGuideSettings.Button" xml:space="preserve">
+    <value>Guide settings</value>
+  </data>
+  <data name="SourcesSummaryLiveSeparatorRun.Text" xml:space="preserve">
+    <value> live / </value>
+  </data>
+  <data name="SourceGuidance.Action.RetestSource.Button" xml:space="preserve">
+    <value>Retest source</value>
+  </data>
+  <data name="SourceGuidance.Action.RetestGuide.Summary" xml:space="preserve">
+    <value>Retry XMLTV fetch and rematch without changing catalog settings.</value>
+  </data>
+  <data name="SourceLifecycle.Repair.Deferred" xml:space="preserve">
+    <value>{0} was deferred.</value>
+  </data>
+  <data name="EpgCoverage.MatchType.Exact" xml:space="preserve">
+    <value>Exact</value>
+  </data>
+  <data name="SourceGuidance.Action.RetestPortal.Button" xml:space="preserve">
+    <value>Retest portal</value>
+  </data>
+  <data name="SourceGuidance.Routing.BufferedRelay" xml:space="preserve">
+    <value>Buffered relay</value>
+  </data>
+  <data name="SourceGuidance.Validation.PlaylistUrlRequired" xml:space="preserve">
+    <value>Playlist URL or file path is required.</value>
+  </data>
+  <data name="SourceGuidance.TypeHint.Mismatch" xml:space="preserve">
+    <value>This looks more like {0} than {1}. Review the selected source type before saving.</value>
+  </data>
+  <data name="SourceGuidance.Xtream.Error.NoCategories" xml:space="preserve">
+    <value>The Xtream endpoint responded, but it did not return any catalog categories.</value>
+  </data>
+  <data name="SourceGuidance.Routing.PlaybackProbes" xml:space="preserve">
+    <value>Playback + probes</value>
+  </data>
+  <data name="SourceGuidance.Routing.ProxyEnabled" xml:space="preserve">
+    <value>Proxy enabled</value>
+  </data>
+  <data name="SourceGuidance.Repair.Detail.StreamProbeRan" xml:space="preserve">
+    <value>A bounded sampled stream probe was run for this source.</value>
+  </data>
+  <data name="SourceGuidance.Repair.Detail.CompanionAlreadyDisabled" xml:space="preserve">
+    <value>Local companion relay was already disabled.</value>
+  </data>
+  <data name="SourceGuidance.Repair.Detail.StateRebuilt" xml:space="preserve">
+    <value>Saved state, operational candidates, and source health were rebuilt.</value>
+  </data>
+  <data name="SourceGuidance.Validation.XtreamRequired" xml:space="preserve">
+    <value>Server URL, username, and password are required for Xtream.</value>
+  </data>
+  <data name="SourceGuidance.Issue.MovieCatalogNotConfirmed.Detail" xml:space="preserve">
+    <value>This Xtream provider may still be live-only, or the VOD endpoint may be restricted.</value>
+  </data>
+  <data name="SourceGuidance.Routing.BufferedRelayLower" xml:space="preserve">
+    <value>buffered relay</value>
+  </data>
+  <data name="SourceGuidance.Stalker.Value.PortalReachable" xml:space="preserve">
+    <value>Portal reachable</value>
+  </data>
+  <data name="SourceGuidance.Report.Capabilities" xml:space="preserve">
+    <value>Capabilities</value>
+  </data>
+  <data name="SourceGuidance.Report.ActivityFocus" xml:space="preserve">
+    <value>Activity focus: {0}</value>
+  </data>
+  <data name="SourceGuidance.Repair.Change.TopFocus" xml:space="preserve">
+    <value>Top repair focus changed from {0} to {1}.</value>
+  </data>
+  <data name="SourceGuidance.Repair.Detail.CatalogCounts" xml:space="preserve">
+    <value>{0:N0} live, {1:N0} movies, {2:N0} series.</value>
+  </data>
+  <data name="SourceGuidance.Report.Health" xml:space="preserve">
+    <value>Health: {0} / {1}/100</value>
+  </data>
+  <data name="SourceGuidance.Setup.InputNeedsAttention" xml:space="preserve">
+    <value>Setup input needs attention</value>
+  </data>
+  <data name="SourceGuidance.Report.SetupTitle" xml:space="preserve">
+    <value>KROIRA source setup report</value>
+  </data>
+  <data name="SourceGuidance.Routing.PassThroughRelay" xml:space="preserve">
+    <value>Pass-through relay</value>
+  </data>
+  <data name="SourceGuidance.Report.RepairTitle" xml:space="preserve">
+    <value>KROIRA source repair report</value>
+  </data>
+  <data name="SourceGuidance.Stalker.Value.ManualGuideOptional" xml:space="preserve">
+    <value>Manual guide optional</value>
+  </data>
+  <data name="SourceGuidance.Issue.SeriesCatalogNotConfirmed.Title" xml:space="preserve">
+    <value>Series catalog was not confirmed</value>
+  </data>
+  <data name="SourceGuidance.Report.RequestedType" xml:space="preserve">
+    <value>Requested type: {0}</value>
+  </data>
+  <data name="SourceGuidance.Repair.Headline.CompanionProblem" xml:space="preserve">
+    <value>Companion routing is getting in the way</value>
+  </data>
+  <data name="SourceGuidance.M3u.Error.NoEntries" xml:space="preserve">
+    <value>The playlist was reachable, but it did not expose any playable entries.</value>
+  </data>
+  <data name="SourceGuidance.Report.CurrentStatus" xml:space="preserve">
+    <value>Current status: {0}</value>
+  </data>
+  <data name="SourceGuidance.Xtream.Detail.LiveRowsReachable" xml:space="preserve">
+    <value>{0:N0} live stream rows were reachable during the preview.</value>
+  </data>
+  <data name="SourceGuidance.Stalker.Headline.HandshakeCompleted" xml:space="preserve">
+    <value>Portal handshake completed</value>
+  </data>
+  <data name="SourceGuidance.Report.Type" xml:space="preserve">
+    <value>Type: {0}</value>
+  </data>
+  <data name="SourceGuidance.Issue.PartialCatalog.Title" xml:space="preserve">
+    <value>Portal returned a partial catalog</value>
+  </data>
+  <data name="SourceGuidance.Xtream.Summary.PlayerApiConfirmed" xml:space="preserve">
+    <value>{0} was confirmed through player_api preview calls.</value>
+  </data>
+  <data name="SourceGuidance.Routing.CompanionEnabledVia" xml:space="preserve">
+    <value>Companion enabled ({0}) via {1}.</value>
+  </data>
+  <data name="SourceGuidance.Report.Connection" xml:space="preserve">
+    <value>Connection: {0}</value>
+  </data>
+  <data name="SourceGuidance.Xtream.Value.ArchiveHints" xml:space="preserve">
+    <value>{0:N0} archive hints</value>
+  </data>
+  <data name="SourceGuidance.Routing.Direct" xml:space="preserve">
+    <value>Direct</value>
+  </data>
+  <data name="SourceGuidance.Issue.UnsupportedSourceType.Title" xml:space="preserve">
+    <value>Unsupported source type</value>
+  </data>
+  <data name="SourceGuidance.Routing.AllRequests" xml:space="preserve">
+    <value>All requests</value>
+  </data>
+  <data name="SourceGuidance.Xtream.Value.GuideDerived" xml:space="preserve">
+    <value>Guide derived</value>
+  </data>
+  <data name="SourceGuidance.Repair.Result.AppliedNeedsAttention" xml:space="preserve">
+    <value>Repair applied, but the source still needs attention</value>
+  </data>
+  <data name="SourceGuidance.Report.Result" xml:space="preserve">
+    <value>Result: {0}</value>
+  </data>
+  <data name="SourceGuidance.Routing.CompanionConfigured" xml:space="preserve">
+    <value>Companion configured.</value>
+  </data>
+  <data name="SourceGuidance.Report.Change" xml:space="preserve">
+    <value>Change: {0}</value>
+  </data>
+  <data name="SourceGuidance.Stalker.Detail.HandshakeCompleted" xml:space="preserve">
+    <value>Handshake and profile discovery completed.</value>
+  </data>
+  <data name="SourceGuidance.TypeHint.Unclassified" xml:space="preserve">
+    <value>KROIRA could not confidently classify this source yet.</value>
+  </data>
+  <data name="SourceGuidance.Xtream.Headline.Reachable" xml:space="preserve">
+    <value>Xtream provider looks reachable</value>
+  </data>
+  <data name="SourceGuidance.Issue.NoGuideUrlDetected.Title" xml:space="preserve">
+    <value>No guide URL was detected yet</value>
+  </data>
+  <data name="SourceGuidance.M3u.Detail.CatalogCounts" xml:space="preserve">
+    <value>{0:N0} live, {1:N0} VOD, {2:N0} episodic hints in the sampled slice.</value>
+  </data>
+  <data name="SourceGuidance.Stalker.Detail.ManualGuideOptional" xml:space="preserve">
+    <value>Stalker portals do not always expose XMLTV directly. Add a manual guide only when you have one.</value>
+  </data>
+  <data name="SourceGuidance.TypeHint.Consistent" xml:space="preserve">
+    <value>{0} setup and the tested endpoint look consistent.</value>
+  </data>
+  <data name="SourceGuidance.Report.Headline" xml:space="preserve">
+    <value>Headline: {0}</value>
+  </data>
+  <data name="SourceGuidance.Setup.NoValidationPath" xml:space="preserve">
+    <value>No validation path is available.</value>
+  </data>
+  <data name="SourceGuidance.Xtream.Detail.ArchiveNotAdvertised" xml:space="preserve">
+    <value>The sampled live stream list did not advertise archive playback clearly.</value>
+  </data>
+  <data name="SourceGuidance.Validation.CompanionEndpointRequired" xml:space="preserve">
+    <value>Companion relay mode requires a companion endpoint URL.</value>
+  </data>
+  <data name="SourceGuidance.Validation.ManualXmltvRequired" xml:space="preserve">
+    <value>Manual guide mode requires a manual XMLTV URL.</value>
+  </data>
+  <data name="SourceGuidance.Xtream.Value.CredentialsAccepted" xml:space="preserve">
+    <value>Credentials accepted</value>
+  </data>
+  <data name="SourceGuidance.Report.Completed" xml:space="preserve">
+    <value>Completed</value>
+  </data>
+  <data name="SourceGuidance.Validation.ProxyUrlRequired" xml:space="preserve">
+    <value>Proxy routing requires a proxy URL.</value>
+  </data>
+  <data name="SourceGuidance.Routing.PassThroughRelayLower" xml:space="preserve">
+    <value>pass-through relay</value>
+  </data>
+  <data name="SourceGuidance.Stalker.Detail.PortalHandshakeCompleted" xml:space="preserve">
+    <value>Portal handshake completed.</value>
+  </data>
+  <data name="SourceGuidance.Issue.ConnectionTestFailed.Title" xml:space="preserve">
+    <value>Connection test failed</value>
+  </data>
+  <data name="SourceGuidance.Routing.ProxyConfigured" xml:space="preserve">
+    <value>Proxy configured.</value>
+  </data>
+  <data name="SourceGuidance.Report.SuggestedActions" xml:space="preserve">
+    <value>Suggested actions</value>
+  </data>
+  <data name="SourceGuidance.Xtream.Detail.CategoryCounts" xml:space="preserve">
+    <value>{0:N0} live categories, {1:N0} movie categories, {2:N0} series categories.</value>
+  </data>
+  <data name="SourceGuidance.Repair.Error.ActionNotDirect" xml:space="preserve">
+    <value>This repair action is not applied directly from the assistant.</value>
+  </data>
+  <data name="SourceGuidance.Repair.Result.NeedsReview" xml:space="preserve">
+    <value>Repair attempt needs review</value>
+  </data>
+  <data name="SourceGuidance.Issue.AllRequestsProxyBroad.Title" xml:space="preserve">
+    <value>All-requests proxy mode is broad</value>
+  </data>
+  <data name="SourceGuidance.Xtream.Detail.ArchiveDetected" xml:space="preserve">
+    <value>Archive-capable channels were detected in the sampled live stream list.</value>
+  </data>
+  <data name="SourceGuidance.Stalker.Summary.PreviewConfirmed" xml:space="preserve">
+    <value>{0} was confirmed through the portal preview.</value>
+  </data>
+  <data name="SourceGuidance.M3u.Detail.SampledEntries" xml:space="preserve">
+    <value>Sampled {0:N0} entries without provider auth errors.</value>
+  </data>
+  <data name="SourceGuidance.Report.Summary" xml:space="preserve">
+    <value>Summary: {0}</value>
+  </data>
+  <data name="SourceGuidance.Routing.PlaybackOnly" xml:space="preserve">
+    <value>Playback only</value>
+  </data>
+  <data name="SourceGuidance.Setup.UnsupportedFormatHeadline" xml:space="preserve">
+    <value>Source format is not supported</value>
+  </data>
+  <data name="SourceGuidance.Issue.NoGuideUrlDetected.Detail" xml:space="preserve">
+    <value>The playlist can still be saved, but guide sync will stay off unless you add a manual XMLTV feed.</value>
+  </data>
+  <data name="SourceGuidance.Repair.Change.CompanionPolicy" xml:space="preserve">
+    <value>Companion policy changed from {0} to {1}.</value>
+  </data>
+  <data name="SourceGuidance.M3u.Error.NotPlaylist" xml:space="preserve">
+    <value>The endpoint responded, but it did not look like an M3U playlist.</value>
+  </data>
+  <data name="SourceGuidance.Stalker.Connection.Success" xml:space="preserve">
+    <value>KROIRA completed handshake and profile discovery with the supplied portal identity.</value>
+  </data>
+  <data name="SourceGuidance.Stalker.Detail.CatalogCounts" xml:space="preserve">
+    <value>{0:N0} live, {1:N0} movies, {2:N0} series items discovered.</value>
+  </data>
+  <data name="SourceGuidance.Repair.Headline.StoredStateNeedsRepair" xml:space="preserve">
+    <value>Stored source state needs repair</value>
+  </data>
+  <data name="SourceGuidance.Issue.NoCatalogFamilies.Title" xml:space="preserve">
+    <value>No catalog families were confirmed</value>
+  </data>
+  <data name="SourceGuidance.Setup.NeedsAttention" xml:space="preserve">
+    <value>Source setup needs attention</value>
+  </data>
+  <data name="SourceGuidance.M3u.Summary.SampledCatalog" xml:space="preserve">
+    <value>{0} was detected in the sampled playlist preview.</value>
+  </data>
+  <data name="SourceGuidance.Report.LatestAttempt" xml:space="preserve">
+    <value>Latest attempt: {0}</value>
+  </data>
+  <data name="SourceGuidance.Report.TypeHint" xml:space="preserve">
+    <value>Type hint: {0}</value>
+  </data>
+  <data name="SourceGuidance.M3u.Connection.Success" xml:space="preserve">
+    <value>KROIRA reached the playlist and parsed a representative slice successfully.</value>
+  </data>
+  <data name="SourceGuidance.Validation.StalkerRequired" xml:space="preserve">
+    <value>Portal URL and MAC address are required for Stalker.</value>
+  </data>
+  <data name="SourceGuidance.Validation.SourceTypeAbsoluteUrl" xml:space="preserve">
+    <value>This source type requires an absolute URL.</value>
+  </data>
+  <data name="SourceGuidance.Repair.Headline.FreshConnectionTest" xml:space="preserve">
+    <value>Source setup needs a fresh connection test</value>
+  </data>
+  <data name="SourceGuidance.Validation.ProxyUrlAbsolute" xml:space="preserve">
+    <value>Proxy URL must be an absolute URL.</value>
+  </data>
+  <data name="SourceGuidance.Setup.ConnectionTestIncomplete" xml:space="preserve">
+    <value>The connection test did not complete successfully.</value>
+  </data>
+  <data name="SourceGuidance.Validation.CompanionEndpointAbsolute" xml:space="preserve">
+    <value>Companion endpoint must be an absolute URL.</value>
+  </data>
+  <data name="SourceGuidance.Routing.CompanionEnabledMode" xml:space="preserve">
+    <value>Companion enabled ({0}).</value>
+  </data>
+  <data name="SourceGuidance.Routing.CompanionEnabled" xml:space="preserve">
+    <value>Companion enabled</value>
+  </data>
+  <data name="SourceGuidance.M3u.Detail.NoXmltvAdvertised" xml:space="preserve">
+    <value>No XMLTV URL was advertised in the playlist header preview.</value>
+  </data>
+  <data name="SourceGuidance.Stalker.Value.ProfileDiscovered" xml:space="preserve">
+    <value>Profile discovered</value>
+  </data>
+  <data name="SourceGuidance.Setup.CouldNotVerify" xml:space="preserve">
+    <value>KROIRA could not verify this source yet.</value>
+  </data>
+  <data name="SourceGuidance.Repair.Headline.PortalNeedsAttention" xml:space="preserve">
+    <value>Portal connection needs attention</value>
+  </data>
+  <data name="SourceGuidance.Repair.Headline.GuideNeedsAttention" xml:space="preserve">
+    <value>Guide data needs attention</value>
+  </data>
+  <data name="SourceGuidance.Issue.CompanionOptional.Detail" xml:space="preserve">
+    <value>Keep direct playback as the normal path unless this provider behaves better behind a local relay.</value>
+  </data>
+  <data name="SourceGuidance.Issue.SourceStable.Title" xml:space="preserve">
+    <value>Source status is stable</value>
+  </data>
+  <data name="SourceGuidance.Report.RedactedNotice" xml:space="preserve">
+    <value>Sensitive values are redacted.</value>
+  </data>
+  <data name="SourceGuidance.Issue.UnsupportedSourceType.Detail" xml:space="preserve">
+    <value>Choose M3U, Xtream, or Stalker.</value>
+  </data>
+  <data name="SourceGuidance.Setup.UnsupportedFormatSummary" xml:space="preserve">
+    <value>KROIRA could not validate the selected source format.</value>
+  </data>
+  <data name="SourceGuidance.M3u.Headline.Importable" xml:space="preserve">
+    <value>Playlist looks importable</value>
+  </data>
+  <data name="SourceGuidance.Repair.Change.NoMaterialMovement" xml:space="preserve">
+    <value>The repair completed, but the source health summary did not move materially yet.</value>
+  </data>
+  <data name="SourceGuidance.Repair.Change.HealthMoved" xml:space="preserve">
+    <value>Health moved from {0}/100 to {1}/100 ({2}{3}).</value>
+  </data>
+  <data name="SourceGuidance.Issue.CompanionOptional.Title" xml:space="preserve">
+    <value>Companion relay is optional</value>
+  </data>
+  <data name="SourceGuidance.Issue.SeriesCatalogNotConfirmed.Detail" xml:space="preserve">
+    <value>Series support will stay optional unless the provider exposes series categories.</value>
+  </data>
+  <data name="SourceGuidance.Report.LastSuccess" xml:space="preserve">
+    <value>Last success: {0}</value>
+  </data>
+  <data name="SourceGuidance.M3u.Detail.CatchupDetected" xml:space="preserve">
+    <value>Catchup attributes or archive-style stream patterns were found in the sampled slice.</value>
+  </data>
+  <data name="SourceGuidance.Xtream.Connection.Success" xml:space="preserve">
+    <value>KROIRA reached the Xtream player_api endpoints with the supplied credentials.</value>
+  </data>
+  <data name="SourceGuidance.M3u.Detail.CatchupNotAdvertised" xml:space="preserve">
+    <value>Catchup support can still appear later, but the sampled slice did not advertise it clearly.</value>
+  </data>
+  <data name="SourceGuidance.Repair.Result.AppliedCleanly" xml:space="preserve">
+    <value>Repair applied cleanly</value>
+  </data>
+  <data name="SourceGuidance.Issue.AllRequestsProxyBroad.Detail" xml:space="preserve">
+    <value>Import, guide, probe, and playback traffic will all route through the proxy. Use it only when the provider truly needs it.</value>
+  </data>
+  <data name="SourceGuidance.Report.RepairExecutionTitle" xml:space="preserve">
+    <value>KROIRA repair execution</value>
+  </data>
+  <data name="SourceGuidance.Repair.Headline.ConnectedUsable" xml:space="preserve">
+    <value>Source is connected and currently usable</value>
+  </data>
+  <data name="SourceGuidance.Routing.DirectRouting" xml:space="preserve">
+    <value>Direct routing</value>
+  </data>
+  <data name="SourceGuidance.Report.NeedsReview" xml:space="preserve">
+    <value>Needs review</value>
+  </data>
+  <data name="SourceGuidance.Report.Detail" xml:space="preserve">
+    <value>Detail: {0}</value>
+  </data>
+  <data name="SourceGuidance.Issue.MovieCatalogNotConfirmed.Title" xml:space="preserve">
+    <value>Movie catalog was not confirmed</value>
+  </data>
+  <data name="SourceGuidance.Report.Action" xml:space="preserve">
+    <value>Action: {0}</value>
+  </data>
+  <data name="SourceGuidance.Issue.NoCatalogFamilies.Detail" xml:space="preserve">
+    <value>The portal handshake worked, but it did not return live, movie, or series data in this preview.</value>
+  </data>
+  <data name="SourceGuidance.Report.Source" xml:space="preserve">
+    <value>Source: {0}</value>
+  </data>
+  <data name="SourceGuidance.Report.Issues" xml:space="preserve">
+    <value>Issues</value>
+  </data>
+  <data name="SourceGuidance.Report.CurrentIssues" xml:space="preserve">
+    <value>Current issues</value>
+  </data>
+  <data name="SourceGuidance.Repair.Change.GuideState" xml:space="preserve">
+    <value>Guide state changed from {0} to {1}.</value>
+  </data>
+  <data name="PlayableInspection.Field.EpgMatchSummary" xml:space="preserve">
+    <value>EPG match summary</value>
+  </data>
+  <data name="PlayableInspection.Field.Series" xml:space="preserve">
+    <value>Series</value>
+  </data>
+  <data name="PlayableInspection.Field.SourceProxyPolicy" xml:space="preserve">
+    <value>Source proxy policy</value>
+  </data>
+  <data name="PlayableInspection.Field.PixelFormat" xml:space="preserve">
+    <value>Pixel format</value>
+  </data>
+  <data name="PlayableInspection.Field.AcquisitionProfile" xml:space="preserve">
+    <value>Acquisition profile</value>
+  </data>
+  <data name="PlayableInspection.Field.CurrentPlaybackCatchup" xml:space="preserve">
+    <value>Current playback catchup</value>
+  </data>
+  <data name="PlayableInspection.Field.SourceEndpoint" xml:space="preserve">
+    <value>Source endpoint</value>
+  </data>
+  <data name="PlayableInspection.Field.SessionState" xml:space="preserve">
+    <value>Session state</value>
+  </data>
+  <data name="PlayableInspection.Field.OperationalSummary" xml:space="preserve">
+    <value>Operational summary</value>
+  </data>
+  <data name="PlayableInspection.Field.LatestCatchupAttempt" xml:space="preserve">
+    <value>Latest catchup attempt</value>
+  </data>
+  <data name="PlayableInspection.Field.PlaybackMode" xml:space="preserve">
+    <value>Playback mode</value>
+  </data>
+  <data name="PlayableInspection.Field.VideoCodec" xml:space="preserve">
+    <value>Video codec</value>
+  </data>
+  <data name="PlayableInspection.Field.DedupFingerprint" xml:space="preserve">
+    <value>Dedup fingerprint</value>
+  </data>
+  <data name="PlayableInspection.Field.LaunchStream" xml:space="preserve">
+    <value>Launch stream</value>
+  </data>
+  <data name="PlayableInspection.Field.LogicalContentKey" xml:space="preserve">
+    <value>Logical content key</value>
+  </data>
+  <data name="PlayableInspection.Field.LogicalIdentity" xml:space="preserve">
+    <value>Logical identity</value>
+  </data>
+  <data name="PlayableInspection.Field.CatchupSummary" xml:space="preserve">
+    <value>Catchup summary</value>
+  </data>
+  <data name="PlayableInspection.Field.AudioCodec" xml:space="preserve">
+    <value>Audio codec</value>
+  </data>
+  <data name="PlayableInspection.Field.SessionMessage" xml:space="preserve">
+    <value>Session message</value>
+  </data>
+  <data name="PlayableInspection.Field.RawProviderName" xml:space="preserve">
+    <value>Raw provider name</value>
+  </data>
+  <data name="PlayableInspection.Field.Source" xml:space="preserve">
+    <value>Source</value>
+  </data>
+  <data name="PlayableInspection.Field.ProviderSummary" xml:space="preserve">
+    <value>Provider summary</value>
+  </data>
+  <data name="PlayableInspection.Field.ProbeSummary" xml:space="preserve">
+    <value>Probe summary</value>
+  </data>
+  <data name="PlayableInspection.Field.ContentType" xml:space="preserve">
+    <value>Content type</value>
+  </data>
+  <data name="PlayableInspection.Field.UpstreamStream" xml:space="preserve">
+    <value>Upstream stream</value>
+  </data>
+  <data name="PlayableInspection.Field.CompanionEndpoint" xml:space="preserve">
+    <value>Companion endpoint</value>
+  </data>
+  <data name="PlayableInspection.Field.ProviderProfile" xml:space="preserve">
+    <value>Provider profile</value>
+  </data>
+  <data name="PlayableInspection.Field.PositionDuration" xml:space="preserve">
+    <value>Position / duration</value>
+  </data>
+  <data name="PlayableInspection.Field.CatchupStatus" xml:space="preserve">
+    <value>Catchup status</value>
+  </data>
+  <data name="PlayableInspection.Field.Resolution" xml:space="preserve">
+    <value>Resolution</value>
+  </data>
+  <data name="PlayableInspection.Field.SeriesCanonicalKey" xml:space="preserve">
+    <value>Series canonical key</value>
+  </data>
+  <data name="PlayableInspection.Field.GuideSummary" xml:space="preserve">
+    <value>Guide summary</value>
+  </data>
+  <data name="PlayableInspection.Field.Category" xml:space="preserve">
+    <value>Category</value>
+  </data>
+  <data name="PlayableInspection.Field.SeriesProviderId" xml:space="preserve">
+    <value>Series provider id</value>
+  </data>
+  <data name="PlayableInspection.Field.PortalStatus" xml:space="preserve">
+    <value>Portal status</value>
+  </data>
+  <data name="PlayableInspection.Field.SourceType" xml:space="preserve">
+    <value>Source type</value>
+  </data>
+  <data name="PlayableInspection.Field.NormalizedName" xml:space="preserve">
+    <value>Normalized name</value>
+  </data>
+  <data name="PlayableInspection.Field.AcquisitionStats" xml:space="preserve">
+    <value>Acquisition stats</value>
+  </data>
+  <data name="PlayableInspection.Field.GuideStatus" xml:space="preserve">
+    <value>Guide status</value>
+  </data>
+  <data name="PlayableInspection.Field.TopIssue" xml:space="preserve">
+    <value>Top issue</value>
+  </data>
+  <data name="PlayableInspection.Field.ProviderItemId" xml:space="preserve">
+    <value>Provider item id</value>
+  </data>
+  <data name="PlayableInspection.Field.ProviderResolution" xml:space="preserve">
+    <value>Provider resolution</value>
+  </data>
+  <data name="PlayableInspection.Field.MirrorCandidates" xml:space="preserve">
+    <value>Mirror candidates</value>
+  </data>
+  <data name="PlayableInspection.Field.CatchupProgram" xml:space="preserve">
+    <value>Catchup program</value>
+  </data>
+  <data name="PlayableInspection.Field.CatchupWindow" xml:space="preserve">
+    <value>Catchup window</value>
+  </data>
+  <data name="PlayableInspection.Field.CatchupRequest" xml:space="preserve">
+    <value>Catchup request</value>
+  </data>
+  <data name="PlayableInspection.Field.SourceProfileId" xml:space="preserve">
+    <value>Source profile id</value>
+  </data>
+  <data name="PlayableInspection.Field.RecoverySummary" xml:space="preserve">
+    <value>Recovery summary</value>
+  </data>
+  <data name="PlayableInspection.Field.HardwareDecode" xml:space="preserve">
+    <value>Hardware decode</value>
+  </data>
+  <data name="PlayableInspection.Field.CandidateRanking" xml:space="preserve">
+    <value>Candidate ranking</value>
+  </data>
+  <data name="PlayableInspection.Field.CompanionStatus" xml:space="preserve">
+    <value>Companion status</value>
+  </data>
+  <data name="PlayableInspection.Field.Validation" xml:space="preserve">
+    <value>Validation</value>
+  </data>
+  <data name="PlayableInspection.Field.CatchupSupport" xml:space="preserve">
+    <value>Catchup support</value>
+  </data>
+  <data name="PlayableInspection.Field.CanonicalKey" xml:space="preserve">
+    <value>Canonical key</value>
+  </data>
+  <data name="PlayableInspection.Field.CatchupDiagnostics" xml:space="preserve">
+    <value>Catchup diagnostics</value>
+  </data>
+  <data name="PlayableInspection.Field.SeriesDedupFingerprint" xml:space="preserve">
+    <value>Series dedup fingerprint</value>
+  </data>
+  <data name="PlayableInspection.Field.Container" xml:space="preserve">
+    <value>Container</value>
+  </data>
+  <data name="PlayableInspection.Field.ProviderEpgId" xml:space="preserve">
+    <value>Provider EPG id</value>
+  </data>
+  <data name="PlayableInspection.Field.PortalProfile" xml:space="preserve">
+    <value>Portal profile</value>
+  </data>
+  <data name="PlayableInspection.Field.AcquisitionRun" xml:space="preserve">
+    <value>Acquisition run</value>
+  </data>
+  <data name="PlayableInspection.Field.RawProviderTitle" xml:space="preserve">
+    <value>Raw provider title</value>
+  </data>
+  <data name="PlayableInspection.Field.Routing" xml:space="preserve">
+    <value>Routing</value>
+  </data>
+  <data name="PlayableInspection.Field.CompanionPolicy" xml:space="preserve">
+    <value>Companion policy</value>
+  </data>
+  <data name="PlayableInspection.Field.CatchupWindowHours" xml:space="preserve">
+    <value>Catchup window hours</value>
+  </data>
+  <data name="PlayableInspection.Field.EpisodeProviderId" xml:space="preserve">
+    <value>Episode provider id</value>
+  </data>
+  <data name="PlayableInspection.Field.LiveStream" xml:space="preserve">
+    <value>Live stream</value>
+  </data>
+  <data name="PlayableInspection.Field.ProxyEndpoint" xml:space="preserve">
+    <value>Proxy endpoint</value>
+  </data>
+  <data name="PlayableInspection.Field.PreferredSourceProfile" xml:space="preserve">
+    <value>Preferred source profile</value>
+  </data>
+  <data name="PlayableInspection.Field.CandidateCount" xml:space="preserve">
+    <value>Candidate count</value>
+  </data>
+  <data name="PlayableInspection.Field.MatchedEpgId" xml:space="preserve">
+    <value>Matched EPG id</value>
+  </data>
+  <data name="PlayableInspection.Field.Health" xml:space="preserve">
+    <value>Health</value>
+  </data>
+  <data name="PlayableInspection.Field.OperationalSelection" xml:space="preserve">
+    <value>Operational selection</value>
+  </data>
+  <data name="PlayableInspection.Field.SeasonEpisode" xml:space="preserve">
+    <value>Season / episode</value>
+  </data>
+  <data name="PlayableInspection.Field.WarningSummary" xml:space="preserve">
+    <value>Warning summary</value>
+  </data>
+  <data name="PlayableInspection.Field.Seekability" xml:space="preserve">
+    <value>Seekability</value>
+  </data>
+  <data name="PlayableInspection.Field.NormalizedIdentity" xml:space="preserve">
+    <value>Normalized identity</value>
+  </data>
+  <data name="PlayableInspection.Field.CatalogStream" xml:space="preserve">
+    <value>Catalog stream</value>
+  </data>
+  <data name="PlayableInspection.Field.RoutingSummary" xml:space="preserve">
+    <value>Routing summary</value>
+  </data>
+  <data name="PlayableInspection.Field.LastKnownGood" xml:space="preserve">
+    <value>Last known good</value>
+  </data>
+  <data name="PlayableInspection.Field.LaunchPath" xml:space="preserve">
+    <value>Launch path</value>
+  </data>
+  <data name="PlayableInspection.Field.AliasKeys" xml:space="preserve">
+    <value>Alias keys</value>
+  </data>
+  <data name="PlayableInspection.Field.CatchupSource" xml:space="preserve">
+    <value>Catchup source</value>
+  </data>
+  <data name="PlayableInspection.Field.RelevantEvidence" xml:space="preserve">
+    <value>Relevant evidence</value>
+  </data>
+  <data name="PlayableInspection.Value.Selected" xml:space="preserve">
+    <value>selected</value>
+  </data>
+  <data name="PlayableInspection.Section.Identity" xml:space="preserve">
+    <value>Identity</value>
+  </data>
+  <data name="PlayableInspection.Fallback.Item" xml:space="preserve">
+    <value>Item</value>
+  </data>
+  <data name="PlayableInspection.Section.SourceDiagnostics" xml:space="preserve">
+    <value>Source diagnostics</value>
+  </data>
+  <data name="PlayableInspection.Status.CatchupCompanion" xml:space="preserve">
+    <value>Showing the catalog, upstream replay stream, and companion relay launch context for this catchup request.</value>
+  </data>
+  <data name="PlayableInspection.Report.NoPlaybackContext" xml:space="preserve">
+    <value>No playback context was available.</value>
+  </data>
+  <data name="PlayableInspection.Value.Applied" xml:space="preserve">
+    <value>Applied</value>
+  </data>
+  <data name="PlayableInspection.Value.Seekable" xml:space="preserve">
+    <value>Seekable</value>
+  </data>
+  <data name="PlayableInspection.Value.NotSeekable" xml:space="preserve">
+    <value>Not seekable</value>
+  </data>
+  <data name="PlayableInspection.Value.CompanionPolicyFormat" xml:space="preserve">
+    <value>{0} - {1}</value>
+  </data>
+  <data name="PlayableInspection.Value.Pending" xml:space="preserve">
+    <value>Pending</value>
+  </data>
+  <data name="PlayableInspection.Value.CatchupReplay" xml:space="preserve">
+    <value>Catchup replay</value>
+  </data>
+  <data name="PlayableInspection.Value.Rank" xml:space="preserve">
+    <value>rank {0}</value>
+  </data>
+  <data name="PlayableInspection.Status.NoPlaybackContext" xml:space="preserve">
+    <value>No playback context was available for inspection.</value>
+  </data>
+  <data name="PlayableInspection.Status.CatalogCompanion" xml:space="preserve">
+    <value>Showing the catalog-level view of this item, including the upstream provider stream and the local companion relay launch path.</value>
+  </data>
+  <data name="PlayableInspection.Value.StalkerLocator" xml:space="preserve">
+    <value>Stalker locator</value>
+  </data>
+  <data name="PlayableInspection.Value.BufferedRelayLower" xml:space="preserve">
+    <value>buffered relay</value>
+  </data>
+  <data name="PlayableInspection.Value.Failed" xml:space="preserve">
+    <value>Failed</value>
+  </data>
+  <data name="PlayableInspection.Section.Streams" xml:space="preserve">
+    <value>Streams</value>
+  </data>
+  <data name="PlayableInspection.Report.Title" xml:space="preserve">
+    <value>KROIRA item inspection</value>
+  </data>
+  <data name="PlayableInspection.Value.CompanionFallbackDirect" xml:space="preserve">
+    <value>Companion fallback to direct</value>
+  </data>
+  <data name="PlayableInspection.Report.RedactedNotice" xml:space="preserve">
+    <value>Sensitive values are redacted.</value>
+  </data>
+  <data name="PlayableInspection.Value.FallbackToDirect" xml:space="preserve">
+    <value>Fallback to direct</value>
+  </data>
+  <data name="PlayableInspection.Fallback.Episode" xml:space="preserve">
+    <value>Episode</value>
+  </data>
+  <data name="PlayableInspection.Value.CatalogUrl" xml:space="preserve">
+    <value>Catalog URL</value>
+  </data>
+  <data name="PlayableInspection.Section.RoutingFallback" xml:space="preserve">
+    <value>Routing and fallback</value>
+  </data>
+  <data name="PlayableInspection.Value.UpstreamResolvedRelayed" xml:space="preserve">
+    <value>Upstream resolved then relayed</value>
+  </data>
+  <data name="PlayableInspection.Fallback.Movie" xml:space="preserve">
+    <value>Movie</value>
+  </data>
+  <data name="PlayableInspection.Value.DirectStreamUrl" xml:space="preserve">
+    <value>Direct stream URL</value>
+  </data>
+  <data name="PlayableInspection.Value.PlaybackOnly" xml:space="preserve">
+    <value>Playback only</value>
+  </data>
+  <data name="PlayableInspection.Status.ActiveRouting" xml:space="preserve">
+    <value>Showing the active playback context with source-aware routing details.</value>
+  </data>
+  <data name="PlayableInspection.Section.GuideCatchup" xml:space="preserve">
+    <value>Guide and catchup</value>
+  </data>
+  <data name="PlayableInspection.Fallback.Channel" xml:space="preserve">
+    <value>Channel</value>
+  </data>
+  <data name="PlayableInspection.Status.CatchupCatalog" xml:space="preserve">
+    <value>Showing the catalog and catchup context for this item. The replay URL is resolved only when catchup is launched.</value>
+  </data>
+  <data name="PlayableInspection.Status.ActiveResolved" xml:space="preserve">
+    <value>Showing the active playback context, including the resolved launch URL currently in use.</value>
+  </data>
+  <data name="PlayableInspection.Value.CompanionRelay" xml:space="preserve">
+    <value>Companion relay</value>
+  </data>
+  <data name="PlayableInspection.Value.ResolvedLaunchUrl" xml:space="preserve">
+    <value>Resolved launch URL</value>
+  </data>
+  <data name="PlayableInspection.Value.DirectRouting" xml:space="preserve">
+    <value>Direct routing</value>
+  </data>
+  <data name="PlayableInspection.Value.Active" xml:space="preserve">
+    <value>Active</value>
+  </data>
+  <data name="PlayableInspection.Value.EpisodeNumber" xml:space="preserve">
+    <value>Episode {0}</value>
+  </data>
+  <data name="PlayableInspection.Value.PassThroughRelayLower" xml:space="preserve">
+    <value>pass-through relay</value>
+  </data>
+  <data name="PlayableInspection.Value.NotResolvedUntilLaunch" xml:space="preserve">
+    <value>Not resolved until launch</value>
+  </data>
+  <data name="PlayableInspection.Value.NotAdvertised" xml:space="preserve">
+    <value>Not advertised</value>
+  </data>
+  <data name="PlayableInspection.Value.Skipped" xml:space="preserve">
+    <value>Skipped</value>
+  </data>
+  <data name="PlayableInspection.Value.PlaybackProbes" xml:space="preserve">
+    <value>Playback + probes</value>
+  </data>
+  <data name="PlayableInspection.Title.ItemUnavailable" xml:space="preserve">
+    <value>Item unavailable</value>
+  </data>
+  <data name="PlayableInspection.Section.CurrentPlayback" xml:space="preserve">
+    <value>Current playback</value>
+  </data>
+  <data name="PlayableInspection.Value.Supported" xml:space="preserve">
+    <value>Supported</value>
+  </data>
+  <data name="PlayableInspection.Value.LastGood" xml:space="preserve">
+    <value>last good</value>
+  </data>
+  <data name="PlayableInspection.Status.ActiveCompanion" xml:space="preserve">
+    <value>Showing the active playback context, including the upstream provider stream and the local companion relay launch URL currently in use.</value>
+  </data>
+  <data name="PlayableInspection.Status.CatalogDeferred" xml:space="preserve">
+    <value>Showing the catalog-level view of this item. Provider-specific URLs are resolved only at launch time.</value>
+  </data>
+  <data name="App.StartupError.ErrorPath" xml:space="preserve">
+    <value>Startup error: {0}</value>
+  </data>
+  <data name="App.StartupError.Title" xml:space="preserve">
+    <value>KROIRA startup error</value>
+  </data>
+  <data name="App.StartupError.LogPath" xml:space="preserve">
+    <value>Startup log: {0}</value>
+  </data>
+
+  <data name="Player.Hint.ReadyLiveSource" xml:space="preserve"><value>Ready live source</value></data>
+  <data name="Player.Error.StreamEnded.Message" xml:space="preserve"><value>The provider ended the stream.</value></data>
+  <data name="Player.Title.Movie" xml:space="preserve"><value>Movie</value></data>
+  <data name="Player.Error.Unreachable.Message" xml:space="preserve"><value>The stream host could not be reached from this device.</value></data>
+  <data name="Player.Aspect.Tooltip" xml:space="preserve"><value>Aspect: {0}</value></data>
+  <data name="General.Resume" xml:space="preserve"><value>Resume</value></data>
+  <data name="Home.Error.DispatcherUnavailable" xml:space="preserve"><value>UI dispatcher queue is unavailable for Home load.</value></data>
+  <data name="Player.Error.MissingContext" xml:space="preserve"><value>Missing playback context.</value></data>
+  <data name="Player.Track.SubtitlesFormat" xml:space="preserve"><value>Subtitles: {0}</value></data>
+  <data name="Player.Fullscreen.Exit" xml:space="preserve"><value>Exit fullscreen</value></data>
+  <data name="Player.Error.StreamStartTimedOut" xml:space="preserve"><value>Stream timed out while starting.</value></data>
+  <data name="Search.OpenMovies" xml:space="preserve"><value>Open Movies</value></data>
+  <data name="Player.Error.StreamEndedUnexpectedly" xml:space="preserve"><value>Stream ended unexpectedly.</value></data>
+  <data name="Player.Track.AudioFormat" xml:space="preserve"><value>Audio: {0}</value></data>
+  <data name="Player.Hint.DescriptionAvailable" xml:space="preserve"><value>Description available</value></data>
+  <data name="Player.Hint.PlaybackReady" xml:space="preserve"><value>Playback ready</value></data>
+  <data name="Player.Title.Episode" xml:space="preserve"><value>Episode</value></data>
+  <data name="Player.Seek.LiveBufferUnavailable" xml:space="preserve"><value>Live stream has no seekable buffer</value></data>
+  <data name="Player.Title.Live" xml:space="preserve"><value>Live</value></data>
+  <data name="Player.Error.AppServicesUnavailable" xml:space="preserve"><value>App services are unavailable.</value></data>
+  <data name="Player.Hint.MetadataAvailable" xml:space="preserve"><value>Metadata available</value></data>
+  <data name="ItemInspector.CopiedSafeReport" xml:space="preserve"><value>Copied a share-safe inspection report to the clipboard.</value></data>
+  <data name="Player.Button.ReturnToPlayer" xml:space="preserve"><value>Return to player</value></data>
+  <data name="Player.Error.Authorization.Title" xml:space="preserve"><value>Stream authorization failed</value></data>
+  <data name="General.Download" xml:space="preserve"><value>Download</value></data>
+  <data name="Player.Seek.Unavailable" xml:space="preserve"><value>Seeking unavailable</value></data>
+  <data name="Player.Error.Timeout.Message" xml:space="preserve"><value>The stream did not respond before the playback timeout elapsed.</value></data>
+  <data name="Player.Seek.LiveBuffer" xml:space="preserve"><value>Seek within live buffer</value></data>
+  <data name="Player.Error.LiveUnavailable" xml:space="preserve"><value>Live unavailable</value></data>
+  <data name="Player.Error.LiveResolveFailed" xml:space="preserve"><value>The live stream could not be resolved for this channel.</value></data>
+  <data name="Player.Status.RecoveringStream" xml:space="preserve"><value>Trying to recover stream.</value></data>
+  <data name="Player.Hint.ConnectionMayVary" xml:space="preserve"><value>Connection may vary</value></data>
+  <data name="Player.Error.InvalidStreamUrl.Title" xml:space="preserve"><value>Invalid stream URL</value></data>
+  <data name="Player.Error.Authorization.Message" xml:space="preserve"><value>The provider rejected the stream request or the source credentials are no longer accepted.</value></data>
+  <data name="Player.Hint.ArtworkAvailable" xml:space="preserve"><value>Artwork available</value></data>
+  <data name="ItemInspector.CopyFailed" xml:space="preserve"><value>Copy failed. {0}</value></data>
+  <data name="Player.ScreenshotSaved" xml:space="preserve"><value>Screenshot saved</value></data>
+  <data name="Player.Hint.LogoAvailable" xml:space="preserve"><value>Logo available</value></data>
+  <data name="Player.Status.Reconnecting" xml:space="preserve"><value>Reconnecting</value></data>
+  <data name="Search.OpenSeries" xml:space="preserve"><value>Open Series</value></data>
+  <data name="Player.Status.Buffering" xml:space="preserve"><value>Buffering</value></data>
+  <data name="Player.Error.Timeout.Title" xml:space="preserve"><value>Stream timed out</value></data>
+  <data name="Player.Hint.OptimizedRoute" xml:space="preserve"><value>Optimized route</value></data>
+  <data name="Player.Error.StreamEnded.Title" xml:space="preserve"><value>Stream ended</value></data>
+  <data name="Player.Fullscreen.Enter" xml:space="preserve"><value>Fullscreen</value></data>
+  <data name="Player.PipWindowTitle" xml:space="preserve"><value>KROIRA PiP</value></data>
+  <data name="ItemInspector.Title" xml:space="preserve"><value>Item inspector</value></data>
+  <data name="Player.Error.StreamBufferStalled" xml:space="preserve"><value>Stream stalled while buffering.</value></data>
+  <data name="Player.Seek.Seek" xml:space="preserve"><value>Seek</value></data>
+  <data name="Player.Hint.ReadyMovieSource" xml:space="preserve"><value>Ready movie source</value></data>
+  <data name="Player.Error.MainWindowUnavailable" xml:space="preserve"><value>Main window is unavailable.</value></data>
+  <data name="Player.Error.UnsupportedMedia.Title" xml:space="preserve"><value>Unsupported media</value></data>
+  <data name="Player.Status.Loading" xml:space="preserve"><value>Loading</value></data>
+  <data name="General.Inspect" xml:space="preserve"><value>Inspect</value></data>
+  <data name="Player.Error.Cancelled.Message" xml:space="preserve"><value>Playback was cancelled before the stream opened.</value></data>
+  <data name="Player.Hint.GuideAvailable" xml:space="preserve"><value>Guide available</value></data>
+  <data name="Player.Hint.RefreshSuggested" xml:space="preserve"><value>Refresh suggested</value></data>
+  <data name="Player.Error.UnsupportedMedia.Message" xml:space="preserve"><value>The stream format or codec is not supported by the current player runtime.</value></data>
+  <data name="Player.Error.UnableToStart" xml:space="preserve"><value>Unable to start playback.</value></data>
+  <data name="Player.Error.PlaybackFailed" xml:space="preserve"><value>Playback failed</value></data>
+  <data name="Player.Button.Return" xml:space="preserve"><value>Return</value></data>
+  <data name="Player.Error.Unknown.Message" xml:space="preserve"><value>The player could not classify the playback failure.</value></data>
+  <data name="Player.Error.Unreachable.Title" xml:space="preserve"><value>Stream unreachable</value></data>
+  <data name="General.Play" xml:space="preserve"><value>Play</value></data>
+  <data name="Player.Error.Cancelled.Title" xml:space="preserve"><value>Playback cancelled</value></data>
+  <data name="Player.Error.InvalidStreamUrl.Message" xml:space="preserve"><value>The stream URL is empty or is not an absolute URL.</value></data>
+  <data name="Player.Status.RecoveredBackupMirror" xml:space="preserve"><value>Recovered via backup mirror.</value></data>
+  <data name="Player.Status.ReturnedToLive" xml:space="preserve"><value>Returned to live playback.</value></data>
+  <data name="AboutBackToSettingsButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Back to settings</value></data>
+  <data name="ChannelsCategoryList.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Live channel categories</value></data>
+  <data name="ChannelsChannelList.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Live channels</value></data>
+  <data name="ChannelsDetailsButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Channel details</value></data>
+  <data name="ChannelsDetailsButton.ToolTipService.ToolTip" xml:space="preserve"><value>Details</value></data>
+  <data name="ChannelsFavoriteButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Toggle favorite</value></data>
+  <data name="ChannelsFavoriteButton.ToolTipService.ToolTip" xml:space="preserve"><value>Toggle favorite</value></data>
+  <data name="ChannelsFavoritesFilter.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Show favorite channels only</value></data>
+  <data name="ChannelsFavoritesFilter.Content" xml:space="preserve"><value>Favorites</value></data>
+  <data name="ChannelsGuideMatchedFilter.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Show guide matched channels only</value></data>
+  <data name="ChannelsProviderComboBox.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Channel provider</value></data>
+  <data name="ChannelsScheduleRecordingButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Schedule recording</value></data>
+  <data name="ChannelsScheduleRecordingButton.Content" xml:space="preserve"><value>●</value></data>
+  <data name="ChannelsScheduleRecordingButton.ToolTipService.ToolTip" xml:space="preserve"><value>Schedule recording</value></data>
+  <data name="ChannelsSearchBox.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Search channels</value></data>
+  <data name="ChannelsSortComboBox.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Channel sort</value></data>
+  <data name="ChannelsStartOverButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Start over</value></data>
+  <data name="ContinueWatchingClearLiveButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Clear all live resume items</value></data>
+  <data name="ContinueWatchingClearLiveButton.Content" xml:space="preserve"><value>Clear all</value></data>
+  <data name="ContinueWatchingClearMoviesButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Clear all movie queue items</value></data>
+  <data name="ContinueWatchingClearMoviesButton.Content" xml:space="preserve"><value>Clear all</value></data>
+  <data name="ContinueWatchingClearSeriesButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Clear all series queue items</value></data>
+  <data name="ContinueWatchingClearSeriesButton.Content" xml:space="preserve"><value>Clear all</value></data>
+  <data name="ContinueWatchingHideWatchedToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Hide watched continue watching items</value></data>
+  <data name="ContinueWatchingHideWatchedToggle.Header" xml:space="preserve"><value>Hide watched</value></data>
+  <data name="ContinueWatchingLiveRemoveButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Remove from continue watching</value></data>
+  <data name="ContinueWatchingLiveRemoveButton.ToolTipService.ToolTip" xml:space="preserve"><value>Remove</value></data>
+  <data name="ContinueWatchingMarkEpisodeUnwatchedButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Mark episode unwatched</value></data>
+  <data name="ContinueWatchingMarkEpisodeUnwatchedButton.Content" xml:space="preserve"><value>Unwatched</value></data>
+  <data name="ContinueWatchingMarkEpisodeWatchedButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Mark episode watched</value></data>
+  <data name="ContinueWatchingMarkEpisodeWatchedButton.Content" xml:space="preserve"><value>Watched</value></data>
+  <data name="ContinueWatchingMarkMovieUnwatchedButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Mark movie unwatched</value></data>
+  <data name="ContinueWatchingMarkMovieUnwatchedButton.Content" xml:space="preserve"><value>Unwatched</value></data>
+  <data name="ContinueWatchingMarkMovieWatchedButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Mark movie watched</value></data>
+  <data name="ContinueWatchingMarkMovieWatchedButton.Content" xml:space="preserve"><value>Watched</value></data>
+  <data name="ContinueWatchingMovieRemoveButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Remove from continue watching</value></data>
+  <data name="ContinueWatchingMovieRemoveButton.ToolTipService.ToolTip" xml:space="preserve"><value>Remove</value></data>
+  <data name="ContinueWatchingSeriesRemoveButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Remove from continue watching</value></data>
+  <data name="ContinueWatchingSeriesRemoveButton.ToolTipService.ToolTip" xml:space="preserve"><value>Remove</value></data>
+  <data name="FavoritesClearLiveButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Clear all favorite live channels</value></data>
+  <data name="FavoritesClearLiveButton.Content" xml:space="preserve"><value>Clear all</value></data>
+  <data name="FavoritesClearMoviesButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Clear all favorite movies</value></data>
+  <data name="FavoritesClearMoviesButton.Content" xml:space="preserve"><value>Clear all</value></data>
+  <data name="FavoritesClearSeriesButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Clear all favorite series</value></data>
+  <data name="FavoritesClearSeriesButton.Content" xml:space="preserve"><value>Clear all</value></data>
+  <data name="FavoritesLiveFavoriteMeta.Text" xml:space="preserve"><value>Live favorite</value></data>
+  <data name="FavoritesPlaySelectedEpisodeButton.Content" xml:space="preserve"><value>Play</value></data>
+  <data name="FavoritesRemoveChannelButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Remove favorite</value></data>
+  <data name="FavoritesRemoveChannelButton.ToolTipService.ToolTip" xml:space="preserve"><value>Remove</value></data>
+  <data name="FavoritesRemoveMovieButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Remove favorite</value></data>
+  <data name="FavoritesRemoveMovieButton.ToolTipService.ToolTip" xml:space="preserve"><value>Remove</value></data>
+  <data name="FavoritesRemoveSeriesButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Remove favorite</value></data>
+  <data name="FavoritesRemoveSeriesButton.ToolTipService.ToolTip" xml:space="preserve"><value>Remove</value></data>
+  <data name="GeneralClearRecentButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Clear recently watched channels</value></data>
+  <data name="GeneralGuideButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Open guide</value></data>
+  <data name="GeneralMovieMeta.Text" xml:space="preserve"><value>Movie</value></data>
+  <data name="GeneralSeriesMeta.Text" xml:space="preserve"><value>Series</value></data>
+  <data name="HomeAllChannelsButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>All Channels</value></data>
+  <data name="HomeAllLiveTvButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Open all live TV</value></data>
+  <data name="HomeBrowseCatalogButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Browse catalog</value></data>
+  <data name="HomeFavoritesButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Favorites</value></data>
+  <data name="HomeRecentlyWatchedButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Recently Watched</value></data>
+  <data name="HomeSportsButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Sports</value></data>
+  <data name="HomeWatchLiveTvButtonControl.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Watch Live TV</value></data>
+  <data name="MoviesCategoryList.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Movie categories</value></data>
+  <data name="MoviesDetailsButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Movie details</value></data>
+  <data name="MoviesDetailsButton.ToolTipService.ToolTip" xml:space="preserve"><value>Details</value></data>
+  <data name="MoviesDownloadButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Download</value></data>
+  <data name="MoviesDownloadButton.ToolTipService.ToolTip" xml:space="preserve"><value>Download</value></data>
+  <data name="MoviesFavoritesFilter.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Show favorite movies only</value></data>
+  <data name="MoviesFavoritesFilter.Content" xml:space="preserve"><value>Favorites</value></data>
+  <data name="MoviesPrimaryOnlyFilter.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Show primary movie entries only</value></data>
+  <data name="MoviesPrimaryOnlyFilter.Content" xml:space="preserve"><value>Primary only</value></data>
+  <data name="MoviesProviderComboBox.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Movie provider</value></data>
+  <data name="MoviesSearchBox.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Search movies</value></data>
+  <data name="MoviesSortComboBox.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Movie sort</value></data>
+  <data name="PlayerAudioDelayValueText.Text" xml:space="preserve"><value>Audio delay 0.0s</value></data>
+  <data name="PlayerRotation0Button.Content" xml:space="preserve"><value>0 deg</value></data>
+  <data name="PlayerRotation180Button.Content" xml:space="preserve"><value>180 deg</value></data>
+  <data name="PlayerRotation270Button.Content" xml:space="preserve"><value>270 deg</value></data>
+  <data name="PlayerRotation90Button.Content" xml:space="preserve"><value>90 deg</value></data>
+  <data name="PlayerSubtitleDelayValueText.Text" xml:space="preserve"><value>Subtitle delay 0.0s</value></data>
+  <data name="SeriesCategoryList.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Series categories</value></data>
+  <data name="SeriesEpisodeDetailsButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Episode details</value></data>
+  <data name="SeriesEpisodeDetailsButton.ToolTipService.ToolTip" xml:space="preserve"><value>Details</value></data>
+  <data name="SeriesEpisodeDownloadButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Download episode</value></data>
+  <data name="SeriesEpisodeDownloadButton.ToolTipService.ToolTip" xml:space="preserve"><value>Download</value></data>
+  <data name="SeriesEpisodeSourceComboBox.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Episode source</value></data>
+  <data name="SeriesFavoritesFilter.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Show favorite series only</value></data>
+  <data name="SeriesFavoritesFilter.Content" xml:space="preserve"><value>Favorites</value></data>
+  <data name="SeriesHideWatchedSwitch.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Hide watched episodes</value></data>
+  <data name="SeriesPlaySelectedEpisodeButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Play selected episode</value></data>
+  <data name="SeriesPlaySelectedEpisodeButton.Content" xml:space="preserve"><value>Play</value></data>
+  <data name="SeriesPrimaryOnlyFilter.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Show primary series entries only</value></data>
+  <data name="SeriesPrimaryOnlyFilter.Content" xml:space="preserve"><value>Primary only</value></data>
+  <data name="SeriesProviderComboBox.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Series provider</value></data>
+  <data name="SeriesSearchBox.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Search series</value></data>
+  <data name="SeriesSeasonComboBox.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Season</value></data>
+  <data name="SeriesSortComboBox.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Series sort</value></data>
+  <data name="SettingsAccentPackComboBox.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Accent pack</value></data>
+  <data name="SettingsAppInformationOpenButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Open app information</value></data>
+  <data name="SettingsEnableAutoRefreshToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Enable automatic refresh</value></data>
+  <data name="SettingsExportButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Export backup</value></data>
+  <data name="SettingsLanguageComboBox.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>App language</value></data>
+  <data name="SettingsOpenGuideButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Open guide settings</value></data>
+  <data name="SettingsOpenSourcesButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Open diagnostics export</value></data>
+  <data name="SettingsPrivacyPolicyOpenButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Open privacy policy</value></data>
+  <data name="SettingsRefreshCadenceComboBox.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Refresh cadence</value></data>
+  <data name="SettingsRemoteModeToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Remote-friendly mode</value></data>
+  <data name="SettingsRestoreButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Restore backup</value></data>
+  <data name="SettingsRunRefreshAfterLaunchSwitch.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Run refresh shortly after launch</value></data>
+  <data name="SettingsSourcesButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Open source diagnostics</value></data>
+  <data name="SettingsSupportEmailButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Email support</value></data>
+  <data name="SettingsSupportOpenButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Open support page</value></data>
+  <data name="SettingsThemePresetComboBox.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Theme preset</value></data>
+  <data name="SourcesSyncAllButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Sync all configured sources</value></data>
+  <data name="SeriesPickShowTitle.Text" xml:space="preserve"><value>Pick a show</value></data>
+  <data name="SeriesPickShowMessage.Text" xml:space="preserve"><value>Select a title from the library to load artwork, seasons, and episode playback here.</value></data>
+  <data name="SourceOnboardingM3uPathBox.PlaceholderText" xml:space="preserve"><value>http://... or C:\...</value></data>
+  <data name="AppDisplayName" xml:space="preserve"><value>KROIRA IPTV</value></data>
+  <data name="AppDescription" xml:space="preserve"><value>KROIRA IPTV brings live TV, movies, series, EPG, and source management into one polished Windows app.</value></data>
+</root>
