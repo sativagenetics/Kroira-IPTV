@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -25,6 +26,7 @@ namespace Kroira.App.Services
         private const string ProviderGroupPrefix = "provider:";
         private static readonly Regex MultiWhitespaceRegex = new(@"\s{2,}", RegexOptions.Compiled);
         private static readonly Regex YearRegex = new(@"\b(19|20)\d{2}\b", RegexOptions.Compiled);
+        private static readonly ConcurrentDictionary<string, string> NormalizedPhraseCache = new(StringComparer.Ordinal);
         private readonly IReadOnlyList<SmartCategoryDefinition> _definitions;
         private readonly Dictionary<string, SmartCategoryDefinition> _definitionById;
 
@@ -565,12 +567,15 @@ namespace Kroira.App.Services
 
         private static bool Any(SmartCategoryItemContext context, params string[] phrases)
         {
-            return ContainsAny(BuildSearchText(context), phrases);
+            var normalized = string.IsNullOrWhiteSpace(context.NormalizedSearchText)
+                ? NormalizeForMatching(BuildSearchText(context))
+                : context.NormalizedSearchText;
+            return ContainsAnyNormalized(normalized, phrases);
         }
 
         private static bool Any(string value, params string[] phrases)
         {
-            return ContainsAny(value, phrases);
+            return ContainsAnyNormalized(NormalizeForMatching(value), phrases);
         }
 
         private static string GuideText(SmartCategoryItemContext context)
@@ -599,10 +604,20 @@ namespace Kroira.App.Services
 
         private static bool ContainsAny(string value, IEnumerable<string> phrases)
         {
-            var normalized = $" {NormalizeForMatching(value)} ";
+            return ContainsAnyNormalized(NormalizeForMatching(value), phrases);
+        }
+
+        private static bool ContainsAnyNormalized(string normalizedValue, IEnumerable<string> phrases)
+        {
+            if (string.IsNullOrWhiteSpace(normalizedValue))
+            {
+                return false;
+            }
+
+            var normalized = $" {normalizedValue} ";
             foreach (var phrase in phrases)
             {
-                var normalizedPhrase = NormalizeForMatching(phrase);
+                var normalizedPhrase = NormalizedPhraseCache.GetOrAdd(phrase, static value => NormalizeForMatching(value));
                 if (string.IsNullOrWhiteSpace(normalizedPhrase))
                 {
                     continue;

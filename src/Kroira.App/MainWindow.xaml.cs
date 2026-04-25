@@ -27,6 +27,7 @@ namespace Kroira.App
         private readonly IWindowManagerService _windowManager;
         private readonly IRemoteNavigationService _remoteNavigationService;
         private bool _needsLocalizedNavigationRefresh;
+        private Stopwatch? _activeNavigationStopwatch;
         private static readonly string StartupLogPath =
             Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Kroira", "startup-log.txt");
 
@@ -182,12 +183,16 @@ namespace Kroira.App
                 return;
             }
 
+            LogStartupCheckpoint(
+                $"MW NAV TIMING: frame navigating target={e.SourcePageType?.Name ?? "<unknown>"} elapsedMs={_activeNavigationStopwatch?.ElapsedMilliseconds ?? -1}");
             ApplyShellStateForPageType(e.SourcePageType, forceLayout: true);
             QueueShellStateRefresh(e.SourcePageType);
         }
 
         private void ContentFrame_Navigated(object sender, NavigationEventArgs e)
         {
+            LogStartupCheckpoint(
+                $"MW NAV TIMING: frame navigated target={e.SourcePageType?.Name ?? "<unknown>"} content={ContentFrame.Content?.GetType().Name ?? "<none>"} elapsedMs={_activeNavigationStopwatch?.ElapsedMilliseconds ?? -1}");
             SyncSelectedNavigationItem(e.SourcePageType);
             ApplyShellStateForPageType(e.SourcePageType, forceLayout: true);
             QueueShellStateRefresh(e.SourcePageType);
@@ -525,14 +530,23 @@ namespace Kroira.App
 
         private void NavigateTo(Type pageType)
         {
+            if (ContentFrame.Content?.GetType() == pageType)
+            {
+                LogStartupCheckpoint($"MW NAV SKIP: already on {pageType.FullName}");
+                return;
+            }
+
+            _activeNavigationStopwatch = Stopwatch.StartNew();
             LogStartupCheckpoint($"MW NAV 01: before navigate to {pageType.FullName}");
             var navigated = ContentFrame.Navigate(pageType);
-            LogStartupCheckpoint($"MW NAV 02: after navigate to {pageType.FullName}, result={navigated}");
+            LogStartupCheckpoint($"MW NAV 02: after navigate to {pageType.FullName}, result={navigated}, elapsedMs={_activeNavigationStopwatch.ElapsedMilliseconds}");
 
             if (!navigated)
             {
                 throw new InvalidOperationException($"Navigation to {pageType.FullName} returned false.");
             }
+
+            _activeNavigationStopwatch = null;
         }
 
         public void NavigateToPlayback(PlaybackLaunchContext context)

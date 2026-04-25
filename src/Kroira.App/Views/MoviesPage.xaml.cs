@@ -25,6 +25,7 @@ namespace Kroira.App.Views
         private const string MediaActionOverlayTag = "MediaActionOverlay";
         private bool _isRestoringCategorySelection;
         private bool _isCategorySelectionRestoreQueued;
+        private bool _isCatalogLoadQueued;
 
         public MoviesViewModel ViewModel { get; }
 
@@ -42,6 +43,7 @@ namespace Kroira.App.Views
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
+            ViewModel.SetSurfaceActive(true);
             ViewModel.RefreshLocalizedLabelsIfNeeded();
             var navigationStopwatch = Stopwatch.StartNew();
             if (DispatcherQueue != null)
@@ -53,17 +55,53 @@ namespace Kroira.App.Views
             }
 
             var shouldLoad = !ViewModel.HasLoadedOnce ||
+                             ViewModel.NeedsFullHydration ||
                              (ViewModel.DisplayMovieSlots.Count == 0 && ViewModel.SurfaceState.State != SurfaceViewState.Ready);
             if (shouldLoad)
             {
                 BrowseRuntimeLogger.Log("MOVIES UI", "navigation triggered catalog load");
-                _ = ViewModel.LoadMoviesCommand.ExecuteAsync(null);
+                ViewModel.ShowInitialLoadingIfEmpty();
+                QueueCatalogLoad("navigation");
                 return;
             }
 
             BrowseRuntimeLogger.Log(
                 "MOVIES UI",
                 $"navigation reused cached surface slots={ViewModel.DisplayMovieSlots.Count} featured={ViewModel.FeaturedMovie?.Title ?? "<none>"}");
+        }
+
+        protected override void OnNavigatedFrom(NavigationEventArgs e)
+        {
+            base.OnNavigatedFrom(e);
+            ViewModel.SetSurfaceActive(false);
+        }
+
+        private void QueueCatalogLoad(string reason)
+        {
+            if (_isCatalogLoadQueued || ViewModel.LoadMoviesCommand.IsRunning)
+            {
+                BrowseRuntimeLogger.Log("MOVIES UI", $"catalog load already pending reason={reason}");
+                return;
+            }
+
+            _isCatalogLoadQueued = true;
+            var queuedStopwatch = Stopwatch.StartNew();
+            var enqueued = DispatcherQueue?.TryEnqueue(
+                Microsoft.UI.Dispatching.DispatcherQueuePriority.Low,
+                () => _ = RunQueuedCatalogLoadAsync(reason, queuedStopwatch)) == true;
+            BrowseRuntimeLogger.Log("MOVIES UI", $"catalog load queued reason={reason} enqueued={enqueued}");
+            if (!enqueued)
+            {
+                _ = RunQueuedCatalogLoadAsync(reason, queuedStopwatch);
+            }
+        }
+
+        private async Task RunQueuedCatalogLoadAsync(string reason, Stopwatch queuedStopwatch)
+        {
+            _isCatalogLoadQueued = false;
+            BrowseRuntimeLogger.Log("MOVIES UI", $"catalog load start reason={reason} queuedMs={queuedStopwatch.ElapsedMilliseconds}");
+            await ViewModel.LoadMoviesCommand.ExecuteAsync(null);
+            BrowseRuntimeLogger.Log("MOVIES UI", $"catalog load end reason={reason} totalMs={queuedStopwatch.ElapsedMilliseconds}");
         }
 
         private void OpenSources_Click(object sender, RoutedEventArgs e)

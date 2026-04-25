@@ -75,6 +75,7 @@ namespace Kroira.App.Services
             var definitionList = definitions.ToList();
             var byKey = new Dictionary<string, List<TItem>>(StringComparer.OrdinalIgnoreCase);
             var providerNamesByKey = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            var providerKeyByName = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             var contextBuildCount = 0;
 
             foreach (var item in allItems)
@@ -103,14 +104,20 @@ namespace Kroira.App.Services
                         continue;
                     }
 
-                    var providerKey = smartCategoryService.BuildOriginalProviderGroupKey(providerGroup);
+                    var trimmedProviderGroup = providerGroup.Trim();
+                    if (!providerKeyByName.TryGetValue(trimmedProviderGroup, out var providerKey))
+                    {
+                        providerKey = smartCategoryService.BuildOriginalProviderGroupKey(trimmedProviderGroup);
+                        providerKeyByName[trimmedProviderGroup] = providerKey;
+                    }
+
                     if (string.IsNullOrWhiteSpace(providerKey) || !providerKeysForItem.Add(providerKey))
                     {
                         continue;
                     }
 
                     AddItem(byKey, providerKey, item);
-                    providerNamesByKey.TryAdd(providerKey, providerGroup.Trim());
+                    providerNamesByKey.TryAdd(providerKey, trimmedProviderGroup);
                 }
             }
 

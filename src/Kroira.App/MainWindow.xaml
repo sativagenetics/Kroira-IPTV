@@ -146,7 +146,8 @@
                         Background="Transparent"
                         BorderBrush="{StaticResource KroiraGhostBorderBrush}"
                         BorderThickness="1,0,0,0">
-                    <Frame x:Name="ContentFrame" />
+                    <Frame x:Name="ContentFrame"
+                           CacheSize="8" />
                 </Border>
             </Grid>
         </NavigationView>

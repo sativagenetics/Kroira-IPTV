@@ -192,6 +192,8 @@ namespace Kroira.App.ViewModels
         private const int BrowseGridColumns = 6;
         private const int InitialDisplayMovieSlotBatchSize = BrowseGridColumns * 2;
         private const int DeferredSlotAppendBatchSize = BrowseGridColumns * 8;
+        private const int InitialMoviePreviewQueryLimit = BrowseGridColumns * 40;
+        private const int InitialMoviePreviewDisplayLimit = BrowseGridColumns * 8;
         private const int SearchApplyDebounceMilliseconds = 180;
         private readonly IServiceProvider _serviceProvider;
         private readonly IBrowsePreferencesService _browsePreferencesService;
@@ -230,12 +232,18 @@ namespace Kroira.App.ViewModels
         private Task? _metadataEnrichmentTask;
         private Stopwatch? _activeLoadStopwatch;
         private Task _displayMovieSlotRefreshTask = Task.CompletedTask;
+        private int _loadGeneration;
+        private bool _isSurfaceActive = true;
+        private bool _needsFullHydration;
 
         public IReadOnlyList<MovieBrowseItemViewModel> FilteredMovies => _filteredMovies;
         public int FilteredMovieCount => _filteredMovies.Count;
         public bool HasLoadedOnce => _hasLoadedOnce;
+        public bool NeedsFullHydration => _needsFullHydration;
         public Visibility ContentShellVisibility => IsBlockingSurfaceState ? Visibility.Collapsed : Visibility.Visible;
         public Visibility BlockingSurfaceVisibility => IsBlockingSurfaceState ? Visibility.Visible : Visibility.Collapsed;
+        public Visibility InitialLoadingVisibility => IsInitialLoading ? Visibility.Visible : Visibility.Collapsed;
+        public IReadOnlyList<int> LoadingSkeletonSlots { get; } = Enumerable.Range(0, InitialDisplayMovieSlotBatchSize).ToArray();
         public BulkObservableCollection<MovieBrowseSlotViewModel> DisplayMovieSlots { get; } = new();
         public BulkObservableCollection<BrowserCategoryViewModel> Categories { get; } = new();
         public ObservableCollection<BrowseSortOptionViewModel> SortOptions { get; } = new();
@@ -262,6 +270,9 @@ namespace Kroira.App.ViewModels
         [ObservableProperty] private bool _hideSecondaryContent;
         [ObservableProperty] private bool _hasAdvancedFilters;
         [ObservableProperty] private bool _isEmpty;
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(InitialLoadingVisibility))]
+        private bool _isInitialLoading;
         [ObservableProperty] private string _discoverySummaryText = LocalizedStrings.Get("Movies_DiscoverySummary_Default");
         [ObservableProperty] private string _emptyStateTitle = LocalizedStrings.Get("Movies_Empty_NoMovies_Title");
         [ObservableProperty] private string _emptyStateMessage = LocalizedStrings.Get("Movies_Empty_NoMovies_Message");
@@ -280,11 +291,32 @@ namespace Kroira.App.ViewModels
             SurfaceState.State is SurfaceViewState.NoSources or SurfaceViewState.Offline or SurfaceViewState.ImportFailed;
 
         private sealed record FilteredMovieResult(CatalogMovieGroup Group, string DisplayCategoryName);
+        private sealed record SourceHealthSnapshot(int SourceProfileId, SourceHealthState HealthState);
+        private sealed record MovieCatalogSnapshot(
+            IReadOnlyList<CatalogMovieGroup> OrderedGroups,
+            Dictionary<int, CatalogCategoryProjection> CategoryByMovieId,
+            Dictionary<int, SourceType> SourceTypeById,
+            Dictionary<int, CatalogDiscoveryHealthBucket> SourceHealthById,
+            Dictionary<int, DateTime?> SourceLastSyncById,
+            IReadOnlyList<(string CategoryName, int Count)> Categories);
 
         partial void OnSurfaceStateChanged(SurfaceStatePresentation value)
         {
             OnPropertyChanged(nameof(ContentShellVisibility));
             OnPropertyChanged(nameof(BlockingSurfaceVisibility));
+        }
+
+        public void ShowInitialLoadingIfEmpty()
+        {
+            if (!_hasLoadedOnce && DisplayMovieSlots.Count == 0 && !IsBlockingSurfaceState)
+            {
+                IsInitialLoading = true;
+            }
+        }
+
+        public void SetSurfaceActive(bool isActive)
+        {
+            _isSurfaceActive = isActive;
         }
 
         public MoviesViewModel(IServiceProvider serviceProvider)
@@ -362,12 +394,19 @@ namespace Kroira.App.ViewModels
         {
             RefreshLocalizedLabelsIfNeeded();
             var loadStopwatch = Stopwatch.StartNew();
+            var phaseStopwatch = Stopwatch.StartNew();
+            var loadGeneration = Interlocked.Increment(ref _loadGeneration);
+            var wasAwaitingFullHydration = _needsFullHydration;
             _activeLoadStopwatch = loadStopwatch;
+            SetNeedsFullHydration(true);
             _preferStagedFirstPaint = !_hasLoadedOnce || DisplayMovieSlots.Count == 0;
             if (!_hasLoadedOnce || DisplayMovieSlots.Count == 0)
             {
+                IsInitialLoading = true;
                 SurfaceState = SurfaceStateCopies.Movies.Create(SurfaceViewState.Loading);
             }
+
+            await Task.Yield();
 
             try
             {
@@ -379,41 +418,61 @@ namespace Kroira.App.ViewModels
                 var browsePreferencesService = scope.ServiceProvider.GetRequiredService<IBrowsePreferencesService>();
                 var surfaceStateService = scope.ServiceProvider.GetRequiredService<ISurfaceStateService>();
                 var sourceAvailability = await surfaceStateService.GetSourceAvailabilityAsync(db);
+                LogLoadPhase("source_availability", loadStopwatch, phaseStopwatch, $"sources={sourceAvailability.SourceCount}");
                 if (sourceAvailability.SourceCount == 0)
                 {
+                    IsInitialLoading = false;
+                    SetNeedsFullHydration(false);
                     SurfaceState = surfaceStateService.ResolveSourceBackedState(sourceAvailability, 0, SurfaceStateCopies.Movies);
                     return;
                 }
 
                 var access = await profileService.GetAccessSnapshotAsync(db);
                 _activeProfileId = access.ProfileId;
+                LogLoadPhase("profile_access", loadStopwatch, phaseStopwatch, $"profile={_activeProfileId}");
                 await _logicalCatalogStateService.ReconcileFavoritesAsync(db, access.ProfileId);
+                LogLoadPhase("favorite_reconcile", loadStopwatch, phaseStopwatch);
                 _languageCode = await AppLanguageService.GetLanguageAsync(db, access.ProfileId);
                 _preferences = await browsePreferencesService.GetAsync(db, Domain, _activeProfileId);
-                var sourceProfiles = await db.SourceProfiles
-                    .AsNoTracking()
-                    .Select(source => new
-                    {
-                        source.Id,
-                        source.Type,
-                        source.LastSync
-                    })
-                    .ToListAsync();
+                LogLoadPhase("language_preferences", loadStopwatch, phaseStopwatch, $"language={_languageCode}");
+                _favoriteMovieKeys = await _logicalCatalogStateService.GetFavoriteLogicalKeysAsync(db, access.ProfileId, FavoriteType.Movie);
+                LogLoadPhase("favorite_keys", loadStopwatch, phaseStopwatch, $"count={_favoriteMovieKeys.Count}");
+                var sourceProfiles = await db.SourceProfiles.AsNoTracking().ToListAsync();
+                LogLoadPhase("source_profiles", loadStopwatch, phaseStopwatch, $"count={sourceProfiles.Count}");
                 var healthStates = await db.SourceHealthReports
                     .AsNoTracking()
                     .OrderByDescending(report => report.EvaluatedAtUtc)
-                    .Select(report => new
-                    {
-                        report.SourceProfileId,
-                        report.HealthState
-                    })
+                    .Select(report => new SourceHealthSnapshot(report.SourceProfileId, report.HealthState))
                     .ToListAsync();
+                LogLoadPhase("source_health", loadStopwatch, phaseStopwatch, $"count={healthStates.Count}");
+
+                var previewApplied = await TryApplyInitialMoviePreviewAsync(
+                    db,
+                    access,
+                    surfaceStateService,
+                    sourceAvailability,
+                    sourceProfiles,
+                    healthStates,
+                    loadGeneration,
+                    loadStopwatch);
+                LogLoadPhase("initial_preview", loadStopwatch, phaseStopwatch, $"applied={previewApplied} slots={DisplayMovieSlots.Count}");
 
                 var movieGroups = (await deduplicationService.LoadMovieGroupsAsync(db))
                     .Select(group => FilterGroup(group, access))
                     .OfType<CatalogMovieGroup>()
                     .ToList();
-                _favoriteMovieKeys = await _logicalCatalogStateService.GetFavoriteLogicalKeysAsync(db, access.ProfileId, FavoriteType.Movie);
+                LogLoadPhase("dedup_filter", loadStopwatch, phaseStopwatch, $"groups={movieGroups.Count}");
+                if (loadGeneration != _loadGeneration)
+                {
+                    return;
+                }
+
+                if (!_isSurfaceActive)
+                {
+                    LogBrowse($"full hydration deferred phase=post-dedup elapsed={loadStopwatch.ElapsedMilliseconds}");
+                    return;
+                }
+
                 _movieWatchSnapshotsById.Clear();
                 foreach (var snapshot in await watchStateService.LoadSnapshotsAsync(
                              db,
@@ -423,78 +482,62 @@ namespace Kroira.App.ViewModels
                 {
                     _movieWatchSnapshotsById[snapshot.Key] = snapshot.Value;
                 }
+                LogLoadPhase("watch_snapshots", loadStopwatch, phaseStopwatch, $"count={_movieWatchSnapshotsById.Count}");
 
-                var movieOrderEntries = movieGroups
-                    .Select(group => new
-                    {
-                        Group = group,
-                        CategoryProjection = BuildMovieCategoryProjection(group.PreferredMovie)
-                    })
-                    .ToList();
-
-                _allMovieGroups.Clear();
-                _allMovieGroups.AddRange(CatalogOrderingService.OrderCatalog(
-                    movieOrderEntries,
-                    _languageCode,
-                    entry => entry.CategoryProjection.DisplayCategoryName,
-                    entry => entry.Group.PreferredMovie.Title)
-                    .Select(entry => entry.Group));
-
-                _movieCategoryById.Clear();
-                _sourceTypeById.Clear();
-                _sourceHealthById.Clear();
-                _sourceLastSyncById.Clear();
-                foreach (var source in sourceProfiles)
+                var catalogSnapshot = await BuildMovieCatalogSnapshotAsync(movieGroups, sourceProfiles, healthStates, _languageCode);
+                LogLoadPhase("catalog_snapshot_build", loadStopwatch, phaseStopwatch, $"groups={catalogSnapshot.OrderedGroups.Count}");
+                if (loadGeneration != _loadGeneration)
                 {
-                    _sourceTypeById[source.Id] = source.Type;
-                    _sourceLastSyncById[source.Id] = source.LastSync;
+                    return;
                 }
 
-                foreach (var health in healthStates.GroupBy(item => item.SourceProfileId))
+                if (!_isSurfaceActive)
                 {
-                    _sourceHealthById[health.Key] = _catalogDiscoveryService.ResolveHealthBucket(health.First().HealthState);
+                    LogBrowse($"full hydration deferred phase=post-snapshot elapsed={loadStopwatch.ElapsedMilliseconds}");
+                    return;
                 }
 
-                foreach (var group in _allMovieGroups)
-                {
-                    foreach (var variant in group.Variants)
-                    {
-                        _movieCategoryById[variant.Movie.Id] = BuildMovieCategoryProjection(variant.Movie);
-                        _sourceTypeById[variant.SourceProfile.Id] = variant.SourceProfile.Type;
-                    }
-                }
-
-                _allCategories.Clear();
-                _allCategories.AddRange(_allMovieGroups
-                    .GroupBy(group => GetCategoryProjection(group.PreferredMovie).RawCategoryName)
-                    .Select(group => (group.Key, group.Count()))
-                    .OrderBy(group => group.Key, StringComparer.CurrentCultureIgnoreCase));
+                ApplyMovieCatalogSnapshot(catalogSnapshot);
+                LogLoadPhase("catalog_snapshot_apply", loadStopwatch, phaseStopwatch, $"groups={_allMovieGroups.Count}");
 
                 BuildSourceOptions();
+                LogLoadPhase("source_options", loadStopwatch, phaseStopwatch, $"count={SourceOptions.Count}");
 
+                var preferredCategoryKey = SelectedCategory?.FilterKey ?? _preferences.SelectedCategoryKey;
+                ApplyLoadedPreferencesFromCurrentOptions();
+                LogLoadPhase("preference_apply", loadStopwatch, phaseStopwatch);
+
+                if (previewApplied || wasAwaitingFullHydration)
+                {
+                    _preferStagedFirstPaint = true;
+                }
+
+                ApplyFilter("load-movies");
+                LogLoadPhase("apply_filter", loadStopwatch, phaseStopwatch, $"results={_filteredMovies.Count} slots={DisplayMovieSlots.Count}");
+                SurfaceState = surfaceStateService.ResolveSourceBackedState(sourceAvailability, _allMovieGroups.Count, SurfaceStateCopies.Movies);
+                _hasLoadedOnce = true;
+                OnPropertyChanged(nameof(HasLoadedOnce));
+                await Task.Yield();
+                var selectedCategory = await BuildVisibleCategoriesAsync(preferredCategoryKey);
+                LogLoadPhase("smart_categories", loadStopwatch, phaseStopwatch, $"categories={Categories.Count}");
                 _isInitializing = true;
                 try
                 {
-                    FavoritesOnly = _preferences.FavoritesOnly;
-                    HideSecondaryContent = _preferences.HideSecondaryContent;
-                    SelectedSortOption = SortOptions.FirstOrDefault(option => string.Equals(option.Key, _preferences.SortKey, StringComparison.OrdinalIgnoreCase))
-                        ?? SortOptions.First();
-                    SelectedSourceOption = SourceOptions.FirstOrDefault(option => option.Id == _preferences.SelectedSourceId)
-                        ?? SourceOptions.FirstOrDefault();
-                    var selectedCategory = BuildVisibleCategories(SelectedCategory?.FilterKey ?? string.Empty);
-                    ReassignSelectedCategory(selectedCategory, "load-initial");
+                    ReassignSelectedCategory(selectedCategory, "load-categories-ready");
                 }
                 finally
                 {
                     _isInitializing = false;
                 }
 
-                ApplyFilter("load-movies");
-                SurfaceState = surfaceStateService.ResolveSourceBackedState(sourceAvailability, _allMovieGroups.Count, SurfaceStateCopies.Movies);
-                _hasLoadedOnce = true;
-                OnPropertyChanged(nameof(HasLoadedOnce));
-                await Task.Yield();
+                if (!string.IsNullOrWhiteSpace(selectedCategory?.FilterKey))
+                {
+                    ApplyFilter("load-category-ready");
+                    LogLoadPhase("category_filter", loadStopwatch, phaseStopwatch, $"results={_filteredMovies.Count} slots={DisplayMovieSlots.Count}");
+                }
+
                 BuildCategoryManagerOptions();
+                SetNeedsFullHydration(false);
                 LogBrowse(
                     $"load ready fullMs={loadStopwatch.ElapsedMilliseconds} groups={_allMovieGroups.Count} results={_filteredMovies.Count} slots={DisplayMovieSlots.Count}");
                 StartMetadataEnrichment();
@@ -502,12 +545,264 @@ namespace Kroira.App.ViewModels
             catch (Exception ex)
             {
                 BrowseRuntimeLogger.Log("MOVIES", $"load failed {ex}");
-                SurfaceState = _serviceProvider.GetRequiredService<ISurfaceStateService>().CreateFailureState(SurfaceStateCopies.Movies, ex);
+                if (loadGeneration == _loadGeneration)
+                {
+                    IsInitialLoading = false;
+                    SurfaceState = _serviceProvider.GetRequiredService<ISurfaceStateService>().CreateFailureState(SurfaceStateCopies.Movies, ex);
+                }
             }
             finally
             {
-                _activeLoadStopwatch = null;
+                if (loadGeneration == _loadGeneration)
+                {
+                    _activeLoadStopwatch = null;
+                }
             }
+        }
+
+        private async Task<bool> TryApplyInitialMoviePreviewAsync(
+            AppDbContext db,
+            ProfileAccessSnapshot access,
+            ISurfaceStateService surfaceStateService,
+            SourceAvailabilitySnapshot sourceAvailability,
+            IReadOnlyList<SourceProfile> sourceProfiles,
+            IReadOnlyList<SourceHealthSnapshot> healthStates,
+            int loadGeneration,
+            Stopwatch loadStopwatch)
+        {
+            if (_hasLoadedOnce ||
+                DisplayMovieSlots.Count > 0 ||
+                !string.IsNullOrWhiteSpace(SearchQuery))
+            {
+                return false;
+            }
+
+            var previewStopwatch = Stopwatch.StartNew();
+            IQueryable<Movie> query = db.Movies.AsNoTracking();
+            if (_preferences.SelectedSourceId > 0)
+            {
+                query = query.Where(movie => movie.SourceProfileId == _preferences.SelectedSourceId);
+            }
+
+            if (_preferences.HideSecondaryContent)
+            {
+                query = query.Where(movie => movie.ContentKind == "Primary");
+            }
+
+            var previewMovies = await query
+                .OrderByDescending(movie => movie.Popularity)
+                .ThenByDescending(movie => movie.VoteAverage)
+                .ThenByDescending(movie => movie.MetadataUpdatedAt)
+                .ThenBy(movie => movie.Id)
+                .Take(InitialMoviePreviewQueryLimit)
+                .ToListAsync();
+            LogBrowse($"PERF preview_db rows={previewMovies.Count} ms={previewStopwatch.ElapsedMilliseconds}");
+            if (loadGeneration != _loadGeneration)
+            {
+                return false;
+            }
+
+            var sourceProfileById = sourceProfiles.ToDictionary(source => source.Id);
+            var previewGroups = new List<CatalogMovieGroup>(InitialMoviePreviewDisplayLimit);
+            foreach (var movie in previewMovies)
+            {
+                if (!access.IsMovieAllowed(movie) ||
+                    !sourceProfileById.TryGetValue(movie.SourceProfileId, out var sourceProfile))
+                {
+                    continue;
+                }
+
+                var variant = new CatalogMovieVariant
+                {
+                    Movie = movie,
+                    SourceProfile = sourceProfile
+                };
+                var group = new CatalogMovieGroup
+                {
+                    GroupKey = $"preview:movie:{movie.Id}",
+                    PreferredMovie = movie,
+                    Variants = new[] { variant },
+                    SourceSummary = sourceProfile.Name
+                };
+                if (_preferences.FavoritesOnly && !IsMovieGroupFavorite(group))
+                {
+                    continue;
+                }
+
+                previewGroups.Add(group);
+                if (previewGroups.Count >= InitialMoviePreviewDisplayLimit)
+                {
+                    break;
+                }
+            }
+
+            if (previewGroups.Count == 0)
+            {
+                return false;
+            }
+
+            var applyStopwatch = Stopwatch.StartNew();
+            ApplyMovieCatalogSnapshot(BuildMovieCatalogSnapshot(previewGroups, sourceProfiles, healthStates, _languageCode));
+            BuildSourceOptions();
+            ApplyLoadedPreferencesFromCurrentOptions();
+            _preferStagedFirstPaint = true;
+            ApplyFilter("load-movies-preview");
+            SurfaceState = surfaceStateService.ResolveSourceBackedState(sourceAvailability, _allMovieGroups.Count, SurfaceStateCopies.Movies);
+            _hasLoadedOnce = true;
+            OnPropertyChanged(nameof(HasLoadedOnce));
+            LogBrowse(
+                $"PERF preview_apply groups={previewGroups.Count} slots={DisplayMovieSlots.Count} ms={applyStopwatch.ElapsedMilliseconds} elapsed={loadStopwatch.ElapsedMilliseconds}");
+            return true;
+        }
+
+        private Task<MovieCatalogSnapshot> BuildMovieCatalogSnapshotAsync(
+            IReadOnlyList<CatalogMovieGroup> movieGroups,
+            IReadOnlyList<SourceProfile> sourceProfiles,
+            IReadOnlyList<SourceHealthSnapshot> healthStates,
+            string languageCode)
+        {
+            return Task.Run(() => BuildMovieCatalogSnapshot(movieGroups, sourceProfiles, healthStates, languageCode));
+        }
+
+        private MovieCatalogSnapshot BuildMovieCatalogSnapshot(
+            IReadOnlyList<CatalogMovieGroup> movieGroups,
+            IReadOnlyList<SourceProfile> sourceProfiles,
+            IReadOnlyList<SourceHealthSnapshot> healthStates,
+            string languageCode)
+        {
+            var categoryByMovieId = new Dictionary<int, CatalogCategoryProjection>();
+            CatalogCategoryProjection GetProjection(Movie movie)
+            {
+                if (!categoryByMovieId.TryGetValue(movie.Id, out var projection))
+                {
+                    projection = BuildMovieCategoryProjection(movie);
+                    categoryByMovieId[movie.Id] = projection;
+                }
+
+                return projection;
+            }
+
+            var movieOrderEntries = movieGroups
+                .Select(group => new
+                {
+                    Group = group,
+                    CategoryProjection = GetProjection(group.PreferredMovie)
+                })
+                .ToList();
+
+            var orderedGroups = CatalogOrderingService.OrderCatalog(
+                movieOrderEntries,
+                languageCode,
+                entry => entry.CategoryProjection.DisplayCategoryName,
+                entry => entry.Group.PreferredMovie.Title)
+                .Select(entry => entry.Group)
+                .ToList();
+
+            var sourceTypeById = new Dictionary<int, SourceType>();
+            var sourceLastSyncById = new Dictionary<int, DateTime?>();
+            foreach (var source in sourceProfiles)
+            {
+                sourceTypeById[source.Id] = source.Type;
+                sourceLastSyncById[source.Id] = source.LastSync;
+            }
+
+            var sourceHealthById = new Dictionary<int, CatalogDiscoveryHealthBucket>();
+            foreach (var health in healthStates.GroupBy(item => item.SourceProfileId))
+            {
+                sourceHealthById[health.Key] = _catalogDiscoveryService.ResolveHealthBucket(health.First().HealthState);
+            }
+
+            foreach (var group in orderedGroups)
+            {
+                foreach (var variant in group.Variants)
+                {
+                    categoryByMovieId[variant.Movie.Id] = GetProjection(variant.Movie);
+                    sourceTypeById[variant.SourceProfile.Id] = variant.SourceProfile.Type;
+                }
+            }
+
+            var categories = orderedGroups
+                .GroupBy(group => categoryByMovieId[group.PreferredMovie.Id].RawCategoryName)
+                .Select(group => (group.Key, group.Count()))
+                .OrderBy(group => group.Key, StringComparer.CurrentCultureIgnoreCase)
+                .ToList();
+
+            return new MovieCatalogSnapshot(
+                orderedGroups,
+                categoryByMovieId,
+                sourceTypeById,
+                sourceHealthById,
+                sourceLastSyncById,
+                categories);
+        }
+
+        private void ApplyMovieCatalogSnapshot(MovieCatalogSnapshot snapshot)
+        {
+            _allMovieGroups.Clear();
+            _allMovieGroups.AddRange(snapshot.OrderedGroups);
+
+            _movieCategoryById.Clear();
+            foreach (var pair in snapshot.CategoryByMovieId)
+            {
+                _movieCategoryById[pair.Key] = pair.Value;
+            }
+
+            _sourceTypeById.Clear();
+            foreach (var pair in snapshot.SourceTypeById)
+            {
+                _sourceTypeById[pair.Key] = pair.Value;
+            }
+
+            _sourceHealthById.Clear();
+            foreach (var pair in snapshot.SourceHealthById)
+            {
+                _sourceHealthById[pair.Key] = pair.Value;
+            }
+
+            _sourceLastSyncById.Clear();
+            foreach (var pair in snapshot.SourceLastSyncById)
+            {
+                _sourceLastSyncById[pair.Key] = pair.Value;
+            }
+
+            _allCategories.Clear();
+            _allCategories.AddRange(snapshot.Categories);
+        }
+
+        private void ApplyLoadedPreferencesFromCurrentOptions()
+        {
+            _isInitializing = true;
+            try
+            {
+                FavoritesOnly = _preferences.FavoritesOnly;
+                HideSecondaryContent = _preferences.HideSecondaryContent;
+                SelectedSortOption = SortOptions.FirstOrDefault(option => string.Equals(option.Key, _preferences.SortKey, StringComparison.OrdinalIgnoreCase))
+                    ?? SortOptions.First();
+                SelectedSourceOption = SourceOptions.FirstOrDefault(option => option.Id == _preferences.SelectedSourceId)
+                    ?? SourceOptions.FirstOrDefault();
+            }
+            finally
+            {
+                _isInitializing = false;
+            }
+        }
+
+        private void SetNeedsFullHydration(bool value)
+        {
+            if (_needsFullHydration == value)
+            {
+                return;
+            }
+
+            _needsFullHydration = value;
+            OnPropertyChanged(nameof(NeedsFullHydration));
+        }
+
+        private void LogLoadPhase(string phase, Stopwatch loadStopwatch, Stopwatch phaseStopwatch, string detail = "")
+        {
+            LogBrowse(
+                $"PERF load_phase phase={phase} ms={phaseStopwatch.ElapsedMilliseconds} elapsed={loadStopwatch.ElapsedMilliseconds}{(string.IsNullOrWhiteSpace(detail) ? string.Empty : " " + detail)}");
+            phaseStopwatch.Restart();
         }
 
         [RelayCommand]
@@ -1034,6 +1329,7 @@ namespace Kroira.App.ViewModels
                     Array.Empty<MovieBrowseSlotViewModel>(),
                     static (existing, incoming) => existing.Matches(incoming),
                     static (existing, incoming) => existing.UpdateFrom(incoming.Movie));
+                IsInitialLoading = false;
                 LogBrowse($"slot patch reason={reason} reused={emptyPatch.ReusedCount} inserted={emptyPatch.InsertedCount} removed={emptyPatch.RemovedCount} moved={emptyPatch.MovedCount}");
                 return;
             }
@@ -1053,6 +1349,7 @@ namespace Kroira.App.ViewModels
                         static (existing, incoming) => existing.UpdateFrom(incoming.Movie));
                     LogBrowse($"slot patch reason={reason} reused={patch.ReusedCount} inserted={patch.InsertedCount} removed={patch.RemovedCount} moved={patch.MovedCount}");
                     LogBrowse($"PERF ui_update media=movies reason={reason} slots={DisplayMovieSlots.Count} ms={uiStopwatch.ElapsedMilliseconds} total_ms={totalStopwatch.ElapsedMilliseconds}");
+                    IsInitialLoading = false;
                     if (prioritizeFirstPaint)
                     {
                         LogBrowse(
@@ -1071,6 +1368,7 @@ namespace Kroira.App.ViewModels
                     static (existing, incoming) => existing.UpdateFrom(incoming.Movie));
                 LogBrowse($"slot patch reason={reason}:initial reused={initialPatch.ReusedCount} inserted={initialPatch.InsertedCount} removed={initialPatch.RemovedCount} moved={initialPatch.MovedCount}");
                 LogBrowse($"PERF ui_update media=movies reason={reason}:initial slots={DisplayMovieSlots.Count} ms={initialUiStopwatch.ElapsedMilliseconds} total_ms={totalStopwatch.ElapsedMilliseconds}");
+                IsInitialLoading = false;
                 LogBrowse(
                     $"first content ready ms={_activeLoadStopwatch?.ElapsedMilliseconds ?? -1} reason={reason} visibleSlots={initialSlots.Count}");
 
@@ -1272,11 +1570,43 @@ namespace Kroira.App.ViewModels
             }
         }
 
+        private async Task<BrowserCategoryViewModel?> BuildVisibleCategoriesAsync(string currentKey)
+        {
+            var stopwatch = Stopwatch.StartNew();
+            LogBrowse($"categories rebuild start preserveKey={currentKey ?? string.Empty}");
+            var visibleGroups = BuildVisibleMovieGroups();
+            RebuildMovieSearchText(visibleGroups);
+            var definitions = _smartCategoryService.GetDefinitions(SmartCategoryMediaType.Movie).ToList();
+            var indexStopwatch = Stopwatch.StartNew();
+            var categoryIndex = await Task.Run(() => SmartCategoryIndexBuilder.Build(
+                visibleGroups,
+                definitions,
+                BuildMovieSmartCategoryContext,
+                group => group.Variants.Select(variant => GetRawCategory(variant.Movie)).Distinct(StringComparer.OrdinalIgnoreCase),
+                _smartCategoryService));
+            LogBrowse($"PERF smart_index media=movies groups={visibleGroups.Count} contexts={categoryIndex.ContextBuildCount} keys={categoryIndex.ItemsByCategoryKey.Count} ms={indexStopwatch.ElapsedMilliseconds} offThread=True");
+            return ApplyVisibleCategories(currentKey ?? string.Empty, visibleGroups, categoryIndex, stopwatch);
+        }
+
         private BrowserCategoryViewModel? BuildVisibleCategories(string currentKey)
         {
             var stopwatch = Stopwatch.StartNew();
             LogBrowse($"categories rebuild start preserveKey={currentKey ?? string.Empty}");
+            var visibleGroups = BuildVisibleMovieGroups();
+            RebuildMovieSearchText(visibleGroups);
+            var indexStopwatch = Stopwatch.StartNew();
+            var categoryIndex = SmartCategoryIndexBuilder.Build(
+                visibleGroups,
+                _smartCategoryService.GetDefinitions(SmartCategoryMediaType.Movie),
+                BuildMovieSmartCategoryContext,
+                group => group.Variants.Select(variant => GetRawCategory(variant.Movie)).Distinct(StringComparer.OrdinalIgnoreCase),
+                _smartCategoryService);
+            LogBrowse($"PERF smart_index media=movies groups={visibleGroups.Count} contexts={categoryIndex.ContextBuildCount} keys={categoryIndex.ItemsByCategoryKey.Count} ms={indexStopwatch.ElapsedMilliseconds} offThread=False");
+            return ApplyVisibleCategories(currentKey ?? string.Empty, visibleGroups, categoryIndex, stopwatch);
+        }
 
+        private List<CatalogMovieGroup> BuildVisibleMovieGroups()
+        {
             var visibleSourceIds = SourceVisibilityOptions.Where(option => option.IsVisible).Select(option => option.Id).ToHashSet();
             if (visibleSourceIds.Count == 0)
             {
@@ -1313,28 +1643,33 @@ namespace Kroira.App.ViewModels
                 .OfType<CatalogMovieGroup>()
                 .ToList();
 
-            var categoryItems = new List<BrowserCategoryViewModel>();
-            var categoryId = 0;
+            return visibleGroups;
+        }
+
+        private void RebuildMovieSearchText(IReadOnlyList<CatalogMovieGroup> visibleGroups)
+        {
             _movieSearchTextByGroupKey.Clear();
             foreach (var group in visibleGroups)
             {
                 _movieSearchTextByGroupKey[group.GroupKey] = BuildMovieSearchText(group, GetCategoryProjection(group.PreferredMovie).DisplayCategoryName);
             }
+        }
 
-            var indexStopwatch = Stopwatch.StartNew();
-            _movieCategoryIndex = SmartCategoryIndexBuilder.Build(
-                visibleGroups,
-                _smartCategoryService.GetDefinitions(SmartCategoryMediaType.Movie),
-                BuildMovieSmartCategoryContext,
-                group => group.Variants.Select(variant => GetRawCategory(variant.Movie)).Distinct(StringComparer.OrdinalIgnoreCase),
-                _smartCategoryService);
-            LogBrowse($"PERF smart_index media=movies groups={visibleGroups.Count} contexts={_movieCategoryIndex.ContextBuildCount} keys={_movieCategoryIndex.ItemsByCategoryKey.Count} ms={indexStopwatch.ElapsedMilliseconds}");
+        private BrowserCategoryViewModel? ApplyVisibleCategories(
+            string currentKey,
+            IReadOnlyList<CatalogMovieGroup> visibleGroups,
+            SmartCategoryIndex<CatalogMovieGroup> categoryIndex,
+            Stopwatch stopwatch)
+        {
+            _movieCategoryIndex = categoryIndex;
+            var categoryItems = new List<BrowserCategoryViewModel>();
+            var categoryId = 0;
 
             foreach (var definition in _smartCategoryService.GetDefinitions(SmartCategoryMediaType.Movie))
             {
                 var count = definition.IsAllCategory
-                    ? _movieCategoryIndex.GetCount(string.Empty)
-                    : _movieCategoryIndex.GetCount(definition.Id);
+                    ? categoryIndex.GetCount(string.Empty)
+                    : categoryIndex.GetCount(definition.Id);
                 if (count <= 0 && !definition.AlwaysShow)
                 {
                     continue;
@@ -1355,7 +1690,7 @@ namespace Kroira.App.ViewModels
                 });
             }
 
-            var providerCategories = _movieCategoryIndex.OriginalProviderGroups
+            var providerCategories = categoryIndex.OriginalProviderGroups
                 .Select((category, index) => new BrowserCategoryViewModel
                 {
                     Id = categoryId++,
@@ -1511,6 +1846,10 @@ namespace Kroira.App.ViewModels
         private SmartCategoryItemContext BuildMovieSmartCategoryContext(CatalogMovieGroup group)
         {
             var movie = group.PreferredMovie;
+            var displayCategoryName = GetCategoryProjection(movie).DisplayCategoryName;
+            var normalizedSearchText = _movieSearchTextByGroupKey.TryGetValue(group.GroupKey, out var searchText)
+                ? searchText
+                : BuildMovieSearchText(group, displayCategoryName);
             var snapshots = group.Variants
                 .Select(variant => _movieWatchSnapshotsById.TryGetValue(variant.Movie.Id, out var snapshot) ? snapshot : null)
                 .OfType<WatchProgressSnapshot>()
@@ -1527,11 +1866,12 @@ namespace Kroira.App.ViewModels
                 Title = movie.Title,
                 RawTitle = movie.RawSourceTitle,
                 ProviderGroupName = string.Join(' ', group.Variants.Select(variant => GetRawCategory(variant.Movie)).Distinct(StringComparer.OrdinalIgnoreCase)),
-                DisplayCategoryName = GetCategoryProjection(movie).DisplayCategoryName,
+                DisplayCategoryName = displayCategoryName,
                 Genres = movie.Genres,
                 OriginalLanguage = movie.OriginalLanguage,
                 SourceName = group.SourceSummary,
                 SourceSummary = group.SourceSummary,
+                NormalizedSearchText = normalizedSearchText,
                 ReleaseDate = movie.ReleaseDate,
                 SourceLastSyncUtc = ResolveLatestSync(sourceProfileIds),
                 VoteAverage = movie.VoteAverage,
@@ -1577,6 +1917,12 @@ namespace Kroira.App.ViewModels
 
         private bool ShouldRebuildCategoryRail(string reason)
         {
+            if (_preferStagedFirstPaint &&
+                reason.StartsWith("load-", StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
             return Categories.Count == 0 ||
                    _movieCategoryIndex.AllItems.Count == 0 ||
                    reason.Contains("rebuild", StringComparison.OrdinalIgnoreCase) ||

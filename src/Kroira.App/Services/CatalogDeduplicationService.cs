@@ -1,10 +1,12 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Kroira.App.Data;
 using Kroira.App.Models;
+using Kroira.App.ViewModels;
 using Microsoft.EntityFrameworkCore;
 
 namespace Kroira.App.Services
@@ -65,22 +67,32 @@ namespace Kroira.App.Services
 
         public async Task<IReadOnlyList<CatalogMovieGroup>> LoadMovieGroupsAsync(AppDbContext db)
         {
+            var totalStopwatch = Stopwatch.StartNew();
+            var phaseStopwatch = Stopwatch.StartNew();
             var revision = await BuildMovieRevisionAsync(db);
+            Log("movies", $"revision ms={phaseStopwatch.ElapsedMilliseconds} total_ms={totalStopwatch.ElapsedMilliseconds}");
             lock (_cacheLock)
             {
                 if (_movieGroupsCache != null && Equals(_movieCacheRevision, revision))
                 {
+                    Log("movies", $"cache_hit groups={_movieGroupsCache.Count} total_ms={totalStopwatch.ElapsedMilliseconds}");
                     return _movieGroupsCache;
                 }
             }
 
+            phaseStopwatch.Restart();
             var movies = await db.Movies.AsNoTracking().ToListAsync();
+            Log("movies", $"db_movies count={movies.Count} ms={phaseStopwatch.ElapsedMilliseconds} total_ms={totalStopwatch.ElapsedMilliseconds}");
+            phaseStopwatch.Restart();
             var sourceIds = movies.Select(movie => movie.SourceProfileId).Distinct().ToList();
             var sourceProfiles = await db.SourceProfiles
                 .Where(profile => sourceIds.Contains(profile.Id))
                 .ToDictionaryAsync(profile => profile.Id);
+            Log("movies", $"db_sources count={sourceProfiles.Count} ms={phaseStopwatch.ElapsedMilliseconds} total_ms={totalStopwatch.ElapsedMilliseconds}");
 
-            var groups = BuildMovieGroups(movies, sourceProfiles);
+            phaseStopwatch.Restart();
+            var groups = await Task.Run(() => BuildMovieGroups(movies, sourceProfiles));
+            Log("movies", $"group_build groups={groups.Count} ms={phaseStopwatch.ElapsedMilliseconds} total_ms={totalStopwatch.ElapsedMilliseconds}");
             lock (_cacheLock)
             {
                 _movieCacheRevision = revision;
@@ -92,24 +104,34 @@ namespace Kroira.App.Services
 
         public async Task<IReadOnlyList<CatalogSeriesGroup>> LoadSeriesGroupsAsync(AppDbContext db)
         {
+            var totalStopwatch = Stopwatch.StartNew();
+            var phaseStopwatch = Stopwatch.StartNew();
             var revision = await BuildSeriesRevisionAsync(db);
+            Log("series", $"revision ms={phaseStopwatch.ElapsedMilliseconds} total_ms={totalStopwatch.ElapsedMilliseconds}");
             lock (_cacheLock)
             {
                 if (_seriesGroupsCache != null && Equals(_seriesCacheRevision, revision))
                 {
+                    Log("series", $"cache_hit groups={_seriesGroupsCache.Count} total_ms={totalStopwatch.ElapsedMilliseconds}");
                     return _seriesGroupsCache;
                 }
             }
 
+            phaseStopwatch.Restart();
             var series = await db.Series
                 .AsNoTracking()
                 .ToListAsync();
+            Log("series", $"db_series count={series.Count} ms={phaseStopwatch.ElapsedMilliseconds} total_ms={totalStopwatch.ElapsedMilliseconds}");
+            phaseStopwatch.Restart();
             var sourceIds = series.Select(show => show.SourceProfileId).Distinct().ToList();
             var sourceProfiles = await db.SourceProfiles
                 .Where(profile => sourceIds.Contains(profile.Id))
                 .ToDictionaryAsync(profile => profile.Id);
+            Log("series", $"db_sources count={sourceProfiles.Count} ms={phaseStopwatch.ElapsedMilliseconds} total_ms={totalStopwatch.ElapsedMilliseconds}");
 
-            var groups = BuildSeriesGroups(series, sourceProfiles);
+            phaseStopwatch.Restart();
+            var groups = await Task.Run(() => BuildSeriesGroups(series, sourceProfiles));
+            Log("series", $"group_build groups={groups.Count} ms={phaseStopwatch.ElapsedMilliseconds} total_ms={totalStopwatch.ElapsedMilliseconds}");
             lock (_cacheLock)
             {
                 _seriesCacheRevision = revision;
@@ -117,6 +139,11 @@ namespace Kroira.App.Services
             }
 
             return groups;
+        }
+
+        private static void Log(string media, string message)
+        {
+            BrowseRuntimeLogger.Log("CATALOG DEDUP", $"{media} {message}");
         }
 
         private static async Task<CatalogCacheRevision> BuildMovieRevisionAsync(AppDbContext db)

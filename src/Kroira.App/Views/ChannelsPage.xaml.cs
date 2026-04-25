@@ -1,6 +1,7 @@
 #nullable enable
 
 using System;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
 using Kroira.App.Models;
@@ -20,6 +21,7 @@ namespace Kroira.App.Views
     public sealed partial class ChannelsPage : Page, IRemoteNavigationPage, ILocalizationRefreshable
     {
         private const string MediaActionOverlayTag = "MediaActionOverlay";
+        private bool _isCatalogLoadQueued;
 
         private static string LogPath => System.IO.Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
@@ -79,8 +81,35 @@ namespace Kroira.App.Views
             }
 
             ViewModel.SetNavigationContext(navigationContext);
-            _ = ViewModel.LoadChannelsCommand.ExecuteAsync(null);
-            Log("05: queued LoadChannelsCommand");
+            QueueCatalogLoad("navigation");
+        }
+
+        private void QueueCatalogLoad(string reason)
+        {
+            if (_isCatalogLoadQueued || ViewModel.LoadChannelsCommand.IsRunning)
+            {
+                Log($"05: LoadChannelsCommand already pending reason={reason}");
+                return;
+            }
+
+            _isCatalogLoadQueued = true;
+            var queuedStopwatch = Stopwatch.StartNew();
+            var enqueued = DispatcherQueue?.TryEnqueue(
+                Microsoft.UI.Dispatching.DispatcherQueuePriority.Low,
+                () => _ = RunQueuedCatalogLoadAsync(reason, queuedStopwatch)) == true;
+            Log($"05: queued LoadChannelsCommand reason={reason} enqueued={enqueued}");
+            if (!enqueued)
+            {
+                _ = RunQueuedCatalogLoadAsync(reason, queuedStopwatch);
+            }
+        }
+
+        private async Task RunQueuedCatalogLoadAsync(string reason, Stopwatch queuedStopwatch)
+        {
+            _isCatalogLoadQueued = false;
+            Log($"05c: starting LoadChannelsCommand reason={reason} queuedMs={queuedStopwatch.ElapsedMilliseconds}");
+            await ViewModel.LoadChannelsCommand.ExecuteAsync(null);
+            Log($"05d: LoadChannelsCommand completed reason={reason} totalMs={queuedStopwatch.ElapsedMilliseconds}");
         }
 
         private void OpenSources_Click(object sender, RoutedEventArgs e)

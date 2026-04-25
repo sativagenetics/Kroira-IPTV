@@ -321,6 +321,80 @@
                         </DataTemplate>
                     </GridView.ItemTemplate>
                 </GridView>
+
+                <GridView x:Name="SeriesLoadingSkeleton"
+                          Visibility="{x:Bind ViewModel.InitialLoadingVisibility, Mode=OneWay}"
+                          ItemsSource="{x:Bind ViewModel.LoadingSkeletonSlots, Mode=OneWay}"
+                          SelectionMode="None"
+                          IsHitTestVisible="False"
+                          IsTabStop="False"
+                          ItemContainerStyle="{StaticResource SeriesTileContainerStyle}"
+                          HorizontalAlignment="Stretch"
+                          ScrollViewer.HorizontalScrollMode="Disabled"
+                          ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                          ScrollViewer.VerticalScrollMode="Disabled"
+                          ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                          Padding="0,2,0,22"
+                          Canvas.ZIndex="1">
+                    <GridView.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <ItemsWrapGrid Orientation="Horizontal"
+                                           ItemWidth="182"
+                                           ItemHeight="248"
+                                           MaximumRowsOrColumns="5" />
+                        </ItemsPanelTemplate>
+                    </GridView.ItemsPanel>
+                    <GridView.ItemTemplate>
+                        <DataTemplate>
+                            <Grid Width="174"
+                                  Height="238">
+                                <Border Background="#220A0D11"
+                                        BorderBrush="#14FFFFFF"
+                                        BorderThickness="1"
+                                        CornerRadius="14"
+                                        Padding="8"
+                                        Opacity="0.84">
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="166" />
+                                            <RowDefinition Height="*" />
+                                        </Grid.RowDefinitions>
+
+                                        <Border CornerRadius="10"
+                                                Background="{StaticResource KroiraPosterPlaceholderBrush}"
+                                                BorderBrush="#10FFFFFF"
+                                                BorderThickness="1">
+                                            <Grid>
+                                                <Border Margin="18"
+                                                        CornerRadius="7"
+                                                        Background="#1AFFFFFF" />
+                                                <FontIcon Glyph="&#xE8A9;"
+                                                          FontSize="24"
+                                                          Foreground="{StaticResource KroiraTextTertiaryBrush}"
+                                                          Opacity="0.2" />
+                                            </Grid>
+                                        </Border>
+
+                                        <StackPanel Grid.Row="1"
+                                                    Spacing="7"
+                                                    Margin="2,12,2,0">
+                                            <Border Height="13"
+                                                    Width="126"
+                                                    HorizontalAlignment="Left"
+                                                    CornerRadius="6"
+                                                    Background="#2AFFFFFF" />
+                                            <Border Height="10"
+                                                    Width="88"
+                                                    HorizontalAlignment="Left"
+                                                    CornerRadius="5"
+                                                    Background="#18FFFFFF" />
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                            </Grid>
+                        </DataTemplate>
+                    </GridView.ItemTemplate>
+                </GridView>
             </Grid>
 
             <Border Grid.Column="1"

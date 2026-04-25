@@ -26,6 +26,7 @@ namespace Kroira.App.Models
         public string LogoUrl { get; init; } = string.Empty;
         public string EpgCurrentTitle { get; init; } = string.Empty;
         public string EpgNextTitle { get; init; } = string.Empty;
+        public string NormalizedSearchText { get; init; } = string.Empty;
         public DateTime? ReleaseDate { get; init; }
         public DateTime? SourceLastSyncUtc { get; init; }
         public double VoteAverage { get; init; }

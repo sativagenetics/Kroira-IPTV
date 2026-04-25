@@ -53,6 +53,7 @@ namespace Kroira.App.Views
         private const string MediaActionOverlayTag = "MediaActionOverlay";
         private bool _isRestoringCategorySelection;
         private bool _isCategorySelectionRestoreQueued;
+        private bool _isCatalogLoadQueued;
 
         public SeriesViewModel ViewModel { get; }
 
@@ -85,13 +86,42 @@ namespace Kroira.App.Views
             if (shouldLoad)
             {
                 BrowseRuntimeLogger.Log("SERIES UI", "navigation triggered catalog load");
-                _ = ViewModel.LoadSeriesCommand.ExecuteAsync(null);
+                ViewModel.ShowInitialLoadingIfEmpty();
+                QueueCatalogLoad("navigation");
                 return;
             }
 
             BrowseRuntimeLogger.Log(
                 "SERIES UI",
                 $"navigation reused cached surface slots={ViewModel.DisplaySeriesSlots.Count} selected={ViewModel.SelectedSeries?.Title ?? "<none>"}");
+        }
+
+        private void QueueCatalogLoad(string reason)
+        {
+            if (_isCatalogLoadQueued || ViewModel.LoadSeriesCommand.IsRunning)
+            {
+                BrowseRuntimeLogger.Log("SERIES UI", $"catalog load already pending reason={reason}");
+                return;
+            }
+
+            _isCatalogLoadQueued = true;
+            var queuedStopwatch = Stopwatch.StartNew();
+            var enqueued = DispatcherQueue?.TryEnqueue(
+                Microsoft.UI.Dispatching.DispatcherQueuePriority.Low,
+                () => _ = RunQueuedCatalogLoadAsync(reason, queuedStopwatch)) == true;
+            BrowseRuntimeLogger.Log("SERIES UI", $"catalog load queued reason={reason} enqueued={enqueued}");
+            if (!enqueued)
+            {
+                _ = RunQueuedCatalogLoadAsync(reason, queuedStopwatch);
+            }
+        }
+
+        private async Task RunQueuedCatalogLoadAsync(string reason, Stopwatch queuedStopwatch)
+        {
+            _isCatalogLoadQueued = false;
+            BrowseRuntimeLogger.Log("SERIES UI", $"catalog load start reason={reason} queuedMs={queuedStopwatch.ElapsedMilliseconds}");
+            await ViewModel.LoadSeriesCommand.ExecuteAsync(null);
+            BrowseRuntimeLogger.Log("SERIES UI", $"catalog load end reason={reason} totalMs={queuedStopwatch.ElapsedMilliseconds}");
         }
 
         private void OpenSources_Click(object sender, RoutedEventArgs e)

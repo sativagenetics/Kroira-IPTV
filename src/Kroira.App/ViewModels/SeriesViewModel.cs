@@ -333,6 +333,8 @@ namespace Kroira.App.ViewModels
         public bool HasLoadedOnce => _hasLoadedOnce;
         public Visibility ContentShellVisibility => IsBlockingSurfaceState ? Visibility.Collapsed : Visibility.Visible;
         public Visibility BlockingSurfaceVisibility => IsBlockingSurfaceState ? Visibility.Visible : Visibility.Collapsed;
+        public Visibility InitialLoadingVisibility => IsInitialLoading ? Visibility.Visible : Visibility.Collapsed;
+        public IReadOnlyList<int> LoadingSkeletonSlots { get; } = Enumerable.Range(0, InitialDisplaySeriesSlotBatchSize).ToArray();
         public BulkObservableCollection<SeriesBrowseSlotViewModel> DisplaySeriesSlots { get; } = new BulkObservableCollection<SeriesBrowseSlotViewModel>();
         public BulkObservableCollection<BrowserCategoryViewModel> Categories { get; } = new BulkObservableCollection<BrowserCategoryViewModel>();
         public BulkObservableCollection<SeriesSeasonOptionViewModel> SeasonOptions { get; } = new BulkObservableCollection<SeriesSeasonOptionViewModel>();
@@ -443,6 +445,10 @@ namespace Kroira.App.ViewModels
         private bool _isEmpty;
 
         [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(InitialLoadingVisibility))]
+        private bool _isInitialLoading;
+
+        [ObservableProperty]
         private string _discoverySummaryText = LocalizedStrings.Get("Series_DiscoverySummary_Default");
 
         [ObservableProperty]
@@ -460,6 +466,14 @@ namespace Kroira.App.ViewModels
         {
             OnPropertyChanged(nameof(ContentShellVisibility));
             OnPropertyChanged(nameof(BlockingSurfaceVisibility));
+        }
+
+        public void ShowInitialLoadingIfEmpty()
+        {
+            if (!_hasLoadedOnce && DisplaySeriesSlots.Count == 0 && !IsBlockingSurfaceState)
+            {
+                IsInitialLoading = true;
+            }
         }
 
         partial void OnSearchQueryChanged(string value)
@@ -681,8 +695,11 @@ namespace Kroira.App.ViewModels
             _preferStagedFirstPaint = !_hasLoadedOnce || DisplaySeriesSlots.Count == 0;
             if (!_hasLoadedOnce || DisplaySeriesSlots.Count == 0)
             {
+                IsInitialLoading = true;
                 SurfaceState = SurfaceStateCopies.Series.Create(SurfaceViewState.Loading);
             }
+
+            await Task.Yield();
 
             try
             {
@@ -696,6 +713,7 @@ namespace Kroira.App.ViewModels
                 var sourceAvailability = await surfaceStateService.GetSourceAvailabilityAsync(db);
                 if (sourceAvailability.SourceCount == 0)
                 {
+                    IsInitialLoading = false;
                     SurfaceState = surfaceStateService.ResolveSourceBackedState(sourceAvailability, 0, SurfaceStateCopies.Series);
                     return;
                 }
@@ -797,6 +815,7 @@ namespace Kroira.App.ViewModels
 
                 BuildSourceOptions();
 
+                var preferredCategoryKey = SelectedCategory?.FilterKey ?? _browsePreferences.SelectedCategoryKey;
                 _isInitializingBrowsePreferences = true;
                 try
                 {
@@ -807,8 +826,6 @@ namespace Kroira.App.ViewModels
                         ?? SortOptions.First();
                     SelectedSourceOption = SourceOptions.FirstOrDefault(option => option.Id == _browsePreferences.SelectedSourceId)
                         ?? SourceOptions.FirstOrDefault();
-                    var selectedCategory = BuildVisibleCategories(languageCode, SelectedCategory?.FilterKey ?? string.Empty);
-                    ReassignSelectedCategory(selectedCategory, "load-initial");
                 }
                 finally
                 {
@@ -820,6 +837,22 @@ namespace Kroira.App.ViewModels
                 _hasLoadedOnce = true;
                 OnPropertyChanged(nameof(HasLoadedOnce));
                 await Task.Yield();
+                var selectedCategory = await BuildVisibleCategoriesAsync(languageCode, preferredCategoryKey);
+                _isInitializingBrowsePreferences = true;
+                try
+                {
+                    ReassignSelectedCategory(selectedCategory, "load-categories-ready");
+                }
+                finally
+                {
+                    _isInitializingBrowsePreferences = false;
+                }
+
+                if (!string.IsNullOrWhiteSpace(selectedCategory?.FilterKey))
+                {
+                    ApplyFilter("load-category-ready");
+                }
+
                 BuildCategoryManagerOptions();
                 LogBrowse(
                     $"load ready fullMs={loadStopwatch.ElapsedMilliseconds} groups={_allSeriesGroups.Count} results={_filteredSeries.Count} slots={DisplaySeriesSlots.Count}");
@@ -828,6 +861,7 @@ namespace Kroira.App.ViewModels
             catch (Exception ex)
             {
                 BrowseRuntimeLogger.Log("SERIES", $"load failed {ex}");
+                IsInitialLoading = false;
                 SurfaceState = _serviceProvider.GetRequiredService<ISurfaceStateService>().CreateFailureState(SurfaceStateCopies.Series, ex);
             }
             finally
@@ -1164,6 +1198,7 @@ namespace Kroira.App.ViewModels
                     Array.Empty<SeriesBrowseSlotViewModel>(),
                     static (existing, incoming) => existing.Matches(incoming),
                     static (existing, incoming) => existing.UpdateFrom(incoming.Series));
+                IsInitialLoading = false;
                 LogBrowse($"slot patch reason={reason} reused={emptyPatch.ReusedCount} inserted={emptyPatch.InsertedCount} removed={emptyPatch.RemovedCount} moved={emptyPatch.MovedCount}");
                 UpdateSelectedSeriesSlotState();
                 return;
@@ -1184,6 +1219,7 @@ namespace Kroira.App.ViewModels
                         static (existing, incoming) => existing.UpdateFrom(incoming.Series));
                     LogBrowse($"slot patch reason={reason} reused={patch.ReusedCount} inserted={patch.InsertedCount} removed={patch.RemovedCount} moved={patch.MovedCount}");
                     LogBrowse($"PERF ui_update media=series reason={reason} slots={DisplaySeriesSlots.Count} ms={uiStopwatch.ElapsedMilliseconds} total_ms={totalStopwatch.ElapsedMilliseconds}");
+                    IsInitialLoading = false;
                     UpdateSelectedSeriesSlotState();
                     if (prioritizeFirstPaint)
                     {
@@ -1203,6 +1239,7 @@ namespace Kroira.App.ViewModels
                     static (existing, incoming) => existing.UpdateFrom(incoming.Series));
                 LogBrowse($"slot patch reason={reason}:initial reused={initialPatch.ReusedCount} inserted={initialPatch.InsertedCount} removed={initialPatch.RemovedCount} moved={initialPatch.MovedCount}");
                 LogBrowse($"PERF ui_update media=series reason={reason}:initial slots={DisplaySeriesSlots.Count} ms={initialUiStopwatch.ElapsedMilliseconds} total_ms={totalStopwatch.ElapsedMilliseconds}");
+                IsInitialLoading = false;
                 UpdateSelectedSeriesSlotState();
                 LogBrowse(
                     $"first content ready ms={_activeLoadStopwatch?.ElapsedMilliseconds ?? -1} reason={reason} visibleSlots={initialSlots.Count}");
@@ -1763,11 +1800,43 @@ namespace Kroira.App.ViewModels
             }
         }
 
+        private async Task<BrowserCategoryViewModel?> BuildVisibleCategoriesAsync(string languageCode, string currentKey)
+        {
+            var stopwatch = Stopwatch.StartNew();
+            LogBrowse($"categories rebuild start preserveKey={currentKey}");
+            var visibleGroups = BuildVisibleSeriesGroups();
+            RebuildSeriesSearchText(visibleGroups);
+            var definitions = _smartCategoryService.GetDefinitions(SmartCategoryMediaType.Series).ToList();
+            var indexStopwatch = Stopwatch.StartNew();
+            var categoryIndex = await Task.Run(() => SmartCategoryIndexBuilder.Build(
+                visibleGroups,
+                definitions,
+                BuildSeriesSmartCategoryContext,
+                group => group.Variants.Select(variant => GetRawCategory(variant.Series)).Distinct(StringComparer.OrdinalIgnoreCase),
+                _smartCategoryService));
+            LogBrowse($"PERF smart_index media=series groups={visibleGroups.Count} contexts={categoryIndex.ContextBuildCount} keys={categoryIndex.ItemsByCategoryKey.Count} ms={indexStopwatch.ElapsedMilliseconds} offThread=True");
+            return ApplyVisibleCategories(languageCode, currentKey ?? string.Empty, visibleGroups, categoryIndex, stopwatch);
+        }
+
         private BrowserCategoryViewModel? BuildVisibleCategories(string languageCode, string currentKey)
         {
             var stopwatch = Stopwatch.StartNew();
             LogBrowse($"categories rebuild start preserveKey={currentKey}");
+            var visibleGroups = BuildVisibleSeriesGroups();
+            RebuildSeriesSearchText(visibleGroups);
+            var indexStopwatch = Stopwatch.StartNew();
+            var categoryIndex = SmartCategoryIndexBuilder.Build(
+                visibleGroups,
+                _smartCategoryService.GetDefinitions(SmartCategoryMediaType.Series),
+                BuildSeriesSmartCategoryContext,
+                group => group.Variants.Select(variant => GetRawCategory(variant.Series)).Distinct(StringComparer.OrdinalIgnoreCase),
+                _smartCategoryService);
+            LogBrowse($"PERF smart_index media=series groups={visibleGroups.Count} contexts={categoryIndex.ContextBuildCount} keys={categoryIndex.ItemsByCategoryKey.Count} ms={indexStopwatch.ElapsedMilliseconds} offThread=False");
+            return ApplyVisibleCategories(languageCode, currentKey ?? string.Empty, visibleGroups, categoryIndex, stopwatch);
+        }
 
+        private List<CatalogSeriesGroup> BuildVisibleSeriesGroups()
+        {
             var visibleSourceIds = SourceVisibilityOptions.Where(option => option.IsVisible).Select(option => option.Id).ToHashSet();
             if (visibleSourceIds.Count == 0)
             {
@@ -1804,28 +1873,34 @@ namespace Kroira.App.ViewModels
                 .OfType<CatalogSeriesGroup>()
                 .ToList();
 
-            var categoryItems = new List<BrowserCategoryViewModel>();
-            var categoryIndex = 0;
+            return visibleGroups;
+        }
+
+        private void RebuildSeriesSearchText(IReadOnlyList<CatalogSeriesGroup> visibleGroups)
+        {
             _seriesSearchTextByGroupKey.Clear();
             foreach (var group in visibleGroups)
             {
                 _seriesSearchTextByGroupKey[group.GroupKey] = BuildSeriesSearchText(group, GetCategoryProjection(group.PreferredSeries).DisplayCategoryName);
             }
+        }
 
-            var indexStopwatch = Stopwatch.StartNew();
-            _seriesCategoryIndex = SmartCategoryIndexBuilder.Build(
-                visibleGroups,
-                _smartCategoryService.GetDefinitions(SmartCategoryMediaType.Series),
-                BuildSeriesSmartCategoryContext,
-                group => group.Variants.Select(variant => GetRawCategory(variant.Series)).Distinct(StringComparer.OrdinalIgnoreCase),
-                _smartCategoryService);
-            LogBrowse($"PERF smart_index media=series groups={visibleGroups.Count} contexts={_seriesCategoryIndex.ContextBuildCount} keys={_seriesCategoryIndex.ItemsByCategoryKey.Count} ms={indexStopwatch.ElapsedMilliseconds}");
+        private BrowserCategoryViewModel? ApplyVisibleCategories(
+            string languageCode,
+            string currentKey,
+            IReadOnlyList<CatalogSeriesGroup> visibleGroups,
+            SmartCategoryIndex<CatalogSeriesGroup> categoryIndexModel,
+            Stopwatch stopwatch)
+        {
+            _seriesCategoryIndex = categoryIndexModel;
+            var categoryItems = new List<BrowserCategoryViewModel>();
+            var categoryIndex = 0;
 
             foreach (var definition in _smartCategoryService.GetDefinitions(SmartCategoryMediaType.Series))
             {
                 var count = definition.IsAllCategory
-                    ? _seriesCategoryIndex.GetCount(string.Empty)
-                    : _seriesCategoryIndex.GetCount(definition.Id);
+                    ? categoryIndexModel.GetCount(string.Empty)
+                    : categoryIndexModel.GetCount(definition.Id);
                 if (count <= 0 && !definition.AlwaysShow)
                 {
                     continue;
@@ -1846,7 +1921,7 @@ namespace Kroira.App.ViewModels
                 });
             }
 
-            var providerCategories = _seriesCategoryIndex.OriginalProviderGroups
+            var providerCategories = categoryIndexModel.OriginalProviderGroups
                 .Select((category, index) => new BrowserCategoryViewModel
                 {
                     Id = categoryIndex++,
@@ -2002,6 +2077,10 @@ namespace Kroira.App.ViewModels
         private SmartCategoryItemContext BuildSeriesSmartCategoryContext(CatalogSeriesGroup group)
         {
             var series = group.PreferredSeries;
+            var displayCategoryName = GetCategoryProjection(series).DisplayCategoryName;
+            var normalizedSearchText = _seriesSearchTextByGroupKey.TryGetValue(group.GroupKey, out var searchText)
+                ? searchText
+                : BuildSeriesSearchText(group, displayCategoryName);
             var states = group.Variants
                 .Select(variant => _seriesSmartStateById.TryGetValue(variant.Series.Id, out var state) ? state : null)
                 .OfType<SeriesSmartWatchState>()
@@ -2025,11 +2104,12 @@ namespace Kroira.App.ViewModels
                 Title = series.Title,
                 RawTitle = series.RawSourceTitle,
                 ProviderGroupName = string.Join(' ', group.Variants.Select(variant => GetRawCategory(variant.Series)).Distinct(StringComparer.OrdinalIgnoreCase)),
-                DisplayCategoryName = GetCategoryProjection(series).DisplayCategoryName,
+                DisplayCategoryName = displayCategoryName,
                 Genres = series.Genres,
                 OriginalLanguage = series.OriginalLanguage,
                 SourceName = group.SourceSummary,
                 SourceSummary = group.SourceSummary,
+                NormalizedSearchText = normalizedSearchText,
                 ReleaseDate = series.FirstAirDate,
                 SourceLastSyncUtc = ResolveLatestSync(sourceProfileIds),
                 VoteAverage = series.VoteAverage,
@@ -2078,6 +2158,12 @@ namespace Kroira.App.ViewModels
 
         private bool ShouldRebuildCategoryRail(string reason)
         {
+            if (_preferStagedFirstPaint &&
+                reason.StartsWith("load-", StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
             return Categories.Count == 0 ||
                    _seriesCategoryIndex.AllItems.Count == 0 ||
                    reason.Contains("rebuild", StringComparison.OrdinalIgnoreCase) ||
