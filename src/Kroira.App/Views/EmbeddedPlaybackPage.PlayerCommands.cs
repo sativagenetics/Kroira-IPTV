@@ -801,6 +801,13 @@ namespace Kroira.App.Views
 
         private void UpdatePlaybackHint()
         {
+            if (!IsLivePlayback())
+            {
+                PlaybackHintText.Text = string.Empty;
+                PlaybackHintText.Visibility = Visibility.Collapsed;
+                return;
+            }
+
             var hints = new List<string>();
             if (IsLivePlayback() && !IsTimelineSeekAllowed())
             {

@@ -57,6 +57,8 @@ namespace Kroira.App.ViewModels
         [NotifyPropertyChangedFor(nameof(ProfileSwitcherVisibility))]
         [NotifyPropertyChangedFor(nameof(ProfileCountText))]
         [NotifyPropertyChangedFor(nameof(CanDeleteSelectedProfile))]
+        [NotifyPropertyChangedFor(nameof(ActiveProfileName))]
+        [NotifyPropertyChangedFor(nameof(SelectedProfileTypeText))]
         private AppProfile? _selectedProfile;
 
         [ObservableProperty]
@@ -109,6 +111,9 @@ namespace Kroira.App.ViewModels
         public Visibility ProfileActionStatusVisibility => string.IsNullOrWhiteSpace(ProfileActionStatusText) ? Visibility.Collapsed : Visibility.Visible;
         public string SourceLocksSummaryText => SourceLocks.Count == 1 ? "1 source can be restricted." : $"{SourceLocks.Count} sources can be restricted.";
         public string CategoryLocksSummaryText => CategoryLocks.Count == 1 ? "1 category can be restricted." : $"{CategoryLocks.Count} categories can be restricted.";
+        public string ActiveProfileName => SelectedProfile?.Name ?? "Profile";
+        public string SelectedProfileTypeText => SelectedProfile?.IsKidsProfile == true ? "Kids profile" : "Standard local profile";
+        public string LocalProfileExplanationText => "Profiles are local to this Windows device. They separate favorites, resume state, PIN locks, and content access without adding online sign-in.";
         public bool CanDeleteSelectedProfile => SelectedProfile != null && Profiles.Count > 1;
         public bool CanAddProfiles => _entitlementService.IsFeatureEnabled(EntitlementFeatureKeys.ProfilesMultiple) &&
                                       (!_profileLimit.HasValue || Profiles.Count < _profileLimit.Value);

@@ -2,9 +2,11 @@
     x:Class="Kroira.App.Views.EpgCenterPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:Kroira.App.Controls"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:vm="using:Kroira.App.ViewModels"
+    Background="{StaticResource KroiraPageBackgroundBrush}"
     mc:Ignorable="d">
 
     <Grid XYFocusKeyboardNavigation="Enabled">
@@ -12,6 +14,8 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
+
+        <controls:AmbientPageBackground Grid.RowSpan="2" />
 
         <Grid Padding="28,24,28,12" ColumnSpacing="16">
             <Grid.ColumnDefinitions>
@@ -57,10 +61,10 @@
                            Foreground="{StaticResource KroiraTextSecondaryBrush}"
                            TextWrapping="WrapWholeWords" />
 
-                <Border Padding="16"
-                        CornerRadius="8"
-                        Background="{StaticResource KroiraSurfaceBrush}"
-                        BorderBrush="{StaticResource KroiraBorderBrush}"
+                <Border Padding="18"
+                        CornerRadius="18"
+                        Background="#42101827"
+                        BorderBrush="{StaticResource KroiraChromeLineBrush}"
                         BorderThickness="1">
                     <StackPanel Spacing="12">
                         <Grid ColumnSpacing="12">
@@ -245,10 +249,14 @@
                                                         <ItemsControl.ItemTemplate>
                                                             <DataTemplate x:DataType="vm:GuideTimelineProgramViewModel">
                                                                 <Button Width="{x:Bind Width}"
-                                                                        MinWidth="48"
+                                                                        MinWidth="0"
                                                                         Height="58"
-                                                                        Margin="0,9,4,9"
-                                                                        Padding="8,5"
+                                                                        Margin="0,9,3,9"
+                                                                        Padding="6,5"
+                                                                        Background="#4E111827"
+                                                                        BorderBrush="{StaticResource KroiraChromeLineBrush}"
+                                                                        BorderThickness="1"
+                                                                        CornerRadius="9"
                                                                         HorizontalContentAlignment="Stretch"
                                                                         Click="TimelineProgram_Click"
                                                                         CommandParameter="{Binding}">
@@ -256,17 +264,20 @@
                                                                         <TextBlock Text="{x:Bind Title}"
                                                                                    FontWeight="SemiBold"
                                                                                    FontSize="12"
-                                                                                   MaxLines="1"
+                                                                                   MaxLines="{x:Bind TitleMaxLines}"
+                                                                                   Visibility="{x:Bind TitleVisibility}"
                                                                                    TextTrimming="CharacterEllipsis" />
                                                                         <TextBlock Text="{x:Bind TimeText}"
                                                                                    Style="{StaticResource KroiraMetaStyle}"
                                                                                    Foreground="{StaticResource KroiraTextSecondaryBrush}"
                                                                                    MaxLines="1"
+                                                                                   Visibility="{x:Bind TimeVisibility}"
                                                                                    TextTrimming="CharacterEllipsis" />
                                                                         <TextBlock Text="{x:Bind DetailText}"
                                                                                    Style="{StaticResource KroiraMetaStyle}"
                                                                                    Foreground="{StaticResource KroiraTextTertiaryBrush}"
                                                                                    MaxLines="1"
+                                                                                   Visibility="{x:Bind DetailVisibility}"
                                                                                    TextTrimming="CharacterEllipsis" />
                                                                     </StackPanel>
                                                                 </Button>

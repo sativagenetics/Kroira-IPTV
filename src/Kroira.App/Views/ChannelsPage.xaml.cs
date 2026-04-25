@@ -71,6 +71,13 @@ namespace Kroira.App.Views
             var navigationContext = e.Parameter as ChannelsNavigationContext;
             Log($"04: OnNavigatedTo entered, parameterType={e.Parameter?.GetType().FullName ?? "null"}, mode={navigationContext?.Mode.ToString() ?? "Default"}");
             base.OnNavigatedTo(e);
+            if (ViewModel.HasLoadedOnce)
+            {
+                ViewModel.RefreshNavigationContext(navigationContext);
+                Log("05: refreshed navigation context without catalog reload");
+                return;
+            }
+
             ViewModel.SetNavigationContext(navigationContext);
             _ = ViewModel.LoadChannelsCommand.ExecuteAsync(null);
             Log("05: queued LoadChannelsCommand");

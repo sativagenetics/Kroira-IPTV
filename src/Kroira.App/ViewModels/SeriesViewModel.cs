@@ -275,6 +275,7 @@ namespace Kroira.App.ViewModels
         private const string Domain = ProfileDomains.Series;
         private const int BrowseGridColumns = 3;
         private const int InitialDisplaySeriesSlotBatchSize = BrowseGridColumns * 2;
+        private const int DeferredSlotAppendBatchSize = BrowseGridColumns * 10;
         private const int SearchApplyDebounceMilliseconds = 180;
         private readonly IServiceProvider _serviceProvider;
         private readonly IBrowsePreferencesService _browsePreferencesService;
@@ -792,13 +793,11 @@ namespace Kroira.App.ViewModels
                 }
 
                 ApplyFilter("load-series");
-                var displayRefreshTask = _displaySeriesSlotRefreshTask;
                 SurfaceState = surfaceStateService.ResolveSourceBackedState(sourceAvailability, _allSeriesGroups.Count, SurfaceStateCopies.Series);
                 _hasLoadedOnce = true;
                 OnPropertyChanged(nameof(HasLoadedOnce));
                 await Task.Yield();
                 BuildCategoryManagerOptions();
-                await displayRefreshTask;
                 LogBrowse(
                     $"load ready fullMs={loadStopwatch.ElapsedMilliseconds} groups={_allSeriesGroups.Count} results={_filteredSeries.Count} slots={DisplaySeriesSlots.Count}");
                 StartMetadataEnrichment();
@@ -1085,8 +1084,19 @@ namespace Kroira.App.ViewModels
                     return;
                 }
 
-                DisplaySeriesSlots.AppendRange(deferredSlots);
-                UpdateSelectedSeriesSlotState();
+                for (var index = 0; index < deferredSlots.Count; index += DeferredSlotAppendBatchSize)
+                {
+                    if (refreshVersion != _seriesSlotRefreshVersion)
+                    {
+                        return;
+                    }
+
+                    DisplaySeriesSlots.AppendRange(deferredSlots.GetRange(
+                        index,
+                        Math.Min(DeferredSlotAppendBatchSize, deferredSlots.Count - index)));
+                    UpdateSelectedSeriesSlotState();
+                    await Task.Yield();
+                }
             }
             catch (Exception ex)
             {

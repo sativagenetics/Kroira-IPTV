@@ -564,10 +564,17 @@ namespace Kroira.App.ViewModels
         [ObservableProperty]
         private string _searchText = string.Empty;
 
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(SyncAllButtonText))]
+        [NotifyPropertyChangedFor(nameof(CanSyncAllSources))]
+        private bool _isSyncAllRunning;
+
         public string M3uSourceCountLabel => $"{M3uSourceCount:N0} M3U";
         public string XtreamSourceCountLabel => $"{XtreamSourceCount:N0} Xtream";
         public string ConfiguredSourceCountText => $"{SourceCount:N0} configured";
         public string RecentActivityCountText => $"{RecentActivities.Count:N0} events";
+        public string SyncAllButtonText => IsSyncAllRunning ? "Syncing all..." : "Sync all";
+        public bool CanSyncAllSources => !IsSyncAllRunning && SourceCount > 0;
 
         public SourceListViewModel(IServiceProvider serviceProvider)
         {
@@ -933,6 +940,7 @@ namespace Kroira.App.ViewModels
             OnPropertyChanged(nameof(M3uSourceCountLabel));
             OnPropertyChanged(nameof(XtreamSourceCountLabel));
             OnPropertyChanged(nameof(ConfiguredSourceCountText));
+            OnPropertyChanged(nameof(CanSyncAllSources));
 
             var totalLiveChannels = TotalLiveChannelCount;
             var guideCoverage = totalLiveChannels > 0
@@ -1030,6 +1038,7 @@ namespace Kroira.App.ViewModels
 
             var noConfiguredSources = _allSources.Count == 0;
             IsEmpty = Sources.Count == 0;
+            OnPropertyChanged(nameof(CanSyncAllSources));
             EmptyStateTitle = noConfiguredSources
                 ? "No sources configured"
                 : "No matching sources";
@@ -1388,6 +1397,65 @@ namespace Kroira.App.ViewModels
                     item.HealthLabel = "Failing";
                     item.Status = BuildStatusMessage("Live refresh did not finish", ex.Message);
                 }
+            }
+        }
+
+        [RelayCommand]
+        public async Task SyncAllSourcesAsync()
+        {
+            if (IsSyncAllRunning)
+            {
+                return;
+            }
+
+            IsSyncAllRunning = true;
+            try
+            {
+                using var scope = _serviceProvider.CreateScope();
+                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                var refreshService = scope.ServiceProvider.GetRequiredService<ISourceRefreshService>();
+                var profiles = await db.SourceProfiles
+                    .AsNoTracking()
+                    .OrderBy(profile => profile.Name)
+                    .ToListAsync();
+
+                foreach (var profile in profiles)
+                {
+                    var item = Sources.FirstOrDefault(source => source.Id == profile.Id);
+                    if (item != null)
+                    {
+                        item.HealthLabel = "Working";
+                        item.Status = "Queued in all-source sync...";
+                    }
+
+                    var refreshScope = profile.Type is SourceType.Xtream or SourceType.Stalker
+                        ? SourceRefreshScope.Full
+                        : SourceRefreshScope.LiveOnly;
+
+                    try
+                    {
+                        if (item != null)
+                        {
+                            item.Status = "Refreshing source...";
+                        }
+
+                        await refreshService.RefreshSourceAsync(profile.Id, SourceRefreshTrigger.Manual, refreshScope);
+                    }
+                    catch (Exception ex)
+                    {
+                        if (item != null)
+                        {
+                            item.HealthLabel = "Failing";
+                            item.Status = BuildStatusMessage("All-source sync needs review", ex.Message);
+                        }
+                    }
+                }
+
+                await LoadSourcesAsync();
+            }
+            finally
+            {
+                IsSyncAllRunning = false;
             }
         }
 

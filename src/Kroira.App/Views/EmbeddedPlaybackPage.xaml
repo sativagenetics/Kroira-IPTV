@@ -325,7 +325,7 @@
                     <StackPanel Grid.Column="0" x:Name="LiveSummaryPanel" Spacing="2" Visibility="Collapsed" MaxWidth="320" VerticalAlignment="Center">
                         <TextBlock Text="Live now" FontSize="10" FontWeight="SemiBold" Foreground="{StaticResource KroiraTextSecondaryBrush}" Opacity="0.8" />
                         <TextBlock x:Name="BottomLiveTitleText" Foreground="{StaticResource KroiraTextPrimaryBrush}" FontSize="14" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
-                        <TextBlock x:Name="BottomLiveMetaText" Foreground="{StaticResource KroiraTextSecondaryBrush}" FontSize="11" Opacity="0.86" TextTrimming="CharacterEllipsis" />
+                        <TextBlock x:Name="BottomLiveMetaText" Foreground="{StaticResource KroiraTextSecondaryBrush}" FontSize="11" Opacity="0.86" TextTrimming="CharacterEllipsis" Visibility="Collapsed" />
                     </StackPanel>
 
                     <Border Grid.Column="1" Background="#08FFFFFF" BorderThickness="0" CornerRadius="22" Padding="10,6" HorizontalAlignment="Center">

@@ -101,6 +101,7 @@
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
                         <StackPanel Spacing="3">
                             <TextBlock Text="Live Resume" Style="{StaticResource KroiraSectionTitleStyle}" />
@@ -109,6 +110,14 @@
                         <Border Grid.Column="1" Background="{StaticResource KroiraStateDangerSoftBrush}" BorderBrush="#33FF5A5F" BorderThickness="1" CornerRadius="8" Padding="8,4" VerticalAlignment="Center">
                             <TextBlock Text="{x:Bind ViewModel.LiveCountText, Mode=OneWay}" Foreground="{StaticResource KroiraLiveDotBrush}" FontSize="10" FontWeight="SemiBold" />
                         </Border>
+                        <Button Grid.Column="2"
+                                Content="Clear all"
+                                Click="ClearLiveProgress_Click"
+                                Style="{StaticResource QuietManagementButtonStyle}"
+                                Visibility="{x:Bind ViewModel.ClearLiveVisibility, Mode=OneWay}"
+                                VerticalAlignment="Center"
+                                Margin="8,0,0,0"
+                                AutomationProperties.Name="Clear all live resume items" />
                     </Grid>
 
                     <Grid Grid.Row="1" Padding="10,0,10,12">
@@ -177,6 +186,7 @@
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
                         <StackPanel Spacing="3">
                             <TextBlock Text="Movie Queue" Style="{StaticResource KroiraSectionTitleStyle}" />
@@ -185,8 +195,15 @@
                         <Border Grid.Column="1" Style="{StaticResource KroiraCountBadgeStyle}" Padding="8,4">
                             <TextBlock Text="{x:Bind ViewModel.MovieCountText, Mode=OneWay}" Foreground="{StaticResource KroiraAccentBrush}" FontSize="10" FontWeight="SemiBold" />
                         </Border>
+                        <Button Grid.Column="2"
+                                Content="Clear all"
+                                Click="ClearMovieProgress_Click"
+                                Style="{StaticResource QuietManagementButtonStyle}"
+                                Visibility="{x:Bind ViewModel.ClearMovieVisibility, Mode=OneWay}"
+                                VerticalAlignment="Center"
+                                AutomationProperties.Name="Clear all movie queue items" />
                         <ToggleSwitch x:Name="HideWatchedToggle"
-                                      Grid.Column="2"
+                                      Grid.Column="3"
                                       Header="Hide watched"
                                       IsOn="{x:Bind ViewModel.HideWatchedItems, Mode=TwoWay}"
                                       OnContent=""
@@ -279,6 +296,7 @@
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
                         <StackPanel Spacing="3">
                             <TextBlock Text="Series Queue" Style="{StaticResource KroiraSectionTitleStyle}" />
@@ -287,6 +305,14 @@
                         <Border Grid.Column="1" Style="{StaticResource KroiraCountBadgeStyle}" Padding="8,4">
                             <TextBlock Text="{x:Bind ViewModel.SeriesCountText, Mode=OneWay}" Foreground="{StaticResource KroiraAccentBrush}" FontSize="10" FontWeight="SemiBold" />
                         </Border>
+                        <Button Grid.Column="2"
+                                Content="Clear all"
+                                Click="ClearSeriesProgress_Click"
+                                Style="{StaticResource QuietManagementButtonStyle}"
+                                Visibility="{x:Bind ViewModel.ClearSeriesVisibility, Mode=OneWay}"
+                                VerticalAlignment="Center"
+                                Margin="8,0,0,0"
+                                AutomationProperties.Name="Clear all series queue items" />
                     </Grid>
 
                     <Grid Grid.Row="1" Padding="10,0,10,12">

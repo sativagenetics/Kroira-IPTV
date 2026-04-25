@@ -139,6 +139,16 @@
                         <StackPanel Orientation="Horizontal"
                                     Spacing="10"
                                     HorizontalAlignment="Right">
+                            <Button Command="{x:Bind ViewModel.SyncAllSourcesCommand}"
+                                    IsEnabled="{x:Bind ViewModel.CanSyncAllSources, Mode=OneWay}"
+                                    Style="{StaticResource KroiraPrimaryButtonStyle}"
+                                    Padding="18,10"
+                                    AutomationProperties.Name="Sync all configured sources">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <FontIcon Glyph="&#xE895;" FontSize="12" />
+                                    <TextBlock Text="{x:Bind ViewModel.SyncAllButtonText, Mode=OneWay}" />
+                                </StackPanel>
+                            </Button>
                             <Button Click="OpenEpgCenter_Click"
                                     Style="{StaticResource SourceActionSecondaryButtonStyle}">
                                 <StackPanel Orientation="Horizontal" Spacing="8">

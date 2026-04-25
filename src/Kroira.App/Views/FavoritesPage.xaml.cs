@@ -1,3 +1,5 @@
+using System;
+using System.Threading.Tasks;
 using Kroira.App.Services;
 using Kroira.App.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
@@ -187,6 +189,48 @@ namespace Kroira.App.Views
             if (sender is Button btn && btn.Tag is int id)
             {
                 ViewModel.RemoveSeriesFavoriteCommand.Execute(id);
+            }
+        }
+
+        private async void ClearChannelFavorites_Click(object sender, RoutedEventArgs e)
+        {
+            await ConfirmAndRunAsync(
+                "Clear all favorite live channels?",
+                "This removes every saved live channel favorite for the active profile on this device.",
+                () => ViewModel.ClearChannelFavoritesCommand.ExecuteAsync(null));
+        }
+
+        private async void ClearMovieFavorites_Click(object sender, RoutedEventArgs e)
+        {
+            await ConfirmAndRunAsync(
+                "Clear all favorite movies?",
+                "This removes every saved movie favorite for the active profile on this device.",
+                () => ViewModel.ClearMovieFavoritesCommand.ExecuteAsync(null));
+        }
+
+        private async void ClearSeriesFavorites_Click(object sender, RoutedEventArgs e)
+        {
+            await ConfirmAndRunAsync(
+                "Clear all favorite series?",
+                "This removes every saved series favorite for the active profile on this device.",
+                () => ViewModel.ClearSeriesFavoritesCommand.ExecuteAsync(null));
+        }
+
+        private async Task ConfirmAndRunAsync(string title, string message, Func<Task> action)
+        {
+            var dialog = new ContentDialog
+            {
+                Title = title,
+                Content = message,
+                PrimaryButtonText = "Clear all",
+                CloseButtonText = "Cancel",
+                DefaultButton = ContentDialogButton.Close,
+                XamlRoot = XamlRoot
+            };
+
+            if (await dialog.ShowAsync() == ContentDialogResult.Primary)
+            {
+                await action();
             }
         }
 

@@ -93,6 +93,9 @@ namespace Kroira.App.ViewModels
         public Visibility ChannelsEmptyVisibility => FavoriteChannels.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
         public Visibility MoviesEmptyVisibility => FavoriteMovies.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
         public Visibility SeriesEmptyVisibility => FavoriteSeries.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+        public Visibility ClearChannelsVisibility => FavoriteChannels.Count == 0 ? Visibility.Collapsed : Visibility.Visible;
+        public Visibility ClearMoviesVisibility => FavoriteMovies.Count == 0 ? Visibility.Collapsed : Visibility.Visible;
+        public Visibility ClearSeriesVisibility => FavoriteSeries.Count == 0 ? Visibility.Collapsed : Visibility.Visible;
         public Visibility SeriesDetailVisibility => SelectedSeries == null ? Visibility.Collapsed : Visibility.Visible;
         public Visibility SeriesDetailEmptyVisibility => SelectedSeries == null ? Visibility.Visible : Visibility.Collapsed;
         public Visibility SelectedSeriesEpisodesVisibility => SelectedSeason?.Episodes?.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
@@ -346,6 +349,43 @@ namespace Kroira.App.ViewModels
             RefreshSurfaceState();
         }
 
+        [RelayCommand]
+        public Task ClearChannelFavoritesAsync()
+        {
+            return ClearFavoritesBucketAsync(FavoriteType.Channel);
+        }
+
+        [RelayCommand]
+        public Task ClearMovieFavoritesAsync()
+        {
+            return ClearFavoritesBucketAsync(FavoriteType.Movie);
+        }
+
+        [RelayCommand]
+        public Task ClearSeriesFavoritesAsync()
+        {
+            return ClearFavoritesBucketAsync(FavoriteType.Series);
+        }
+
+        private async Task ClearFavoritesBucketAsync(FavoriteType contentType)
+        {
+            using var scope = _serviceProvider.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var profileService = scope.ServiceProvider.GetRequiredService<IProfileStateService>();
+            var activeProfileId = await profileService.GetActiveProfileIdAsync(db);
+            var favorites = await db.Favorites
+                .Where(favorite => favorite.ProfileId == activeProfileId && favorite.ContentType == contentType)
+                .ToListAsync();
+
+            if (favorites.Count > 0)
+            {
+                db.Favorites.RemoveRange(favorites);
+                await db.SaveChangesAsync();
+            }
+
+            await LoadFavoritesAsync();
+        }
+
         private void NotifyCountsChanged()
         {
             OnPropertyChanged(nameof(FavoriteCountText));
@@ -356,6 +396,9 @@ namespace Kroira.App.ViewModels
             OnPropertyChanged(nameof(ChannelsEmptyVisibility));
             OnPropertyChanged(nameof(MoviesEmptyVisibility));
             OnPropertyChanged(nameof(SeriesEmptyVisibility));
+            OnPropertyChanged(nameof(ClearChannelsVisibility));
+            OnPropertyChanged(nameof(ClearMoviesVisibility));
+            OnPropertyChanged(nameof(ClearSeriesVisibility));
         }
 
         private void RefreshSurfaceState()

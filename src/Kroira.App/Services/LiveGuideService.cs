@@ -221,7 +221,7 @@ namespace Kroira.App.Services
 
         private static int ResolveCatchupLookbackHours()
         {
-            return 96;
+            return 6;
         }
 
         private static EpgStatus ResolveSourceStatus(Models.SourceType sourceType, GuideCredentialSnapshot? credential, EpgSyncLog? epgLog)

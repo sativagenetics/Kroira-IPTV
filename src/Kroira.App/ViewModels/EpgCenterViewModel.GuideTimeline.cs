@@ -36,6 +36,10 @@ namespace Kroira.App.ViewModels
         public double Left { get; set; }
         public double Width { get; set; }
         public string TimeText => $"{StartTimeUtc.ToLocalTime():HH:mm} - {EndTimeUtc.ToLocalTime():HH:mm}";
+        public Visibility TitleVisibility => Width >= 34 ? Visibility.Visible : Visibility.Collapsed;
+        public Visibility TimeVisibility => Width >= 74 ? Visibility.Visible : Visibility.Collapsed;
+        public Visibility DetailVisibility => Width >= 126 && !string.IsNullOrWhiteSpace(DetailText) ? Visibility.Visible : Visibility.Collapsed;
+        public int TitleMaxLines => Width >= 112 ? 2 : 1;
     }
 
     public sealed class GuideTimelineChannelViewModel
@@ -542,7 +546,7 @@ namespace Kroira.App.ViewModels
                 StartTimeUtc = program.StartTimeUtc,
                 EndTimeUtc = program.EndTimeUtc,
                 Left = program.OffsetPercent * GuideTimelineWidth / 100d,
-                Width = Math.Max(48, program.WidthPercent * GuideTimelineWidth / 100d)
+                Width = Math.Max(2, program.WidthPercent * GuideTimelineWidth / 100d)
             };
         }
 

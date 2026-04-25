@@ -75,6 +75,9 @@ namespace Kroira.App.ViewModels
         public Visibility LiveEmptyVisibility => LiveProgressItems.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
         public Visibility MovieEmptyVisibility => MovieProgressItems.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
         public Visibility SeriesEmptyVisibility => SeriesProgressItems.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+        public Visibility ClearLiveVisibility => LiveProgressItems.Count == 0 ? Visibility.Collapsed : Visibility.Visible;
+        public Visibility ClearMovieVisibility => MovieProgressItems.Count == 0 ? Visibility.Collapsed : Visibility.Visible;
+        public Visibility ClearSeriesVisibility => SeriesProgressItems.Count == 0 ? Visibility.Collapsed : Visibility.Visible;
         public int ActiveProfileId { get; private set; } = 1;
 
         public ContinueWatchingViewModel(IServiceProvider serviceProvider)
@@ -182,6 +185,24 @@ namespace Kroira.App.ViewModels
         }
 
         [RelayCommand]
+        public Task ClearLiveProgressAsync()
+        {
+            return ClearProgressBucketAsync(PlaybackContentType.Channel);
+        }
+
+        [RelayCommand]
+        public Task ClearMovieProgressAsync()
+        {
+            return ClearProgressBucketAsync(PlaybackContentType.Movie);
+        }
+
+        [RelayCommand]
+        public Task ClearSeriesProgressAsync()
+        {
+            return ClearProgressBucketAsync(PlaybackContentType.Episode);
+        }
+
+        [RelayCommand]
         public async Task MarkWatchedAsync(ProgressItemViewModel? item)
         {
             if (item == null || item.ContentType == PlaybackContentType.Channel)
@@ -195,6 +216,25 @@ namespace Kroira.App.ViewModels
             var watchStateService = scope.ServiceProvider.GetRequiredService<ILibraryWatchStateService>();
             var activeProfileId = await profileService.GetActiveProfileIdAsync(db);
             await watchStateService.MarkWatchedAsync(db, activeProfileId, item.ContentType, item.ContentId);
+            await LoadProgressAsync();
+        }
+
+        private async Task ClearProgressBucketAsync(PlaybackContentType contentType)
+        {
+            using var scope = _serviceProvider.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var profileService = scope.ServiceProvider.GetRequiredService<IProfileStateService>();
+            var activeProfileId = await profileService.GetActiveProfileIdAsync(db);
+            var progressRows = await db.PlaybackProgresses
+                .Where(progress => progress.ProfileId == activeProfileId && progress.ContentType == contentType)
+                .ToListAsync();
+
+            if (progressRows.Count > 0)
+            {
+                db.PlaybackProgresses.RemoveRange(progressRows);
+                await db.SaveChangesAsync();
+            }
+
             await LoadProgressAsync();
         }
 
@@ -430,6 +470,9 @@ namespace Kroira.App.ViewModels
             OnPropertyChanged(nameof(LiveEmptyVisibility));
             OnPropertyChanged(nameof(MovieEmptyVisibility));
             OnPropertyChanged(nameof(SeriesEmptyVisibility));
+            OnPropertyChanged(nameof(ClearLiveVisibility));
+            OnPropertyChanged(nameof(ClearMovieVisibility));
+            OnPropertyChanged(nameof(ClearSeriesVisibility));
         }
     }
 }

@@ -332,6 +332,38 @@
 
                 <StackPanel Grid.Column="1" Spacing="18">
                     <Border Style="{StaticResource KroiraSettingsGroupStyle}">
+                        <StackPanel Spacing="14">
+                            <StackPanel Spacing="3">
+                                <TextBlock Text="App information" Style="{StaticResource KroiraSectionTitleStyle}" />
+                                <TextBlock Text="About, help, privacy, support, version, and legal information live on a separate information page."
+                                           Style="{StaticResource KroiraBodyStyle}"
+                                           TextWrapping="Wrap" />
+                            </StackPanel>
+
+                            <Border Height="1" Background="{StaticResource KroiraBorderBrush}" Opacity="0.45" />
+
+                            <Grid ColumnSpacing="14">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="{x:Bind ViewModel.AppName, Mode=OneWay}" Style="{StaticResource KroiraTitleStyle}" />
+                                    <TextBlock Text="{x:Bind ViewModel.ReleaseVersionText, Mode=OneWay}"
+                                               Style="{StaticResource KroiraBodyStyle}"
+                                               TextWrapping="Wrap" />
+                                </StackPanel>
+                                <Button Grid.Column="1"
+                                        Content="Open"
+                                        Click="OpenAboutFromSettings_Click"
+                                        Style="{StaticResource KroiraGhostButtonStyle}"
+                                        VerticalAlignment="Center"
+                                        AutomationProperties.Name="Open app information" />
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Style="{StaticResource KroiraSettingsGroupStyle}" Visibility="Collapsed">
                         <StackPanel Spacing="16">
                             <StackPanel Spacing="3">
                                 <TextBlock Text="About" Style="{StaticResource KroiraSectionTitleStyle}" />
@@ -446,7 +478,7 @@
                         </StackPanel>
                     </Border>
 
-                    <Border Style="{StaticResource KroiraSettingsGroupStyle}">
+                    <Border Style="{StaticResource KroiraSettingsGroupStyle}" Visibility="Collapsed">
                         <StackPanel Spacing="14">
                             <StackPanel Spacing="3">
                                 <TextBlock Text="Help" Style="{StaticResource KroiraSectionTitleStyle}" />
@@ -474,7 +506,7 @@
                         </StackPanel>
                     </Border>
 
-                    <Border Style="{StaticResource KroiraSettingsGroupStyle}">
+                    <Border Style="{StaticResource KroiraSettingsGroupStyle}" Visibility="Collapsed">
                         <StackPanel Spacing="14">
                             <StackPanel Spacing="3">
                                 <TextBlock Text="Privacy &amp; Support" Style="{StaticResource KroiraSectionTitleStyle}" />
@@ -608,7 +640,7 @@
                         </StackPanel>
                     </Border>
 
-                    <Border Style="{StaticResource KroiraSettingsGroupStyle}">
+                    <Border Style="{StaticResource KroiraSettingsGroupStyle}" Visibility="Collapsed">
                         <StackPanel Spacing="12">
                             <StackPanel Spacing="3">
                                 <TextBlock Text="Disclaimer" Style="{StaticResource KroiraSectionTitleStyle}" />
@@ -631,6 +663,7 @@
                     <TextBlock Text="Copyright 2026 KROIRA."
                                Foreground="{StaticResource KroiraTextTertiaryBrush}"
                                FontSize="12"
+                               Visibility="Collapsed"
                                Margin="2,0,0,0" />
                 </StackPanel>
             </Grid>

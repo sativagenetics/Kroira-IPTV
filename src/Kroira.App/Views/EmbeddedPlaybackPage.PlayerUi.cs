@@ -279,8 +279,12 @@ namespace Kroira.App.Views
             _isFavorite = await logicalCatalogStateService.IsFavoritedAsync(db, _context.ProfileId, FavoriteType.Channel, currentRow.Channel.Id);
 
             TitleText.Text = currentRow.Channel.Name;
+            TitleText.Visibility = Visibility.Collapsed;
+            ContextText.Text = string.Empty;
+            ContextText.Visibility = Visibility.Collapsed;
             BottomLiveTitleText.Text = currentRow.Channel.Name;
-            BottomLiveMetaText.Text = "Guide not available.";
+            BottomLiveMetaText.Text = string.Empty;
+            BottomLiveMetaText.Visibility = Visibility.Collapsed;
 
             var browsePreferences = await browsePreferencesService.GetAsync(db, ProfileDomains.Live, _context.ProfileId);
             var logicalKeyByChannelId = visibleRows.ToDictionary(
@@ -369,6 +373,7 @@ namespace Kroira.App.Views
             _favoriteContentId = movie.Id;
             _isFavorite = await logicalCatalogStateService.IsFavoritedAsync(db, _context.ProfileId, FavoriteType.Movie, movie.Id);
             _resolvedSourceName = movie.CategoryName;
+            TitleText.Visibility = Visibility.Visible;
             TitleText.Text = movie.Title;
             ContextText.Text = movie.MetadataLine;
             ContextText.Visibility = string.IsNullOrWhiteSpace(ContextText.Text) ? Visibility.Collapsed : Visibility.Visible;
@@ -413,6 +418,7 @@ namespace Kroira.App.Views
             _favoriteContentId = series.Id;
             _isFavorite = await logicalCatalogStateService.IsFavoritedAsync(db, _context.ProfileId, FavoriteType.Series, series.Id);
             _resolvedSourceName = series.Title;
+            TitleText.Visibility = Visibility.Visible;
             TitleText.Text = series.Title;
             ContextText.Text = $"S{season.SeasonNumber:00} E{episode.EpisodeNumber:00}  {episode.Title}";
             ContextText.Visibility = Visibility.Visible;
@@ -549,14 +555,11 @@ namespace Kroira.App.Views
             if (IsChannelPlayback())
             {
                 BottomLiveTitleText.Text = TitleText.Text;
-                var secondaryText = IsCatchupPlayback()
-                    ? BuildCatchupContextText()
-                    : _resolvedGuideSummary;
-                ContextText.Text = string.IsNullOrWhiteSpace(_resolvedSourceName)
-                    ? secondaryText
-                    : string.IsNullOrWhiteSpace(secondaryText)
-                        ? _resolvedSourceName
-                        : $"{_resolvedSourceName}  •  {_resolvedGuideSummary}";
+                BottomLiveMetaText.Text = string.Empty;
+                BottomLiveMetaText.Visibility = Visibility.Collapsed;
+                ContextText.Text = string.Empty;
+                ContextText.Visibility = Visibility.Collapsed;
+                return;
             }
 
             ContextText.Visibility = string.IsNullOrWhiteSpace(ContextText.Text) ? Visibility.Collapsed : Visibility.Visible;
@@ -578,7 +581,8 @@ namespace Kroira.App.Views
                 ? summary.SourceStatusSummary
                 : $"{summary.SourceStatusSummary}  â€¢  {summary.CatchupStatusSummary}";
             BottomLiveTitleText.Text = TitleText.Text;
-            BottomLiveMetaText.Text = BuildChannelMeta(summary);
+            BottomLiveMetaText.Text = string.Empty;
+            BottomLiveMetaText.Visibility = Visibility.Collapsed;
             _guideProgramItems.Clear();
             foreach (var program in summary.TimelinePrograms)
             {
@@ -613,9 +617,8 @@ namespace Kroira.App.Views
             _guideProgramItems.Clear();
             _resolvedGuideSummary = string.Empty;
             BottomLiveTitleText.Text = TitleText.Text;
-            BottomLiveMetaText.Text = IsCatchupPlayback()
-                ? BuildCatchupContextText()
-                : IsChannelPlayback() ? "Guide not available." : string.Empty;
+            BottomLiveMetaText.Text = string.Empty;
+            BottomLiveMetaText.Visibility = Visibility.Collapsed;
         }
 
         private string BuildChannelMeta(ChannelGuideSummary? summary)

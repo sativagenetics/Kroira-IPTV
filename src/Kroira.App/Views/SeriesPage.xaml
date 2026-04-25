@@ -29,10 +29,10 @@
 
         <Style x:Key="CategoryRailItemContainerStyle" TargetType="ListViewItem">
             <Setter Property="Padding" Value="0" />
-            <Setter Property="Margin" Value="0,0,8,0" />
+            <Setter Property="Margin" Value="0,0,0,6" />
             <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-            <Setter Property="MinHeight" Value="34" />
-            <Setter Property="CornerRadius" Value="18" />
+            <Setter Property="MinHeight" Value="42" />
+            <Setter Property="CornerRadius" Value="12" />
         </Style>
 
         <Style x:Key="FavoritePillButtonStyle" TargetType="Button" BasedOn="{StaticResource KroiraGhostButtonStyle}">
@@ -46,18 +46,23 @@
         <controls:AmbientPageBackground />
 
         <Grid Padding="30,26,30,34"
-              MaxWidth="1480"
+              MaxWidth="1660"
               HorizontalAlignment="Center"
               RowSpacing="16"
+              ColumnSpacing="16"
               Visibility="{x:Bind ViewModel.ContentShellVisibility, Mode=OneWay}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
+            <RowDefinition Height="0" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="186" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
 
-        <Grid Grid.Row="0" ColumnSpacing="18">
+        <Grid Grid.Row="0" Grid.ColumnSpan="2" ColumnSpacing="18">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
@@ -76,6 +81,7 @@
         </Grid>
 
         <Border Grid.Row="1"
+                Grid.ColumnSpan="2"
                 Background="#42070B12"
                 BorderBrush="Transparent"
                 BorderThickness="0"
@@ -134,7 +140,8 @@
         </Border>
 
         <ListView x:Name="CategoryList"
-                  Grid.Row="2"
+                  Grid.Row="3"
+                  Grid.Column="0"
                   ItemsSource="{x:Bind ViewModel.Categories, Mode=OneWay}"
                   SelectedItem="{x:Bind ViewModel.SelectedCategory, Mode=TwoWay}"
                   SelectionMode="Single"
@@ -142,41 +149,67 @@
                   Background="Transparent"
                   BorderThickness="0"
                   Padding="0"
-                  ScrollViewer.HorizontalScrollMode="Enabled"
-                  ScrollViewer.HorizontalScrollBarVisibility="Hidden"
-                  ScrollViewer.VerticalScrollMode="Disabled"
-                  ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                  ScrollViewer.HorizontalScrollMode="Disabled"
+                  ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                  ScrollViewer.VerticalScrollMode="Enabled"
+                  ScrollViewer.VerticalScrollBarVisibility="Auto"
                   AutomationProperties.Name="Series categories">
-            <ListView.ItemsPanel>
-                <ItemsPanelTemplate>
-                    <ItemsStackPanel Orientation="Horizontal" />
-                </ItemsPanelTemplate>
-            </ListView.ItemsPanel>
             <ListView.ItemTemplate>
                 <DataTemplate x:DataType="viewModels:BrowserCategoryViewModel">
-                    <Grid MinWidth="92">
+                    <Grid MinHeight="44">
                         <Border Background="{StaticResource KroiraAccentContainerBrush}"
                                 BorderBrush="{StaticResource KroiraChromeLineBrush}"
                                 BorderThickness="1"
-                                CornerRadius="18"
+                                CornerRadius="12"
                                 Opacity="{x:Bind SelectionBackgroundOpacity, Mode=OneWay}" />
                         <Border BorderBrush="{StaticResource KroiraAccentBrush}"
                                 BorderThickness="1"
-                                CornerRadius="18"
+                                CornerRadius="12"
                                 Opacity="{x:Bind SelectionChromeOpacity, Mode=OneWay}" />
-                        <TextBlock Text="{x:Bind Name, Mode=OneWay}"
-                                   Style="{StaticResource KroiraMetaStyle}"
-                                   Foreground="{StaticResource KroiraTextPrimaryBrush}"
-                                   FontSize="12"
-                                   FontWeight="SemiBold"
-                                   TextTrimming="CharacterEllipsis"
-                                   Padding="14,8" />
+                        <Border Width="3"
+                                HorizontalAlignment="Left"
+                                Margin="0,7,0,7"
+                                CornerRadius="2"
+                                Background="{StaticResource KroiraAccentBrush}"
+                                Opacity="{x:Bind SelectionAccentOpacity, Mode=OneWay}" />
+                        <Grid Padding="12,8,10,8" ColumnSpacing="8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Spacing="1">
+                                <TextBlock Text="{x:Bind Name, Mode=OneWay}"
+                                           Foreground="{StaticResource KroiraTextPrimaryBrush}"
+                                           FontSize="12"
+                                           FontWeight="SemiBold"
+                                           TextTrimming="CharacterEllipsis" />
+                                <TextBlock Text="{x:Bind Description, Mode=OneWay}"
+                                           Visibility="{x:Bind DescriptionVisibility, Mode=OneWay}"
+                                           Foreground="{StaticResource KroiraTextTertiaryBrush}"
+                                           FontSize="10"
+                                           MaxLines="1"
+                                           TextTrimming="CharacterEllipsis" />
+                            </StackPanel>
+                            <Border Grid.Column="1"
+                                    Background="#1AFFFFFF"
+                                    BorderBrush="{StaticResource KroiraChromeLineBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="9"
+                                    Padding="6,2"
+                                    VerticalAlignment="Center"
+                                    Visibility="{x:Bind CountVisibility, Mode=OneWay}">
+                                <TextBlock Text="{x:Bind CountText, Mode=OneWay}"
+                                           Foreground="{StaticResource KroiraTextSecondaryBrush}"
+                                           FontSize="10"
+                                           FontWeight="SemiBold" />
+                            </Border>
+                        </Grid>
                     </Grid>
                 </DataTemplate>
             </ListView.ItemTemplate>
         </ListView>
 
-        <Grid Grid.Row="3" ColumnSpacing="20">
+        <Grid Grid.Row="3" Grid.Column="1" ColumnSpacing="20">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="370" />
@@ -256,27 +289,27 @@
                                                     IsHitTestVisible="False"
                                                     HorizontalAlignment="Stretch"
                                                     VerticalAlignment="Bottom"
-                                                    Margin="8"
-                                                    CornerRadius="13"
-                                                    Padding="8"
-                                                    Background="#C805070B">
-                                                <Grid ColumnSpacing="8">
+                                                    Margin="10"
+                                                    CornerRadius="18"
+                                                    Padding="6"
+                                                    Background="#A805070B">
+                                                <Grid ColumnSpacing="6">
                                                     <Grid.ColumnDefinitions>
                                                         <ColumnDefinition Width="*" />
                                                         <ColumnDefinition Width="Auto" />
                                                     </Grid.ColumnDefinitions>
                                                     <Border HorizontalAlignment="Left"
-                                                            Background="{StaticResource KroiraAccentContainerBrush}"
+                                                            Background="#66111827"
                                                             BorderBrush="{StaticResource KroiraAccentBrush}"
                                                             BorderThickness="1"
-                                                            CornerRadius="12"
-                                                            Padding="10,6">
-                                                        <StackPanel Orientation="Horizontal" Spacing="6">
+                                                            CornerRadius="13"
+                                                            Padding="8,5">
+                                                        <StackPanel Orientation="Horizontal" Spacing="5">
                                                             <FontIcon Glyph="&#xE7C3;"
-                                                                      FontSize="11"
+                                                                      FontSize="10"
                                                                       Foreground="{StaticResource KroiraAccentBrush}" />
                                                             <TextBlock Text="Details"
-                                                                       FontSize="12"
+                                                                       FontSize="11"
                                                                        FontWeight="SemiBold"
                                                                        Foreground="{StaticResource KroiraTextPrimaryBrush}" />
                                                         </StackPanel>
@@ -285,17 +318,17 @@
                                                             Click="FavoriteToggle_Click"
                                                             Tag="{Binding Id}"
                                                             ToolTipService.ToolTip="{Binding FavoriteLabel}"
-                                                            Width="30"
-                                                            Height="30"
+                                                            Width="28"
+                                                            Height="28"
                                                             Padding="0"
                                                             MinWidth="0"
                                                             MinHeight="0"
                                                             Background="#201A2030"
                                                             BorderBrush="{StaticResource KroiraChromeLineBrush}"
                                                             BorderThickness="1"
-                                                            CornerRadius="15">
+                                                            CornerRadius="14">
                                                         <FontIcon Glyph="{Binding FavoriteGlyph}"
-                                                                  FontSize="12"
+                                                                  FontSize="11"
                                                                   Foreground="{StaticResource KroiraAccentBrush}" />
                                                     </Button>
                                                 </Grid>

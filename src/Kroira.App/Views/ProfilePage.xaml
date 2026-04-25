@@ -65,9 +65,55 @@
                 <StackPanel Spacing="18">
                     <Border Style="{StaticResource KroiraSettingsGroupStyle}">
                         <StackPanel Spacing="16">
-                            <TextBlock Text="Active profile" Style="{StaticResource KroiraSectionTitleStyle}" />
-                            <TextBlock Text="{x:Bind ViewModel.ProfileCountText, Mode=OneWay}"
-                                       Style="{StaticResource KroiraBodyStyle}" />
+                            <StackPanel Spacing="3">
+                                <TextBlock Text="Local profile management" Style="{StaticResource KroiraSectionTitleStyle}" />
+                                <TextBlock Text="{x:Bind ViewModel.LocalProfileExplanationText, Mode=OneWay}"
+                                           Style="{StaticResource KroiraBodyStyle}"
+                                           TextWrapping="Wrap" />
+                            </StackPanel>
+
+                            <Border Height="1" Background="{StaticResource KroiraBorderBrush}" Opacity="0.45" />
+
+                            <Border Background="#50111827"
+                                    BorderBrush="{StaticResource KroiraChromeLineBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="16"
+                                    Padding="16">
+                                <Grid ColumnSpacing="14">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="64" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <Border Width="58"
+                                            Height="58"
+                                            CornerRadius="18"
+                                            Background="{StaticResource KroiraAccentContainerBrush}"
+                                            BorderBrush="{StaticResource KroiraAccentBrush}"
+                                            BorderThickness="1">
+                                        <FontIcon Glyph="&#xE77B;"
+                                                  FontSize="24"
+                                                  Foreground="{StaticResource KroiraAccentBrush}" />
+                                    </Border>
+                                    <StackPanel Grid.Column="1" Spacing="4" VerticalAlignment="Center">
+                                        <TextBlock Text="{x:Bind ViewModel.ActiveProfileName, Mode=OneWay}"
+                                                   Style="{StaticResource KroiraSectionTitleStyle}"
+                                                   MaxLines="1"
+                                                   TextTrimming="CharacterEllipsis" />
+                                        <TextBlock Text="{x:Bind ViewModel.SelectedProfileTypeText, Mode=OneWay}"
+                                                   Style="{StaticResource KroiraBodyStyle}" />
+                                    </StackPanel>
+                                    <Border Grid.Column="2"
+                                            Style="{StaticResource KroiraCountBadgeStyle}"
+                                            Padding="9,5"
+                                            VerticalAlignment="Center">
+                                        <TextBlock Text="{x:Bind ViewModel.ProfileCountText, Mode=OneWay}"
+                                                   Foreground="{StaticResource KroiraAccentBrush}"
+                                                   FontSize="11"
+                                                   FontWeight="SemiBold" />
+                                    </Border>
+                                </Grid>
+                            </Border>
 
                             <ComboBox Visibility="{x:Bind ViewModel.ProfileSwitcherVisibility, Mode=OneWay}"
                                       Style="{StaticResource KroiraComboBoxStyle}"

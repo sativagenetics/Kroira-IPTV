@@ -104,6 +104,7 @@
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
                         <StackPanel Spacing="3">
                             <TextBlock Text="Live TV" Style="{StaticResource KroiraSectionTitleStyle}" />
@@ -121,6 +122,13 @@
                                        FontSize="10"
                                        FontWeight="SemiBold" />
                         </Border>
+                        <Button Grid.Column="2"
+                                Content="Clear all"
+                                Click="ClearChannelFavorites_Click"
+                                Style="{StaticResource QuietManagementButtonStyle}"
+                                Visibility="{x:Bind ViewModel.ClearChannelsVisibility, Mode=OneWay}"
+                                VerticalAlignment="Center"
+                                AutomationProperties.Name="Clear all favorite live channels" />
                     </Grid>
 
                     <Grid Grid.Row="1" Padding="10,0,10,12">
@@ -194,6 +202,7 @@
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
                         <StackPanel Spacing="3">
                             <TextBlock Text="Movies" Style="{StaticResource KroiraSectionTitleStyle}" />
@@ -202,6 +211,13 @@
                         <Border Grid.Column="1" Style="{StaticResource KroiraCountBadgeStyle}" Padding="8,4">
                             <TextBlock Text="{x:Bind ViewModel.MovieCountText, Mode=OneWay}" Foreground="{StaticResource KroiraAccentBrush}" FontSize="10" FontWeight="SemiBold" />
                         </Border>
+                        <Button Grid.Column="2"
+                                Content="Clear all"
+                                Click="ClearMovieFavorites_Click"
+                                Style="{StaticResource QuietManagementButtonStyle}"
+                                Visibility="{x:Bind ViewModel.ClearMoviesVisibility, Mode=OneWay}"
+                                VerticalAlignment="Center"
+                                AutomationProperties.Name="Clear all favorite movies" />
                     </Grid>
 
                     <Grid Grid.Row="1" Padding="10,0,10,12">
@@ -266,6 +282,7 @@
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
                         <StackPanel Spacing="3">
                             <TextBlock Text="Series" Style="{StaticResource KroiraSectionTitleStyle}" />
@@ -274,6 +291,13 @@
                         <Border Grid.Column="1" Style="{StaticResource KroiraCountBadgeStyle}" Padding="8,4">
                             <TextBlock Text="{x:Bind ViewModel.SeriesCountText, Mode=OneWay}" Foreground="{StaticResource KroiraAccentBrush}" FontSize="10" FontWeight="SemiBold" />
                         </Border>
+                        <Button Grid.Column="2"
+                                Content="Clear all"
+                                Click="ClearSeriesFavorites_Click"
+                                Style="{StaticResource QuietManagementButtonStyle}"
+                                Visibility="{x:Bind ViewModel.ClearSeriesVisibility, Mode=OneWay}"
+                                VerticalAlignment="Center"
+                                AutomationProperties.Name="Clear all favorite series" />
                     </Grid>
 
                     <Grid Grid.Row="1" Padding="10,0,10,12">

@@ -190,6 +190,9 @@ namespace Kroira.App.Views
 
             _context = context;
             TitleText.Text = TitleForContext(context);
+            TitleText.Visibility = context.ContentType == PlaybackContentType.Channel ? Visibility.Collapsed : Visibility.Visible;
+            ContextText.Text = string.Empty;
+            ContextText.Visibility = Visibility.Collapsed;
             StartNewPlaybackSession();
             var windowManager = AppServices.GetRequiredService<IWindowManagerService>();
             _windowManager = windowManager;

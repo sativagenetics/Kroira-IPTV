@@ -183,8 +183,9 @@ namespace Kroira.App.ViewModels
     {
         private const string Domain = ProfileDomains.Movies;
         private const string FixedFeaturedMovieTitle = "Kurtlar Vadisi Gladio";
-        private const int BrowseGridColumns = 5;
+        private const int BrowseGridColumns = 6;
         private const int InitialDisplayMovieSlotBatchSize = BrowseGridColumns * 2;
+        private const int DeferredSlotAppendBatchSize = BrowseGridColumns * 8;
         private const int SearchApplyDebounceMilliseconds = 180;
         private readonly IServiceProvider _serviceProvider;
         private readonly IBrowsePreferencesService _browsePreferencesService;
@@ -469,13 +470,11 @@ namespace Kroira.App.ViewModels
                 }
 
                 ApplyFilter("load-movies");
-                var displayRefreshTask = _displayMovieSlotRefreshTask;
                 SurfaceState = surfaceStateService.ResolveSourceBackedState(sourceAvailability, _allMovieGroups.Count, SurfaceStateCopies.Movies);
                 _hasLoadedOnce = true;
                 OnPropertyChanged(nameof(HasLoadedOnce));
                 await Task.Yield();
                 BuildCategoryManagerOptions();
-                await displayRefreshTask;
                 LogBrowse(
                     $"load ready fullMs={loadStopwatch.ElapsedMilliseconds} groups={_allMovieGroups.Count} results={_filteredMovies.Count} slots={DisplayMovieSlots.Count}");
                 StartMetadataEnrichment();
@@ -957,7 +956,18 @@ namespace Kroira.App.ViewModels
                     return;
                 }
 
-                DisplayMovieSlots.AppendRange(deferredSlots);
+                for (var index = 0; index < deferredSlots.Count; index += DeferredSlotAppendBatchSize)
+                {
+                    if (refreshVersion != _movieSlotRefreshVersion)
+                    {
+                        return;
+                    }
+
+                    DisplayMovieSlots.AppendRange(deferredSlots.GetRange(
+                        index,
+                        Math.Min(DeferredSlotAppendBatchSize, deferredSlots.Count - index)));
+                    await Task.Yield();
+                }
             }
             catch (Exception ex)
             {

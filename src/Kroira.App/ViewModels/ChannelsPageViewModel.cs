@@ -63,6 +63,7 @@ namespace Kroira.App.ViewModels
         private int _lastPreDiscoveryCount;
         private bool _lastDiscoveryFacetFiltersActive;
         private bool _isInitializing;
+        private bool _hasLoadedOnce;
         private ChannelsNavigationContext? _navigationContext;
 
         public BulkObservableCollection<BrowserChannelViewModel> FilteredChannels { get; } = new();
@@ -128,6 +129,7 @@ namespace Kroira.App.ViewModels
 
         public bool HasManageCategorySelection => SelectedManageCategory != null;
         public string BrowseResultTitle => SelectedCategory?.Name ?? "All channels";
+        public bool HasLoadedOnce => _hasLoadedOnce;
         public string BrowseResultSubtitle => ResolveBrowseResultSubtitle();
         public string BrowseResultCountText => FilteredChannels.Count == 1
             ? "1 channel"
@@ -163,8 +165,10 @@ namespace Kroira.App.ViewModels
 
         partial void OnSelectedCategoryChanged(BrowserCategoryViewModel? value)
         {
+            UpdateCategorySelectionState(value?.FilterKey ?? string.Empty);
             if (_isInitializing)
             {
+                NotifyBrowseResultChanged();
                 return;
             }
 
@@ -296,6 +300,29 @@ namespace Kroira.App.ViewModels
         {
             _navigationContext = context?.Mode == ChannelsNavigationMode.Sports ? context : null;
             Log($"NAV: context set mode={_navigationContext?.Mode.ToString() ?? "Default"}");
+        }
+
+        public void RefreshNavigationContext(ChannelsNavigationContext? context)
+        {
+            SetNavigationContext(context);
+            if (!_hasLoadedOnce || Categories.Count == 0)
+            {
+                return;
+            }
+
+            _isInitializing = true;
+            try
+            {
+                ApplyInitialFilterSelection();
+            }
+            finally
+            {
+                _isInitializing = false;
+            }
+
+            UpdateCategorySelectionState(SelectedCategory?.FilterKey ?? string.Empty);
+            NotifyBrowseResultChanged();
+            QueueApplyFilter();
         }
 
         [RelayCommand]
@@ -462,9 +489,12 @@ namespace Kroira.App.ViewModels
                     _isInitializing = false;
                 }
 
+                UpdateCategorySelectionState(SelectedCategory?.FilterKey ?? string.Empty);
                 Log("05: initialized selected filters");
                 QueueApplyFilter();
                 SurfaceState = surfaceStateService.ResolveSourceBackedState(sourceAvailability, _allChannels.Count, SurfaceStateCopies.LiveTv);
+                _hasLoadedOnce = true;
+                OnPropertyChanged(nameof(HasLoadedOnce));
                 Log("06: queued ApplyFilter");
             }
             catch (Exception ex)
@@ -1491,6 +1521,16 @@ namespace Kroira.App.ViewModels
                 {
                     _isInitializing = false;
                 }
+            }
+
+            UpdateCategorySelectionState(targetCategory?.FilterKey ?? string.Empty);
+        }
+
+        private void UpdateCategorySelectionState(string selectedKey)
+        {
+            foreach (var category in Categories)
+            {
+                category.IsSelected = string.Equals(category.FilterKey, selectedKey, StringComparison.OrdinalIgnoreCase);
             }
         }
 

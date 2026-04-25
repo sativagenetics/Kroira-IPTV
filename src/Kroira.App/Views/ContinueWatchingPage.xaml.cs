@@ -1,3 +1,5 @@
+using System;
+using System.Threading.Tasks;
 using Kroira.App.Models;
 using Kroira.App.Services;
 using Kroira.App.ViewModels;
@@ -83,6 +85,48 @@ namespace Kroira.App.Views
             if (sender is FrameworkElement { DataContext: ProgressItemViewModel item })
             {
                 _ = ViewModel.MarkUnwatchedCommand.ExecuteAsync(item);
+            }
+        }
+
+        private async void ClearLiveProgress_Click(object sender, RoutedEventArgs e)
+        {
+            await ConfirmAndRunAsync(
+                "Clear all live resume items?",
+                "This removes every saved live resume entry for the active profile on this device.",
+                () => ViewModel.ClearLiveProgressCommand.ExecuteAsync(null));
+        }
+
+        private async void ClearMovieProgress_Click(object sender, RoutedEventArgs e)
+        {
+            await ConfirmAndRunAsync(
+                "Clear all movie queue items?",
+                "This removes every saved movie resume entry for the active profile on this device.",
+                () => ViewModel.ClearMovieProgressCommand.ExecuteAsync(null));
+        }
+
+        private async void ClearSeriesProgress_Click(object sender, RoutedEventArgs e)
+        {
+            await ConfirmAndRunAsync(
+                "Clear all series queue items?",
+                "This removes every saved episode resume entry for the active profile on this device.",
+                () => ViewModel.ClearSeriesProgressCommand.ExecuteAsync(null));
+        }
+
+        private async Task ConfirmAndRunAsync(string title, string message, Func<Task> action)
+        {
+            var dialog = new ContentDialog
+            {
+                Title = title,
+                Content = message,
+                PrimaryButtonText = "Clear all",
+                CloseButtonText = "Cancel",
+                DefaultButton = ContentDialogButton.Close,
+                XamlRoot = XamlRoot
+            };
+
+            if (await dialog.ShowAsync() == ContentDialogResult.Primary)
+            {
+                await action();
             }
         }
 

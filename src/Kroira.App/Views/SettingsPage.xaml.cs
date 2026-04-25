@@ -112,6 +112,11 @@ namespace Kroira.App.Views
             Frame.Navigate(typeof(EpgCenterPage));
         }
 
+        private void OpenAboutFromSettings_Click(object sender, RoutedEventArgs e)
+        {
+            Frame.Navigate(typeof(AboutPage));
+        }
+
         private Windows.Storage.Pickers.FileSavePicker CreateSavePicker()
         {
             var picker = new Windows.Storage.Pickers.FileSavePicker
