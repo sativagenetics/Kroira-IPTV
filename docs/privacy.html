@@ -37,16 +37,28 @@
   <div class="box">
     <p>Last updated: April 2026</p>
 
-    <p>KROIRA IPTV is a Windows desktop IPTV player for user-provided sources. It supports user-provided M3U playlists, Xtream providers, and Stalker portals. KROIRA does not provide channels, playlists, credentials, subscriptions, or hosted content.</p>
+    <p>KROIRA IPTV is a Windows media player and source manager for user-provided M3U playlists, Xtream providers, and Stalker portals. KROIRA does not provide channels, streams, playlists, subscriptions, credentials, or media content.</p>
 
     <h2>What the app uses</h2>
-    <p>The app can connect to user-provided source endpoints, guide endpoints, poster artwork endpoints, and optional local routing or companion endpoints configured by the user.</p>
+    <p>The app can connect to user-provided source endpoints, XMLTV guide endpoints, poster/artwork endpoints, metadata provider endpoints, and optional local routing or companion endpoints configured by the user.</p>
 
-    <h2>Local data</h2>
-    <p>KROIRA stores app-related data locally on the device, including source configuration, guide settings, favorites, playback progress, continue-watching data, and local preferences.</p>
+    <h2>Local data storage</h2>
+    <p>KROIRA stores app-related data locally on the device, including source configuration, guide settings, cached guide data, favorites, playback progress, continue-watching data, source health diagnostics, protected credential records, and local preferences.</p>
 
-    <h2>Personal data</h2>
-    <p>KROIRA is not a content provider, does not sell user data to advertisers, and does not operate telemetry servers for your media URLs or provider credentials. Users are responsible for the sources they add and the information those sources expose.</p>
+    <h2>Source credentials</h2>
+    <p>Source credentials are used only to connect to sources that the user configures. KROIRA uses protected credential copies with Windows DPAPI CurrentUser scope when available. Some plaintext source fields may remain for backward compatibility with existing import and parser flows; they are not removed destructively in this release.</p>
+
+    <h2>Diagnostics and logs</h2>
+    <p>Sanitized diagnostics and exported source reports are designed to mask playlist URLs, usernames, passwords, tokens, keys, MAC-like values, and loose secrets before display or export. Users should still review exported diagnostics before sharing them because provider names and non-secret configuration may remain.</p>
+
+    <h2>Telemetry</h2>
+    <p>KROIRA does not bundle app telemetry, advertising analytics, or a vendor-operated media URL collection service in this release.</p>
+
+    <h2>Metadata providers</h2>
+    <p>When metadata enrichment is used, KROIRA may contact metadata or artwork providers such as TMDb, plus image URLs supplied by user-configured sources, to improve titles, posters, and backdrops. KROIRA does not send source passwords or provider tokens to TMDb.</p>
+
+    <h2>User responsibility</h2>
+    <p>KROIRA is not a content provider. Users are responsible for adding only authorized sources and for understanding what information their configured sources expose. KROIRA does not bypass DRM, paywalls, authentication, or access controls.</p>
 
     <h2>Network access</h2>
     <p>Network access is used to connect to user-provided IPTV sources, XMLTV guide data, metadata/artwork endpoints, and optional local companion or proxy services that the user configures.</p>

@@ -27,4 +27,4 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\validate-release.p
 
 ## Content Disclaimer
 
-KROIRA IPTV is a media player utility for user-provided sources. It does not include, sell, provide, host, curate, or distribute channels, playlists, stream credentials, subscriptions, or copyrighted content. Users are responsible for the legality, availability, and safety of the sources they add.
+KROIRA IPTV is a media player and source manager for user-provided sources. It does not include, sell, provide, host, curate, or distribute channels, streams, playlists, credentials, subscriptions, or media content. Users are responsible for adding only authorized sources and complying with applicable provider terms and laws. KROIRA does not bypass DRM, paywalls, authentication, or access controls.

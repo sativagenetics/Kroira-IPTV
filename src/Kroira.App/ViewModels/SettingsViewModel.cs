@@ -96,12 +96,18 @@ namespace Kroira.App.ViewModels
         public bool CanStartBackupAction => CanUseBackupRestore && !IsBackupBusy;
         public bool HasBackupStatus => !string.IsNullOrWhiteSpace(BackupStatusText);
         public string AppName => AppSubmissionInfo.AppName;
+        public string ReleaseVersionText => $"Release {AppSubmissionInfo.ReleaseVersion}";
+        public string ShortDescription => AppSubmissionInfo.ShortDescription;
         public string ProductDescription => AppSubmissionInfo.ProductDescription;
         public string HelpStepOne => AppSubmissionInfo.HelpStepOne;
         public string HelpStepTwo => AppSubmissionInfo.HelpStepTwo;
         public string HelpStepThree => AppSubmissionInfo.HelpStepThree;
         public string HelpStepFour => AppSubmissionInfo.HelpStepFour;
         public string PrivacySummaryText => AppSubmissionInfo.PrivacySummary;
+        public string CredentialHandlingText => AppSubmissionInfo.CredentialHandlingSummary;
+        public string SanitizedLogsText => AppSubmissionInfo.SanitizedLogsSummary;
+        public string TelemetryText => AppSubmissionInfo.TelemetrySummary;
+        public string MetadataProviderText => AppSubmissionInfo.MetadataProviderSummary;
         public string PrivacyPolicyDisplayText => AppSubmissionInfo.PrivacyPolicyDisplayText;
         public bool CanOpenPrivacyPolicy => AppSubmissionInfo.HasPrivacyPolicyUrl;
         public string SupportPageDisplayText => AppSubmissionInfo.SupportPageDisplayText;
@@ -109,7 +115,16 @@ namespace Kroira.App.ViewModels
         public string SupportEmailText => AppSubmissionInfo.SupportEmailDisplayText;
         public bool CanEmailSupport => AppSubmissionInfo.HasSupportEmail;
         public string SupportSummaryText => AppSubmissionInfo.SupportSummary;
+        public string SupportAuthenticationFailureText => AppSubmissionInfo.SupportAuthenticationFailure;
+        public string SupportNoChannelsText => AppSubmissionInfo.SupportNoChannels;
+        public string SupportNoEpgText => AppSubmissionInfo.SupportNoEpg;
+        public string SupportWrongEpgText => AppSubmissionInfo.SupportWrongEpg;
+        public string SupportStreamDoesNotPlayText => AppSubmissionInfo.SupportStreamDoesNotPlay;
+        public string SupportStoreInstallText => AppSubmissionInfo.SupportStoreInstall;
+        public string SupportResetAppDataText => AppSubmissionInfo.SupportResetAppData;
+        public string SupportExportDiagnosticsText => AppSubmissionInfo.SupportExportDiagnostics;
         public string LegalDisclaimerText => AppSubmissionInfo.LegalDisclaimer;
+        public string RunFullTrustJustificationText => AppSubmissionInfo.RunFullTrustJustification;
 
         partial void OnSelectedLanguageChanged(LanguageOptionViewModel value)
         {
