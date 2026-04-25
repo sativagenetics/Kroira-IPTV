@@ -232,74 +232,21 @@
                                                 <Grid Grid.Column="1"
                                                       Width="{x:Bind TimelineWidth}"
                                                       Height="76"
-                                                      Background="#18000000">
+                                                      Background="#18000000"
+                                                      Loaded="ClipToBounds_Loaded"
+                                                      SizeChanged="ClipToBounds_SizeChanged">
                                                     <TextBlock Text="No guide in this range"
                                                                Visibility="{x:Bind EmptyGuideVisibility}"
                                                                Margin="12,0,0,0"
                                                                VerticalAlignment="Center"
                                                                Style="{StaticResource KroiraMetaStyle}"
                                                                Foreground="{StaticResource KroiraTextTertiaryBrush}" />
-                                                    <ItemsControl ItemsSource="{x:Bind Programs}"
-                                                                  Width="{x:Bind TimelineWidth}"
-                                                                  Height="76">
-                                                        <ItemsControl.ItemsPanel>
-                                                            <ItemsPanelTemplate>
-                                                                <Canvas Height="76" />
-                                                            </ItemsPanelTemplate>
-                                                        </ItemsControl.ItemsPanel>
-                                                        <ItemsControl.ItemContainerStyle>
-                                                            <Style TargetType="ContentPresenter">
-                                                                <Setter Property="Canvas.Left" Value="{Binding Left}" />
-                                                            </Style>
-                                                        </ItemsControl.ItemContainerStyle>
-                                                        <ItemsControl.ItemTemplate>
-                                                            <DataTemplate x:DataType="vm:GuideTimelineProgramViewModel">
-                                                                <Button Width="{x:Bind Width}"
-                                                                        MinWidth="0"
-                                                                        Height="54"
-                                                                        Margin="0,10,0,10"
-                                                                        Padding="6,4"
-                                                                        Background="#4E111827"
-                                                                        BorderBrush="{StaticResource KroiraChromeLineBrush}"
-                                                                        BorderThickness="1"
-                                                                        CornerRadius="9"
-                                                                        HorizontalContentAlignment="Stretch"
-                                                                        VerticalContentAlignment="Stretch"
-                                                                        Click="TimelineProgram_Click"
-                                                                        CommandParameter="{Binding}"
-                                                                        ToolTipService.ToolTip="{x:Bind ToolTipText}">
-                                                                    <Grid>
-                                                                        <FontIcon Glyph="&#xE121;"
-                                                                                  FontSize="9"
-                                                                                  Foreground="{StaticResource KroiraAccentBrush}"
-                                                                                  HorizontalAlignment="Center"
-                                                                                  VerticalAlignment="Center"
-                                                                                  Visibility="{x:Bind CompactGlyphVisibility}" />
-                                                                    <StackPanel Spacing="1"
-                                                                                Visibility="{x:Bind TitleVisibility}">
-                                                                        <TextBlock Text="{x:Bind Title}"
-                                                                                   FontWeight="SemiBold"
-                                                                                   FontSize="12"
-                                                                                   MaxLines="{x:Bind TitleMaxLines}"
-                                                                                   TextTrimming="CharacterEllipsis" />
-                                                                        <TextBlock Text="{x:Bind TimeText}"
-                                                                                   Style="{StaticResource KroiraMetaStyle}"
-                                                                                   Foreground="{StaticResource KroiraTextSecondaryBrush}"
-                                                                                   MaxLines="1"
-                                                                                   Visibility="{x:Bind TimeVisibility}"
-                                                                                   TextTrimming="CharacterEllipsis" />
-                                                                        <TextBlock Text="{x:Bind DetailText}"
-                                                                                   Style="{StaticResource KroiraMetaStyle}"
-                                                                                   Foreground="{StaticResource KroiraTextTertiaryBrush}"
-                                                                                   MaxLines="1"
-                                                                                   Visibility="{x:Bind DetailVisibility}"
-                                                                                   TextTrimming="CharacterEllipsis" />
-                                                                    </StackPanel>
-                                                                    </Grid>
-                                                                </Button>
-                                                            </DataTemplate>
-                                                        </ItemsControl.ItemTemplate>
-                                                    </ItemsControl>
+                                                    <Canvas Width="{x:Bind TimelineWidth}"
+                                                            Height="76"
+                                                            Tag="{Binding}"
+                                                            Loaded="TimelineProgramCanvas_Loaded"
+                                                            SizeChanged="TimelineProgramCanvas_SizeChanged"
+                                                            DataContextChanged="TimelineProgramCanvas_DataContextChanged" />
                                                     <Canvas Width="{x:Bind TimelineWidth}"
                                                             Height="76"
                                                             IsHitTestVisible="False">
