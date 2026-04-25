@@ -5483,4 +5483,13 @@
   </data>
   <data name="Sources_Status_RemovingSource" xml:space="preserve"><value>正在删除来源...</value></data>
   <data name="Sources_Status_RemoveSourceFailed" xml:space="preserve"><value>无法删除此来源</value></data>
+  <data name="Player_Tracks_Audio" xml:space="preserve"><value>音频</value></data>
+  <data name="Player_Tracks_Subtitles" xml:space="preserve"><value>字幕</value></data>
+  <data name="Player_Tracks_Off" xml:space="preserve"><value>关闭</value></data>
+  <data name="Player_Tracks_SubtitlesOff" xml:space="preserve"><value>字幕已关闭</value></data>
+  <data name="Player_Tracks_NoAudio" xml:space="preserve"><value>未报告音频轨道。</value></data>
+  <data name="Player_Tracks_NoSubtitles" xml:space="preserve"><value>没有可用的字幕轨道。</value></data>
+  <data name="Player_Tracks_NoTracks" xml:space="preserve"><value>此流没有备用音频或字幕轨道。</value></data>
+  <data name="Player_Tracks_AudioFallback" xml:space="preserve"><value>音频 {0}</value></data>
+  <data name="Player_Tracks_SubtitleFallback" xml:space="preserve"><value>字幕 {0}</value></data>
 </root>

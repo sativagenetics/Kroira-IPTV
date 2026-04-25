@@ -5483,4 +5483,13 @@
   </data>
   <data name="Sources_Status_RemovingSource" xml:space="preserve"><value>Kaynak kaldırılıyor...</value></data>
   <data name="Sources_Status_RemoveSourceFailed" xml:space="preserve"><value>Bu kaynak kaldırılamadı</value></data>
+  <data name="Player_Tracks_Audio" xml:space="preserve"><value>Ses</value></data>
+  <data name="Player_Tracks_Subtitles" xml:space="preserve"><value>Altyazılar</value></data>
+  <data name="Player_Tracks_Off" xml:space="preserve"><value>Kapalı</value></data>
+  <data name="Player_Tracks_SubtitlesOff" xml:space="preserve"><value>Altyazılar kapalı</value></data>
+  <data name="Player_Tracks_NoAudio" xml:space="preserve"><value>Ses parçası bildirilmedi.</value></data>
+  <data name="Player_Tracks_NoSubtitles" xml:space="preserve"><value>Kullanılabilir altyazı parçası yok.</value></data>
+  <data name="Player_Tracks_NoTracks" xml:space="preserve"><value>Bu akışta alternatif ses veya altyazı parçası yok.</value></data>
+  <data name="Player_Tracks_AudioFallback" xml:space="preserve"><value>Ses {0}</value></data>
+  <data name="Player_Tracks_SubtitleFallback" xml:space="preserve"><value>Altyazı {0}</value></data>
 </root>

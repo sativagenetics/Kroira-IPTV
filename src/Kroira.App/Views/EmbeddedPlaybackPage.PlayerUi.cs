@@ -111,6 +111,7 @@ namespace Kroira.App.Views
         {
             XamlRuntimeLocalizer.Apply(this);
             BuildToolsFlyout();
+            _ = RefreshTrackMenusAsync();
             RefreshToolToggleStates();
             RefreshSpeedUi();
             UpdateFavoriteUi();

@@ -1439,7 +1439,11 @@ namespace Kroira.App.Views
             var selectedTrackId = GetSelectedTrackId(_player.GetSubtitleTracks());
             if (!string.IsNullOrWhiteSpace(selectedTrackId))
             {
-                _player.SelectSubtitleTrack(string.Empty);
+                if (!TrySelectSubtitleTrack(string.Empty, "subtitle_toggle"))
+                {
+                    return;
+                }
+
                 if (_context != null)
                 {
                     _context.PreferredSubtitleTrackId = string.Empty;
@@ -1454,7 +1458,11 @@ namespace Kroira.App.Views
                     return;
                 }
 
-                _player.SelectSubtitleTrack(track.Id);
+                if (!TrySelectSubtitleTrack(track.Id, "subtitle_toggle"))
+                {
+                    return;
+                }
+
                 if (_context != null)
                 {
                     _context.PreferredSubtitleTrackId = track.Id;

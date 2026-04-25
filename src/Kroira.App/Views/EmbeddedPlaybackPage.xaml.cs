@@ -97,10 +97,14 @@ namespace Kroira.App.Views
         private int _bufferTimeoutAttemptId;
         private int _lastOpenSucceededAttemptId = -1;
         private int _lastOpenFailedAttemptId = -1;
+        private int _lastLoggedAudioTrackCount = -1;
+        private int _lastLoggedSubtitleTrackCount = -1;
         private int _fullscreenTransitionGeneration;
         private int _externalIdleHideGeneration;
         private string _lastPlayerWarning = string.Empty;
         private string _lastStateMessage = string.Empty;
+        private string _lastLoggedSelectedAudioTrackId = string.Empty;
+        private string _lastLoggedSelectedSubtitleTrackId = string.Empty;
         private PlaybackAspectMode _selectedAspectMode = PlaybackAspectMode.Automatic;
         private PlaybackSessionState _currentState = PlaybackSessionState.Idle;
         private bool _isLiveTimeshiftActive;
@@ -1779,7 +1783,11 @@ namespace Kroira.App.Views
                 return;
             }
 
-            _player.SelectAudioTrack(trackId);
+            if (!TrySelectAudioTrack(trackId, "track_menu"))
+            {
+                return;
+            }
+
             if (_context != null)
             {
                 _context.RestoreAudioTrackSelection = true;
@@ -1800,7 +1808,11 @@ namespace Kroira.App.Views
             }
 
             var trackId = item.Tag as string;
-            _player.SelectSubtitleTrack(trackId);
+            if (!TrySelectSubtitleTrack(trackId, "track_menu"))
+            {
+                return;
+            }
+
             if (_context != null)
             {
                 _context.RestoreSubtitleTrackSelection = true;
@@ -1809,6 +1821,63 @@ namespace Kroira.App.Views
             _ = RefreshTrackMenusAsync();
             _ = SavePlayerPreferencesAsync();
             ResetInactivityTimer("click");
+        }
+
+        private bool TrySelectAudioTrack(string trackId, string source)
+        {
+            if (_player == null || string.IsNullOrWhiteSpace(trackId))
+            {
+                LogStructuredPlayback(
+                    "track_select_unsupported",
+                    $"kind=audio; source={SanitizeForLog(source)}; reason=no_player_or_track");
+                return false;
+            }
+
+            var safeTrackId = SanitizeForLog(trackId);
+            var safeSource = SanitizeForLog(source);
+            LogStructuredPlayback("track_select_requested", $"kind=audio; id={safeTrackId}; source={safeSource}");
+            try
+            {
+                _player.SelectAudioTrack(trackId);
+                LogStructuredPlayback("track_select_succeeded", $"kind=audio; id={safeTrackId}; source={safeSource}");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                LogStructuredPlayback(
+                    "track_select_failed",
+                    $"kind=audio; id={safeTrackId}; source={safeSource}; message={SanitizeForLog(ex.Message)}");
+                return false;
+            }
+        }
+
+        private bool TrySelectSubtitleTrack(string? trackId, string source)
+        {
+            if (_player == null)
+            {
+                LogStructuredPlayback(
+                    "track_select_unsupported",
+                    $"kind=subtitle; source={SanitizeForLog(source)}; reason=no_player");
+                return false;
+            }
+
+            var normalizedTrackId = string.IsNullOrWhiteSpace(trackId) ? string.Empty : trackId;
+            var safeTrackId = string.IsNullOrEmpty(normalizedTrackId) ? "off" : SanitizeForLog(normalizedTrackId);
+            var safeSource = SanitizeForLog(source);
+            LogStructuredPlayback("track_select_requested", $"kind=subtitle; id={safeTrackId}; source={safeSource}");
+            try
+            {
+                _player.SelectSubtitleTrack(normalizedTrackId);
+                LogStructuredPlayback("track_select_succeeded", $"kind=subtitle; id={safeTrackId}; source={safeSource}");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                LogStructuredPlayback(
+                    "track_select_failed",
+                    $"kind=subtitle; id={safeTrackId}; source={safeSource}; message={SanitizeForLog(ex.Message)}");
+                return false;
+            }
         }
 
         private void AspectItem_Click(object sender, RoutedEventArgs e)
@@ -2069,6 +2138,7 @@ namespace Kroira.App.Views
 
             var audioTracks = _player.GetAudioTracks();
             var subtitleTracks = _player.GetSubtitleTracks();
+            LogTrackAvailability(audioTracks, subtitleTracks);
             PopulateAudioTrackMenu(audioTracks);
             PopulateSubtitleTrackMenu(subtitleTracks);
             PopulateCombinedTrackMenu(audioTracks, subtitleTracks);
@@ -2086,19 +2156,16 @@ namespace Kroira.App.Views
 
             foreach (var track in audioTracks)
             {
-                var item = new ToggleMenuFlyoutItem
-                {
-                    Text = track.DisplayName,
-                    Tag = track.Id,
-                    IsChecked = track.IsSelected
-                };
-                item.Click += AudioTrackItem_Click;
-                AudioTrackFlyout.Items.Add(item);
+                AudioTrackFlyout.Items.Add(CreateAudioTrackMenuItem(track));
             }
 
             AudioTrackButton.Visibility = audioTracks.Count > 1 ? Visibility.Visible : Visibility.Collapsed;
             var selectedTrack = FindSelectedTrack(audioTracks);
-            ToolTipService.SetToolTip(AudioTrackButton, selectedTrack != null ? $"Audio: {selectedTrack.DisplayName}" : "Audio track");
+            ToolTipService.SetToolTip(
+                AudioTrackButton,
+                selectedTrack != null
+                    ? LocalizedStrings.Format("Player_Track_AudioFormat", FormatTrackDisplayName(selectedTrack))
+                    : LocalizedStrings.Get("Player_Tracks_Audio"));
         }
 
         private void PopulateSubtitleTrackMenu(IReadOnlyList<MpvTrackInfo> subtitleTracks)
@@ -2110,31 +2177,22 @@ namespace Kroira.App.Views
                 return;
             }
 
-            var offItem = new ToggleMenuFlyoutItem
-            {
-                Text = "Off",
-                Tag = null,
-                IsChecked = true
-            };
-            offItem.Click += SubtitleTrackItem_Click;
+            var offItem = CreateSubtitleOffMenuItem(isChecked: true);
             SubtitleTrackFlyout.Items.Add(offItem);
 
             foreach (var track in subtitleTracks)
             {
-                var item = new ToggleMenuFlyoutItem
-                {
-                    Text = track.DisplayName,
-                    Tag = track.Id,
-                    IsChecked = track.IsSelected
-                };
-                item.Click += SubtitleTrackItem_Click;
-                SubtitleTrackFlyout.Items.Add(item);
+                SubtitleTrackFlyout.Items.Add(CreateSubtitleTrackMenuItem(track));
             }
 
             var selectedTrack = FindSelectedTrack(subtitleTracks);
             offItem.IsChecked = selectedTrack == null;
             SubtitleTrackButton.Visibility = subtitleTracks.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
-            ToolTipService.SetToolTip(SubtitleTrackButton, selectedTrack != null ? $"Subtitles: {selectedTrack.DisplayName}" : "Subtitles off");
+            ToolTipService.SetToolTip(
+                SubtitleTrackButton,
+                selectedTrack != null
+                    ? LocalizedStrings.Format("Player_Track_SubtitlesFormat", FormatTrackDisplayName(selectedTrack))
+                    : LocalizedStrings.Get("Player_Tracks_SubtitlesOff"));
         }
 
         private void PopulateCombinedTrackMenu(IReadOnlyList<MpvTrackInfo> audioTracks, IReadOnlyList<MpvTrackInfo> subtitleTracks)
@@ -2143,82 +2201,187 @@ namespace Kroira.App.Views
 
             var canUseAudioTracks = CanUseFeature(EntitlementFeatureKeys.PlaybackAudioTrackSelection);
             var canUseSubtitleTracks = CanUseFeature(EntitlementFeatureKeys.PlaybackSubtitleTrackSelection);
-            var hasAudioChoices = canUseAudioTracks && audioTracks.Count > 1;
-            var hasSubtitleChoices = canUseSubtitleTracks && subtitleTracks.Count > 0;
-            if (!hasAudioChoices && !hasSubtitleChoices)
+            if (!canUseAudioTracks && !canUseSubtitleTracks)
             {
                 TracksButton.Visibility = Visibility.Collapsed;
                 return;
             }
 
-            if (hasAudioChoices)
+            if (canUseAudioTracks)
             {
-                var audioMenu = new MenuFlyoutSubItem { Text = "Audio" };
-                foreach (var track in audioTracks)
+                AddTrackSectionHeader(TracksFlyout.Items, "Player_Tracks_Audio");
+                if (audioTracks.Count == 0)
                 {
-                    var item = new ToggleMenuFlyoutItem
-                    {
-                        Text = track.DisplayName,
-                        Tag = track.Id,
-                        IsChecked = track.IsSelected
-                    };
-
-                    item.Click += AudioTrackItem_Click;
-                    audioMenu.Items.Add(item);
+                    AddDisabledTrackMenuItem(TracksFlyout.Items, LocalizedStrings.Get("Player_Tracks_NoAudio"));
                 }
-
-                TracksFlyout.Items.Add(audioMenu);
+                else
+                {
+                    foreach (var track in audioTracks)
+                    {
+                        TracksFlyout.Items.Add(CreateAudioTrackMenuItem(track));
+                    }
+                }
             }
 
-            if (hasSubtitleChoices)
+            if (canUseAudioTracks && canUseSubtitleTracks)
             {
-                var subtitleMenu = new MenuFlyoutSubItem { Text = "Subtitles" };
-                var offItem = new ToggleMenuFlyoutItem
-                {
-                    Text = "Off",
-                    Tag = null,
-                    IsChecked = true
-                };
+                AddToolsSeparator(TracksFlyout.Items);
+            }
 
-                offItem.Click += SubtitleTrackItem_Click;
-                subtitleMenu.Items.Add(offItem);
-
-                foreach (var track in subtitleTracks)
-                {
-                    var item = new ToggleMenuFlyoutItem
-                    {
-                        Text = track.DisplayName,
-                        Tag = track.Id,
-                        IsChecked = track.IsSelected
-                    };
-
-                    item.Click += SubtitleTrackItem_Click;
-                    subtitleMenu.Items.Add(item);
-                }
-
+            if (canUseSubtitleTracks)
+            {
+                AddTrackSectionHeader(TracksFlyout.Items, "Player_Tracks_Subtitles");
                 var selectedSubtitleTrack = FindSelectedTrack(subtitleTracks);
-                offItem.IsChecked = selectedSubtitleTrack == null;
+                TracksFlyout.Items.Add(CreateSubtitleOffMenuItem(selectedSubtitleTrack == null));
 
-                if (TracksFlyout.Items.Count > 0)
+                if (subtitleTracks.Count == 0)
                 {
-                    TracksFlyout.Items.Add(new MenuFlyoutSeparator());
+                    AddDisabledTrackMenuItem(TracksFlyout.Items, LocalizedStrings.Get("Player_Tracks_NoSubtitles"));
                 }
-
-                TracksFlyout.Items.Add(subtitleMenu);
+                else
+                {
+                    foreach (var track in subtitleTracks)
+                    {
+                        TracksFlyout.Items.Add(CreateSubtitleTrackMenuItem(track));
+                    }
+                }
             }
 
             var selectedAudioTrack = FindSelectedTrack(audioTracks);
             var selectedSubtitle = FindSelectedTrack(subtitleTracks);
-            var tooltip = selectedAudioTrack != null && selectedSubtitle != null
-                ? $"{LocalizedStrings.Format("Player_Track_AudioFormat", selectedAudioTrack.DisplayName)} | {LocalizedStrings.Format("Player_Track_SubtitlesFormat", selectedSubtitle.DisplayName)}"
-                : selectedAudioTrack != null
-                    ? LocalizedStrings.Format("Player_Track_AudioFormat", selectedAudioTrack.DisplayName)
-                    : selectedSubtitle != null
-                        ? LocalizedStrings.Format("Player_Track_SubtitlesFormat", selectedSubtitle.DisplayName)
-                        : LocalizedStrings.Get("Player_Menu_AudioAndSubtitles");
-
             TracksButton.Visibility = Visibility.Visible;
-            ToolTipService.SetToolTip(TracksButton, tooltip);
+            ToolTipService.SetToolTip(TracksButton, BuildTracksTooltip(audioTracks, subtitleTracks, selectedAudioTrack, selectedSubtitle));
+        }
+
+        private ToggleMenuFlyoutItem CreateAudioTrackMenuItem(MpvTrackInfo track)
+        {
+            var item = new ToggleMenuFlyoutItem
+            {
+                Text = FormatTrackDisplayName(track),
+                Tag = track.Id,
+                IsChecked = track.IsSelected,
+                IsEnabled = !string.IsNullOrWhiteSpace(track.Id)
+            };
+            item.Click += AudioTrackItem_Click;
+            return item;
+        }
+
+        private ToggleMenuFlyoutItem CreateSubtitleTrackMenuItem(MpvTrackInfo track)
+        {
+            var item = new ToggleMenuFlyoutItem
+            {
+                Text = FormatTrackDisplayName(track),
+                Tag = track.Id,
+                IsChecked = track.IsSelected,
+                IsEnabled = !string.IsNullOrWhiteSpace(track.Id)
+            };
+            item.Click += SubtitleTrackItem_Click;
+            return item;
+        }
+
+        private ToggleMenuFlyoutItem CreateSubtitleOffMenuItem(bool isChecked)
+        {
+            var item = new ToggleMenuFlyoutItem
+            {
+                Text = LocalizedStrings.Get("Player_Tracks_Off"),
+                Tag = null,
+                IsChecked = isChecked
+            };
+            item.Click += SubtitleTrackItem_Click;
+            return item;
+        }
+
+        private static void AddTrackSectionHeader(IList<MenuFlyoutItemBase> items, string resourceKey)
+        {
+            items.Add(new MenuFlyoutItem
+            {
+                Text = LocalizedStrings.Get(resourceKey),
+                IsEnabled = false
+            });
+        }
+
+        private static void AddDisabledTrackMenuItem(IList<MenuFlyoutItemBase> items, string text)
+        {
+            items.Add(new MenuFlyoutItem
+            {
+                Text = text,
+                IsEnabled = false
+            });
+        }
+
+        private static string BuildTracksTooltip(
+            IReadOnlyList<MpvTrackInfo> audioTracks,
+            IReadOnlyList<MpvTrackInfo> subtitleTracks,
+            MpvTrackInfo? selectedAudioTrack,
+            MpvTrackInfo? selectedSubtitle)
+        {
+            if (audioTracks.Count == 0 && subtitleTracks.Count == 0)
+            {
+                return LocalizedStrings.Get("Player_Tracks_NoTracks");
+            }
+
+            if (selectedAudioTrack != null && selectedSubtitle != null)
+            {
+                return $"{LocalizedStrings.Format("Player_Track_AudioFormat", FormatTrackDisplayName(selectedAudioTrack))} | {LocalizedStrings.Format("Player_Track_SubtitlesFormat", FormatTrackDisplayName(selectedSubtitle))}";
+            }
+
+            if (selectedAudioTrack != null)
+            {
+                return LocalizedStrings.Format("Player_Track_AudioFormat", FormatTrackDisplayName(selectedAudioTrack));
+            }
+
+            if (selectedSubtitle != null)
+            {
+                return LocalizedStrings.Format("Player_Track_SubtitlesFormat", FormatTrackDisplayName(selectedSubtitle));
+            }
+
+            return LocalizedStrings.Get("Player_Menu_AudioAndSubtitles");
+        }
+
+        private static string FormatTrackDisplayName(MpvTrackInfo track)
+        {
+            var title = (track.Title ?? string.Empty).Trim();
+            var language = (track.Language ?? string.Empty).Trim();
+            if (!string.IsNullOrWhiteSpace(title) && !string.IsNullOrWhiteSpace(language))
+            {
+                return $"{title} ({language})";
+            }
+
+            if (!string.IsNullOrWhiteSpace(title))
+            {
+                return title;
+            }
+
+            if (!string.IsNullOrWhiteSpace(language))
+            {
+                return language;
+            }
+
+            var trackId = string.IsNullOrWhiteSpace(track.Id) ? "?" : track.Id.Trim();
+            return string.Equals(track.Type, "sub", StringComparison.OrdinalIgnoreCase)
+                ? LocalizedStrings.Format("Player_Tracks_SubtitleFallback", trackId)
+                : LocalizedStrings.Format("Player_Tracks_AudioFallback", trackId);
+        }
+
+        private void LogTrackAvailability(IReadOnlyList<MpvTrackInfo> audioTracks, IReadOnlyList<MpvTrackInfo> subtitleTracks)
+        {
+            var selectedAudioTrackId = GetSelectedTrackId(audioTracks) ?? string.Empty;
+            var selectedSubtitleTrackId = GetSelectedTrackId(subtitleTracks) ?? string.Empty;
+            if (_lastLoggedAudioTrackCount == audioTracks.Count &&
+                _lastLoggedSubtitleTrackCount == subtitleTracks.Count &&
+                string.Equals(_lastLoggedSelectedAudioTrackId, selectedAudioTrackId, StringComparison.Ordinal) &&
+                string.Equals(_lastLoggedSelectedSubtitleTrackId, selectedSubtitleTrackId, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            _lastLoggedAudioTrackCount = audioTracks.Count;
+            _lastLoggedSubtitleTrackCount = subtitleTracks.Count;
+            _lastLoggedSelectedAudioTrackId = selectedAudioTrackId;
+            _lastLoggedSelectedSubtitleTrackId = selectedSubtitleTrackId;
+            LogStructuredPlayback(
+                "tracks_available",
+                $"audio_count={audioTracks.Count}; subtitle_count={subtitleTracks.Count}; selected_audio={SanitizeForLog(selectedAudioTrackId)}; selected_subtitle={SanitizeForLog(selectedSubtitleTrackId)}");
         }
 
         private static MpvTrackInfo? FindSelectedTrack(IReadOnlyList<MpvTrackInfo> tracks)
@@ -2242,6 +2405,11 @@ namespace Kroira.App.Views
             AudioTrackButton.Visibility = Visibility.Collapsed;
             SubtitleTrackButton.Visibility = Visibility.Collapsed;
             TracksButton.Visibility = Visibility.Collapsed;
+            ApplyToolButtonSelection(TracksButton, selected: false);
+            _lastLoggedAudioTrackCount = -1;
+            _lastLoggedSubtitleTrackCount = -1;
+            _lastLoggedSelectedAudioTrackId = string.Empty;
+            _lastLoggedSelectedSubtitleTrackId = string.Empty;
         }
 
         private bool CanUseFeature(string featureKey)
@@ -2954,6 +3122,12 @@ namespace Kroira.App.Views
                 _pendingUtilityFlyout = null;
             }
 
+            if (ReferenceEquals(flyout, TracksFlyout))
+            {
+                ApplyToolButtonSelection(TracksButton, selected: true);
+                LogStructuredPlayback("track_menu_opened", "source=tracks_button");
+            }
+
             LogPlaybackState("OVERLAY: flyout opened");
             ShowControls(persist: true, cause: "menu_opened");
         }
@@ -2971,6 +3145,12 @@ namespace Kroira.App.Views
                 if (ReferenceEquals(_pendingUtilityFlyout, flyout))
                 {
                     _pendingUtilityFlyout = null;
+                }
+
+                if (ReferenceEquals(flyout, TracksFlyout))
+                {
+                    ApplyToolButtonSelection(TracksButton, selected: false);
+                    LogStructuredPlayback("track_menu_closed", "source=tracks_button");
                 }
             }
 
@@ -2996,6 +3176,7 @@ namespace Kroira.App.Views
         private bool IsUtilityChildFlyout(FlyoutBase flyout)
         {
             return ReferenceEquals(flyout, AspectFlyout) ||
+                   ReferenceEquals(flyout, TracksFlyout) ||
                    ReferenceEquals(flyout, AudioDelayFlyout) ||
                    ReferenceEquals(flyout, SubtitleDelayFlyout) ||
                    ReferenceEquals(flyout, SubtitleStyleFlyout) ||

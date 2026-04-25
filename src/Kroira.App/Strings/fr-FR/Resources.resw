@@ -5483,4 +5483,13 @@
   </data>
   <data name="Sources_Status_RemovingSource" xml:space="preserve"><value>Suppression de la source...</value></data>
   <data name="Sources_Status_RemoveSourceFailed" xml:space="preserve"><value>Impossible de supprimer cette source</value></data>
+  <data name="Player_Tracks_Audio" xml:space="preserve"><value>Audio</value></data>
+  <data name="Player_Tracks_Subtitles" xml:space="preserve"><value>Sous-titres</value></data>
+  <data name="Player_Tracks_Off" xml:space="preserve"><value>Désactivé</value></data>
+  <data name="Player_Tracks_SubtitlesOff" xml:space="preserve"><value>Sous-titres désactivés</value></data>
+  <data name="Player_Tracks_NoAudio" xml:space="preserve"><value>Aucune piste audio détectée.</value></data>
+  <data name="Player_Tracks_NoSubtitles" xml:space="preserve"><value>Aucune piste de sous-titres disponible.</value></data>
+  <data name="Player_Tracks_NoTracks" xml:space="preserve"><value>Ce flux ne propose aucune piste audio alternative ni sous-titres.</value></data>
+  <data name="Player_Tracks_AudioFallback" xml:space="preserve"><value>Audio {0}</value></data>
+  <data name="Player_Tracks_SubtitleFallback" xml:space="preserve"><value>Sous-titre {0}</value></data>
 </root>
