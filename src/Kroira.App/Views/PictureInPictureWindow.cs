@@ -11,7 +11,7 @@ namespace Kroira.App.Views
 
         public PictureInPictureWindow()
         {
-            Title = LocalizedStrings.Get("Player.PipWindowTitle");
+            Title = LocalizedStrings.Get("Player_PipWindowTitle");
             Content = _contentFrame;
         }
 

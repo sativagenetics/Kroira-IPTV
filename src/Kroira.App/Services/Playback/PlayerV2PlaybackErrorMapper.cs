@@ -52,8 +52,8 @@ namespace Kroira.App.Services.Playback
             {
                 return Create(
                     PlayerV2PlaybackErrorCode.InvalidUrl,
-                    L("Player.Error.InvalidStreamUrl.Title"),
-                    L("Player.Error.InvalidStreamUrl.Message"),
+                    L("Player_Error_InvalidStreamUrl_Title"),
+                    L("Player_Error_InvalidStreamUrl_Message"),
                     isRetryable: false);
             }
 
@@ -61,8 +61,8 @@ namespace Kroira.App.Services.Playback
             {
                 return Create(
                     PlayerV2PlaybackErrorCode.Timeout,
-                    L("Player.Error.Timeout.Title"),
-                    L("Player.Error.Timeout.Message"),
+                    L("Player_Error_Timeout_Title"),
+                    L("Player_Error_Timeout_Message"),
                     isRetryable: true);
             }
 
@@ -70,8 +70,8 @@ namespace Kroira.App.Services.Playback
             {
                 return Create(
                     PlayerV2PlaybackErrorCode.Cancelled,
-                    L("Player.Error.Cancelled.Title"),
-                    L("Player.Error.Cancelled.Message"),
+                    L("Player_Error_Cancelled_Title"),
+                    L("Player_Error_Cancelled_Message"),
                     isRetryable: false);
             }
 
@@ -79,8 +79,8 @@ namespace Kroira.App.Services.Playback
             {
                 return Create(
                     PlayerV2PlaybackErrorCode.ForbiddenAuthFailure,
-                    L("Player.Error.Authorization.Title"),
-                    L("Player.Error.Authorization.Message"),
+                    L("Player_Error_Authorization_Title"),
+                    L("Player_Error_Authorization_Message"),
                     isRetryable: false);
             }
 
@@ -88,8 +88,8 @@ namespace Kroira.App.Services.Playback
             {
                 return Create(
                     PlayerV2PlaybackErrorCode.UnsupportedMedia,
-                    L("Player.Error.UnsupportedMedia.Title"),
-                    L("Player.Error.UnsupportedMedia.Message"),
+                    L("Player_Error_UnsupportedMedia_Title"),
+                    L("Player_Error_UnsupportedMedia_Message"),
                     isRetryable: false);
             }
 
@@ -97,8 +97,8 @@ namespace Kroira.App.Services.Playback
             {
                 return Create(
                     PlayerV2PlaybackErrorCode.StreamEnded,
-                    L("Player.Error.StreamEnded.Title"),
-                    L("Player.Error.StreamEnded.Message"),
+                    L("Player_Error_StreamEnded_Title"),
+                    L("Player_Error_StreamEnded_Message"),
                     isRetryable: false);
             }
 
@@ -106,15 +106,15 @@ namespace Kroira.App.Services.Playback
             {
                 return Create(
                     PlayerV2PlaybackErrorCode.Unreachable,
-                    L("Player.Error.Unreachable.Title"),
-                    L("Player.Error.Unreachable.Message"),
+                    L("Player_Error_Unreachable_Title"),
+                    L("Player_Error_Unreachable_Message"),
                     isRetryable: true);
             }
 
             return Create(
                 PlayerV2PlaybackErrorCode.Unknown,
-                L("Player.Error.PlaybackFailed"),
-                L("Player.Error.Unknown.Message"),
+                L("Player_Error_PlaybackFailed"),
+                L("Player_Error_Unknown_Message"),
                 isRetryable: true);
         }
 

@@ -74,7 +74,7 @@ namespace Kroira.App.ViewModels
         private bool _isFavorite;
 
         public string FavoriteGlyph => IsFavorite ? "\uE735" : "\uE734";
-        public string FavoriteLabel => IsFavorite ? "Saved" : "Save";
+        public string FavoriteLabel => IsFavorite ? LocalizedStrings.Get("General_Saved") : LocalizedStrings.Get("General_Save");
 
         public void UpdateFrom(CatalogMovieGroup group, bool isFavorite, string displayCategoryName)
         {
@@ -110,6 +110,12 @@ namespace Kroira.App.ViewModels
             OnPropertyChanged(nameof(TmdbPosterPath));
             OnPropertyChanged(nameof(HasAlternateSources));
             OnPropertyChanged(nameof(SourceSummary));
+            OnPropertyChanged(nameof(FavoriteLabel));
+        }
+
+        public void RefreshLocalizedText()
+        {
+            OnPropertyChanged(nameof(FavoriteLabel));
         }
     }
 
@@ -209,6 +215,9 @@ namespace Kroira.App.ViewModels
         private int _activeProfileId;
         private string _languageCode = AppLanguageService.DefaultLanguageCode;
         private string _visibleCategorySignature = string.Empty;
+        private int _localizedTextVersion = -1;
+        private int _lastBaseResultCount;
+        private bool _lastHasDiscoveryFacetFilters;
         private bool _isInitializing;
         private bool _isApplyingFilter;
         private bool _pendingApplyFilter;
@@ -253,9 +262,9 @@ namespace Kroira.App.ViewModels
         [ObservableProperty] private bool _hideSecondaryContent;
         [ObservableProperty] private bool _hasAdvancedFilters;
         [ObservableProperty] private bool _isEmpty;
-        [ObservableProperty] private string _discoverySummaryText = "Browse by source, language, genre, and artwork availability.";
-        [ObservableProperty] private string _emptyStateTitle = "No movies to show";
-        [ObservableProperty] private string _emptyStateMessage = "Sync a VOD source, or clear your search and browse filters.";
+        [ObservableProperty] private string _discoverySummaryText = LocalizedStrings.Get("Movies_DiscoverySummary_Default");
+        [ObservableProperty] private string _emptyStateTitle = LocalizedStrings.Get("Movies_Empty_NoMovies_Title");
+        [ObservableProperty] private string _emptyStateMessage = LocalizedStrings.Get("Movies_Empty_NoMovies_Message");
         [ObservableProperty] private SurfaceStatePresentation _surfaceState = SurfaceStateCopies.Movies.Create(SurfaceViewState.Loading);
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(FeaturedMovieCanPlay))]
@@ -286,12 +295,7 @@ namespace Kroira.App.ViewModels
             _taxonomyService = serviceProvider.GetRequiredService<ICatalogTaxonomyService>();
             _smartCategoryService = serviceProvider.GetRequiredService<ISmartCategoryService>();
             _logicalCatalogStateService = serviceProvider.GetRequiredService<ILogicalCatalogStateService>();
-            SortOptions.Add(new BrowseSortOptionViewModel("recommended", "Recommended"));
-            SortOptions.Add(new BrowseSortOptionViewModel("title_asc", "Title A-Z"));
-            SortOptions.Add(new BrowseSortOptionViewModel("rating_desc", "Highest rated"));
-            SortOptions.Add(new BrowseSortOptionViewModel("popularity_desc", "Most popular"));
-            SortOptions.Add(new BrowseSortOptionViewModel("year_desc", "Newest release"));
-            SortOptions.Add(new BrowseSortOptionViewModel("favorites_first", "Favorites first"));
+            RebuildSortOptions();
             DiscoverySignalOptions.CollectionChanged += (_, _) => OnPropertyChanged(nameof(DiscoverySignalVisibility));
             DiscoverySourceTypeOptions.CollectionChanged += (_, _) => OnPropertyChanged(nameof(DiscoverySourceTypeVisibility));
             DiscoveryLanguageOptions.CollectionChanged += (_, _) => OnPropertyChanged(nameof(DiscoveryLanguageVisibility));
@@ -356,6 +360,7 @@ namespace Kroira.App.ViewModels
         [RelayCommand]
         public async Task LoadMoviesAsync()
         {
+            RefreshLocalizedLabelsIfNeeded();
             var loadStopwatch = Stopwatch.StartNew();
             _activeLoadStopwatch = loadStopwatch;
             _preferStagedFirstPaint = !_hasLoadedOnce || DisplayMovieSlots.Count == 0;
@@ -666,7 +671,9 @@ namespace Kroira.App.ViewModels
                                  HasDiscoveryFilters(discoveryProjection.EffectiveSelection) ||
                                  (SelectedSourceOption?.Id ?? 0) != 0 ||
                                  !string.Equals(SelectedSortOption?.Key ?? "recommended", "recommended", StringComparison.OrdinalIgnoreCase);
-            UpdateEmptyState(baseResults.Count, discoveryProjection.HasActiveFacetFilters);
+            _lastBaseResultCount = baseResults.Count;
+            _lastHasDiscoveryFacetFilters = discoveryProjection.HasActiveFacetFilters;
+            UpdateEmptyState(_lastBaseResultCount, _lastHasDiscoveryFacetFilters);
             var shouldStageFirstPaint = _preferStagedFirstPaint;
             _preferStagedFirstPaint = false;
             _displayMovieSlotRefreshTask = RefreshDisplayMovieSlotsAsync(shouldStageFirstPaint, reason);
@@ -863,6 +870,85 @@ namespace Kroira.App.ViewModels
             return new BrowseFacetOptionViewModel(option.Key, option.Label, option.ItemCount);
         }
 
+        public void RefreshLocalizedLabelsIfNeeded()
+        {
+            if (_localizedTextVersion == LocalizedStrings.Version)
+            {
+                return;
+            }
+
+            _localizedTextVersion = LocalizedStrings.Version;
+            DiscoverySummaryText = LocalizedStrings.Get("Movies_DiscoverySummary_Default");
+            RebuildSortOptions();
+            if (_hasLoadedOnce)
+            {
+                BuildSourceOptions();
+                RefreshCategoryText();
+                BuildCategoryManagerOptions();
+                UpdateEmptyState(_lastBaseResultCount, _lastHasDiscoveryFacetFilters);
+            }
+
+            foreach (var movie in _filteredMovies)
+            {
+                movie.RefreshLocalizedText();
+            }
+
+            FeaturedMovie.RefreshLocalizedText();
+            OnPropertyChanged(nameof(FilteredMovies));
+        }
+
+        private void RebuildSortOptions()
+        {
+            var selectedKey = SelectedSortOption?.Key ?? _preferences.SortKey;
+            if (string.IsNullOrWhiteSpace(selectedKey))
+            {
+                selectedKey = "recommended";
+            }
+
+            var wasInitializing = _isInitializing;
+            _isInitializing = true;
+            try
+            {
+                SortOptions.Clear();
+                foreach (var option in BrowseLocalization.CreateSortOptions(BrowseLocalization.MovieSortOptions))
+                {
+                    SortOptions.Add(option);
+                }
+
+                SelectedSortOption = SortOptions.FirstOrDefault(option => string.Equals(option.Key, selectedKey, StringComparison.OrdinalIgnoreCase))
+                    ?? SortOptions.FirstOrDefault();
+            }
+            finally
+            {
+                _isInitializing = wasInitializing;
+            }
+        }
+
+        private void RefreshCategoryText()
+        {
+            foreach (var category in Categories)
+            {
+                if (category.IsSmartCategory &&
+                    _smartCategoryService.GetDefinition(category.SmartCategoryId) is { } definition)
+                {
+                    category.UpdateText(
+                        BrowseLocalization.SmartCategoryName(definition),
+                        BrowseLocalization.SmartCategoryDescription(definition),
+                        BrowseLocalization.SmartCategorySection(definition));
+                }
+                else if (category.IsOriginalProviderGroup)
+                {
+                    category.UpdateText(
+                        category.Name,
+                        category.Description,
+                        BrowseLocalization.OriginalProviderGroups);
+                }
+            }
+
+            ApplyCategorySectionHeaders(Categories);
+            _visibleCategorySignature = BuildCategorySignature(Categories);
+        }
+
         private void UpdateEmptyState(int baseResultCount, bool hasDiscoveryFacetFilters)
         {
             if (!IsEmpty)
@@ -879,13 +965,15 @@ namespace Kroira.App.ViewModels
                                       !string.IsNullOrWhiteSpace(SelectedCategory?.FilterKey);
             if (hasNarrowingFilters)
             {
-                EmptyStateTitle = "Nothing matches this explore mix";
-                EmptyStateMessage = "Relax one or two facets, switch providers, or widen your search to reopen the movie library.";
+                EmptyStateTitle = LocalizedStrings.Get("Browse_Empty_NoMatches_Title");
+                EmptyStateMessage = LocalizedStrings.Get("Movies_Empty_NoMatches_Message");
                 return;
             }
 
-            EmptyStateTitle = baseResultCount == 0 ? "No movies to show" : "Movie shelf is empty";
-            EmptyStateMessage = "Sync a VOD source, or review your category rules if this provider should already contain movies.";
+            EmptyStateTitle = baseResultCount == 0
+                ? LocalizedStrings.Get("Movies_Empty_NoMovies_Title")
+                : LocalizedStrings.Get("Movies_Empty_ShelfEmpty_Title");
+            EmptyStateMessage = LocalizedStrings.Get("Movies_Empty_ShelfEmpty_Message");
         }
 
         private static bool HasMovieArtwork(Movie movie)
@@ -1131,14 +1219,14 @@ namespace Kroira.App.ViewModels
                     GroupKey = "placeholder",
                     PreferredMovie = new Movie
                     {
-                        Title = "Movies",
-                        Overview = "Sync an Xtream VOD source to build a poster-first library with TMDb artwork, ratings, genres, and backdrops.",
-                        CategoryName = "VOD library"
+                        Title = LocalizedStrings.Get("Movies_Placeholder_Title"),
+                        Overview = LocalizedStrings.Get("Movies_Placeholder_Overview"),
+                        CategoryName = BrowseLocalization.VodLibrary
                     },
                     Variants = Array.Empty<CatalogMovieVariant>()
                 },
                 false,
-                "VOD library");
+                BrowseLocalization.VodLibrary);
         }
 
         private void BuildSourceOptions()
@@ -1146,7 +1234,7 @@ namespace Kroira.App.ViewModels
             var existingSelection = _preferences.SelectedSourceId;
             var sourceOptions = new List<BrowseSourceFilterOptionViewModel>
             {
-                new BrowseSourceFilterOptionViewModel(0, "All providers", _allMovieGroups.Count)
+                new BrowseSourceFilterOptionViewModel(0, BrowseLocalization.AllProviders, _allMovieGroups.Count)
             };
             var sourceVisibilityOptions = new List<BrowseSourceVisibilityViewModel>();
 
@@ -1158,7 +1246,7 @@ namespace Kroira.App.ViewModels
             {
                 var isVisible = !_preferences.HiddenSourceIds.Contains(group.Id);
                 sourceOptions.Add(new BrowseSourceFilterOptionViewModel(group.Id, group.Name, group.Count));
-                sourceVisibilityOptions.Add(new BrowseSourceVisibilityViewModel(group.Id, group.Name, $"{group.Count:N0} variants", isVisible, OnSourceVisibilityChanged));
+                sourceVisibilityOptions.Add(new BrowseSourceVisibilityViewModel(group.Id, group.Name, BrowseLocalization.VariantCount(group.Count), isVisible, OnSourceVisibilityChanged));
             }
 
             var wasInitializing = _isInitializing;
@@ -1257,9 +1345,9 @@ namespace Kroira.App.ViewModels
                     Id = categoryId++,
                     FilterKey = definition.IsAllCategory ? string.Empty : definition.Id,
                     SmartCategoryId = definition.Id,
-                    Name = definition.DisplayName,
-                    Description = definition.MatchRule,
-                    SectionName = definition.SectionName,
+                    Name = BrowseLocalization.SmartCategoryName(definition),
+                    Description = BrowseLocalization.SmartCategoryDescription(definition),
+                    SectionName = BrowseLocalization.SmartCategorySection(definition),
                     ItemCount = count,
                     OrderIndex = definition.SortPriority,
                     IsSmartCategory = true,
@@ -1274,7 +1362,7 @@ namespace Kroira.App.ViewModels
                     FilterKey = category.Key,
                     Name = category.Name,
                     Description = ResolveDisplayCategoryName(category.Name),
-                    SectionName = "Original Provider Groups",
+                    SectionName = BrowseLocalization.OriginalProviderGroups,
                     ItemCount = category.Count,
                     OrderIndex = 100_000 + index,
                     IsOriginalProviderGroup = true,
@@ -1305,10 +1393,11 @@ namespace Kroira.App.ViewModels
             var previousSection = string.Empty;
             foreach (var category in categories)
             {
-                category.SectionHeaderVisibility = string.IsNullOrWhiteSpace(category.SectionName) ||
-                                                   string.Equals(category.SectionName, previousSection, StringComparison.Ordinal)
+                var visibility = string.IsNullOrWhiteSpace(category.SectionName) ||
+                                 string.Equals(category.SectionName, previousSection, StringComparison.Ordinal)
                     ? Visibility.Collapsed
                     : Visibility.Visible;
+                category.UpdateSectionHeaderVisibility(visibility);
                 previousSection = category.SectionName;
             }
         }
@@ -1702,7 +1791,7 @@ namespace Kroira.App.ViewModels
             if (distinct.Count == 0) return string.Empty;
             if (distinct.Count == 1) return distinct[0];
             if (distinct.Count == 2) return $"{distinct[0]} + {distinct[1]}";
-            return $"{distinct[0]} +{distinct.Count - 1} more";
+            return $"{distinct[0]} +{BrowseLocalization.MoreCount(distinct.Count - 1)}";
         }
     }
 }

@@ -167,7 +167,7 @@ namespace Kroira.App.Services
 
                 var message = refreshResult.Success
                     ? refreshResult.Message
-                    : F("SourceLifecycle.Create.ImportFailed", refreshResult.Message);
+                    : F("SourceLifecycle_Create_ImportFailed", refreshResult.Message);
 
                 if (!string.IsNullOrWhiteSpace(duplicateHint))
                 {
@@ -186,7 +186,7 @@ namespace Kroira.App.Services
             }
             catch (Exception ex)
             {
-                var message = F("SourceLifecycle.Create.ImportFailed", ex.Message);
+                var message = F("SourceLifecycle_Create_ImportFailed", ex.Message);
                 if (!string.IsNullOrWhiteSpace(duplicateHint))
                 {
                     message = $"{message} {duplicateHint}";
@@ -217,7 +217,7 @@ namespace Kroira.App.Services
             var credential = await credentialStore.GetCredentialAsync(db, request.SourceId);
             if (credential == null)
             {
-                throw new InvalidOperationException(L("SourceLifecycle.Error.CredentialsNotFound"));
+                throw new InvalidOperationException(L("SourceLifecycle_Error_CredentialsNotFound"));
             }
 
             var normalized = NormalizeGuideRequest(request);
@@ -275,14 +275,14 @@ namespace Kroira.App.Services
                     Success = true,
                     SyncTriggered = false,
                     PreservedExistingGuideData = false,
-                    Message = L("SourceLifecycle.Guide.Unchanged")
+                    Message = L("SourceLifecycle_Guide_Unchanged")
                 };
             }
 
             var preservedGuideData = false;
             var message = routingChanged && !guideBindingChanged
-                ? L("SourceLifecycle.Guide.RoutingSaved")
-                : L("SourceLifecycle.Guide.SettingsSaved");
+                ? L("SourceLifecycle_Guide_RoutingSaved")
+                : L("SourceLifecycle_Guide_SettingsSaved");
 
             if (guideBindingChanged)
             {
@@ -315,7 +315,7 @@ namespace Kroira.App.Services
                 return new SourceDeleteResult
                 {
                     Success = false,
-                    Message = L("SourceLifecycle.Delete.NotFound")
+                    Message = L("SourceLifecycle_Delete_NotFound")
                 };
             }
 
@@ -508,28 +508,28 @@ namespace Kroira.App.Services
 
             await TryPostDeleteRepairAsync(
                 warnings,
-                L("SourceLifecycle.Repair.BrowseReferences"),
+                L("SourceLifecycle_Repair_BrowseReferences"),
                 () => browsePreferencesService.RepairSourceReferencesAsync(db, sourceProfileId),
                 sourceProfileId);
             await TryPostDeleteRepairAsync(
                 warnings,
-                L("SourceLifecycle.Repair.LogicalStateReconciliation"),
+                L("SourceLifecycle_Repair_LogicalStateReconciliation"),
                 () => logicalCatalogStateService.ReconcilePersistentStateAsync(db),
                 sourceProfileId);
             await TryPostDeleteRepairAsync(
                 warnings,
-                L("SourceLifecycle.Repair.OperationalMirrorRebuild"),
+                L("SourceLifecycle_Repair_OperationalMirrorRebuild"),
                 () => contentOperationalService.RefreshOperationalStateAsync(db),
                 sourceProfileId);
             await TryPostDeleteRepairAsync(
                 warnings,
-                L("SourceLifecycle.Repair.AutoRefreshRuntimeRepair"),
+                L("SourceLifecycle_Repair_AutoRefreshRuntimeRepair"),
                 () => autoRefreshService.RepairRuntimeStateAsync(db),
                 sourceProfileId);
 
             var message = warnings.Count == 0
-                ? F("SourceLifecycle.Delete.Deleted", profile.Name)
-                : F("SourceLifecycle.Delete.DeletedCleanupDeferred", profile.Name);
+                ? F("SourceLifecycle_Delete_Deleted", profile.Name)
+                : F("SourceLifecycle_Delete_DeletedCleanupDeferred", profile.Name);
 
             return new SourceDeleteResult
             {
@@ -601,12 +601,12 @@ namespace Kroira.App.Services
         {
             if (string.IsNullOrWhiteSpace(request.Name))
             {
-                throw new InvalidOperationException(L("SourceLifecycle.Validation.NameUnresolved"));
+                throw new InvalidOperationException(L("SourceLifecycle_Validation_NameUnresolved"));
             }
 
             if (request.Type == SourceType.M3U && string.IsNullOrWhiteSpace(request.Url))
             {
-                throw new InvalidOperationException(L("SourceLifecycle.Validation.M3uUrlRequired"));
+                throw new InvalidOperationException(L("SourceLifecycle_Validation_M3uUrlRequired"));
             }
 
             if (request.Type == SourceType.Xtream &&
@@ -614,13 +614,13 @@ namespace Kroira.App.Services
                  string.IsNullOrWhiteSpace(request.Username) ||
                  string.IsNullOrWhiteSpace(request.Password)))
             {
-                throw new InvalidOperationException(L("SourceLifecycle.Validation.XtreamRequired"));
+                throw new InvalidOperationException(L("SourceLifecycle_Validation_XtreamRequired"));
             }
 
             if (request.Type == SourceType.Stalker &&
                 (string.IsNullOrWhiteSpace(request.Url) || string.IsNullOrWhiteSpace(request.StalkerMacAddress)))
             {
-                throw new InvalidOperationException(L("SourceLifecycle.Validation.StalkerRequired"));
+                throw new InvalidOperationException(L("SourceLifecycle_Validation_StalkerRequired"));
             }
 
             ValidateGuideRequest(new SourceGuideSettingsUpdateRequest
@@ -640,17 +640,17 @@ namespace Kroira.App.Services
         {
             if (request.ActiveMode == EpgActiveMode.Manual && string.IsNullOrWhiteSpace(request.ManualEpgUrl))
             {
-                throw new InvalidOperationException(L("SourceLifecycle.Validation.ManualXmltvRequired"));
+                throw new InvalidOperationException(L("SourceLifecycle_Validation_ManualXmltvRequired"));
             }
 
             if (request.ProxyScope != SourceProxyScope.Disabled && string.IsNullOrWhiteSpace(request.ProxyUrl))
             {
-                throw new InvalidOperationException(L("SourceLifecycle.Validation.ProxyUrlRequired"));
+                throw new InvalidOperationException(L("SourceLifecycle_Validation_ProxyUrlRequired"));
             }
 
             if (request.CompanionScope != SourceCompanionScope.Disabled && string.IsNullOrWhiteSpace(request.CompanionUrl))
             {
-                throw new InvalidOperationException(L("SourceLifecycle.Validation.CompanionEndpointRequired"));
+                throw new InvalidOperationException(L("SourceLifecycle_Validation_CompanionEndpointRequired"));
             }
         }
 
@@ -807,7 +807,7 @@ namespace Kroira.App.Services
                     StringComparison.OrdinalIgnoreCase));
 
             return hasSimilarSource
-                ? L("SourceLifecycle.Create.DuplicateHint")
+                ? L("SourceLifecycle_Create_DuplicateHint")
                 : string.Empty;
         }
 
@@ -915,8 +915,8 @@ namespace Kroira.App.Services
                 ? epgLog.MatchBreakdown
                 : string.Empty;
             epgLog.FailureReason = hasGuideData
-                ? L("SourceLifecycle.Guide.PendingPreserved")
-                : L("SourceLifecycle.Guide.Pending");
+                ? L("SourceLifecycle_Guide_PendingPreserved")
+                : L("SourceLifecycle_Guide_Pending");
             epgLog.GuideWarningSummary = epgLog.FailureReason;
             epgLog.GuideSourceStatusJson = BuildPendingGuideSourceStatusJson(credential, nowUtc);
 
@@ -967,7 +967,7 @@ namespace Kroira.App.Services
                 if (!string.IsNullOrWhiteSpace(credential.ManualEpgUrl))
                 {
                     snapshots.Add(BuildPendingGuideSource(
-                        L("SourceLifecycle.GuideSource.ManualXmltvOverride"),
+                        L("SourceLifecycle_GuideSource_ManualXmltvOverride"),
                         credential.ManualEpgUrl.Trim(),
                         EpgGuideSourceKind.Manual,
                         isOptional: false,
@@ -979,7 +979,7 @@ namespace Kroira.App.Services
                      !string.IsNullOrWhiteSpace(credential.DetectedEpgUrl))
             {
                 snapshots.Add(BuildPendingGuideSource(
-                    L("SourceLifecycle.GuideSource.ProviderXmltv"),
+                    L("SourceLifecycle_GuideSource_ProviderXmltv"),
                     credential.DetectedEpgUrl.Trim(),
                     EpgGuideSourceKind.Provider,
                     isOptional: false,
@@ -991,7 +991,7 @@ namespace Kroira.App.Services
             {
                 var kind = EpgPublicGuideCatalog.ClassifyFallbackUrl(url);
                 snapshots.Add(BuildPendingGuideSource(
-                    EpgPublicGuideCatalog.BuildGuideSourceLabel(url, kind, L("SourceLifecycle.GuideSource.FallbackXmltv")),
+                    EpgPublicGuideCatalog.BuildGuideSourceLabel(url, kind, L("SourceLifecycle_GuideSource_FallbackXmltv")),
                     url,
                     kind,
                     isOptional: true,
@@ -1019,7 +1019,7 @@ namespace Kroira.App.Services
                 IsOptional = isOptional,
                 Priority = priority,
                 CheckedAtUtc = checkedAtUtc,
-                Message = L("SourceLifecycle.GuideSource.ConfiguredSyncPending")
+                Message = L("SourceLifecycle_GuideSource_ConfiguredSyncPending")
             };
         }
 
@@ -1041,7 +1041,7 @@ namespace Kroira.App.Services
             catch (Exception ex)
             {
                 RuntimeEventLogger.Log("SOURCE-LIFECYCLE", ex, $"source_id={sourceProfileId} {label} deferred");
-                warnings.Add(F("SourceLifecycle.Repair.Deferred", UppercaseFirst(label)));
+                warnings.Add(F("SourceLifecycle_Repair_Deferred", UppercaseFirst(label)));
             }
         }
 

@@ -47,8 +47,8 @@ namespace Kroira.App.ViewModels
         public int WatchedEpisodeCount { get; }
         public int TotalEpisodeCount { get; }
         public string DisplayName => TotalEpisodeCount > 0
-            ? $"Season {SeasonNumber} ({WatchedEpisodeCount}/{TotalEpisodeCount})"
-            : $"Season {SeasonNumber}";
+            ? LocalizedStrings.Format("Series_Season_Display_WithProgress", SeasonNumber, WatchedEpisodeCount, TotalEpisodeCount)
+            : LocalizedStrings.Format("Series_Season_Display", SeasonNumber);
     }
 
     public sealed class SeriesEpisodeItemViewModel
@@ -70,10 +70,10 @@ namespace Kroira.App.ViewModels
         public bool IsWatched => Snapshot?.IsWatched == true;
         public long ResumePositionMs => Snapshot?.ResumePositionMs ?? 0;
         public string StatusText => IsWatched
-            ? "Watched"
+            ? LocalizedStrings.Get("Series_Episode_Status_Watched")
             : Snapshot?.HasResumePoint == true
-                ? $"Resume {TimeSpan.FromMilliseconds(ResumePositionMs):hh\\:mm\\:ss}"
-                : "Unwatched";
+                ? LocalizedStrings.Format("Series_Episode_Status_Resume", TimeSpan.FromMilliseconds(ResumePositionMs).ToString(@"hh\:mm\:ss"))
+                : LocalizedStrings.Get("Series_Episode_Status_Unwatched");
         public Visibility MarkWatchedVisibility => IsWatched ? Visibility.Collapsed : Visibility.Visible;
         public Visibility MarkUnwatchedVisibility => IsWatched ? Visibility.Visible : Visibility.Collapsed;
     }
@@ -142,7 +142,7 @@ namespace Kroira.App.ViewModels
         private bool _isFavorite;
 
         public string FavoriteGlyph => IsFavorite ? "\uE735" : "\uE734";
-        public string FavoriteLabel => IsFavorite ? "Saved" : "Save";
+        public string FavoriteLabel => IsFavorite ? LocalizedStrings.Get("General_Saved") : LocalizedStrings.Get("General_Save");
 
         public void UpdateFrom(CatalogSeriesGroup group, bool isFavorite, string displayCategoryName)
         {
@@ -182,6 +182,12 @@ namespace Kroira.App.ViewModels
             OnPropertyChanged(nameof(HasAlternateSources));
             OnPropertyChanged(nameof(SourceSelectionVisibility));
             OnPropertyChanged(nameof(SourceSummary));
+            OnPropertyChanged(nameof(FavoriteLabel));
+        }
+
+        public void RefreshLocalizedText()
+        {
+            OnPropertyChanged(nameof(FavoriteLabel));
         }
 
         partial void OnSelectedSourceOptionChanged(SeriesSourceOptionViewModel? value)
@@ -306,6 +312,9 @@ namespace Kroira.App.ViewModels
         private HashSet<string> _favoriteSeriesKeys = new(StringComparer.OrdinalIgnoreCase);
         private SmartCategoryIndex<CatalogSeriesGroup> _seriesCategoryIndex = SmartCategoryIndex<CatalogSeriesGroup>.Empty;
         private string _browseLanguageCode = AppLanguageService.DefaultLanguageCode;
+        private int _localizedTextVersion = -1;
+        private int _lastBaseResultCount;
+        private bool _lastHasDiscoveryFacetFilters;
         private bool _isApplyingFilter;
         private bool _pendingApplyFilter;
         private bool _hasLoadedOnce;
@@ -434,13 +443,13 @@ namespace Kroira.App.ViewModels
         private bool _isEmpty;
 
         [ObservableProperty]
-        private string _discoverySummaryText = "Browse by source, language, genre, and episode availability.";
+        private string _discoverySummaryText = LocalizedStrings.Get("Series_DiscoverySummary_Default");
 
         [ObservableProperty]
-        private string _emptyStateTitle = "No series to show";
+        private string _emptyStateTitle = LocalizedStrings.Get("Series_Empty_NoSeries_Title");
 
         [ObservableProperty]
-        private string _emptyStateMessage = "Sync a VOD source, or clear your search and browse filters.";
+        private string _emptyStateMessage = LocalizedStrings.Get("Series_Empty_NoSeries_Message");
 
         [ObservableProperty]
         private SurfaceStatePresentation _surfaceState = SurfaceStateCopies.Series.Create(SurfaceViewState.Loading);
@@ -656,12 +665,7 @@ namespace Kroira.App.ViewModels
             _taxonomyService = serviceProvider.GetRequiredService<ICatalogTaxonomyService>();
             _smartCategoryService = serviceProvider.GetRequiredService<ISmartCategoryService>();
             _logicalCatalogStateService = serviceProvider.GetRequiredService<ILogicalCatalogStateService>();
-            SortOptions.Add(new BrowseSortOptionViewModel("recommended", "Recommended"));
-            SortOptions.Add(new BrowseSortOptionViewModel("title_asc", "Title A-Z"));
-            SortOptions.Add(new BrowseSortOptionViewModel("rating_desc", "Highest rated"));
-            SortOptions.Add(new BrowseSortOptionViewModel("popularity_desc", "Most popular"));
-            SortOptions.Add(new BrowseSortOptionViewModel("year_desc", "Newest first"));
-            SortOptions.Add(new BrowseSortOptionViewModel("favorites_first", "Favorites first"));
+            RebuildSortOptions();
             DiscoverySignalOptions.CollectionChanged += (_, _) => OnPropertyChanged(nameof(DiscoverySignalVisibility));
             DiscoverySourceTypeOptions.CollectionChanged += (_, _) => OnPropertyChanged(nameof(DiscoverySourceTypeVisibility));
             DiscoveryLanguageOptions.CollectionChanged += (_, _) => OnPropertyChanged(nameof(DiscoveryLanguageVisibility));
@@ -671,6 +675,7 @@ namespace Kroira.App.ViewModels
         [RelayCommand]
         public async Task LoadSeriesAsync()
         {
+            RefreshLocalizedLabelsIfNeeded();
             var loadStopwatch = Stopwatch.StartNew();
             _activeLoadStopwatch = loadStopwatch;
             _preferStagedFirstPaint = !_hasLoadedOnce || DisplaySeriesSlots.Count == 0;
@@ -1032,7 +1037,9 @@ namespace Kroira.App.ViewModels
                                  (SelectedSourceOption?.Id ?? 0) != 0 ||
                                  !string.Equals(SelectedSortOption?.Key ?? "recommended", "recommended", StringComparison.OrdinalIgnoreCase);
             IsEmpty = _filteredSeries.Count == 0;
-            UpdateEmptyState(baseResults.Count, discoveryProjection.HasActiveFacetFilters);
+            _lastBaseResultCount = baseResults.Count;
+            _lastHasDiscoveryFacetFilters = discoveryProjection.HasActiveFacetFilters;
+            UpdateEmptyState(_lastBaseResultCount, _lastHasDiscoveryFacetFilters);
             var shouldStageFirstPaint = _preferStagedFirstPaint;
             _preferStagedFirstPaint = false;
             _displaySeriesSlotRefreshTask = RefreshDisplaySeriesSlotsAsync(shouldStageFirstPaint, reason);
@@ -1447,6 +1454,101 @@ namespace Kroira.App.ViewModels
             return new BrowseFacetOptionViewModel(option.Key, option.Label, option.ItemCount);
         }
 
+        public void RefreshLocalizedLabelsIfNeeded()
+        {
+            if (_localizedTextVersion == LocalizedStrings.Version)
+            {
+                return;
+            }
+
+            _localizedTextVersion = LocalizedStrings.Version;
+            DiscoverySummaryText = LocalizedStrings.Get("Series_DiscoverySummary_Default");
+            RebuildSortOptions();
+            if (_hasLoadedOnce)
+            {
+                BuildSourceOptions();
+                RefreshCategoryText();
+                BuildCategoryManagerOptions();
+                UpdateEmptyState(_lastBaseResultCount, _lastHasDiscoveryFacetFilters);
+            }
+
+            foreach (var series in _allSeries)
+            {
+                series.RefreshLocalizedText();
+            }
+
+            RefreshSeriesDetailLocalizedText();
+            OnPropertyChanged(nameof(FilteredSeries));
+        }
+
+        private void RebuildSortOptions()
+        {
+            var selectedKey = SelectedSortOption?.Key ?? _browsePreferences.SortKey;
+            if (string.IsNullOrWhiteSpace(selectedKey))
+            {
+                selectedKey = "recommended";
+            }
+
+            var wasInitializing = _isInitializingBrowsePreferences;
+            _isInitializingBrowsePreferences = true;
+            try
+            {
+                SortOptions.Clear();
+                foreach (var option in BrowseLocalization.CreateSortOptions(BrowseLocalization.SeriesSortOptions))
+                {
+                    SortOptions.Add(option);
+                }
+
+                SelectedSortOption = SortOptions.FirstOrDefault(option => string.Equals(option.Key, selectedKey, StringComparison.OrdinalIgnoreCase))
+                    ?? SortOptions.FirstOrDefault();
+            }
+            finally
+            {
+                _isInitializingBrowsePreferences = wasInitializing;
+            }
+        }
+
+        private void RefreshCategoryText()
+        {
+            foreach (var category in Categories)
+            {
+                if (category.IsSmartCategory &&
+                    _smartCategoryService.GetDefinition(category.SmartCategoryId) is { } definition)
+                {
+                    category.UpdateText(
+                        BrowseLocalization.SmartCategoryName(definition),
+                        BrowseLocalization.SmartCategoryDescription(definition),
+                        BrowseLocalization.SmartCategorySection(definition));
+                }
+                else if (category.IsOriginalProviderGroup)
+                {
+                    category.UpdateText(
+                        category.Name,
+                        category.Description,
+                        BrowseLocalization.OriginalProviderGroups);
+                }
+            }
+
+            ApplyCategorySectionHeaders(Categories);
+            _visibleCategorySignature = BuildCategorySignature(Categories);
+        }
+
+        private void RefreshSeriesDetailLocalizedText()
+        {
+            if (SelectedSeries?.ActiveSeries != null)
+            {
+                var seasonNumber = SelectedSeason?.SeasonNumber;
+                var episodeId = SelectedEpisode?.Id;
+                BuildSeasonOptions(SelectedSeries.ActiveSeries);
+                if (seasonNumber.HasValue)
+                {
+                    SelectedSeason = SeasonOptions.FirstOrDefault(option => option.SeasonNumber == seasonNumber.Value);
+                }
+
+                BuildEpisodeItems(SelectedSeason, episodeId);
+            }
+        }
+
         private void UpdateEmptyState(int baseResultCount, bool hasDiscoveryFacetFilters)
         {
             if (!IsEmpty)
@@ -1463,13 +1565,15 @@ namespace Kroira.App.ViewModels
                                       !string.IsNullOrWhiteSpace(SelectedCategory?.FilterKey);
             if (hasNarrowingFilters)
             {
-                EmptyStateTitle = "Nothing matches this explore mix";
-                EmptyStateMessage = "Relax one or two facets, switch providers, or widen your search to reopen the series library.";
+                EmptyStateTitle = LocalizedStrings.Get("Browse_Empty_NoMatches_Title");
+                EmptyStateMessage = LocalizedStrings.Get("Series_Empty_NoMatches_Message");
                 return;
             }
 
-            EmptyStateTitle = baseResultCount == 0 ? "No series to show" : "Series shelf is empty";
-            EmptyStateMessage = "Sync a VOD source, or review your category rules if this provider should already contain series.";
+            EmptyStateTitle = baseResultCount == 0
+                ? LocalizedStrings.Get("Series_Empty_NoSeries_Title")
+                : LocalizedStrings.Get("Series_Empty_ShelfEmpty_Title");
+            EmptyStateMessage = LocalizedStrings.Get("Series_Empty_ShelfEmpty_Message");
         }
 
         private static bool HasSeriesArtwork(Series series)
@@ -1621,7 +1725,7 @@ namespace Kroira.App.ViewModels
             var existingSelection = _browsePreferences.SelectedSourceId;
             var sourceOptions = new List<BrowseSourceFilterOptionViewModel>
             {
-                new BrowseSourceFilterOptionViewModel(0, "All providers", _allSeriesGroups.Count)
+                new BrowseSourceFilterOptionViewModel(0, BrowseLocalization.AllProviders, _allSeriesGroups.Count)
             };
             var sourceVisibilityOptions = new List<BrowseSourceVisibilityViewModel>();
 
@@ -1633,7 +1737,7 @@ namespace Kroira.App.ViewModels
             {
                 var isVisible = !_browsePreferences.HiddenSourceIds.Contains(group.Id);
                 sourceOptions.Add(new BrowseSourceFilterOptionViewModel(group.Id, group.Name, group.Count));
-                sourceVisibilityOptions.Add(new BrowseSourceVisibilityViewModel(group.Id, group.Name, $"{group.Count:N0} variants", isVisible, OnSourceVisibilityChanged));
+                sourceVisibilityOptions.Add(new BrowseSourceVisibilityViewModel(group.Id, group.Name, BrowseLocalization.VariantCount(group.Count), isVisible, OnSourceVisibilityChanged));
             }
 
             var wasInitializingBrowsePreferences = _isInitializingBrowsePreferences;
@@ -1732,9 +1836,9 @@ namespace Kroira.App.ViewModels
                     Id = categoryIndex++,
                     FilterKey = definition.IsAllCategory ? string.Empty : definition.Id,
                     SmartCategoryId = definition.Id,
-                    Name = definition.DisplayName,
-                    Description = definition.MatchRule,
-                    SectionName = definition.SectionName,
+                    Name = BrowseLocalization.SmartCategoryName(definition),
+                    Description = BrowseLocalization.SmartCategoryDescription(definition),
+                    SectionName = BrowseLocalization.SmartCategorySection(definition),
                     ItemCount = count,
                     OrderIndex = definition.SortPriority,
                     IsSmartCategory = true,
@@ -1749,7 +1853,7 @@ namespace Kroira.App.ViewModels
                     FilterKey = category.Key,
                     Name = category.Name,
                     Description = ResolveDisplayCategoryName(category.Name),
-                    SectionName = "Original Provider Groups",
+                    SectionName = BrowseLocalization.OriginalProviderGroups,
                     ItemCount = category.Count,
                     OrderIndex = 100_000 + index,
                     IsOriginalProviderGroup = true,
@@ -1780,10 +1884,11 @@ namespace Kroira.App.ViewModels
             var previousSection = string.Empty;
             foreach (var category in categories)
             {
-                category.SectionHeaderVisibility = string.IsNullOrWhiteSpace(category.SectionName) ||
-                                                   string.Equals(category.SectionName, previousSection, StringComparison.Ordinal)
+                var visibility = string.IsNullOrWhiteSpace(category.SectionName) ||
+                                 string.Equals(category.SectionName, previousSection, StringComparison.Ordinal)
                     ? Visibility.Collapsed
                     : Visibility.Visible;
+                category.UpdateSectionHeaderVisibility(visibility);
                 previousSection = category.SectionName;
             }
         }
@@ -2124,7 +2229,7 @@ namespace Kroira.App.ViewModels
 
             if (!HasPlayableEpisodes(series))
             {
-                SelectedSeriesStatus = "Loading episode details...";
+                SelectedSeriesStatus = LocalizedStrings.Get("Series_Details_LoadingEpisodes");
                 SelectedSeriesStatusVisibility = Visibility.Visible;
 
                 try
@@ -2160,7 +2265,7 @@ namespace Kroira.App.ViewModels
 
             if (SelectedSeason == null)
             {
-                SelectedSeriesStatus = "Episode details are not available for this series yet. Try syncing VOD again or check the provider data.";
+                SelectedSeriesStatus = LocalizedStrings.Get("Series_Details_EpisodesUnavailable");
                 SelectedSeriesStatusVisibility = Visibility.Visible;
             }
             else
@@ -2681,7 +2786,7 @@ namespace Kroira.App.ViewModels
                 return $"{distinct[0]} + {distinct[1]}";
             }
 
-            return $"{distinct[0]} +{distinct.Count - 1} more";
+            return $"{distinct[0]} +{BrowseLocalization.MoreCount(distinct.Count - 1)}";
         }
     }
 }

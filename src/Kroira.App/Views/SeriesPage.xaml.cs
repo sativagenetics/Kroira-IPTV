@@ -37,14 +37,14 @@ namespace Kroira.App.Views
     public sealed class SeasonPrefixConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, string language)
-            => LocalizedStrings.Format("Series.SeasonNumber", value);
+            => LocalizedStrings.Format("Series_SeasonNumber", value);
         public object ConvertBack(object value, Type targetType, object parameter, string language) => DependencyProperty.UnsetValue;
     }
 
     public sealed class EpisodePrefixConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, string language)
-            => LocalizedStrings.Format("Series.EpisodeNumber", value);
+            => LocalizedStrings.Format("Series_EpisodeNumber", value);
         public object ConvertBack(object value, Type targetType, object parameter, string language) => DependencyProperty.UnsetValue;
     }
 
@@ -70,6 +70,7 @@ namespace Kroira.App.Views
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
+            ViewModel.RefreshLocalizedLabelsIfNeeded();
             var navigationStopwatch = Stopwatch.StartNew();
             if (DispatcherQueue != null)
             {
@@ -516,15 +517,15 @@ namespace Kroira.App.Views
                     PlaybackContentType.Episode,
                     item.Id,
                     item.Title,
-                    LocalizedStrings.Format("Series.SeasonEpisodeLabel", item.SeasonNumber, item.EpisodeNumber),
+                    LocalizedStrings.Format("Series_SeasonEpisodeLabel", item.SeasonNumber, item.EpisodeNumber),
                     item.StreamUrl);
             }
             catch (Exception ex)
             {
                 var dialog = new ContentDialog
                 {
-                    Title = LocalizedStrings.Get("Movies.DownloadFailedTitle"),
-                    CloseButtonText = LocalizedStrings.Get("General.Close"),
+                    Title = LocalizedStrings.Get("Movies_DownloadFailedTitle"),
+                    CloseButtonText = LocalizedStrings.Get("General_Close"),
                     XamlRoot = this.XamlRoot,
                     Content = ex.Message
                 };

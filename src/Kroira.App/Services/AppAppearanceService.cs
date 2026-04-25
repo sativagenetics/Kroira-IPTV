@@ -50,18 +50,23 @@ namespace Kroira.App.Services
         private const string AccentSettingKey = "Appearance.AccentPreset";
         private readonly IServiceProvider _serviceProvider;
 
-        private static readonly IReadOnlyList<AppAppearanceOption> _themeOptions = new[]
+        private sealed record AppAppearanceOptionSpec(
+            string Key,
+            string DisplayNameResourceKey,
+            string DescriptionResourceKey);
+
+        private static readonly IReadOnlyList<AppAppearanceOptionSpec> ThemeOptionSpecs = new[]
         {
-            new AppAppearanceOption("cinema", LocalizedStrings.Get("Appearance.Theme.Cinema.Name"), LocalizedStrings.Get("Appearance.Theme.Cinema.Description")),
-            new AppAppearanceOption("broadcast", LocalizedStrings.Get("Appearance.Theme.Broadcast.Name"), LocalizedStrings.Get("Appearance.Theme.Broadcast.Description")),
-            new AppAppearanceOption("archive", LocalizedStrings.Get("Appearance.Theme.Archive.Name"), LocalizedStrings.Get("Appearance.Theme.Archive.Description"))
+            new AppAppearanceOptionSpec("cinema", "Appearance_Theme_Cinema_Name", "Appearance_Theme_Cinema_Description"),
+            new AppAppearanceOptionSpec("broadcast", "Appearance_Theme_Broadcast_Name", "Appearance_Theme_Broadcast_Description"),
+            new AppAppearanceOptionSpec("archive", "Appearance_Theme_Archive_Name", "Appearance_Theme_Archive_Description")
         };
 
-        private static readonly IReadOnlyList<AppAppearanceOption> _accentOptions = new[]
+        private static readonly IReadOnlyList<AppAppearanceOptionSpec> AccentOptionSpecs = new[]
         {
-            new AppAppearanceOption("gold", LocalizedStrings.Get("Appearance.Accent.Gold.Name"), LocalizedStrings.Get("Appearance.Accent.Gold.Description")),
-            new AppAppearanceOption("signal", LocalizedStrings.Get("Appearance.Accent.Signal.Name"), LocalizedStrings.Get("Appearance.Accent.Signal.Description")),
-            new AppAppearanceOption("ember", LocalizedStrings.Get("Appearance.Accent.Ember.Name"), LocalizedStrings.Get("Appearance.Accent.Ember.Description"))
+            new AppAppearanceOptionSpec("gold", "Appearance_Accent_Gold_Name", "Appearance_Accent_Gold_Description"),
+            new AppAppearanceOptionSpec("signal", "Appearance_Accent_Signal_Name", "Appearance_Accent_Signal_Description"),
+            new AppAppearanceOptionSpec("ember", "Appearance_Accent_Ember_Name", "Appearance_Accent_Ember_Description")
         };
 
         public AppAppearanceService(IServiceProvider serviceProvider)
@@ -69,8 +74,8 @@ namespace Kroira.App.Services
             _serviceProvider = serviceProvider;
         }
 
-        public IReadOnlyList<AppAppearanceOption> ThemeOptions => _themeOptions;
-        public IReadOnlyList<AppAppearanceOption> AccentOptions => _accentOptions;
+        public IReadOnlyList<AppAppearanceOption> ThemeOptions => ThemeOptionSpecs.Select(CreateOption).ToList();
+        public IReadOnlyList<AppAppearanceOption> AccentOptions => AccentOptionSpecs.Select(CreateOption).ToList();
 
         public async Task InitializeAsync()
         {
@@ -135,16 +140,24 @@ namespace Kroira.App.Services
 
         private static string NormalizeThemeKey(string? value)
         {
-            return _themeOptions.Any(option => string.Equals(option.Key, value, StringComparison.OrdinalIgnoreCase))
+            return ThemeOptionSpecs.Any(option => string.Equals(option.Key, value, StringComparison.OrdinalIgnoreCase))
                 ? value!.Trim().ToLowerInvariant()
                 : "cinema";
         }
 
         private static string NormalizeAccentKey(string? value)
         {
-            return _accentOptions.Any(option => string.Equals(option.Key, value, StringComparison.OrdinalIgnoreCase))
+            return AccentOptionSpecs.Any(option => string.Equals(option.Key, value, StringComparison.OrdinalIgnoreCase))
                 ? value!.Trim().ToLowerInvariant()
                 : "gold";
+        }
+
+        private static AppAppearanceOption CreateOption(AppAppearanceOptionSpec spec)
+        {
+            return new AppAppearanceOption(
+                spec.Key,
+                LocalizedStrings.Get(spec.DisplayNameResourceKey),
+                LocalizedStrings.Get(spec.DescriptionResourceKey));
         }
 
         private static void ApplyThemePreset(ResourceDictionary resources, string key)

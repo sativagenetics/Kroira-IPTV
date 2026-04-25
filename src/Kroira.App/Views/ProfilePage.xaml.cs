@@ -33,10 +33,10 @@ namespace Kroira.App.Views
 
             var dialog = new ContentDialog
             {
-                Title = LocalizedStrings.Get("Profile.DeleteConfirmTitle"),
-                Content = LocalizedStrings.Get("Profile.DeleteConfirmMessage"),
-                PrimaryButtonText = LocalizedStrings.Get("General.Delete"),
-                CloseButtonText = LocalizedStrings.Get("General.Cancel"),
+                Title = LocalizedStrings.Get("Profile_DeleteConfirmTitle"),
+                Content = LocalizedStrings.Get("Profile_DeleteConfirmMessage"),
+                PrimaryButtonText = LocalizedStrings.Get("General_Delete"),
+                CloseButtonText = LocalizedStrings.Get("General_Cancel"),
                 DefaultButton = ContentDialogButton.Close,
                 XamlRoot = XamlRoot
             };

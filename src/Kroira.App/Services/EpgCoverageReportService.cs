@@ -254,16 +254,16 @@ namespace Kroira.App.Services
         {
             if (decisionState == EpgMappingDecisionState.Approved && IsWeakMatchType(source))
             {
-                return L("EpgCoverage.ReviewStatus.ApprovedRefresh");
+                return L("EpgCoverage_ReviewStatus_ApprovedRefresh");
             }
 
             return source switch
             {
                 ChannelEpgMatchSource.Provider or ChannelEpgMatchSource.Normalized or ChannelEpgMatchSource.UserApproved => programmeCount > 0
-                    ? L("EpgCoverage.ReviewStatus.ActiveAssignment")
-                    : L("EpgCoverage.ReviewStatus.TrustedNoProgrammes"),
-                ChannelEpgMatchSource.Previous or ChannelEpgMatchSource.Alias or ChannelEpgMatchSource.Regex or ChannelEpgMatchSource.Fuzzy => L("EpgCoverage.ReviewStatus.SuggestionOnly"),
-                _ => L("EpgCoverage.ReviewStatus.NoGuideMatch")
+                    ? L("EpgCoverage_ReviewStatus_ActiveAssignment")
+                    : L("EpgCoverage_ReviewStatus_TrustedNoProgrammes"),
+                ChannelEpgMatchSource.Previous or ChannelEpgMatchSource.Alias or ChannelEpgMatchSource.Regex or ChannelEpgMatchSource.Fuzzy => L("EpgCoverage_ReviewStatus_SuggestionOnly"),
+                _ => L("EpgCoverage_ReviewStatus_NoGuideMatch")
             };
         }
 
@@ -271,14 +271,14 @@ namespace Kroira.App.Services
         {
             return source switch
             {
-                ChannelEpgMatchSource.Provider => L("EpgCoverage.MatchType.Exact"),
-                ChannelEpgMatchSource.Normalized => L("EpgCoverage.MatchType.Normalized"),
-                ChannelEpgMatchSource.UserApproved => L("EpgCoverage.MatchType.Approved"),
-                ChannelEpgMatchSource.Previous => L("EpgCoverage.MatchType.Reused"),
-                ChannelEpgMatchSource.Alias => L("EpgCoverage.MatchType.WeakAlias"),
-                ChannelEpgMatchSource.Regex => L("EpgCoverage.MatchType.WeakRegex"),
-                ChannelEpgMatchSource.Fuzzy => L("EpgCoverage.MatchType.Fuzzy"),
-                _ => L("EpgCoverage.MatchType.Unmatched")
+                ChannelEpgMatchSource.Provider => L("EpgCoverage_MatchType_Exact"),
+                ChannelEpgMatchSource.Normalized => L("EpgCoverage_MatchType_Normalized"),
+                ChannelEpgMatchSource.UserApproved => L("EpgCoverage_MatchType_Approved"),
+                ChannelEpgMatchSource.Previous => L("EpgCoverage_MatchType_Reused"),
+                ChannelEpgMatchSource.Alias => L("EpgCoverage_MatchType_WeakAlias"),
+                ChannelEpgMatchSource.Regex => L("EpgCoverage_MatchType_WeakRegex"),
+                ChannelEpgMatchSource.Fuzzy => L("EpgCoverage_MatchType_Fuzzy"),
+                _ => L("EpgCoverage_MatchType_Unmatched")
             };
         }
 
@@ -329,7 +329,7 @@ namespace Kroira.App.Services
             {
                 snapshots.Add(new EpgGuideSourceStatusSnapshot
                 {
-                    Label = L("EpgCoverage.GuideSource.ActiveXmltv"),
+                    Label = L("EpgCoverage_GuideSource_ActiveXmltv"),
                     Url = RedactGuideUrl(log.ActiveXmltvUrl),
                     Kind = credential?.EpgMode == EpgActiveMode.Manual ? EpgGuideSourceKind.Manual : EpgGuideSourceKind.Provider,
                     Status = log.IsSuccess ? EpgGuideSourceStatus.Ready : EpgGuideSourceStatus.Failed,
@@ -343,12 +343,12 @@ namespace Kroira.App.Services
                 var kind = EpgPublicGuideCatalog.ClassifyFallbackUrl(url);
                 snapshots.Add(new EpgGuideSourceStatusSnapshot
                 {
-                    Label = EpgPublicGuideCatalog.BuildGuideSourceLabel(url, kind, L("SourceLifecycle.GuideSource.FallbackXmltv")),
+                    Label = EpgPublicGuideCatalog.BuildGuideSourceLabel(url, kind, L("SourceLifecycle_GuideSource_FallbackXmltv")),
                     Url = RedactGuideUrl(url),
                     Kind = kind,
                     Status = EpgGuideSourceStatus.Pending,
                     IsOptional = true,
-                    Message = L("EpgCoverage.GuideSource.ConfiguredSyncToTest")
+                    Message = L("EpgCoverage_GuideSource_ConfiguredSyncToTest")
                 });
             }
 

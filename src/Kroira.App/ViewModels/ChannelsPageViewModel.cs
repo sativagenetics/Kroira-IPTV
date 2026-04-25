@@ -64,6 +64,7 @@ namespace Kroira.App.ViewModels
         private BrowsePreferences _preferences = new();
         private int _activeProfileId;
         private int _filterRequestVersion;
+        private int _localizedTextVersion = -1;
         private int _lastPreDiscoveryCount;
         private bool _lastDiscoveryFacetFiltersActive;
         private bool _isInitializing;
@@ -123,21 +124,21 @@ namespace Kroira.App.ViewModels
         private bool _hasAdvancedFilters;
 
         [ObservableProperty]
-        private string _discoverySummaryText = "Guide and catch-up details appear when they are available for these channels.";
+        private string _discoverySummaryText = LocalizedStrings.Get("Live_DiscoverySummary_Default");
 
         [ObservableProperty]
-        private string _emptyStateTitle = "No channels to show";
+        private string _emptyStateTitle = LocalizedStrings.Get("Live_Empty_NoChannels_Title");
 
         [ObservableProperty]
-        private string _emptyStateMessage = "Sync a live source, or clear your search and browse filters.";
+        private string _emptyStateMessage = LocalizedStrings.Get("Live_Empty_NoChannels_Message");
 
         public bool HasManageCategorySelection => SelectedManageCategory != null;
-        public string BrowseResultTitle => SelectedCategory?.Name ?? "All channels";
+        public string BrowseResultTitle => SelectedCategory?.Name ?? LocalizedStrings.Get("Live_Browse_AllChannels");
         public bool HasLoadedOnce => _hasLoadedOnce;
         public string BrowseResultSubtitle => ResolveBrowseResultSubtitle();
         public string BrowseResultCountText => FilteredChannels.Count == 1
-            ? "1 channel"
-            : $"{FilteredChannels.Count:N0} channels";
+            ? LocalizedStrings.Get("Browse_ChannelCount_One")
+            : LocalizedStrings.Format("Browse_ChannelCount_Many", FilteredChannels.Count);
         public Microsoft.UI.Xaml.Visibility DiscoverySignalVisibility => DiscoverySignalOptions.Count > 2
             ? Microsoft.UI.Xaml.Visibility.Visible
             : Microsoft.UI.Xaml.Visibility.Collapsed;
@@ -288,16 +289,8 @@ namespace Kroira.App.ViewModels
             _taxonomyService = serviceProvider.GetRequiredService<ICatalogTaxonomyService>();
             _smartCategoryService = serviceProvider.GetRequiredService<ISmartCategoryService>();
             _logicalCatalogStateService = serviceProvider.GetRequiredService<ILogicalCatalogStateService>();
-            RegisterSpotlightSection("last_tuned", "Last tuned", "Jump straight back into the last live channel you opened.");
-            RegisterSpotlightSection("recent", "Recent", "Fast return to recently watched live channels.");
-            RegisterSpotlightSection("priority", "Priority channels", "Favorites, sports, guide-ready channels, and channels you revisit often.");
-            RegisterSpotlightSection("turkish_sports", "Turkish sports", "Quick access to Turkish sports and football coverage across providers.");
-            RegisterSpotlightSection("most_watched_sports", "Most watched sports", "Sports channels you actually watch the most on this profile.");
-            SortOptions.Add(new BrowseSortOptionViewModel(DefaultPrioritySortKey, "Priority first"));
-            SortOptions.Add(new BrowseSortOptionViewModel("name_desc", "Name Z-A"));
-            SortOptions.Add(new BrowseSortOptionViewModel("name_asc", "Name A-Z"));
-            SortOptions.Add(new BrowseSortOptionViewModel("favorites_first", "Favorites first"));
-            SortOptions.Add(new BrowseSortOptionViewModel("guide_first", "Guide-ready first"));
+            RegisterLocalizedSpotlightSections();
+            RebuildSortOptions();
             DiscoverySignalOptions.CollectionChanged += (_, _) => OnPropertyChanged(nameof(DiscoverySignalVisibility));
             DiscoverySourceTypeOptions.CollectionChanged += (_, _) => OnPropertyChanged(nameof(DiscoverySourceTypeVisibility));
         }
@@ -310,6 +303,7 @@ namespace Kroira.App.ViewModels
 
         public void RefreshNavigationContext(ChannelsNavigationContext? context)
         {
+            RefreshLocalizedLabelsIfNeeded();
             SetNavigationContext(context);
             if (!_hasLoadedOnce || Categories.Count == 0)
             {
@@ -334,6 +328,7 @@ namespace Kroira.App.ViewModels
         [RelayCommand]
         public async Task LoadChannelsAsync()
         {
+            RefreshLocalizedLabelsIfNeeded();
             Log("01: LoadChannelsAsync entered");
             SurfaceState = SurfaceStateCopies.LiveTv.Create(SurfaceViewState.Loading);
             _allChannels.Clear();
@@ -447,7 +442,7 @@ namespace Kroira.App.ViewModels
                         SourceProfileId = category.SourceProfileId,
                         PreferredSourceProfileId = category.SourceProfileId,
                         LogicalContentKey = logicalKey,
-                        SourceName = _sourceNames.TryGetValue(category.SourceProfileId, out var sourceName) ? sourceName : "Unknown Source",
+                        SourceName = _sourceNames.TryGetValue(category.SourceProfileId, out var sourceName) ? sourceName : LocalizedStrings.Get("Browse_UnknownSource"),
                         SourceType = sourceTypeById.TryGetValue(category.SourceProfileId, out var sourceType) ? sourceType : SourceType.M3U,
                         RawName = channel.Name,
                         Name = cleanedChannelName,
@@ -1059,13 +1054,109 @@ namespace Kroira.App.ViewModels
                                       !string.IsNullOrWhiteSpace(SelectedCategory?.FilterKey);
             if (hasNarrowingFilters)
             {
-                EmptyStateTitle = "Nothing matches this explore mix";
-                EmptyStateMessage = "Relax one or two facets, clear guide or favorite filters, or widen your search to reopen live browsing.";
+                EmptyStateTitle = LocalizedStrings.Get("Browse_Empty_NoMatches_Title");
+                EmptyStateMessage = LocalizedStrings.Get("Live_Empty_NoMatches_Message");
                 return;
             }
 
-            EmptyStateTitle = baseResultCount == 0 ? "No channels to show" : "Live browser is empty";
-            EmptyStateMessage = "Try a different category, adjust search, or sync a live source from Sources.";
+            EmptyStateTitle = baseResultCount == 0
+                ? LocalizedStrings.Get("Live_Empty_NoChannels_Title")
+                : LocalizedStrings.Get("Live_Empty_BrowserEmpty_Title");
+            EmptyStateMessage = LocalizedStrings.Get("Live_Empty_BrowserEmpty_Message");
+        }
+
+        private void RefreshLocalizedLabelsIfNeeded()
+        {
+            if (_localizedTextVersion == LocalizedStrings.Version)
+            {
+                return;
+            }
+
+            _localizedTextVersion = LocalizedStrings.Version;
+            DiscoverySummaryText = LocalizedStrings.Get("Live_DiscoverySummary_Default");
+            RebuildSortOptions();
+            RefreshSpotlightSectionText();
+            if (_hasLoadedOnce)
+            {
+                BuildSourceOptions();
+                RefreshCategoryText();
+                BuildCategoryManagerOptions();
+                UpdateEmptyState(_lastPreDiscoveryCount, _lastDiscoveryFacetFiltersActive);
+            }
+
+            NotifyBrowseResultChanged();
+        }
+
+        private void RebuildSortOptions()
+        {
+            var selectedKey = SelectedSortOption?.Key ?? ResolveInitialSortKey();
+            var wasInitializing = _isInitializing;
+            _isInitializing = true;
+            try
+            {
+                SortOptions.Clear();
+                foreach (var option in BrowseLocalization.CreateSortOptions(BrowseLocalization.LiveSortOptions))
+                {
+                    SortOptions.Add(option);
+                }
+
+                SelectedSortOption = SortOptions.FirstOrDefault(option => string.Equals(option.Key, selectedKey, StringComparison.OrdinalIgnoreCase))
+                    ?? SortOptions.FirstOrDefault();
+            }
+            finally
+            {
+                _isInitializing = wasInitializing;
+            }
+        }
+
+        private void RegisterLocalizedSpotlightSections()
+        {
+            RegisterSpotlightSection("last_tuned", LocalizedStrings.Get("Live_Spotlight_LastTuned_Title"), LocalizedStrings.Get("Live_Spotlight_LastTuned_Subtitle"));
+            RegisterSpotlightSection("recent", LocalizedStrings.Get("Live_Spotlight_Recent_Title"), LocalizedStrings.Get("Live_Spotlight_Recent_Subtitle"));
+            RegisterSpotlightSection("priority", LocalizedStrings.Get("Live_Spotlight_Priority_Title"), LocalizedStrings.Get("Live_Spotlight_Priority_Subtitle"));
+            RegisterSpotlightSection("turkish_sports", LocalizedStrings.Get("Live_Spotlight_TurkishSports_Title"), LocalizedStrings.Get("Live_Spotlight_TurkishSports_Subtitle"));
+            RegisterSpotlightSection("most_watched_sports", LocalizedStrings.Get("Live_Spotlight_MostWatchedSports_Title"), LocalizedStrings.Get("Live_Spotlight_MostWatchedSports_Subtitle"));
+        }
+
+        private void RefreshSpotlightSectionText()
+        {
+            UpdateSpotlightSectionText("last_tuned", LocalizedStrings.Get("Live_Spotlight_LastTuned_Title"), LocalizedStrings.Get("Live_Spotlight_LastTuned_Subtitle"));
+            UpdateSpotlightSectionText("recent", LocalizedStrings.Get("Live_Spotlight_Recent_Title"), LocalizedStrings.Get("Live_Spotlight_Recent_Subtitle"));
+            UpdateSpotlightSectionText("priority", LocalizedStrings.Get("Live_Spotlight_Priority_Title"), LocalizedStrings.Get("Live_Spotlight_Priority_Subtitle"));
+            UpdateSpotlightSectionText("turkish_sports", LocalizedStrings.Get("Live_Spotlight_TurkishSports_Title"), LocalizedStrings.Get("Live_Spotlight_TurkishSports_Subtitle"));
+            UpdateSpotlightSectionText("most_watched_sports", LocalizedStrings.Get("Live_Spotlight_MostWatchedSports_Title"), LocalizedStrings.Get("Live_Spotlight_MostWatchedSports_Subtitle"));
+        }
+
+        private void UpdateSpotlightSectionText(string key, string title, string subtitle)
+        {
+            if (_spotlightSectionMap.TryGetValue(key, out var section))
+            {
+                section.UpdateText(title, subtitle);
+            }
+        }
+
+        private void RefreshCategoryText()
+        {
+            foreach (var category in Categories)
+            {
+                if (category.IsSmartCategory &&
+                    _smartCategoryService.GetDefinition(category.SmartCategoryId) is { } definition)
+                {
+                    category.UpdateText(
+                        BrowseLocalization.SmartCategoryName(definition),
+                        BrowseLocalization.SmartCategoryDescription(definition),
+                        BrowseLocalization.SmartCategorySection(definition));
+                }
+                else if (category.IsOriginalProviderGroup)
+                {
+                    category.UpdateText(
+                        category.Name,
+                        category.Description,
+                        BrowseLocalization.OriginalProviderGroups);
+                }
+            }
+
+            ApplyCategorySectionHeaders(Categories);
         }
 
         private void RegisterSpotlightSection(string key, string title, string subtitle)
@@ -1447,13 +1538,13 @@ namespace Kroira.App.ViewModels
             var filterKey = SelectedCategory?.FilterKey ?? string.Empty;
             var baseText = filterKey switch
             {
-                SmartPriorityCategoryKey => "Favorites, sports, and recent channels surfaced for fast watching.",
-                SmartSportsCategoryKey => "Sports channels across your visible providers.",
-                SmartTurkishSportsCategoryKey => "Turkish sports coverage grouped for fast kickoff and match-day access.",
-                SmartRecentCategoryKey => "Your recent live history, with the newest tune-ins closest to the top.",
-                _ when string.IsNullOrWhiteSpace(filterKey) => "All available live channels in your library.",
+                SmartPriorityCategoryKey => LocalizedStrings.Get("Live_Browse_Subtitle_Priority"),
+                SmartSportsCategoryKey => LocalizedStrings.Get("Live_Browse_Subtitle_Sports"),
+                SmartTurkishSportsCategoryKey => LocalizedStrings.Get("Live_Browse_Subtitle_TurkishSports"),
+                SmartRecentCategoryKey => LocalizedStrings.Get("Live_Browse_Subtitle_Recent"),
+                _ when string.IsNullOrWhiteSpace(filterKey) => LocalizedStrings.Get("Live_Browse_Subtitle_All"),
                 _ when !string.IsNullOrWhiteSpace(SelectedCategory?.Description) => SelectedCategory!.Description,
-                _ => $"Channels in {SelectedCategory?.Name ?? "this category"}, ready to watch."
+                _ => LocalizedStrings.Format("Live_Browse_Subtitle_Category", SelectedCategory?.Name ?? LocalizedStrings.Get("Browse_ThisCategory"))
             };
 
             return HasDiscoveryFilters()
@@ -1466,7 +1557,7 @@ namespace Kroira.App.ViewModels
             var existingSelection = SelectedSourceOption?.Id ?? _preferences.SelectedSourceId;
             var sourceOptions = new List<BrowseSourceFilterOptionViewModel>
             {
-                new BrowseSourceFilterOptionViewModel(0, "All providers", _allChannels.Count)
+                new BrowseSourceFilterOptionViewModel(0, BrowseLocalization.AllProviders, _allChannels.Count)
             };
             var sourceVisibilityOptions = new List<BrowseSourceVisibilityViewModel>();
 
@@ -1475,7 +1566,7 @@ namespace Kroira.App.ViewModels
                          .Select(group => new
                          {
                              Id = group.Key,
-                             Name = _sourceNames.TryGetValue(group.Key, out var name) ? name : $"Source {group.Key}",
+                             Name = _sourceNames.TryGetValue(group.Key, out var name) ? name : BrowseLocalization.SourceFallback(group.Key),
                              Count = group.Count()
                          })
                          .OrderBy(group => group.Name))
@@ -1485,7 +1576,7 @@ namespace Kroira.App.ViewModels
                 sourceVisibilityOptions.Add(new BrowseSourceVisibilityViewModel(
                     group.Id,
                     group.Name,
-                    $"{group.Count:N0} channels",
+                    BrowseLocalization.ChannelCount(group.Count),
                     isVisible,
                     OnSourceVisibilityChanged));
             }
@@ -1555,9 +1646,9 @@ namespace Kroira.App.ViewModels
                     Id = categoryId++,
                     FilterKey = definition.IsAllCategory ? string.Empty : definition.Id,
                     SmartCategoryId = definition.Id,
-                    Name = definition.DisplayName,
-                    Description = definition.MatchRule,
-                    SectionName = definition.SectionName,
+                    Name = BrowseLocalization.SmartCategoryName(definition),
+                    Description = BrowseLocalization.SmartCategoryDescription(definition),
+                    SectionName = BrowseLocalization.SmartCategorySection(definition),
                     ItemCount = count,
                     OrderIndex = definition.SortPriority,
                     IsSmartCategory = true,
@@ -1572,7 +1663,7 @@ namespace Kroira.App.ViewModels
                     FilterKey = group.Key,
                     Name = group.Name,
                     Description = ResolveEffectiveLiveDisplayCategoryName(group.Name, string.Empty),
-                    SectionName = "Original Provider Groups",
+                    SectionName = BrowseLocalization.OriginalProviderGroups,
                     ItemCount = group.Count,
                     OrderIndex = 100_000 + index,
                     IsOriginalProviderGroup = true,
@@ -1597,10 +1688,11 @@ namespace Kroira.App.ViewModels
             var previousSection = string.Empty;
             foreach (var category in categories)
             {
-                category.SectionHeaderVisibility = string.IsNullOrWhiteSpace(category.SectionName) ||
-                                                   string.Equals(category.SectionName, previousSection, StringComparison.Ordinal)
+                var visibility = string.IsNullOrWhiteSpace(category.SectionName) ||
+                                 string.Equals(category.SectionName, previousSection, StringComparison.Ordinal)
                     ? Microsoft.UI.Xaml.Visibility.Collapsed
                     : Microsoft.UI.Xaml.Visibility.Visible;
+                category.UpdateSectionHeaderVisibility(visibility);
                 previousSection = category.SectionName;
             }
         }

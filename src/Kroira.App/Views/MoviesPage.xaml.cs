@@ -42,6 +42,7 @@ namespace Kroira.App.Views
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
+            ViewModel.RefreshLocalizedLabelsIfNeeded();
             var navigationStopwatch = Stopwatch.StartNew();
             if (DispatcherQueue != null)
             {
@@ -166,7 +167,7 @@ namespace Kroira.App.Views
                 return;
             }
 
-            var variant = await ChooseMovieVariantAsync(movie, "General.Play");
+            var variant = await ChooseMovieVariantAsync(movie, "General_Play");
             if (variant == null || string.IsNullOrWhiteSpace(variant.Movie.StreamUrl))
             {
                 return;
@@ -196,7 +197,7 @@ namespace Kroira.App.Views
         {
             if (e.ClickedItem is MovieBrowseSlotViewModel { HasMovie: true, Movie: { } movie })
             {
-            var variant = await ChooseMovieVariantAsync(movie, "General.Play");
+            var variant = await ChooseMovieVariantAsync(movie, "General_Play");
                 if (variant != null && !string.IsNullOrWhiteSpace(variant.Movie.StreamUrl))
                 {
                     this.Frame.Navigate(typeof(EmbeddedPlaybackPage), CreateMovieLaunchContext(variant));
@@ -226,7 +227,7 @@ namespace Kroira.App.Views
                 !RemoteNavigationHelper.IsWithinInteractiveControl(e.OriginalSource) &&
                 RemoteNavigationHelper.FindDataContextInAncestors<MovieBrowseSlotViewModel>(e.OriginalSource) is { HasMovie: true, Movie: { } movie })
             {
-            var variant = await ChooseMovieVariantAsync(movie, "General.Play");
+            var variant = await ChooseMovieVariantAsync(movie, "General_Play");
                 if (variant != null && !string.IsNullOrWhiteSpace(variant.Movie.StreamUrl))
                 {
                     Frame.Navigate(typeof(EmbeddedPlaybackPage), CreateMovieLaunchContext(variant));
@@ -402,7 +403,7 @@ namespace Kroira.App.Views
                 return;
             }
 
-            var variant = await ChooseMovieVariantAsync(movie, "General.Inspect");
+            var variant = await ChooseMovieVariantAsync(movie, "General_Inspect");
             if (variant == null)
             {
                 return;
@@ -418,7 +419,7 @@ namespace Kroira.App.Views
                 return;
             }
 
-            var variant = await ChooseMovieVariantAsync(movie, "General.Inspect");
+            var variant = await ChooseMovieVariantAsync(movie, "General_Inspect");
             if (variant == null)
             {
                 return;
@@ -437,7 +438,7 @@ namespace Kroira.App.Views
 
         private async Task QueueMovieDownloadAsync(MovieBrowseItemViewModel movie)
         {
-            var variant = await ChooseMovieVariantAsync(movie, "General.Download");
+            var variant = await ChooseMovieVariantAsync(movie, "General_Download");
             if (variant == null || string.IsNullOrWhiteSpace(variant.Movie.StreamUrl))
             {
                 return;
@@ -457,8 +458,8 @@ namespace Kroira.App.Views
             {
                 await ShowContentDialogAsync(new ContentDialog
                 {
-                    Title = LocalizedStrings.Get("Movies.DownloadFailedTitle"),
-                    CloseButtonText = LocalizedStrings.Get("General.Close"),
+                    Title = LocalizedStrings.Get("Movies_DownloadFailedTitle"),
+                    CloseButtonText = LocalizedStrings.Get("General_Close"),
                     XamlRoot = this.XamlRoot,
                     Content = ex.Message
                 });
@@ -492,7 +493,7 @@ namespace Kroira.App.Views
             {
                 Title = movie.Title,
                 PrimaryButtonText = LocalizedStrings.Get(actionResourceKey),
-                CloseButtonText = LocalizedStrings.Get("General.Cancel"),
+                CloseButtonText = LocalizedStrings.Get("General_Cancel"),
                 DefaultButton = ContentDialogButton.Primary,
                 XamlRoot = this.XamlRoot,
                 Content = new StackPanel
@@ -502,11 +503,11 @@ namespace Kroira.App.Views
                     {
                         new TextBlock
                         {
-                            Text = actionResourceKey == "General.Play"
-                                ? LocalizedStrings.Get("Movies.ChooseSource.Playback")
-                                : actionResourceKey == "General.Download"
-                                    ? LocalizedStrings.Get("Movies.ChooseSource.Download")
-                                    : LocalizedStrings.Get("Movies.ChooseSource.Inspect"),
+                            Text = actionResourceKey == "General_Play"
+                                ? LocalizedStrings.Get("Movies_ChooseSource_Playback")
+                                : actionResourceKey == "General_Download"
+                                    ? LocalizedStrings.Get("Movies_ChooseSource_Download")
+                                    : LocalizedStrings.Get("Movies_ChooseSource_Inspect"),
                             TextWrapping = TextWrapping.Wrap
                         },
                         comboBox

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.ObjectModel;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
@@ -110,13 +111,13 @@ namespace Kroira.App.ViewModels
         public string SourceKindText { get; set; } = string.Empty;
         public string HealthBadgeText { get; set; } = string.Empty;
         public string GuideBadgeText { get; set; } = string.Empty;
-        public string PrimarySyncText { get; set; } = "Sync Now";
+        public string PrimarySyncText { get; set; } = LocalizedStrings.Get("Sources_Action_SyncNow");
         public string SourcePanelSummaryText { get; set; } = string.Empty;
         public string ConnectionLabelText { get; set; } = string.Empty;
         public StatusPillKind HealthPillKind { get; set; } = StatusPillKind.Neutral;
         public StatusPillKind GuidePillKind { get; set; } = StatusPillKind.Neutral;
-        public string LastSyncText { get; set; } = "Never";
-        public string LastAttemptText { get; set; } = "Never";
+        public string LastSyncText { get; set; } = LocalizedStrings.Get("General_Never");
+        public string LastAttemptText { get; set; } = LocalizedStrings.Get("General_Never");
         public int ChannelCount { get; set; }
         public int MovieCount { get; set; }
         public int SeriesCount { get; set; }
@@ -167,7 +168,7 @@ namespace Kroira.App.ViewModels
         public string AcquisitionRoutingText { get; set; } = string.Empty;
         public string AcquisitionLastRunText { get; set; } = string.Empty;
         public string OperationalStatusText { get; set; } = string.Empty;
-        public string ProxyStatusText { get; set; } = "Direct routing";
+        public string ProxyStatusText { get; set; } = LocalizedStrings.Get("Sources_Proxy_DirectRouting");
         public string CompanionStatusText { get; set; } = string.Empty;
         public IReadOnlyList<SourceHealthComponentItemViewModel> HealthComponents { get; set; } = Array.Empty<SourceHealthComponentItemViewModel>();
         public IReadOnlyList<SourceIssueItemViewModel> HealthIssues { get; set; } = Array.Empty<SourceIssueItemViewModel>();
@@ -191,7 +192,7 @@ namespace Kroira.App.ViewModels
         [NotifyPropertyChangedFor(nameof(IsEpgSyncEnabled))]
         private bool _isEpgSyncing;
 
-        public string EpgSyncButtonText => IsEpgSyncing ? "Syncing..." : "EPG";
+        public string EpgSyncButtonText => IsEpgSyncing ? LocalizedStrings.Get("General_Syncing") : "EPG";
         public bool IsEpgSyncEnabled => CanSyncEpg && !IsEpgSyncing;
         public bool CanRunXtreamVodOnly => Type is "Xtream" or "Stalker";
 
@@ -313,28 +314,34 @@ namespace Kroira.App.ViewModels
             : 0d;
 
         public string GuideCoverageRatioText => ChannelCount > 0
-            ? $"{EpgMatchedChannels:N0} / {ChannelCount:N0} mapped"
-            : "No live channels";
+            ? LocalizedStrings.Format("Sources_GuideCoverage_Mapped", EpgMatchedChannels, ChannelCount)
+            : LocalizedStrings.Get("Sources_GuideCoverage_NoLiveChannels");
 
         public string GuideCoverageSecondaryText => ChannelCount > 0
-            ? $"{Math.Max(ChannelCount - EpgMatchedChannels, 0):N0} unmatched"
+            ? LocalizedStrings.Format("Sources_GuideCoverage_Unmatched", Math.Max(ChannelCount - EpgMatchedChannels, 0))
             : GuideStatusText;
 
         public string OperationalSummaryText => string.IsNullOrWhiteSpace(SourcePanelSummaryText)
             ? Status
             : SourcePanelSummaryText;
 
-        public string QualitySnapshotText => $"Duplicates {DuplicateCount:N0}, invalid {InvalidStreamCount:N0}, suspicious {SuspiciousEntryCount:N0}, unknown {UnknownClassificationCount:N0}";
+        public string QualitySnapshotText => LocalizedStrings.Format(
+            "Sources_QualitySnapshot",
+            DuplicateCount,
+            InvalidStreamCount,
+            SuspiciousEntryCount,
+            UnknownClassificationCount);
 
         public string LogoCoverageText => ChannelCount > 0
-            ? $"{ChannelsWithLogoCount:N0} / {ChannelCount:N0} live channels with logos"
-            : "No live channels available";
+            ? LocalizedStrings.Format("Sources_LogoCoverage_WithLogos", ChannelsWithLogoCount, ChannelCount)
+            : LocalizedStrings.Get("Sources_LogoCoverage_NoLiveChannels");
 
         public string ValidationScoreText => HealthScore > 0
-            ? $"{HealthScore}/100 confidence"
-            : LastSyncText == "Never"
-                ? "Validation pending"
-                : "0/100 confidence";
+            ? LocalizedStrings.Format("Sources_Validation_Confidence", HealthScore)
+            : string.Equals(LastSyncText, "Never", StringComparison.OrdinalIgnoreCase) ||
+              string.Equals(LastSyncText, LocalizedStrings.Get("General_Never"), StringComparison.OrdinalIgnoreCase)
+                ? LocalizedStrings.Get("Sources_Validation_Pending")
+                : LocalizedStrings.Format("Sources_Validation_Confidence", 0);
 
         public Microsoft.UI.Xaml.Visibility GuideCoverageVisibility => ChannelCount > 0
             ? Microsoft.UI.Xaml.Visibility.Visible
@@ -571,9 +578,11 @@ namespace Kroira.App.ViewModels
 
         public string M3uSourceCountLabel => $"{M3uSourceCount:N0} M3U";
         public string XtreamSourceCountLabel => $"{XtreamSourceCount:N0} Xtream";
-        public string ConfiguredSourceCountText => $"{SourceCount:N0} configured";
-        public string RecentActivityCountText => $"{RecentActivities.Count:N0} events";
-        public string SyncAllButtonText => IsSyncAllRunning ? "Syncing all..." : "Sync all";
+        public string ConfiguredSourceCountText => LocalizedStrings.Format("Sources_ConfiguredCount", SourceCount);
+        public string RecentActivityCountText => LocalizedStrings.Format("Sources_RecentActivityCount", RecentActivities.Count);
+        public string SyncAllButtonText => IsSyncAllRunning
+            ? LocalizedStrings.Get("Sources_Action_SyncingAll")
+            : LocalizedStrings.Get("Sources_Action_SyncAll");
         public bool CanSyncAllSources => !IsSyncAllRunning && SourceCount > 0;
 
         public SourceListViewModel(IServiceProvider serviceProvider)
@@ -713,26 +722,29 @@ namespace Kroira.App.ViewModels
                     SourceType = profile.Type,
                     HealthLabel = profile.LastSync.HasValue ? "Healthy" : "Not synced",
                     StatusSummary = profile.LastSync.HasValue
-                        ? $"Last import completed {profile.LastSync.Value.ToLocalTime():g}."
-                        : "Saved source. No successful import recorded yet.",
+                        ? LocalizedStrings.Format("Sources_Status_LastImportCompleted", profile.LastSync.Value.ToLocalTime())
+                        : LocalizedStrings.Get("Sources_Status_NoSuccessfulImport"),
                     ImportResultText = profile.LastSync.HasValue
-                        ? $"Imported at {profile.LastSync.Value.ToLocalTime():g}"
-                        : "No successful import recorded.",
-                    ValidationResultText = "Validation will appear after the first completed sync.",
-                    EpgCoverageText = "Guide not synced.",
-                    EpgStatusText = "Guide not synced",
-                    EpgStatusSummary = "Guide has not synced yet.",
-                    LastSuccessfulSyncText = $"Import {(profile.LastSync.HasValue ? profile.LastSync.Value.ToLocalTime().ToString("g") : "Never")} - Guide Never",
-                    LastSyncAttemptText = "Never",
-                    LastImportSuccessText = profile.LastSync?.ToLocalTime().ToString("g") ?? "Never",
-                    LastEpgSuccessText = "Never",
-                    ActiveEpgModeText = "Detected from provider",
+                        ? LocalizedStrings.Format("Sources_Status_ImportedAt", profile.LastSync.Value.ToLocalTime())
+                        : LocalizedStrings.Get("Sources_Status_NoSuccessfulImportShort"),
+                    ValidationResultText = LocalizedStrings.Get("Sources_Validation_AfterFirstSync"),
+                    EpgCoverageText = LocalizedStrings.Get("Sources_Guide_NotSyncedSentence"),
+                    EpgStatusText = LocalizedStrings.Get("Sources_Guide_NotSynced"),
+                    EpgStatusSummary = LocalizedStrings.Get("Sources_Guide_NotSyncedYet"),
+                    LastSuccessfulSyncText = LocalizedStrings.Format(
+                        "Sources_LastSuccessfulSync",
+                        profile.LastSync.HasValue ? profile.LastSync.Value.ToLocalTime().ToString("g") : LocalizedStrings.Get("General_Never"),
+                        LocalizedStrings.Get("General_Never")),
+                    LastSyncAttemptText = LocalizedStrings.Get("General_Never"),
+                    LastImportSuccessText = profile.LastSync?.ToLocalTime().ToString("g") ?? LocalizedStrings.Get("General_Never"),
+                    LastEpgSuccessText = LocalizedStrings.Get("General_Never"),
+                    ActiveEpgModeText = LocalizedStrings.Get("Sources_Guide_DetectedFromProvider"),
                     EpgStatus = EpgStatus.Unknown,
                     EpgResultCode = EpgSyncResultCode.None,
-                    AutoRefreshStatusText = "Auto standby",
-                    AutoRefreshSummaryText = "Automatic refresh has not run yet.",
-                    NextAutoRefreshText = "Never",
-                    LastAutoRefreshText = "Never",
+                    AutoRefreshStatusText = LocalizedStrings.Get("Sources_AutoRefresh_Standby"),
+                    AutoRefreshSummaryText = LocalizedStrings.Get("Sources_AutoRefresh_NotRunYet"),
+                    NextAutoRefreshText = LocalizedStrings.Get("General_Never"),
+                    LastAutoRefreshText = LocalizedStrings.Get("General_Never"),
                     HealthComponents = Array.Empty<SourceDiagnosticsComponentSnapshot>(),
                     HealthProbes = Array.Empty<SourceDiagnosticsProbeSnapshot>()
                 };
@@ -764,13 +776,13 @@ namespace Kroira.App.ViewModels
                         SourceType.Stalker => "STALKER PORTAL",
                         _ => "M3U PLAYLIST"
                     },
-                    HealthBadgeText = (snapshot.HealthLabel ?? "Saved").ToUpperInvariant(),
+                    HealthBadgeText = LocalizeHealthLabel(snapshot.HealthLabel ?? "Saved").ToUpper(CultureInfo.CurrentCulture),
                     GuideBadgeText = BuildGuideBadgeText(snapshot),
                     PrimarySyncText = profile.Type switch
                     {
-                        SourceType.Xtream => "Sync Now",
-                        SourceType.Stalker => "Sync Portal",
-                        _ => "Import Now"
+                        SourceType.Xtream => LocalizedStrings.Get("Sources_Action_SyncNow"),
+                        SourceType.Stalker => LocalizedStrings.Get("Sources_Action_SyncPortal"),
+                        _ => LocalizedStrings.Get("Sources_Action_ImportNow")
                     },
                     SourcePanelSummaryText = BuildSourcePanelSummary(snapshot),
                     ConnectionLabelText = BuildConnectionLabel(snapshot),
@@ -951,8 +963,8 @@ namespace Kroira.App.ViewModels
                 ? $"{guideCoverage:P0}"
                 : "0%";
             GuideCoverageCaption = totalLiveChannels > 0
-                ? $"{TotalMatchedGuideChannelCount:N0} of {totalLiveChannels:N0} live channels matched to guide data"
-                : "Add a live source to see guide coverage.";
+                ? LocalizedStrings.Format("Sources_GuideCoverage_Caption", TotalMatchedGuideChannelCount, totalLiveChannels)
+                : LocalizedStrings.Get("Sources_GuideCoverage_AddLiveSource");
 
             var healthySources = loadedSources.Count(source => source.HealthPillKind == StatusPillKind.Healthy);
             var failingSources = loadedSources.Count(source => source.HealthPillKind == StatusPillKind.Failed);
@@ -960,32 +972,32 @@ namespace Kroira.App.ViewModels
 
             if (workingSources > 0)
             {
-                HealthStatusHeadline = "Syncing";
-                HealthStatusCaption = $"{workingSources} source{(workingSources == 1 ? string.Empty : "s")} syncing now.";
+                HealthStatusHeadline = LocalizedStrings.Get("Sources_HealthStatus_Syncing");
+                HealthStatusCaption = LocalizedStrings.Format("Sources_HealthStatus_SyncingCaption", workingSources);
                 HealthStatusKind = StatusPillKind.Syncing;
             }
             else if (failingSources > 0)
             {
-                HealthStatusHeadline = "Attention";
-                HealthStatusCaption = $"{failingSources} source{(failingSources == 1 ? string.Empty : "s")} need review.";
+                HealthStatusHeadline = LocalizedStrings.Get("Sources_HealthStatus_Attention");
+                HealthStatusCaption = LocalizedStrings.Format("Sources_HealthStatus_AttentionCaption", failingSources);
                 HealthStatusKind = StatusPillKind.Failed;
             }
             else if (healthySources == loadedSources.Count && loadedSources.Count > 0)
             {
-                HealthStatusHeadline = "Optimal";
-                HealthStatusCaption = "All configured sources are ready.";
+                HealthStatusHeadline = LocalizedStrings.Get("Sources_HealthStatus_Optimal");
+                HealthStatusCaption = LocalizedStrings.Get("Sources_HealthStatus_OptimalCaption");
                 HealthStatusKind = StatusPillKind.Healthy;
             }
             else if (loadedSources.Count > 0)
             {
-                HealthStatusHeadline = "Mixed";
-                HealthStatusCaption = $"{healthySources} source{(healthySources == 1 ? string.Empty : "s")} ready, {loadedSources.Count - healthySources} to review.";
+                HealthStatusHeadline = LocalizedStrings.Get("Sources_HealthStatus_Mixed");
+                HealthStatusCaption = LocalizedStrings.Format("Sources_HealthStatus_MixedCaption", healthySources, loadedSources.Count - healthySources);
                 HealthStatusKind = StatusPillKind.Warning;
             }
             else
             {
-                HealthStatusHeadline = "Idle";
-                HealthStatusCaption = "Add a source to get started.";
+                HealthStatusHeadline = LocalizedStrings.Get("Sources_HealthStatus_Idle");
+                HealthStatusCaption = LocalizedStrings.Get("Sources_HealthStatus_IdleCaption");
                 HealthStatusKind = StatusPillKind.Neutral;
             }
 
@@ -1040,11 +1052,11 @@ namespace Kroira.App.ViewModels
             IsEmpty = Sources.Count == 0;
             OnPropertyChanged(nameof(CanSyncAllSources));
             EmptyStateTitle = noConfiguredSources
-                ? "No sources configured"
-                : "No matching sources";
+                ? LocalizedStrings.Get("Sources_Empty_NoSources_Title")
+                : LocalizedStrings.Get("Sources_Empty_NoMatches_Title");
             EmptyStateMessage = noConfiguredSources
-                ? "Add an M3U playlist, Xtream provider, or Stalker portal to start importing live channels, movies, series, and guide data."
-                : "Try a different source name, type, or guide status.";
+                ? LocalizedStrings.Get("Sources_Empty_NoSources_Message")
+                : LocalizedStrings.Get("Sources_Empty_NoMatches_Message");
         }
 
         private static SourceItemViewModel ReuseOrCreateSourceItem(
@@ -1076,8 +1088,8 @@ namespace Kroira.App.ViewModels
                 if (profile.LastSync.HasValue)
                 {
                     var importStatusText = snapshot.HealthLabel is "Failing" or "Attention" or "Weak" or "Incomplete" or "Outdated" or "Problematic"
-                        ? "Review"
-                        : "Complete";
+                        ? LocalizedStrings.Get("Sources_Recent_Status_Review")
+                        : LocalizedStrings.Get("Sources_Recent_Status_Complete");
                     var importKind = snapshot.HealthLabel is "Failing" or "Problematic"
                         ? StatusPillKind.Failed
                         : snapshot.HealthLabel is "Attention"
@@ -1092,13 +1104,13 @@ namespace Kroira.App.ViewModels
                         SourceName = profile.Name,
                         ActionText = profile.Type switch
                         {
-                            SourceType.Xtream => "Source Sync",
-                            SourceType.Stalker => "Portal Sync",
-                            _ => "Playlist Import"
+                            SourceType.Xtream => LocalizedStrings.Get("Sources_Recent_Action_SourceSync"),
+                            SourceType.Stalker => LocalizedStrings.Get("Sources_Recent_Action_PortalSync"),
+                            _ => LocalizedStrings.Get("Sources_Recent_Action_PlaylistImport")
                         },
                         StatusText = importStatusText,
                         StatusKind = importKind,
-                        PayloadText = $"{snapshot.LiveChannelCount:N0} live, {snapshot.MovieCount + snapshot.SeriesCount:N0} VOD/series"
+                        PayloadText = LocalizedStrings.Format("Sources_Recent_Payload_Import", snapshot.LiveChannelCount, snapshot.MovieCount + snapshot.SeriesCount)
                     }));
                 }
 
@@ -1108,10 +1120,10 @@ namespace Kroira.App.ViewModels
                     {
                         TimestampText = epgLog.SyncedAtUtc.ToLocalTime().ToString("MMM d, HH:mm"),
                         SourceName = profile.Name,
-                        ActionText = "Guide Sync",
+                        ActionText = LocalizedStrings.Get("Sources_Recent_Action_GuideSync"),
                         StatusText = snapshot.EpgStatusText,
                         StatusKind = MapGuidePillKind(snapshot),
-                        PayloadText = $"{snapshot.MatchedLiveChannelCount:N0} matched, {snapshot.EpgProgramCount:N0} programmes"
+                        PayloadText = LocalizedStrings.Format("Sources_Recent_Payload_Guide", snapshot.MatchedLiveChannelCount, snapshot.EpgProgramCount)
                     }));
                 }
             }
@@ -1175,13 +1187,13 @@ namespace Kroira.App.ViewModels
 
             return snapshot.EpgStatus switch
             {
-                EpgStatus.Syncing => "Connection syncing",
-                EpgStatus.Ready => "Connection active",
-                EpgStatus.ManualOverride => "Manual guide active",
-                EpgStatus.Stale => "Guide is stale",
-                EpgStatus.FailedFetchOrParse => "Connection failed",
-                EpgStatus.UnavailableNoXmltv => "Guide unavailable",
-                _ => "Standby"
+                EpgStatus.Syncing => LocalizedStrings.Get("Sources_Connection_Syncing"),
+                EpgStatus.Ready => LocalizedStrings.Get("Sources_Connection_Active"),
+                EpgStatus.ManualOverride => LocalizedStrings.Get("Sources_Connection_ManualGuideActive"),
+                EpgStatus.Stale => LocalizedStrings.Get("Sources_Connection_GuideStale"),
+                EpgStatus.FailedFetchOrParse => LocalizedStrings.Get("Sources_Connection_Failed"),
+                EpgStatus.UnavailableNoXmltv => LocalizedStrings.Get("Sources_Connection_GuideUnavailable"),
+                _ => LocalizedStrings.Get("Sources_Connection_Standby")
             };
         }
 
@@ -1195,6 +1207,27 @@ namespace Kroira.App.ViewModels
                 "Attention" or "Degraded" => StatusPillKind.Warning,
                 "Failing" or "Problematic" => StatusPillKind.Failed,
                 _ => StatusPillKind.Standby
+            };
+        }
+
+        private static string LocalizeHealthLabel(string healthLabel)
+        {
+            return healthLabel switch
+            {
+                "Healthy" => LocalizedStrings.Get("Sources_HealthLabel_Healthy"),
+                "Good" => LocalizedStrings.Get("Sources_HealthLabel_Good"),
+                "Ready" => LocalizedStrings.Get("Sources_HealthLabel_Ready"),
+                "Weak" => LocalizedStrings.Get("Sources_HealthLabel_Weak"),
+                "Incomplete" => LocalizedStrings.Get("Sources_HealthLabel_Incomplete"),
+                "Outdated" => LocalizedStrings.Get("Sources_HealthLabel_Outdated"),
+                "Working" => LocalizedStrings.Get("Sources_HealthLabel_Working"),
+                "Attention" => LocalizedStrings.Get("Sources_HealthLabel_Attention"),
+                "Degraded" => LocalizedStrings.Get("Sources_HealthLabel_Degraded"),
+                "Failing" => LocalizedStrings.Get("Sources_HealthLabel_Failing"),
+                "Problematic" => LocalizedStrings.Get("Sources_HealthLabel_Problematic"),
+                "Not synced" => LocalizedStrings.Get("Sources_HealthLabel_NotSynced"),
+                "Saved" => LocalizedStrings.Get("Sources_HealthLabel_Saved"),
+                _ => healthLabel
             };
         }
 
@@ -1425,7 +1458,7 @@ namespace Kroira.App.ViewModels
                     if (item != null)
                     {
                         item.HealthLabel = "Working";
-                        item.Status = "Queued in all-source sync...";
+                        item.Status = LocalizedStrings.Get("Sources_Status_QueuedAllSync");
                     }
 
                     var refreshScope = profile.Type is SourceType.Xtream or SourceType.Stalker
@@ -1436,7 +1469,7 @@ namespace Kroira.App.ViewModels
                     {
                         if (item != null)
                         {
-                            item.Status = "Refreshing source...";
+                            item.Status = LocalizedStrings.Get("Sources_Status_RefreshingSource");
                         }
 
                         await refreshService.RefreshSourceAsync(profile.Id, SourceRefreshTrigger.Manual, refreshScope);
@@ -1446,7 +1479,7 @@ namespace Kroira.App.ViewModels
                         if (item != null)
                         {
                             item.HealthLabel = "Failing";
-                            item.Status = BuildStatusMessage("All-source sync needs review", ex.Message);
+                            item.Status = BuildStatusMessage(LocalizedStrings.Get("Sources_Status_AllSyncNeedsReview"), ex.Message);
                         }
                     }
                 }
@@ -1467,7 +1500,7 @@ namespace Kroira.App.ViewModels
 
             item.IsEpgSyncing = true;
             item.HealthLabel = "Working";
-            item.Status = "Refreshing guide data...";
+            item.Status = LocalizedStrings.Get("Sources_Status_RefreshingGuide");
 
             try
             {
@@ -1480,7 +1513,7 @@ namespace Kroira.App.ViewModels
             {
                 item.IsEpgSyncing = false;
                 item.HealthLabel = "Failing";
-                item.Status = BuildStatusMessage("Guide refresh needs review", ex.Message);
+                item.Status = BuildStatusMessage(LocalizedStrings.Get("Sources_Status_GuideRefreshNeedsReview"), ex.Message);
             }
         }
 
@@ -1491,7 +1524,7 @@ namespace Kroira.App.ViewModels
             if (item != null)
             {
                 item.HealthLabel = "Working";
-                item.Status = "Refreshing source...";
+                item.Status = LocalizedStrings.Get("Sources_Status_RefreshingSource");
             }
 
             try
@@ -1505,7 +1538,7 @@ namespace Kroira.App.ViewModels
                     item = Sources.FirstOrDefault(source => source.Id == id);
                     if (item != null)
                     {
-                        item.Status = BuildStatusMessage("Source refresh needs review", result.Message);
+                        item.Status = BuildStatusMessage(LocalizedStrings.Get("Sources_Status_SourceRefreshNeedsReview"), result.Message);
                     }
                 }
                 else if (!result.GuideSucceeded && result.GuideAttempted && !string.IsNullOrWhiteSpace(result.GuideSummary))
@@ -1522,7 +1555,7 @@ namespace Kroira.App.ViewModels
                 if (item != null)
                 {
                     item.HealthLabel = "Failing";
-                    item.Status = BuildStatusMessage("Source refresh did not finish", ex.Message);
+                    item.Status = BuildStatusMessage(LocalizedStrings.Get("Sources_Status_SourceRefreshFailed"), ex.Message);
                 }
             }
         }
@@ -1534,7 +1567,7 @@ namespace Kroira.App.ViewModels
             if (item != null)
             {
                 item.HealthLabel = "Working";
-                item.Status = "Refreshing movie and series catalog...";
+                item.Status = LocalizedStrings.Get("Sources_Status_RefreshingVod");
             }
 
             try
@@ -1549,7 +1582,7 @@ namespace Kroira.App.ViewModels
                 if (item != null)
                 {
                     item.HealthLabel = "Failing";
-                    item.Status = BuildStatusMessage("Library refresh did not finish", ex.Message);
+                    item.Status = BuildStatusMessage(LocalizedStrings.Get("Sources_Status_LibraryRefreshFailed"), ex.Message);
                 }
             }
         }

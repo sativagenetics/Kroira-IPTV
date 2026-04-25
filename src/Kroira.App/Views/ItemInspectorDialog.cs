@@ -32,10 +32,10 @@ namespace Kroira.App.Views
                 TextWrapping = TextWrapping.Wrap
             };
 
-            Title = LocalizedStrings.Get("ItemInspector.Title");
-            PrimaryButtonText = LocalizedStrings.Get("GeneralCopySafeReportButton.Content");
-            SecondaryButtonText = snapshot.SupportsExternalLaunch ? LocalizedStrings.Get("PlayerOpenExternalButton.Content") : string.Empty;
-            CloseButtonText = LocalizedStrings.Get("General.Close");
+            Title = LocalizedStrings.Get("ItemInspector_Title");
+            PrimaryButtonText = LocalizedStrings.Get("GeneralCopySafeReportButton_Content");
+            SecondaryButtonText = snapshot.SupportsExternalLaunch ? LocalizedStrings.Get("PlayerOpenExternalButton_Content") : string.Empty;
+            CloseButtonText = LocalizedStrings.Get("General_Close");
             DefaultButton = ContentDialogButton.Close;
             MinWidth = 820;
             MaxWidth = 920;
@@ -218,11 +218,11 @@ namespace Kroira.App.Views
                 package.SetText(_snapshot.SafeReportText);
                 Clipboard.SetContent(package);
                 Clipboard.Flush();
-                _actionStatusText.Text = LocalizedStrings.Get("ItemInspector.CopiedSafeReport");
+                _actionStatusText.Text = LocalizedStrings.Get("ItemInspector_CopiedSafeReport");
             }
             catch (Exception ex)
             {
-                _actionStatusText.Text = LocalizedStrings.Format("ItemInspector.CopyFailed", ex.Message);
+                _actionStatusText.Text = LocalizedStrings.Format("ItemInspector_CopyFailed", ex.Message);
             }
         }
 

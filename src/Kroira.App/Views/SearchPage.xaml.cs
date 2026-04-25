@@ -87,9 +87,9 @@ namespace Kroira.App.Views
             var dialog = new ContentDialog
             {
                 Title = item.Title,
-                PrimaryButtonText = item.ResumePositionMs > 0 ? LocalizedStrings.Get("General.Resume") : LocalizedStrings.Get("General.Play"),
-                SecondaryButtonText = LocalizedStrings.Get("Search.OpenMovies"),
-                CloseButtonText = LocalizedStrings.Get("General.Close"),
+                PrimaryButtonText = item.ResumePositionMs > 0 ? LocalizedStrings.Get("General_Resume") : LocalizedStrings.Get("General_Play"),
+                SecondaryButtonText = LocalizedStrings.Get("Search_OpenMovies"),
+                CloseButtonText = LocalizedStrings.Get("General_Close"),
                 DefaultButton = ContentDialogButton.Primary,
                 IsPrimaryButtonEnabled = !string.IsNullOrWhiteSpace(item.StreamUrl),
                 XamlRoot = XamlRoot,
@@ -112,8 +112,8 @@ namespace Kroira.App.Views
             var dialog = new ContentDialog
             {
                 Title = item.Title,
-                PrimaryButtonText = LocalizedStrings.Get("Search.OpenSeries"),
-                CloseButtonText = LocalizedStrings.Get("General.Close"),
+                PrimaryButtonText = LocalizedStrings.Get("Search_OpenSeries"),
+                CloseButtonText = LocalizedStrings.Get("General_Close"),
                 DefaultButton = ContentDialogButton.Primary,
                 XamlRoot = XamlRoot,
                 Content = BuildDetailContent(item)

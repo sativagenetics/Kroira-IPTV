@@ -371,12 +371,12 @@ namespace Kroira.App
             {
                 SafeAppendLog("APP E01: showing startup error window");
 
-                var title = LocalizedStrings.Get("App.StartupError.Title");
+                var title = LocalizedStrings.Get("App_StartupError_Title");
                 var text =
                     title + "\n\n" +
                     ex + "\n\n" +
-                    LocalizedStrings.Format("App.StartupError.LogPath", StartupLogPath) + "\n" +
-                    LocalizedStrings.Format("App.StartupError.ErrorPath", StartupErrorPath);
+                    LocalizedStrings.Format("App_StartupError_LogPath", StartupLogPath) + "\n" +
+                    LocalizedStrings.Format("App_StartupError_ErrorPath", StartupErrorPath);
 
                 var errorWindow = new Window
                 {

@@ -34,18 +34,18 @@ namespace Kroira.App.Services
 
         public static readonly IReadOnlyList<AppLanguageOption> SupportedLanguages = new[]
         {
-            new AppLanguageOption(SystemDefaultLanguageCode, "Language.SystemDefault"),
-            new AppLanguageOption(DefaultLanguageCode, "Language.English"),
-            new AppLanguageOption("tr-TR", "Language.Turkish"),
-            new AppLanguageOption("zh-Hans", "Language.ChineseSimplified"),
-            new AppLanguageOption("es-ES", "Language.Spanish"),
-            new AppLanguageOption(ArabicLanguageCode, "Language.Arabic"),
-            new AppLanguageOption("fr-FR", "Language.French"),
-            new AppLanguageOption("de-DE", "Language.German"),
-            new AppLanguageOption("pt-BR", "Language.PortugueseBrazil"),
-            new AppLanguageOption("hi-IN", "Language.Hindi"),
-            new AppLanguageOption("ja-JP", "Language.Japanese"),
-            new AppLanguageOption("ko-KR", "Language.Korean")
+            new AppLanguageOption(SystemDefaultLanguageCode, "Language_SystemDefault"),
+            new AppLanguageOption(DefaultLanguageCode, "Language_English"),
+            new AppLanguageOption("tr-TR", "Language_Turkish"),
+            new AppLanguageOption("zh-Hans", "Language_ChineseSimplified"),
+            new AppLanguageOption("es-ES", "Language_Spanish"),
+            new AppLanguageOption(ArabicLanguageCode, "Language_Arabic"),
+            new AppLanguageOption("fr-FR", "Language_French"),
+            new AppLanguageOption("de-DE", "Language_German"),
+            new AppLanguageOption("pt-BR", "Language_PortugueseBrazil"),
+            new AppLanguageOption("hi-IN", "Language_Hindi"),
+            new AppLanguageOption("ja-JP", "Language_Japanese"),
+            new AppLanguageOption("ko-KR", "Language_Korean")
         };
 
         public static IReadOnlyList<string> SupportedLanguageCodes =>
@@ -65,10 +65,12 @@ namespace Kroira.App.Services
             if (string.Equals(normalized, SystemDefaultLanguageCode, StringComparison.OrdinalIgnoreCase))
             {
                 ClearPrimaryLanguageOverride();
+                LocalizedStrings.Reset();
                 return;
             }
 
             SetPrimaryLanguageOverride(normalized);
+            LocalizedStrings.Reset();
         }
 
         public static async Task<string> GetLanguageAsync(AppDbContext db, int profileId = 0)

@@ -41,6 +41,46 @@ namespace Kroira.App.ViewModels
         public double SelectionBackgroundOpacity => IsSelected ? 1 : 0;
         public double SelectionChromeOpacity => IsSelected ? 0.9 : 0;
         public double SelectionAccentOpacity => IsSelected ? 1 : 0.22;
+
+        public void UpdateText(string name, string description, string sectionName)
+        {
+            var displayChanged = false;
+            if (!string.Equals(Name, name, StringComparison.Ordinal))
+            {
+                Name = name;
+                OnPropertyChanged(nameof(Name));
+                displayChanged = true;
+            }
+
+            if (!string.Equals(Description, description, StringComparison.Ordinal))
+            {
+                Description = description;
+                OnPropertyChanged(nameof(Description));
+                OnPropertyChanged(nameof(DescriptionVisibility));
+            }
+
+            if (!string.Equals(SectionName, sectionName, StringComparison.Ordinal))
+            {
+                SectionName = sectionName;
+                OnPropertyChanged(nameof(SectionName));
+            }
+
+            if (displayChanged)
+            {
+                OnPropertyChanged(nameof(DisplayName));
+            }
+        }
+
+        public void UpdateSectionHeaderVisibility(Visibility visibility)
+        {
+            if (SectionHeaderVisibility == visibility)
+            {
+                return;
+            }
+
+            SectionHeaderVisibility = visibility;
+            OnPropertyChanged(nameof(SectionHeaderVisibility));
+        }
     }
 
     public partial class BrowserChannelViewModel : ObservableObject
@@ -116,11 +156,14 @@ namespace Kroira.App.ViewModels
 
     public sealed class LiveChannelSectionViewModel : ObservableObject
     {
+        private string _title;
+        private string _subtitle;
+
         public LiveChannelSectionViewModel(string key, string title, string subtitle)
         {
             Key = key;
-            Title = title;
-            Subtitle = subtitle;
+            _title = title;
+            _subtitle = subtitle;
             Channels.CollectionChanged += (_, _) =>
             {
                 OnPropertyChanged(nameof(Visibility));
@@ -129,14 +172,29 @@ namespace Kroira.App.ViewModels
         }
 
         public string Key { get; }
-        public string Title { get; }
-        public string Subtitle { get; }
+        public string Title => _title;
+        public string Subtitle => _subtitle;
         public ObservableCollection<BrowserChannelViewModel> Channels { get; } = new();
         public Visibility Visibility => Channels.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
         public Visibility ClearRecentActionVisibility =>
             string.Equals(Key, "recent", StringComparison.OrdinalIgnoreCase) && Channels.Count > 0
                 ? Visibility.Visible
                 : Visibility.Collapsed;
+
+        public void UpdateText(string title, string subtitle)
+        {
+            if (!string.Equals(_title, title, StringComparison.Ordinal))
+            {
+                _title = title;
+                OnPropertyChanged(nameof(Title));
+            }
+
+            if (!string.Equals(_subtitle, subtitle, StringComparison.Ordinal))
+            {
+                _subtitle = subtitle;
+                OnPropertyChanged(nameof(Subtitle));
+            }
+        }
     }
 
     public static class EpgProgramDisplay

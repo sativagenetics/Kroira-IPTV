@@ -62,14 +62,14 @@ namespace Kroira.App.Views
             ToolsRestartButton.Visibility = !isLive && canSeek ? Visibility.Visible : Visibility.Collapsed;
             ToolsPictureInPictureButton.Visibility = canUsePictureInPicture ? Visibility.Visible : Visibility.Collapsed;
             ToolsPictureInPictureButton.Content = IsPictureInPictureMode()
-                ? LocalizedStrings.Get("Player.Button.ExitPip")
-                : LocalizedStrings.Get("Player.Button.Pip");
+                ? LocalizedStrings.Get("Player_Button_ExitPip")
+                : LocalizedStrings.Get("Player_Button_Pip");
             ToolsAlwaysOnTopButton.Visibility = IsPictureInPictureMode() ? Visibility.Collapsed : Visibility.Visible;
             ToolsPanelSummaryText.Text = IsCatchupPlayback()
-                ? LocalizedStrings.Get("Player.Tools.Summary.Catchup")
+                ? LocalizedStrings.Get("Player_Tools_Summary_Catchup")
                 : isLive
-                    ? LocalizedStrings.Get("Player.Tools.Summary.Live")
-                    : LocalizedStrings.Get("Player.Tools.Summary.Default");
+                    ? LocalizedStrings.Get("Player_Tools_Summary_Live")
+                    : LocalizedStrings.Get("Player_Tools_Summary_Default");
 
             RefreshToolToggleStates();
             UpdateToolsPanelVisibility();
@@ -186,16 +186,16 @@ namespace Kroira.App.Views
             var hasEpisodeNavigation = _allEpisodeSwitchItems.Count > 1;
             var canUsePictureInPicture = CanUseFeature(EntitlementFeatureKeys.PlaybackPictureInPicture);
 
-            AddToolsMenuItem(flyout.Items, LocalizedStrings.Get("Player.Menu.Info"), () => TogglePanel(nameof(InfoPanel)), _infoPanelOpen);
-            AddToolsMenuItem(flyout.Items, LocalizedStrings.Get("Player.Menu.RetryStream"), RetryCurrentPlayback);
+            AddToolsMenuItem(flyout.Items, LocalizedStrings.Get("Player_Menu_Info"), () => TogglePanel(nameof(InfoPanel)), _infoPanelOpen);
+            AddToolsMenuItem(flyout.Items, LocalizedStrings.Get("Player_Menu_RetryStream"), RetryCurrentPlayback);
             if (!isLive && canSeek)
             {
-                AddToolsMenuItem(flyout.Items, LocalizedStrings.Get("Player.Menu.Restart"), () => RestartPlayerSession("tools_menu", 0));
+                AddToolsMenuItem(flyout.Items, LocalizedStrings.Get("Player_Menu_Restart"), () => RestartPlayerSession("tools_menu", 0));
             }
 
             if (IsCatchupPlayback() || (isLive && canSeek))
             {
-                AddToolsMenuItem(flyout.Items, LocalizedStrings.Get("Player.Menu.JumpToLive"), () =>
+                AddToolsMenuItem(flyout.Items, LocalizedStrings.Get("Player_Menu_JumpToLive"), () =>
                 {
                     if (IsCatchupPlayback())
                     {
@@ -213,13 +213,13 @@ namespace Kroira.App.Views
                 AddToolsSeparator(flyout.Items);
                 if (isChannel)
                 {
-                    AddToolsMenuItem(flyout.Items, LocalizedStrings.Get("Player.Menu.Guide"), () => TogglePanel(nameof(MiniGuidePanel)), _guidePanelOpen);
-                    AddToolsMenuItem(flyout.Items, LocalizedStrings.Get("Player.Menu.Channels"), () => TogglePanel(nameof(ChannelSwitchPanel)), _channelPanelOpen);
+                    AddToolsMenuItem(flyout.Items, LocalizedStrings.Get("Player_Menu_Guide"), () => TogglePanel(nameof(MiniGuidePanel)), _guidePanelOpen);
+                    AddToolsMenuItem(flyout.Items, LocalizedStrings.Get("Player_Menu_Channels"), () => TogglePanel(nameof(ChannelSwitchPanel)), _channelPanelOpen);
                 }
 
                 if (hasEpisodeNavigation)
                 {
-                    AddToolsMenuItem(flyout.Items, LocalizedStrings.Get("Player.Menu.Episodes"), () => TogglePanel(nameof(EpisodePanel)), _episodePanelOpen);
+                    AddToolsMenuItem(flyout.Items, LocalizedStrings.Get("Player_Menu_Episodes"), () => TogglePanel(nameof(EpisodePanel)), _episodePanelOpen);
                 }
             }
 
@@ -232,63 +232,63 @@ namespace Kroira.App.Views
 
         private void AddDisplayToolsMenu(IList<MenuFlyoutItemBase> items)
         {
-            var display = new MenuFlyoutSubItem { Text = LocalizedStrings.Get("Player.Menu.Display") };
-            AddAspectMenuItem(display, LocalizedStrings.Get("Player.Aspect.Automatic"), PlaybackAspectMode.Automatic);
-            AddAspectMenuItem(display, LocalizedStrings.Get("Player.Aspect.FillWindow"), PlaybackAspectMode.FillWindow);
+            var display = new MenuFlyoutSubItem { Text = LocalizedStrings.Get("Player_Menu_Display") };
+            AddAspectMenuItem(display, LocalizedStrings.Get("Player_Aspect_Automatic"), PlaybackAspectMode.Automatic);
+            AddAspectMenuItem(display, LocalizedStrings.Get("Player_Aspect_FillWindow"), PlaybackAspectMode.FillWindow);
             AddAspectMenuItem(display, "16:9", PlaybackAspectMode.Ratio16x9);
             AddAspectMenuItem(display, "4:3", PlaybackAspectMode.Ratio4x3);
             AddAspectMenuItem(display, "1.85:1", PlaybackAspectMode.Ratio185x1);
             AddAspectMenuItem(display, "2.35:1", PlaybackAspectMode.Ratio235x1);
             display.Items.Add(new MenuFlyoutSeparator());
-            AddToolsMenuItem(display.Items, LocalizedStrings.Get("Player.Menu.ZoomOut"), () => AdjustVideoZoom(-0.15), isEnabled: _player != null);
-            AddToolsMenuItem(display.Items, LocalizedStrings.Get("Player.Menu.ResetZoom"), () => SetVideoZoom(0), IsApproximately(_player?.VideoZoom ?? 0, 0, 0.01), _player != null);
-            AddToolsMenuItem(display.Items, LocalizedStrings.Get("Player.Menu.ZoomIn"), () => AdjustVideoZoom(0.15), isEnabled: _player != null);
+            AddToolsMenuItem(display.Items, LocalizedStrings.Get("Player_Menu_ZoomOut"), () => AdjustVideoZoom(-0.15), isEnabled: _player != null);
+            AddToolsMenuItem(display.Items, LocalizedStrings.Get("Player_Menu_ResetZoom"), () => SetVideoZoom(0), IsApproximately(_player?.VideoZoom ?? 0, 0, 0.01), _player != null);
+            AddToolsMenuItem(display.Items, LocalizedStrings.Get("Player_Menu_ZoomIn"), () => AdjustVideoZoom(0.15), isEnabled: _player != null);
             display.Items.Add(new MenuFlyoutSeparator());
-            AddToolsMenuItem(display.Items, LocalizedStrings.Format("Player.Menu.RotationDegrees", 0), () => SetVideoRotation(0), NormalizeRotation(_player?.VideoRotation ?? 0) == 0, _player != null);
-            AddToolsMenuItem(display.Items, LocalizedStrings.Format("Player.Menu.RotationDegrees", 90), () => SetVideoRotation(90), NormalizeRotation(_player?.VideoRotation ?? 0) == 90, _player != null);
-            AddToolsMenuItem(display.Items, LocalizedStrings.Format("Player.Menu.RotationDegrees", 180), () => SetVideoRotation(180), NormalizeRotation(_player?.VideoRotation ?? 0) == 180, _player != null);
-            AddToolsMenuItem(display.Items, LocalizedStrings.Format("Player.Menu.RotationDegrees", 270), () => SetVideoRotation(270), NormalizeRotation(_player?.VideoRotation ?? 0) == 270, _player != null);
+            AddToolsMenuItem(display.Items, LocalizedStrings.Format("Player_Menu_RotationDegrees", 0), () => SetVideoRotation(0), NormalizeRotation(_player?.VideoRotation ?? 0) == 0, _player != null);
+            AddToolsMenuItem(display.Items, LocalizedStrings.Format("Player_Menu_RotationDegrees", 90), () => SetVideoRotation(90), NormalizeRotation(_player?.VideoRotation ?? 0) == 90, _player != null);
+            AddToolsMenuItem(display.Items, LocalizedStrings.Format("Player_Menu_RotationDegrees", 180), () => SetVideoRotation(180), NormalizeRotation(_player?.VideoRotation ?? 0) == 180, _player != null);
+            AddToolsMenuItem(display.Items, LocalizedStrings.Format("Player_Menu_RotationDegrees", 270), () => SetVideoRotation(270), NormalizeRotation(_player?.VideoRotation ?? 0) == 270, _player != null);
             display.Items.Add(new MenuFlyoutSeparator());
-            AddToolsMenuItem(display.Items, LocalizedStrings.Get("Player.Menu.Deinterlace"), ToggleDeinterlace, _player?.IsDeinterlaceEnabled ?? _playerPreferences.Deinterlace, _player != null);
+            AddToolsMenuItem(display.Items, LocalizedStrings.Get("Player_Menu_Deinterlace"), ToggleDeinterlace, _player?.IsDeinterlaceEnabled ?? _playerPreferences.Deinterlace, _player != null);
             items.Add(display);
         }
 
         private void AddAudioSubtitleToolsMenu(IList<MenuFlyoutItemBase> items)
         {
-            var audioSubtitles = new MenuFlyoutSubItem { Text = LocalizedStrings.Get("Player.Menu.AudioAndSubtitles") };
-            AddToolsMenuItem(audioSubtitles.Items, LocalizedStrings.Get("Player.Menu.Tracks"), OpenTracksFlyout);
+            var audioSubtitles = new MenuFlyoutSubItem { Text = LocalizedStrings.Get("Player_Menu_AudioAndSubtitles") };
+            AddToolsMenuItem(audioSubtitles.Items, LocalizedStrings.Get("Player_Menu_Tracks"), OpenTracksFlyout);
             audioSubtitles.Items.Add(new MenuFlyoutSeparator());
-            AddToolsMenuItem(audioSubtitles.Items, LocalizedStrings.Format("Player.Menu.AudioDelay", "-0.1s"), () => AdjustAudioDelay(-0.1));
-            AddToolsMenuItem(audioSubtitles.Items, LocalizedStrings.Get("Player.Menu.ResetAudioDelay"), () => SetAudioDelay(0), IsApproximately(_player?.AudioDelaySeconds ?? _playerPreferences.AudioDelaySeconds, 0, 0.01));
-            AddToolsMenuItem(audioSubtitles.Items, LocalizedStrings.Format("Player.Menu.AudioDelay", "+0.1s"), () => AdjustAudioDelay(0.1));
+            AddToolsMenuItem(audioSubtitles.Items, LocalizedStrings.Format("Player_Menu_AudioDelay", "-0.1s"), () => AdjustAudioDelay(-0.1));
+            AddToolsMenuItem(audioSubtitles.Items, LocalizedStrings.Get("Player_Menu_ResetAudioDelay"), () => SetAudioDelay(0), IsApproximately(_player?.AudioDelaySeconds ?? _playerPreferences.AudioDelaySeconds, 0, 0.01));
+            AddToolsMenuItem(audioSubtitles.Items, LocalizedStrings.Format("Player_Menu_AudioDelay", "+0.1s"), () => AdjustAudioDelay(0.1));
             audioSubtitles.Items.Add(new MenuFlyoutSeparator());
-            AddToolsMenuItem(audioSubtitles.Items, LocalizedStrings.Format("Player.Menu.SubtitleDelay", "-0.1s"), () => AdjustSubtitleDelay(-0.1));
-            AddToolsMenuItem(audioSubtitles.Items, LocalizedStrings.Get("Player.Menu.ResetSubtitleDelay"), () => SetSubtitleDelay(0), IsApproximately(_player?.SubtitleDelaySeconds ?? _playerPreferences.SubtitleDelaySeconds, 0, 0.01));
-            AddToolsMenuItem(audioSubtitles.Items, LocalizedStrings.Format("Player.Menu.SubtitleDelay", "+0.1s"), () => AdjustSubtitleDelay(0.1));
+            AddToolsMenuItem(audioSubtitles.Items, LocalizedStrings.Format("Player_Menu_SubtitleDelay", "-0.1s"), () => AdjustSubtitleDelay(-0.1));
+            AddToolsMenuItem(audioSubtitles.Items, LocalizedStrings.Get("Player_Menu_ResetSubtitleDelay"), () => SetSubtitleDelay(0), IsApproximately(_player?.SubtitleDelaySeconds ?? _playerPreferences.SubtitleDelaySeconds, 0, 0.01));
+            AddToolsMenuItem(audioSubtitles.Items, LocalizedStrings.Format("Player_Menu_SubtitleDelay", "+0.1s"), () => AdjustSubtitleDelay(0.1));
             audioSubtitles.Items.Add(new MenuFlyoutSeparator());
-            AddToolsMenuItem(audioSubtitles.Items, LocalizedStrings.Get("Player.Menu.SubtitleSizeSmall"), () => SetSubtitleScale(0.85), IsApproximately(_player?.SubtitleScale > 0 ? _player.SubtitleScale : _playerPreferences.SubtitleScale, 0.85));
-            AddToolsMenuItem(audioSubtitles.Items, LocalizedStrings.Get("Player.Menu.SubtitleSizeMedium"), () => SetSubtitleScale(1.0), IsApproximately(_player?.SubtitleScale > 0 ? _player.SubtitleScale : _playerPreferences.SubtitleScale, 1.0));
-            AddToolsMenuItem(audioSubtitles.Items, LocalizedStrings.Get("Player.Menu.SubtitleSizeLarge"), () => SetSubtitleScale(1.2), IsApproximately(_player?.SubtitleScale > 0 ? _player.SubtitleScale : _playerPreferences.SubtitleScale, 1.2));
+            AddToolsMenuItem(audioSubtitles.Items, LocalizedStrings.Get("Player_Menu_SubtitleSizeSmall"), () => SetSubtitleScale(0.85), IsApproximately(_player?.SubtitleScale > 0 ? _player.SubtitleScale : _playerPreferences.SubtitleScale, 0.85));
+            AddToolsMenuItem(audioSubtitles.Items, LocalizedStrings.Get("Player_Menu_SubtitleSizeMedium"), () => SetSubtitleScale(1.0), IsApproximately(_player?.SubtitleScale > 0 ? _player.SubtitleScale : _playerPreferences.SubtitleScale, 1.0));
+            AddToolsMenuItem(audioSubtitles.Items, LocalizedStrings.Get("Player_Menu_SubtitleSizeLarge"), () => SetSubtitleScale(1.2), IsApproximately(_player?.SubtitleScale > 0 ? _player.SubtitleScale : _playerPreferences.SubtitleScale, 1.2));
             audioSubtitles.Items.Add(new MenuFlyoutSeparator());
-            AddToolsMenuItem(audioSubtitles.Items, LocalizedStrings.Get("Player.Menu.SubtitleHigh"), () => SetSubtitlePosition(84), (_player?.SubtitlePosition ?? _playerPreferences.SubtitlePosition) <= 88);
-            AddToolsMenuItem(audioSubtitles.Items, LocalizedStrings.Get("Player.Menu.SubtitleMiddle"), () => SetSubtitlePosition(92), (_player?.SubtitlePosition ?? _playerPreferences.SubtitlePosition) > 88 && (_player?.SubtitlePosition ?? _playerPreferences.SubtitlePosition) < 98);
-            AddToolsMenuItem(audioSubtitles.Items, LocalizedStrings.Get("Player.Menu.SubtitleLow"), () => SetSubtitlePosition(100), (_player?.SubtitlePosition ?? _playerPreferences.SubtitlePosition) >= 98);
+            AddToolsMenuItem(audioSubtitles.Items, LocalizedStrings.Get("Player_Menu_SubtitleHigh"), () => SetSubtitlePosition(84), (_player?.SubtitlePosition ?? _playerPreferences.SubtitlePosition) <= 88);
+            AddToolsMenuItem(audioSubtitles.Items, LocalizedStrings.Get("Player_Menu_SubtitleMiddle"), () => SetSubtitlePosition(92), (_player?.SubtitlePosition ?? _playerPreferences.SubtitlePosition) > 88 && (_player?.SubtitlePosition ?? _playerPreferences.SubtitlePosition) < 98);
+            AddToolsMenuItem(audioSubtitles.Items, LocalizedStrings.Get("Player_Menu_SubtitleLow"), () => SetSubtitlePosition(100), (_player?.SubtitlePosition ?? _playerPreferences.SubtitlePosition) >= 98);
             items.Add(audioSubtitles);
         }
 
         private void AddSessionToolsMenu(IList<MenuFlyoutItemBase> items, bool canUsePictureInPicture)
         {
-            var session = new MenuFlyoutSubItem { Text = LocalizedStrings.Get("Player.Menu.Session") };
-            AddToolsMenuItem(session.Items, LocalizedStrings.Format("Player.Menu.SleepMinutes", 30), () => SetSleepTimer(TimeSpan.FromMinutes(30)));
-            AddToolsMenuItem(session.Items, LocalizedStrings.Format("Player.Menu.SleepMinutes", 60), () => SetSleepTimer(TimeSpan.FromMinutes(60)));
-            AddToolsMenuItem(session.Items, LocalizedStrings.Format("Player.Menu.SleepMinutes", 90), () => SetSleepTimer(TimeSpan.FromMinutes(90)));
-            AddToolsMenuItem(session.Items, LocalizedStrings.Get("Player.Menu.SleepTimerOff"), CancelSleepTimer, !_sleepDeadline.HasValue || _sleepDeadline.Value <= DateTimeOffset.UtcNow);
+            var session = new MenuFlyoutSubItem { Text = LocalizedStrings.Get("Player_Menu_Session") };
+            AddToolsMenuItem(session.Items, LocalizedStrings.Format("Player_Menu_SleepMinutes", 30), () => SetSleepTimer(TimeSpan.FromMinutes(30)));
+            AddToolsMenuItem(session.Items, LocalizedStrings.Format("Player_Menu_SleepMinutes", 60), () => SetSleepTimer(TimeSpan.FromMinutes(60)));
+            AddToolsMenuItem(session.Items, LocalizedStrings.Format("Player_Menu_SleepMinutes", 90), () => SetSleepTimer(TimeSpan.FromMinutes(90)));
+            AddToolsMenuItem(session.Items, LocalizedStrings.Get("Player_Menu_SleepTimerOff"), CancelSleepTimer, !_sleepDeadline.HasValue || _sleepDeadline.Value <= DateTimeOffset.UtcNow);
             session.Items.Add(new MenuFlyoutSeparator());
-            AddToolsMenuItem(session.Items, IsPictureInPictureMode() ? LocalizedStrings.Get("Player.Menu.ExitPictureInPicture") : LocalizedStrings.Get("Player.Menu.PictureInPicture"), () => PictureInPicture_Click(this, new RoutedEventArgs()), IsPictureInPictureMode(), canUsePictureInPicture);
-            AddToolsMenuItem(session.Items, LocalizedStrings.Get("Player.Menu.AlwaysOnTop"), ToggleAlwaysOnTop, _windowManager?.IsAlwaysOnTop == true, !IsPictureInPictureMode());
-            AddToolsMenuItem(session.Items, LocalizedStrings.Get("Player.Menu.Screenshot"), CaptureScreenshot, isEnabled: _player != null);
+            AddToolsMenuItem(session.Items, IsPictureInPictureMode() ? LocalizedStrings.Get("Player_Menu_ExitPictureInPicture") : LocalizedStrings.Get("Player_Menu_PictureInPicture"), () => PictureInPicture_Click(this, new RoutedEventArgs()), IsPictureInPictureMode(), canUsePictureInPicture);
+            AddToolsMenuItem(session.Items, LocalizedStrings.Get("Player_Menu_AlwaysOnTop"), ToggleAlwaysOnTop, _windowManager?.IsAlwaysOnTop == true, !IsPictureInPictureMode());
+            AddToolsMenuItem(session.Items, LocalizedStrings.Get("Player_Menu_Screenshot"), CaptureScreenshot, isEnabled: _player != null);
             session.Items.Add(new MenuFlyoutSeparator());
-            AddToolsMenuItem(session.Items, LocalizedStrings.Get("Player.Menu.StopPlayback"), () =>
+            AddToolsMenuItem(session.Items, LocalizedStrings.Get("Player_Menu_StopPlayback"), () =>
             {
                 NavigateBack();
             });
@@ -391,12 +391,12 @@ namespace Kroira.App.Views
         {
             return aspectMode switch
             {
-                PlaybackAspectMode.FillWindow => LocalizedStrings.Get("Player.Aspect.FillWindow"),
+                PlaybackAspectMode.FillWindow => LocalizedStrings.Get("Player_Aspect_FillWindow"),
                 PlaybackAspectMode.Ratio16x9 => "16:9",
                 PlaybackAspectMode.Ratio4x3 => "4:3",
                 PlaybackAspectMode.Ratio185x1 => "1.85",
                 PlaybackAspectMode.Ratio235x1 => "2.35",
-                _ => LocalizedStrings.Get("Player.Aspect.Automatic")
+                _ => LocalizedStrings.Get("Player_Aspect_Automatic")
             };
         }
 
@@ -407,7 +407,7 @@ namespace Kroira.App.Views
                 .FirstOrDefault();
 
             return string.IsNullOrWhiteSpace(closest.Label)
-                ? LocalizedStrings.Get("Player.SubtitleSize.Medium")
+                ? LocalizedStrings.Get("Player_SubtitleSize_Medium")
                 : LocalizedStrings.Get(closest.Label);
         }
 
@@ -415,15 +415,15 @@ namespace Kroira.App.Views
         {
             if (position <= 88)
             {
-                return LocalizedStrings.Get("Player.SubtitlePosition.High");
+                return LocalizedStrings.Get("Player_SubtitlePosition_High");
             }
 
             if (position >= 98)
             {
-                return LocalizedStrings.Get("Player.SubtitlePosition.Low");
+                return LocalizedStrings.Get("Player_SubtitlePosition_Low");
             }
 
-            return LocalizedStrings.Get("Player.SubtitlePosition.Mid");
+            return LocalizedStrings.Get("Player_SubtitlePosition_Mid");
         }
 
         private void RefreshToolToggleStates()
@@ -436,11 +436,11 @@ namespace Kroira.App.Views
             var subtitlePosition = _player?.SubtitlePosition ?? _playerPreferences.SubtitlePosition;
             var hasSleepTimer = _sleepDeadline.HasValue && _sleepDeadline.Value > DateTimeOffset.UtcNow;
             var sleepSummary = hasSleepTimer
-                ? LocalizedStrings.Format("Player.Sleep.In", (_sleepDeadline!.Value - DateTimeOffset.UtcNow).ToString("hh\\:mm\\:ss", CultureInfo.CurrentCulture))
-                : LocalizedStrings.Get("Player.Sleep.Off");
+                ? LocalizedStrings.Format("Player_Sleep_In", (_sleepDeadline!.Value - DateTimeOffset.UtcNow).ToString("hh\\:mm\\:ss", CultureInfo.CurrentCulture))
+                : LocalizedStrings.Get("Player_Sleep_Off");
             var windowSummary = _windowManager?.IsAlwaysOnTop == true
-                ? LocalizedStrings.Get("Player.Window.AlwaysOnTopEnabled")
-                : LocalizedStrings.Get("Player.Window.NormalStacking");
+                ? LocalizedStrings.Get("Player_Window_AlwaysOnTopEnabled")
+                : LocalizedStrings.Get("Player_Window_NormalStacking");
 
             ApplyToolButtonSelection(ToolsButton, _toolsPanelOpen);
             ApplyToolButtonSelection(ToolsGuideButton, _guidePanelOpen);
@@ -471,10 +471,10 @@ namespace Kroira.App.Views
             ApplyToolButtonSelection(SubtitlePositionLowButton, subtitlePosition >= 98);
             ApplyToolButtonSelection(SleepTimerCancelButton, !hasSleepTimer);
 
-            ToolsDisplaySummaryText.Text = LocalizedStrings.Format("Player.Display.Summary", GetAspectModeLabel(_selectedAspectMode), zoom.ToString("0.##", CultureInfo.CurrentCulture), rotation);
-            ToolsAudioDelayValueText.Text = LocalizedStrings.Format("Player.AudioDelay.Value", FormatSignedSeconds(audioDelay));
-            ToolsSubtitleDelayValueText.Text = LocalizedStrings.Format("Player.SubtitleDelay.Value", FormatSignedSeconds(subtitleDelay));
-            ToolsSubtitleSummaryText.Text = LocalizedStrings.Format("Player.Subtitle.Summary", GetSubtitleSizeLabel(subtitleScale), GetSubtitlePositionLabel(subtitlePosition));
+            ToolsDisplaySummaryText.Text = LocalizedStrings.Format("Player_Display_Summary", GetAspectModeLabel(_selectedAspectMode), zoom.ToString("0.##", CultureInfo.CurrentCulture), rotation);
+            ToolsAudioDelayValueText.Text = LocalizedStrings.Format("Player_AudioDelay_Value", FormatSignedSeconds(audioDelay));
+            ToolsSubtitleDelayValueText.Text = LocalizedStrings.Format("Player_SubtitleDelay_Value", FormatSignedSeconds(subtitleDelay));
+            ToolsSubtitleSummaryText.Text = LocalizedStrings.Format("Player_Subtitle_Summary", GetSubtitleSizeLabel(subtitleScale), GetSubtitlePositionLabel(subtitlePosition));
             ToolsSessionSummaryText.Text = $"{sleepSummary} {windowSummary}";
         }
 
@@ -483,7 +483,7 @@ namespace Kroira.App.Views
             AudioDelayFlyout.Items.Clear();
             AddFlyoutItem(AudioDelayFlyout, "-0.1s", (_, _) => AdjustAudioDelay(-0.1));
             AddFlyoutItem(AudioDelayFlyout, "+0.1s", (_, _) => AdjustAudioDelay(0.1));
-            AddFlyoutItem(AudioDelayFlyout, LocalizedStrings.Get("General.Reset"), (_, _) => SetAudioDelay(0));
+            AddFlyoutItem(AudioDelayFlyout, LocalizedStrings.Get("General_Reset"), (_, _) => SetAudioDelay(0));
         }
 
         private void BuildSubtitleDelayFlyout()
@@ -491,7 +491,7 @@ namespace Kroira.App.Views
             SubtitleDelayFlyout.Items.Clear();
             AddFlyoutItem(SubtitleDelayFlyout, "-0.1s", (_, _) => AdjustSubtitleDelay(-0.1));
             AddFlyoutItem(SubtitleDelayFlyout, "+0.1s", (_, _) => AdjustSubtitleDelay(0.1));
-            AddFlyoutItem(SubtitleDelayFlyout, LocalizedStrings.Get("General.Reset"), (_, _) => SetSubtitleDelay(0));
+            AddFlyoutItem(SubtitleDelayFlyout, LocalizedStrings.Get("General_Reset"), (_, _) => SetSubtitleDelay(0));
         }
 
         private void BuildSubtitleStyleFlyout()
@@ -502,35 +502,35 @@ namespace Kroira.App.Views
                 AddFlyoutItem(SubtitleStyleFlyout, LocalizedStrings.Get(preset.Label), (_, _) => SetSubtitleScale(preset.Scale));
             }
 
-            AddFlyoutItem(SubtitleStyleFlyout, LocalizedStrings.Get("Player.SubtitlePosition.High"), (_, _) => SetSubtitlePosition(84));
-            AddFlyoutItem(SubtitleStyleFlyout, LocalizedStrings.Get("Player.SubtitlePosition.Mid"), (_, _) => SetSubtitlePosition(92));
-            AddFlyoutItem(SubtitleStyleFlyout, LocalizedStrings.Get("Player.SubtitlePosition.Low"), (_, _) => SetSubtitlePosition(100));
+            AddFlyoutItem(SubtitleStyleFlyout, LocalizedStrings.Get("Player_SubtitlePosition_High"), (_, _) => SetSubtitlePosition(84));
+            AddFlyoutItem(SubtitleStyleFlyout, LocalizedStrings.Get("Player_SubtitlePosition_Mid"), (_, _) => SetSubtitlePosition(92));
+            AddFlyoutItem(SubtitleStyleFlyout, LocalizedStrings.Get("Player_SubtitlePosition_Low"), (_, _) => SetSubtitlePosition(100));
         }
 
         private void BuildZoomFlyout()
         {
             ZoomFlyout.Items.Clear();
-            AddFlyoutItem(ZoomFlyout, LocalizedStrings.Get("Player.Menu.ZoomIn"), (_, _) => AdjustVideoZoom(0.15));
-            AddFlyoutItem(ZoomFlyout, LocalizedStrings.Get("Player.Menu.ZoomOut"), (_, _) => AdjustVideoZoom(-0.15));
-            AddFlyoutItem(ZoomFlyout, LocalizedStrings.Get("Player.Menu.ResetZoom"), (_, _) => SetVideoZoom(0));
+            AddFlyoutItem(ZoomFlyout, LocalizedStrings.Get("Player_Menu_ZoomIn"), (_, _) => AdjustVideoZoom(0.15));
+            AddFlyoutItem(ZoomFlyout, LocalizedStrings.Get("Player_Menu_ZoomOut"), (_, _) => AdjustVideoZoom(-0.15));
+            AddFlyoutItem(ZoomFlyout, LocalizedStrings.Get("Player_Menu_ResetZoom"), (_, _) => SetVideoZoom(0));
         }
 
         private void BuildRotationFlyout()
         {
             RotationFlyout.Items.Clear();
-            AddFlyoutItem(RotationFlyout, LocalizedStrings.Format("Player.Menu.RotationDegrees", 0), (_, _) => SetVideoRotation(0));
-            AddFlyoutItem(RotationFlyout, LocalizedStrings.Format("Player.Menu.RotationDegrees", 90), (_, _) => SetVideoRotation(90));
-            AddFlyoutItem(RotationFlyout, LocalizedStrings.Format("Player.Menu.RotationDegrees", 180), (_, _) => SetVideoRotation(180));
-            AddFlyoutItem(RotationFlyout, LocalizedStrings.Format("Player.Menu.RotationDegrees", 270), (_, _) => SetVideoRotation(270));
+            AddFlyoutItem(RotationFlyout, LocalizedStrings.Format("Player_Menu_RotationDegrees", 0), (_, _) => SetVideoRotation(0));
+            AddFlyoutItem(RotationFlyout, LocalizedStrings.Format("Player_Menu_RotationDegrees", 90), (_, _) => SetVideoRotation(90));
+            AddFlyoutItem(RotationFlyout, LocalizedStrings.Format("Player_Menu_RotationDegrees", 180), (_, _) => SetVideoRotation(180));
+            AddFlyoutItem(RotationFlyout, LocalizedStrings.Format("Player_Menu_RotationDegrees", 270), (_, _) => SetVideoRotation(270));
         }
 
         private void BuildSleepTimerFlyout()
         {
             SleepTimerFlyout.Items.Clear();
-            AddFlyoutItem(SleepTimerFlyout, LocalizedStrings.Format("Player.Menu.SleepMinutes", 30), (_, _) => SetSleepTimer(TimeSpan.FromMinutes(30)));
-            AddFlyoutItem(SleepTimerFlyout, LocalizedStrings.Format("Player.Menu.SleepMinutes", 60), (_, _) => SetSleepTimer(TimeSpan.FromMinutes(60)));
-            AddFlyoutItem(SleepTimerFlyout, LocalizedStrings.Format("Player.Menu.SleepMinutes", 90), (_, _) => SetSleepTimer(TimeSpan.FromMinutes(90)));
-            AddFlyoutItem(SleepTimerFlyout, LocalizedStrings.Get("General.Cancel"), (_, _) => CancelSleepTimer());
+            AddFlyoutItem(SleepTimerFlyout, LocalizedStrings.Format("Player_Menu_SleepMinutes", 30), (_, _) => SetSleepTimer(TimeSpan.FromMinutes(30)));
+            AddFlyoutItem(SleepTimerFlyout, LocalizedStrings.Format("Player_Menu_SleepMinutes", 60), (_, _) => SetSleepTimer(TimeSpan.FromMinutes(60)));
+            AddFlyoutItem(SleepTimerFlyout, LocalizedStrings.Format("Player_Menu_SleepMinutes", 90), (_, _) => SetSleepTimer(TimeSpan.FromMinutes(90)));
+            AddFlyoutItem(SleepTimerFlyout, LocalizedStrings.Get("General_Cancel"), (_, _) => CancelSleepTimer());
         }
 
         private void AddFlyoutItem(MenuFlyout flyout, string text, RoutedEventHandler handler)
@@ -638,8 +638,8 @@ namespace Kroira.App.Views
         {
             FavoriteIcon.Glyph = _isFavorite ? "\uE735" : "\uE734";
             ToolTipService.SetToolTip(FavoriteButton, _isFavorite
-                ? LocalizedStrings.Get("Player.Favorite.RemoveTooltip")
-                : LocalizedStrings.Get("Player.Favorite.SaveTooltip"));
+                ? LocalizedStrings.Get("Player_Favorite_RemoveTooltip")
+                : LocalizedStrings.Get("Player_Favorite_SaveTooltip"));
         }
 
         private void UpdatePanelVisibility()
@@ -793,8 +793,8 @@ namespace Kroira.App.Views
             }
 
             ChannelSearchStatusText.Text = filtered.Count == 0
-                ? LocalizedStrings.Get("Player.ChannelSearch.NoMatches")
-                : LocalizedStrings.Format("Player.ChannelSearch.Ready", filtered.Count);
+                ? LocalizedStrings.Get("Player_ChannelSearch_NoMatches")
+                : LocalizedStrings.Format("Player_ChannelSearch_Ready", filtered.Count);
         }
 
         private void ApplyEpisodeFilter()
@@ -818,7 +818,7 @@ namespace Kroira.App.Views
             var hints = new List<string>();
             if (IsLivePlayback() && !IsTimelineSeekAllowed())
             {
-                hints.Add(LocalizedStrings.Get("Player.Hint.SeekUnavailable"));
+                hints.Add(LocalizedStrings.Get("Player_Hint_SeekUnavailable"));
             }
 
             if (IsCatchupPlayback() && !string.IsNullOrWhiteSpace(_context?.CatchupStatusText))
@@ -840,7 +840,7 @@ namespace Kroira.App.Views
                 var remaining = _sleepDeadline.Value - DateTimeOffset.UtcNow;
                 if (remaining > TimeSpan.Zero)
                 {
-                    hints.Add(LocalizedStrings.Format("Player.Hint.SleepTimer", remaining.ToString("hh\\:mm\\:ss", CultureInfo.CurrentCulture)));
+                    hints.Add(LocalizedStrings.Format("Player_Hint_SleepTimer", remaining.ToString("hh\\:mm\\:ss", CultureInfo.CurrentCulture)));
                 }
             }
 
@@ -856,17 +856,17 @@ namespace Kroira.App.Views
             }
 
             return value
-                .Replace("Probe-backed", LocalizedStrings.Get("Player.Hint.PlaybackReady"), StringComparison.OrdinalIgnoreCase)
-                .Replace("weak probe confidence", LocalizedStrings.Get("Player.Hint.ConnectionMayVary"), StringComparison.OrdinalIgnoreCase)
-                .Replace("guide mapped", LocalizedStrings.Get("Player.Hint.GuideAvailable"), StringComparison.OrdinalIgnoreCase)
-                .Replace("logo ready", LocalizedStrings.Get("Player.Hint.LogoAvailable"), StringComparison.OrdinalIgnoreCase)
-                .Replace("poster", LocalizedStrings.Get("Player.Hint.ArtworkAvailable"), StringComparison.OrdinalIgnoreCase)
-                .Replace("overview", LocalizedStrings.Get("Player.Hint.DescriptionAvailable"), StringComparison.OrdinalIgnoreCase)
-                .Replace("metadata", LocalizedStrings.Get("Player.Hint.MetadataAvailable"), StringComparison.OrdinalIgnoreCase)
-                .Replace("stale source", LocalizedStrings.Get("Player.Hint.RefreshSuggested"), StringComparison.OrdinalIgnoreCase)
-                .Replace("proxy routed", LocalizedStrings.Get("Player.Hint.OptimizedRoute"), StringComparison.OrdinalIgnoreCase)
-                .Replace("Operationally usable live mirror", LocalizedStrings.Get("Player.Hint.ReadyLiveSource"), StringComparison.OrdinalIgnoreCase)
-                .Replace("Operationally usable movie source", LocalizedStrings.Get("Player.Hint.ReadyMovieSource"), StringComparison.OrdinalIgnoreCase);
+                .Replace("Probe-backed", LocalizedStrings.Get("Player_Hint_PlaybackReady"), StringComparison.OrdinalIgnoreCase)
+                .Replace("weak probe confidence", LocalizedStrings.Get("Player_Hint_ConnectionMayVary"), StringComparison.OrdinalIgnoreCase)
+                .Replace("guide mapped", LocalizedStrings.Get("Player_Hint_GuideAvailable"), StringComparison.OrdinalIgnoreCase)
+                .Replace("logo ready", LocalizedStrings.Get("Player_Hint_LogoAvailable"), StringComparison.OrdinalIgnoreCase)
+                .Replace("poster", LocalizedStrings.Get("Player_Hint_ArtworkAvailable"), StringComparison.OrdinalIgnoreCase)
+                .Replace("overview", LocalizedStrings.Get("Player_Hint_DescriptionAvailable"), StringComparison.OrdinalIgnoreCase)
+                .Replace("metadata", LocalizedStrings.Get("Player_Hint_MetadataAvailable"), StringComparison.OrdinalIgnoreCase)
+                .Replace("stale source", LocalizedStrings.Get("Player_Hint_RefreshSuggested"), StringComparison.OrdinalIgnoreCase)
+                .Replace("proxy routed", LocalizedStrings.Get("Player_Hint_OptimizedRoute"), StringComparison.OrdinalIgnoreCase)
+                .Replace("Operationally usable live mirror", LocalizedStrings.Get("Player_Hint_ReadyLiveSource"), StringComparison.OrdinalIgnoreCase)
+                .Replace("Operationally usable movie source", LocalizedStrings.Get("Player_Hint_ReadyMovieSource"), StringComparison.OrdinalIgnoreCase);
         }
 
         private void RefreshInfoPanel()
@@ -877,24 +877,24 @@ namespace Kroira.App.Views
                 : !string.IsNullOrWhiteSpace(_context?.OperationalSummary)
                     ? _context.OperationalSummary
                     : IsCatchupPlayback()
-                        ? LocalizedStrings.Get("Player.Info.CatchupSummary")
-                        : IsLivePlayback() ? LocalizedStrings.Get("Player.Info.LiveSummary") : LocalizedStrings.Get("Player.Info.SeekableSummary");
-            InfoResolutionText.Text = info.HasVideo ? $"{info.Width}x{info.Height}" : LocalizedStrings.Get("General.Unknown");
-            InfoFpsText.Text = info.FramesPerSecond > 0 ? $"{info.FramesPerSecond:0.##}" : LocalizedStrings.Get("General.Unknown");
-            InfoVideoCodecText.Text = string.IsNullOrWhiteSpace(info.VideoCodec) ? LocalizedStrings.Get("General.Unknown") : info.VideoCodec;
-            InfoAudioCodecText.Text = string.IsNullOrWhiteSpace(info.AudioCodec) ? LocalizedStrings.Get("General.Unknown") : info.AudioCodec;
+                        ? LocalizedStrings.Get("Player_Info_CatchupSummary")
+                        : IsLivePlayback() ? LocalizedStrings.Get("Player_Info_LiveSummary") : LocalizedStrings.Get("Player_Info_SeekableSummary");
+            InfoResolutionText.Text = info.HasVideo ? $"{info.Width}x{info.Height}" : LocalizedStrings.Get("General_Unknown");
+            InfoFpsText.Text = info.FramesPerSecond > 0 ? $"{info.FramesPerSecond:0.##}" : LocalizedStrings.Get("General_Unknown");
+            InfoVideoCodecText.Text = string.IsNullOrWhiteSpace(info.VideoCodec) ? LocalizedStrings.Get("General_Unknown") : info.VideoCodec;
+            InfoAudioCodecText.Text = string.IsNullOrWhiteSpace(info.AudioCodec) ? LocalizedStrings.Get("General_Unknown") : info.AudioCodec;
             InfoSourceText.Text = string.IsNullOrWhiteSpace(_resolvedSourceName)
-                ? string.IsNullOrWhiteSpace(_resolvedRoutingSummary) ? LocalizedStrings.Get("General.Unknown") : _resolvedRoutingSummary
+                ? string.IsNullOrWhiteSpace(_resolvedRoutingSummary) ? LocalizedStrings.Get("General_Unknown") : _resolvedRoutingSummary
                 : string.IsNullOrWhiteSpace(_resolvedRoutingSummary) || string.Equals(_resolvedRoutingSummary, "Direct routing", StringComparison.OrdinalIgnoreCase)
                     ? _resolvedSourceName
                     : $"{_resolvedSourceName} - {_resolvedRoutingSummary}";
             InfoSpeedText.Text = $"{(_player?.PlaybackSpeed > 0 ? _player.PlaybackSpeed : _playerPreferences.PlaybackSpeed):0.##}x";
             InfoSeekText.Text = IsCatchupPlayback()
-                ? IsTimelineSeekAllowed() ? LocalizedStrings.Get("Player.Info.CatchupReplay") : LocalizedStrings.Get("Player.Info.CatchupNotSeekable")
-                : IsTimelineSeekAllowed() ? LocalizedStrings.Get("Player.Info.Seekable") : LocalizedStrings.Get("Player.Info.NotSeekable");
+                ? IsTimelineSeekAllowed() ? LocalizedStrings.Get("Player_Info_CatchupReplay") : LocalizedStrings.Get("Player_Info_CatchupNotSeekable")
+                : IsTimelineSeekAllowed() ? LocalizedStrings.Get("Player_Info_Seekable") : LocalizedStrings.Get("Player_Info_NotSeekable");
             InfoGuideText.Text = IsCatchupPlayback() && !string.IsNullOrWhiteSpace(_context?.CatchupStatusText)
                 ? _context.CatchupStatusText
-                : string.IsNullOrWhiteSpace(_resolvedGuideSummary) ? LocalizedStrings.Get("Player.Info.NoGuideStatus") : _resolvedGuideSummary;
+                : string.IsNullOrWhiteSpace(_resolvedGuideSummary) ? LocalizedStrings.Get("Player_Info_NoGuideStatus") : _resolvedGuideSummary;
         }
 
         private async void InspectCurrentItem_Click(object sender, RoutedEventArgs e)
@@ -930,7 +930,7 @@ namespace Kroira.App.Views
                     }
                     else
                     {
-                        ShowZapBanner(LocalizedStrings.Get("Player.External.Unavailable"), result.Message);
+                        ShowZapBanner(LocalizedStrings.Get("Player_External_Unavailable"), result.Message);
                     }
                 }
                 finally
@@ -944,7 +944,7 @@ namespace Kroira.App.Views
             var externalPlayerLaunchService = ((App)Application.Current).Services.GetRequiredService<IExternalPlayerLaunchService>();
             var launchResult = await externalPlayerLaunchService.LaunchAsync(_context.Clone(), preferCurrentResolvedStream: true);
             ShowZapBanner(
-                launchResult.Success ? TitleText.Text : LocalizedStrings.Get("Player.External.Unavailable"),
+                launchResult.Success ? TitleText.Text : LocalizedStrings.Get("Player_External_Unavailable"),
                 launchResult.Message);
         }
 
@@ -1798,7 +1798,7 @@ namespace Kroira.App.Views
             Directory.CreateDirectory(directory);
             var filePath = Path.Combine(directory, $"kroira-{DateTime.Now:yyyyMMdd-HHmmss}.png");
             _player.CaptureScreenshot(filePath);
-            ShowZapBanner(LocalizedStrings.Get("Player.ScreenshotSaved"), filePath);
+            ShowZapBanner(LocalizedStrings.Get("Player_ScreenshotSaved"), filePath);
         }
 
         private void SpeedItem_Click(object sender, RoutedEventArgs e)

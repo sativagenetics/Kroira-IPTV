@@ -91,24 +91,24 @@ namespace Kroira.App.Views
         private async void ClearLiveProgress_Click(object sender, RoutedEventArgs e)
         {
             await ConfirmAndRunAsync(
-                LocalizedStrings.Get("ContinueWatching.ClearLiveTitle"),
-                LocalizedStrings.Get("ContinueWatching.ClearLiveMessage"),
+                LocalizedStrings.Get("ContinueWatching_ClearLiveTitle"),
+                LocalizedStrings.Get("ContinueWatching_ClearLiveMessage"),
                 () => ViewModel.ClearLiveProgressCommand.ExecuteAsync(null));
         }
 
         private async void ClearMovieProgress_Click(object sender, RoutedEventArgs e)
         {
             await ConfirmAndRunAsync(
-                LocalizedStrings.Get("ContinueWatching.ClearMoviesTitle"),
-                LocalizedStrings.Get("ContinueWatching.ClearMoviesMessage"),
+                LocalizedStrings.Get("ContinueWatching_ClearMoviesTitle"),
+                LocalizedStrings.Get("ContinueWatching_ClearMoviesMessage"),
                 () => ViewModel.ClearMovieProgressCommand.ExecuteAsync(null));
         }
 
         private async void ClearSeriesProgress_Click(object sender, RoutedEventArgs e)
         {
             await ConfirmAndRunAsync(
-                LocalizedStrings.Get("ContinueWatching.ClearSeriesTitle"),
-                LocalizedStrings.Get("ContinueWatching.ClearSeriesMessage"),
+                LocalizedStrings.Get("ContinueWatching_ClearSeriesTitle"),
+                LocalizedStrings.Get("ContinueWatching_ClearSeriesMessage"),
                 () => ViewModel.ClearSeriesProgressCommand.ExecuteAsync(null));
         }
 
@@ -118,8 +118,8 @@ namespace Kroira.App.Views
             {
                 Title = title,
                 Content = message,
-                PrimaryButtonText = LocalizedStrings.Get("General.ClearAll"),
-                CloseButtonText = LocalizedStrings.Get("General.Cancel"),
+                PrimaryButtonText = LocalizedStrings.Get("General_ClearAll"),
+                CloseButtonText = LocalizedStrings.Get("General_Cancel"),
                 DefaultButton = ContentDialogButton.Close,
                 XamlRoot = XamlRoot
             };

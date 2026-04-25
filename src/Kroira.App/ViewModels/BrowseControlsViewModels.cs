@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using CommunityToolkit.Mvvm.ComponentModel;
+using Kroira.App.Services;
 
 namespace Kroira.App.ViewModels
 {
@@ -152,7 +153,7 @@ namespace Kroira.App.ViewModels
         {
             get
             {
-                var detail = IsHidden ? "hidden" : EffectiveName;
+                var detail = IsHidden ? LocalizedStrings.Get("Browse_CategoryManager_Hidden") : EffectiveName;
                 return ItemCount > 0
                     ? $"{RawName} -> {detail} ({ItemCount:N0})"
                     : $"{RawName} -> {detail}";

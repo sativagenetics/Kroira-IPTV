@@ -195,24 +195,24 @@ namespace Kroira.App.Views
         private async void ClearChannelFavorites_Click(object sender, RoutedEventArgs e)
         {
             await ConfirmAndRunAsync(
-                LocalizedStrings.Get("Favorites.ClearChannelsTitle"),
-                LocalizedStrings.Get("Favorites.ClearChannelsMessage"),
+                LocalizedStrings.Get("Favorites_ClearChannelsTitle"),
+                LocalizedStrings.Get("Favorites_ClearChannelsMessage"),
                 () => ViewModel.ClearChannelFavoritesCommand.ExecuteAsync(null));
         }
 
         private async void ClearMovieFavorites_Click(object sender, RoutedEventArgs e)
         {
             await ConfirmAndRunAsync(
-                LocalizedStrings.Get("Favorites.ClearMoviesTitle"),
-                LocalizedStrings.Get("Favorites.ClearMoviesMessage"),
+                LocalizedStrings.Get("Favorites_ClearMoviesTitle"),
+                LocalizedStrings.Get("Favorites_ClearMoviesMessage"),
                 () => ViewModel.ClearMovieFavoritesCommand.ExecuteAsync(null));
         }
 
         private async void ClearSeriesFavorites_Click(object sender, RoutedEventArgs e)
         {
             await ConfirmAndRunAsync(
-                LocalizedStrings.Get("Favorites.ClearSeriesTitle"),
-                LocalizedStrings.Get("Favorites.ClearSeriesMessage"),
+                LocalizedStrings.Get("Favorites_ClearSeriesTitle"),
+                LocalizedStrings.Get("Favorites_ClearSeriesMessage"),
                 () => ViewModel.ClearSeriesFavoritesCommand.ExecuteAsync(null));
         }
 
@@ -222,8 +222,8 @@ namespace Kroira.App.Views
             {
                 Title = title,
                 Content = message,
-                PrimaryButtonText = LocalizedStrings.Get("General.ClearAll"),
-                CloseButtonText = LocalizedStrings.Get("General.Cancel"),
+                PrimaryButtonText = LocalizedStrings.Get("General_ClearAll"),
+                CloseButtonText = LocalizedStrings.Get("General_Cancel"),
                 DefaultButton = ContentDialogButton.Close,
                 XamlRoot = XamlRoot
             };

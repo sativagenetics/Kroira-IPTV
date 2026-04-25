@@ -247,7 +247,7 @@ namespace Kroira.App.Services
                 new()
                 {
                     Key = AllKey,
-                    Label = "All source types",
+                    Label = LocalizedStrings.Get("Discovery_AllSourceTypes"),
                     ItemCount = records.Count(record => MatchesSignal(record, selection.SignalKey, nowUtc) &&
                                                         MatchesLanguage(record, selection.LanguageKey) &&
                                                         MatchesTag(record, selection.TagKey))
@@ -291,7 +291,7 @@ namespace Kroira.App.Services
                 new()
                 {
                     Key = AllKey,
-                    Label = "All languages",
+                    Label = LocalizedStrings.Get("Discovery_AllLanguages"),
                     ItemCount = records.Count(record => MatchesSignal(record, selection.SignalKey, nowUtc) &&
                                                         MatchesSourceType(record, selection.SourceTypeKey) &&
                                                         MatchesTag(record, selection.TagKey))
@@ -334,7 +334,9 @@ namespace Kroira.App.Services
                 new()
                 {
                     Key = AllKey,
-                    Label = domain == CatalogDiscoveryDomain.Live ? "All shelves" : "All genres",
+                    Label = domain == CatalogDiscoveryDomain.Live
+                        ? LocalizedStrings.Get("Discovery_AllShelves")
+                        : LocalizedStrings.Get("Discovery_AllGenres"),
                     ItemCount = records.Count(record => MatchesSignal(record, selection.SignalKey, nowUtc) &&
                                                         MatchesSourceType(record, selection.SourceTypeKey) &&
                                                         MatchesLanguage(record, selection.LanguageKey))
@@ -410,16 +412,16 @@ namespace Kroira.App.Services
                 return BuildDefaultSummaryText(domain);
             }
 
-            return $"Focused by {string.Join(" / ", activeLabels)}.";
+            return LocalizedStrings.Format("Discovery_FocusedBy", string.Join(" / ", activeLabels));
         }
 
         private static string BuildDefaultSummaryText(CatalogDiscoveryDomain domain)
         {
             return domain switch
             {
-                CatalogDiscoveryDomain.Live => "Guide, catchup, source type, and health stay quiet until sync evidence proves them.",
-                CatalogDiscoveryDomain.Series => "Source type, language, genre, episode-ready, and health appear only when the catalog proves them.",
-                _ => "Source type, language, genre, artwork, and health appear only when the catalog proves them."
+                CatalogDiscoveryDomain.Live => LocalizedStrings.Get("Discovery_DefaultSummary_Live"),
+                CatalogDiscoveryDomain.Series => LocalizedStrings.Get("Discovery_DefaultSummary_Series"),
+                _ => LocalizedStrings.Get("Discovery_DefaultSummary_Movies")
             };
         }
 
@@ -547,33 +549,33 @@ namespace Kroira.App.Services
             {
                 CatalogDiscoveryDomain.Live =>
                 [
-                    new("favorites", "Favorites", (record, _) => record.IsFavorite),
-                    new("catchup_ready", "Catchup ready", (record, _) => record.HasCatchup),
-                    new("guide_linked", "Guide linked", (record, _) => record.HasGuide),
-                    new("healthy_sources", "Healthy sources", (record, _) => record.HealthBucket == CatalogDiscoveryHealthBucket.Healthy),
-                    new("needs_attention", "Needs attention", (record, _) => record.HealthBucket is CatalogDiscoveryHealthBucket.Attention or CatalogDiscoveryHealthBucket.Degraded),
-                    new("recently_watched", "Recently watched", (record, nowUtc) =>
+                    new("favorites", LocalizedStrings.Get("Discovery_Signal_Favorites"), (record, _) => record.IsFavorite),
+                    new("catchup_ready", LocalizedStrings.Get("Discovery_Signal_CatchupReady"), (record, _) => record.HasCatchup),
+                    new("guide_linked", LocalizedStrings.Get("Discovery_Signal_GuideLinked"), (record, _) => record.HasGuide),
+                    new("healthy_sources", LocalizedStrings.Get("Discovery_Signal_HealthySources"), (record, _) => record.HealthBucket == CatalogDiscoveryHealthBucket.Healthy),
+                    new("needs_attention", LocalizedStrings.Get("Discovery_Signal_NeedsAttention"), (record, _) => record.HealthBucket is CatalogDiscoveryHealthBucket.Attention or CatalogDiscoveryHealthBucket.Degraded),
+                    new("recently_watched", LocalizedStrings.Get("Discovery_Signal_RecentlyWatched"), (record, nowUtc) =>
                         record.LastInteractionUtc.HasValue &&
                         nowUtc - record.LastInteractionUtc.Value <= RecentInteractionWindow)
                 ],
                 CatalogDiscoveryDomain.Series =>
                 [
-                    new("favorites", "Favorites", (record, _) => record.IsFavorite),
-                    new("artwork_ready", "Artwork ready", (record, _) => record.HasArtwork),
-                    new("episode_ready", "Episode ready", (record, _) => record.HasPlayableChildren),
-                    new("healthy_sources", "Healthy sources", (record, _) => record.HealthBucket == CatalogDiscoveryHealthBucket.Healthy),
-                    new("needs_attention", "Needs attention", (record, _) => record.HealthBucket is CatalogDiscoveryHealthBucket.Attention or CatalogDiscoveryHealthBucket.Degraded),
-                    new("recently_synced", "Recently synced", (record, nowUtc) =>
+                    new("favorites", LocalizedStrings.Get("Discovery_Signal_Favorites"), (record, _) => record.IsFavorite),
+                    new("artwork_ready", LocalizedStrings.Get("Discovery_Signal_ArtworkReady"), (record, _) => record.HasArtwork),
+                    new("episode_ready", LocalizedStrings.Get("Discovery_Signal_EpisodeReady"), (record, _) => record.HasPlayableChildren),
+                    new("healthy_sources", LocalizedStrings.Get("Discovery_Signal_HealthySources"), (record, _) => record.HealthBucket == CatalogDiscoveryHealthBucket.Healthy),
+                    new("needs_attention", LocalizedStrings.Get("Discovery_Signal_NeedsAttention"), (record, _) => record.HealthBucket is CatalogDiscoveryHealthBucket.Attention or CatalogDiscoveryHealthBucket.Degraded),
+                    new("recently_synced", LocalizedStrings.Get("Discovery_Signal_RecentlySynced"), (record, nowUtc) =>
                         record.LastSyncUtc.HasValue &&
                         nowUtc - record.LastSyncUtc.Value <= RecentSyncWindow)
                 ],
                 _ =>
                 [
-                    new("favorites", "Favorites", (record, _) => record.IsFavorite),
-                    new("artwork_ready", "Artwork ready", (record, _) => record.HasArtwork),
-                    new("healthy_sources", "Healthy sources", (record, _) => record.HealthBucket == CatalogDiscoveryHealthBucket.Healthy),
-                    new("needs_attention", "Needs attention", (record, _) => record.HealthBucket is CatalogDiscoveryHealthBucket.Attention or CatalogDiscoveryHealthBucket.Degraded),
-                    new("recently_synced", "Recently synced", (record, nowUtc) =>
+                    new("favorites", LocalizedStrings.Get("Discovery_Signal_Favorites"), (record, _) => record.IsFavorite),
+                    new("artwork_ready", LocalizedStrings.Get("Discovery_Signal_ArtworkReady"), (record, _) => record.HasArtwork),
+                    new("healthy_sources", LocalizedStrings.Get("Discovery_Signal_HealthySources"), (record, _) => record.HealthBucket == CatalogDiscoveryHealthBucket.Healthy),
+                    new("needs_attention", LocalizedStrings.Get("Discovery_Signal_NeedsAttention"), (record, _) => record.HealthBucket is CatalogDiscoveryHealthBucket.Attention or CatalogDiscoveryHealthBucket.Degraded),
+                    new("recently_synced", LocalizedStrings.Get("Discovery_Signal_RecentlySynced"), (record, nowUtc) =>
                         record.LastSyncUtc.HasValue &&
                         nowUtc - record.LastSyncUtc.Value <= RecentSyncWindow)
                 ]
@@ -584,9 +586,9 @@ namespace Kroira.App.Services
         {
             return domain switch
             {
-                CatalogDiscoveryDomain.Live => "All live",
-                CatalogDiscoveryDomain.Series => "All series",
-                _ => "All movies"
+                CatalogDiscoveryDomain.Live => LocalizedStrings.Get("Discovery_AllLive"),
+                CatalogDiscoveryDomain.Series => LocalizedStrings.Get("Discovery_AllSeries"),
+                _ => LocalizedStrings.Get("Discovery_AllMovies")
             };
         }
 

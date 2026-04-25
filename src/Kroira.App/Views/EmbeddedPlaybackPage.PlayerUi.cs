@@ -69,9 +69,9 @@ namespace Kroira.App.Views
         private readonly List<(string Key, ToggleMenuFlyoutItem Item)> _toggleToolItems = new();
         private readonly List<(double Scale, string Label)> _subtitleScalePresets = new()
         {
-            (0.85, "Player.SubtitleSize.Small"),
-            (1.0, "Player.SubtitleSize.Medium"),
-            (1.2, "Player.SubtitleSize.Large")
+            (0.85, "Player_SubtitleSize_Small"),
+            (1.0, "Player_SubtitleSize_Medium"),
+            (1.2, "Player_SubtitleSize_Large")
         };
 
         private IPlayerPreferencesService? _playerPreferencesService;
@@ -451,8 +451,8 @@ namespace Kroira.App.Views
             }
 
             ApplyEpisodeFilter();
-            EpisodePanelHeaderText.Text = LocalizedStrings.Get("Player.Episodes.PanelHeader");
-            EpisodePanelStatusText.Text = LocalizedStrings.Format("Player.Episodes.PanelStatus", _allEpisodeSwitchItems.Count);
+            EpisodePanelHeaderText.Text = LocalizedStrings.Get("Player_Episodes_PanelHeader");
+            EpisodePanelStatusText.Text = LocalizedStrings.Format("Player_Episodes_PanelStatus", _allEpisodeSwitchItems.Count);
             ClearGuidePanel();
         }
 
@@ -568,11 +568,11 @@ namespace Kroira.App.Views
 
         private void ApplyGuideSummary(ChannelGuideSummary summary)
         {
-            GuideCurrentTitleText.Text = summary.CurrentProgram?.Title ?? LocalizedStrings.Get("Player.Guide.NoCurrentProgramme");
+            GuideCurrentTitleText.Text = summary.CurrentProgram?.Title ?? LocalizedStrings.Get("Player_Guide_NoCurrentProgramme");
             GuideCurrentTimeText.Text = summary.CurrentProgram != null
                 ? $"{summary.CurrentProgram.StartTimeUtc.ToLocalTime():HH:mm} - {summary.CurrentProgram.EndTimeUtc.ToLocalTime():HH:mm}"
                 : string.Empty;
-            GuideNextTitleText.Text = summary.NextProgram?.Title ?? LocalizedStrings.Get("Player.Guide.NoUpcomingProgramme");
+            GuideNextTitleText.Text = summary.NextProgram?.Title ?? LocalizedStrings.Get("Player_Guide_NoUpcomingProgramme");
             GuideNextTimeText.Text = summary.NextProgram != null
                 ? $"{summary.NextProgram.StartTimeUtc.ToLocalTime():HH:mm}"
                 : string.Empty;
@@ -589,7 +589,7 @@ namespace Kroira.App.Views
             {
                 _guideProgramItems.Add(new PlayerGuideProgramItem
                 {
-                    Title = program.IsCurrent ? LocalizedStrings.Format("Player.Guide.NowProgram", program.Title) : program.Title,
+                    Title = program.IsCurrent ? LocalizedStrings.Format("Player_Guide_NowProgram", program.Title) : program.Title,
                     ProgramTitle = program.Title,
                     TimeText = $"{program.StartTimeUtc.ToLocalTime():HH:mm} - {program.EndTimeUtc.ToLocalTime():HH:mm}",
                     StatusText = program.CatchupStatusText,
@@ -632,15 +632,15 @@ namespace Kroira.App.Views
 
             if (summary?.CurrentProgram != null && summary.NextProgram != null)
             {
-                return LocalizedStrings.Format("Player.Meta.NowNext", summary.CurrentProgram.Title, summary.NextProgram.Title);
+                return LocalizedStrings.Format("Player_Meta_NowNext", summary.CurrentProgram.Title, summary.NextProgram.Title);
             }
 
             if (summary?.CurrentProgram != null)
             {
-                return LocalizedStrings.Format("Player.Meta.Now", summary.CurrentProgram.Title);
+                return LocalizedStrings.Format("Player_Meta_Now", summary.CurrentProgram.Title);
             }
 
-            return summary?.SourceStatusSummary ?? LocalizedStrings.Get("Player.Guide.NotAvailable");
+            return summary?.SourceStatusSummary ?? LocalizedStrings.Get("Player_Guide_NotAvailable");
         }
 
         private string BuildCatchupContextText()
@@ -661,7 +661,7 @@ namespace Kroira.App.Views
                 parts.Add($"{_context.CatchupProgramStartTimeUtc.Value.ToLocalTime():HH:mm} - {_context.CatchupProgramEndTimeUtc.Value.ToLocalTime():HH:mm}");
             }
 
-            parts.Add(LocalizedStrings.Get("Player.Catchup.Playback"));
+            parts.Add(LocalizedStrings.Get("Player_Catchup_Playback"));
 
             if (!string.IsNullOrWhiteSpace(_context.CatchupStatusText))
             {

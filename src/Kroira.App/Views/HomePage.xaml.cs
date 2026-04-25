@@ -64,7 +64,7 @@ namespace Kroira.App.Views
             var dispatcherQueue = Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread();
             if (dispatcherQueue == null)
             {
-                throw new InvalidOperationException(LocalizedStrings.Get("Home.Error.DispatcherUnavailable"));
+                throw new InvalidOperationException(LocalizedStrings.Get("Home_Error_DispatcherUnavailable"));
             }
 
             var enqueued = dispatcherQueue.TryEnqueue(() =>

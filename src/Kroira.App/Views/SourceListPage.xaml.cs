@@ -95,11 +95,11 @@ namespace Kroira.App.Views
             var report = ViewModel.GetSafeActivityReport(id);
             if (string.IsNullOrWhiteSpace(report))
             {
-                await ShowMessageAsync(LocalizedStrings.Get("Sources.ActivityReportUnavailableTitle"), LocalizedStrings.Get("Sources.ActivityReportUnavailableMessage"));
+                await ShowMessageAsync(LocalizedStrings.Get("Sources_ActivityReportUnavailableTitle"), LocalizedStrings.Get("Sources_ActivityReportUnavailableMessage"));
                 return;
             }
 
-            await CopyTextAsync(report, LocalizedStrings.Get("Sources.ActivityReportUnavailableTitle"));
+            await CopyTextAsync(report, LocalizedStrings.Get("Sources_ActivityReportUnavailableTitle"));
         }
 
         private async void DiagnosticsAction_Click(object sender, RoutedEventArgs e)
@@ -151,11 +151,11 @@ namespace Kroira.App.Views
             var report = ViewModel.GetSafeRepairReport(id);
             if (string.IsNullOrWhiteSpace(report))
             {
-                await ShowMessageAsync(LocalizedStrings.Get("Sources.RepairReportUnavailableTitle"), LocalizedStrings.Get("Sources.RepairReportUnavailableMessage"));
+                await ShowMessageAsync(LocalizedStrings.Get("Sources_RepairReportUnavailableTitle"), LocalizedStrings.Get("Sources_RepairReportUnavailableMessage"));
                 return;
             }
 
-            await CopyTextAsync(report, LocalizedStrings.Get("Sources.RepairReportUnavailableTitle"));
+            await CopyTextAsync(report, LocalizedStrings.Get("Sources_RepairReportUnavailableTitle"));
         }
 
         private async Task CopyDiagnosticsReportAsync(int id)
@@ -163,11 +163,11 @@ namespace Kroira.App.Views
             var report = ViewModel.GetSafeDiagnosticsReport(id);
             if (string.IsNullOrWhiteSpace(report))
             {
-                await ShowMessageAsync(LocalizedStrings.Get("Sources.DiagnosticsReportUnavailableTitle"), LocalizedStrings.Get("Sources.DiagnosticsReportUnavailableMessage"));
+                await ShowMessageAsync(LocalizedStrings.Get("Sources_DiagnosticsReportUnavailableTitle"), LocalizedStrings.Get("Sources_DiagnosticsReportUnavailableMessage"));
                 return;
             }
 
-            await CopyTextAsync(report, LocalizedStrings.Get("Sources.DiagnosticsReportUnavailableTitle"));
+            await CopyTextAsync(report, LocalizedStrings.Get("Sources_DiagnosticsReportUnavailableTitle"));
         }
 
         private void SyncSourceById(int id)
@@ -217,7 +217,7 @@ namespace Kroira.App.Views
             }
             catch (Exception ex)
             {
-                await ShowMessageAsync(LocalizedStrings.Get("Sources.StreamProbeFailedTitle"), ex.Message);
+                await ShowMessageAsync(LocalizedStrings.Get("Sources_StreamProbeFailedTitle"), ex.Message);
             }
         }
 
@@ -283,7 +283,7 @@ namespace Kroira.App.Views
             }
             catch (Exception ex)
             {
-                await ShowMessageAsync(LocalizedStrings.Get("Sources.RepairAttemptFailedTitle"), ex.Message);
+                await ShowMessageAsync(LocalizedStrings.Get("Sources_RepairAttemptFailedTitle"), ex.Message);
             }
         }
 
@@ -292,36 +292,36 @@ namespace Kroira.App.Views
             var draft = await ViewModel.GetGuideSettingsAsync(id);
             if (draft == null)
             {
-                await ShowMessageAsync(LocalizedStrings.Get("Sources.GuideSettingsTitle"), LocalizedStrings.Get("Sources.GuideSettingsLoadFailed"));
+                await ShowMessageAsync(LocalizedStrings.Get("Sources_GuideSettingsTitle"), LocalizedStrings.Get("Sources_GuideSettingsLoadFailed"));
                 return;
             }
 
             var modeOptions = new[]
             {
-                new GuideModeOption(EpgActiveMode.Detected, LocalizedStrings.Get("Sources.GuideMode.Detected.Label"), LocalizedStrings.Get("Sources.GuideMode.Detected.Description")),
-                new GuideModeOption(EpgActiveMode.Manual, LocalizedStrings.Get("Sources.GuideMode.Manual.Label"), LocalizedStrings.Get("Sources.GuideMode.Manual.Description")),
-                new GuideModeOption(EpgActiveMode.None, LocalizedStrings.Get("Sources.GuideMode.None.Label"), LocalizedStrings.Get("Sources.GuideMode.None.Description"))
+                new GuideModeOption(EpgActiveMode.Detected, LocalizedStrings.Get("Sources_GuideMode_Detected_Label"), LocalizedStrings.Get("Sources_GuideMode_Detected_Description")),
+                new GuideModeOption(EpgActiveMode.Manual, LocalizedStrings.Get("Sources_GuideMode_Manual_Label"), LocalizedStrings.Get("Sources_GuideMode_Manual_Description")),
+                new GuideModeOption(EpgActiveMode.None, LocalizedStrings.Get("Sources_GuideMode_None_Label"), LocalizedStrings.Get("Sources_GuideMode_None_Description"))
             };
 
             var proxyOptions = new[]
             {
-                new ProxyModeOption(SourceProxyScope.Disabled, LocalizedStrings.Get("Sources.ProxyMode.Direct.Label"), LocalizedStrings.Get("Sources.ProxyMode.Direct.Description")),
-                new ProxyModeOption(SourceProxyScope.PlaybackOnly, LocalizedStrings.Get("Sources.ProxyMode.PlaybackOnly.Label"), LocalizedStrings.Get("Sources.ProxyMode.PlaybackOnly.Description")),
-                new ProxyModeOption(SourceProxyScope.PlaybackAndProbing, LocalizedStrings.Get("Sources.ProxyMode.PlaybackProbes.Label"), LocalizedStrings.Get("Sources.ProxyMode.PlaybackProbes.Description")),
-                new ProxyModeOption(SourceProxyScope.AllRequests, LocalizedStrings.Get("Sources.ProxyMode.AllRequests.Label"), LocalizedStrings.Get("Sources.ProxyMode.AllRequests.Description"))
+                new ProxyModeOption(SourceProxyScope.Disabled, LocalizedStrings.Get("Sources_ProxyMode_Direct_Label"), LocalizedStrings.Get("Sources_ProxyMode_Direct_Description")),
+                new ProxyModeOption(SourceProxyScope.PlaybackOnly, LocalizedStrings.Get("Sources_ProxyMode_PlaybackOnly_Label"), LocalizedStrings.Get("Sources_ProxyMode_PlaybackOnly_Description")),
+                new ProxyModeOption(SourceProxyScope.PlaybackAndProbing, LocalizedStrings.Get("Sources_ProxyMode_PlaybackProbes_Label"), LocalizedStrings.Get("Sources_ProxyMode_PlaybackProbes_Description")),
+                new ProxyModeOption(SourceProxyScope.AllRequests, LocalizedStrings.Get("Sources_ProxyMode_AllRequests_Label"), LocalizedStrings.Get("Sources_ProxyMode_AllRequests_Description"))
             };
 
             var companionOptions = new[]
             {
-                new CompanionScopeOption(SourceCompanionScope.Disabled, LocalizedStrings.Get("General.Disabled"), LocalizedStrings.Get("Sources.Companion.Disabled.Description")),
-                new CompanionScopeOption(SourceCompanionScope.PlaybackOnly, LocalizedStrings.Get("Sources.ProxyMode.PlaybackOnly.Label"), LocalizedStrings.Get("Sources.Companion.PlaybackOnly.Description")),
-                new CompanionScopeOption(SourceCompanionScope.PlaybackAndProbing, LocalizedStrings.Get("Sources.ProxyMode.PlaybackProbes.Label"), LocalizedStrings.Get("Sources.Companion.PlaybackProbes.Description"))
+                new CompanionScopeOption(SourceCompanionScope.Disabled, LocalizedStrings.Get("General_Disabled"), LocalizedStrings.Get("Sources_Companion_Disabled_Description")),
+                new CompanionScopeOption(SourceCompanionScope.PlaybackOnly, LocalizedStrings.Get("Sources_ProxyMode_PlaybackOnly_Label"), LocalizedStrings.Get("Sources_Companion_PlaybackOnly_Description")),
+                new CompanionScopeOption(SourceCompanionScope.PlaybackAndProbing, LocalizedStrings.Get("Sources_ProxyMode_PlaybackProbes_Label"), LocalizedStrings.Get("Sources_Companion_PlaybackProbes_Description"))
             };
 
             var companionModeOptions = new[]
             {
-                new CompanionModeOption(SourceCompanionRelayMode.Relay, LocalizedStrings.Get("Sources.CompanionMode.Relay.Label"), LocalizedStrings.Get("Sources.CompanionMode.Relay.Description")),
-                new CompanionModeOption(SourceCompanionRelayMode.Buffered, LocalizedStrings.Get("Sources.CompanionMode.Buffered.Label"), LocalizedStrings.Get("Sources.CompanionMode.Buffered.Description"))
+                new CompanionModeOption(SourceCompanionRelayMode.Relay, LocalizedStrings.Get("Sources_CompanionMode_Relay_Label"), LocalizedStrings.Get("Sources_CompanionMode_Relay_Description")),
+                new CompanionModeOption(SourceCompanionRelayMode.Buffered, LocalizedStrings.Get("Sources_CompanionMode_Buffered_Label"), LocalizedStrings.Get("Sources_CompanionMode_Buffered_Description"))
             };
 
             var modeComboBox = new ComboBox
@@ -333,7 +333,7 @@ namespace Kroira.App.Views
 
             var proxyComboBox = new ComboBox
             {
-                Header = LocalizedStrings.Get("Sources.RoutingPolicyHeader"),
+                Header = LocalizedStrings.Get("Sources_RoutingPolicyHeader"),
                 ItemsSource = proxyOptions,
                 DisplayMemberPath = nameof(ProxyModeOption.Label),
                 SelectedItem = proxyOptions.FirstOrDefault(option => option.Scope == draft.ProxyScope) ?? proxyOptions[0]
@@ -341,15 +341,15 @@ namespace Kroira.App.Views
 
             var manualUrlBox = new TextBox
             {
-                Header = LocalizedStrings.Get("Sources.ManualXmltvUrlHeader"),
+                Header = LocalizedStrings.Get("Sources_ManualXmltvUrlHeader"),
                 PlaceholderText = "https://... or C:\\guide.xml",
                 Text = draft.ManualEpgUrl
             };
 
             var fallbackUrlBox = new TextBox
             {
-                Header = LocalizedStrings.Get("Sources.FallbackXmltvUrlsHeader"),
-                PlaceholderText = LocalizedStrings.Get("Sources.FallbackXmltvUrlsPlaceholder"),
+                Header = LocalizedStrings.Get("Sources_FallbackXmltvUrlsHeader"),
+                PlaceholderText = LocalizedStrings.Get("Sources_FallbackXmltvUrlsPlaceholder"),
                 AcceptsReturn = true,
                 TextWrapping = TextWrapping.Wrap,
                 MinHeight = 88,
@@ -358,14 +358,14 @@ namespace Kroira.App.Views
 
             var proxyUrlBox = new TextBox
             {
-                Header = LocalizedStrings.Get("Sources.ProxyUrlHeader"),
+                Header = LocalizedStrings.Get("Sources_ProxyUrlHeader"),
                 PlaceholderText = "http://proxy-host:port or socks5://proxy-host:port",
                 Text = draft.ProxyUrl
             };
 
             var companionComboBox = new ComboBox
             {
-                Header = LocalizedStrings.Get("Sources.CompanionRelayHeader"),
+                Header = LocalizedStrings.Get("Sources_CompanionRelayHeader"),
                 ItemsSource = companionOptions,
                 DisplayMemberPath = nameof(CompanionScopeOption.Label),
                 SelectedItem = companionOptions.FirstOrDefault(option => option.Scope == draft.CompanionScope) ?? companionOptions[0]
@@ -373,7 +373,7 @@ namespace Kroira.App.Views
 
             var companionModeComboBox = new ComboBox
             {
-                Header = LocalizedStrings.Get("Sources.CompanionBehaviorHeader"),
+                Header = LocalizedStrings.Get("Sources_CompanionBehaviorHeader"),
                 ItemsSource = companionModeOptions,
                 DisplayMemberPath = nameof(CompanionModeOption.Label),
                 SelectedItem = companionModeOptions.FirstOrDefault(option => option.Mode == draft.CompanionMode) ?? companionModeOptions[1]
@@ -381,7 +381,7 @@ namespace Kroira.App.Views
 
             var companionUrlBox = new TextBox
             {
-                Header = LocalizedStrings.Get("Sources.CompanionEndpointHeader"),
+                Header = LocalizedStrings.Get("Sources_CompanionEndpointHeader"),
                 PlaceholderText = "http://127.0.0.1:9318/kroira-companion",
                 Text = draft.CompanionUrl
             };
@@ -458,10 +458,10 @@ namespace Kroira.App.Views
 
             var dialog = new ContentDialog
             {
-                Title = LocalizedStrings.Format("Sources.GuideSettingsForTitle", draft.SourceName),
-                PrimaryButtonText = LocalizedStrings.Get("Sources.SaveAndSync"),
-                SecondaryButtonText = LocalizedStrings.Get("General.Save"),
-                CloseButtonText = LocalizedStrings.Get("General.Cancel"),
+                Title = LocalizedStrings.Format("Sources_GuideSettingsForTitle", draft.SourceName),
+                PrimaryButtonText = LocalizedStrings.Get("Sources_SaveAndSync"),
+                SecondaryButtonText = LocalizedStrings.Get("General_Save"),
+                CloseButtonText = LocalizedStrings.Get("General_Cancel"),
                 DefaultButton = ContentDialogButton.Primary,
                 XamlRoot = XamlRoot,
                 Content = new StackPanel
@@ -472,17 +472,17 @@ namespace Kroira.App.Views
                         new TextBlock
                         {
                             Text = draft.SourceType == SourceType.M3U
-                                ? LocalizedStrings.Get("Sources.GuideSettings.M3uMessage")
+                                ? LocalizedStrings.Get("Sources_GuideSettings_M3uMessage")
                                 : draft.SourceType == SourceType.Stalker
-                                    ? LocalizedStrings.Get("Sources.GuideSettings.StalkerMessage")
-                                : LocalizedStrings.Get("Sources.GuideSettings.DefaultMessage"),
+                                    ? LocalizedStrings.Get("Sources_GuideSettings_StalkerMessage")
+                                : LocalizedStrings.Get("Sources_GuideSettings_DefaultMessage"),
                             TextWrapping = TextWrapping.Wrap
                         },
                         new TextBlock
                         {
                             Text = string.IsNullOrWhiteSpace(draft.DetectedEpgUrl)
-                                ? LocalizedStrings.Get("Sources.DetectedXmltvNone")
-                                : LocalizedStrings.Format("Sources.DetectedXmltvUrl", draft.DetectedEpgUrl),
+                                ? LocalizedStrings.Get("Sources_DetectedXmltvNone")
+                                : LocalizedStrings.Format("Sources_DetectedXmltvUrl", draft.DetectedEpgUrl),
                             TextWrapping = TextWrapping.Wrap
                         },
                         modeComboBox,
@@ -513,7 +513,7 @@ namespace Kroira.App.Views
                 }
             };
 
-            dialog.Title = LocalizedStrings.Format("Sources.GuideSettingsForTitle", draft.SourceName);
+            dialog.Title = LocalizedStrings.Format("Sources_GuideSettingsForTitle", draft.SourceName);
             var result = await ShowContentDialogAsync(dialog);
             if (result is not ContentDialogResult.Primary and not ContentDialogResult.Secondary)
             {
@@ -535,7 +535,7 @@ namespace Kroira.App.Views
             }
             catch (Exception ex)
             {
-                await ShowMessageAsync(LocalizedStrings.Get("Sources.GuideSettingsFailedTitle"), ex.Message);
+                await ShowMessageAsync(LocalizedStrings.Get("Sources_GuideSettingsFailedTitle"), ex.Message);
             }
         }
 
@@ -543,7 +543,7 @@ namespace Kroira.App.Views
         {
             if (string.IsNullOrWhiteSpace(text))
             {
-                await ShowMessageAsync(unavailableTitle, LocalizedStrings.Get("Sources.NothingSafeToCopy"));
+                await ShowMessageAsync(unavailableTitle, LocalizedStrings.Get("Sources_NothingSafeToCopy"));
                 return;
             }
 
@@ -556,7 +556,7 @@ namespace Kroira.App.Views
             }
             catch (Exception ex)
             {
-                await ShowMessageAsync(LocalizedStrings.Get("Sources.CopyFailedTitle"), ex.Message);
+                await ShowMessageAsync(LocalizedStrings.Get("Sources_CopyFailedTitle"), ex.Message);
             }
         }
 
@@ -565,7 +565,7 @@ namespace Kroira.App.Views
             await ShowContentDialogAsync(new ContentDialog
             {
                 Title = title,
-                CloseButtonText = LocalizedStrings.Get("General.Close"),
+                CloseButtonText = LocalizedStrings.Get("General_Close"),
                 XamlRoot = XamlRoot,
                 Content = message
             });

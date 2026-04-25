@@ -26,21 +26,7 @@ namespace Kroira.App.ViewModels
         private bool _isLoadingAutoRefresh;
         private bool _isLoadingRemoteMode;
 
-        public ObservableCollection<LanguageOptionViewModel> Languages { get; } = new()
-        {
-            new LanguageOptionViewModel(AppLanguageService.SystemDefaultLanguageCode, LocalizedStrings.Get("Language.SystemDefault")),
-            new LanguageOptionViewModel(AppLanguageService.DefaultLanguageCode, LocalizedStrings.Get("Language.English")),
-            new LanguageOptionViewModel("tr-TR", LocalizedStrings.Get("Language.Turkish")),
-            new LanguageOptionViewModel("zh-Hans", LocalizedStrings.Get("Language.ChineseSimplified")),
-            new LanguageOptionViewModel("es-ES", LocalizedStrings.Get("Language.Spanish")),
-            new LanguageOptionViewModel("ar-SA", LocalizedStrings.Get("Language.Arabic")),
-            new LanguageOptionViewModel("fr-FR", LocalizedStrings.Get("Language.French")),
-            new LanguageOptionViewModel("de-DE", LocalizedStrings.Get("Language.German")),
-            new LanguageOptionViewModel("pt-BR", LocalizedStrings.Get("Language.PortugueseBrazil")),
-            new LanguageOptionViewModel("hi-IN", LocalizedStrings.Get("Language.Hindi")),
-            new LanguageOptionViewModel("ja-JP", LocalizedStrings.Get("Language.Japanese")),
-            new LanguageOptionViewModel("ko-KR", LocalizedStrings.Get("Language.Korean"))
-        };
+        public ObservableCollection<LanguageOptionViewModel> Languages { get; } = new();
 
         public ObservableCollection<AppAppearanceOptionViewModel> ThemeOptions { get; } = new();
         public ObservableCollection<AppAppearanceOptionViewModel> AccentOptions { get; } = new();
@@ -56,10 +42,10 @@ namespace Kroira.App.ViewModels
         private string _licenseStatusDescription = string.Empty;
 
         [ObservableProperty]
-        private LanguageOptionViewModel _selectedLanguage = new LanguageOptionViewModel(AppLanguageService.SystemDefaultLanguageCode, LocalizedStrings.Get("Language.SystemDefault"));
+        private LanguageOptionViewModel _selectedLanguage = new LanguageOptionViewModel(AppLanguageService.SystemDefaultLanguageCode, string.Empty);
 
         [ObservableProperty]
-        private string _languageStatusText = LocalizedStrings.Get("Settings.Language.Status.Initial");
+        private string _languageStatusText = LocalizedStrings.Get("Settings_Language_Status_Initial");
 
         [ObservableProperty]
         private AppAppearanceOptionViewModel? _selectedThemeOption;
@@ -68,7 +54,7 @@ namespace Kroira.App.ViewModels
         private AppAppearanceOptionViewModel? _selectedAccentOption;
 
         [ObservableProperty]
-        private string _appearanceStatusText = LocalizedStrings.Get("Settings.Appearance.Status.Initial");
+        private string _appearanceStatusText = LocalizedStrings.Get("Settings_Appearance_Status_Initial");
 
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(IsBackupIdle))]
@@ -77,10 +63,10 @@ namespace Kroira.App.ViewModels
 
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(HasBackupStatus))]
-        private string _backupStatusText = LocalizedStrings.Get("Settings.Backup.Status.Initial");
+        private string _backupStatusText = LocalizedStrings.Get("Settings_Backup_Status_Initial");
 
         [ObservableProperty]
-        private string _resourceStatusText = LocalizedStrings.Get("Settings.Resources.Status.Ready");
+        private string _resourceStatusText = LocalizedStrings.Get("Settings_Resources_Status_Ready");
 
         [ObservableProperty]
         private bool _autoRefreshEnabled = true;
@@ -92,13 +78,13 @@ namespace Kroira.App.ViewModels
         private AutoRefreshIntervalOptionViewModel? _selectedAutoRefreshInterval;
 
         [ObservableProperty]
-        private string _autoRefreshStatusText = LocalizedStrings.Get("Settings.AutoRefresh.Status.Initial");
+        private string _autoRefreshStatusText = LocalizedStrings.Get("Settings_AutoRefresh_Status_Initial");
 
         [ObservableProperty]
         private bool _remoteModeEnabled = true;
 
         [ObservableProperty]
-        private string _remoteModeStatusText = LocalizedStrings.Get("Settings.RemoteMode.Status.Initial");
+        private string _remoteModeStatusText = LocalizedStrings.Get("Settings_RemoteMode_Status_Initial");
 
         public bool IsBackupIdle => !IsBackupBusy;
         public bool CanUseBackupRestore => _entitlementService.IsFeatureEnabled(EntitlementFeatureKeys.LibraryBackupRestore);
@@ -201,22 +187,7 @@ namespace Kroira.App.ViewModels
             _entitlementService = entitlementService;
             _remoteNavigationService = remoteNavigationService;
             _serviceProvider = serviceProvider;
-            var appearanceService = _serviceProvider.GetRequiredService<IAppAppearanceService>();
-            foreach (var option in appearanceService.ThemeOptions)
-            {
-                ThemeOptions.Add(new AppAppearanceOptionViewModel(option.Key, option.DisplayName, option.Description));
-            }
-
-            foreach (var option in appearanceService.AccentOptions)
-            {
-                AccentOptions.Add(new AppAppearanceOptionViewModel(option.Key, option.DisplayName, option.Description));
-            }
-
-            foreach (var hours in new[] { 1, 3, 6, 12, 24 })
-            {
-                AutoRefreshIntervalOptions.Add(new AutoRefreshIntervalOptionViewModel(hours));
-            }
-
+            RefreshLocalizedOptionCollections();
             UpdateState();
         }
 
@@ -235,39 +206,34 @@ namespace Kroira.App.ViewModels
             var autoRefresh = await autoRefreshService.LoadSettingsAsync(db);
             await _remoteNavigationService.InitializeAsync();
 
-            _isLoadingLanguage = true;
-            SelectedLanguage = Languages.FirstOrDefault(language => language.Code == languageCode)
-                ?? Languages.First(language => language.Code == AppLanguageService.DefaultLanguageCode);
-            _isLoadingLanguage = false;
+            RefreshLocalizedOptionCollections(
+                languageCode,
+                appearance.ThemePresetKey,
+                appearance.AccentPresetKey,
+                autoRefresh.IntervalHours);
             LanguageStatusText = string.Equals(languageCode, AppLanguageService.SystemDefaultLanguageCode, StringComparison.OrdinalIgnoreCase)
-                ? LocalizedStrings.Get("Settings.Language.Status.System")
-                : LocalizedStrings.Format("Settings.Language.Status.Selected", SelectedLanguage.DisplayName);
+                ? LocalizedStrings.Get("Settings_Language_Status_System")
+                : LocalizedStrings.Format("Settings_Language_Status_Selected", SelectedLanguage.DisplayName);
 
-            _isLoadingAppearance = true;
-            SelectedThemeOption = ThemeOptions.FirstOrDefault(option => option.Key == appearance.ThemePresetKey) ?? ThemeOptions.FirstOrDefault();
-            SelectedAccentOption = AccentOptions.FirstOrDefault(option => option.Key == appearance.AccentPresetKey) ?? AccentOptions.FirstOrDefault();
-            _isLoadingAppearance = false;
             AppearanceStatusText = LocalizedStrings.Format(
-                "Settings.Appearance.Status.Active",
-                SelectedThemeOption?.DisplayName ?? LocalizedStrings.Get("Appearance.Theme.Cinema.Name"),
-                SelectedAccentOption?.DisplayName ?? LocalizedStrings.Get("Appearance.Accent.Gold.Name"));
+                "Settings_Appearance_Status_Active",
+                SelectedThemeOption?.DisplayName ?? LocalizedStrings.Get("Appearance_Theme_Cinema_Name"),
+                SelectedAccentOption?.DisplayName ?? LocalizedStrings.Get("Appearance_Accent_Gold_Name"));
 
             _isLoadingAutoRefresh = true;
             AutoRefreshEnabled = autoRefresh.IsEnabled;
             RunAutoRefreshAfterLaunch = autoRefresh.RunAfterLaunch;
-            SelectedAutoRefreshInterval = AutoRefreshIntervalOptions.FirstOrDefault(option => option.Hours == autoRefresh.IntervalHours)
-                ?? AutoRefreshIntervalOptions.FirstOrDefault();
             _isLoadingAutoRefresh = false;
             AutoRefreshStatusText = autoRefresh.IsEnabled
-                ? LocalizedStrings.Format("Settings.AutoRefresh.Status.Running", autoRefresh.IntervalHours)
-                : LocalizedStrings.Get("Settings.AutoRefresh.Status.Off");
+                ? LocalizedStrings.Format("Settings_AutoRefresh_Status_Running", autoRefresh.IntervalHours)
+                : LocalizedStrings.Get("Settings_AutoRefresh_Status_Off");
 
             _isLoadingRemoteMode = true;
             RemoteModeEnabled = _remoteNavigationService.IsRemoteModeEnabled;
             _isLoadingRemoteMode = false;
             RemoteModeStatusText = RemoteModeEnabled
-                ? LocalizedStrings.Get("Settings.RemoteMode.Status.On")
-                : LocalizedStrings.Get("Settings.RemoteMode.Status.Off");
+                ? LocalizedStrings.Get("Settings_RemoteMode_Status_On")
+                : LocalizedStrings.Get("Settings_RemoteMode_Status_Off");
         }
 
         private async Task SaveLanguageAsync(string languageCode)
@@ -277,7 +243,24 @@ namespace Kroira.App.ViewModels
             var profileService = scope.ServiceProvider.GetRequiredService<IProfileStateService>();
             var activeProfile = await profileService.GetActiveProfileAsync(db);
             await AppLanguageService.SetLanguageAsync(db, languageCode, activeProfile.Id);
-            LanguageStatusText = LocalizedStrings.Get("Settings.Language.Status.RestartRequired");
+            RefreshLocalizedOptionCollections(
+                languageCode,
+                SelectedThemeOption?.Key,
+                SelectedAccentOption?.Key,
+                SelectedAutoRefreshInterval?.Hours);
+            RefreshLocalizedStaticProperties();
+            UpdateState();
+            LanguageStatusText = LocalizedStrings.Get("Settings_Language_Status_RestartRequired");
+            AppearanceStatusText = LocalizedStrings.Format(
+                "Settings_Appearance_Status_Active",
+                SelectedThemeOption?.DisplayName ?? LocalizedStrings.Get("Appearance_Theme_Cinema_Name"),
+                SelectedAccentOption?.DisplayName ?? LocalizedStrings.Get("Appearance_Accent_Gold_Name"));
+            AutoRefreshStatusText = AutoRefreshEnabled
+                ? LocalizedStrings.Format("Settings_AutoRefresh_Status_Running", SelectedAutoRefreshInterval?.Hours ?? 6)
+                : LocalizedStrings.Get("Settings_AutoRefresh_Status_Off");
+            RemoteModeStatusText = RemoteModeEnabled
+                ? LocalizedStrings.Get("Settings_RemoteMode_Status_On")
+                : LocalizedStrings.Get("Settings_RemoteMode_Status_Off");
         }
 
         private async Task SaveAppearanceAsync()
@@ -297,9 +280,9 @@ namespace Kroira.App.ViewModels
             await appearanceService.SaveAsync(db, current);
 
             AppearanceStatusText = LocalizedStrings.Format(
-                "Settings.Appearance.Status.Active",
-                SelectedThemeOption?.DisplayName ?? LocalizedStrings.Get("Appearance.Theme.Cinema.Name"),
-                SelectedAccentOption?.DisplayName ?? LocalizedStrings.Get("Appearance.Accent.Gold.Name"));
+                "Settings_Appearance_Status_Active",
+                SelectedThemeOption?.DisplayName ?? LocalizedStrings.Get("Appearance_Theme_Cinema_Name"),
+                SelectedAccentOption?.DisplayName ?? LocalizedStrings.Get("Appearance_Accent_Gold_Name"));
         }
 
         private async Task SaveAutoRefreshAsync()
@@ -315,16 +298,117 @@ namespace Kroira.App.ViewModels
             };
             await autoRefreshService.SaveSettingsAsync(db, settings);
             AutoRefreshStatusText = settings.IsEnabled
-                ? LocalizedStrings.Format("Settings.AutoRefresh.Status.Running", settings.IntervalHours)
-                : LocalizedStrings.Get("Settings.AutoRefresh.Status.Off");
+                ? LocalizedStrings.Format("Settings_AutoRefresh_Status_Running", settings.IntervalHours)
+                : LocalizedStrings.Get("Settings_AutoRefresh_Status_Off");
         }
 
         private async Task SaveRemoteModeAsync()
         {
             await _remoteNavigationService.SetRemoteModeEnabledAsync(RemoteModeEnabled);
             RemoteModeStatusText = RemoteModeEnabled
-                ? LocalizedStrings.Get("Settings.RemoteMode.Status.On")
-                : LocalizedStrings.Get("Settings.RemoteMode.Status.Off");
+                ? LocalizedStrings.Get("Settings_RemoteMode_Status_On")
+                : LocalizedStrings.Get("Settings_RemoteMode_Status_Off");
+        }
+
+        private void RefreshLocalizedOptionCollections(
+            string? selectedLanguageCode = null,
+            string? selectedThemeKey = null,
+            string? selectedAccentKey = null,
+            int? selectedAutoRefreshHours = null)
+        {
+            selectedLanguageCode ??= SelectedLanguage?.Code ?? AppLanguageService.SystemDefaultLanguageCode;
+            selectedThemeKey ??= SelectedThemeOption?.Key;
+            selectedAccentKey ??= SelectedAccentOption?.Key;
+            selectedAutoRefreshHours ??= SelectedAutoRefreshInterval?.Hours ?? 6;
+
+            var wasLoadingLanguage = _isLoadingLanguage;
+            var wasLoadingAppearance = _isLoadingAppearance;
+            var wasLoadingAutoRefresh = _isLoadingAutoRefresh;
+            _isLoadingLanguage = true;
+            _isLoadingAppearance = true;
+            _isLoadingAutoRefresh = true;
+            try
+            {
+                Languages.Clear();
+                foreach (var language in AppLanguageService.SupportedLanguages)
+                {
+                    Languages.Add(new LanguageOptionViewModel(
+                        language.Code,
+                        LocalizedStrings.Get(language.DisplayNameResourceKey)));
+                }
+
+                var normalizedLanguage = AppLanguageService.NormalizeLanguageCode(selectedLanguageCode);
+                SelectedLanguage = Languages.FirstOrDefault(language => string.Equals(language.Code, normalizedLanguage, StringComparison.OrdinalIgnoreCase))
+                    ?? Languages.First(language => language.Code == AppLanguageService.SystemDefaultLanguageCode);
+
+                ThemeOptions.Clear();
+                var appearanceService = _serviceProvider.GetRequiredService<IAppAppearanceService>();
+                foreach (var option in appearanceService.ThemeOptions)
+                {
+                    ThemeOptions.Add(new AppAppearanceOptionViewModel(option.Key, option.DisplayName, option.Description));
+                }
+
+                AccentOptions.Clear();
+                foreach (var option in appearanceService.AccentOptions)
+                {
+                    AccentOptions.Add(new AppAppearanceOptionViewModel(option.Key, option.DisplayName, option.Description));
+                }
+
+                SelectedThemeOption = ThemeOptions.FirstOrDefault(option => string.Equals(option.Key, selectedThemeKey, StringComparison.OrdinalIgnoreCase))
+                    ?? ThemeOptions.FirstOrDefault();
+                SelectedAccentOption = AccentOptions.FirstOrDefault(option => string.Equals(option.Key, selectedAccentKey, StringComparison.OrdinalIgnoreCase))
+                    ?? AccentOptions.FirstOrDefault();
+
+                AutoRefreshIntervalOptions.Clear();
+                foreach (var hours in new[] { 1, 3, 6, 12, 24 })
+                {
+                    AutoRefreshIntervalOptions.Add(new AutoRefreshIntervalOptionViewModel(hours));
+                }
+
+                SelectedAutoRefreshInterval = AutoRefreshIntervalOptions.FirstOrDefault(option => option.Hours == selectedAutoRefreshHours)
+                    ?? AutoRefreshIntervalOptions.FirstOrDefault();
+            }
+            finally
+            {
+                _isLoadingLanguage = wasLoadingLanguage;
+                _isLoadingAppearance = wasLoadingAppearance;
+                _isLoadingAutoRefresh = wasLoadingAutoRefresh;
+            }
+        }
+
+        private void RefreshLocalizedStaticProperties()
+        {
+            foreach (var propertyName in new[]
+            {
+                nameof(ShortDescription),
+                nameof(ProductDescription),
+                nameof(HelpStepOne),
+                nameof(HelpStepTwo),
+                nameof(HelpStepThree),
+                nameof(HelpStepFour),
+                nameof(PrivacySummaryText),
+                nameof(CredentialHandlingText),
+                nameof(SanitizedLogsText),
+                nameof(TelemetryText),
+                nameof(MetadataProviderText),
+                nameof(PrivacyPolicyDisplayText),
+                nameof(SupportPageDisplayText),
+                nameof(SupportEmailText),
+                nameof(SupportSummaryText),
+                nameof(SupportAuthenticationFailureText),
+                nameof(SupportNoChannelsText),
+                nameof(SupportNoEpgText),
+                nameof(SupportWrongEpgText),
+                nameof(SupportStreamDoesNotPlayText),
+                nameof(SupportStoreInstallText),
+                nameof(SupportResetAppDataText),
+                nameof(SupportExportDiagnosticsText),
+                nameof(LegalDisclaimerText),
+                nameof(RunFullTrustJustificationText)
+            })
+            {
+                OnPropertyChanged(propertyName);
+            }
         }
 
         [RelayCommand]
@@ -343,10 +427,10 @@ namespace Kroira.App.ViewModels
             ProTierVisibility = isPro ? Visibility.Visible : Visibility.Collapsed;
             FreeTierVisibility = !isPro ? Visibility.Visible : Visibility.Collapsed;
 
-            var backupRestoreState = CanUseBackupRestore ? LocalizedStrings.Get("General.Available") : LocalizedStrings.Get("General.NotAvailable");
-            var appearanceState = CanUseThemePresets || CanUseAccentPacks ? LocalizedStrings.Get("General.Available") : LocalizedStrings.Get("General.NotAvailable");
+            var backupRestoreState = CanUseBackupRestore ? LocalizedStrings.Get("General_Available") : LocalizedStrings.Get("General_NotAvailable");
+            var appearanceState = CanUseThemePresets || CanUseAccentPacks ? LocalizedStrings.Get("General_Available") : LocalizedStrings.Get("General_NotAvailable");
             LicenseStatusDescription = LocalizedStrings.Format(
-                "Settings.License.Status",
+                "Settings_License_Status",
                 _entitlementService.CurrentTierDisplayName,
                 backupRestoreState,
                 appearanceState);
@@ -358,7 +442,7 @@ namespace Kroira.App.ViewModels
 
             if (!CanUseBackupRestore)
             {
-                BackupStatusText = LocalizedStrings.Get("Settings.Backup.Export.NotAvailable");
+                BackupStatusText = LocalizedStrings.Get("Settings_Backup_Export_NotAvailable");
                 LogBackup("export command denied by entitlement");
                 return;
             }
@@ -370,7 +454,7 @@ namespace Kroira.App.ViewModels
             }
 
             IsBackupBusy = true;
-            BackupStatusText = LocalizedStrings.Get("Settings.Backup.Exporting");
+            BackupStatusText = LocalizedStrings.Get("Settings_Backup_Exporting");
             LogBackup("export status set busy");
 
             try
@@ -387,7 +471,7 @@ namespace Kroira.App.ViewModels
 
                 BackupStatusText =
                     LocalizedStrings.Format(
-                        "Settings.Backup.Export.Success",
+                        "Settings_Backup_Export_Success",
                         result.SourceCount,
                         result.ProfileCount,
                         result.FavoriteCount,
@@ -397,7 +481,7 @@ namespace Kroira.App.ViewModels
             catch (Exception ex)
             {
                 TryDeleteEmptyBackupFile(filePath);
-                BackupStatusText = LocalizedStrings.Format("Settings.Backup.Export.Failed", ex.Message);
+                BackupStatusText = LocalizedStrings.Format("Settings_Backup_Export_Failed", ex.Message);
                 LogBackup($"export failed type={ex.GetType().Name} message='{ex.Message}'");
             }
             finally
@@ -411,7 +495,7 @@ namespace Kroira.App.ViewModels
         {
             if (!CanUseBackupRestore)
             {
-                BackupStatusText = LocalizedStrings.Get("Settings.Backup.Restore.NotAvailable");
+                BackupStatusText = LocalizedStrings.Get("Settings_Backup_Restore_NotAvailable");
                 return;
             }
 
@@ -421,7 +505,7 @@ namespace Kroira.App.ViewModels
             }
 
             IsBackupBusy = true;
-            BackupStatusText = LocalizedStrings.Get("Settings.Backup.Restoring");
+            BackupStatusText = LocalizedStrings.Get("Settings_Backup_Restoring");
 
             try
             {
@@ -433,7 +517,7 @@ namespace Kroira.App.ViewModels
                 var builder = new StringBuilder();
                 builder.Append(
                     LocalizedStrings.Format(
-                        "Settings.Backup.Restore.Success",
+                        "Settings_Backup_Restore_Success",
                         result.SourceCount,
                         result.ProfileCount,
                         result.FavoriteCount,
@@ -442,7 +526,7 @@ namespace Kroira.App.ViewModels
                 if (result.SourceSyncFailureCount > 0)
                 {
                     builder.Append(' ');
-                    builder.Append(LocalizedStrings.Format("Settings.Backup.Restore.SourceFailures", result.SourceSyncFailureCount));
+                    builder.Append(LocalizedStrings.Format("Settings_Backup_Restore_SourceFailures", result.SourceSyncFailureCount));
                 }
 
                 if (result.Warnings.Count > 0)
@@ -454,7 +538,7 @@ namespace Kroira.App.ViewModels
             }
             catch (Exception ex)
             {
-                BackupStatusText = LocalizedStrings.Format("Settings.Backup.Restore.Failed", ex.Message);
+                BackupStatusText = LocalizedStrings.Format("Settings_Backup_Restore_Failed", ex.Message);
             }
             finally
             {
@@ -486,8 +570,8 @@ namespace Kroira.App.ViewModels
         {
             await OpenExternalUriAsync(
                 AppSubmissionInfo.TryCreatePrivacyPolicyUri(out var uri) ? uri : null,
-                LocalizedStrings.Get("Settings.Privacy.Missing"),
-                LocalizedStrings.Get("Settings.Privacy.OpenFailed"));
+                LocalizedStrings.Get("Settings_Privacy_Missing"),
+                LocalizedStrings.Get("Settings_Privacy_OpenFailed"));
         }
 
         [RelayCommand]
@@ -495,8 +579,8 @@ namespace Kroira.App.ViewModels
         {
             await OpenExternalUriAsync(
                 AppSubmissionInfo.TryCreateSupportPageUri(out var uri) ? uri : null,
-                LocalizedStrings.Get("Settings.Support.Missing"),
-                LocalizedStrings.Get("Settings.Support.OpenFailed"));
+                LocalizedStrings.Get("Settings_Support_Missing"),
+                LocalizedStrings.Get("Settings_Support_OpenFailed"));
         }
 
         [RelayCommand]
@@ -504,8 +588,8 @@ namespace Kroira.App.ViewModels
         {
             await OpenExternalUriAsync(
                 AppSubmissionInfo.TryCreateSupportEmailUri(out var uri) ? uri : null,
-                LocalizedStrings.Get("Settings.SupportEmail.Missing"),
-                LocalizedStrings.Get("Settings.SupportEmail.OpenFailed"));
+                LocalizedStrings.Get("Settings_SupportEmail_Missing"),
+                LocalizedStrings.Get("Settings_SupportEmail_OpenFailed"));
         }
 
         private void LogBackup(string message)
@@ -525,7 +609,7 @@ namespace Kroira.App.ViewModels
             {
                 var launched = await Windows.System.Launcher.LaunchUriAsync(uri);
                 ResourceStatusText = launched
-                    ? LocalizedStrings.Get("Settings.Resources.Status.Ready")
+                    ? LocalizedStrings.Get("Settings_Resources_Status_Ready")
                     : failureMessage;
             }
             catch
@@ -590,7 +674,7 @@ namespace Kroira.App.ViewModels
 
         public int Hours { get; }
         public string DisplayName => Hours == 1
-            ? LocalizedStrings.Get("Settings.AutoRefresh.EveryHour")
-            : LocalizedStrings.Format("Settings.AutoRefresh.EveryHours", Hours);
+            ? LocalizedStrings.Get("Settings_AutoRefresh_EveryHour")
+            : LocalizedStrings.Format("Settings_AutoRefresh_EveryHours", Hours);
     }
 }
