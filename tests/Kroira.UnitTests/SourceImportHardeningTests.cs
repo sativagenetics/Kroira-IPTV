@@ -172,6 +172,36 @@ public sealed class SourceImportHardeningTests
         Assert.IsFalse(syncState.ErrorLog.Contains("secret", StringComparison.OrdinalIgnoreCase));
     }
 
+    [TestMethod]
+    public async Task XtreamImport_TimeoutOrCancellationFailsWithSanitizedRequestTimeout()
+    {
+        await using var connection = await OpenConnectionAsync();
+        await using var db = await CreateDatabaseAsync(connection);
+        var sourceId = await SeedSourceAsync(db, SourceType.Xtream, "https://xtream.example", "alice", "secret");
+        var parser = CreateXtreamParser(new FixtureRoutingService(request =>
+        {
+            var query = request.RequestUri?.Query ?? string.Empty;
+            if (!query.Contains("action=", StringComparison.OrdinalIgnoreCase))
+            {
+                return Json(HttpStatusCode.OK, """{"user_info":{"auth":1}}""");
+            }
+
+            throw new TaskCanceledException("timeout for username=alice password=secret");
+        }));
+
+        var ex = await Assert.ThrowsExceptionAsync<TaskCanceledException>(() =>
+            parser.ParseAndImportXtreamAsync(db, sourceId, refreshHealth: false));
+
+        StringAssert.Contains(ex.Message, "timed out or was cancelled");
+        Assert.IsFalse(ex.Message.Contains("alice", StringComparison.OrdinalIgnoreCase));
+        Assert.IsFalse(ex.Message.Contains("secret", StringComparison.OrdinalIgnoreCase));
+
+        var syncState = await db.SourceSyncStates.SingleAsync(item => item.SourceProfileId == sourceId);
+        Assert.AreEqual((int)HttpStatusCode.RequestTimeout, syncState.HttpStatusCode);
+        Assert.IsFalse(syncState.ErrorLog.Contains("alice", StringComparison.OrdinalIgnoreCase));
+        Assert.IsFalse(syncState.ErrorLog.Contains("secret", StringComparison.OrdinalIgnoreCase));
+    }
+
     private static HttpResponseMessage RespondXtreamSuccess(HttpRequestMessage request)
     {
         var query = request.RequestUri?.Query ?? string.Empty;

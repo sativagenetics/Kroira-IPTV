@@ -659,13 +659,6 @@
       "LogicalContentKey": "id:trt1",
       "PreferredSourceProfileId": 1,
       "IsCompleted": false
-    },
-    {
-      "ContentType": "Channel",
-      "ContentId": 999999,
-      "LogicalContentKey": "channel:identity:ghost-channel",
-      "PreferredSourceProfileId": 999999,
-      "IsCompleted": false
     }
   ],
   "Home": {

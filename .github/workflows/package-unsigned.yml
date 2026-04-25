@@ -1,0 +1,63 @@
+name: Package Unsigned
+
+on:
+  workflow_dispatch:
+    inputs:
+      configuration:
+        description: Build configuration
+        required: true
+        default: Release
+        type: choice
+        options:
+          - Release
+          - Debug
+      platform:
+        description: Package platform
+        required: true
+        default: x64
+        type: choice
+        options:
+          - x64
+          - x86
+          - ARM64
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    runs-on: windows-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+          cache: true
+          cache-dependency-path: |
+            global.json
+            Directory.Build.props
+            Kroira.sln
+            src/Kroira.App/Kroira.App.csproj
+
+      - name: Create unsigned package
+        shell: pwsh
+        run: .\scripts\package-unsigned.ps1 -Configuration "${{ inputs.configuration }}" -Platform "${{ inputs.platform }}" -OutputRoot "artifacts\packages\unsigned"
+
+      - name: Upload package artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unsigned-package-${{ inputs.platform }}-${{ inputs.configuration }}
+          path: |
+            artifacts/packages/unsigned/**/*.msix
+            artifacts/packages/unsigned/**/*.appx
+            artifacts/packages/unsigned/**/*.appxupload
+            artifacts/packages/unsigned/**/*.msixbundle
+            artifacts/packages/unsigned/**/*.appxbundle
+          if-no-files-found: ignore
+          retention-days: 14

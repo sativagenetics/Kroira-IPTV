@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  restore-build-test:
+    runs-on: windows-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+          cache: true
+          cache-dependency-path: |
+            global.json
+            Directory.Build.props
+            Kroira.sln
+            src/Kroira.App/Kroira.App.csproj
+            tests/Kroira.UnitTests/Kroira.UnitTests.csproj
+
+      - name: Restore
+        shell: pwsh
+        run: dotnet restore Kroira.sln
+
+      - name: Build
+        shell: pwsh
+        run: dotnet build Kroira.sln -c Debug -p:Platform=x64 -p:AppxPackageSigningEnabled=false --no-restore /m:1 -p:BuildInParallel=false
+
+      - name: Test
+        shell: pwsh
+        run: dotnet test Kroira.sln -c Debug -p:Platform=x64 -p:AppxPackageSigningEnabled=false --no-restore /m:1 -p:BuildInParallel=false --logger "trx;LogFileName=unit-tests.trx"
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-test-results
+          path: |
+            **/TestResults/*.trx
+          if-no-files-found: ignore
+          retention-days: 14
