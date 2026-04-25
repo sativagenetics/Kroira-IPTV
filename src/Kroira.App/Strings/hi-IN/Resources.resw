@@ -5445,4 +5445,42 @@
   <data name="SmartCategorySection_Year_Era" xml:space="preserve"><value>Year / Era</value></data>
   <data name="SmartCategorySection_Basketball" xml:space="preserve"><value>Basketball</value></data>
   <data name="SmartCategorySection_Football_Leagues" xml:space="preserve"><value>Football Leagues</value></data>
+  <data name="ShellHomeItem.Content" xml:space="preserve">
+    <value>होम</value>
+  </data>
+  <data name="ShellSearchItem.Content" xml:space="preserve">
+    <value>खोज</value>
+  </data>
+  <data name="ShellLiveTvItem.Content" xml:space="preserve">
+    <value>लाइव टीवी</value>
+  </data>
+  <data name="ShellMoviesItem.Content" xml:space="preserve">
+    <value>फ़िल्में</value>
+  </data>
+  <data name="ShellSeriesItem.Content" xml:space="preserve">
+    <value>सीरीज़</value>
+  </data>
+  <data name="ShellContinueWatchingItem.Content" xml:space="preserve">
+    <value>देखना जारी रखें</value>
+  </data>
+  <data name="ShellLibraryItem.Content" xml:space="preserve">
+    <value>लाइब्रेरी</value>
+  </data>
+  <data name="ShellFavoritesItem.Content" xml:space="preserve">
+    <value>पसंदीदा</value>
+  </data>
+  <data name="ShellSourcesItem.Content" xml:space="preserve">
+    <value>स्रोत</value>
+  </data>
+  <data name="ShellGuideItem.Content" xml:space="preserve">
+    <value>गाइड</value>
+  </data>
+  <data name="ShellSettingsItem.Content" xml:space="preserve">
+    <value>सेटिंग्स</value>
+  </data>
+  <data name="ShellProfileItem.Content" xml:space="preserve">
+    <value>प्रोफ़ाइल</value>
+  </data>
+  <data name="Sources_Status_RemovingSource" xml:space="preserve"><value>स्रोत हटाया जा रहा है...</value></data>
+  <data name="Sources_Status_RemoveSourceFailed" xml:space="preserve"><value>यह स्रोत हटाया नहीं जा सका</value></data>
 </root>

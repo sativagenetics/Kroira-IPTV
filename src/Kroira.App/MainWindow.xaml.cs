@@ -26,6 +26,7 @@ namespace Kroira.App
     {
         private readonly IWindowManagerService _windowManager;
         private readonly IRemoteNavigationService _remoteNavigationService;
+        private bool _needsLocalizedNavigationRefresh;
         private static readonly string StartupLogPath =
             Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Kroira", "startup-log.txt");
 
@@ -60,6 +61,7 @@ namespace Kroira.App
                 ConfigureDarkTitleBar();
 
                 _windowManager.FullscreenStateChanged += WindowManager_FullscreenStateChanged;
+                AppLanguageService.LanguageChanged += AppLanguageService_LanguageChanged;
                 LogStartupCheckpoint("MW 09: subscribed to FullscreenStateChanged");
                 ApplyShellStateForPageType(null, forceLayout: false);
 
@@ -91,6 +93,76 @@ namespace Kroira.App
             }
         }
 
+        private void AppLanguageService_LanguageChanged(object? sender, AppLanguageChangedEventArgs e)
+        {
+            var dispatcherQueue = RootShell.DispatcherQueue;
+            if (dispatcherQueue == null || dispatcherQueue.HasThreadAccess)
+            {
+                ApplyRuntimeLanguageChange(e);
+                return;
+            }
+
+            dispatcherQueue.TryEnqueue(() => ApplyRuntimeLanguageChange(e));
+        }
+
+        private void ApplyRuntimeLanguageChange(AppLanguageChangedEventArgs e)
+        {
+            try
+            {
+                LogStartupCheckpoint($"MW LANG 01: runtime language refresh queued version={e.Version} current={e.CurrentLanguageCode}");
+                Title = LocalizedStrings.Get("AppDisplayName");
+                RootShell.FlowDirection = AppLanguageService.GetCurrentFlowDirection();
+                RefreshShellNavigationLabels();
+                if (ContentFrame.Content is Views.SettingsPage settingsPage)
+                {
+                    settingsPage.RefreshLocalizedContent();
+                }
+
+                _needsLocalizedNavigationRefresh = true;
+            }
+            catch (Exception ex)
+            {
+                LogStartupCheckpoint("MW LANG ERROR");
+                LogStartupException("MAINWINDOW LANGUAGE REFRESH ERROR", ex);
+            }
+        }
+
+        private void RefreshShellNavigationLabels()
+        {
+            try
+            {
+                foreach (var item in EnumerateNavigationItems())
+                {
+                    if (item.Tag?.ToString() is not string tag)
+                    {
+                        continue;
+                    }
+
+                    item.Content = tag switch
+                    {
+                        "Home" => LocalizedStrings.Get("ShellHomeItem"),
+                        "Search" => LocalizedStrings.Get("ShellSearchItem"),
+                        "Channels" => LocalizedStrings.Get("ShellLiveTvItem"),
+                        "Movies" => LocalizedStrings.Get("ShellMoviesItem"),
+                        "Series" => LocalizedStrings.Get("ShellSeriesItem"),
+                        "ContinueWatching" => LocalizedStrings.Get("ShellContinueWatchingItem"),
+                        "Favorites" => LocalizedStrings.Get("ShellFavoritesItem"),
+                        "Sources" => LocalizedStrings.Get("ShellSourcesItem"),
+                        "Guide" => LocalizedStrings.Get("ShellGuideItem"),
+                        "Settings" => LocalizedStrings.Get("ShellSettingsItem"),
+                        "MediaLibrary" => LocalizedStrings.Get("ShellLibraryItem"),
+                        "Profile" => LocalizedStrings.Get("ShellProfileItem"),
+                        _ => item.Content?.ToString() ?? string.Empty
+                    };
+                }
+            }
+            catch (Exception ex)
+            {
+                LogStartupCheckpoint("MW LANG NAV LABEL ERROR");
+                LogStartupException("MAINWINDOW LANGUAGE REFRESH ERROR", ex);
+            }
+        }
+
         private void ContentFrame_NavigationFailed(object sender, NavigationFailedEventArgs e)
         {
             LogStartupCheckpoint($"MW NAV FAILED: {e.SourcePageType?.FullName}");
@@ -119,6 +191,13 @@ namespace Kroira.App
             SyncSelectedNavigationItem(e.SourcePageType);
             ApplyShellStateForPageType(e.SourcePageType, forceLayout: true);
             QueueShellStateRefresh(e.SourcePageType);
+
+            if (_needsLocalizedNavigationRefresh && ContentFrame.Content is ILocalizationRefreshable localizationRefreshable)
+            {
+                localizationRefreshable.RefreshLocalizedContent();
+                _needsLocalizedNavigationRefresh = false;
+            }
+
             if (!_remoteNavigationService.IsRemoteModeEnabled ||
                 ContentFrame.Content is not IRemoteNavigationPage remotePage)
             {

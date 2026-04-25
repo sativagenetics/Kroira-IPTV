@@ -126,6 +126,26 @@ namespace Kroira.App.ViewModels
             _profileLimit = _entitlementService.GetLimit(EntitlementLimitKeys.ProfilesMaxCount);
         }
 
+        public void RefreshLocalizedText()
+        {
+            foreach (var propertyName in new[]
+            {
+                nameof(ProfileSwitcherVisibility),
+                nameof(ProfileCountText),
+                nameof(CanDeleteSelectedProfile),
+                nameof(ActiveProfileName),
+                nameof(SelectedProfileTypeText),
+                nameof(SourceLocksSummaryText),
+                nameof(CategoryLocksSummaryText),
+                nameof(LocalProfileExplanationText),
+                nameof(CanAddProfiles),
+                nameof(CanManageParentalControls)
+            })
+            {
+                OnPropertyChanged(propertyName);
+            }
+        }
+
         partial void OnSelectedProfileChanged(AppProfile? value)
         {
             if (_isLoading || value == null)

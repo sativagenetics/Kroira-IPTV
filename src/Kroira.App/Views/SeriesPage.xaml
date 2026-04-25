@@ -2,6 +2,7 @@
     x:Class="Kroira.App.Views.SeriesPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:runtime="using:Kroira.App.Services"
     xmlns:controls="using:Kroira.App.Controls"
     xmlns:local="using:Kroira.App.Views"
     xmlns:viewModels="using:Kroira.App.ViewModels"
@@ -69,12 +70,12 @@
             </Grid.ColumnDefinitions>
 
             <StackPanel Spacing="6">
-                <TextBlock x:Uid="SeriesLibraryLabel" Text="SHOWS LIBRARY"
+                <TextBlock x:Uid="SeriesLibraryLabel" runtime:RuntimeLocalizer.Uid="SeriesLibraryLabel" Text="SHOWS LIBRARY"
                            Style="{StaticResource KroiraLabelStyle}"
                            Foreground="{StaticResource KroiraAccentBrush}" />
-                <TextBlock x:Uid="SeriesPageTitle" Text="Series"
+                <TextBlock x:Uid="SeriesPageTitle" runtime:RuntimeLocalizer.Uid="SeriesPageTitle" Text="Series"
                            Style="{StaticResource KroiraPageTitleStyle}" />
-                <TextBlock x:Uid="SeriesPageSubtitle" Text="Pick a show to browse seasons and episodes."
+                <TextBlock x:Uid="SeriesPageSubtitle" runtime:RuntimeLocalizer.Uid="SeriesPageSubtitle" Text="Pick a show to browse seasons and episodes."
                            Style="{StaticResource KroiraPageSubtitleStyle}"
                            MaxWidth="680" />
             </StackPanel>
@@ -93,7 +94,7 @@
 
                     <Grid Grid.Column="0">
                          <TextBox x:Name="SearchBox"
-                                  x:Uid="SeriesSearchBox"
+                                  x:Uid="SeriesSearchBox" runtime:RuntimeLocalizer.Uid="SeriesSearchBox"
                                   Style="{StaticResource KroiraFilterTextBoxStyle}"
                                   Text="{x:Bind ViewModel.SearchQuery, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                   KeyDown="SearchBox_KeyDown"
@@ -107,7 +108,7 @@
                                   VerticalAlignment="Center" />
                     </Grid>
 
-                     <ComboBox x:Uid="SeriesProviderComboBox"
+                     <ComboBox x:Uid="SeriesProviderComboBox" runtime:RuntimeLocalizer.Uid="SeriesProviderComboBox"
                                Grid.Column="1"
                                Style="{StaticResource KroiraFilterComboBoxStyle}"
                                ItemsSource="{x:Bind ViewModel.SourceOptions, Mode=OneWay}"
@@ -115,7 +116,7 @@
                                DisplayMemberPath="DisplayName"
                                AutomationProperties.Name="Series provider" />
 
-                     <ComboBox x:Uid="SeriesSortComboBox"
+                     <ComboBox x:Uid="SeriesSortComboBox" runtime:RuntimeLocalizer.Uid="SeriesSortComboBox"
                                Grid.Column="2"
                                Style="{StaticResource KroiraFilterComboBoxStyle}"
                                ItemsSource="{x:Bind ViewModel.SortOptions, Mode=OneWay}"
@@ -128,10 +129,10 @@
                                 Spacing="10"
                                 HorizontalAlignment="Right"
                                 VerticalAlignment="Center">
-                         <CheckBox x:Uid="SeriesFavoritesFilter" Content="Favorites"
+                         <CheckBox x:Uid="SeriesFavoritesFilter" runtime:RuntimeLocalizer.Uid="SeriesFavoritesFilter" Content="Favorites"
                                   IsChecked="{x:Bind ViewModel.FavoritesOnly, Mode=TwoWay}"
                                   AutomationProperties.Name="Show favorite series only" />
-                         <CheckBox x:Uid="SeriesPrimaryOnlyFilter" Content="Primary only"
+                         <CheckBox x:Uid="SeriesPrimaryOnlyFilter" runtime:RuntimeLocalizer.Uid="SeriesPrimaryOnlyFilter" Content="Primary only"
                                   IsChecked="{x:Bind ViewModel.HideSecondaryContent, Mode=TwoWay}"
                                   AutomationProperties.Name="Show primary series entries only" />
                     </StackPanel>
@@ -142,7 +143,7 @@
                 Grid.Column="0"
                 Style="{StaticResource KroiraCategoryRailPanelStyle}">
             <ListView x:Name="CategoryList"
-                      x:Uid="SeriesCategoryList"
+                      x:Uid="SeriesCategoryList" runtime:RuntimeLocalizer.Uid="SeriesCategoryList"
                       ItemsSource="{x:Bind ViewModel.Categories, Mode=OneWay}"
                       SelectedItem="{x:Bind ViewModel.SelectedCategory, Mode=TwoWay}"
                       SelectionMode="Single"
@@ -257,7 +258,7 @@
                                                             <FontIcon Glyph="&#xE7C3;"
                                                                       FontSize="10"
                                                                       Foreground="{StaticResource KroiraAccentBrush}" />
-                                                            <TextBlock x:Uid="GeneralDetailsText" Text="Details"
+                                                            <TextBlock x:Uid="GeneralDetailsText" runtime:RuntimeLocalizer.Uid="GeneralDetailsText" Text="Details"
                                                                        FontSize="11"
                                                                        FontWeight="SemiBold"
                                                                        Foreground="{StaticResource KroiraTextPrimaryBrush}" />
@@ -361,9 +362,9 @@
                             </Grid>
                         </Border>
                         <StackPanel Spacing="8">
-                            <TextBlock x:Uid="SeriesPickShowTitle" Text="Pick a show"
+                            <TextBlock x:Uid="SeriesPickShowTitle" runtime:RuntimeLocalizer.Uid="SeriesPickShowTitle" Text="Pick a show"
                                        Style="{StaticResource KroiraSectionTitleStyle}" />
-                            <TextBlock x:Uid="SeriesPickShowMessage" Text="Select a title from the library to load artwork, seasons, and episode playback here."
+                            <TextBlock x:Uid="SeriesPickShowMessage" runtime:RuntimeLocalizer.Uid="SeriesPickShowMessage" Text="Select a title from the library to load artwork, seasons, and episode playback here."
                                        Style="{StaticResource KroiraBodyStyle}"
                                        MaxLines="3"
                                        TextWrapping="Wrap" />
@@ -475,10 +476,10 @@
                                     <StackPanel Spacing="10">
                                         <StackPanel Spacing="7"
                                                     Visibility="{x:Bind ViewModel.SelectedSeries.SourceSelectionVisibility, Mode=OneWay}">
-                                            <TextBlock x:Uid="SeriesSourceLabel" Text="SOURCE"
+                                            <TextBlock x:Uid="SeriesSourceLabel" runtime:RuntimeLocalizer.Uid="SeriesSourceLabel" Text="SOURCE"
                                                        Style="{StaticResource KroiraLabelStyle}"
                                                        Foreground="{StaticResource KroiraAccentBrush}" />
-                                         <ComboBox x:Uid="SeriesEpisodeSourceComboBox"
+                                         <ComboBox x:Uid="SeriesEpisodeSourceComboBox" runtime:RuntimeLocalizer.Uid="SeriesEpisodeSourceComboBox"
                                                    Style="{StaticResource KroiraFilterComboBoxStyle}"
                                                    ItemsSource="{x:Bind ViewModel.SelectedSeries.SourceOptions, Mode=OneWay}"
                                                    SelectedItem="{x:Bind ViewModel.SelectedSeries.SelectedSourceOption, Mode=TwoWay}"
@@ -486,10 +487,10 @@
                                                    HorizontalAlignment="Stretch"
                                                    AutomationProperties.Name="Episode source" />
                                         </StackPanel>
-                                        <TextBlock x:Uid="SeriesSeasonLabel" Text="SEASON"
+                                        <TextBlock x:Uid="SeriesSeasonLabel" runtime:RuntimeLocalizer.Uid="SeriesSeasonLabel" Text="SEASON"
                                                    Style="{StaticResource KroiraLabelStyle}"
                                                    Foreground="{StaticResource KroiraAccentBrush}" />
-                                         <ComboBox x:Uid="SeriesSeasonComboBox"
+                                         <ComboBox x:Uid="SeriesSeasonComboBox" runtime:RuntimeLocalizer.Uid="SeriesSeasonComboBox"
                                                    Style="{StaticResource KroiraFilterComboBoxStyle}"
                                                    ItemsSource="{x:Bind ViewModel.SeasonOptions, Mode=OneWay}"
                                                    SelectedItem="{x:Bind ViewModel.SelectedSeason, Mode=TwoWay}"
@@ -501,7 +502,7 @@
                                                 </DataTemplate>
                                             </ComboBox.ItemTemplate>
                                         </ComboBox>
-                                         <ToggleSwitch x:Uid="SeriesHideWatchedSwitch" Header="Hide watched episodes"
+                                         <ToggleSwitch x:Uid="SeriesHideWatchedSwitch" runtime:RuntimeLocalizer.Uid="SeriesHideWatchedSwitch" Header="Hide watched episodes"
                                                        IsOn="{x:Bind ViewModel.HideWatchedEpisodes, Mode=TwoWay}"
                                                        OnContent=""
                                                        OffContent=""
@@ -514,13 +515,13 @@
                                                 VerticalAlignment="Bottom"
                                                 Visibility="{x:Bind ViewModel.SelectedEpisodePlayVisibility, Mode=OneWay}">
                                          <Button x:Name="PlaySelectedEpisodeButton"
-                                                  x:Uid="SeriesPlaySelectedEpisodeButton"
+                                                  x:Uid="SeriesPlaySelectedEpisodeButton" runtime:RuntimeLocalizer.Uid="SeriesPlaySelectedEpisodeButton"
                                                  Content="Play"
                                                  Click="PlaySelectedEpisode_Click"
                                                  Style="{StaticResource KroiraPrimaryButtonStyle}"
                                                  Padding="18,11"
                                                  AutomationProperties.Name="Play selected episode" />
-                                        <Button x:Uid="SeriesEpisodeDetailsButton"
+                                        <Button x:Uid="SeriesEpisodeDetailsButton" runtime:RuntimeLocalizer.Uid="SeriesEpisodeDetailsButton"
                                                 Click="InspectSelectedEpisode_Click"
                                                 Style="{StaticResource KroiraGhostButtonStyle}"
                                                 Width="38"
@@ -532,7 +533,7 @@
                                                       FontSize="12"
                                                       Foreground="{StaticResource KroiraTextPrimaryBrush}" />
                                         </Button>
-                                        <Button x:Uid="SeriesEpisodeDownloadButton"
+                                        <Button x:Uid="SeriesEpisodeDownloadButton" runtime:RuntimeLocalizer.Uid="SeriesEpisodeDownloadButton"
                                                 Click="DownloadSelectedEpisode_Click"
                                                 Visibility="{x:Bind DownloadActionsVisibility, Mode=OneWay}"
                                                 Style="{StaticResource KroiraGhostButtonStyle}"
@@ -563,7 +564,7 @@
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
-                                <TextBlock x:Uid="SeriesEpisodesLabel" Text="EPISODES"
+                                <TextBlock x:Uid="SeriesEpisodesLabel" runtime:RuntimeLocalizer.Uid="SeriesEpisodesLabel" Text="EPISODES"
                                            Style="{StaticResource KroiraLabelStyle}"
                                            Foreground="{StaticResource KroiraAccentBrush}"
                                            VerticalAlignment="Center" />
@@ -575,7 +576,7 @@
                             </Grid>
 
                             <controls:EmptyStateView IconGlyph="&#xE8A9;"
-                                                     x:Uid="SeriesNoPlayableEpisodesEmpty"
+                                                     x:Uid="SeriesNoPlayableEpisodesEmpty" runtime:RuntimeLocalizer.Uid="SeriesNoPlayableEpisodesEmpty"
                                                      Title="No playable episodes"
                                                      Message="Episode stream data is not available for this season yet. Re-sync the VOD source or select a different season."
                                                      Visibility="{x:Bind ViewModel.EpisodesEmptyVisibility, Mode=OneWay}" />
@@ -647,24 +648,24 @@
                                                                     Orientation="Horizontal"
                                                                     Spacing="6"
                                                                     Background="#B805070B">
-                                                            <Button x:Uid="GeneralDetailsButton" Content="Details"
+                                                            <Button x:Uid="GeneralDetailsButton" runtime:RuntimeLocalizer.Uid="GeneralDetailsButton" Content="Details"
                                                                     Click="InspectEpisode_Click"
                                                                     Style="{StaticResource KroiraGhostButtonStyle}"
                                                                     FontSize="11"
                                                                     Padding="9,4" />
-                                                            <Button x:Uid="GeneralDownloadButton" Content="Download"
+                                                            <Button x:Uid="GeneralDownloadButton" runtime:RuntimeLocalizer.Uid="GeneralDownloadButton" Content="Download"
                                                                     Click="DownloadEpisode_Click"
                                                                     Visibility="{Binding ElementName=SeriesPageRoot, Path=DownloadActionsVisibility}"
                                                                     Style="{StaticResource KroiraGhostButtonStyle}"
                                                                     FontSize="11"
                                                                     Padding="9,4" />
-                                                            <Button x:Uid="SeriesWatchedButton" Content="Watched"
+                                                            <Button x:Uid="SeriesWatchedButton" runtime:RuntimeLocalizer.Uid="SeriesWatchedButton" Content="Watched"
                                                                     Click="MarkEpisodeWatched_Click"
                                                                     Style="{StaticResource KroiraGhostButtonStyle}"
                                                                     FontSize="11"
                                                                     Padding="9,4"
                                                                     Visibility="{Binding MarkWatchedVisibility}" />
-                                                            <Button x:Uid="SeriesUnwatchedButton" Content="Unwatched"
+                                                            <Button x:Uid="SeriesUnwatchedButton" runtime:RuntimeLocalizer.Uid="SeriesUnwatchedButton" Content="Unwatched"
                                                                     Click="MarkEpisodeUnwatched_Click"
                                                                     Style="{StaticResource KroiraGhostButtonStyle}"
                                                                     FontSize="11"
@@ -702,7 +703,7 @@
             <controls:ErrorStateView IconGlyph="{x:Bind ViewModel.SurfaceState.Glyph, Mode=OneWay}"
                                      Title="{x:Bind ViewModel.SurfaceState.Title, Mode=OneWay}"
                                      Message="{x:Bind ViewModel.SurfaceState.Message, Mode=OneWay}"
-                                     x:Uid="GeneralRetryErrorState"
+                                     x:Uid="GeneralRetryErrorState" runtime:RuntimeLocalizer.Uid="GeneralRetryErrorState"
                                      RetryActionLabel="Retry"
                                      DiagnosticsActionLabel="{x:Bind ViewModel.SurfaceState.ActionLabel, Mode=OneWay}"
                                      DiagnosticsActionVisibility="{x:Bind ViewModel.SurfaceState.DiagnosticsActionVisibility, Mode=OneWay}"

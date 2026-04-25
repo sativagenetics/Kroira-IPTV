@@ -2,6 +2,7 @@
     x:Class="Kroira.App.Views.EpgCenterPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:runtime="using:Kroira.App.Services"
     xmlns:controls="using:Kroira.App.Controls"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -23,7 +24,7 @@
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
             <StackPanel Spacing="4">
-                    <TextBlock x:Uid="EpgCenterPageTitle" Text="EPG Center" Style="{StaticResource KroiraPageTitleStyle}" />
+                    <TextBlock x:Uid="EpgCenterPageTitle" runtime:RuntimeLocalizer.Uid="EpgCenterPageTitle" Text="EPG Center" Style="{StaticResource KroiraPageTitleStyle}" />
                 <TextBlock Text="{x:Bind ViewModel.HeadlineText, Mode=OneWay}"
                            Style="{StaticResource KroiraBodyStyle}"
                            Foreground="{StaticResource KroiraTextSecondaryBrush}"
@@ -73,7 +74,7 @@
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
                             <StackPanel Spacing="3">
-                    <TextBlock x:Uid="EpgGuideTimelineTitle" Text="Guide Timeline" Style="{StaticResource KroiraSectionTitleStyle}" />
+                    <TextBlock x:Uid="EpgGuideTimelineTitle" runtime:RuntimeLocalizer.Uid="EpgGuideTimelineTitle" Text="Guide Timeline" Style="{StaticResource KroiraSectionTitleStyle}" />
                                 <TextBlock Text="{x:Bind ViewModel.GuideRangeText, Mode=OneWay}"
                                            Style="{StaticResource KroiraMetaStyle}"
                                            Foreground="{StaticResource KroiraTextSecondaryBrush}" />
@@ -82,13 +83,13 @@
                                 <Button Click="JumpGuideToNow_Click">
                                     <StackPanel Orientation="Horizontal" Spacing="8">
                                         <FontIcon Glyph="&#xE121;" FontSize="14" />
-                                <TextBlock x:Uid="EpgJumpToNowButton" Text="Jump to Now" />
+                                <TextBlock x:Uid="EpgJumpToNowButton" runtime:RuntimeLocalizer.Uid="EpgJumpToNowButton" Text="Jump to Now" />
                                     </StackPanel>
                                 </Button>
                                 <Button Click="RefreshGuideTimeline_Click">
                                     <StackPanel Orientation="Horizontal" Spacing="8">
                                         <FontIcon Glyph="&#xE72C;" FontSize="14" />
-                                <TextBlock x:Uid="GeneralReloadText" Text="Reload" />
+                                <TextBlock x:Uid="GeneralReloadText" runtime:RuntimeLocalizer.Uid="GeneralReloadText" Text="Reload" />
                                     </StackPanel>
                                 </Button>
                             </StackPanel>
@@ -100,19 +101,19 @@
                                 <ColumnDefinition Width="1.1*" />
                                 <ColumnDefinition Width="1.4*" />
                             </Grid.ColumnDefinitions>
-                            <ComboBox x:Uid="GeneralSourceCombo" Header="Source"
+                            <ComboBox x:Uid="GeneralSourceCombo" runtime:RuntimeLocalizer.Uid="GeneralSourceCombo" Header="Source"
                                       DisplayMemberPath="Label"
                                       ItemsSource="{x:Bind ViewModel.GuideSourceFilterOptions, Mode=OneWay}"
                                       SelectedItem="{x:Bind ViewModel.SelectedGuideSourceFilter, Mode=TwoWay}"
                                       MinWidth="220" />
-                            <ComboBox x:Uid="GeneralCategoryCombo"
+                            <ComboBox x:Uid="GeneralCategoryCombo" runtime:RuntimeLocalizer.Uid="GeneralCategoryCombo"
                                       Grid.Column="1"
                                       Header="Category"
                                       DisplayMemberPath="Label"
                                       ItemsSource="{x:Bind ViewModel.GuideCategoryOptions, Mode=OneWay}"
                                       SelectedItem="{x:Bind ViewModel.SelectedGuideCategoryOption, Mode=TwoWay}"
                                       MinWidth="220" />
-                            <TextBox x:Uid="GeneralSearchBoxHeader"
+                            <TextBox x:Uid="GeneralSearchBoxHeader" runtime:RuntimeLocalizer.Uid="GeneralSearchBoxHeader"
                                      Grid.Column="2"
                                      Header="Search"
                                      PlaceholderText="Filter channels, categories, or sources"
@@ -124,11 +125,11 @@
                                    Style="{StaticResource KroiraBodyStyle}"
                                    Foreground="{StaticResource KroiraStateWarningBrush}"
                                    TextWrapping="WrapWholeWords" />
-                               <TextBlock x:Uid="EpgTimelineLoadingText" Text="Loading guide timeline..."
+                               <TextBlock x:Uid="EpgTimelineLoadingText" runtime:RuntimeLocalizer.Uid="EpgTimelineLoadingText" Text="Loading guide timeline..."
                                    Visibility="{x:Bind ViewModel.GuideTimelineBusyVisibility, Mode=OneWay}"
                                    Style="{StaticResource KroiraMetaStyle}"
                                    Foreground="{StaticResource KroiraTextSecondaryBrush}" />
-                               <TextBlock x:Uid="EpgNoProgrammesText" Text="No guide programmes are available for the selected filters and time range."
+                               <TextBlock x:Uid="EpgNoProgrammesText" runtime:RuntimeLocalizer.Uid="EpgNoProgrammesText" Text="No guide programmes are available for the selected filters and time range."
                                    Visibility="{x:Bind ViewModel.GuideTimelineEmptyVisibility, Mode=OneWay}"
                                    Style="{StaticResource KroiraBodyStyle}"
                                    Foreground="{StaticResource KroiraTextSecondaryBrush}"
@@ -145,7 +146,7 @@
                                         <ColumnDefinition Width="230" />
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
-                                        <TextBlock x:Uid="GeneralChannelLabel" Text="Channel"
+                                        <TextBlock x:Uid="GeneralChannelLabel" runtime:RuntimeLocalizer.Uid="GeneralChannelLabel" Text="Channel"
                                                VerticalAlignment="Center"
                                                Style="{StaticResource KroiraMetaStyle}"
                                                Foreground="{StaticResource KroiraTextTertiaryBrush}" />
@@ -237,7 +238,7 @@
                                                       Background="#18000000"
                                                       Loaded="ClipToBounds_Loaded"
                                                       SizeChanged="ClipToBounds_SizeChanged">
-                                        <TextBlock x:Uid="EpgNoGuideInRangeText" Text="No guide in this range"
+                                        <TextBlock x:Uid="EpgNoGuideInRangeText" runtime:RuntimeLocalizer.Uid="EpgNoGuideInRangeText" Text="No guide in this range"
                                                                Visibility="{x:Bind EmptyGuideVisibility}"
                                                                Margin="12,0,0,0"
                                                                VerticalAlignment="Center"
@@ -275,7 +276,7 @@
                         BorderBrush="{StaticResource KroiraBorderBrush}"
                         BorderThickness="1">
                     <StackPanel Spacing="12">
-                <TextBlock x:Uid="EpgManualMatchingTitle" Text="Manual EPG Matching" Style="{StaticResource KroiraSectionTitleStyle}" />
+                <TextBlock x:Uid="EpgManualMatchingTitle" runtime:RuntimeLocalizer.Uid="EpgManualMatchingTitle" Text="Manual EPG Matching" Style="{StaticResource KroiraSectionTitleStyle}" />
                         <TextBlock Text="{x:Bind ViewModel.ManualMatchStatusText, Mode=OneWay}"
                                    Visibility="{x:Bind ViewModel.ManualMatchStatusVisibility, Mode=OneWay}"
                                    Style="{StaticResource KroiraBodyStyle}"
@@ -288,19 +289,19 @@
                                 <ColumnDefinition Width="1.4*" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
-                            <ComboBox x:Uid="GeneralSourceCombo2" Header="Source"
+                            <ComboBox x:Uid="GeneralSourceCombo2" runtime:RuntimeLocalizer.Uid="GeneralSourceCombo2" Header="Source"
                                       DisplayMemberPath="Label"
                                       ItemsSource="{x:Bind ViewModel.SourceOptions, Mode=OneWay}"
                                       SelectedItem="{x:Bind ViewModel.SelectedSourceOption, Mode=TwoWay}"
                                       MinWidth="220" />
-                            <ComboBox x:Uid="GeneralChannelCombo"
+                            <ComboBox x:Uid="GeneralChannelCombo" runtime:RuntimeLocalizer.Uid="GeneralChannelCombo"
                                       Grid.Column="1"
                                       Header="Channel"
                                       DisplayMemberPath="DisplayName"
                                       ItemsSource="{x:Bind ViewModel.ManualMatchChannels, Mode=OneWay}"
                                       SelectedItem="{x:Bind ViewModel.SelectedManualMatchChannel, Mode=TwoWay}"
                                       MinWidth="280" />
-                            <TextBox x:Uid="EpgXmltvChannelSearchBox"
+                            <TextBox x:Uid="EpgXmltvChannelSearchBox" runtime:RuntimeLocalizer.Uid="EpgXmltvChannelSearchBox"
                                      Grid.Column="2"
                                      Header="XMLTV channel search"
                                      PlaceholderText="Search display name or enter an exact XMLTV id"
@@ -310,12 +311,12 @@
                                     Click="ClearManualOverride_Click">
                                 <StackPanel Orientation="Horizontal" Spacing="8">
                                     <FontIcon Glyph="&#xE711;" FontSize="14" />
-                            <TextBlock x:Uid="EpgClearOverrideButton" Text="Clear Override" />
+                            <TextBlock x:Uid="EpgClearOverrideButton" runtime:RuntimeLocalizer.Uid="EpgClearOverrideButton" Text="Clear Override" />
                                 </StackPanel>
                             </Button>
                         </Grid>
 
-                    <TextBlock x:Uid="EpgSearchingMatchesText" Text="Searching matches..."
+                    <TextBlock x:Uid="EpgSearchingMatchesText" runtime:RuntimeLocalizer.Uid="EpgSearchingMatchesText" Text="Searching matches..."
                                    Visibility="{x:Bind ViewModel.ManualMatchBusyVisibility, Mode=OneWay}"
                                    Style="{StaticResource KroiraMetaStyle}"
                                    Foreground="{StaticResource KroiraTextSecondaryBrush}" />
@@ -348,7 +349,7 @@
                                                 CommandParameter="{Binding}">
                                             <StackPanel Orientation="Horizontal" Spacing="8">
                                                 <FontIcon Glyph="&#xE73E;" FontSize="14" />
-                                        <TextBlock x:Uid="EpgSetOverrideButton" Text="Set Override" />
+                                        <TextBlock x:Uid="EpgSetOverrideButton" runtime:RuntimeLocalizer.Uid="EpgSetOverrideButton" Text="Set Override" />
                                             </StackPanel>
                                         </Button>
                                     </Grid>
@@ -364,7 +365,7 @@
                         BorderBrush="{StaticResource KroiraBorderBrush}"
                         BorderThickness="1">
                     <StackPanel Spacing="12">
-                <TextBlock x:Uid="EpgPublicGuideSourceTitle" Text="Public Guide Source" Style="{StaticResource KroiraSectionTitleStyle}" />
+                <TextBlock x:Uid="EpgPublicGuideSourceTitle" runtime:RuntimeLocalizer.Uid="EpgPublicGuideSourceTitle" Text="Public Guide Source" Style="{StaticResource KroiraSectionTitleStyle}" />
                         <Grid ColumnSpacing="12" RowSpacing="10">
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto" />
@@ -378,13 +379,13 @@
                                 <ColumnDefinition Width="1.3*" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
-                            <ComboBox x:Uid="GeneralSourceCombo3" Header="Source"
+                            <ComboBox x:Uid="GeneralSourceCombo3" runtime:RuntimeLocalizer.Uid="GeneralSourceCombo3" Header="Source"
                                       DisplayMemberPath="Label"
                                       ItemsSource="{x:Bind ViewModel.SourceOptions, Mode=OneWay}"
                                       SelectedItem="{x:Bind ViewModel.SelectedSourceOption, Mode=TwoWay}"
                                       IsEnabled="{x:Bind ViewModel.HasPublicGuideConfigSources, Mode=OneWay}"
                                       MinWidth="220" />
-                            <ComboBox x:Uid="GeneralModeCombo"
+                            <ComboBox x:Uid="GeneralModeCombo" runtime:RuntimeLocalizer.Uid="GeneralModeCombo"
                                       Grid.Column="1"
                                       Header="Mode"
                                       DisplayMemberPath="Label"
@@ -402,7 +403,7 @@
                                     <TextBlock Text="{x:Bind ViewModel.PublicGuideActionText, Mode=OneWay}" />
                                 </StackPanel>
                             </Button>
-                            <ComboBox x:Uid="EpgPublicCountryCombo"
+                            <ComboBox x:Uid="EpgPublicCountryCombo" runtime:RuntimeLocalizer.Uid="EpgPublicCountryCombo"
                                       Grid.Row="1"
                                       Grid.ColumnSpan="2"
                                       Header="IPTV-EPG.org country"
@@ -431,25 +432,25 @@
                                         IsEnabled="{x:Bind ViewModel.CanManagePublicGuidePresets, Mode=OneWay}">
                                     <StackPanel Orientation="Horizontal" Spacing="8">
                                         <FontIcon Glyph="&#xE8B3;" FontSize="14" />
-                            <TextBlock x:Uid="EpgReplaceWithAutoDetectedButton" Text="Replace with Auto-Detected" />
+                            <TextBlock x:Uid="EpgReplaceWithAutoDetectedButton" runtime:RuntimeLocalizer.Uid="EpgReplaceWithAutoDetectedButton" Text="Replace with Auto-Detected" />
                                     </StackPanel>
                                 </Button>
                                 <Button Click="ClearPublicGuidePresets_Click"
                                         IsEnabled="{x:Bind ViewModel.CanManagePublicGuidePresets, Mode=OneWay}">
                                     <StackPanel Orientation="Horizontal" Spacing="8">
                                         <FontIcon Glyph="&#xE74D;" FontSize="14" />
-                            <TextBlock x:Uid="EpgClearPublicPresetsButton" Text="Clear IPTV-EPG.org Presets" />
+                            <TextBlock x:Uid="EpgClearPublicPresetsButton" runtime:RuntimeLocalizer.Uid="EpgClearPublicPresetsButton" Text="Clear IPTV-EPG.org Presets" />
                                     </StackPanel>
                                 </Button>
                                 <Button Click="ClearReviewDecisions_Click"
                                         IsEnabled="{x:Bind ViewModel.CanManageReviewDecisions, Mode=OneWay}">
                                     <StackPanel Orientation="Horizontal" Spacing="8">
                                         <FontIcon Glyph="&#xE711;" FontSize="14" />
-                            <TextBlock x:Uid="EpgClearReviewDecisionsButton" Text="Clear Review Decisions" />
+                            <TextBlock x:Uid="EpgClearReviewDecisionsButton" runtime:RuntimeLocalizer.Uid="EpgClearReviewDecisionsButton" Text="Clear Review Decisions" />
                                     </StackPanel>
                                 </Button>
                             </StackPanel>
-                            <TextBox x:Uid="EpgPublicXmltvUrlBox"
+                            <TextBox x:Uid="EpgPublicXmltvUrlBox" runtime:RuntimeLocalizer.Uid="EpgPublicXmltvUrlBox"
                                      Grid.Row="4"
                                      Grid.ColumnSpan="2"
                                      Header="Public XMLTV URL"
@@ -463,7 +464,7 @@
                                     IsEnabled="{x:Bind ViewModel.CanAddCustomPublicGuide, Mode=OneWay}">
                                 <StackPanel Orientation="Horizontal" Spacing="8">
                                     <FontIcon Glyph="&#xE710;" FontSize="14" />
-                                <TextBlock x:Uid="EpgAddUrlButton" Text="Add URL" />
+                                <TextBlock x:Uid="EpgAddUrlButton" runtime:RuntimeLocalizer.Uid="EpgAddUrlButton" Text="Add URL" />
                                 </StackPanel>
                             </Button>
                         </Grid>
@@ -502,7 +503,7 @@
                 </ItemsControl>
 
                 <StackPanel Spacing="8" Visibility="{x:Bind ViewModel.WarningListVisibility, Mode=OneWay}">
-                    <TextBlock x:Uid="EpgWarningsTitle" Text="Warnings" Style="{StaticResource KroiraSectionTitleStyle}" />
+                    <TextBlock x:Uid="EpgWarningsTitle" runtime:RuntimeLocalizer.Uid="EpgWarningsTitle" Text="Warnings" Style="{StaticResource KroiraSectionTitleStyle}" />
                     <ListView ItemsSource="{x:Bind ViewModel.Warnings, Mode=OneWay}" IsItemClickEnabled="False">
                         <ListView.ItemTemplate>
                             <DataTemplate>
@@ -513,8 +514,8 @@
                 </StackPanel>
 
                 <StackPanel Spacing="8">
-                <TextBlock x:Uid="EpgGuideSourcesTitle" Text="Guide Sources" Style="{StaticResource KroiraSectionTitleStyle}" />
-                <TextBlock x:Uid="EpgNoSourcesText" Text="No EPG sources have been configured or detected yet."
+                <TextBlock x:Uid="EpgGuideSourcesTitle" runtime:RuntimeLocalizer.Uid="EpgGuideSourcesTitle" Text="Guide Sources" Style="{StaticResource KroiraSectionTitleStyle}" />
+                <TextBlock x:Uid="EpgNoSourcesText" runtime:RuntimeLocalizer.Uid="EpgNoSourcesText" Text="No EPG sources have been configured or detected yet."
                                Visibility="{x:Bind ViewModel.EmptySourcesVisibility, Mode=OneWay}"
                                Foreground="{StaticResource KroiraTextSecondaryBrush}" />
                     <ListView ItemsSource="{x:Bind ViewModel.GuideSources, Mode=OneWay}" IsItemClickEnabled="False">
@@ -557,10 +558,10 @@
                     </Grid.ColumnDefinitions>
 
                     <StackPanel Spacing="8">
-                    <TextBlock x:Uid="EpgUnmatchedChannelsTitle" Text="Unmatched Channels" Style="{StaticResource KroiraSectionTitleStyle}" />
-                    <TextBox x:Uid="EpgSearchUnmatchedBox" PlaceholderText="Search unmatched channels"
+                    <TextBlock x:Uid="EpgUnmatchedChannelsTitle" runtime:RuntimeLocalizer.Uid="EpgUnmatchedChannelsTitle" Text="Unmatched Channels" Style="{StaticResource KroiraSectionTitleStyle}" />
+                    <TextBox x:Uid="EpgSearchUnmatchedBox" runtime:RuntimeLocalizer.Uid="EpgSearchUnmatchedBox" PlaceholderText="Search unmatched channels"
                                  Text="{x:Bind ViewModel.SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                    <TextBlock x:Uid="EpgNoUnmatchedChannelsText" Text="No unmatched channels found."
+                    <TextBlock x:Uid="EpgNoUnmatchedChannelsText" runtime:RuntimeLocalizer.Uid="EpgNoUnmatchedChannelsText" Text="No unmatched channels found."
                                    Visibility="{x:Bind ViewModel.EmptyUnmatchedVisibility, Mode=OneWay}"
                                    Foreground="{StaticResource KroiraTextSecondaryBrush}" />
                         <ListView ItemsSource="{x:Bind ViewModel.UnmatchedChannels, Mode=OneWay}" MaxHeight="420" IsItemClickEnabled="False">
@@ -577,10 +578,10 @@
                     </StackPanel>
 
                     <StackPanel Grid.Column="1" Spacing="8">
-                    <TextBlock x:Uid="EpgWeakMatchesTitle" Text="Weak Matches" Style="{StaticResource KroiraSectionTitleStyle}" />
-                    <TextBox x:Uid="EpgSearchWeakMatchesBox" PlaceholderText="Search weak matches"
+                    <TextBlock x:Uid="EpgWeakMatchesTitle" runtime:RuntimeLocalizer.Uid="EpgWeakMatchesTitle" Text="Weak Matches" Style="{StaticResource KroiraSectionTitleStyle}" />
+                    <TextBox x:Uid="EpgSearchWeakMatchesBox" runtime:RuntimeLocalizer.Uid="EpgSearchWeakMatchesBox" PlaceholderText="Search weak matches"
                                  Text="{x:Bind ViewModel.SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                    <TextBlock x:Uid="EpgNoWeakMatchesText" Text="No weak matches found."
+                    <TextBlock x:Uid="EpgNoWeakMatchesText" runtime:RuntimeLocalizer.Uid="EpgNoWeakMatchesText" Text="No weak matches found."
                                    Visibility="{x:Bind ViewModel.EmptyWeakVisibility, Mode=OneWay}"
                                    Foreground="{StaticResource KroiraTextSecondaryBrush}" />
                         <ListView ItemsSource="{x:Bind ViewModel.WeakMatches, Mode=OneWay}" MaxHeight="420" IsItemClickEnabled="False">
@@ -598,15 +599,15 @@
                                                     Spacing="8"
                                                     Margin="0,6,0,0"
                                                     Visibility="{x:Bind ReviewActionsVisibility}">
-                            <Button x:Uid="EpgApproveButton" Content="Approve"
+                            <Button x:Uid="EpgApproveButton" runtime:RuntimeLocalizer.Uid="EpgApproveButton" Content="Approve"
                                                     Click="ApproveWeakMatch_Click"
                                                     CommandParameter="{x:Bind}"
                                                     Visibility="{x:Bind ApproveVisibility}" />
-                            <Button x:Uid="EpgRejectButton" Content="Reject"
+                            <Button x:Uid="EpgRejectButton" runtime:RuntimeLocalizer.Uid="EpgRejectButton" Content="Reject"
                                                     Click="RejectWeakMatch_Click"
                                                     CommandParameter="{x:Bind}"
                                                     Visibility="{x:Bind RejectVisibility}" />
-                            <Button x:Uid="EpgClearButton" Content="Clear"
+                            <Button x:Uid="EpgClearButton" runtime:RuntimeLocalizer.Uid="EpgClearButton" Content="Clear"
                                                     Click="ClearMappingDecision_Click"
                                                     CommandParameter="{x:Bind}"
                                                     Visibility="{x:Bind ClearDecisionVisibility}" />

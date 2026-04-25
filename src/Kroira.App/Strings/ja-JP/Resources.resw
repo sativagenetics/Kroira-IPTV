@@ -5445,4 +5445,42 @@
   <data name="SmartCategorySection_Year_Era" xml:space="preserve"><value>Year / Era</value></data>
   <data name="SmartCategorySection_Basketball" xml:space="preserve"><value>Basketball</value></data>
   <data name="SmartCategorySection_Football_Leagues" xml:space="preserve"><value>Football Leagues</value></data>
+  <data name="ShellHomeItem.Content" xml:space="preserve">
+    <value>ホーム</value>
+  </data>
+  <data name="ShellSearchItem.Content" xml:space="preserve">
+    <value>検索</value>
+  </data>
+  <data name="ShellLiveTvItem.Content" xml:space="preserve">
+    <value>ライブTV</value>
+  </data>
+  <data name="ShellMoviesItem.Content" xml:space="preserve">
+    <value>映画</value>
+  </data>
+  <data name="ShellSeriesItem.Content" xml:space="preserve">
+    <value>シリーズ</value>
+  </data>
+  <data name="ShellContinueWatchingItem.Content" xml:space="preserve">
+    <value>続きを見る</value>
+  </data>
+  <data name="ShellLibraryItem.Content" xml:space="preserve">
+    <value>ライブラリ</value>
+  </data>
+  <data name="ShellFavoritesItem.Content" xml:space="preserve">
+    <value>お気に入り</value>
+  </data>
+  <data name="ShellSourcesItem.Content" xml:space="preserve">
+    <value>ソース</value>
+  </data>
+  <data name="ShellGuideItem.Content" xml:space="preserve">
+    <value>ガイド</value>
+  </data>
+  <data name="ShellSettingsItem.Content" xml:space="preserve">
+    <value>設定</value>
+  </data>
+  <data name="ShellProfileItem.Content" xml:space="preserve">
+    <value>プロフィール</value>
+  </data>
+  <data name="Sources_Status_RemovingSource" xml:space="preserve"><value>ソースを削除しています...</value></data>
+  <data name="Sources_Status_RemoveSourceFailed" xml:space="preserve"><value>このソースを削除できませんでした</value></data>
 </root>

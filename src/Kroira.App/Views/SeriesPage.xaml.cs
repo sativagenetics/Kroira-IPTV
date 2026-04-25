@@ -48,7 +48,7 @@ namespace Kroira.App.Views
         public object ConvertBack(object value, Type targetType, object parameter, string language) => DependencyProperty.UnsetValue;
     }
 
-    public sealed partial class SeriesPage : Page, IRemoteNavigationPage
+    public sealed partial class SeriesPage : Page, IRemoteNavigationPage, ILocalizationRefreshable
     {
         private const string MediaActionOverlayTag = "MediaActionOverlay";
         private bool _isRestoringCategorySelection;
@@ -574,6 +574,13 @@ namespace Kroira.App.Views
             }
 
             return false;
+        }
+
+        public void RefreshLocalizedContent()
+        {
+            ViewModel.RefreshLocalizedLabelsIfNeeded();
+            XamlRuntimeLocalizer.Apply(this);
+            QueueRestoreCategorySelection("language-changed");
         }
     }
 }

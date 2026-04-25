@@ -8,7 +8,7 @@ using Microsoft.UI.Xaml.Navigation;
 
 namespace Kroira.App.Views
 {
-    public sealed partial class ProfilePage : Page
+    public sealed partial class ProfilePage : Page, ILocalizationRefreshable
     {
         public ProfileViewModel ViewModel { get; }
 
@@ -47,6 +47,12 @@ namespace Kroira.App.Views
             }
 
             await ViewModel.DeleteSelectedProfileCommand.ExecuteAsync(null);
+        }
+
+        public void RefreshLocalizedContent()
+        {
+            ViewModel.RefreshLocalizedText();
+            XamlRuntimeLocalizer.Apply(this);
         }
     }
 }

@@ -2,6 +2,7 @@
     x:Class="Kroira.App.Views.ProfilePage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:runtime="using:Kroira.App.Services"
     xmlns:controls="using:Kroira.App.Controls"
     xmlns:viewModels="using:Kroira.App.ViewModels"
     Background="{StaticResource KroiraPageBackgroundBrush}">
@@ -48,8 +49,8 @@
                                   Foreground="{StaticResource KroiraAccentBrush}" />
                     </Border>
                     <StackPanel Grid.Column="1" Spacing="6" VerticalAlignment="Center">
-                        <TextBlock x:Uid="ProfilePageTitle" Text="Profiles" Style="{StaticResource KroiraPageTitleStyle}" />
-                        <TextBlock x:Uid="ProfilePageSubtitle" Text="Separate library state, favorites, resume data, and family-safe access controls."
+                        <TextBlock x:Uid="ProfilePageTitle" runtime:RuntimeLocalizer.Uid="ProfilePageTitle" Text="Profiles" Style="{StaticResource KroiraPageTitleStyle}" />
+                        <TextBlock x:Uid="ProfilePageSubtitle" runtime:RuntimeLocalizer.Uid="ProfilePageSubtitle" Text="Separate library state, favorites, resume data, and family-safe access controls."
                                    Style="{StaticResource KroiraPageSubtitleStyle}"
                                    MaxWidth="760" />
                     </StackPanel>
@@ -66,7 +67,7 @@
                     <Border Style="{StaticResource KroiraSettingsGroupStyle}">
                         <StackPanel Spacing="16">
                             <StackPanel Spacing="3">
-                                <TextBlock x:Uid="ProfileLocalManagementTitle" Text="Local profile management" Style="{StaticResource KroiraSectionTitleStyle}" />
+                                <TextBlock x:Uid="ProfileLocalManagementTitle" runtime:RuntimeLocalizer.Uid="ProfileLocalManagementTitle" Text="Local profile management" Style="{StaticResource KroiraSectionTitleStyle}" />
                                 <TextBlock Text="{x:Bind ViewModel.LocalProfileExplanationText, Mode=OneWay}"
                                            Style="{StaticResource KroiraBodyStyle}"
                                            TextWrapping="Wrap" />
@@ -122,21 +123,21 @@
                                       DisplayMemberPath="Name"
                                       MinWidth="240" />
 
-                            <TextBox x:Uid="ProfileNameBox" Header="Profile name"
+                            <TextBox x:Uid="ProfileNameBox" runtime:RuntimeLocalizer.Uid="ProfileNameBox" Header="Profile name"
                                      Text="{x:Bind ViewModel.EditableProfileName, Mode=TwoWay}"
                                      PlaceholderText="Profile name" />
 
                             <StackPanel Orientation="Horizontal" Spacing="12">
-                                <Button x:Uid="ProfileSaveNameButton" Content="Save name"
+                                <Button x:Uid="ProfileSaveNameButton" runtime:RuntimeLocalizer.Uid="ProfileSaveNameButton" Content="Save name"
                                         Command="{x:Bind ViewModel.SaveProfileNameCommand}"
                                         Style="{StaticResource KroiraPrimaryButtonStyle}" />
-                                <Button x:Uid="ProfileAddProfileButton" Content="Add profile"
+                                <Button x:Uid="ProfileAddProfileButton" runtime:RuntimeLocalizer.Uid="ProfileAddProfileButton" Content="Add profile"
                                         Command="{x:Bind ViewModel.AddProfileCommand}"
                                         IsEnabled="{x:Bind ViewModel.CanAddProfiles, Mode=OneWay}" />
-                                <Button x:Uid="ProfileAddKidsProfileButton" Content="Add kids profile"
+                                <Button x:Uid="ProfileAddKidsProfileButton" runtime:RuntimeLocalizer.Uid="ProfileAddKidsProfileButton" Content="Add kids profile"
                                         Command="{x:Bind ViewModel.AddKidsProfileCommand}"
                                         IsEnabled="{x:Bind ViewModel.CanAddProfiles, Mode=OneWay}" />
-                                <Button x:Uid="ProfileDeleteProfileButton" Content="Delete profile"
+                                <Button x:Uid="ProfileDeleteProfileButton" runtime:RuntimeLocalizer.Uid="ProfileDeleteProfileButton" Content="Delete profile"
                                         Click="DeleteProfile_Click"
                                         IsEnabled="{x:Bind ViewModel.CanDeleteSelectedProfile, Mode=OneWay}" />
                             </StackPanel>
@@ -150,11 +151,11 @@
 
                     <Border Style="{StaticResource KroiraSettingsGroupStyle}">
                         <StackPanel Spacing="14">
-                            <TextBlock x:Uid="ProfileAccessBehaviorTitle" Text="Access behavior" Style="{StaticResource KroiraSectionTitleStyle}" />
-                            <ToggleSwitch x:Uid="ProfileKidsSafeModeSwitch" Header="Kids-safe mode"
+                            <TextBlock x:Uid="ProfileAccessBehaviorTitle" runtime:RuntimeLocalizer.Uid="ProfileAccessBehaviorTitle" Text="Access behavior" Style="{StaticResource KroiraSectionTitleStyle}" />
+                            <ToggleSwitch x:Uid="ProfileKidsSafeModeSwitch" runtime:RuntimeLocalizer.Uid="ProfileKidsSafeModeSwitch" Header="Kids-safe mode"
                                           IsEnabled="{x:Bind ViewModel.CanManageParentalControls, Mode=OneWay}"
                                           IsOn="{x:Bind ViewModel.IsKidsSafeMode, Mode=TwoWay}" />
-                            <ToggleSwitch x:Uid="ProfileHideLockedContentSwitch" Header="Hide locked content until unlocked"
+                            <ToggleSwitch x:Uid="ProfileHideLockedContentSwitch" runtime:RuntimeLocalizer.Uid="ProfileHideLockedContentSwitch" Header="Hide locked content until unlocked"
                                           IsEnabled="{x:Bind ViewModel.CanManageParentalControls, Mode=OneWay}"
                                           IsOn="{x:Bind ViewModel.HideLockedContent, Mode=TwoWay}" />
                             <TextBlock Text="{x:Bind ViewModel.AccessStatusText, Mode=OneWay}"
@@ -165,44 +166,44 @@
 
                     <Border Style="{StaticResource KroiraSettingsGroupStyle}">
                         <StackPanel Spacing="14">
-                            <TextBlock x:Uid="ProfilePinTitle" Text="PIN" Style="{StaticResource KroiraSectionTitleStyle}" />
+                            <TextBlock x:Uid="ProfilePinTitle" runtime:RuntimeLocalizer.Uid="ProfilePinTitle" Text="PIN" Style="{StaticResource KroiraSectionTitleStyle}" />
                             <TextBlock Text="{x:Bind ViewModel.PinStatusText, Mode=OneWay}"
                                        Style="{StaticResource KroiraBodyStyle}"
                                        TextWrapping="Wrap" />
 
-                            <TextBox x:Uid="ProfileSetPinBox" Header="Set or replace PIN"
+                            <TextBox x:Uid="ProfileSetPinBox" runtime:RuntimeLocalizer.Uid="ProfileSetPinBox" Header="Set or replace PIN"
                                      IsEnabled="{x:Bind ViewModel.CanManageParentalControls, Mode=OneWay}"
                                      Text="{x:Bind ViewModel.PinDraft, Mode=TwoWay}"
                                      PlaceholderText="Enter PIN digits" />
 
                             <StackPanel Orientation="Horizontal" Spacing="12">
-                                <Button x:Uid="ProfileSavePinButton" Content="Save PIN"
+                                <Button x:Uid="ProfileSavePinButton" runtime:RuntimeLocalizer.Uid="ProfileSavePinButton" Content="Save PIN"
                                         Visibility="{x:Bind ViewModel.SetPinVisibility, Mode=OneWay}"
                                         IsEnabled="{x:Bind ViewModel.CanManageParentalControls, Mode=OneWay}"
                                         Command="{x:Bind ViewModel.SetPinCommand}"
                                         Style="{StaticResource KroiraPrimaryButtonStyle}" />
-                                <Button x:Uid="ProfileReplacePinButton" Content="Replace PIN"
+                                <Button x:Uid="ProfileReplacePinButton" runtime:RuntimeLocalizer.Uid="ProfileReplacePinButton" Content="Replace PIN"
                                         Visibility="{x:Bind ViewModel.ClearPinVisibility, Mode=OneWay}"
                                         IsEnabled="{x:Bind ViewModel.CanManageParentalControls, Mode=OneWay}"
                                         Command="{x:Bind ViewModel.SetPinCommand}"
                                         Style="{StaticResource KroiraPrimaryButtonStyle}" />
-                                <Button x:Uid="ProfileClearPinButton" Content="Clear PIN"
+                                <Button x:Uid="ProfileClearPinButton" runtime:RuntimeLocalizer.Uid="ProfileClearPinButton" Content="Clear PIN"
                                         Visibility="{x:Bind ViewModel.ClearPinVisibility, Mode=OneWay}"
                                         IsEnabled="{x:Bind ViewModel.CanManageParentalControls, Mode=OneWay}"
                                         Command="{x:Bind ViewModel.ClearPinCommand}" />
                             </StackPanel>
 
-                            <TextBox x:Uid="ProfileUnlockContentBox" Header="Unlock locked content"
+                            <TextBox x:Uid="ProfileUnlockContentBox" runtime:RuntimeLocalizer.Uid="ProfileUnlockContentBox" Header="Unlock locked content"
                                      IsEnabled="{x:Bind ViewModel.CanManageParentalControls, Mode=OneWay}"
                                      Text="{x:Bind ViewModel.UnlockPinDraft, Mode=TwoWay}"
                                      PlaceholderText="Enter PIN for this session" />
 
                             <StackPanel Orientation="Horizontal" Spacing="12">
-                                <Button x:Uid="ProfileUnlockButton" Content="Unlock"
+                                <Button x:Uid="ProfileUnlockButton" runtime:RuntimeLocalizer.Uid="ProfileUnlockButton" Content="Unlock"
                                         Visibility="{x:Bind ViewModel.UnlockVisibility, Mode=OneWay}"
                                         IsEnabled="{x:Bind ViewModel.CanManageParentalControls, Mode=OneWay}"
                                         Command="{x:Bind ViewModel.UnlockLockedContentCommand}" />
-                                <Button x:Uid="ProfileRelockButton" Content="Hide locked content"
+                                <Button x:Uid="ProfileRelockButton" runtime:RuntimeLocalizer.Uid="ProfileRelockButton" Content="Hide locked content"
                                         Visibility="{x:Bind ViewModel.RelockVisibility, Mode=OneWay}"
                                         IsEnabled="{x:Bind ViewModel.CanManageParentalControls, Mode=OneWay}"
                                         Command="{x:Bind ViewModel.RelockContentCommand}" />
@@ -219,7 +220,7 @@
 
                     <Border Style="{StaticResource KroiraSettingsGroupStyle}">
                         <StackPanel Spacing="14">
-                            <TextBlock x:Uid="ProfileLockedSourcesTitle" Text="Locked sources" Style="{StaticResource KroiraSectionTitleStyle}" />
+                            <TextBlock x:Uid="ProfileLockedSourcesTitle" runtime:RuntimeLocalizer.Uid="ProfileLockedSourcesTitle" Text="Locked sources" Style="{StaticResource KroiraSectionTitleStyle}" />
                             <TextBlock Text="{x:Bind ViewModel.SourceLocksSummaryText, Mode=OneWay}"
                                        Style="{StaticResource KroiraBodyStyle}" />
                             <Border MaxHeight="240"
@@ -257,7 +258,7 @@
                                     BorderBrush="{StaticResource KroiraChromeLineBrush}"
                                     BorderThickness="1"
                                     CornerRadius="12">
-                                <TextBlock x:Uid="ProfileNoSourcesText" Text="No sources available. Add a source first."
+                                <TextBlock x:Uid="ProfileNoSourcesText" runtime:RuntimeLocalizer.Uid="ProfileNoSourcesText" Text="No sources available. Add a source first."
                                            Style="{StaticResource KroiraBodyStyle}"
                                            TextWrapping="Wrap" />
                             </Border>
@@ -266,7 +267,7 @@
 
                     <Border Grid.Row="1" Style="{StaticResource KroiraSettingsGroupStyle}">
                         <StackPanel Spacing="14">
-                            <TextBlock x:Uid="ProfileLockedCategoriesTitle" Text="Locked categories" Style="{StaticResource KroiraSectionTitleStyle}" />
+                            <TextBlock x:Uid="ProfileLockedCategoriesTitle" runtime:RuntimeLocalizer.Uid="ProfileLockedCategoriesTitle" Text="Locked categories" Style="{StaticResource KroiraSectionTitleStyle}" />
                             <TextBlock Text="{x:Bind ViewModel.CategoryLocksSummaryText, Mode=OneWay}"
                                        Style="{StaticResource KroiraBodyStyle}" />
                             <Border MaxHeight="360"
@@ -304,7 +305,7 @@
                                     BorderBrush="{StaticResource KroiraChromeLineBrush}"
                                     BorderThickness="1"
                                     CornerRadius="12">
-                                <TextBlock x:Uid="ProfileNoCategoriesText" Text="Categories will appear here after sources are imported."
+                                <TextBlock x:Uid="ProfileNoCategoriesText" runtime:RuntimeLocalizer.Uid="ProfileNoCategoriesText" Text="Categories will appear here after sources are imported."
                                            Style="{StaticResource KroiraBodyStyle}"
                                            TextWrapping="Wrap" />
                             </Border>

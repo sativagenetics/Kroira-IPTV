@@ -10,7 +10,7 @@ using Microsoft.UI.Xaml.Navigation;
 
 namespace Kroira.App.Views
 {
-    public sealed partial class SettingsPage : Page, IRemoteNavigationPage
+    public sealed partial class SettingsPage : Page, IRemoteNavigationPage, ILocalizationRefreshable
     {
         private bool _isExportPickerOpen;
 
@@ -167,6 +167,13 @@ namespace Kroira.App.Views
             }
 
             return false;
+        }
+
+        public void RefreshLocalizedContent()
+        {
+            ViewModel.RefreshLocalizedText();
+            XamlRuntimeLocalizer.Apply(this);
+            Bindings.Update();
         }
     }
 }

@@ -14,7 +14,7 @@ using Microsoft.UI.Xaml.Navigation;
 
 namespace Kroira.App.Views
 {
-    public sealed partial class HomePage : Page, IRemoteNavigationPage
+    public sealed partial class HomePage : Page, IRemoteNavigationPage, ILocalizationRefreshable
     {
         private static readonly bool BypassInitialHomeLoad = false;
         private static readonly string StartupLogPath =
@@ -391,6 +391,11 @@ namespace Kroira.App.Views
             }
 
             return false;
+        }
+
+        public void RefreshLocalizedContent()
+        {
+            XamlRuntimeLocalizer.Apply(this);
         }
     }
 }

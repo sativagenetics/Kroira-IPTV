@@ -12,7 +12,7 @@ using Windows.ApplicationModel.DataTransfer;
 
 namespace Kroira.App.Views
 {
-    public sealed partial class SourceListPage : Page
+    public sealed partial class SourceListPage : Page, ILocalizationRefreshable
     {
         public SourceListViewModel ViewModel { get; }
 
@@ -648,6 +648,12 @@ namespace Kroira.App.Views
             public SourceCompanionRelayMode Mode { get; }
             public string Label { get; }
             public string Description { get; }
+        }
+
+        public void RefreshLocalizedContent()
+        {
+            ViewModel.RefreshLocalizedLabelsIfNeeded();
+            XamlRuntimeLocalizer.Apply(this);
         }
     }
 }

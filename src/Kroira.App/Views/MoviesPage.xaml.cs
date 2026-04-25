@@ -20,7 +20,7 @@ using Windows.System;
 
 namespace Kroira.App.Views
 {
-    public sealed partial class MoviesPage : Page, IRemoteNavigationPage
+    public sealed partial class MoviesPage : Page, IRemoteNavigationPage, ILocalizationRefreshable
     {
         private const string MediaActionOverlayTag = "MediaActionOverlay";
         private bool _isRestoringCategorySelection;
@@ -582,6 +582,13 @@ namespace Kroira.App.Views
             }
 
             return false;
+        }
+
+        public void RefreshLocalizedContent()
+        {
+            ViewModel.RefreshLocalizedLabelsIfNeeded();
+            XamlRuntimeLocalizer.Apply(this);
+            QueueRestoreCategorySelection("language-changed");
         }
     }
 }

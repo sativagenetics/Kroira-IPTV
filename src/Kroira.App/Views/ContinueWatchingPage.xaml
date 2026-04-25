@@ -2,6 +2,7 @@
     x:Class="Kroira.App.Views.ContinueWatchingPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:runtime="using:Kroira.App.Services"
     xmlns:controls="using:Kroira.App.Controls"
     Background="{StaticResource KroiraPageBackgroundBrush}">
 
@@ -58,8 +59,8 @@
             </Grid.ColumnDefinitions>
             <StackPanel Spacing="8">
                 <Border Width="54" Height="5" Background="{StaticResource KroiraAccentGradientBrush}" CornerRadius="3" HorizontalAlignment="Left" />
-                    <TextBlock x:Uid="ContinueWatchingPageTitle" Text="Continue Watching" Style="{StaticResource KroiraPageTitleStyle}" />
-                    <TextBlock x:Uid="ContinueWatchingPageSubtitle" Text="Resume live sources, movies, and episodes from dedicated queues."
+                    <TextBlock x:Uid="ContinueWatchingPageTitle" runtime:RuntimeLocalizer.Uid="ContinueWatchingPageTitle" Text="Continue Watching" Style="{StaticResource KroiraPageTitleStyle}" />
+                    <TextBlock x:Uid="ContinueWatchingPageSubtitle" runtime:RuntimeLocalizer.Uid="ContinueWatchingPageSubtitle" Text="Resume live sources, movies, and episodes from dedicated queues."
                            Style="{StaticResource KroiraPageSubtitleStyle}"
                            MaxWidth="760" />
             </StackPanel>
@@ -71,7 +72,7 @@
                     Padding="14,10"
                     VerticalAlignment="Bottom"
                     Visibility="Collapsed">
-                    <TextBlock x:Uid="ContinueWatchingResumeHubLabel" Text="RESUME HUB"
+                    <TextBlock x:Uid="ContinueWatchingResumeHubLabel" runtime:RuntimeLocalizer.Uid="ContinueWatchingResumeHubLabel" Text="RESUME HUB"
                            Foreground="{StaticResource KroiraAccentBrush}"
                            FontSize="11"
                            FontWeight="SemiBold"
@@ -100,14 +101,14 @@
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
                         <StackPanel Spacing="3">
-                                <TextBlock x:Uid="ContinueWatchingLiveResumeTitle" Text="Live Resume" Style="{StaticResource KroiraSectionTitleStyle}" />
-                                <TextBlock x:Uid="ContinueWatchingLiveResumeSubtitle" Text="Return to saved live sources" Style="{StaticResource KroiraBodyStyle}" />
+                                <TextBlock x:Uid="ContinueWatchingLiveResumeTitle" runtime:RuntimeLocalizer.Uid="ContinueWatchingLiveResumeTitle" Text="Live Resume" Style="{StaticResource KroiraSectionTitleStyle}" />
+                                <TextBlock x:Uid="ContinueWatchingLiveResumeSubtitle" runtime:RuntimeLocalizer.Uid="ContinueWatchingLiveResumeSubtitle" Text="Return to saved live sources" Style="{StaticResource KroiraBodyStyle}" />
                         </StackPanel>
                         <Border Grid.Column="1" Style="{StaticResource KroiraLaneCountBadgeStyle}" VerticalAlignment="Center">
                             <TextBlock Text="{x:Bind ViewModel.LiveCountText, Mode=OneWay}" Foreground="{StaticResource KroiraLiveDotBrush}" FontSize="10" FontWeight="SemiBold" />
                         </Border>
                         <Button Grid.Column="2"
-                                    x:Uid="ContinueWatchingClearLiveButton"
+                                    x:Uid="ContinueWatchingClearLiveButton" runtime:RuntimeLocalizer.Uid="ContinueWatchingClearLiveButton"
                                     Content="Clear all"
                                 Click="ClearLiveProgress_Click"
                                 Style="{StaticResource KroiraLaneClearButtonStyle}"
@@ -120,7 +121,7 @@
 
                     <Grid Grid.Row="1" Padding="10,0,10,12">
                         <controls:EmptyStateView IconGlyph="&#xE714;"
-                                     x:Uid="ContinueWatchingNoLiveResumeEmpty"
+                                     x:Uid="ContinueWatchingNoLiveResumeEmpty" runtime:RuntimeLocalizer.Uid="ContinueWatchingNoLiveResumeEmpty"
                                      Title="No live resume items"
                                      Message="Live playback entries appear here when saved progress exists."
                                                  Visibility="{x:Bind ViewModel.LiveEmptyVisibility, Mode=OneWay}"
@@ -155,7 +156,7 @@
                                                 <TextBlock Text="{Binding LastWatchedText}" Style="{StaticResource KroiraMetaStyle}" MaxLines="1" TextTrimming="CharacterEllipsis" />
                                                 <TextBlock Text="{Binding ResumeContextText}" Style="{StaticResource KroiraBodyStyle}" MaxLines="1" TextTrimming="CharacterEllipsis" />
                                             </StackPanel>
-                                            <Button x:Uid="ContinueWatchingLiveRemoveButton"
+                                            <Button x:Uid="ContinueWatchingLiveRemoveButton" runtime:RuntimeLocalizer.Uid="ContinueWatchingLiveRemoveButton"
                                                     Grid.Column="2"
                                                     Tag="{Binding ProgressId}"
                                                     Click="RemoveProgress_Click"
@@ -190,14 +191,14 @@
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
                         <StackPanel Spacing="3">
-                                <TextBlock x:Uid="ContinueWatchingMovieQueueTitle" Text="Movie Queue" Style="{StaticResource KroiraSectionTitleStyle}" />
-                                <TextBlock x:Uid="ContinueWatchingMovieQueueSubtitle" Text="Saved film positions" Style="{StaticResource KroiraBodyStyle}" />
+                                <TextBlock x:Uid="ContinueWatchingMovieQueueTitle" runtime:RuntimeLocalizer.Uid="ContinueWatchingMovieQueueTitle" Text="Movie Queue" Style="{StaticResource KroiraSectionTitleStyle}" />
+                                <TextBlock x:Uid="ContinueWatchingMovieQueueSubtitle" runtime:RuntimeLocalizer.Uid="ContinueWatchingMovieQueueSubtitle" Text="Saved film positions" Style="{StaticResource KroiraBodyStyle}" />
                         </StackPanel>
                         <Border Grid.Column="1" Style="{StaticResource KroiraLaneCountBadgeStyle}">
                             <TextBlock Text="{x:Bind ViewModel.MovieCountText, Mode=OneWay}" Foreground="{StaticResource KroiraAccentBrush}" FontSize="10" FontWeight="SemiBold" />
                         </Border>
                         <Button Grid.Column="2"
-                                    x:Uid="ContinueWatchingClearMoviesButton"
+                                    x:Uid="ContinueWatchingClearMoviesButton" runtime:RuntimeLocalizer.Uid="ContinueWatchingClearMoviesButton"
                                     Content="Clear all"
                                 Click="ClearMovieProgress_Click"
                                 Style="{StaticResource KroiraLaneClearButtonStyle}"
@@ -205,7 +206,7 @@
                                 VerticalAlignment="Center"
                                 AutomationProperties.Name="Clear all movie queue items" />
                         <ToggleSwitch x:Name="HideWatchedToggle"
-                                      x:Uid="ContinueWatchingHideWatchedToggle"
+                                      x:Uid="ContinueWatchingHideWatchedToggle" runtime:RuntimeLocalizer.Uid="ContinueWatchingHideWatchedToggle"
                                       Grid.Column="3"
                                       Header="Hide watched"
                                       IsOn="{x:Bind ViewModel.HideWatchedItems, Mode=TwoWay}"
@@ -218,7 +219,7 @@
 
                     <Grid Grid.Row="1" Padding="10,0,10,12">
                         <controls:EmptyStateView IconGlyph="&#xE8B2;"
-                                     x:Uid="ContinueWatchingNoMoviesEmpty"
+                                     x:Uid="ContinueWatchingNoMoviesEmpty" runtime:RuntimeLocalizer.Uid="ContinueWatchingNoMoviesEmpty"
                                      Title="No movies to resume"
                                      Message="Partially watched movies will collect here."
                                                  Visibility="{x:Bind ViewModel.MovieEmptyVisibility, Mode=OneWay}"
@@ -263,17 +264,17 @@
                                                              AutomationProperties.Name="{Binding ProgressText}" />
                                             </StackPanel>
                                             <StackPanel Grid.Column="2" Spacing="6" VerticalAlignment="Center" Width="82">
-                                            <Button x:Uid="ContinueWatchingMarkMovieWatchedButton" Content="Watched"
+                                            <Button x:Uid="ContinueWatchingMarkMovieWatchedButton" runtime:RuntimeLocalizer.Uid="ContinueWatchingMarkMovieWatchedButton" Content="Watched"
                                                         Click="MarkWatched_Click"
                                                         Style="{StaticResource QuietManagementButtonStyle}"
                                                         Visibility="{Binding MarkWatchedVisibility}"
                                                         AutomationProperties.Name="Mark movie watched" />
-                                            <Button x:Uid="ContinueWatchingMarkMovieUnwatchedButton" Content="Unwatched"
+                                            <Button x:Uid="ContinueWatchingMarkMovieUnwatchedButton" runtime:RuntimeLocalizer.Uid="ContinueWatchingMarkMovieUnwatchedButton" Content="Unwatched"
                                                         Click="MarkUnwatched_Click"
                                                         Style="{StaticResource QuietManagementButtonStyle}"
                                                         Visibility="{Binding MarkUnwatchedVisibility}"
                                                         AutomationProperties.Name="Mark movie unwatched" />
-                                                <Button x:Uid="ContinueWatchingMovieRemoveButton"
+                                                <Button x:Uid="ContinueWatchingMovieRemoveButton" runtime:RuntimeLocalizer.Uid="ContinueWatchingMovieRemoveButton"
                                                         Tag="{Binding ProgressId}"
                                                         Click="RemoveProgress_Click"
                                                         Style="{StaticResource QuietIconButtonStyle}"
@@ -306,14 +307,14 @@
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
                         <StackPanel Spacing="3">
-                                <TextBlock x:Uid="ContinueWatchingSeriesQueueTitle" Text="Series Queue" Style="{StaticResource KroiraSectionTitleStyle}" />
-                                <TextBlock x:Uid="ContinueWatchingSeriesQueueSubtitle" Text="Episode resume items" Style="{StaticResource KroiraBodyStyle}" />
+                                <TextBlock x:Uid="ContinueWatchingSeriesQueueTitle" runtime:RuntimeLocalizer.Uid="ContinueWatchingSeriesQueueTitle" Text="Series Queue" Style="{StaticResource KroiraSectionTitleStyle}" />
+                                <TextBlock x:Uid="ContinueWatchingSeriesQueueSubtitle" runtime:RuntimeLocalizer.Uid="ContinueWatchingSeriesQueueSubtitle" Text="Episode resume items" Style="{StaticResource KroiraBodyStyle}" />
                         </StackPanel>
                         <Border Grid.Column="1" Style="{StaticResource KroiraLaneCountBadgeStyle}">
                             <TextBlock Text="{x:Bind ViewModel.SeriesCountText, Mode=OneWay}" Foreground="{StaticResource KroiraAccentBrush}" FontSize="10" FontWeight="SemiBold" />
                         </Border>
                         <Button Grid.Column="2"
-                                    x:Uid="ContinueWatchingClearSeriesButton"
+                                    x:Uid="ContinueWatchingClearSeriesButton" runtime:RuntimeLocalizer.Uid="ContinueWatchingClearSeriesButton"
                                     Content="Clear all"
                                 Click="ClearSeriesProgress_Click"
                                 Style="{StaticResource KroiraLaneClearButtonStyle}"
@@ -326,7 +327,7 @@
 
                     <Grid Grid.Row="1" Padding="10,0,10,12">
                         <controls:EmptyStateView IconGlyph="&#xE8A9;"
-                                     x:Uid="ContinueWatchingNoEpisodesEmpty"
+                                     x:Uid="ContinueWatchingNoEpisodesEmpty" runtime:RuntimeLocalizer.Uid="ContinueWatchingNoEpisodesEmpty"
                                      Title="No episodes to resume"
                                      Message="Saved episode progress will appear as a compact queue."
                                                  Visibility="{x:Bind ViewModel.SeriesEmptyVisibility, Mode=OneWay}"
@@ -371,17 +372,17 @@
                                                              AutomationProperties.Name="{Binding ProgressText}" />
                                             </StackPanel>
                                             <StackPanel Grid.Column="2" Spacing="6" VerticalAlignment="Center" Width="82">
-                                            <Button x:Uid="ContinueWatchingMarkEpisodeWatchedButton" Content="Watched"
+                                            <Button x:Uid="ContinueWatchingMarkEpisodeWatchedButton" runtime:RuntimeLocalizer.Uid="ContinueWatchingMarkEpisodeWatchedButton" Content="Watched"
                                                         Click="MarkWatched_Click"
                                                         Style="{StaticResource QuietManagementButtonStyle}"
                                                         Visibility="{Binding MarkWatchedVisibility}"
                                                         AutomationProperties.Name="Mark episode watched" />
-                                            <Button x:Uid="ContinueWatchingMarkEpisodeUnwatchedButton" Content="Unwatched"
+                                            <Button x:Uid="ContinueWatchingMarkEpisodeUnwatchedButton" runtime:RuntimeLocalizer.Uid="ContinueWatchingMarkEpisodeUnwatchedButton" Content="Unwatched"
                                                         Click="MarkUnwatched_Click"
                                                         Style="{StaticResource QuietManagementButtonStyle}"
                                                         Visibility="{Binding MarkUnwatchedVisibility}"
                                                         AutomationProperties.Name="Mark episode unwatched" />
-                                                <Button x:Uid="ContinueWatchingSeriesRemoveButton"
+                                                <Button x:Uid="ContinueWatchingSeriesRemoveButton" runtime:RuntimeLocalizer.Uid="ContinueWatchingSeriesRemoveButton"
                                                         Tag="{Binding ProgressId}"
                                                         Click="RemoveProgress_Click"
                                                         Style="{StaticResource QuietIconButtonStyle}"

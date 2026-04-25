@@ -2,6 +2,7 @@
     x:Class="Kroira.App.Views.HomePage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:runtime="using:Kroira.App.Services"
     xmlns:controls="using:Kroira.App.Controls"
     Background="{StaticResource KroiraPageBackgroundBrush}">
 
@@ -97,7 +98,7 @@
                                         CornerRadius="8"
                                         Padding="8,3"
                                         HorizontalAlignment="Left">
-                                    <TextBlock x:Uid="GeneralResumeBadge" Text="RESUME"
+                                    <TextBlock x:Uid="GeneralResumeBadge" runtime:RuntimeLocalizer.Uid="GeneralResumeBadge" Text="RESUME"
                                                Foreground="{StaticResource KroiraAccentBrush}"
                                                FontSize="10"
                                                FontWeight="SemiBold" />
@@ -259,7 +260,7 @@
                                     VerticalAlignment="Top">
                                 <StackPanel Orientation="Horizontal" Spacing="5">
                                     <Ellipse Width="6" Height="6" Fill="{StaticResource KroiraLiveDotBrush}" />
-                                    <TextBlock x:Uid="GeneralLiveBadge" Text="LIVE"
+                                    <TextBlock x:Uid="GeneralLiveBadge" runtime:RuntimeLocalizer.Uid="GeneralLiveBadge" Text="LIVE"
                                                Foreground="{StaticResource KroiraLiveDotBrush}"
                                                FontSize="10"
                                                FontWeight="SemiBold" />
@@ -443,25 +444,25 @@
                                              Height="7"
                                              Fill="{StaticResource KroiraLiveDotBrush}"
                                              VerticalAlignment="Center" />
-                                    <TextBlock x:Uid="HomeLiveSportsBadge" Text="LIVE SPORTS"
+                                    <TextBlock x:Uid="HomeLiveSportsBadge" runtime:RuntimeLocalizer.Uid="HomeLiveSportsBadge" Text="LIVE SPORTS"
                                                Foreground="{StaticResource KroiraAccentBrush}"
                                                FontSize="11"
                                                FontWeight="SemiBold" />
                                 </StackPanel>
                             </Border>
-                            <TextBlock x:Uid="HomeMatchCenterTitle" Text="Match Center"
+                            <TextBlock x:Uid="HomeMatchCenterTitle" runtime:RuntimeLocalizer.Uid="HomeMatchCenterTitle" Text="Match Center"
                                        Style="{StaticResource KroiraDisplayLgStyle}"
                                        FontSize="46"
                                        LineHeight="52"
                                        MaxLines="1" />
-                            <TextBlock x:Uid="HomeMatchCenterSubtitle" Text="Jump into live sports instantly."
+                            <TextBlock x:Uid="HomeMatchCenterSubtitle" runtime:RuntimeLocalizer.Uid="HomeMatchCenterSubtitle" Text="Jump into live sports instantly."
                                        Style="{StaticResource KroiraBodyStyle}"
                                        FontSize="16"
                                        LineHeight="23"
                                        MaxWidth="460"
                                        Foreground="{StaticResource KroiraTextSecondaryBrush}" />
                             <Button x:Name="FeaturedPrimaryButton"
-                                    x:Uid="HomeWatchLiveTvButtonControl"
+                                    x:Uid="HomeWatchLiveTvButtonControl" runtime:RuntimeLocalizer.Uid="HomeWatchLiveTvButtonControl"
                                     Click="LiveTv_Click"
                                     Style="{StaticResource KroiraPrimaryButtonStyle}"
                                     Padding="20,11"
@@ -471,7 +472,7 @@
                                     AutomationProperties.Name="Watch Live TV">
                                 <StackPanel Orientation="Horizontal" Spacing="8">
                                     <FontIcon Glyph="&#xE768;" FontSize="14" />
-                                    <TextBlock x:Uid="HomeWatchLiveTvButton" Text="Watch Live TV" />
+                                    <TextBlock x:Uid="HomeWatchLiveTvButton" runtime:RuntimeLocalizer.Uid="HomeWatchLiveTvButton" Text="Watch Live TV" />
                                 </StackPanel>
                             </Button>
                         </StackPanel>
@@ -501,10 +502,10 @@
                                               Foreground="{StaticResource KroiraLiveDotBrush}" />
                                 </Grid>
                                 <StackPanel Spacing="4">
-                                    <TextBlock x:Uid="HomeHeroLiveTvTitle" Text="Live TV"
+                                    <TextBlock x:Uid="HomeHeroLiveTvTitle" runtime:RuntimeLocalizer.Uid="HomeHeroLiveTvTitle" Text="Live TV"
                                                Style="{StaticResource KroiraTitleStyle}"
                                                FontSize="17" />
-                                    <TextBlock x:Uid="HomeHeroLiveTvSubtitle" Text="Sports channels, live events, and match-night viewing in one jump."
+                                    <TextBlock x:Uid="HomeHeroLiveTvSubtitle" runtime:RuntimeLocalizer.Uid="HomeHeroLiveTvSubtitle" Text="Sports channels, live events, and match-night viewing in one jump."
                                                Style="{StaticResource KroiraBodyStyle}"
                                                FontSize="12"
                                                LineHeight="17"
@@ -513,7 +514,7 @@
                                 </StackPanel>
                                 <Border Height="1"
                                         Background="{StaticResource KroiraGlassBorderBrush}" />
-                                <TextBlock x:Uid="HomeMatchReadyText" Text="Ready when the match starts"
+                                <TextBlock x:Uid="HomeMatchReadyText" runtime:RuntimeLocalizer.Uid="HomeMatchReadyText" Text="Ready when the match starts"
                                            Style="{StaticResource KroiraMetaStyle}"
                                            Foreground="{StaticResource KroiraAccentBrush}" />
                             </StackPanel>
@@ -523,14 +524,14 @@
             </Border>
 
             <StackPanel Spacing="10">
-                <TextBlock x:Uid="HomeLiveTvShortcutsTitle" Text="Live TV Shortcuts"
+                <TextBlock x:Uid="HomeLiveTvShortcutsTitle" runtime:RuntimeLocalizer.Uid="HomeLiveTvShortcutsTitle" Text="Live TV Shortcuts"
                            Style="{StaticResource KroiraSectionTitleStyle}" />
 
                 <Grid HorizontalAlignment="Stretch">
                     <StackPanel Orientation="Horizontal"
                                 Spacing="10"
                                 HorizontalAlignment="Center">
-                        <Button x:Uid="HomeAllChannelsButton"
+                        <Button x:Uid="HomeAllChannelsButton" runtime:RuntimeLocalizer.Uid="HomeAllChannelsButton"
                                 Width="226"
                                 Click="LiveTv_Click"
                                 Style="{StaticResource HomeCardButtonStyle}"
@@ -559,11 +560,11 @@
                                 <StackPanel Grid.Column="1"
                                             Spacing="1"
                                             VerticalAlignment="Center">
-                                    <TextBlock x:Uid="HomeAllChannelsTitle" Text="All Channels"
+                                    <TextBlock x:Uid="HomeAllChannelsTitle" runtime:RuntimeLocalizer.Uid="HomeAllChannelsTitle" Text="All Channels"
                                                Style="{StaticResource KroiraTitleStyle}"
                                                MaxLines="1"
                                                TextTrimming="CharacterEllipsis" />
-                                    <TextBlock x:Uid="HomeAllChannelsSubtitle" Text="Browse the full live lineup"
+                                    <TextBlock x:Uid="HomeAllChannelsSubtitle" runtime:RuntimeLocalizer.Uid="HomeAllChannelsSubtitle" Text="Browse the full live lineup"
                                                Style="{StaticResource KroiraMetaStyle}"
                                                MaxLines="1"
                                                TextTrimming="CharacterEllipsis" />
@@ -572,7 +573,7 @@
                         </Border>
                         </Button>
 
-                        <Button x:Uid="HomeSportsButton"
+                        <Button x:Uid="HomeSportsButton" runtime:RuntimeLocalizer.Uid="HomeSportsButton"
                                 Width="226"
                                 Click="Sports_Click"
                                 Style="{StaticResource HomeCardButtonStyle}"
@@ -601,11 +602,11 @@
                                 <StackPanel Grid.Column="1"
                                             Spacing="1"
                                             VerticalAlignment="Center">
-                                    <TextBlock x:Uid="HomeSportsTitle" Text="Sports"
+                                    <TextBlock x:Uid="HomeSportsTitle" runtime:RuntimeLocalizer.Uid="HomeSportsTitle" Text="Sports"
                                                Style="{StaticResource KroiraTitleStyle}"
                                                MaxLines="1"
                                                TextTrimming="CharacterEllipsis" />
-                                    <TextBlock x:Uid="HomeSportsSubtitle" Text="Jump to sports viewing"
+                                    <TextBlock x:Uid="HomeSportsSubtitle" runtime:RuntimeLocalizer.Uid="HomeSportsSubtitle" Text="Jump to sports viewing"
                                                Style="{StaticResource KroiraMetaStyle}"
                                                MaxLines="1"
                                                TextTrimming="CharacterEllipsis" />
@@ -614,7 +615,7 @@
                         </Border>
                         </Button>
 
-                        <Button x:Uid="HomeFavoritesButton"
+                        <Button x:Uid="HomeFavoritesButton" runtime:RuntimeLocalizer.Uid="HomeFavoritesButton"
                                 Width="226"
                                 Click="Favorites_Click"
                                 Style="{StaticResource HomeCardButtonStyle}"
@@ -643,11 +644,11 @@
                                 <StackPanel Grid.Column="1"
                                             Spacing="1"
                                             VerticalAlignment="Center">
-                                    <TextBlock x:Uid="HomeFavoritesTitle" Text="Favorites"
+                                    <TextBlock x:Uid="HomeFavoritesTitle" runtime:RuntimeLocalizer.Uid="HomeFavoritesTitle" Text="Favorites"
                                                Style="{StaticResource KroiraTitleStyle}"
                                                MaxLines="1"
                                                TextTrimming="CharacterEllipsis" />
-                                    <TextBlock x:Uid="HomeFavoritesSubtitle" Text="Open saved channels"
+                                    <TextBlock x:Uid="HomeFavoritesSubtitle" runtime:RuntimeLocalizer.Uid="HomeFavoritesSubtitle" Text="Open saved channels"
                                                Style="{StaticResource KroiraMetaStyle}"
                                                MaxLines="1"
                                                TextTrimming="CharacterEllipsis" />
@@ -656,7 +657,7 @@
                         </Border>
                         </Button>
 
-                        <Button x:Uid="HomeRecentlyWatchedButton"
+                        <Button x:Uid="HomeRecentlyWatchedButton" runtime:RuntimeLocalizer.Uid="HomeRecentlyWatchedButton"
                                 Width="226"
                                 Click="ContinueWatching_Click"
                                 Style="{StaticResource HomeCardButtonStyle}"
@@ -685,11 +686,11 @@
                                 <StackPanel Grid.Column="1"
                                             Spacing="1"
                                             VerticalAlignment="Center">
-                                    <TextBlock x:Uid="HomeRecentlyWatchedTitle" Text="Recently Watched"
+                                    <TextBlock x:Uid="HomeRecentlyWatchedTitle" runtime:RuntimeLocalizer.Uid="HomeRecentlyWatchedTitle" Text="Recently Watched"
                                                Style="{StaticResource KroiraTitleStyle}"
                                                MaxLines="1"
                                                TextTrimming="CharacterEllipsis" />
-                                    <TextBlock x:Uid="HomeRecentlyWatchedSubtitle" Text="Return to recent viewing"
+                                    <TextBlock x:Uid="HomeRecentlyWatchedSubtitle" runtime:RuntimeLocalizer.Uid="HomeRecentlyWatchedSubtitle" Text="Return to recent viewing"
                                                Style="{StaticResource KroiraMetaStyle}"
                                                MaxLines="1"
                                                TextTrimming="CharacterEllipsis" />
@@ -704,10 +705,10 @@
             <StackPanel Spacing="10"
                         Visibility="{x:Bind ViewModel.LiveSportsItemsVisibility, Mode=OneWay}">
                 <Grid>
-                    <TextBlock x:Uid="HomeLiveSportsNowTitle" Text="Live Sports Now"
+                    <TextBlock x:Uid="HomeLiveSportsNowTitle" runtime:RuntimeLocalizer.Uid="HomeLiveSportsNowTitle" Text="Live Sports Now"
                                Style="{StaticResource KroiraSectionTitleStyle}"
                                VerticalAlignment="Center" />
-                    <Button x:Uid="HomeAllLiveTvButton" Content="All live TV"
+                    <Button x:Uid="HomeAllLiveTvButton" runtime:RuntimeLocalizer.Uid="HomeAllLiveTvButton" Content="All live TV"
                             HorizontalAlignment="Right"
                             VerticalAlignment="Center"
                             Click="LiveTv_Click"
@@ -725,10 +726,10 @@
 
             <StackPanel Spacing="16">
                 <Grid>
-                    <TextBlock x:Uid="HomeContinueWatchingTitle" Text="Continue Watching"
+                    <TextBlock x:Uid="HomeContinueWatchingTitle" runtime:RuntimeLocalizer.Uid="HomeContinueWatchingTitle" Text="Continue Watching"
                                Style="{StaticResource KroiraSectionTitleStyle}"
                                VerticalAlignment="Center" />
-                    <Button x:Uid="HomeViewAllButton" Content="View all"
+                    <Button x:Uid="HomeViewAllButton" runtime:RuntimeLocalizer.Uid="HomeViewAllButton" Content="View all"
                             HorizontalAlignment="Right"
                             VerticalAlignment="Center"
                             Click="ContinueWatching_Click"
@@ -744,7 +745,7 @@
                                ScrollAmount="404" />
 
                 <controls:EmptyStateView IconGlyph="&#xE768;"
-                                         x:Uid="HomeNothingToResumeEmpty"
+                                         x:Uid="HomeNothingToResumeEmpty" runtime:RuntimeLocalizer.Uid="HomeNothingToResumeEmpty"
                                          Title="Nothing to resume yet"
                                          Message="Start watching a channel, movie, or episode and it will appear here."
                                          Visibility="{x:Bind ViewModel.ContinueEmptyVisibility, Mode=OneWay}" />
@@ -752,10 +753,10 @@
 
             <StackPanel Spacing="16" Visibility="{x:Bind ViewModel.PopularItemsVisibility, Mode=OneWay}">
                 <Grid>
-                    <TextBlock x:Uid="HomeRecommendedForYouTitle" Text="Recommended For You"
+                    <TextBlock x:Uid="HomeRecommendedForYouTitle" runtime:RuntimeLocalizer.Uid="HomeRecommendedForYouTitle" Text="Recommended For You"
                                Style="{StaticResource KroiraSectionTitleStyle}"
                                VerticalAlignment="Center" />
-                    <Button x:Uid="HomeBrowseCatalogButton" Content="Browse catalog"
+                    <Button x:Uid="HomeBrowseCatalogButton" runtime:RuntimeLocalizer.Uid="HomeBrowseCatalogButton" Content="Browse catalog"
                             HorizontalAlignment="Right"
                             VerticalAlignment="Center"
                             Click="BrowseCatalog_Click"
@@ -771,7 +772,7 @@
             </StackPanel>
 
             <StackPanel Spacing="16" Visibility="{x:Bind ViewModel.RecentlyAddedItemsVisibility, Mode=OneWay}">
-                <TextBlock x:Uid="HomeRecentlyAddedTitle" Text="Recently Added"
+                <TextBlock x:Uid="HomeRecentlyAddedTitle" runtime:RuntimeLocalizer.Uid="HomeRecentlyAddedTitle" Text="Recently Added"
                            Style="{StaticResource KroiraSectionTitleStyle}" />
                 <controls:Rail x:Name="RecentlyAddedRail"
                                ItemsSource="{x:Bind ViewModel.RecentlyAddedItems, Mode=OneWay}"
@@ -782,7 +783,7 @@
             </StackPanel>
 
             <StackPanel Spacing="16" Visibility="{x:Bind ViewModel.TopRatedItemsVisibility, Mode=OneWay}">
-                <TextBlock x:Uid="HomeTopRatedTitle" Text="Top Rated"
+                <TextBlock x:Uid="HomeTopRatedTitle" runtime:RuntimeLocalizer.Uid="HomeTopRatedTitle" Text="Top Rated"
                            Style="{StaticResource KroiraSectionTitleStyle}" />
                 <controls:Rail x:Name="TopRatedRail"
                                ItemsSource="{x:Bind ViewModel.TopRatedItems, Mode=OneWay}"
@@ -794,10 +795,10 @@
 
             <StackPanel Spacing="16" Visibility="{x:Bind ViewModel.LiveItemsVisibility, Mode=OneWay}">
                 <Grid>
-                    <TextBlock x:Uid="HomeLiveNowTitle" Text="Live Now"
+                    <TextBlock x:Uid="HomeLiveNowTitle" runtime:RuntimeLocalizer.Uid="HomeLiveNowTitle" Text="Live Now"
                                Style="{StaticResource KroiraSectionTitleStyle}"
                                VerticalAlignment="Center" />
-                    <Button x:Uid="HomeAllLiveTvButton2" Content="All live TV"
+                    <Button x:Uid="HomeAllLiveTvButton2" runtime:RuntimeLocalizer.Uid="HomeAllLiveTvButton2" Content="All live TV"
                             HorizontalAlignment="Right"
                             VerticalAlignment="Center"
                             Click="LiveTv_Click"
@@ -815,7 +816,7 @@
             <StackPanel Spacing="8"
                         Opacity="0.72"
                         Margin="0,2,0,0">
-                <TextBlock x:Uid="HomeLibraryAtGlanceTitle" Text="Library at a glance"
+                <TextBlock x:Uid="HomeLibraryAtGlanceTitle" runtime:RuntimeLocalizer.Uid="HomeLibraryAtGlanceTitle" Text="Library at a glance"
                            Style="{StaticResource KroiraLabelStyle}"
                            Foreground="{StaticResource KroiraTextTertiaryBrush}" />
                 <ItemsControl ItemsSource="{x:Bind ViewModel.SummaryItems, Mode=OneWay}"
@@ -847,7 +848,7 @@
             <controls:ErrorStateView IconGlyph="{x:Bind ViewModel.SurfaceState.Glyph, Mode=OneWay}"
                                      Title="{x:Bind ViewModel.SurfaceState.Title, Mode=OneWay}"
                                      Message="{x:Bind ViewModel.SurfaceState.Message, Mode=OneWay}"
-                                     x:Uid="GeneralRetryErrorState"
+                                     x:Uid="GeneralRetryErrorState" runtime:RuntimeLocalizer.Uid="GeneralRetryErrorState"
                                      RetryActionLabel="Retry"
                                      DiagnosticsActionLabel="{x:Bind ViewModel.SurfaceState.ActionLabel, Mode=OneWay}"
                                      DiagnosticsActionVisibility="{x:Bind ViewModel.SurfaceState.DiagnosticsActionVisibility, Mode=OneWay}"

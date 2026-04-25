@@ -5445,4 +5445,42 @@
   <data name="SmartCategorySection_Year_Era" xml:space="preserve"><value>Year / Era</value></data>
   <data name="SmartCategorySection_Basketball" xml:space="preserve"><value>Basketball</value></data>
   <data name="SmartCategorySection_Football_Leagues" xml:space="preserve"><value>Football Leagues</value></data>
+  <data name="ShellHomeItem.Content" xml:space="preserve">
+    <value>主页</value>
+  </data>
+  <data name="ShellSearchItem.Content" xml:space="preserve">
+    <value>搜索</value>
+  </data>
+  <data name="ShellLiveTvItem.Content" xml:space="preserve">
+    <value>直播电视</value>
+  </data>
+  <data name="ShellMoviesItem.Content" xml:space="preserve">
+    <value>电影</value>
+  </data>
+  <data name="ShellSeriesItem.Content" xml:space="preserve">
+    <value>剧集</value>
+  </data>
+  <data name="ShellContinueWatchingItem.Content" xml:space="preserve">
+    <value>继续观看</value>
+  </data>
+  <data name="ShellLibraryItem.Content" xml:space="preserve">
+    <value>媒体库</value>
+  </data>
+  <data name="ShellFavoritesItem.Content" xml:space="preserve">
+    <value>收藏</value>
+  </data>
+  <data name="ShellSourcesItem.Content" xml:space="preserve">
+    <value>来源</value>
+  </data>
+  <data name="ShellGuideItem.Content" xml:space="preserve">
+    <value>节目指南</value>
+  </data>
+  <data name="ShellSettingsItem.Content" xml:space="preserve">
+    <value>设置</value>
+  </data>
+  <data name="ShellProfileItem.Content" xml:space="preserve">
+    <value>个人资料</value>
+  </data>
+  <data name="Sources_Status_RemovingSource" xml:space="preserve"><value>正在删除来源...</value></data>
+  <data name="Sources_Status_RemoveSourceFailed" xml:space="preserve"><value>无法删除此来源</value></data>
 </root>

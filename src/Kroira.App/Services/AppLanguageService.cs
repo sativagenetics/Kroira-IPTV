@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using Kroira.App.Data;
@@ -51,6 +52,8 @@ namespace Kroira.App.Services
         public static IReadOnlyList<string> SupportedLanguageCodes =>
             SupportedLanguages.Select(language => language.Code).ToArray();
 
+        public static event EventHandler<AppLanguageChangedEventArgs>? LanguageChanged;
+
         public static void ApplySavedLanguageOverride()
         {
             if (TryGetPersistedLanguageCode(out var languageCode))
@@ -65,11 +68,13 @@ namespace Kroira.App.Services
             if (string.Equals(normalized, SystemDefaultLanguageCode, StringComparison.OrdinalIgnoreCase))
             {
                 ClearPrimaryLanguageOverride();
+                ApplyCurrentCulture(SystemDefaultLanguageCode);
                 LocalizedStrings.Reset();
                 return;
             }
 
             SetPrimaryLanguageOverride(normalized);
+            ApplyCurrentCulture(normalized);
             LocalizedStrings.Reset();
         }
 
@@ -99,6 +104,7 @@ namespace Kroira.App.Services
 
         public static async Task SetLanguageAsync(AppDbContext db, string languageCode, int profileId = 0)
         {
+            var previous = GetPersistedLanguageCode();
             var normalized = NormalizeLanguageCode(languageCode);
             PersistLanguageCode(normalized);
             ApplyLanguageOverride(normalized);
@@ -121,6 +127,13 @@ namespace Kroira.App.Services
             }
 
             await db.SaveChangesAsync();
+
+            if (!string.Equals(previous, normalized, StringComparison.OrdinalIgnoreCase))
+            {
+                LanguageChanged?.Invoke(
+                    null,
+                    new AppLanguageChangedEventArgs(previous, normalized, LocalizedStrings.Version));
+            }
         }
 
         public static string NormalizeLanguageCode(string? languageCode)
@@ -245,6 +258,51 @@ namespace Kroira.App.Services
             }
         }
 
+        private static void ApplyCurrentCulture(string languageCode)
+        {
+            var candidate = string.Equals(languageCode, SystemDefaultLanguageCode, StringComparison.OrdinalIgnoreCase)
+                ? ResolveSystemLanguageCode()
+                : languageCode;
+
+            if (string.IsNullOrWhiteSpace(candidate))
+            {
+                candidate = DefaultLanguageCode;
+            }
+
+            try
+            {
+                var culture = CultureInfo.GetCultureInfo(candidate);
+                CultureInfo.CurrentCulture = culture;
+                CultureInfo.CurrentUICulture = culture;
+                CultureInfo.DefaultThreadCurrentCulture = culture;
+                CultureInfo.DefaultThreadCurrentUICulture = culture;
+            }
+            catch
+            {
+                // Keep the host culture if Windows reports an unsupported tag.
+            }
+        }
+
+        private static string ResolveSystemLanguageCode()
+        {
+            var userLanguages = Windows.System.UserProfile.GlobalizationPreferences.Languages;
+            foreach (var userLanguage in userLanguages)
+            {
+                var match = SupportedLanguages
+                    .Where(language => language.Code != SystemDefaultLanguageCode)
+                    .FirstOrDefault(language =>
+                        string.Equals(language.Code, userLanguage, StringComparison.OrdinalIgnoreCase) ||
+                        userLanguage.StartsWith(language.Code, StringComparison.OrdinalIgnoreCase) ||
+                        language.Code.StartsWith(userLanguage, StringComparison.OrdinalIgnoreCase));
+                if (match != null)
+                {
+                    return match.Code;
+                }
+            }
+
+            return DefaultLanguageCode;
+        }
+
         private static bool TryClearPrimaryLanguageOverrideWithWindowsApi()
         {
             try
@@ -282,5 +340,19 @@ namespace Kroira.App.Services
                 return string.Empty;
             }
         }
+    }
+
+    public sealed class AppLanguageChangedEventArgs : EventArgs
+    {
+        public AppLanguageChangedEventArgs(string previousLanguageCode, string currentLanguageCode, int version)
+        {
+            PreviousLanguageCode = previousLanguageCode;
+            CurrentLanguageCode = currentLanguageCode;
+            Version = version;
+        }
+
+        public string PreviousLanguageCode { get; }
+        public string CurrentLanguageCode { get; }
+        public int Version { get; }
     }
 }

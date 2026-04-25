@@ -17,7 +17,7 @@ using Windows.System;
 
 namespace Kroira.App.Views
 {
-    public sealed partial class ChannelsPage : Page, IRemoteNavigationPage
+    public sealed partial class ChannelsPage : Page, IRemoteNavigationPage, ILocalizationRefreshable
     {
         private const string MediaActionOverlayTag = "MediaActionOverlay";
 
@@ -621,7 +621,7 @@ namespace Kroira.App.Views
             var dialog = new ContentDialog
             {
                 Title = title,
-                CloseButtonText = "Close",
+                CloseButtonText = LocalizedStrings.Get("General_Close"),
                 XamlRoot = XamlRoot,
                 Content = message
             };
@@ -674,6 +674,12 @@ namespace Kroira.App.Views
             }
 
             return false;
+        }
+
+        public void RefreshLocalizedContent()
+        {
+            ViewModel.RefreshLocalizedLabelsIfNeeded();
+            XamlRuntimeLocalizer.Apply(this);
         }
     }
 }

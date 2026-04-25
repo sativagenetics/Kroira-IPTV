@@ -430,6 +430,28 @@ namespace Kroira.App.ViewModels
                 OnPropertyChanged(propertyName);
             }
         }
+
+        public void NotifyLocalizedTextChanged()
+        {
+            foreach (var propertyName in new[]
+            {
+                nameof(SourceKindText),
+                nameof(HealthBadgeText),
+                nameof(GuideBadgeText),
+                nameof(PrimarySyncText),
+                nameof(ConnectionLabelText),
+                nameof(GuideCoverageRatioText),
+                nameof(GuideCoverageSecondaryText),
+                nameof(QualitySnapshotText),
+                nameof(LogoCoverageText),
+                nameof(ValidationScoreText),
+                nameof(EpgSyncButtonText),
+                nameof(OperationalSummaryText)
+            })
+            {
+                OnPropertyChanged(propertyName);
+            }
+        }
     }
 
     public sealed class SourceIssueItemViewModel
@@ -516,6 +538,7 @@ namespace Kroira.App.ViewModels
     {
         private readonly IServiceProvider _serviceProvider;
         private List<SourceItemViewModel> _allSources = new();
+        private int _localizedTextVersion = -1;
 
         public BulkObservableCollection<SourceItemViewModel> Sources { get; } = new();
         public ObservableCollection<SourceRecentActivityItemViewModel> RecentActivities { get; } = new();
@@ -1010,6 +1033,99 @@ namespace Kroira.App.ViewModels
             OnPropertyChanged(nameof(RecentActivityCountText));
         }
 
+        public void RefreshLocalizedLabelsIfNeeded()
+        {
+            if (_localizedTextVersion == LocalizedStrings.Version)
+            {
+                return;
+            }
+
+            _localizedTextVersion = LocalizedStrings.Version;
+            foreach (var source in _allSources)
+            {
+                RefreshSourceItemLocalizedText(source);
+                source.NotifyLocalizedTextChanged();
+            }
+
+            RefreshAggregateLocalizedText();
+            ApplySourceFilter();
+        }
+
+        private static void RefreshSourceItemLocalizedText(SourceItemViewModel source)
+        {
+            source.HealthBadgeText = LocalizeHealthLabel(source.HealthLabel).ToUpper(CultureInfo.CurrentCulture);
+            source.PrimarySyncText = source.Type switch
+            {
+                "Xtream" => LocalizedStrings.Get("Sources_Action_SyncNow"),
+                "Stalker" => LocalizedStrings.Get("Sources_Action_SyncPortal"),
+                _ => LocalizedStrings.Get("Sources_Action_ImportNow")
+            };
+
+            source.ConnectionLabelText = source.Type == "Stalker"
+                ? source.HealthPillKind == StatusPillKind.Failed
+                    ? LocalizedStrings.Get("Sources_Connection_Failed")
+                    : LocalizedStrings.Get("Sources_Connection_Active")
+                : source.ConnectionLabelText;
+        }
+
+        private void RefreshAggregateLocalizedText()
+        {
+            OnPropertyChanged(nameof(M3uSourceCountLabel));
+            OnPropertyChanged(nameof(XtreamSourceCountLabel));
+            OnPropertyChanged(nameof(ConfiguredSourceCountText));
+            OnPropertyChanged(nameof(RecentActivityCountText));
+            OnPropertyChanged(nameof(SyncAllButtonText));
+            OnPropertyChanged(nameof(CanSyncAllSources));
+
+            var totalLiveChannels = TotalLiveChannelCount;
+            GuideCoverageCaption = totalLiveChannels > 0
+                ? LocalizedStrings.Format("Sources_GuideCoverage_Caption", TotalMatchedGuideChannelCount, totalLiveChannels)
+                : LocalizedStrings.Get("Sources_GuideCoverage_AddLiveSource");
+
+            var healthySources = _allSources.Count(source => source.HealthPillKind == StatusPillKind.Healthy);
+            var failingSources = _allSources.Count(source => source.HealthPillKind == StatusPillKind.Failed);
+            var workingSources = _allSources.Count(source => source.HealthPillKind == StatusPillKind.Syncing);
+
+            if (workingSources > 0)
+            {
+                HealthStatusHeadline = LocalizedStrings.Get("Sources_HealthStatus_Syncing");
+                HealthStatusCaption = LocalizedStrings.Format("Sources_HealthStatus_SyncingCaption", workingSources);
+                HealthStatusKind = StatusPillKind.Syncing;
+            }
+            else if (failingSources > 0)
+            {
+                HealthStatusHeadline = LocalizedStrings.Get("Sources_HealthStatus_Attention");
+                HealthStatusCaption = LocalizedStrings.Format("Sources_HealthStatus_AttentionCaption", failingSources);
+                HealthStatusKind = StatusPillKind.Failed;
+            }
+            else if (healthySources == _allSources.Count && _allSources.Count > 0)
+            {
+                HealthStatusHeadline = LocalizedStrings.Get("Sources_HealthStatus_Optimal");
+                HealthStatusCaption = LocalizedStrings.Get("Sources_HealthStatus_OptimalCaption");
+                HealthStatusKind = StatusPillKind.Healthy;
+            }
+            else if (_allSources.Count > 0)
+            {
+                HealthStatusHeadline = LocalizedStrings.Get("Sources_HealthStatus_Mixed");
+                HealthStatusCaption = LocalizedStrings.Format("Sources_HealthStatus_MixedCaption", healthySources, _allSources.Count - healthySources);
+                HealthStatusKind = StatusPillKind.Warning;
+            }
+            else
+            {
+                HealthStatusHeadline = LocalizedStrings.Get("Sources_HealthStatus_Idle");
+                HealthStatusCaption = LocalizedStrings.Get("Sources_HealthStatus_IdleCaption");
+                HealthStatusKind = StatusPillKind.Neutral;
+            }
+
+            var noConfiguredSources = _allSources.Count == 0;
+            EmptyStateTitle = noConfiguredSources
+                ? LocalizedStrings.Get("Sources_Empty_NoSources_Title")
+                : LocalizedStrings.Get("Sources_Empty_NoMatches_Title");
+            EmptyStateMessage = noConfiguredSources
+                ? LocalizedStrings.Get("Sources_Empty_NoSources_Message")
+                : LocalizedStrings.Get("Sources_Empty_NoMatches_Message");
+        }
+
         private void ApplySourceFilter()
         {
             IEnumerable<SourceItemViewModel> filtered = _allSources;
@@ -1181,8 +1297,8 @@ namespace Kroira.App.ViewModels
             if (snapshot.SourceType == SourceType.Stalker)
             {
                 return string.IsNullOrWhiteSpace(snapshot.StalkerPortalErrorText)
-                    ? "Portal active"
-                    : "Portal needs review";
+                    ? LocalizedStrings.Get("Sources_Connection_Active")
+                    : LocalizedStrings.Get("Sources_Connection_Failed");
             }
 
             return snapshot.EpgStatus switch
@@ -1394,11 +1510,11 @@ namespace Kroira.App.ViewModels
         public async Task ParseSourceAsync(int id)
         {
             var item = Sources.FirstOrDefault(source => source.Id == id);
-            if (item != null)
-            {
-                item.HealthLabel = "Working";
-                item.Status = "Refreshing live catalog...";
-            }
+                if (item != null)
+                {
+                    item.HealthLabel = "Working";
+                    item.Status = LocalizedStrings.Get("Sources_Status_RefreshingSource");
+                }
 
             try
             {
@@ -1428,7 +1544,7 @@ namespace Kroira.App.ViewModels
                 if (item != null)
                 {
                     item.HealthLabel = "Failing";
-                    item.Status = BuildStatusMessage("Live refresh did not finish", ex.Message);
+                    item.Status = BuildStatusMessage(LocalizedStrings.Get("Sources_Status_SourceRefreshFailed"), ex.Message);
                 }
             }
         }
@@ -1594,7 +1710,7 @@ namespace Kroira.App.ViewModels
             if (uiItem != null)
             {
                 uiItem.HealthLabel = "Working";
-                uiItem.Status = "Removing source...";
+                uiItem.Status = LocalizedStrings.Get("Sources_Status_RemovingSource");
             }
 
             try
@@ -1620,7 +1736,7 @@ namespace Kroira.App.ViewModels
                 if (uiItem != null)
                 {
                     uiItem.HealthLabel = "Failing";
-                    uiItem.Status = BuildStatusMessage("Could not remove this source", ex.Message);
+                    uiItem.Status = BuildStatusMessage(LocalizedStrings.Get("Sources_Status_RemoveSourceFailed"), ex.Message);
                 }
             }
         }

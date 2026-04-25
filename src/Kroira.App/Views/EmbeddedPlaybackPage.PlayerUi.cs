@@ -107,6 +107,57 @@ namespace Kroira.App.Views
             RefreshInfoPanel();
         }
 
+        public void RefreshLocalizedContent()
+        {
+            XamlRuntimeLocalizer.Apply(this);
+            BuildToolsFlyout();
+            RefreshToolToggleStates();
+            RefreshSpeedUi();
+            UpdateFavoriteUi();
+            UpdatePlaybackHint();
+            RefreshInfoPanel();
+            RefreshGuideProgramLocalizedText();
+
+            if (_allEpisodeSwitchItems.Count > 0)
+            {
+                EpisodePanelHeaderText.Text = LocalizedStrings.Get("Player_Episodes_PanelHeader");
+                EpisodePanelStatusText.Text = LocalizedStrings.Format("Player_Episodes_PanelStatus", _allEpisodeSwitchItems.Count);
+            }
+        }
+
+        private void RefreshGuideProgramLocalizedText()
+        {
+            if (_guideProgramItems.Count == 0)
+            {
+                return;
+            }
+
+            var refreshed = _guideProgramItems
+                .Select(program => new PlayerGuideProgramItem
+                {
+                    Title = program.IsCurrent
+                        ? LocalizedStrings.Format("Player_Guide_NowProgram", program.ProgramTitle)
+                        : program.ProgramTitle,
+                    ProgramTitle = program.ProgramTitle,
+                    TimeText = program.TimeText,
+                    StatusText = program.StatusText,
+                    IsCurrent = program.IsCurrent,
+                    RequestKind = program.RequestKind,
+                    StartTimeUtc = program.StartTimeUtc,
+                    EndTimeUtc = program.EndTimeUtc,
+                    ActionLabel = program.ActionLabel,
+                    ActionVisibility = program.ActionVisibility,
+                    StatusVisibility = program.StatusVisibility
+                })
+                .ToList();
+
+            _guideProgramItems.Clear();
+            foreach (var item in refreshed)
+            {
+                _guideProgramItems.Add(item);
+            }
+        }
+
         private void ResetResolvedPlaybackUiState()
         {
             _resolvedSourceName = string.Empty;

@@ -27,7 +27,7 @@ namespace Kroira.App.Views
     // page; OnNavigatedTo creates the mpv handle + child HWND, OnNavigatedFrom
     // cancels the old session and releases native playback resources without blocking
     // the UI thread. There is no app-lifetime playback singleton.
-    public sealed partial class EmbeddedPlaybackPage : Page, IRemoteNavigationPage
+    public sealed partial class EmbeddedPlaybackPage : Page, IRemoteNavigationPage, ILocalizationRefreshable
     {
         private static readonly TimeSpan ControlsHideDelay = TimeSpan.FromMilliseconds(2250);
         private static readonly TimeSpan ExternalIdleHideDelay = TimeSpan.FromMilliseconds(700);

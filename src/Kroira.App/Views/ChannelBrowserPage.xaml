@@ -2,6 +2,7 @@
     x:Class="Kroira.App.Views.ChannelBrowserPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:runtime="using:Kroira.App.Services"
     xmlns:controls="using:Kroira.App.Controls"
     Background="{StaticResource KroiraPageBackgroundBrush}">
 
@@ -19,13 +20,13 @@
         <StackPanel Spacing="16">
             <StackPanel Orientation="Horizontal" Spacing="12">
                 <Button x:Name="BackButton"
-                        x:Uid="GeneralBackButton"
+                        x:Uid="GeneralBackButton" runtime:RuntimeLocalizer.Uid="GeneralBackButton"
                         Content="Back"
                         Click="Back_Click"
                         Style="{StaticResource KroiraButtonStyle}" />
                 <StackPanel>
-                    <TextBlock x:Uid="ChannelBrowserPageTitle" Text="Browser" Style="{StaticResource KroiraPageTitleStyle}" />
-                    <TextBlock x:Uid="ChannelBrowserPageSubtitle" Text="Source-level channel browser with guide-aware context." Style="{StaticResource KroiraPageSubtitleStyle}" />
+                    <TextBlock x:Uid="ChannelBrowserPageTitle" runtime:RuntimeLocalizer.Uid="ChannelBrowserPageTitle" Text="Browser" Style="{StaticResource KroiraPageTitleStyle}" />
+                    <TextBlock x:Uid="ChannelBrowserPageSubtitle" runtime:RuntimeLocalizer.Uid="ChannelBrowserPageSubtitle" Text="Source-level channel browser with guide-aware context." Style="{StaticResource KroiraPageSubtitleStyle}" />
                 </StackPanel>
             </StackPanel>
 
@@ -43,7 +44,7 @@
                           DisplayMemberPath="Name"
                           HorizontalAlignment="Stretch" />
                 <TextBox x:Name="SearchBox"
-                         x:Uid="ChannelBrowserSearchBox"
+                         x:Uid="ChannelBrowserSearchBox" runtime:RuntimeLocalizer.Uid="ChannelBrowserSearchBox"
                          Grid.Column="1"
                          Style="{StaticResource KroiraTextBoxStyle}"
                          PlaceholderText="Search channels..."
@@ -112,7 +113,7 @@
                             </Grid>
                         </StackPanel>
                         <StackPanel Grid.Column="2" Spacing="8" VerticalAlignment="Top">
-                            <Button x:Uid="GeneralDetailsButton"
+                            <Button x:Uid="GeneralDetailsButton" runtime:RuntimeLocalizer.Uid="GeneralDetailsButton"
                                     Content="Details"
                                     Click="InspectChannel_Click"
                                     Background="#141A29"

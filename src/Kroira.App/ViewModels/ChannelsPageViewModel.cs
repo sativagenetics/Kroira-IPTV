@@ -1065,7 +1065,7 @@ namespace Kroira.App.ViewModels
             EmptyStateMessage = LocalizedStrings.Get("Live_Empty_BrowserEmpty_Message");
         }
 
-        private void RefreshLocalizedLabelsIfNeeded()
+        public void RefreshLocalizedLabelsIfNeeded()
         {
             if (_localizedTextVersion == LocalizedStrings.Version)
             {

@@ -250,7 +250,9 @@ namespace Kroira.App.ViewModels
                 SelectedAutoRefreshInterval?.Hours);
             RefreshLocalizedStaticProperties();
             UpdateState();
-            LanguageStatusText = LocalizedStrings.Get("Settings_Language_Status_RestartRequired");
+            LanguageStatusText = string.Equals(languageCode, AppLanguageService.SystemDefaultLanguageCode, StringComparison.OrdinalIgnoreCase)
+                ? LocalizedStrings.Get("Settings_Language_Status_System")
+                : LocalizedStrings.Format("Settings_Language_Status_Selected", SelectedLanguage.DisplayName);
             AppearanceStatusText = LocalizedStrings.Format(
                 "Settings_Appearance_Status_Active",
                 SelectedThemeOption?.DisplayName ?? LocalizedStrings.Get("Appearance_Theme_Cinema_Name"),
@@ -374,6 +376,43 @@ namespace Kroira.App.ViewModels
                 _isLoadingAppearance = wasLoadingAppearance;
                 _isLoadingAutoRefresh = wasLoadingAutoRefresh;
             }
+        }
+
+        public void RefreshLocalizedText()
+        {
+            RefreshLocalizedOptionCollections(
+                SelectedLanguage?.Code,
+                SelectedThemeOption?.Key,
+                SelectedAccentOption?.Key,
+                SelectedAutoRefreshInterval?.Hours);
+            RefreshLocalizedStaticProperties();
+            UpdateState();
+
+            var selectedLanguage = SelectedLanguage ?? Languages.FirstOrDefault();
+            LanguageStatusText = string.Equals(selectedLanguage?.Code, AppLanguageService.SystemDefaultLanguageCode, StringComparison.OrdinalIgnoreCase)
+                ? LocalizedStrings.Get("Settings_Language_Status_System")
+                : LocalizedStrings.Format(
+                    "Settings_Language_Status_Selected",
+                    selectedLanguage?.DisplayName ?? LocalizedStrings.Get("Language_SystemDefault"));
+            AppearanceStatusText = LocalizedStrings.Format(
+                "Settings_Appearance_Status_Active",
+                SelectedThemeOption?.DisplayName ?? LocalizedStrings.Get("Appearance_Theme_Cinema_Name"),
+                SelectedAccentOption?.DisplayName ?? LocalizedStrings.Get("Appearance_Accent_Gold_Name"));
+            AutoRefreshStatusText = AutoRefreshEnabled
+                ? LocalizedStrings.Format("Settings_AutoRefresh_Status_Running", SelectedAutoRefreshInterval?.Hours ?? 6)
+                : LocalizedStrings.Get("Settings_AutoRefresh_Status_Off");
+            RemoteModeStatusText = RemoteModeEnabled
+                ? LocalizedStrings.Get("Settings_RemoteMode_Status_On")
+                : LocalizedStrings.Get("Settings_RemoteMode_Status_Off");
+
+            if (!IsBackupBusy &&
+                (string.IsNullOrWhiteSpace(BackupStatusText) ||
+                 string.Equals(BackupStatusText, LocalizedStrings.Get("Settings_Backup_Status_Initial"), StringComparison.Ordinal)))
+            {
+                BackupStatusText = LocalizedStrings.Get("Settings_Backup_Status_Initial");
+            }
+
+            ResourceStatusText = LocalizedStrings.Get("Settings_Resources_Status_Ready");
         }
 
         private void RefreshLocalizedStaticProperties()
