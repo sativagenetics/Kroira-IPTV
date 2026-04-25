@@ -22,6 +22,6 @@ Inspect every generated image before copying approved screenshots into this fold
 
 ## Content Disclaimer
 
-KROIRA IPTV does not include, sell, provide, host, curate, or distribute channels, playlists, stream credentials, subscriptions, or copyrighted content. Screenshots must not imply otherwise.
+KROIRA IPTV does not include, sell, provide, host, curate, or distribute channels, streams, playlists, credentials, subscriptions, or media content. Users are responsible for authorized sources, and KROIRA does not bypass DRM, paywalls, authentication, or access controls. Screenshots must not imply otherwise.
 
 Update the root `README.md` with relative image links when approved screenshots are added.

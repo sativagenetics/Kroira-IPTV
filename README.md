@@ -1,8 +1,8 @@
 # KROIRA IPTV
 
-KROIRA IPTV is a packaged WinUI 3 desktop app for Windows that lets users connect their own IPTV sources, browse live TV and VOD, and play content through an embedded `mpv/libmpv` pipeline.
+KROIRA IPTV is a packaged WinUI 3 desktop app for Windows that lets users connect their own authorized IPTV sources, browse live TV and VOD, and play content through an embedded `mpv/libmpv` pipeline.
 
-It is a player-only product. The repository contains the Windows client, deterministic regression coverage for the ingestion pipeline, and the supporting documentation used to keep the product surface honest and maintainable.
+It is a media player and source manager. The repository contains the Windows client, deterministic regression coverage for the ingestion pipeline, and the supporting documentation used to keep the product surface honest and maintainable.
 
 [Contributing](CONTRIBUTING.md) | [Code of Conduct](CODE_OF_CONDUCT.md) | [Security](SECURITY.md) | [Support](SUPPORT.md)
 
@@ -14,7 +14,23 @@ KROIRA focuses on three primary content surfaces:
 - Movies
 - Series
 
-The current restored codebase includes source onboarding, source health and guide controls, favorites, continue watching, embedded playback, and local configuration/state persistence.
+The V2 release candidate includes source onboarding, source health and guide controls, favorites, continue watching, embedded playback, global search, metadata fallback, profile-aware personal state, and local configuration/state persistence.
+
+## V2.0.0 Release Candidate Status
+
+The `v2-market-ready` branch is the V2 release-candidate branch. The baseline validates restore, Debug x64 build, unit tests, Release regression corpus, and unsigned local MSIX packaging with signing disabled.
+
+Release-candidate validation:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\validate-v2-release.ps1 -Configuration Debug -Platform x64
+```
+
+Unsigned local package output:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\package-v2-release.ps1 -Unsigned -SkipValidation -Configuration Release -Platform x64
+```
 
 ## What KROIRA Is
 
@@ -155,7 +171,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\ci-regressions.ps1 -Configura
 
 ## Current Status
 
-The repository is in active product development, not long-term maintenance mode.
+The repository is in V2 release-candidate validation, not long-term maintenance mode.
 
 Current baseline:
 
@@ -163,6 +179,7 @@ Current baseline:
 - Live TV, movies, series, favorites, and continue watching are active
 - Embedded playback is active and based on `mpv/libmpv`
 - Guide settings, source health, and repair surfaces are active
+- Global search, metadata fallback, settings/legal text, and V2 data integrity checks are active
 
 Current limitations:
 
@@ -185,17 +202,18 @@ Longer-term areas under evaluation:
 
 ## Disclaimer
 
-KROIRA IPTV is a client application only.
+KROIRA IPTV is a media player and source manager for user-provided sources.
 
 It does not include, sell, provide, host, curate, or distribute:
 
 - channels
+- streams
 - playlists
 - stream credentials
 - subscription services
-- copyrighted content
+- media content
 
-Users are responsible for the legality, availability, and safety of the sources they add.
+Users are responsible for adding only authorized sources and for complying with applicable provider terms and laws. KROIRA does not bypass DRM, paywalls, authentication, or access controls.
 
 ## License
 

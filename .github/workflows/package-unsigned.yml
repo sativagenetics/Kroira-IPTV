@@ -46,7 +46,7 @@ jobs:
 
       - name: Create unsigned package
         shell: pwsh
-        run: .\scripts\package-unsigned.ps1 -Configuration "${{ inputs.configuration }}" -Platform "${{ inputs.platform }}" -OutputRoot "artifacts\packages\unsigned"
+        run: .\scripts\package-v2-release.ps1 -Unsigned -SkipValidation -Configuration "${{ inputs.configuration }}" -Platform "${{ inputs.platform }}" -OutputRoot "artifacts\packages\unsigned"
 
       - name: Upload package artifacts
         if: always()

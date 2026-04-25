@@ -27,13 +27,13 @@ Because the V2 baseline targets Windows desktop playback, the app must not ask f
 Run the baseline validation before packaging:
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\validate-release.ps1 -Configuration Release
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\validate-v2-release.ps1 -Configuration Debug -Platform x64
 ```
 
 If packaging is needed locally and unsigned MSIX output is acceptable for review, run:
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\package-unsigned.ps1 -Configuration Release -Platform x64
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\package-v2-release.ps1 -Unsigned -SkipValidation -Configuration Release -Platform x64
 ```
 
 Do not upload unsigned packages to Partner Center.
@@ -61,6 +61,7 @@ The listing must not imply that KROIRA supplies channels, playlists, accounts, c
 - Use `scripts/store-screenshots.ps1` with `-SanitizedDataConfirmed` only after manually confirming the data set is store-safe.
 - Follow `docs/store_screenshot_workflow.md` and `docs/screenshots/README.md`.
 - Generated screenshots belong under `artifacts/store-screenshots` and are ignored by git.
+- Screenshots must not imply that KROIRA provides channels, streams, playlists, subscriptions, or media content.
 
 ## 6. Privacy And Support
 

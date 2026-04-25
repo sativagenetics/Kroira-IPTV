@@ -2,7 +2,7 @@
 
 ## What KROIRA Supports
 
-KROIRA IPTV is a Windows desktop player for user-provided IPTV sources.
+KROIRA IPTV is a Windows media player and source manager for user-provided IPTV sources. KROIRA does not provide channels, streams, playlists, subscriptions, credentials, or media content.
 
 Support requests are appropriate for:
 
@@ -14,6 +14,7 @@ Support requests are appropriate for:
 Support requests are not appropriate for:
 
 - asking for playlists, channels, or credentials
+- asking KROIRA to bypass DRM, paywalls, authentication, or access controls
 - provider account recovery
 - copyright disputes related to third-party sources
 - support for third-party services that KROIRA does not operate
