@@ -316,6 +316,7 @@ namespace Kroira.App
             services.AddSingleton<ITmdbMetadataService, TmdbMetadataService>();
             services.AddSingleton<ICatalogDeduplicationService, CatalogDeduplicationService>();
             services.AddSingleton<ICatalogTaxonomyService, CatalogTaxonomyService>();
+            services.AddSingleton<ISmartCategoryService, SmartCategoryService>();
             services.AddSingleton<ICatalogSurfaceCountService, CatalogSurfaceCountService>();
             services.AddSingleton<IHomeRecommendationService, HomeRecommendationService>();
             services.AddSingleton<ILiveGuideService, LiveGuideService>();

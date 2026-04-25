@@ -191,9 +191,11 @@ namespace Kroira.App.ViewModels
         private readonly IBrowsePreferencesService _browsePreferencesService;
         private readonly ICatalogDiscoveryService _catalogDiscoveryService;
         private readonly ICatalogTaxonomyService _taxonomyService;
+        private readonly ISmartCategoryService _smartCategoryService;
         private readonly ILogicalCatalogStateService _logicalCatalogStateService;
         private readonly List<CatalogMovieGroup> _allMovieGroups = new();
         private readonly Dictionary<int, CatalogCategoryProjection> _movieCategoryById = new();
+        private readonly Dictionary<int, WatchProgressSnapshot> _movieWatchSnapshotsById = new();
         private readonly Dictionary<int, SourceType> _sourceTypeById = new();
         private readonly Dictionary<int, CatalogDiscoveryHealthBucket> _sourceHealthById = new();
         private readonly Dictionary<int, DateTime?> _sourceLastSyncById = new();
@@ -280,6 +282,7 @@ namespace Kroira.App.ViewModels
             _browsePreferencesService = serviceProvider.GetRequiredService<IBrowsePreferencesService>();
             _catalogDiscoveryService = serviceProvider.GetRequiredService<ICatalogDiscoveryService>();
             _taxonomyService = serviceProvider.GetRequiredService<ICatalogTaxonomyService>();
+            _smartCategoryService = serviceProvider.GetRequiredService<ISmartCategoryService>();
             _logicalCatalogStateService = serviceProvider.GetRequiredService<ILogicalCatalogStateService>();
             SortOptions.Add(new BrowseSortOptionViewModel("recommended", "Recommended"));
             SortOptions.Add(new BrowseSortOptionViewModel("title_asc", "Title A-Z"));
@@ -365,6 +368,7 @@ namespace Kroira.App.ViewModels
                 var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
                 var deduplicationService = scope.ServiceProvider.GetRequiredService<ICatalogDeduplicationService>();
                 var profileService = scope.ServiceProvider.GetRequiredService<IProfileStateService>();
+                var watchStateService = scope.ServiceProvider.GetRequiredService<ILibraryWatchStateService>();
                 var browsePreferencesService = scope.ServiceProvider.GetRequiredService<IBrowsePreferencesService>();
                 var surfaceStateService = scope.ServiceProvider.GetRequiredService<ISurfaceStateService>();
                 var sourceAvailability = await surfaceStateService.GetSourceAvailabilityAsync(db);
@@ -403,6 +407,15 @@ namespace Kroira.App.ViewModels
                     .OfType<CatalogMovieGroup>()
                     .ToList();
                 _favoriteMovieKeys = await _logicalCatalogStateService.GetFavoriteLogicalKeysAsync(db, access.ProfileId, FavoriteType.Movie);
+                _movieWatchSnapshotsById.Clear();
+                foreach (var snapshot in await watchStateService.LoadSnapshotsAsync(
+                             db,
+                             access.ProfileId,
+                             PlaybackContentType.Movie,
+                             movieGroups.SelectMany(group => group.Variants).Select(variant => variant.Movie.Id)))
+                {
+                    _movieWatchSnapshotsById[snapshot.Key] = snapshot.Value;
+                }
 
                 var movieOrderEntries = movieGroups
                     .Select(group => new
@@ -718,12 +731,6 @@ namespace Kroira.App.ViewModels
                     continue;
                 }
 
-                if (!string.IsNullOrWhiteSpace(selectedCategoryKey) &&
-                    !string.Equals(categoryProjection.DisplayCategoryKey, selectedCategoryKey, StringComparison.OrdinalIgnoreCase))
-                {
-                    continue;
-                }
-
                 var filteredGroup = new CatalogMovieGroup
                 {
                     GroupKey = group.GroupKey,
@@ -731,6 +738,12 @@ namespace Kroira.App.ViewModels
                     Variants = variants,
                     SourceSummary = BuildSourceSummary(variants.Select(variant => variant.SourceProfile.Name))
                 };
+
+                if (!string.IsNullOrWhiteSpace(selectedCategoryKey) &&
+                    !MatchesMovieCategorySelection(filteredGroup, categoryProjection, selectedCategoryKey))
+                {
+                    continue;
+                }
 
                 if (FavoritesOnly && !IsMovieGroupFavorite(filteredGroup))
                 {
@@ -1156,43 +1169,90 @@ namespace Kroira.App.ViewModels
                 visibleSourceIds = _allMovieGroups.SelectMany(group => group.Variants).Select(variant => variant.SourceProfile.Id).ToHashSet();
             }
 
-            var visibleMovies = _allMovieGroups
-                .Where(group => group.Variants.Any(variant => visibleSourceIds.Contains(variant.SourceProfile.Id)))
-                .Where(group => group.Variants.Any(variant => !HideSecondaryContent || string.Equals(variant.Movie.ContentKind, "Primary", StringComparison.OrdinalIgnoreCase)))
-                .Select(group => group.PreferredMovie)
-                .Select(GetCategoryProjection)
-                .Where(category => !IsCategoryHidden(category.RawCategoryName))
-                .ToList();
-
-            var categoryItems = new List<BrowserCategoryViewModel>
-            {
-                new BrowserCategoryViewModel
+            var visibleGroups = _allMovieGroups
+                .Select(group =>
                 {
-                    Id = 0,
-                    FilterKey = string.Empty,
-                    Name = "All Categories",
-                    Description = "Every visible film",
-                    ItemCount = visibleMovies.Count,
-                    OrderIndex = -1,
-                    IconGlyph = "\uE8B2"
-                }
-            };
+                    var variants = group.Variants
+                        .Where(variant => visibleSourceIds.Contains(variant.SourceProfile.Id))
+                        .Where(variant => !HideSecondaryContent || string.Equals(variant.Movie.ContentKind, "Primary", StringComparison.OrdinalIgnoreCase))
+                        .ToList();
+                    if (variants.Count == 0)
+                    {
+                        return null;
+                    }
 
-            var categories = visibleMovies
-                .GroupBy(category => category.DisplayCategoryName, StringComparer.OrdinalIgnoreCase)
-                .Select(group => new { Name = group.Key, Count = group.Count() })
-                .OrderBy(category => category.Name, StringComparer.CurrentCultureIgnoreCase)
+                    var preferredMovie = variants.FirstOrDefault(variant => variant.Movie.Id == group.PreferredMovie.Id)?.Movie ?? variants[0].Movie;
+                    var categoryProjection = GetCategoryProjection(preferredMovie);
+                    if (IsCategoryHidden(categoryProjection.RawCategoryName))
+                    {
+                        return null;
+                    }
+
+                    return new CatalogMovieGroup
+                    {
+                        GroupKey = group.GroupKey,
+                        PreferredMovie = preferredMovie,
+                        Variants = variants,
+                        SourceSummary = BuildSourceSummary(variants.Select(variant => variant.SourceProfile.Name))
+                    };
+                })
+                .OfType<CatalogMovieGroup>()
                 .ToList();
 
-            categoryItems.AddRange(categories.Select((category, index) => new BrowserCategoryViewModel
-                     {
-                         Id = index + 1,
-                         FilterKey = NormalizeCategoryKey(category.Name),
-                         Name = category.Name,
-                         ItemCount = category.Count,
-                         OrderIndex = index + 1,
-                         IconGlyph = "\uE8FD"
-                     }));
+            var categoryItems = new List<BrowserCategoryViewModel>();
+            var categoryId = 0;
+            var smartContexts = visibleGroups
+                .Select(BuildMovieSmartCategoryContext)
+                .ToList();
+
+            foreach (var definition in _smartCategoryService.GetDefinitions(SmartCategoryMediaType.Movie))
+            {
+                var count = definition.IsAllCategory
+                    ? visibleGroups.Count
+                    : smartContexts.Count(definition.Predicate);
+                if (count <= 0 && !definition.AlwaysShow)
+                {
+                    continue;
+                }
+
+                categoryItems.Add(new BrowserCategoryViewModel
+                {
+                    Id = categoryId++,
+                    FilterKey = definition.IsAllCategory ? string.Empty : definition.Id,
+                    SmartCategoryId = definition.Id,
+                    Name = definition.DisplayName,
+                    Description = definition.MatchRule,
+                    SectionName = definition.SectionName,
+                    ItemCount = count,
+                    OrderIndex = definition.SortPriority,
+                    IsSmartCategory = true,
+                    IconGlyph = definition.IconGlyph
+                });
+            }
+
+            var providerCategories = visibleGroups
+                .SelectMany(group => group.Variants
+                    .Select(variant => new { group.GroupKey, RawCategory = GetRawCategory(variant.Movie) })
+                    .GroupBy(item => item.RawCategory, StringComparer.OrdinalIgnoreCase)
+                    .Select(grouping => grouping.First()))
+                .GroupBy(item => item.RawCategory, StringComparer.OrdinalIgnoreCase)
+                .Select(group => new { Name = group.Key, Count = group.Select(item => item.GroupKey).Distinct(StringComparer.OrdinalIgnoreCase).Count() })
+                .OrderBy(category => category.Name, StringComparer.CurrentCultureIgnoreCase)
+                .Select((category, index) => new BrowserCategoryViewModel
+                {
+                    Id = categoryId++,
+                    FilterKey = _smartCategoryService.BuildOriginalProviderGroupKey(category.Name),
+                    Name = category.Name,
+                    Description = ResolveDisplayCategoryName(category.Name),
+                    SectionName = "Original Provider Groups",
+                    ItemCount = category.Count,
+                    OrderIndex = 100_000 + index,
+                    IsOriginalProviderGroup = true,
+                    IconGlyph = "\uE8FD"
+                });
+
+            categoryItems.AddRange(providerCategories);
+            ApplyCategorySectionHeaders(categoryItems);
 
             var signature = BuildCategorySignature(categoryItems);
             if (!string.Equals(_visibleCategorySignature, signature, StringComparison.Ordinal))
@@ -1208,6 +1268,19 @@ namespace Kroira.App.ViewModels
 
             LogBrowse($"categories rebuild end count={Categories.Count} resolvedKey={resolvedCategory?.FilterKey ?? "<all>"}");
             return resolvedCategory;
+        }
+
+        private static void ApplyCategorySectionHeaders(IReadOnlyList<BrowserCategoryViewModel> categories)
+        {
+            var previousSection = string.Empty;
+            foreach (var category in categories)
+            {
+                category.SectionHeaderVisibility = string.IsNullOrWhiteSpace(category.SectionName) ||
+                                                   string.Equals(category.SectionName, previousSection, StringComparison.Ordinal)
+                    ? Visibility.Collapsed
+                    : Visibility.Visible;
+                previousSection = category.SectionName;
+            }
         }
 
         private void ReassignSelectedCategory(BrowserCategoryViewModel? category, string reason)
@@ -1295,6 +1368,72 @@ namespace Kroira.App.ViewModels
             };
         }
 
+        private bool MatchesMovieCategorySelection(
+            CatalogMovieGroup group,
+            CatalogCategoryProjection categoryProjection,
+            string selectedCategoryKey)
+        {
+            if (_smartCategoryService.TryParseOriginalProviderGroupKey(selectedCategoryKey, out var providerGroupKey))
+            {
+                return group.Variants.Any(variant => string.Equals(
+                    _smartCategoryService.NormalizeKey(GetRawCategory(variant.Movie)),
+                    providerGroupKey,
+                    StringComparison.OrdinalIgnoreCase));
+            }
+
+            if (_smartCategoryService.IsSmartCategoryKey(selectedCategoryKey))
+            {
+                return _smartCategoryService.Matches(selectedCategoryKey, BuildMovieSmartCategoryContext(group));
+            }
+
+            return string.Equals(categoryProjection.DisplayCategoryKey, selectedCategoryKey, StringComparison.OrdinalIgnoreCase);
+        }
+
+        private SmartCategoryItemContext BuildMovieSmartCategoryContext(CatalogMovieGroup group)
+        {
+            var movie = group.PreferredMovie;
+            var snapshots = group.Variants
+                .Select(variant => _movieWatchSnapshotsById.TryGetValue(variant.Movie.Id, out var snapshot) ? snapshot : null)
+                .OfType<WatchProgressSnapshot>()
+                .ToList();
+            var sourceProfileIds = group.Variants
+                .Select(variant => variant.SourceProfile.Id)
+                .Where(id => id > 0)
+                .Distinct()
+                .ToList();
+
+            return new SmartCategoryItemContext
+            {
+                MediaType = SmartCategoryMediaType.Movie,
+                Title = movie.Title,
+                RawTitle = movie.RawSourceTitle,
+                ProviderGroupName = string.Join(' ', group.Variants.Select(variant => GetRawCategory(variant.Movie)).Distinct(StringComparer.OrdinalIgnoreCase)),
+                DisplayCategoryName = GetCategoryProjection(movie).DisplayCategoryName,
+                Genres = movie.Genres,
+                OriginalLanguage = movie.OriginalLanguage,
+                SourceName = group.SourceSummary,
+                SourceSummary = group.SourceSummary,
+                ReleaseDate = movie.ReleaseDate,
+                SourceLastSyncUtc = ResolveLatestSync(sourceProfileIds),
+                VoteAverage = movie.VoteAverage,
+                Popularity = movie.Popularity,
+                VariantCount = group.Variants.Count,
+                IsFavorite = IsMovieGroupFavorite(group),
+                IsRecentlyWatched = snapshots.Count > 0,
+                IsContinueWatching = snapshots.Any(snapshot => snapshot.HasResumePoint),
+                IsWatched = snapshots.Any(snapshot => snapshot.IsWatched),
+                IsInProgress = snapshots.Any(snapshot => snapshot.HasResumePoint),
+                IsCompleted = snapshots.Any(snapshot => snapshot.IsCompleted),
+                HasMetadata = !string.IsNullOrWhiteSpace(movie.TmdbId) ||
+                              !string.IsNullOrWhiteSpace(movie.ImdbId) ||
+                              !string.IsNullOrWhiteSpace(movie.Genres) ||
+                              !string.IsNullOrWhiteSpace(movie.Overview) ||
+                              movie.MetadataUpdatedAt.HasValue,
+                HasArtwork = HasMovieArtwork(movie),
+                IsPrimary = string.Equals(movie.ContentKind, "Primary", StringComparison.OrdinalIgnoreCase)
+            };
+        }
+
         private bool MatchesMovieSearch(CatalogMovieGroup group, string displayCategory)
         {
             return group.PreferredMovie.Title.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase) ||
@@ -1345,7 +1484,7 @@ namespace Kroira.App.ViewModels
 
         private static string BuildCategorySignature(IEnumerable<BrowserCategoryViewModel> categories)
         {
-            return string.Join("|", categories.Select(category => $"{category.FilterKey}:{category.Name}:{category.ItemCount}:{category.IconGlyph}:{category.OrderIndex}"));
+            return string.Join("|", categories.Select(category => $"{category.FilterKey}:{category.SectionName}:{category.Name}:{category.ItemCount}:{category.IconGlyph}:{category.OrderIndex}"));
         }
 
         private void OnSourceVisibilityChanged(BrowseSourceVisibilityViewModel option, bool isVisible)

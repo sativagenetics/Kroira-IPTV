@@ -281,9 +281,11 @@ namespace Kroira.App.ViewModels
         private readonly IBrowsePreferencesService _browsePreferencesService;
         private readonly ICatalogDiscoveryService _catalogDiscoveryService;
         private readonly ICatalogTaxonomyService _taxonomyService;
+        private readonly ISmartCategoryService _smartCategoryService;
         private readonly ILogicalCatalogStateService _logicalCatalogStateService;
         private readonly List<CatalogSeriesGroup> _allSeriesGroups = new();
         private readonly Dictionary<int, CatalogCategoryProjection> _seriesCategoryById = new();
+        private readonly Dictionary<int, SeriesSmartWatchState> _seriesSmartStateById = new();
         private readonly Dictionary<int, SourceType> _sourceTypeById = new();
         private readonly Dictionary<int, CatalogDiscoveryHealthBucket> _sourceHealthById = new();
         private readonly Dictionary<int, DateTime?> _sourceLastSyncById = new();
@@ -407,6 +409,18 @@ namespace Kroira.App.ViewModels
         public Visibility DiscoveryTagVisibility => DiscoveryTagOptions.Count > 2 ? Visibility.Visible : Visibility.Collapsed;
 
         private sealed record FilteredSeriesResult(CatalogSeriesGroup Group, string DisplayCategoryName);
+
+        private sealed class SeriesSmartWatchState
+        {
+            public int SeasonCount { get; init; }
+            public int EpisodeCount { get; init; }
+            public int WatchedEpisodeCount { get; init; }
+            public bool HasAnyProgress { get; init; }
+            public bool HasResumePoint { get; init; }
+            public bool IsRecentlyWatched { get; init; }
+            public bool IsCompleted => EpisodeCount > 0 && WatchedEpisodeCount >= EpisodeCount;
+            public bool HasCompleteSeasons => SeasonCount > 0 && EpisodeCount > 0;
+        }
 
         [ObservableProperty]
         private string _selectedSeriesStatus = string.Empty;
@@ -638,6 +652,7 @@ namespace Kroira.App.ViewModels
             _browsePreferencesService = serviceProvider.GetRequiredService<IBrowsePreferencesService>();
             _catalogDiscoveryService = serviceProvider.GetRequiredService<ICatalogDiscoveryService>();
             _taxonomyService = serviceProvider.GetRequiredService<ICatalogTaxonomyService>();
+            _smartCategoryService = serviceProvider.GetRequiredService<ISmartCategoryService>();
             _logicalCatalogStateService = serviceProvider.GetRequiredService<ILogicalCatalogStateService>();
             SortOptions.Add(new BrowseSortOptionViewModel("recommended", "Recommended"));
             SortOptions.Add(new BrowseSortOptionViewModel("title_asc", "Title A-Z"));
@@ -716,6 +731,7 @@ namespace Kroira.App.ViewModels
                     .OfType<CatalogSeriesGroup>()
                     .ToList();
                 _favoriteSeriesKeys = await _logicalCatalogStateService.GetFavoriteLogicalKeysAsync(db, access.ProfileId, FavoriteType.Series);
+                await LoadSeriesSmartWatchStateAsync(db, access.ProfileId, seriesGroups);
 
                 var seriesOrderEntries = seriesGroups
                     .Select(group => new
@@ -810,6 +826,91 @@ namespace Kroira.App.ViewModels
             finally
             {
                 _activeLoadStopwatch = null;
+            }
+        }
+
+        private async Task LoadSeriesSmartWatchStateAsync(
+            AppDbContext db,
+            int profileId,
+            IReadOnlyList<CatalogSeriesGroup> seriesGroups)
+        {
+            _seriesSmartStateById.Clear();
+            var seriesIds = seriesGroups
+                .SelectMany(group => group.Variants)
+                .Select(variant => variant.Series.Id)
+                .Where(id => id > 0)
+                .Distinct()
+                .ToList();
+            if (seriesIds.Count == 0)
+            {
+                return;
+            }
+
+            var seasonCounts = new Dictionary<int, int>();
+            var episodeCounts = new Dictionary<int, int>();
+            var progressRows = new List<(int SeriesId, PlaybackProgress Progress)>();
+
+            foreach (var chunk in seriesIds.Chunk(800))
+            {
+                var chunkIds = chunk.ToList();
+                foreach (var item in await db.Seasons
+                             .AsNoTracking()
+                             .Where(season => chunkIds.Contains(season.SeriesId))
+                             .GroupBy(season => season.SeriesId)
+                             .Select(group => new { SeriesId = group.Key, Count = group.Count() })
+                             .ToListAsync())
+                {
+                    seasonCounts[item.SeriesId] = item.Count;
+                }
+
+                foreach (var item in await (
+                             from season in db.Seasons.AsNoTracking()
+                             join episode in db.Episodes.AsNoTracking() on season.Id equals episode.SeasonId
+                             where chunkIds.Contains(season.SeriesId)
+                             select new { season.SeriesId, episode.Id })
+                         .GroupBy(item => item.SeriesId)
+                         .Select(group => new { SeriesId = group.Key, Count = group.Count() })
+                         .ToListAsync())
+                {
+                    episodeCounts[item.SeriesId] = item.Count;
+                }
+
+                var chunkProgressRows = await (
+                        from progress in db.PlaybackProgresses.AsNoTracking()
+                        join episode in db.Episodes.AsNoTracking() on progress.ContentId equals episode.Id
+                        join season in db.Seasons.AsNoTracking() on episode.SeasonId equals season.Id
+                        where progress.ProfileId == profileId &&
+                              progress.ContentType == PlaybackContentType.Episode &&
+                              chunkIds.Contains(season.SeriesId)
+                        select new { season.SeriesId, Progress = progress })
+                    .ToListAsync();
+                progressRows.AddRange(chunkProgressRows.Select(item => (item.SeriesId, item.Progress)));
+            }
+
+            var progressBySeries = progressRows
+                .GroupBy(item => item.SeriesId)
+                .ToDictionary(group => group.Key, group => group.Select(item => item.Progress).ToList());
+
+            foreach (var seriesId in seriesIds)
+            {
+                progressBySeries.TryGetValue(seriesId, out var rows);
+                rows ??= new List<PlaybackProgress>();
+                var watchedCount = rows.Count(WatchStateRules.IsWatched);
+                var hasResumePoint = rows.Any(progress =>
+                    WatchStateRules.NormalizeResumePosition(
+                        progress.PositionMs,
+                        progress.DurationMs,
+                        WatchStateRules.IsWatched(progress)) >= WatchStateRules.MinimumResumePositionMs);
+
+                _seriesSmartStateById[seriesId] = new SeriesSmartWatchState
+                {
+                    SeasonCount = seasonCounts.TryGetValue(seriesId, out var seasonCount) ? seasonCount : 0,
+                    EpisodeCount = episodeCounts.TryGetValue(seriesId, out var episodeCount) ? episodeCount : 0,
+                    WatchedEpisodeCount = watchedCount,
+                    HasAnyProgress = rows.Count > 0,
+                    HasResumePoint = hasResumePoint,
+                    IsRecentlyWatched = rows.Count > 0
+                };
             }
         }
 
@@ -1184,12 +1285,6 @@ namespace Kroira.App.ViewModels
                     continue;
                 }
 
-                if (!string.IsNullOrWhiteSpace(selectedCategoryKey) &&
-                    !string.Equals(categoryProjection.DisplayCategoryKey, selectedCategoryKey, StringComparison.OrdinalIgnoreCase))
-                {
-                    continue;
-                }
-
                 var filteredGroup = new CatalogSeriesGroup
                 {
                     GroupKey = group.GroupKey,
@@ -1197,6 +1292,12 @@ namespace Kroira.App.ViewModels
                     Variants = variants,
                     SourceSummary = BuildSourceSummary(variants.Select(variant => variant.SourceProfile.Name))
                 };
+
+                if (!string.IsNullOrWhiteSpace(selectedCategoryKey) &&
+                    !MatchesSeriesCategorySelection(filteredGroup, categoryProjection, selectedCategoryKey))
+                {
+                    continue;
+                }
 
                 if (FavoritesOnly && !IsSeriesGroupFavorite(filteredGroup))
                 {
@@ -1542,47 +1643,90 @@ namespace Kroira.App.ViewModels
                 visibleSourceIds = _allSeriesGroups.SelectMany(group => group.Variants).Select(variant => variant.SourceProfile.Id).ToHashSet();
             }
 
-            var visibleSeriesCategories = _allSeriesGroups
-                .Where(group => group.Variants.Any(variant => visibleSourceIds.Contains(variant.SourceProfile.Id)))
-                .Where(group => group.Variants.Any(variant => !HideSecondaryContent || string.Equals(variant.Series.ContentKind, "Primary", StringComparison.OrdinalIgnoreCase)))
-                .Select(group => group.PreferredSeries)
-                .Select(GetCategoryProjection)
-                .Where(category => !IsCategoryHidden(category.RawCategoryName))
+            var visibleGroups = _allSeriesGroups
+                .Select(group =>
+                {
+                    var variants = group.Variants
+                        .Where(variant => visibleSourceIds.Contains(variant.SourceProfile.Id))
+                        .Where(variant => !HideSecondaryContent || string.Equals(variant.Series.ContentKind, "Primary", StringComparison.OrdinalIgnoreCase))
+                        .ToList();
+                    if (variants.Count == 0)
+                    {
+                        return null;
+                    }
+
+                    var preferredSeries = variants.FirstOrDefault(variant => variant.Series.Id == group.PreferredSeries.Id)?.Series ?? variants[0].Series;
+                    var categoryProjection = GetCategoryProjection(preferredSeries);
+                    if (IsCategoryHidden(categoryProjection.RawCategoryName))
+                    {
+                        return null;
+                    }
+
+                    return new CatalogSeriesGroup
+                    {
+                        GroupKey = group.GroupKey,
+                        PreferredSeries = preferredSeries,
+                        Variants = variants,
+                        SourceSummary = BuildSourceSummary(variants.Select(variant => variant.SourceProfile.Name))
+                    };
+                })
+                .OfType<CatalogSeriesGroup>()
                 .ToList();
 
-            var categoryItems = new List<BrowserCategoryViewModel>
+            var categoryItems = new List<BrowserCategoryViewModel>();
+            var categoryIndex = 0;
+            var smartContexts = visibleGroups
+                .Select(BuildSeriesSmartCategoryContext)
+                .ToList();
+
+            foreach (var definition in _smartCategoryService.GetDefinitions(SmartCategoryMediaType.Series))
             {
-                new BrowserCategoryViewModel
+                var count = definition.IsAllCategory
+                    ? visibleGroups.Count
+                    : smartContexts.Count(definition.Predicate);
+                if (count <= 0 && !definition.AlwaysShow)
                 {
-                    Id = 0,
-                    FilterKey = string.Empty,
-                    Name = "All Categories",
-                    Description = "Every visible show",
-                    ItemCount = visibleSeriesCategories.Count,
-                    OrderIndex = -1,
-                    IconGlyph = "\uE8A9"
+                    continue;
                 }
-            };
 
-            var categoryCounts = visibleSeriesCategories
-                .GroupBy(category => category.DisplayCategoryName, StringComparer.OrdinalIgnoreCase)
-                .ToDictionary(group => group.Key, group => group.Count(), StringComparer.OrdinalIgnoreCase);
-
-            var orderedCategories = CatalogOrderingService.OrderCategories(categoryCounts.Keys, languageCode);
-            var categoryIndex = 1;
-            foreach (var categoryName in orderedCategories)
-            {
                 categoryItems.Add(new BrowserCategoryViewModel
                 {
-                    Id = categoryIndex,
-                    FilterKey = NormalizeCategoryKey(categoryName),
-                    Name = categoryName,
-                    ItemCount = categoryCounts.TryGetValue(categoryName, out var count) ? count : 0,
-                    OrderIndex = categoryIndex,
+                    Id = categoryIndex++,
+                    FilterKey = definition.IsAllCategory ? string.Empty : definition.Id,
+                    SmartCategoryId = definition.Id,
+                    Name = definition.DisplayName,
+                    Description = definition.MatchRule,
+                    SectionName = definition.SectionName,
+                    ItemCount = count,
+                    OrderIndex = definition.SortPriority,
+                    IsSmartCategory = true,
+                    IconGlyph = definition.IconGlyph
+                });
+            }
+
+            var providerCategories = visibleGroups
+                .SelectMany(group => group.Variants
+                    .Select(variant => new { group.GroupKey, RawCategory = GetRawCategory(variant.Series) })
+                    .GroupBy(item => item.RawCategory, StringComparer.OrdinalIgnoreCase)
+                    .Select(grouping => grouping.First()))
+                .GroupBy(item => item.RawCategory, StringComparer.OrdinalIgnoreCase)
+                .Select(group => new { Name = group.Key, Count = group.Select(item => item.GroupKey).Distinct(StringComparer.OrdinalIgnoreCase).Count() })
+                .OrderBy(category => category.Name, StringComparer.CurrentCultureIgnoreCase)
+                .Select((category, index) => new BrowserCategoryViewModel
+                {
+                    Id = categoryIndex++,
+                    FilterKey = _smartCategoryService.BuildOriginalProviderGroupKey(category.Name),
+                    Name = category.Name,
+                    Description = ResolveDisplayCategoryName(category.Name),
+                    SectionName = "Original Provider Groups",
+                    ItemCount = category.Count,
+                    OrderIndex = 100_000 + index,
+                    IsOriginalProviderGroup = true,
                     IconGlyph = "\uE7C3"
                 });
-                categoryIndex++;
-            }
+
+            categoryItems.AddRange(providerCategories);
+            ApplyCategorySectionHeaders(categoryItems);
 
             var signature = BuildCategorySignature(categoryItems);
             if (!string.Equals(_visibleCategorySignature, signature, StringComparison.Ordinal))
@@ -1598,6 +1742,19 @@ namespace Kroira.App.ViewModels
 
             LogBrowse($"categories rebuild end count={Categories.Count} resolvedKey={resolvedCategory?.FilterKey ?? "<all>"}");
             return resolvedCategory;
+        }
+
+        private static void ApplyCategorySectionHeaders(IReadOnlyList<BrowserCategoryViewModel> categories)
+        {
+            var previousSection = string.Empty;
+            foreach (var category in categories)
+            {
+                category.SectionHeaderVisibility = string.IsNullOrWhiteSpace(category.SectionName) ||
+                                                   string.Equals(category.SectionName, previousSection, StringComparison.Ordinal)
+                    ? Visibility.Collapsed
+                    : Visibility.Visible;
+                previousSection = category.SectionName;
+            }
         }
 
         private void ReassignSelectedCategory(BrowserCategoryViewModel? category, string reason)
@@ -1682,6 +1839,82 @@ namespace Kroira.App.ViewModels
                 "year_desc" => groups.OrderByDescending(group => group.PreferredSeries.FirstAirDate ?? DateTime.MinValue).ThenBy(group => group.PreferredSeries.Title, StringComparer.CurrentCultureIgnoreCase),
                 "favorites_first" => groups.OrderByDescending(IsSeriesGroupFavorite).ThenBy(group => group.PreferredSeries.Title, StringComparer.CurrentCultureIgnoreCase),
                 _ => groups
+            };
+        }
+
+        private bool MatchesSeriesCategorySelection(
+            CatalogSeriesGroup group,
+            CatalogCategoryProjection categoryProjection,
+            string selectedCategoryKey)
+        {
+            if (_smartCategoryService.TryParseOriginalProviderGroupKey(selectedCategoryKey, out var providerGroupKey))
+            {
+                return group.Variants.Any(variant => string.Equals(
+                    _smartCategoryService.NormalizeKey(GetRawCategory(variant.Series)),
+                    providerGroupKey,
+                    StringComparison.OrdinalIgnoreCase));
+            }
+
+            if (_smartCategoryService.IsSmartCategoryKey(selectedCategoryKey))
+            {
+                return _smartCategoryService.Matches(selectedCategoryKey, BuildSeriesSmartCategoryContext(group));
+            }
+
+            return string.Equals(categoryProjection.DisplayCategoryKey, selectedCategoryKey, StringComparison.OrdinalIgnoreCase);
+        }
+
+        private SmartCategoryItemContext BuildSeriesSmartCategoryContext(CatalogSeriesGroup group)
+        {
+            var series = group.PreferredSeries;
+            var states = group.Variants
+                .Select(variant => _seriesSmartStateById.TryGetValue(variant.Series.Id, out var state) ? state : null)
+                .OfType<SeriesSmartWatchState>()
+                .ToList();
+            var sourceProfileIds = group.Variants
+                .Select(variant => variant.SourceProfile.Id)
+                .Where(id => id > 0)
+                .Distinct()
+                .ToList();
+            var seasonCount = states.Count > 0
+                ? states.Max(state => state.SeasonCount)
+                : group.Variants.Max(variant => variant.Series.Seasons?.Count ?? 0);
+            var episodeCount = states.Count > 0
+                ? states.Max(state => state.EpisodeCount)
+                : group.Variants.Max(variant => variant.EpisodeCount);
+            var isCompleted = states.Any(state => state.IsCompleted);
+
+            return new SmartCategoryItemContext
+            {
+                MediaType = SmartCategoryMediaType.Series,
+                Title = series.Title,
+                RawTitle = series.RawSourceTitle,
+                ProviderGroupName = string.Join(' ', group.Variants.Select(variant => GetRawCategory(variant.Series)).Distinct(StringComparer.OrdinalIgnoreCase)),
+                DisplayCategoryName = GetCategoryProjection(series).DisplayCategoryName,
+                Genres = series.Genres,
+                OriginalLanguage = series.OriginalLanguage,
+                SourceName = group.SourceSummary,
+                SourceSummary = group.SourceSummary,
+                ReleaseDate = series.FirstAirDate,
+                SourceLastSyncUtc = ResolveLatestSync(sourceProfileIds),
+                VoteAverage = series.VoteAverage,
+                Popularity = series.Popularity,
+                VariantCount = group.Variants.Count,
+                SeasonCount = seasonCount,
+                EpisodeCount = episodeCount,
+                IsFavorite = IsSeriesGroupFavorite(group),
+                IsRecentlyWatched = states.Any(state => state.IsRecentlyWatched),
+                IsContinueWatching = states.Any(state => state.HasResumePoint),
+                IsWatched = isCompleted,
+                IsInProgress = states.Any(state => state.HasResumePoint || state.HasAnyProgress && !state.IsCompleted),
+                IsCompleted = isCompleted,
+                HasMetadata = !string.IsNullOrWhiteSpace(series.TmdbId) ||
+                              !string.IsNullOrWhiteSpace(series.ImdbId) ||
+                              !string.IsNullOrWhiteSpace(series.Genres) ||
+                              !string.IsNullOrWhiteSpace(series.Overview) ||
+                              series.MetadataUpdatedAt.HasValue,
+                HasArtwork = HasSeriesArtwork(series),
+                IsPrimary = string.Equals(series.ContentKind, "Primary", StringComparison.OrdinalIgnoreCase),
+                HasCompleteSeasons = states.Any(state => state.HasCompleteSeasons)
             };
         }
 
@@ -2337,7 +2570,7 @@ namespace Kroira.App.ViewModels
 
         private static string BuildCategorySignature(IEnumerable<BrowserCategoryViewModel> categories)
         {
-            return string.Join("|", categories.Select(category => $"{category.FilterKey}:{category.Name}:{category.ItemCount}:{category.IconGlyph}:{category.OrderIndex}"));
+            return string.Join("|", categories.Select(category => $"{category.FilterKey}:{category.SectionName}:{category.Name}:{category.ItemCount}:{category.IconGlyph}:{category.OrderIndex}"));
         }
 
         private async Task SaveHideWatchedEpisodesAsync(bool value)

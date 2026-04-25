@@ -21,10 +21,14 @@ namespace Kroira.App.ViewModels
         public string FilterKey { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
+        public string SectionName { get; set; } = string.Empty;
+        public string SmartCategoryId { get; set; } = string.Empty;
         public int ItemCount { get; set; }
         public int OrderIndex { get; set; }
         public bool IsSmartCategory { get; set; }
+        public bool IsOriginalProviderGroup { get; set; }
         public string IconGlyph { get; set; } = "\uE8B2";
+        public Visibility SectionHeaderVisibility { get; set; } = Visibility.Collapsed;
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(SelectionBackgroundOpacity))]
         [NotifyPropertyChangedFor(nameof(SelectionChromeOpacity))]

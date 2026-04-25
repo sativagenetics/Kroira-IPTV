@@ -18,10 +18,10 @@ namespace Kroira.App.ViewModels
     public partial class ChannelsPageViewModel : ObservableObject
     {
         private const string DefaultPrioritySortKey = "priority_first";
-        private const string SmartPriorityCategoryKey = "__smart_priority";
-        private const string SmartSportsCategoryKey = "__smart_sports";
-        private const string SmartTurkishSportsCategoryKey = "__smart_turkish_sports";
-        private const string SmartRecentCategoryKey = "__smart_recent";
+        private const string SmartPriorityCategoryKey = "live.library.priority";
+        private const string SmartSportsCategoryKey = "live.sports.all";
+        private const string SmartTurkishSportsCategoryKey = "live.sports.turkish";
+        private const string SmartRecentCategoryKey = "live.library.recent";
         private static readonly bool EnableDeferredSpotlightHelpers = false;
         private static string LogPath => Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
@@ -47,6 +47,7 @@ namespace Kroira.App.ViewModels
         private readonly IBrowsePreferencesService _browsePreferencesService;
         private readonly ICatalogDiscoveryService _catalogDiscoveryService;
         private readonly ICatalogTaxonomyService _taxonomyService;
+        private readonly ISmartCategoryService _smartCategoryService;
         private readonly ILogicalCatalogStateService _logicalCatalogStateService;
         private readonly List<BrowserChannelViewModel> _allChannels = new();
         private readonly List<(int Id, string Name, int Count)> _allRawCategories = new();
@@ -281,6 +282,7 @@ namespace Kroira.App.ViewModels
             _browsePreferencesService = serviceProvider.GetRequiredService<IBrowsePreferencesService>();
             _catalogDiscoveryService = serviceProvider.GetRequiredService<ICatalogDiscoveryService>();
             _taxonomyService = serviceProvider.GetRequiredService<ICatalogTaxonomyService>();
+            _smartCategoryService = serviceProvider.GetRequiredService<ISmartCategoryService>();
             _logicalCatalogStateService = serviceProvider.GetRequiredService<ILogicalCatalogStateService>();
             RegisterSpotlightSection("last_tuned", "Last tuned", "Jump straight back into the last live channel you opened.");
             RegisterSpotlightSection("recent", "Recent", "Fast return to recently watched live channels.");
@@ -1072,6 +1074,19 @@ namespace Kroira.App.ViewModels
 
         private bool MatchesCategorySelection(BrowserChannelViewModel channel, string filterKey)
         {
+            if (_smartCategoryService.TryParseOriginalProviderGroupKey(filterKey, out var providerGroupKey))
+            {
+                return string.Equals(
+                    _smartCategoryService.NormalizeKey(channel.CategoryName),
+                    providerGroupKey,
+                    StringComparison.OrdinalIgnoreCase);
+            }
+
+            if (_smartCategoryService.IsSmartCategoryKey(filterKey))
+            {
+                return _smartCategoryService.Matches(filterKey, BuildLiveSmartCategoryContext(channel));
+            }
+
             return filterKey switch
             {
                 SmartPriorityCategoryKey => IsPriorityCandidate(channel),
@@ -1082,6 +1097,32 @@ namespace Kroira.App.ViewModels
                     _browsePreferencesService.NormalizeCategoryKey(channel.DisplayCategoryName),
                     filterKey,
                     StringComparison.OrdinalIgnoreCase)
+            };
+        }
+
+        private SmartCategoryItemContext BuildLiveSmartCategoryContext(BrowserChannelViewModel channel)
+        {
+            return new SmartCategoryItemContext
+            {
+                MediaType = SmartCategoryMediaType.Live,
+                Title = channel.Name,
+                RawTitle = channel.RawName,
+                ProviderGroupName = channel.CategoryName,
+                DisplayCategoryName = channel.DisplayCategoryName,
+                SourceName = channel.SourceName,
+                SourceSummary = channel.SourceName,
+                TvgId = string.Empty,
+                TvgName = channel.Name,
+                LogoUrl = channel.LogoUrl,
+                EpgCurrentTitle = channel.CurrentProgramTitle,
+                EpgNextTitle = channel.NextProgramTitle,
+                SourceLastSyncUtc = channel.SourceLastSyncUtc,
+                IsFavorite = channel.IsFavorite,
+                IsRecentlyWatched = IsRecentChannel(channel),
+                HasGuideLink = channel.HasGuideLink,
+                HasGuideData = channel.HasGuideData,
+                HasMatchedGuide = channel.HasMatchedGuide,
+                IsPrimary = true
             };
         }
 
@@ -1399,64 +1440,77 @@ namespace Kroira.App.ViewModels
         private void BuildVisibleCategories()
         {
             var visibleChannels = BuildSourceScopedChannels();
+            var categoryItems = new List<BrowserCategoryViewModel>();
+            var categoryId = 0;
+            var smartContexts = visibleChannels
+                .Select(BuildLiveSmartCategoryContext)
+                .ToList();
 
-            Categories.Clear();
-            Categories.Add(new BrowserCategoryViewModel
+            foreach (var definition in _smartCategoryService.GetDefinitions(SmartCategoryMediaType.Live))
             {
-                Id = 0,
-                FilterKey = string.Empty,
-                Name = "All channels",
-                Description = "Every visible live channel",
-                ItemCount = visibleChannels.Count,
-                OrderIndex = -1,
-                IconGlyph = "\uE714"
-            });
-
-            void AddSmartCategory(int id, string key, string name, string description, int count, int orderIndex)
-            {
-                if (count <= 0)
+                var count = definition.IsAllCategory
+                    ? visibleChannels.Count
+                    : smartContexts.Count(definition.Predicate);
+                if (count <= 0 && !definition.AlwaysShow)
                 {
-                    return;
+                    continue;
                 }
 
-                Categories.Add(new BrowserCategoryViewModel
+                categoryItems.Add(new BrowserCategoryViewModel
                 {
-                    Id = id,
-                    FilterKey = key,
-                    Name = name,
-                    Description = description,
+                    Id = categoryId++,
+                    FilterKey = definition.IsAllCategory ? string.Empty : definition.Id,
+                    SmartCategoryId = definition.Id,
+                    Name = definition.DisplayName,
+                    Description = definition.MatchRule,
+                    SectionName = definition.SectionName,
                     ItemCount = count,
-                    OrderIndex = orderIndex,
+                    OrderIndex = definition.SortPriority,
                     IsSmartCategory = true,
-                    IconGlyph = "\uE7C1"
+                    IconGlyph = definition.IconGlyph
                 });
             }
 
-            AddSmartCategory(-1, SmartPriorityCategoryKey, "Priority watch", "High-value sports, favorites, and repeat channels", visibleChannels.Count(IsPriorityCandidate), 0);
-            AddSmartCategory(-2, SmartSportsCategoryKey, "Sports", "All sports-led channels across providers", visibleChannels.Count(channel => channel.IsSportsChannel), 1);
-            AddSmartCategory(-3, SmartTurkishSportsCategoryKey, "Turkish sports", "Fast access to Turkish sports coverage", visibleChannels.Count(channel => channel.IsTurkishSportsChannel), 2);
-            AddSmartCategory(-4, SmartRecentCategoryKey, "Recent", "Channels you've watched recently", visibleChannels.Count(IsRecentChannel), 3);
-
-            var categories = visibleChannels
-                .GroupBy(channel => channel.DisplayCategoryName)
+            var providerCategories = visibleChannels
+                .GroupBy(channel => channel.CategoryName)
                 .OrderBy(group => group.Key, StringComparer.CurrentCultureIgnoreCase)
                 .Select((group, index) => new BrowserCategoryViewModel
                 {
-                    Id = index + 10,
-                    FilterKey = _browsePreferencesService.NormalizeCategoryKey(group.Key),
+                    Id = categoryId++,
+                    FilterKey = _smartCategoryService.BuildOriginalProviderGroupKey(group.Key),
                     Name = group.Key,
+                    Description = ResolveEffectiveLiveDisplayCategoryName(group.Key, string.Empty),
+                    SectionName = "Original Provider Groups",
                     ItemCount = group.Count(),
-                    OrderIndex = index + 10,
+                    OrderIndex = 100_000 + index,
+                    IsOriginalProviderGroup = true,
                     IconGlyph = "\uE8B3"
                 })
                 .ToList();
 
-            foreach (var category in categories)
+            categoryItems.AddRange(providerCategories);
+            ApplyCategorySectionHeaders(categoryItems);
+
+            Categories.Clear();
+            foreach (var category in categoryItems)
             {
                 Categories.Add(category);
             }
 
             Log($"RAIL: BuildVisibleCategories completed with {Categories.Count} categories from {visibleChannels.Count} visible channels");
+        }
+
+        private static void ApplyCategorySectionHeaders(IReadOnlyList<BrowserCategoryViewModel> categories)
+        {
+            var previousSection = string.Empty;
+            foreach (var category in categories)
+            {
+                category.SectionHeaderVisibility = string.IsNullOrWhiteSpace(category.SectionName) ||
+                                                   string.Equals(category.SectionName, previousSection, StringComparison.Ordinal)
+                    ? Microsoft.UI.Xaml.Visibility.Collapsed
+                    : Microsoft.UI.Xaml.Visibility.Visible;
+                previousSection = category.SectionName;
+            }
         }
 
         private void BuildCategoryManagerOptions()

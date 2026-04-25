@@ -177,6 +177,15 @@
     </Style>
 
     <DataTemplate x:Key="KroiraCategoryRailItemTemplate">
+        <StackPanel Spacing="5">
+            <TextBlock Text="{Binding SectionName}"
+                       Visibility="{Binding SectionHeaderVisibility}"
+                       Style="{StaticResource KroiraLabelStyle}"
+                       Foreground="{StaticResource KroiraTextTertiaryBrush}"
+                       FontSize="10"
+                       MaxLines="1"
+                       TextTrimming="CharacterEllipsis"
+                       Margin="4,8,0,0" />
         <Grid MinHeight="44"
               ToolTipService.ToolTip="{Binding Name}">
             <Border Background="{StaticResource KroiraAccentContainerBrush}"
@@ -242,6 +251,7 @@
                 </Border>
             </Grid>
         </Grid>
+        </StackPanel>
     </DataTemplate>
 
     <Style x:Key="KroiraLaneColumnStyle" TargetType="Border">
