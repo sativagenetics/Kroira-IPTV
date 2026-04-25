@@ -42,8 +42,10 @@ namespace Kroira.App.Views
         private const double PointerMoveResetDistance = 3.0;
         private static long s_nextPlaybackSessionId;
         private static int s_nextSwitchGeneration;
+        private static readonly ISensitiveDataRedactionService PlaybackLogRedactor = new SensitiveDataRedactionService();
 
         private readonly PlaybackSessionStateMachine _stateMachine = new();
+        private readonly PlayerV2OverlayStateController _overlayController = new();
         private readonly PlaybackProgressCoordinator _progressCoordinator;
         private readonly ICatchupPlaybackService _catchupPlaybackService;
         private readonly IEntitlementService _entitlementService;
@@ -206,6 +208,9 @@ namespace Kroira.App.Views
             UpdateFullscreenUi();
             UpdatePictureInPictureUi();
             UpdateAspectUi();
+            _overlayController.SetFullscreen(IsFullscreenPlaybackActive());
+            _overlayController.SetPlaybackState(_stateMachine.State);
+            _overlayController.SetMenuOpen(IsMenuOpen);
             UpdateOverlayVisibility("navigated_to");
         }
 
@@ -241,6 +246,9 @@ namespace Kroira.App.Views
             _currentState = _stateMachine.State;
             _lastStateMessage = _stateMachine.Message;
             _overlayHiddenByInactivity = false;
+            _overlayController.SetMenuOpen(false);
+            _overlayController.SetPlaybackState(_stateMachine.State);
+            _overlayController.SetFullscreen(IsFullscreenPlaybackActive());
             _failedMirrorContentIds.Clear();
             ResetSessionRuntimeState("session_start", 0, clearRetryState: true);
         }
@@ -474,6 +482,8 @@ namespace Kroira.App.Views
             }
             _overlayHiddenByInactivity = false;
             _ignoreSurfaceClickUntilUtc = DateTime.MinValue;
+            _overlayController.SetMenuOpen(false);
+            _overlayController.SetPlaybackState(PlaybackSessionState.Idle);
             ResetInteractionTrackingState("teardown");
             ResetTransientPlaybackPanels(clearChannelSearch: true, restoreFocus: false);
             ResetResolvedPlaybackUiState();
@@ -638,7 +648,6 @@ namespace Kroira.App.Views
 
             if (allowHide)
             {
-                _overlayHiddenByInactivity = true;
                 LogPlaybackState("OVERLAY: hide timer tick");
                 HideControls();
                 return;
@@ -656,7 +665,7 @@ namespace Kroira.App.Views
             if (_loadTimeoutAttemptId != _activeAttemptId) return;
 
             LogStructuredPlayback("timeout_reason", "reason=open_timeout");
-            _ = AttemptRecoveryAsync("Stream timed out while starting.", _activeAttemptId);
+            _ = AttemptRecoveryAsync(BuildFailureMessage(MapPlaybackError("Stream timed out while starting.", wasTimeout: true)), _activeAttemptId);
         }
 
         private void BufferTimeoutTimer_Tick(object? sender, object e)
@@ -666,7 +675,7 @@ namespace Kroira.App.Views
             if (_bufferTimeoutAttemptId != _activeAttemptId) return;
 
             LogStructuredPlayback("timeout_reason", "reason=buffer_timeout");
-            _ = AttemptRecoveryAsync("Stream stalled while buffering.", _activeAttemptId);
+            _ = AttemptRecoveryAsync(BuildFailureMessage(MapPlaybackError("Stream stalled while buffering.", wasTimeout: true)), _activeAttemptId);
         }
 
         private async void ProgressPersistTimer_Tick(object? sender, object e)
@@ -698,6 +707,16 @@ namespace Kroira.App.Views
             ClearError();
             StopBufferTimeout();
             _overlayHiddenByInactivity = false;
+            _overlayController.ShowOverlay();
+
+            var urlError = PlayerV2PlaybackErrorMapper.Map(new PlayerV2PlaybackErrorInput { StreamUrl = _context.StreamUrl });
+            if (urlError.Code == PlayerV2PlaybackErrorCode.InvalidUrl)
+            {
+                ShowFatalError(urlError);
+                UpdateInteractionState();
+                UpdateOverlayVisibility("open_invalid_url");
+                return;
+            }
 
             if (isRetry)
             {
@@ -1074,6 +1093,9 @@ namespace Kroira.App.Views
                 return;
             }
 
+            _overlayController.SetPlaybackState(snapshot.State);
+            _overlayHiddenByInactivity = !_overlayController.IsOverlayVisible;
+
             if (_currentState != snapshot.State || !string.Equals(_lastStateMessage, snapshot.Message, StringComparison.Ordinal))
             {
                 LogStructuredPlayback(
@@ -1299,7 +1321,7 @@ namespace Kroira.App.Views
 
             if (!IsPlaybackComplete())
             {
-                await AttemptRecoveryAsync("Stream ended unexpectedly.", _activeAttemptId);
+                await AttemptRecoveryAsync(BuildFailureMessage(MapPlaybackError("Stream ended unexpectedly.", streamEnded: true)), _activeAttemptId);
                 return;
             }
 
@@ -1638,9 +1660,12 @@ namespace Kroira.App.Views
             if (_teardownStarted) return;
             Interlocked.Increment(ref _fullscreenTransitionGeneration);
             SetFullscreenSurfaceInputShield(false, "fullscreen_changed");
+            _overlayController.SetFullscreen(IsFullscreenPlaybackActive());
+            _overlayHiddenByInactivity = false;
             LogPlaybackState($"WINDOW: fullscreen changed active={BoolToLog(_windowManager?.IsFullscreen == true)}");
             _surface?.Present(force: true, reason: "fullscreen_changed");
             UpdateFullscreenUi();
+            ResetInactivityTimer("fullscreen_changed");
         }
 
         private void WindowManager_WindowActivationChanged(object? sender, EventArgs e)
@@ -2497,6 +2522,7 @@ namespace Kroira.App.Views
 
         private void ShowControls(bool persist = false, string cause = "show_controls")
         {
+            _overlayController.ShowOverlay();
             _overlayHiddenByInactivity = false;
             if (persist || ShouldForceOverlayVisible())
             {
@@ -2509,8 +2535,13 @@ namespace Kroira.App.Views
 
         private void HideControls()
         {
-            if (!CanAutoHideOverlay())
+            if (CanAutoHideOverlay() && _overlayController.TryAutoHide())
             {
+                _overlayHiddenByInactivity = true;
+            }
+            else
+            {
+                _overlayController.ShowOverlay();
                 _overlayHiddenByInactivity = false;
             }
 
@@ -2540,6 +2571,7 @@ namespace Kroira.App.Views
             }
 
             _overlayHiddenByInactivity = false;
+            _overlayController.ShowOverlay();
             var wasArmed = _controlsHideTimer.IsEnabled;
             _controlsHideTimer.Stop();
             if (CanAutoHideOverlay())
@@ -2566,6 +2598,7 @@ namespace Kroira.App.Views
         {
             _controlsHideTimer?.Stop();
             _overlayHiddenByInactivity = false;
+            _overlayController.ShowOverlay();
             LogStructuredPlayback(
                 "inactivity_timer_disarmed",
                 $"cause={SanitizeForLog(source)}; timer_armed={BoolToLog(_controlsHideTimer?.IsEnabled == true)}; deny_reason={GetAutoHideDenyReason(timerArmed: false)}");
@@ -2580,9 +2613,8 @@ namespace Kroira.App.Views
 
         private bool ShouldForceOverlayVisible()
         {
-            return _stateMachine.State != PlaybackSessionState.Playing ||
+            return !_overlayController.CanAutoHide ||
                    _isPointerOverControls ||
-                   IsMenuOpen ||
                    IsUserInteractingWithControls;
         }
 
@@ -2595,11 +2627,20 @@ namespace Kroira.App.Views
 
             if (ShouldForceOverlayVisible())
             {
+                _overlayController.ShowOverlay();
                 _overlayHiddenByInactivity = false;
                 _controlsHideTimer?.Stop();
             }
+            else if (_overlayHiddenByInactivity)
+            {
+                _overlayController.TryAutoHide();
+            }
+            else
+            {
+                _overlayController.ShowOverlay();
+            }
 
-            ApplyOverlayVisibility(ShouldForceOverlayVisible() || !_overlayHiddenByInactivity, reason);
+            ApplyOverlayVisibility(_overlayController.IsOverlayVisible, reason);
         }
 
         private void ApplyOverlayVisibility(bool isVisible, string reason)
@@ -2636,6 +2677,19 @@ namespace Kroira.App.Views
 
         private bool AreFlyoutMenusOpen => _openOverlayFlyouts.Count > 0 || _pendingUtilityFlyout != null;
         private bool IsMenuOpen => AreFlyoutMenusOpen || _toolsPanelOpen;
+
+        private void SyncOverlayMenuState(string reason)
+        {
+            var isMenuOpen = IsMenuOpen;
+            _overlayController.SetMenuOpen(isMenuOpen);
+            _overlayHiddenByInactivity = !_overlayController.IsOverlayVisible;
+            if (isMenuOpen)
+            {
+                _controlsHideTimer?.Stop();
+            }
+
+            LogStructuredPlayback("overlay_menu_state", $"reason={SanitizeForLog(reason)}; menu_open={BoolToLog(isMenuOpen)}");
+        }
 
         private bool IsUserInteractingWithControls =>
             _isOverlayPointerInteractionActive ||
@@ -2855,6 +2909,7 @@ namespace Kroira.App.Views
             _openOverlayFlyouts.Remove(flyout);
             _openOverlayFlyouts.Add(flyout);
             SetMenuSurfaceInputShield(true, "flyout_opened");
+            SyncOverlayMenuState("flyout_opened");
             if (IsUtilityChildFlyout(flyout))
             {
                 _activeUtilityFlyout = flyout;
@@ -2888,6 +2943,7 @@ namespace Kroira.App.Views
 
             SuppressSurfaceClicks();
             SetMenuSurfaceInputShield(AreFlyoutMenusOpen, _pendingUtilityFlyout != null ? "flyout_transition" : "flyout_closed");
+            SyncOverlayMenuState(_pendingUtilityFlyout != null ? "flyout_transition" : "flyout_closed");
             LogPlaybackState("OVERLAY: flyout closed");
             if (_pendingUtilityFlyout != null)
             {
@@ -3046,6 +3102,7 @@ namespace Kroira.App.Views
             _pendingUtilityFlyout = null;
             _toolsMenuFlyout = null;
             _toolsPanelOpen = false;
+            _overlayController.SetMenuOpen(false);
             UpdateToolsPanelVisibility();
             SetMenuSurfaceInputShield(false, "flyouts_teardown");
 
@@ -3182,7 +3239,7 @@ namespace Kroira.App.Views
                 return "none";
             }
 
-            return value
+            return RedactPlaybackText(value)
                 .Replace(";", ",", StringComparison.Ordinal)
                 .Replace("\r", " ", StringComparison.Ordinal)
                 .Replace("\n", " ", StringComparison.Ordinal)
@@ -3223,23 +3280,82 @@ namespace Kroira.App.Views
 
         private void ShowFatalError(string? message)
         {
+            ShowFatalError(MapPlaybackError(message));
+        }
+
+        private void ShowFatalError(PlayerV2PlaybackError error)
+        {
             if (_lastOpenFailedAttemptId != _activeAttemptId)
             {
                 _lastOpenFailedAttemptId = _activeAttemptId;
-                LogStructuredPlayback("open_failed", $"attempt_id={_activeAttemptId}; reason={SanitizeForLog(message)}");
+                LogStructuredPlayback(
+                    "open_failed",
+                    $"attempt_id={_activeAttemptId}; code={error.Code}; retryable={BoolToLog(error.IsRetryable)}; reason={SanitizeForLog(error.Title)}");
             }
 
-            _stateMachine.SetError(BuildFailureMessage(message));
+            _stateMachine.SetError(BuildFailureMessage(error));
+        }
+
+        private PlayerV2PlaybackError MapPlaybackError(
+            string? message,
+            Exception? exception = null,
+            bool wasTimeout = false,
+            bool wasCancelled = false,
+            bool streamEnded = false)
+        {
+            var streamUrl = _context?.StreamUrl;
+            if (_context == null && string.IsNullOrWhiteSpace(streamUrl))
+            {
+                var fallback = string.IsNullOrWhiteSpace(message)
+                    ? "Unable to start playback."
+                    : RedactPlaybackText(message);
+                return new PlayerV2PlaybackError(
+                    PlayerV2PlaybackErrorCode.Unknown,
+                    "Playback failed",
+                    fallback,
+                    IsRetryable: true);
+            }
+
+            var mapped = PlayerV2PlaybackErrorMapper.Map(new PlayerV2PlaybackErrorInput
+            {
+                StreamUrl = streamUrl,
+                PlayerMessage = RedactPlaybackText(message),
+                Exception = exception,
+                WasTimeout = wasTimeout,
+                WasCancelled = wasCancelled,
+                StreamEnded = streamEnded
+            });
+            if (mapped.Code == PlayerV2PlaybackErrorCode.Unknown && !string.IsNullOrWhiteSpace(message))
+            {
+                return new PlayerV2PlaybackError(
+                    mapped.Code,
+                    mapped.Title,
+                    RedactPlaybackText(message),
+                    mapped.IsRetryable);
+            }
+
+            return mapped;
         }
 
         private string BuildFailureMessage(string? fallbackMessage)
         {
             var baseMessage = string.IsNullOrWhiteSpace(fallbackMessage)
                 ? "Unable to start playback."
-                : fallbackMessage.Trim();
-            return string.IsNullOrWhiteSpace(_lastPlayerWarning)
+                : RedactPlaybackText(fallbackMessage).Trim();
+            var playerWarning = RedactPlaybackText(_lastPlayerWarning);
+            return string.IsNullOrWhiteSpace(playerWarning)
                 ? baseMessage
-                : $"{baseMessage} {_lastPlayerWarning}";
+                : $"{baseMessage} {playerWarning}";
+        }
+
+        private string BuildFailureMessage(PlayerV2PlaybackError error)
+        {
+            var message = string.IsNullOrWhiteSpace(error.Message) ? error.Title : error.Message;
+            var title = string.IsNullOrWhiteSpace(error.Title) ? "Playback failed" : error.Title;
+            var baseMessage = message.StartsWith(title, StringComparison.OrdinalIgnoreCase)
+                ? message
+                : $"{title}. {message}";
+            return BuildFailureMessage(baseMessage);
         }
 
         private bool IsPlaybackComplete()
@@ -3249,13 +3365,18 @@ namespace Kroira.App.Views
 
         private static string NormalizePlayerMessage(string message)
         {
-            var normalized = message.Replace("\r", " ").Replace("\n", " ").Trim();
+            var normalized = RedactPlaybackText(message).Replace("\r", " ").Replace("\n", " ").Trim();
             if (normalized.Length > 180)
             {
                 normalized = normalized[..180].TrimEnd() + "...";
             }
 
             return normalized;
+        }
+
+        private static string RedactPlaybackText(string? value)
+        {
+            return PlaybackLogRedactor.RedactLooseText(value);
         }
 
         private void NavigateBack()

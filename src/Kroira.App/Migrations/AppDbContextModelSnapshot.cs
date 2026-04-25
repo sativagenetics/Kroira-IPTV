@@ -238,13 +238,20 @@ namespace Kroira.App.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ChannelCategoryId");
-
                     b.HasIndex("EpgChannelId")
                         .HasDatabaseName("IX_Channels_EpgChannelId");
 
                     b.HasIndex("NormalizedIdentityKey")
                         .HasDatabaseName("IX_Channels_NormalizedIdentityKey");
+
+                    b.HasIndex("NormalizedName")
+                        .HasDatabaseName("IX_Channels_NormalizedName");
+
+                    b.HasIndex("ProviderEpgChannelId")
+                        .HasDatabaseName("IX_Channels_ProviderEpgChannelId");
+
+                    b.HasIndex("ChannelCategoryId", "ProviderEpgChannelId")
+                        .HasDatabaseName("IX_Channels_ChannelCategoryId_ProviderEpgChannelId");
 
                     b.ToTable("Channels");
                 });
@@ -266,6 +273,9 @@ namespace Kroira.App.Migrations
                         .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("SourceProfileId")
+                        .HasDatabaseName("IX_ChannelCategories_SourceProfileId");
 
                     b.ToTable("ChannelCategories");
                 });
@@ -432,6 +442,10 @@ namespace Kroira.App.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("SourceProfileId", "ChannelId");
+
+                    b.HasIndex("SourceProfileId", "ChannelIdentityKey");
+
                     b.HasIndex("SourceProfileId", "ChannelId", "XmltvChannelId")
                         .IsUnique();
 
@@ -473,6 +487,12 @@ namespace Kroira.App.Migrations
 
                     b.HasIndex("ChannelId", "StartTimeUtc")
                         .HasDatabaseName("IX_EpgPrograms_ChannelId_StartTimeUtc");
+
+                    b.HasIndex("StartTimeUtc", "EndTimeUtc")
+                        .HasDatabaseName("IX_EpgPrograms_StartTimeUtc_EndTimeUtc");
+
+                    b.HasIndex("ChannelId", "StartTimeUtc", "EndTimeUtc")
+                        .HasDatabaseName("IX_EpgPrograms_ChannelId_StartTimeUtc_EndTimeUtc");
 
                     b.ToTable("EpgPrograms");
                 });
@@ -867,7 +887,15 @@ namespace Kroira.App.Migrations
 
                     b.HasIndex("MetadataUpdatedAt");
 
+                    b.HasIndex("SourceProfileId");
+
                     b.HasIndex("TmdbId");
+
+                    b.HasIndex("SourceProfileId", "CanonicalTitleKey");
+
+                    b.HasIndex("SourceProfileId", "ContentKind");
+
+                    b.HasIndex("SourceProfileId", "ExternalId");
 
                     b.ToTable("Movies");
                 });
@@ -1178,7 +1206,15 @@ namespace Kroira.App.Migrations
 
                     b.HasIndex("MetadataUpdatedAt");
 
+                    b.HasIndex("SourceProfileId");
+
                     b.HasIndex("TmdbId");
+
+                    b.HasIndex("SourceProfileId", "CanonicalTitleKey");
+
+                    b.HasIndex("SourceProfileId", "ContentKind");
+
+                    b.HasIndex("SourceProfileId", "ExternalId");
 
                     b.ToTable("Series");
                 });
@@ -1898,6 +1934,40 @@ namespace Kroira.App.Migrations
                     b.ToTable("SourceProfiles");
                 });
 
+            modelBuilder.Entity("Kroira.App.Models.SourceProtectedCredentialSecret", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(96)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ProtectedValue")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ProtectionScheme")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("SourceProfileId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("UpdatedAtUtc")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SourceProfileId", "Name")
+                        .IsUnique();
+
+                    b.ToTable("SourceProtectedCredentialSecrets");
+                });
+
             modelBuilder.Entity("Kroira.App.Models.SourceSyncState", b =>
                 {
                     b.Property<int>("Id")
@@ -2204,6 +2274,15 @@ namespace Kroira.App.Migrations
                     b.HasOne("Kroira.App.Models.SourceProfile", null)
                         .WithOne()
                         .HasForeignKey("Kroira.App.Models.SourceHealthReport", "SourceProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Kroira.App.Models.SourceProtectedCredentialSecret", b =>
+                {
+                    b.HasOne("Kroira.App.Models.SourceProfile", null)
+                        .WithMany()
+                        .HasForeignKey("SourceProfileId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

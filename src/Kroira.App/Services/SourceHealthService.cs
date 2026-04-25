@@ -16,7 +16,8 @@ namespace Kroira.App.Services
         Task RefreshSourceHealthAsync(
             AppDbContext db,
             int sourceProfileId,
-            SourceAcquisitionSession? acquisitionSession = null);
+            SourceAcquisitionSession? acquisitionSession = null,
+            bool forceProbe = false);
     }
 
     public sealed class SourceHealthService : ISourceHealthService
@@ -62,7 +63,8 @@ namespace Kroira.App.Services
         public async Task RefreshSourceHealthAsync(
             AppDbContext db,
             int sourceProfileId,
-            SourceAcquisitionSession? acquisitionSession = null)
+            SourceAcquisitionSession? acquisitionSession = null,
+            bool forceProbe = false)
         {
             var profile = await db.SourceProfiles.AsNoTracking().FirstOrDefaultAsync(item => item.Id == sourceProfileId);
             if (profile == null)
@@ -154,7 +156,7 @@ namespace Kroira.App.Services
                 .FirstOrDefaultAsync(item => item.SourceProfileId == sourceProfileId);
 
             var guideMetrics = await BuildGuideMetricsAsync(db, liveChannels.Select(channel => channel.Id).ToList());
-            var probes = await ResolveProbesAsync(db, profile, credential, liveChannels, movies, episodes, report);
+            var probes = await ResolveProbesAsync(db, profile, credential, liveChannels, movies, episodes, report, forceProbe);
             var evaluation = Evaluate(profile, syncState, credential, epgLog, liveChannels, movies, series, guideMetrics, probes);
             if (acquisitionSession != null)
             {
@@ -315,10 +317,11 @@ namespace Kroira.App.Services
             IReadOnlyList<LiveChannelRecord> liveChannels,
             IReadOnlyList<MovieRecord> movies,
             IReadOnlyList<EpisodeRecord> episodes,
-            SourceHealthReport? existingReport)
+            SourceHealthReport? existingReport,
+            bool forceProbe)
         {
             var currentLastSuccessfulSyncAtUtc = profile.LastSync.HasValue ? NormalizeUtc(profile.LastSync.Value) : (DateTime?)null;
-            if (CanReuseProbeEvidence(existingReport, currentLastSuccessfulSyncAtUtc))
+            if (!forceProbe && CanReuseProbeEvidence(existingReport, currentLastSuccessfulSyncAtUtc))
             {
                 return existingReport!.Probes
                     .OrderBy(item => item.SortOrder)
@@ -835,7 +838,18 @@ namespace Kroira.App.Services
                 return SourceHealthState.Weak;
             }
 
-            if (hasLatestImportFailure || components.Any(item => item.State == SourceHealthComponentState.Weak))
+            var weakComponents = components
+                .Where(item => item.State == SourceHealthComponentState.Weak)
+                .ToList();
+            if (weakComponents.Count > 0)
+            {
+                return hasLatestImportFailure ||
+                       weakComponents.Any(item => item.ComponentType is SourceHealthComponentType.Catalog or SourceHealthComponentType.Live or SourceHealthComponentType.Vod)
+                    ? SourceHealthState.Weak
+                    : SourceHealthState.Good;
+            }
+
+            if (hasLatestImportFailure)
             {
                 return SourceHealthState.Weak;
             }
@@ -1375,10 +1389,12 @@ namespace Kroira.App.Services
         private static int AlignOverallScore(SourceHealthState state, int score) => state switch
         {
             SourceHealthState.Healthy => Math.Clamp(score, 85, 100),
+            SourceHealthState.Good => Math.Clamp(score, 75, 89),
             SourceHealthState.Weak => Math.Clamp(score, 65, 84),
             SourceHealthState.Incomplete => Math.Clamp(score, 40, 64),
             SourceHealthState.Outdated => Math.Clamp(score, 50, 74),
             SourceHealthState.Problematic => Math.Clamp(score, 0, 39),
+            SourceHealthState.Unknown => Math.Clamp(score, 0, 50),
             _ => 0
         };
 
@@ -1393,10 +1409,12 @@ namespace Kroira.App.Services
             var lead = healthState switch
             {
                 SourceHealthState.Healthy => $"Healthy source. {BuildInventorySummary(totalChannels, totalMovies, totalSeries)}",
+                SourceHealthState.Good => "Source is usable with minor quality gaps.",
                 SourceHealthState.Weak => "Source works, but quality is uneven.",
                 SourceHealthState.Incomplete => "Source synced, but important parts are still incomplete.",
                 SourceHealthState.Outdated => "Source data is present, but parts of it are stale.",
                 SourceHealthState.Problematic => "Source needs attention before it can be trusted.",
+                SourceHealthState.Unknown => "Source health is not known yet.",
                 _ => "Source saved. Validation will appear after the first successful sync."
             };
 
@@ -1408,10 +1426,12 @@ namespace Kroira.App.Services
             var lead = healthState switch
             {
                 SourceHealthState.Healthy => "Component health is strong",
+                SourceHealthState.Good => "Component health is good with minor gaps",
                 SourceHealthState.Weak => "Component health is usable but uneven",
                 SourceHealthState.Incomplete => "Component health shows missing core coverage",
                 SourceHealthState.Outdated => "Component health is stable, but the data is stale",
                 SourceHealthState.Problematic => "Component health found serious source problems",
+                SourceHealthState.Unknown => "Component health is unknown",
                 _ => "Component health is waiting for the first sync"
             };
 

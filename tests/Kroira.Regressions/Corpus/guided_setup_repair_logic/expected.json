@@ -934,7 +934,7 @@
       "Summary": "Live probe reached 2/2 sampled items. Route: Companion relay unavailable. Direct provider path kept.",
       "Status": "Sync succeeded at [timestamp] [timestamp] - Sync succeeded",
       "CapabilitySummary": "Catalog: Live \u002B Movies / Guide: Guide ready / Catchup: 1 channels / Routing: Companion enabled",
-      "SafeReport": "KROIRA source repair report\r\nSensitive values are redacted.\r\n\r\nSource: Fixture Repair M3U\r\nType: M3U\r\nHeadline: Companion routing is getting in the way\r\nSummary: Live probe reached 2/2 sampled items. Route: Companion relay unavailable. Direct provider path kept.\r\nCurrent status: Sync succeeded at [timestamp] [timestamp] - Sync succeeded\r\nActivity focus: Health Problematic Guide Guide ready Direct routing Playback \u002B probe companion: buffered relay via [fixture-server]/companion-down\r\nLatest attempt: Sync succeeded at [timestamp]\r\nLast success: [timestamp] - Sync succeeded\r\nHealth: Problematic / 39/100\r\n\r\nCapabilities\r\nCatalog: Live \u002B Movies - 2 live, 1 movies, 0 series.\r\nGuide: Guide ready - 2/2 live channels matched. Current coverage 0/2, next coverage 0/2, unmatched 0.\r\nCatchup: 1 channels - 1 live channel(s) advertise catchup or start-over support.\r\nRouting: Companion enabled - Companion enabled (buffered relay) via [fixture-server]/companion-down.\r\n\r\nCurrent issues\r\nSuspicious entries detected: 1 titles or categories look like placeholders, promo rows, or other low-confidence content.\r\nChannel branding is thin: 0 of 2 live channels currently have logos.\r\n\r\nSuggested actions\r\nDisable companion: Keep the provider path direct for this source, then rerun refresh and validation.\r\nRetest guide: Retry XMLTV fetch and rematch without changing catalog settings.\r\nGuide settings: Check detected versus manual XMLTV and routing choices before the next guide sync.",
+      "SafeReport": "KROIRA source repair report\r\nSensitive values are redacted.\r\n\r\nSource: Fixture Repair M3U\r\nType: M3U\r\nHeadline: Companion routing is getting in the way\r\nSummary: Live probe reached 2/2 sampled items. Route: Companion relay unavailable. Direct provider path kept.\r\nCurrent status: Sync succeeded at [timestamp] [timestamp] - Sync succeeded\r\nActivity focus: Health Problematic Guide Guide ready Direct routing Playback \u002B probe companion: buffered relay via [fixture-server]/companion-down\r\nLatest attempt: Sync succeeded at [timestamp]\r\nLast success: [timestamp] - Sync succeeded\r\nHealth: Problematic / 39/100\r\n\r\nCapabilities\r\nCatalog: Live \u002B Movies - 2 live, 1 movies, 0 series.\r\nGuide: Guide ready - 2/2 live channels matched. Current coverage 0/2, next coverage 0/2, unmatched 0.\r\nCatchup: 1 channels - 1 live channel(s) advertise catchup or start-over support.\r\nRouting: Companion enabled - Companion enabled (buffered relay) via [fixture-server]/companion-down.\r\n\r\nCurrent issues\r\nSuspicious entries detected: 1 titles or categories look like placeholders, promo rows, or other low-confidence content.\r\nChannel branding is thin: 0 of 2 live channels currently have logos.\r\n\r\nSuggested actions\r\nDisable companion: Keep the provider path direct for this source, then rerun refresh and validation.\r\nRetest guide: Retry XMLTV fetch and rematch without changing catalog settings.\r\nGuide settings: Check detected versus manual XMLTV and routing choices before the next guide sync.\r\nRun probe: Probe a small sampled set with per-request timeout instead of hammering the provider.",
       "Capabilities": [
         {
           "Label": "Catalog",
@@ -1000,6 +1000,15 @@
           "Summary": "Check detected versus manual XMLTV and routing choices before the next guide sync.",
           "ButtonText": "Guide settings",
           "Tone": "Neutral"
+        },
+        {
+          "ActionType": "RunStreamProbe",
+          "Kind": "Apply",
+          "IsPrimary": false,
+          "Title": "Run bounded stream probe",
+          "Summary": "Probe a small sampled set with per-request timeout instead of hammering the provider.",
+          "ButtonText": "Run probe",
+          "Tone": "Neutral"
         }
       ]
     },
@@ -1011,7 +1020,7 @@
       "Summary": "Series could not be loaded: Response status code does not indicate success: 500 (Internal Server Error).",
       "Status": "Sync succeeded at [timestamp] [timestamp] - Sync succeeded",
       "CapabilitySummary": "Catalog: Live \u002B Movies / Guide: Guide not synced / Catchup: No advertised support / Routing: Direct",
-      "SafeReport": "KROIRA source repair report\r\nSensitive values are redacted.\r\n\r\nSource: Fixture Repair Stalker\r\nType: Stalker\r\nHeadline: Portal connection needs attention\r\nSummary: Series could not be loaded: Response status code does not indicate success: 500 (Internal Server Error).\r\nCurrent status: Sync succeeded at [timestamp] [timestamp] - Sync succeeded\r\nActivity focus: Health Weak Guide Guide not synced Direct routing Local companion relay off\r\nLatest attempt: Sync succeeded at [timestamp]\r\nLast success: [timestamp] - Sync succeeded\r\nHealth: Weak / 84/100\r\n\r\nCapabilities\r\nCatalog: Live \u002B Movies - 1 live, 1 movies, 0 series.\r\nGuide: Guide not synced - 0/1 live channels matched. Current coverage 0/1, next coverage 0/1, unmatched 1.\r\nCatchup: No advertised support - No live channels advertise catchup on this source.\r\nRouting: Direct - Direct routing\r\n\r\nCurrent issues\r\nGuide coverage is empty: Live channels imported successfully, but none of them match persisted guide data.\r\nChannel branding is thin: 0 of 1 live channels currently have logos.\r\n\r\nSuggested actions\r\nRefresh portal: Run a fresh Stalker handshake, reload profile data, and retest the portal catalog.",
+      "SafeReport": "KROIRA source repair report\r\nSensitive values are redacted.\r\n\r\nSource: Fixture Repair Stalker\r\nType: Stalker\r\nHeadline: Portal connection needs attention\r\nSummary: Series could not be loaded: Response status code does not indicate success: 500 (Internal Server Error).\r\nCurrent status: Sync succeeded at [timestamp] [timestamp] - Sync succeeded\r\nActivity focus: Health Weak Guide Guide not synced Direct routing Local companion relay off\r\nLatest attempt: Sync succeeded at [timestamp]\r\nLast success: [timestamp] - Sync succeeded\r\nHealth: Weak / 84/100\r\n\r\nCapabilities\r\nCatalog: Live \u002B Movies - 1 live, 1 movies, 0 series.\r\nGuide: Guide not synced - 0/1 live channels matched. Current coverage 0/1, next coverage 0/1, unmatched 1.\r\nCatchup: No advertised support - No live channels advertise catchup on this source.\r\nRouting: Direct - Direct routing\r\n\r\nCurrent issues\r\nGuide coverage is empty: Live channels imported successfully, but none of them match persisted guide data.\r\nChannel branding is thin: 0 of 1 live channels currently have logos.\r\n\r\nSuggested actions\r\nRefresh portal: Run a fresh Stalker handshake, reload profile data, and retest the portal catalog.\r\nRun probe: Probe a small sampled set with per-request timeout instead of hammering the provider.",
       "Capabilities": [
         {
           "Label": "Catalog",
@@ -1059,6 +1068,15 @@
           "Summary": "Run a fresh Stalker handshake, reload profile data, and retest the portal catalog.",
           "ButtonText": "Refresh portal",
           "Tone": "Warning"
+        },
+        {
+          "ActionType": "RunStreamProbe",
+          "Kind": "Apply",
+          "IsPrimary": false,
+          "Title": "Run bounded stream probe",
+          "Summary": "Probe a small sampled set with per-request timeout instead of hammering the provider.",
+          "ButtonText": "Run probe",
+          "Tone": "Neutral"
         }
       ]
     }

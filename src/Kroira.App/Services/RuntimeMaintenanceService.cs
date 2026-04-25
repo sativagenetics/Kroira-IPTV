@@ -37,10 +37,12 @@ namespace Kroira.App.Services
                 var logicalCatalogStateService = services.GetRequiredService<ILogicalCatalogStateService>();
                 var contentOperationalService = services.GetRequiredService<IContentOperationalService>();
                 var autoRefreshService = services.GetRequiredService<ISourceAutoRefreshService>();
+                var credentialStore = services.GetRequiredService<ISourceCredentialStore>();
 
                 await profileStateService.GetActiveProfileAsync(db);
                 await CleanupOrphanedRowsAsync(db, cancellationToken);
                 cancellationToken.ThrowIfCancellationRequested();
+                await TryProtectExistingCredentialsAsync(db, credentialStore, cancellationToken);
 
                 await acquisitionService.BackfillAsync(db, cancellationToken: cancellationToken);
                 await autoRefreshService.RepairRuntimeStateAsync(db);
@@ -65,9 +67,11 @@ namespace Kroira.App.Services
                 var browsePreferencesService = services.GetRequiredService<IBrowsePreferencesService>();
                 var contentOperationalService = services.GetRequiredService<IContentOperationalService>();
                 var sourceHealthService = services.GetRequiredService<ISourceHealthService>();
+                var credentialStore = services.GetRequiredService<ISourceCredentialStore>();
 
                 await profileStateService.GetActiveProfileAsync(db);
                 await CleanupOrphanedRowsAsync(db, cancellationToken);
+                await TryProtectExistingCredentialsAsync(db, credentialStore, cancellationToken);
                 await acquisitionService.BackfillAsync(db, cancellationToken: cancellationToken);
                 await browsePreferencesService.RepairSourceReferencesAsync(db);
 
@@ -244,6 +248,33 @@ namespace Kroira.App.Services
             return sourcesToRefresh.Distinct().ToList();
         }
 
+        private static async Task TryProtectExistingCredentialsAsync(
+            AppDbContext db,
+            ISourceCredentialStore credentialStore,
+            CancellationToken cancellationToken)
+        {
+            try
+            {
+                var result = await credentialStore.ProtectExistingCredentialsAsync(db, cancellationToken);
+                if (result.MigratedCount > 0 ||
+                    result.RemovedStaleSecretCount > 0 ||
+                    result.FailedCount > 0)
+                {
+                    RuntimeEventLogger.Log(
+                        "RUNTIME-MAINT",
+                        $"credential protection migration: migrated={result.MigratedCount}, stale_removed={result.RemovedStaleSecretCount}, failed={result.FailedCount}");
+                }
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                RuntimeEventLogger.Log("RUNTIME-MAINT", ex, "credential protection migration skipped");
+            }
+        }
+
         private static async Task CleanupOrphanedRowsAsync(AppDbContext db, CancellationToken cancellationToken)
         {
             var profileIds = await db.AppProfiles
@@ -254,6 +285,26 @@ namespace Kroira.App.Services
                 .AsNoTracking()
                 .Select(profile => profile.Id)
                 .ToListAsync(cancellationToken);
+            var validCategoryIds = await db.ChannelCategories
+                .AsNoTracking()
+                .Where(category => sourceIds.Contains(category.SourceProfileId))
+                .Select(category => category.Id)
+                .ToListAsync(cancellationToken);
+            var validChannelIds = await db.Channels
+                .AsNoTracking()
+                .Where(channel => validCategoryIds.Contains(channel.ChannelCategoryId))
+                .Select(channel => channel.Id)
+                .ToListAsync(cancellationToken);
+            var validSeriesIds = await db.Series
+                .AsNoTracking()
+                .Where(series => sourceIds.Contains(series.SourceProfileId))
+                .Select(series => series.Id)
+                .ToListAsync(cancellationToken);
+            var validSeasonIds = await db.Seasons
+                .AsNoTracking()
+                .Where(season => validSeriesIds.Contains(season.SeriesId))
+                .Select(season => season.Id)
+                .ToListAsync(cancellationToken);
 
             var orphanFavorites = await db.Favorites
                 .Where(favorite => !profileIds.Contains(favorite.ProfileId))
@@ -263,6 +314,31 @@ namespace Kroira.App.Services
                 .ToListAsync(cancellationToken);
             var orphanControls = await db.ParentalControlSettings
                 .Where(setting => !profileIds.Contains(setting.ProfileId))
+                .ToListAsync(cancellationToken);
+            var orphanChannelCategories = await db.ChannelCategories
+                .Where(category => !sourceIds.Contains(category.SourceProfileId))
+                .ToListAsync(cancellationToken);
+            var orphanChannels = await db.Channels
+                .Where(channel => !validCategoryIds.Contains(channel.ChannelCategoryId))
+                .ToListAsync(cancellationToken);
+            var orphanEpgPrograms = await db.EpgPrograms
+                .Where(program => !validChannelIds.Contains(program.ChannelId))
+                .ToListAsync(cancellationToken);
+            var orphanEpgMappingDecisions = await db.EpgMappingDecisions
+                .Where(decision => !sourceIds.Contains(decision.SourceProfileId) ||
+                                   !validChannelIds.Contains(decision.ChannelId))
+                .ToListAsync(cancellationToken);
+            var orphanMovies = await db.Movies
+                .Where(movie => !sourceIds.Contains(movie.SourceProfileId))
+                .ToListAsync(cancellationToken);
+            var orphanSeries = await db.Series
+                .Where(series => !sourceIds.Contains(series.SourceProfileId))
+                .ToListAsync(cancellationToken);
+            var orphanSeasons = await db.Seasons
+                .Where(season => !validSeriesIds.Contains(season.SeriesId))
+                .ToListAsync(cancellationToken);
+            var orphanEpisodes = await db.Episodes
+                .Where(episode => !validSeasonIds.Contains(episode.SeasonId))
                 .ToListAsync(cancellationToken);
             var orphanSyncStates = await db.SourceSyncStates
                 .Where(state => !sourceIds.Contains(state.SourceProfileId))
@@ -278,6 +354,9 @@ namespace Kroira.App.Services
                 .ToListAsync(cancellationToken);
             var orphanCredentials = await db.SourceCredentials
                 .Where(credential => !sourceIds.Contains(credential.SourceProfileId))
+                .ToListAsync(cancellationToken);
+            var orphanProtectedCredentials = await db.SourceProtectedCredentialSecrets
+                .Where(secret => !sourceIds.Contains(secret.SourceProfileId))
                 .ToListAsync(cancellationToken);
             var orphanEpgLogs = await db.EpgSyncLogs
                 .Where(log => !sourceIds.Contains(log.SourceProfileId))
@@ -327,11 +406,20 @@ namespace Kroira.App.Services
             if (orphanFavorites.Count == 0 &&
                 orphanProgress.Count == 0 &&
                 orphanControls.Count == 0 &&
+                orphanChannelCategories.Count == 0 &&
+                orphanChannels.Count == 0 &&
+                orphanEpgPrograms.Count == 0 &&
+                orphanEpgMappingDecisions.Count == 0 &&
+                orphanMovies.Count == 0 &&
+                orphanSeries.Count == 0 &&
+                orphanSeasons.Count == 0 &&
+                orphanEpisodes.Count == 0 &&
                 orphanSyncStates.Count == 0 &&
                 orphanStalkerSnapshots.Count == 0 &&
                 orphanAcquisitionProfiles.Count == 0 &&
                 orphanAcquisitionRuns.Count == 0 &&
                 orphanCredentials.Count == 0 &&
+                orphanProtectedCredentials.Count == 0 &&
                 orphanEpgLogs.Count == 0 &&
                 orphanHealthReports.Count == 0 &&
                 orphanHealthComponents.Count == 0 &&
@@ -348,12 +436,21 @@ namespace Kroira.App.Services
             db.Favorites.RemoveRange(orphanFavorites);
             db.PlaybackProgresses.RemoveRange(orphanProgress);
             db.ParentalControlSettings.RemoveRange(orphanControls);
+            db.EpgPrograms.RemoveRange(orphanEpgPrograms);
+            db.EpgMappingDecisions.RemoveRange(orphanEpgMappingDecisions);
+            db.Episodes.RemoveRange(orphanEpisodes);
+            db.Seasons.RemoveRange(orphanSeasons);
+            db.Series.RemoveRange(orphanSeries);
+            db.Movies.RemoveRange(orphanMovies);
+            db.Channels.RemoveRange(orphanChannels);
+            db.ChannelCategories.RemoveRange(orphanChannelCategories);
             db.SourceSyncStates.RemoveRange(orphanSyncStates);
             db.StalkerPortalSnapshots.RemoveRange(orphanStalkerSnapshots);
             db.SourceAcquisitionEvidence.RemoveRange(orphanAcquisitionEvidence);
             db.SourceAcquisitionRuns.RemoveRange(orphanAcquisitionRuns);
             db.SourceAcquisitionProfiles.RemoveRange(orphanAcquisitionProfiles);
             db.SourceCredentials.RemoveRange(orphanCredentials);
+            db.SourceProtectedCredentialSecrets.RemoveRange(orphanProtectedCredentials);
             db.EpgSyncLogs.RemoveRange(orphanEpgLogs);
             db.SourceHealthComponents.RemoveRange(orphanHealthComponents);
             db.SourceHealthProbes.RemoveRange(orphanHealthProbes);
@@ -366,7 +463,7 @@ namespace Kroira.App.Services
             await db.SaveChangesAsync(cancellationToken);
             RuntimeEventLogger.Log(
                 "RUNTIME-MAINT",
-                $"removed orphaned rows: favorites={orphanFavorites.Count}, progress={orphanProgress.Count}, sync={orphanSyncStates.Count + orphanStalkerSnapshots.Count}, acquisition={orphanAcquisitionProfiles.Count + orphanAcquisitionRuns.Count + orphanAcquisitionEvidence.Count}, operational={orphanOperationalCandidates.Count + orphanOperationalStates.Count}");
+                $"removed orphaned rows: favorites={orphanFavorites.Count}, progress={orphanProgress.Count}, catalog={orphanChannelCategories.Count + orphanChannels.Count + orphanMovies.Count + orphanSeries.Count + orphanSeasons.Count + orphanEpisodes.Count}, guide={orphanEpgPrograms.Count + orphanEpgMappingDecisions.Count}, sync={orphanSyncStates.Count + orphanStalkerSnapshots.Count}, acquisition={orphanAcquisitionProfiles.Count + orphanAcquisitionRuns.Count + orphanAcquisitionEvidence.Count}, operational={orphanOperationalCandidates.Count + orphanOperationalStates.Count}");
         }
     }
 }

@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Net.Http;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -308,6 +309,8 @@ namespace Kroira.App.ViewModels
         private bool _preserveSeriesDetailContextOnSelectionChange;
         private int _seriesSlotRefreshVersion;
         private int _searchApplyRequestVersion;
+        private CancellationTokenSource? _metadataEnrichmentCts;
+        private Task? _metadataEnrichmentTask;
         private Stopwatch? _activeLoadStopwatch;
         private Task _displaySeriesSlotRefreshTask = Task.CompletedTask;
 
@@ -1764,20 +1767,43 @@ namespace Kroira.App.ViewModels
 
         private void StartMetadataEnrichment()
         {
-            _ = Task.Run(async () =>
+            if (_metadataEnrichmentTask is { IsCompleted: false })
+            {
+                return;
+            }
+
+            _metadataEnrichmentCts?.Dispose();
+            var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+            _metadataEnrichmentCts = cts;
+            var token = cts.Token;
+
+            _metadataEnrichmentTask = Task.Run(async () =>
             {
                 try
                 {
+                    await Task.Delay(TimeSpan.FromMilliseconds(750), token);
                     using var scope = _serviceProvider.CreateScope();
                     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
                     var metadataService = scope.ServiceProvider.GetRequiredService<ITmdbMetadataService>();
-                    var series = await db.Series.Take(28).ToListAsync();
-                    await metadataService.EnrichSeriesAsync(db, series, 28);
+                    var series = await db.Series.AsNoTracking().Take(28).ToListAsync(token);
+                    await metadataService.EnrichSeriesAsync(db, series, 28, token);
+                }
+                catch (OperationCanceledException) when (token.IsCancellationRequested)
+                {
                 }
                 catch
                 {
                 }
-            });
+                finally
+                {
+                    if (ReferenceEquals(_metadataEnrichmentCts, cts))
+                    {
+                        _metadataEnrichmentCts = null;
+                    }
+
+                    cts.Dispose();
+                }
+            }, token);
         }
 
         private async Task EnsureSeriesDetailsAsync(SeriesBrowseItemViewModel item)

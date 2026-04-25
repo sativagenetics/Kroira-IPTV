@@ -203,6 +203,7 @@ namespace Kroira.App.Data
             EnsureColumn(conn, "SourceCredentials", "StalkerTimezone", "TEXT NOT NULL DEFAULT ''");
             EnsureColumn(conn, "SourceCredentials", "StalkerLocale", "TEXT NOT NULL DEFAULT ''");
             EnsureColumn(conn, "SourceCredentials", "StalkerApiUrl", "TEXT NOT NULL DEFAULT ''");
+            EnsureSourceProtectedCredentialTables(conn);
             EnsureColumn(conn, "SourceSyncStates", "LastAutoRefreshAttemptAtUtc", "TEXT");
             EnsureColumn(conn, "SourceSyncStates", "LastAutoRefreshSuccessAtUtc", "TEXT");
             EnsureColumn(conn, "SourceSyncStates", "NextAutoRefreshDueAtUtc", "TEXT");
@@ -472,13 +473,25 @@ namespace Kroira.App.Data
             EnsureIndex(conn, "IX_Movies_CanonicalTitleKey", "Movies", "CanonicalTitleKey");
             EnsureIndex(conn, "IX_Movies_DedupFingerprint", "Movies", "DedupFingerprint");
             EnsureIndex(conn, "IX_Movies_TmdbId", "Movies", "TmdbId");
+            EnsureIndex(conn, "IX_Movies_SourceProfileId", "Movies", "SourceProfileId");
+            EnsureCompositeIndex(conn, "IX_Movies_SourceProfileId_ExternalId", "Movies", "SourceProfileId", "ExternalId");
+            EnsureCompositeIndex(conn, "IX_Movies_SourceProfileId_CanonicalTitleKey", "Movies", "SourceProfileId", "CanonicalTitleKey");
+            EnsureCompositeIndex(conn, "IX_Movies_SourceProfileId_ContentKind", "Movies", "SourceProfileId", "ContentKind");
             EnsureIndex(conn, "IX_AppProfiles_Name", "AppProfiles", "Name");
             EnsureIndex(conn, "IX_Series_MetadataUpdatedAt", "Series", "MetadataUpdatedAt");
             EnsureIndex(conn, "IX_Series_CanonicalTitleKey", "Series", "CanonicalTitleKey");
             EnsureIndex(conn, "IX_Series_DedupFingerprint", "Series", "DedupFingerprint");
             EnsureIndex(conn, "IX_Series_TmdbId", "Series", "TmdbId");
+            EnsureIndex(conn, "IX_Series_SourceProfileId", "Series", "SourceProfileId");
+            EnsureCompositeIndex(conn, "IX_Series_SourceProfileId_ExternalId", "Series", "SourceProfileId", "ExternalId");
+            EnsureCompositeIndex(conn, "IX_Series_SourceProfileId_CanonicalTitleKey", "Series", "SourceProfileId", "CanonicalTitleKey");
+            EnsureCompositeIndex(conn, "IX_Series_SourceProfileId_ContentKind", "Series", "SourceProfileId", "ContentKind");
+            EnsureIndex(conn, "IX_ChannelCategories_SourceProfileId", "ChannelCategories", "SourceProfileId");
             EnsureIndex(conn, "IX_Channels_EpgChannelId", "Channels", "EpgChannelId");
+            EnsureIndex(conn, "IX_Channels_ProviderEpgChannelId", "Channels", "ProviderEpgChannelId");
             EnsureIndex(conn, "IX_Channels_NormalizedIdentityKey", "Channels", "NormalizedIdentityKey");
+            EnsureIndex(conn, "IX_Channels_NormalizedName", "Channels", "NormalizedName");
+            EnsureCompositeIndex(conn, "IX_Channels_ChannelCategoryId_ProviderEpgChannelId", "Channels", "ChannelCategoryId", "ProviderEpgChannelId");
             EnsureIndex(conn, "IX_SourceAcquisitionRuns_SourceProfileId", "SourceAcquisitionRuns", "SourceProfileId");
             EnsureIndex(conn, "IX_SourceAcquisitionEvidence_SourceAcquisitionRunId", "SourceAcquisitionEvidence", "SourceAcquisitionRunId");
             EnsureIndex(conn, "IX_SourceAcquisitionEvidence_SourceProfileId", "SourceAcquisitionEvidence", "SourceProfileId");
@@ -504,9 +517,13 @@ namespace Kroira.App.Data
             EnsureTripleCompositeIndex(conn, "IX_RecordingJobs_ProfileId_Status_StartTimeUtc", "RecordingJobs", "ProfileId", "Status", "StartTimeUtc");
             EnsureTripleCompositeIndex(conn, "IX_DownloadJobs_ProfileId_Status_RequestedAtUtc", "DownloadJobs", "ProfileId", "Status", "RequestedAtUtc");
             EnsureCompositeIndex(conn, "IX_EpgPrograms_ChannelId_StartTimeUtc", "EpgPrograms", "ChannelId", "StartTimeUtc");
+            EnsureTripleCompositeIndex(conn, "IX_EpgPrograms_ChannelId_StartTimeUtc_EndTimeUtc", "EpgPrograms", "ChannelId", "StartTimeUtc", "EndTimeUtc");
+            EnsureCompositeIndex(conn, "IX_EpgPrograms_StartTimeUtc_EndTimeUtc", "EpgPrograms", "StartTimeUtc", "EndTimeUtc");
             EnsureIndex(conn, "IX_SourceSyncStates_NextAutoRefreshDueAtUtc", "SourceSyncStates", "NextAutoRefreshDueAtUtc");
             EnsureUniqueTripleCompositeIndex(conn, "IX_EpgMappingDecisions_SourceProfileId_ChannelId_XmltvChannelId", "EpgMappingDecisions", "SourceProfileId", "ChannelId", "XmltvChannelId");
             EnsureTripleCompositeIndex(conn, "IX_EpgMappingDecisions_SourceProfileId_StreamUrlHash_XmltvChannelId", "EpgMappingDecisions", "SourceProfileId", "StreamUrlHash", "XmltvChannelId");
+            EnsureCompositeIndex(conn, "IX_EpgMappingDecisions_SourceProfileId_ChannelId", "EpgMappingDecisions", "SourceProfileId", "ChannelId");
+            EnsureCompositeIndex(conn, "IX_EpgMappingDecisions_SourceProfileId_ChannelIdentityKey", "EpgMappingDecisions", "SourceProfileId", "ChannelIdentityKey");
 
             BackfillLegacyProfileState(conn);
         }
@@ -1051,6 +1068,30 @@ namespace Kroira.App.Data
             cmd.CommandText = @"
                 CREATE UNIQUE INDEX IF NOT EXISTS ""IX_StalkerPortalSnapshots_SourceProfileId""
                 ON ""StalkerPortalSnapshots"" (""SourceProfileId"");";
+            cmd.ExecuteNonQuery();
+        }
+
+        private static void EnsureSourceProtectedCredentialTables(SqliteConnection conn)
+        {
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = @"
+                CREATE TABLE IF NOT EXISTS ""SourceProtectedCredentialSecrets"" (
+                    ""Id""               INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                    ""SourceProfileId""  INTEGER NOT NULL,
+                    ""Name""             TEXT    NOT NULL DEFAULT '',
+                    ""ProtectedValue""   TEXT    NOT NULL DEFAULT '',
+                    ""ProtectionScheme"" TEXT    NOT NULL DEFAULT '',
+                    ""UpdatedAtUtc""     TEXT    NOT NULL DEFAULT '',
+                    CONSTRAINT ""FK_SourceProtectedCredentialSecrets_SourceProfiles_SourceProfileId""
+                        FOREIGN KEY (""SourceProfileId"")
+                        REFERENCES ""SourceProfiles"" (""Id"")
+                        ON DELETE CASCADE
+                );";
+            cmd.ExecuteNonQuery();
+
+            cmd.CommandText = @"
+                CREATE UNIQUE INDEX IF NOT EXISTS ""IX_SourceProtectedCredentialSecrets_SourceProfileId_Name""
+                ON ""SourceProtectedCredentialSecrets"" (""SourceProfileId"", ""Name"");";
             cmd.ExecuteNonQuery();
         }
 

@@ -43,10 +43,17 @@ namespace Kroira.App.Services
         public string ActionLabel { get; }
         public Visibility StateVisibility => State == SurfaceViewState.Ready ? Visibility.Collapsed : Visibility.Visible;
         public Visibility ContentVisibility => State == SurfaceViewState.Ready ? Visibility.Visible : Visibility.Collapsed;
+        public Visibility LoadingStateVisibility => State == SurfaceViewState.Loading ? Visibility.Visible : Visibility.Collapsed;
+        public Visibility EmptyStateVisibility => State is SurfaceViewState.NoSources or SurfaceViewState.EmptyContent ? Visibility.Visible : Visibility.Collapsed;
+        public Visibility ErrorStateVisibility => State is SurfaceViewState.Offline or SurfaceViewState.ImportFailed ? Visibility.Visible : Visibility.Collapsed;
         public Visibility ActionVisibility =>
             State == SurfaceViewState.Loading || string.IsNullOrWhiteSpace(ActionLabel)
                 ? Visibility.Collapsed
                 : Visibility.Visible;
+        public Visibility DiagnosticsActionVisibility =>
+            ErrorStateVisibility == Visibility.Visible && !string.IsNullOrWhiteSpace(ActionLabel)
+                ? Visibility.Visible
+                : Visibility.Collapsed;
         public Visibility ProgressVisibility => State == SurfaceViewState.Loading ? Visibility.Visible : Visibility.Collapsed;
         public Visibility IconVisibility => State == SurfaceViewState.Loading ? Visibility.Collapsed : Visibility.Visible;
     }

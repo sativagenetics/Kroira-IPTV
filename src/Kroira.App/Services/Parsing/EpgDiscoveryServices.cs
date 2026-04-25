@@ -132,17 +132,21 @@ namespace Kroira.App.Services.Parsing
     public sealed class M3uEpgDiscoveryService : IEpgSourceDiscoveryService
     {
         private readonly ISourceRoutingService _sourceRoutingService;
+        private readonly ISourceCredentialStore _credentialStore;
 
-        public M3uEpgDiscoveryService(ISourceRoutingService sourceRoutingService)
+        public M3uEpgDiscoveryService(
+            ISourceRoutingService sourceRoutingService,
+            ISourceCredentialStore? credentialStore = null)
         {
             _sourceRoutingService = sourceRoutingService;
+            _credentialStore = credentialStore ?? SourceCredentialStore.CreateDefault();
         }
 
         public SourceType SourceType => SourceType.M3U;
 
         public async Task<EpgDiscoveryResult> DiscoverAsync(AppDbContext db, int sourceProfileId)
         {
-            var cred = await db.SourceCredentials.FirstOrDefaultAsync(c => c.SourceProfileId == sourceProfileId);
+            var cred = await _credentialStore.GetCredentialAsync(db, sourceProfileId);
             if (cred == null || string.IsNullOrWhiteSpace(cred.Url))
             {
                 throw new Exception("M3U source URL or path is empty.");
@@ -241,38 +245,36 @@ namespace Kroira.App.Services.Parsing
 
         private static string FormatDiagnosticValue(string value)
         {
-            if (string.IsNullOrWhiteSpace(value))
-            {
-                return "\"\"";
-            }
-
-            return $"\"{value.Replace("\"", "'")}\"";
+            return EpgDiagnosticFormatter.Format(value);
         }
     }
 
     public sealed class XtreamEpgDiscoveryService : IEpgSourceDiscoveryService
     {
         private readonly ISourceRoutingService _sourceRoutingService;
+        private readonly ISourceCredentialStore _credentialStore;
 
-        public XtreamEpgDiscoveryService(ISourceRoutingService sourceRoutingService)
+        public XtreamEpgDiscoveryService(
+            ISourceRoutingService sourceRoutingService,
+            ISourceCredentialStore? credentialStore = null)
         {
             _sourceRoutingService = sourceRoutingService;
+            _credentialStore = credentialStore ?? SourceCredentialStore.CreateDefault();
         }
 
         public SourceType SourceType => SourceType.Xtream;
 
         public async Task<EpgDiscoveryResult> DiscoverAsync(AppDbContext db, int sourceProfileId)
         {
-            var cred = await db.SourceCredentials.FirstOrDefaultAsync(c => c.SourceProfileId == sourceProfileId);
+            var cred = await _credentialStore.GetCredentialAsync(db, sourceProfileId);
             if (cred == null || string.IsNullOrWhiteSpace(cred.Url) || string.IsNullOrWhiteSpace(cred.Username))
             {
                 throw new Exception("Xtream credentials are incomplete.");
             }
 
-            var baseUrl = cred.Url.TrimEnd('/');
-            var authQuery = $"?username={Uri.EscapeDataString(cred.Username)}&password={Uri.EscapeDataString(cred.Password)}";
-            var providerGuideUrl = $"{baseUrl}/xmltv.php{authQuery}";
+            var providerGuideUrl = EpgDiscoveryHelpers.BuildXtreamProviderXmltvUrl(cred);
             cred.DetectedEpgUrl = providerGuideUrl;
+            await _credentialStore.ProtectCredentialAsync(db, cred);
 
             var activeMode = EpgDiscoveryHelpers.ResolveActiveMode(cred);
             var providerCandidates = new List<EpgSourceCandidate>
@@ -289,7 +291,8 @@ namespace Kroira.App.Services.Parsing
             var candidates = activeMode == EpgActiveMode.Manual
                 ? EpgDiscoveryHelpers.BuildManualAndFallbackCandidates(cred, 1)
                 : providerCandidates
-                    .Concat(EpgDiscoveryHelpers.BuildFallbackCandidates(cred, 1))
+                    .Concat(EpgDiscoveryHelpers.BuildConfiguredEpgUrlFallbackCandidates(cred, 1))
+                    .Concat(EpgDiscoveryHelpers.BuildFallbackCandidates(cred, 2))
                     .ToList();
 
             if (activeMode == EpgActiveMode.Manual &&
@@ -311,29 +314,28 @@ namespace Kroira.App.Services.Parsing
 
         private static string FormatDiagnosticValue(string value)
         {
-            if (string.IsNullOrWhiteSpace(value))
-            {
-                return "\"\"";
-            }
-
-            return $"\"{value.Replace("\"", "'")}\"";
+            return EpgDiagnosticFormatter.Format(value);
         }
     }
 
     public sealed class StalkerEpgDiscoveryService : IEpgSourceDiscoveryService
     {
         private readonly ISourceRoutingService _sourceRoutingService;
+        private readonly ISourceCredentialStore _credentialStore;
 
-        public StalkerEpgDiscoveryService(ISourceRoutingService sourceRoutingService)
+        public StalkerEpgDiscoveryService(
+            ISourceRoutingService sourceRoutingService,
+            ISourceCredentialStore? credentialStore = null)
         {
             _sourceRoutingService = sourceRoutingService;
+            _credentialStore = credentialStore ?? SourceCredentialStore.CreateDefault();
         }
 
         public SourceType SourceType => SourceType.Stalker;
 
         public async Task<EpgDiscoveryResult> DiscoverAsync(AppDbContext db, int sourceProfileId)
         {
-            var cred = await db.SourceCredentials.FirstOrDefaultAsync(c => c.SourceProfileId == sourceProfileId);
+            var cred = await _credentialStore.GetCredentialAsync(db, sourceProfileId);
             if (cred == null || string.IsNullOrWhiteSpace(cred.Url))
             {
                 throw new Exception("Stalker source credentials are incomplete.");
@@ -436,6 +438,67 @@ namespace Kroira.App.Services.Parsing
             }
 
             return candidates;
+        }
+
+        internal static IReadOnlyList<EpgSourceCandidate> BuildConfiguredEpgUrlFallbackCandidates(SourceCredential credential, int startingPriority)
+        {
+            if (string.IsNullOrWhiteSpace(credential.ManualEpgUrl))
+            {
+                return Array.Empty<EpgSourceCandidate>();
+            }
+
+            return new[]
+            {
+                new EpgSourceCandidate
+                {
+                    Url = credential.ManualEpgUrl.Trim(),
+                    Label = "Configured XMLTV fallback",
+                    Method = "configured_epg_url",
+                    Kind = EpgGuideSourceKind.Manual,
+                    IsOptional = true,
+                    Priority = startingPriority
+                }
+            };
+        }
+
+        internal static string BuildXtreamProviderXmltvUrl(SourceCredential credential)
+        {
+            var baseUrl = (credential.Url ?? string.Empty).Trim();
+            var authQuery = $"?username={Uri.EscapeDataString(credential.Username ?? string.Empty)}&password={Uri.EscapeDataString(credential.Password ?? string.Empty)}";
+            if (Uri.TryCreate(baseUrl, UriKind.Absolute, out var uri))
+            {
+                var path = uri.AbsolutePath.TrimEnd('/');
+                if (string.IsNullOrWhiteSpace(path) || path == "/")
+                {
+                    path = "/xmltv.php";
+                }
+                else
+                {
+                    var fileName = Path.GetFileName(path);
+                    path = string.Equals(fileName, "get.php", StringComparison.OrdinalIgnoreCase) ||
+                           string.Equals(fileName, "player_api.php", StringComparison.OrdinalIgnoreCase) ||
+                           string.Equals(fileName, "xmltv.php", StringComparison.OrdinalIgnoreCase)
+                        ? ReplaceFileName(path, "xmltv.php")
+                        : $"{path}/xmltv.php";
+                }
+
+                var builder = new UriBuilder(uri)
+                {
+                    Path = path,
+                    Query = authQuery.TrimStart('?')
+                };
+                return builder.Uri.ToString();
+            }
+
+            return $"{baseUrl.TrimEnd('/')}/xmltv.php{authQuery}";
+        }
+
+        private static string ReplaceFileName(string absolutePath, string newFileName)
+        {
+            var lastSlashIndex = absolutePath.LastIndexOf('/');
+            return lastSlashIndex < 0
+                ? newFileName
+                : absolutePath[..(lastSlashIndex + 1)] + newFileName;
         }
 
         internal static async Task<EpgDiscoveryResult> FetchGuideSourcesAsync(
@@ -752,7 +815,7 @@ namespace Kroira.App.Services.Parsing
 
             static string locationForLog(string value)
             {
-                return string.IsNullOrWhiteSpace(value) ? "(empty)" : value;
+                return string.IsNullOrWhiteSpace(value) ? "(empty)" : EpgDiagnosticFormatter.RedactUrl(value);
             }
         }
 
@@ -820,12 +883,7 @@ namespace Kroira.App.Services.Parsing
 
         private static string FormatDiagnosticValue(string value)
         {
-            if (string.IsNullOrWhiteSpace(value))
-            {
-                return "\"\"";
-            }
-
-            return $"\"{value.Replace("\"", "'")}\"";
+            return EpgDiagnosticFormatter.Format(value);
         }
 
         internal sealed record EpgXmltvFetchResult(

@@ -174,13 +174,20 @@
                                 HorizontalAlignment="Right"
                                 VerticalAlignment="Center">
                         <CheckBox Content="Favorites"
-                                  IsChecked="{x:Bind ViewModel.FavoritesOnly, Mode=TwoWay}" />
+                                  IsChecked="{x:Bind ViewModel.FavoritesOnly, Mode=TwoWay}"
+                                  AutomationProperties.Name="Show favorite channels only" />
                         <CheckBox Content="Guide matched"
-                                  IsChecked="{x:Bind ViewModel.GuideMatchedOnly, Mode=TwoWay}" />
+                                  IsChecked="{x:Bind ViewModel.GuideMatchedOnly, Mode=TwoWay}"
+                                  AutomationProperties.Name="Show guide matched channels only" />
+                        <Button Content="Guide"
+                                Click="OpenGuide_Click"
+                                Style="{StaticResource LiveQuickOverlayButtonStyle}"
+                                AutomationProperties.Name="Open guide" />
                         <Button Content="Clear recent"
                                 Click="ClearRecentHistory_Click"
                                 Style="{StaticResource LiveQuickOverlayButtonStyle}"
-                                Visibility="{x:Bind ViewModel.ClearRecentHistoryVisibility, Mode=OneWay}" />
+                                Visibility="{x:Bind ViewModel.ClearRecentHistoryVisibility, Mode=OneWay}"
+                                AutomationProperties.Name="Clear recently watched channels" />
                     </StackPanel>
             </Grid>
         </Border>
@@ -281,26 +288,12 @@
                 </Grid>
 
                 <Grid Grid.Row="1">
-                    <StackPanel Visibility="{x:Bind ViewModel.IsEmpty, Mode=OneWay}"
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                Spacing="10"
-                                MaxWidth="460">
-                        <FontIcon Glyph="&#xE714;"
-                                  Foreground="{StaticResource KroiraTextTertiaryBrush}"
-                                  FontSize="28"
-                                  HorizontalAlignment="Center" />
-                        <TextBlock Text="{x:Bind ViewModel.EmptyStateTitle, Mode=OneWay}"
-                                   Foreground="{StaticResource KroiraTextPrimaryBrush}"
-                                   FontSize="20"
-                                   FontWeight="SemiBold"
-                                   HorizontalAlignment="Center" />
-                        <TextBlock Text="{x:Bind ViewModel.EmptyStateMessage, Mode=OneWay}"
-                                   Foreground="{StaticResource KroiraTextSecondaryBrush}"
-                                   FontSize="13"
-                                   TextWrapping="Wrap"
-                                   TextAlignment="Center" />
-                    </StackPanel>
+                    <controls:EmptyStateView IconGlyph="&#xE714;"
+                                             Title="{x:Bind ViewModel.EmptyStateTitle, Mode=OneWay}"
+                                             Message="{x:Bind ViewModel.EmptyStateMessage, Mode=OneWay}"
+                                             Visibility="{x:Bind ViewModel.IsEmpty, Mode=OneWay}"
+                                             HorizontalAlignment="Center"
+                                             VerticalAlignment="Center" />
 
                     <GridView x:Name="ChannelList"
                       ItemsSource="{x:Bind ViewModel.FilteredChannels, Mode=OneWay}"
@@ -417,15 +410,16 @@
                                         </Border>
                                     </Grid>
 
-                                    <TextBlock Grid.Row="1"
-                                               Text="{Binding Name}"
-                                               Foreground="{StaticResource KroiraTextPrimaryBrush}"
-                                               FontSize="12"
-                                               FontWeight="SemiBold"
-                                               MaxLines="1"
-                                               TextWrapping="Wrap"
-                                               VerticalAlignment="Top"
-                                               Margin="0,0,0,4" />
+                                     <TextBlock Grid.Row="1"
+                                                Text="{Binding Name}"
+                                                Foreground="{StaticResource KroiraTextPrimaryBrush}"
+                                                FontSize="12"
+                                                FontWeight="SemiBold"
+                                                MaxLines="1"
+                                                TextWrapping="Wrap"
+                                                TextTrimming="CharacterEllipsis"
+                                                VerticalAlignment="Top"
+                                                Margin="0,0,0,4" />
 
                                     <StackPanel Grid.Row="2"
                                                 Spacing="1">
@@ -435,12 +429,24 @@
                                                    MaxLines="1"
                                                    TextTrimming="CharacterEllipsis"
                                                    Visibility="{Binding CurrentProgramVisibility}" />
-                                        <TextBlock Text="{Binding GuideMetaText}"
+                                         <TextBlock Text="{Binding GuideMetaText}"
+                                                    Foreground="{StaticResource KroiraTextTertiaryBrush}"
+                                                     FontSize="9"
+                                                    MaxLines="1"
+                                                    TextTrimming="CharacterEllipsis"
+                                                    Visibility="{Binding GuideMetaVisibility}" />
+                                        <TextBlock Text="{Binding CurrentProgramDescription}"
                                                    Foreground="{StaticResource KroiraTextTertiaryBrush}"
-                                                    FontSize="9"
+                                                   FontSize="9"
                                                    MaxLines="1"
                                                    TextTrimming="CharacterEllipsis"
-                                                   Visibility="{Binding GuideMetaVisibility}" />
+                                                   Visibility="{Binding DescriptionVisibility}" />
+                                        <TextBlock Text="{Binding NextProgramCompactText}"
+                                                   Foreground="{StaticResource KroiraTextTertiaryBrush}"
+                                                   FontSize="9"
+                                                   MaxLines="1"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   Visibility="{Binding NextProgramVisibility}" />
                                         <TextBlock Text="{Binding CatchupBadgeText}"
                                                    Foreground="{StaticResource KroiraAccentBrush}"
                                                    FontSize="10"
@@ -522,38 +528,29 @@
         </Grid>
         </Grid>
 
-        <Border Visibility="{x:Bind ViewModel.SurfaceState.StateVisibility, Mode=OneWay}"
-                HorizontalAlignment="Center"
-                VerticalAlignment="Center"
-                MaxWidth="560"
-                Margin="32"
-                Background="#76070B12"
-                BorderBrush="{StaticResource KroiraGlassBorderBrush}"
-                BorderThickness="1"
-                CornerRadius="16"
-                Padding="28,24">
-            <StackPanel Spacing="12">
-                <Grid Width="32" Height="32">
-                    <ProgressRing IsActive="True"
-                                  Width="28"
-                                  Height="28"
-                                  Visibility="{x:Bind ViewModel.SurfaceState.ProgressVisibility, Mode=OneWay}" />
-                    <FontIcon Glyph="{x:Bind ViewModel.SurfaceState.Glyph, Mode=OneWay}"
-                              FontSize="28"
-                              Foreground="{StaticResource KroiraTextTertiaryBrush}"
-                              Visibility="{x:Bind ViewModel.SurfaceState.IconVisibility, Mode=OneWay}" />
-                </Grid>
-                <TextBlock Text="{x:Bind ViewModel.SurfaceState.Title, Mode=OneWay}"
-                           Style="{StaticResource KroiraSectionTitleStyle}" />
-                <TextBlock Text="{x:Bind ViewModel.SurfaceState.Message, Mode=OneWay}"
-                           Style="{StaticResource KroiraBodyStyle}"
-                           TextWrapping="Wrap" />
-                <Button Content="{x:Bind ViewModel.SurfaceState.ActionLabel, Mode=OneWay}"
-                        Click="OpenSources_Click"
-                        Visibility="{x:Bind ViewModel.SurfaceState.ActionVisibility, Mode=OneWay}"
-                        Style="{StaticResource KroiraPrimaryButtonStyle}"
-                        HorizontalAlignment="Left" />
-            </StackPanel>
-        </Border>
+        <Grid Visibility="{x:Bind ViewModel.SurfaceState.StateVisibility, Mode=OneWay}"
+              HorizontalAlignment="Center"
+              VerticalAlignment="Center"
+              Margin="32">
+            <controls:LoadingStateView Title="{x:Bind ViewModel.SurfaceState.Title, Mode=OneWay}"
+                                       Message="{x:Bind ViewModel.SurfaceState.Message, Mode=OneWay}"
+                                       Visibility="{x:Bind ViewModel.SurfaceState.LoadingStateVisibility, Mode=OneWay}" />
+            <controls:EmptyStateView IconGlyph="{x:Bind ViewModel.SurfaceState.Glyph, Mode=OneWay}"
+                                     Title="{x:Bind ViewModel.SurfaceState.Title, Mode=OneWay}"
+                                     Message="{x:Bind ViewModel.SurfaceState.Message, Mode=OneWay}"
+                                     PrimaryActionLabel="{x:Bind ViewModel.SurfaceState.ActionLabel, Mode=OneWay}"
+                                     PrimaryActionVisibility="{x:Bind ViewModel.SurfaceState.ActionVisibility, Mode=OneWay}"
+                                     Visibility="{x:Bind ViewModel.SurfaceState.EmptyStateVisibility, Mode=OneWay}"
+                                     PrimaryActionClick="OpenSources_Click" />
+            <controls:ErrorStateView IconGlyph="{x:Bind ViewModel.SurfaceState.Glyph, Mode=OneWay}"
+                                     Title="{x:Bind ViewModel.SurfaceState.Title, Mode=OneWay}"
+                                     Message="{x:Bind ViewModel.SurfaceState.Message, Mode=OneWay}"
+                                     RetryActionLabel="Retry"
+                                     DiagnosticsActionLabel="{x:Bind ViewModel.SurfaceState.ActionLabel, Mode=OneWay}"
+                                     DiagnosticsActionVisibility="{x:Bind ViewModel.SurfaceState.DiagnosticsActionVisibility, Mode=OneWay}"
+                                     Visibility="{x:Bind ViewModel.SurfaceState.ErrorStateVisibility, Mode=OneWay}"
+                                     RetryClick="RetrySurface_Click"
+                                     DiagnosticsClick="OpenSources_Click" />
+        </Grid>
     </Grid>
 </Page>

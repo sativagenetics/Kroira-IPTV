@@ -7,6 +7,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{87FDB234-33A
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kroira.App", "src\Kroira.App\Kroira.App.csproj", "{6C73FF35-71FA-48E1-901F-10408685B600}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{6F6F44FF-1689-408A-A2A3-F2AC2166039D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kroira.UnitTests", "tests\Kroira.UnitTests\Kroira.UnitTests.csproj", "{7BFAEB55-F019-4F6D-A706-BD25813F90DF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -25,11 +29,20 @@ Global
 		{6C73FF35-71FA-48E1-901F-10408685B600}.Release|x64.ActiveCfg = Release|x64
 		{6C73FF35-71FA-48E1-901F-10408685B600}.Release|x64.Build.0 = Release|x64
 		{6C73FF35-71FA-48E1-901F-10408685B600}.Release|x64.Deploy.0 = Release|x64
+		{7BFAEB55-F019-4F6D-A706-BD25813F90DF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7BFAEB55-F019-4F6D-A706-BD25813F90DF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7BFAEB55-F019-4F6D-A706-BD25813F90DF}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{7BFAEB55-F019-4F6D-A706-BD25813F90DF}.Debug|x64.Build.0 = Debug|Any CPU
+		{7BFAEB55-F019-4F6D-A706-BD25813F90DF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7BFAEB55-F019-4F6D-A706-BD25813F90DF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7BFAEB55-F019-4F6D-A706-BD25813F90DF}.Release|x64.ActiveCfg = Release|Any CPU
+		{7BFAEB55-F019-4F6D-A706-BD25813F90DF}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{6C73FF35-71FA-48E1-901F-10408685B600} = {87FDB234-33AB-4DF0-B9DF-EF79FFBA8A18}
+		{7BFAEB55-F019-4F6D-A706-BD25813F90DF} = {6F6F44FF-1689-408A-A2A3-F2AC2166039D}
 	EndGlobalSection
 EndGlobal

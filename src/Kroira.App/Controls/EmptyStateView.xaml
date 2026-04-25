@@ -1,0 +1,53 @@
+<UserControl
+    x:Class="Kroira.App.Controls.EmptyStateView"
+    x:Name="Root"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Border Style="{StaticResource KroiraEmptyStateSurfaceStyle}"
+            MaxWidth="620"
+            AutomationProperties.Name="{Binding Title, ElementName=Root}">
+        <Grid ColumnSpacing="16">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <Grid Width="44"
+                  Height="44"
+                  VerticalAlignment="Top">
+                <Ellipse Fill="{StaticResource KroiraStateNeutralSoftBrush}" />
+                <FontIcon Glyph="{Binding IconGlyph, ElementName=Root}"
+                          FontSize="22"
+                          Foreground="{StaticResource KroiraAccentBrush}" />
+            </Grid>
+
+            <StackPanel Grid.Column="1"
+                        Spacing="9">
+                <StackPanel Spacing="5">
+                    <TextBlock Text="{Binding Title, ElementName=Root}"
+                               Style="{StaticResource KroiraSectionTitleStyle}"
+                               TextWrapping="WrapWholeWords" />
+                    <TextBlock Text="{Binding Message, ElementName=Root}"
+                               Style="{StaticResource KroiraBodyStyle}"
+                               Foreground="{StaticResource KroiraTextSecondaryBrush}"
+                               TextWrapping="WrapWholeWords" />
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal"
+                            Spacing="10">
+                    <Button Content="{Binding PrimaryActionLabel, ElementName=Root}"
+                            Style="{StaticResource KroiraPrimaryButtonStyle}"
+                            Visibility="{Binding PrimaryActionVisibility, ElementName=Root}"
+                            AutomationProperties.Name="{Binding PrimaryActionLabel, ElementName=Root}"
+                            Click="PrimaryActionButton_Click" />
+                    <Button Content="{Binding SecondaryActionLabel, ElementName=Root}"
+                            Style="{StaticResource KroiraGhostButtonStyle}"
+                            Visibility="{Binding SecondaryActionVisibility, ElementName=Root}"
+                            AutomationProperties.Name="{Binding SecondaryActionLabel, ElementName=Root}"
+                            Click="SecondaryActionButton_Click" />
+                </StackPanel>
+            </StackPanel>
+        </Grid>
+    </Border>
+</UserControl>

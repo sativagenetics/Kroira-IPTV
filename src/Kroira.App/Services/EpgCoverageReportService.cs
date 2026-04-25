@@ -17,6 +17,8 @@ namespace Kroira.App.Services
 
     public sealed class EpgCoverageReportService : IEpgCoverageReportService
     {
+        private static readonly ISensitiveDataRedactionService Redactor = new SensitiveDataRedactionService();
+
         public async Task<EpgCoverageReport> BuildReportAsync(AppDbContext db)
         {
             var sources = await db.SourceProfiles.AsNoTracking()
@@ -120,12 +122,12 @@ namespace Kroira.App.Services
                     XmltvChannelCount = log?.XmltvChannelCount ?? 0,
                     LastSyncAttemptUtc = log?.SyncedAtUtc == default ? null : log?.SyncedAtUtc,
                     LastSuccessUtc = log?.LastSuccessAtUtc,
-                    ActiveXmltvUrl = log?.ActiveXmltvUrl ?? string.Empty,
-                    DetectedEpgUrl = credential?.DetectedEpgUrl ?? string.Empty,
-                    ManualEpgUrl = credential?.ManualEpgUrl ?? string.Empty,
-                    FallbackEpgUrls = credential?.FallbackEpgUrls ?? string.Empty,
-                    FailureReason = log?.FailureReason ?? string.Empty,
-                    WarningSummary = log?.GuideWarningSummary ?? string.Empty,
+                    ActiveXmltvUrl = RedactGuideText(log?.ActiveXmltvUrl),
+                    DetectedEpgUrl = RedactGuideText(credential?.DetectedEpgUrl),
+                    ManualEpgUrl = RedactGuideText(credential?.ManualEpgUrl),
+                    FallbackEpgUrls = RedactGuideText(credential?.FallbackEpgUrls),
+                    FailureReason = RedactGuideText(log?.FailureReason),
+                    WarningSummary = RedactGuideText(log?.GuideWarningSummary),
                     GuideSources = ParseGuideSources(log, credential),
                     CanSync = credential != null && credential.EpgMode != EpgActiveMode.None
                 });
@@ -315,9 +317,7 @@ namespace Kroira.App.Services
                     var parsed = JsonSerializer.Deserialize<List<EpgGuideSourceStatusSnapshot>>(log.GuideSourceStatusJson);
                     return parsed is null
                         ? Array.Empty<EpgGuideSourceStatusSnapshot>()
-                        : parsed
-                            .OrderBy(source => source.Priority)
-                            .ToList();
+                        : SanitizeGuideSources(parsed.OrderBy(source => source.Priority));
                 }
                 catch
                 {
@@ -330,10 +330,10 @@ namespace Kroira.App.Services
                 snapshots.Add(new EpgGuideSourceStatusSnapshot
                 {
                     Label = "Active XMLTV",
-                    Url = log.ActiveXmltvUrl,
+                    Url = RedactGuideUrl(log.ActiveXmltvUrl),
                     Kind = credential?.EpgMode == EpgActiveMode.Manual ? EpgGuideSourceKind.Manual : EpgGuideSourceKind.Provider,
                     Status = log.IsSuccess ? EpgGuideSourceStatus.Ready : EpgGuideSourceStatus.Failed,
-                    Message = string.IsNullOrWhiteSpace(log.FailureReason) ? log.Status.ToString() : log.FailureReason,
+                    Message = RedactGuideText(string.IsNullOrWhiteSpace(log.FailureReason) ? log.Status.ToString() : log.FailureReason),
                     CheckedAtUtc = log.SyncedAtUtc == default ? null : log.SyncedAtUtc
                 });
             }
@@ -344,7 +344,7 @@ namespace Kroira.App.Services
                 snapshots.Add(new EpgGuideSourceStatusSnapshot
                 {
                     Label = EpgPublicGuideCatalog.BuildGuideSourceLabel(url, kind, "Fallback XMLTV"),
-                    Url = url,
+                    Url = RedactGuideUrl(url),
                     Kind = kind,
                     Status = EpgGuideSourceStatus.Pending,
                     IsOptional = true,
@@ -353,6 +353,39 @@ namespace Kroira.App.Services
             }
 
             return snapshots;
+        }
+
+        private static IReadOnlyList<EpgGuideSourceStatusSnapshot> SanitizeGuideSources(IEnumerable<EpgGuideSourceStatusSnapshot> sources)
+        {
+            return sources
+                .Select(source => new EpgGuideSourceStatusSnapshot
+                {
+                    Label = source.Label,
+                    Url = RedactGuideUrl(source.Url),
+                    Kind = source.Kind,
+                    Status = source.Status,
+                    IsOptional = source.IsOptional,
+                    Priority = source.Priority,
+                    XmltvChannelCount = source.XmltvChannelCount,
+                    ProgrammeCount = source.ProgrammeCount,
+                    Message = RedactGuideText(source.Message),
+                    CheckedAtUtc = source.CheckedAtUtc,
+                    FetchDurationMs = source.FetchDurationMs,
+                    WasCacheHit = source.WasCacheHit,
+                    WasContentUnchanged = source.WasContentUnchanged,
+                    ContentHash = source.ContentHash
+                })
+                .ToList();
+        }
+
+        private static string RedactGuideUrl(string? value)
+        {
+            return Redactor.RedactUrl(value);
+        }
+
+        private static string RedactGuideText(string? value)
+        {
+            return Redactor.RedactLooseText(value);
         }
 
         private static IEnumerable<string> SplitGuideUrls(string? value)

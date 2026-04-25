@@ -63,7 +63,8 @@ namespace Kroira.App.Models
         DisableCompanionRelay = 2,
         RepairRuntimeState = 3,
         RefreshPortalProfile = 4,
-        ReviewGuideSettings = 5
+        ReviewGuideSettings = 5,
+        RunStreamProbe = 6
     }
 
     public enum SourceRepairActionKind

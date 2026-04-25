@@ -944,7 +944,7 @@ namespace Kroira.App.Services
         {
             return healthLabel switch
             {
-                "Healthy" or "Ready" => SourceActivityTone.Healthy,
+                "Healthy" or "Good" or "Ready" => SourceActivityTone.Healthy,
                 "Weak" or "Incomplete" or "Outdated" or "Attention" or "Degraded" => SourceActivityTone.Warning,
                 "Working" => SourceActivityTone.Syncing,
                 "Failing" or "Problematic" => SourceActivityTone.Failed,

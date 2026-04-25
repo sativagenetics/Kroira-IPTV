@@ -294,6 +294,13 @@ namespace Kroira.App.Services
                             break;
                         }
 
+                    case SourceRepairActionType.RunStreamProbe:
+                        {
+                            await sourceHealthService.RefreshSourceHealthAsync(db, sourceId, forceProbe: true);
+                            detailBuilder.Add("A bounded sampled stream probe was run for this source.");
+                            break;
+                        }
+
                     default:
                         throw new InvalidOperationException("This repair action is not applied directly from the assistant.");
                 }
@@ -819,7 +826,7 @@ namespace Kroira.App.Services
                     Detail = string.IsNullOrWhiteSpace(activity.CurrentStateText)
                         ? SanitizeText(diagnostics.StatusSummary)
                         : SanitizeText(activity.CurrentStateText),
-                    Tone = diagnostics.HealthLabel.Equals("Healthy", StringComparison.OrdinalIgnoreCase)
+                    Tone = IsHealthyOrGood(diagnostics.HealthLabel)
                         ? SourceActivityTone.Healthy
                         : SourceActivityTone.Neutral
                 });
@@ -915,6 +922,20 @@ namespace Kroira.App.Services
                     ButtonText = profile.Type == SourceType.Stalker ? "Retest portal" : "Retest source",
                     IsPrimary = actions.Count == 0,
                     Tone = setupProblem ? SourceActivityTone.Warning : SourceActivityTone.Neutral
+                });
+            }
+
+            if (diagnostics.LiveChannelCount + diagnostics.MovieCount > 0 || diagnostics.EpisodeCount > 0)
+            {
+                actions.Add(new SourceRepairAction
+                {
+                    ActionType = SourceRepairActionType.RunStreamProbe,
+                    Kind = SourceRepairActionKind.Apply,
+                    Title = "Run bounded stream probe",
+                    Summary = "Probe a small sampled set with per-request timeout instead of hammering the provider.",
+                    ButtonText = "Run probe",
+                    IsPrimary = actions.Count == 0,
+                    Tone = SourceActivityTone.Neutral
                 });
             }
 
@@ -1493,6 +1514,13 @@ namespace Kroira.App.Services
                     .Where(item => !string.IsNullOrWhiteSpace(item.Value))
                     .Take(4)
                     .Select(item => $"{item.Label}: {item.Value}"));
+        }
+
+        private static bool IsHealthyOrGood(string? healthLabel)
+        {
+            return healthLabel != null &&
+                   (healthLabel.Equals("Healthy", StringComparison.OrdinalIgnoreCase) ||
+                    healthLabel.Equals("Good", StringComparison.OrdinalIgnoreCase));
         }
 
         private string BuildSetupSafeReport(SourceSetupValidationSnapshot snapshot)

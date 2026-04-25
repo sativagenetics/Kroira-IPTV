@@ -30,6 +30,11 @@ namespace Kroira.App.Views
             Frame.Navigate(typeof(SourceListPage));
         }
 
+        private void RetrySurface_Click(object sender, RoutedEventArgs e)
+        {
+            ViewModel.LoadFavoritesCommand.Execute(null);
+        }
+
         private void ChannelList_ItemClick(object sender, ItemClickEventArgs e)
         {
             if (e.ClickedItem is BrowserChannelViewModel channel)
@@ -140,8 +145,11 @@ namespace Kroira.App.Views
             {
                 this.Frame.Navigate(typeof(EmbeddedPlaybackPage), new Kroira.App.Models.PlaybackLaunchContext
                 {
+                    ProfileId = ViewModel.ActiveProfileId,
                     ContentId = episode.Id,
                     ContentType = Kroira.App.Models.PlaybackContentType.Episode,
+                    PreferredSourceProfileId = ViewModel.SelectedSeries?.PreferredSourceProfileId ?? 0,
+                    CatalogStreamUrl = episode.StreamUrl,
                     StreamUrl = episode.StreamUrl,
                     StartPositionMs = 0
                 });
@@ -191,9 +199,14 @@ namespace Kroira.App.Views
 
             Frame.Navigate(typeof(EmbeddedPlaybackPage), new Kroira.App.Models.PlaybackLaunchContext
             {
+                ProfileId = ViewModel.ActiveProfileId,
                 ContentId = channel.Id,
                 ContentType = Kroira.App.Models.PlaybackContentType.Channel,
+                LogicalContentKey = channel.LogicalContentKey,
+                PreferredSourceProfileId = channel.PreferredSourceProfileId,
+                CatalogStreamUrl = channel.StreamUrl,
                 StreamUrl = channel.StreamUrl,
+                LiveStreamUrl = channel.StreamUrl,
                 StartPositionMs = 0
             });
         }
@@ -207,8 +220,12 @@ namespace Kroira.App.Views
 
             Frame.Navigate(typeof(EmbeddedPlaybackPage), new Kroira.App.Models.PlaybackLaunchContext
             {
+                ProfileId = ViewModel.ActiveProfileId,
                 ContentId = movie.Id,
                 ContentType = Kroira.App.Models.PlaybackContentType.Movie,
+                LogicalContentKey = movie.LogicalContentKey,
+                PreferredSourceProfileId = movie.PreferredSourceProfileId,
+                CatalogStreamUrl = movie.StreamUrl,
                 StreamUrl = movie.StreamUrl,
                 StartPositionMs = 0
             });

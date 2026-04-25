@@ -24,28 +24,28 @@ namespace Kroira.App.Views
     {
         public object Convert(object value, Type targetType, object parameter, string language)
             => value == null ? Visibility.Collapsed : Visibility.Visible;
-        public object ConvertBack(object value, Type targetType, object parameter, string language) => throw new NotImplementedException();
+        public object ConvertBack(object value, Type targetType, object parameter, string language) => DependencyProperty.UnsetValue;
     }
 
     public sealed class NullToVisibleConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, string language)
             => value == null ? Visibility.Visible : Visibility.Collapsed;
-        public object ConvertBack(object value, Type targetType, object parameter, string language) => throw new NotImplementedException();
+        public object ConvertBack(object value, Type targetType, object parameter, string language) => DependencyProperty.UnsetValue;
     }
 
     public sealed class SeasonPrefixConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, string language)
             => $"Season {value}";
-        public object ConvertBack(object value, Type targetType, object parameter, string language) => throw new NotImplementedException();
+        public object ConvertBack(object value, Type targetType, object parameter, string language) => DependencyProperty.UnsetValue;
     }
 
     public sealed class EpisodePrefixConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, string language)
             => $"Episode {value}";
-        public object ConvertBack(object value, Type targetType, object parameter, string language) => throw new NotImplementedException();
+        public object ConvertBack(object value, Type targetType, object parameter, string language) => DependencyProperty.UnsetValue;
     }
 
     public sealed partial class SeriesPage : Page, IRemoteNavigationPage
@@ -96,6 +96,11 @@ namespace Kroira.App.Views
         private void OpenSources_Click(object sender, RoutedEventArgs e)
         {
             Frame.Navigate(typeof(SourceListPage));
+        }
+
+        private void RetrySurface_Click(object sender, RoutedEventArgs e)
+        {
+            _ = ViewModel.LoadSeriesCommand.ExecuteAsync(null);
         }
 
         private void SeriesPage_Loaded(object sender, RoutedEventArgs e)

@@ -32,6 +32,11 @@ namespace Kroira.App.Views
             this.Frame.Navigate(typeof(SourceOnboardingPage));
         }
 
+        private void OpenEpgCenter_Click(object sender, RoutedEventArgs e)
+        {
+            this.Frame.Navigate(typeof(EpgCenterPage));
+        }
+
         private void DeleteSource_Click(object sender, RoutedEventArgs e)
         {
             if (sender is FrameworkElement { Tag: int id })
@@ -96,6 +101,45 @@ namespace Kroira.App.Views
             await CopyTextAsync(report, "Activity report unavailable");
         }
 
+        private async void DiagnosticsAction_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not FrameworkElement { Tag: SourceRecommendedActionItemViewModel action })
+            {
+                return;
+            }
+
+            switch (action.ActionType)
+            {
+                case SourceRecommendedActionType.ResyncSource:
+                    SyncSourceById(action.SourceId);
+                    break;
+
+                case SourceRecommendedActionType.ConfigureEpg:
+                    await OpenGuideSettingsAsync(action.SourceId);
+                    break;
+
+                case SourceRecommendedActionType.OpenManualEpgMatch:
+                    this.Frame.Navigate(typeof(EpgCenterPage));
+                    break;
+
+                case SourceRecommendedActionType.RefreshMetadata:
+                    RefreshMetadataById(action.SourceId);
+                    break;
+
+                case SourceRecommendedActionType.RunStreamProbe:
+                    await RunStreamProbeAsync(action.SourceId);
+                    break;
+
+                case SourceRecommendedActionType.ExportDiagnostics:
+                    await CopyDiagnosticsReportAsync(action.SourceId);
+                    break;
+
+                case SourceRecommendedActionType.RemoveSource:
+                    ViewModel.DeleteSourceCommand.Execute(action.SourceId);
+                    break;
+            }
+        }
+
         private async void CopyRepairReport_Click(object sender, RoutedEventArgs e)
         {
             if (sender is not FrameworkElement { Tag: int id })
@@ -111,6 +155,69 @@ namespace Kroira.App.Views
             }
 
             await CopyTextAsync(report, "Repair report unavailable");
+        }
+
+        private async Task CopyDiagnosticsReportAsync(int id)
+        {
+            var report = ViewModel.GetSafeDiagnosticsReport(id);
+            if (string.IsNullOrWhiteSpace(report))
+            {
+                await ShowMessageAsync("Diagnostics report unavailable", "This source does not have a share-safe diagnostics summary yet.");
+                return;
+            }
+
+            await CopyTextAsync(report, "Diagnostics report unavailable");
+        }
+
+        private void SyncSourceById(int id)
+        {
+            var source = ViewModel.Sources.FirstOrDefault(item => item.Id == id);
+            if (source == null)
+            {
+                return;
+            }
+
+            if (string.Equals(source.Type, SourceType.Xtream.ToString(), StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(source.Type, SourceType.Stalker.ToString(), StringComparison.OrdinalIgnoreCase))
+            {
+                ViewModel.SyncXtreamCommand.Execute(id);
+                return;
+            }
+
+            ViewModel.ParseSourceCommand.Execute(id);
+        }
+
+        private void RefreshMetadataById(int id)
+        {
+            var source = ViewModel.Sources.FirstOrDefault(item => item.Id == id);
+            if (source != null && source.CanRunXtreamVodOnly)
+            {
+                ViewModel.SyncXtreamVodCommand.Execute(id);
+                return;
+            }
+
+            SyncSourceById(id);
+        }
+
+        private async Task RunStreamProbeAsync(int id)
+        {
+            try
+            {
+                var result = await ViewModel.ApplyRepairActionAsync(id, SourceRepairActionType.RunStreamProbe);
+                if (result == null)
+                {
+                    return;
+                }
+
+                var detail = string.IsNullOrWhiteSpace(result.ChangeText)
+                    ? result.DetailText
+                    : $"{result.DetailText}{Environment.NewLine}{Environment.NewLine}{result.ChangeText}".Trim();
+                await ShowMessageAsync(result.HeadlineText, detail);
+            }
+            catch (Exception ex)
+            {
+                await ShowMessageAsync("Stream probe failed", ex.Message);
+            }
         }
 
         private void SyncEpgSource_Click(object sender, RoutedEventArgs e)

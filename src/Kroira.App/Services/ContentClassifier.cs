@@ -31,6 +31,11 @@ namespace Kroira.App.Services
             "ts", "m3u8", "m3u", "php", "txt", "html", "htm"
         };
 
+        private static readonly HashSet<string> RadioExtensions = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "mp3", "aac", "ogg", "opus", "pls"
+        };
+
         // ── M3U bucket / adult / trash blocklist ──────────────────────────
         //
         // Any group-title or item title that matches one of the patterns below
@@ -594,13 +599,19 @@ namespace Kroira.App.Services
         //     "Capítulo N", "Odcinek N").
         //   • Missing all signals → Live (default for live-looking streams).
 
-        public enum M3uEntryType { Live, Movie, Episode }
+        public enum M3uEntryType { Live, Movie, Episode, Radio, Unknown }
 
         public static M3uEntryType ClassifyM3uEntry(string name, string streamUrl, string groupName, string tvgType)
         {
             var lowerUrl = (streamUrl ?? string.Empty).Trim().ToLowerInvariant();
             var lowerGroup = (groupName ?? string.Empty).Trim().ToLowerInvariant();
-            var titleHasEpisode = HasEpisodePattern(name);
+            var lowerName = (name ?? string.Empty).Trim().ToLowerInvariant();
+            var titleHasEpisode = HasEpisodePattern(name ?? string.Empty);
+
+            if (string.IsNullOrWhiteSpace(lowerUrl))
+            {
+                return M3uEntryType.Unknown;
+            }
 
             // 1) tvg-type explicit wins, but "series"/"episode" requires a real
             //    episode marker in the title. Otherwise demote to Movie.
@@ -608,12 +619,21 @@ namespace Kroira.App.Services
             {
                 var t = tvgType.Trim().ToLowerInvariant();
                 if (t == "movie") return M3uEntryType.Movie;
+                if (t == "radio" || t == "audio") return M3uEntryType.Radio;
                 if (t == "live") return M3uEntryType.Live;
                 if (t == "series" || t == "episode")
                     return titleHasEpisode ? M3uEntryType.Episode : M3uEntryType.Movie;
             }
 
             // 2) URL path hints.
+            if (lowerUrl.Contains("/radio/") ||
+                lowerGroup.Contains("radio") ||
+                lowerName.StartsWith("radio ") ||
+                lowerName.Contains(" radio"))
+            {
+                return M3uEntryType.Radio;
+            }
+
             if (lowerUrl.Contains("/live/")) return M3uEntryType.Live;
 
             if (lowerUrl.Contains("/series/"))
@@ -624,6 +644,9 @@ namespace Kroira.App.Services
 
             // 3) File extension implies VOD-like content.
             var ext = GetUrlExtension(lowerUrl);
+            if (!string.IsNullOrEmpty(ext) && RadioExtensions.Contains(ext))
+                return M3uEntryType.Radio;
+
             if (!string.IsNullOrEmpty(ext) && MovieExtensions.Contains(ext))
                 return titleHasEpisode ? M3uEntryType.Episode : M3uEntryType.Movie;
 

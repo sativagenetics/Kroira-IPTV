@@ -11,7 +11,9 @@ namespace Kroira.App.Models
         Weak = 2,
         Incomplete = 3,
         Outdated = 4,
-        Problematic = 5
+        Problematic = 5,
+        Good = 6,
+        Unknown = 7
     }
 
     public enum SourceHealthIssueSeverity
@@ -53,6 +55,36 @@ namespace Kroira.App.Models
         NotRun = 0,
         Completed = 1,
         Skipped = 2
+    }
+
+    public enum SourceRecommendedActionType
+    {
+        ResyncSource = 0,
+        ConfigureEpg = 1,
+        OpenManualEpgMatch = 2,
+        RefreshMetadata = 3,
+        RunStreamProbe = 4,
+        ExportDiagnostics = 5,
+        RemoveSource = 6
+    }
+
+    public sealed class SourceDiagnosticsMetricSnapshot
+    {
+        public string Label { get; set; } = string.Empty;
+        public string Value { get; set; } = string.Empty;
+        public string Detail { get; set; } = string.Empty;
+        public SourceActivityTone Tone { get; set; } = SourceActivityTone.Neutral;
+    }
+
+    public sealed class SourceRecommendedActionSnapshot
+    {
+        public SourceRecommendedActionType ActionType { get; set; }
+        public string Title { get; set; } = string.Empty;
+        public string Summary { get; set; } = string.Empty;
+        public string ButtonText { get; set; } = string.Empty;
+        public SourceActivityTone Tone { get; set; } = SourceActivityTone.Neutral;
+        public bool IsPrimary { get; set; }
+        public int SortOrder { get; set; }
     }
 
     public class SourceHealthReport
@@ -169,6 +201,18 @@ namespace Kroira.App.Models
             SourceHealthComponentState.Outdated => "Outdated",
             SourceHealthComponentState.Problematic => "Problematic",
             SourceHealthComponentState.NotApplicable => "Not applicable",
+            _ => "Not synced"
+        };
+
+        public static string GetHealthStateLabel(SourceHealthState state) => state switch
+        {
+            SourceHealthState.Healthy => "Healthy",
+            SourceHealthState.Good => "Good",
+            SourceHealthState.Weak => "Weak",
+            SourceHealthState.Incomplete => "Incomplete",
+            SourceHealthState.Outdated => "Outdated",
+            SourceHealthState.Problematic => "Problematic",
+            SourceHealthState.Unknown => "Unknown",
             _ => "Not synced"
         };
 

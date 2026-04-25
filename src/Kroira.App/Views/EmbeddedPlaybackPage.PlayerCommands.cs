@@ -12,14 +12,12 @@ using Kroira.App.Services.Playback;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI;
-using Microsoft.UI.Input;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Windows.System;
-using Windows.UI.Core;
 
 namespace Kroira.App.Views
 {
@@ -118,6 +116,7 @@ namespace Kroira.App.Views
 
             if (isOpen)
             {
+                SyncOverlayMenuState("tools_open");
                 BuildToolsFlyout();
                 UpdateToolsPanelVisibility();
                 SuppressSurfaceClicks();
@@ -148,6 +147,7 @@ namespace Kroira.App.Views
             _toolsMenuFlyout?.Hide();
             _toolsMenuFlyout = null;
             SetMenuSurfaceInputShield(AreFlyoutMenusOpen, "tools_closed");
+            SyncOverlayMenuState("tools_closed");
             RestorePlayerKeyboardFocus(force: true);
             ResumeOverlayAutoHide("tools_closed");
         }
@@ -172,6 +172,7 @@ namespace Kroira.App.Views
 
             RefreshToolToggleStates();
             UpdateToolsPanelVisibility();
+            SyncOverlayMenuState("tools_flyout_closed");
         }
 
         private MenuFlyout CreateToolsMenuFlyout()
@@ -1184,37 +1185,6 @@ namespace Kroira.App.Views
             return false;
         }
 
-        private bool ShouldSuppressGlobalHotkeys(KeyRoutedEventArgs e)
-        {
-            if (IsMenuOpen && e.Key != VirtualKey.Escape)
-            {
-                return true;
-            }
-
-            return e.Key != VirtualKey.Escape && IsTextInputFocused();
-        }
-
-        private bool ShouldReserveFocusedControlKeys()
-        {
-            var current = GetFocusedElement();
-            while (current != null)
-            {
-                if (ReferenceEquals(current, RootGrid))
-                {
-                    return false;
-                }
-
-                if (current is ButtonBase or HyperlinkButton or ToggleSwitch or CheckBox or ComboBox or ComboBoxItem or Slider or ListViewItem or GridViewItem)
-                {
-                    return true;
-                }
-
-                current = VisualTreeHelper.GetParent(current);
-            }
-
-            return false;
-        }
-
         private bool CloseTopmostOverlayFlyout()
         {
             if (_pendingUtilityFlyout != null && _activeUtilityFlyout == null)
@@ -1263,21 +1233,16 @@ namespace Kroira.App.Views
                 return true;
             }
 
-            if (_isOverlayVisible)
-            {
-                _overlayHiddenByInactivity = true;
-                HideControls();
-                return true;
-            }
-
             if (_windowManager?.IsFullscreen == true)
             {
                 _windowManager.ExitFullscreen();
+                _overlayController.SetFullscreen(false);
                 ShowControls(cause: "fullscreen_exit");
                 return true;
             }
 
-            return false;
+            NavigateBack();
+            return true;
         }
 
         private void OpenTracksFlyout()
@@ -1316,99 +1281,57 @@ namespace Kroira.App.Views
 
         private bool HandleEnhancedKeyDown(KeyRoutedEventArgs e)
         {
-            if (ShouldSuppressGlobalHotkeys(e))
+            var key = MapPlayerV2Key(e.Key);
+            if (key == PlayerV2Key.Other)
             {
                 return false;
             }
 
-            var shiftDown = InputKeyboardSource.GetKeyStateForCurrentThread(VirtualKey.Shift).HasFlag(CoreVirtualKeyStates.Down);
-            var context = new PlaybackRemoteContext
+            var command = PlayerV2HotkeyRouter.Resolve(key, new PlayerV2HotkeyContext
             {
-                IsTextInputFocused = IsTextInputFocused(),
+                IsEditableControlFocused = IsTextInputFocused(),
                 IsMenuOpen = IsMenuOpen,
-                ReserveFocusedControlKeys = ShouldReserveFocusedControlKeys(),
-                IsPictureInPicture = IsPictureInPictureMode(),
-                IsLivePlayback = IsLivePlayback(),
-                IsChannelPlayback = IsChannelPlayback(),
-                CanSeek = IsTimelineSeekAllowed(),
-                HasLastChannel = _lastChannelCandidateId > 0,
-                CanRestartOrStartOver = IsTimelineSeekAllowed() || (IsChannelPlayback() && _guideProgramItems.Any(item => item.IsCurrent && item.RequestKind != CatchupRequestKind.None)),
-                CanGoLive = IsChannelPlayback()
-            };
-
-            var command = PlaybackRemoteCommandMap.Resolve(e.Key, shiftDown, context);
-            if (command == PlaybackRemoteCommand.None)
+                IsPanelOpen = AreTransientPanelsOpen,
+                IsFullscreen = IsFullscreenPlaybackActive(),
+                IsSeekableVod = IsSeekableVodPlayback()
+            });
+            if (command == PlayerV2HotkeyCommand.None)
             {
                 return false;
             }
+
+            _overlayController.NotifyKeyboardInteraction();
+            _overlayHiddenByInactivity = false;
 
             switch (command)
             {
-                case PlaybackRemoteCommand.TogglePlayPause:
+                case PlayerV2HotkeyCommand.TogglePlayPause:
                     TogglePlayPauseOrLive();
                     break;
-                case PlaybackRemoteCommand.SeekBackward10:
+                case PlayerV2HotkeyCommand.SeekBackward:
                     TrySeekRelativeSeconds(-10);
                     break;
-                case PlaybackRemoteCommand.SeekBackward30:
-                    TrySeekRelativeSeconds(-30);
-                    break;
-                case PlaybackRemoteCommand.SeekForward10:
+                case PlayerV2HotkeyCommand.SeekForward:
                     TrySeekRelativeSeconds(10);
                     break;
-                case PlaybackRemoteCommand.SeekForward30:
-                    TrySeekRelativeSeconds(30);
-                    break;
-                case PlaybackRemoteCommand.VolumeUp:
+                case PlayerV2HotkeyCommand.VolumeUp:
                     AdjustVolume(5);
                     break;
-                case PlaybackRemoteCommand.VolumeDown:
+                case PlayerV2HotkeyCommand.VolumeDown:
                     AdjustVolume(-5);
                     break;
-                case PlaybackRemoteCommand.PreviousChannel:
-                    _ = SwitchRelativeChannelAsync(-1);
-                    break;
-                case PlaybackRemoteCommand.NextChannel:
-                    _ = SwitchRelativeChannelAsync(1);
-                    break;
-                case PlaybackRemoteCommand.LastChannel:
-                    _ = SwitchToChannelAsync(_lastChannelCandidateId, "last_hotkey");
-                    break;
-                case PlaybackRemoteCommand.ToggleFullscreen:
+                case PlayerV2HotkeyCommand.ToggleFullscreen:
                     RequestFullscreenToggle("hotkey");
                     break;
-                case PlaybackRemoteCommand.ToggleMute:
+                case PlayerV2HotkeyCommand.ToggleMute:
                     Mute_Click(this, new RoutedEventArgs());
                     break;
-                case PlaybackRemoteCommand.ToggleSubtitles:
-                    ToggleSubtitleSelection();
-                    break;
-                case PlaybackRemoteCommand.OpenTrackSelection:
-                    OpenTracksFlyout();
-                    break;
-                case PlaybackRemoteCommand.ToggleInfoPanel:
+                case PlayerV2HotkeyCommand.ToggleInfoPanel:
                     TogglePanel(nameof(InfoPanel));
                     break;
-                case PlaybackRemoteCommand.ToggleGuidePanel:
-                    TogglePanel(nameof(MiniGuidePanel));
-                    break;
-                case PlaybackRemoteCommand.RestartOrStartOver:
-                    _ = TryRestartOrStartOverAsync();
-                    break;
-                case PlaybackRemoteCommand.GoLive:
-                    if (IsCatchupPlayback())
-                    {
-                        _ = ReturnToLivePlaybackAsync("hotkey");
-                    }
-                    else
-                    {
-                        GoToLiveEdge("hotkey");
-                    }
-                    break;
-                case PlaybackRemoteCommand.StopPlayback:
-                    Stop_Click(this, new RoutedEventArgs());
-                    break;
-                case PlaybackRemoteCommand.CloseContext:
+                case PlayerV2HotkeyCommand.CloseMenuOrPanel:
+                case PlayerV2HotkeyCommand.ExitFullscreen:
+                case PlayerV2HotkeyCommand.NavigateBack:
                     if (!HandleEscapeHotkey())
                     {
                         return false;
@@ -1423,6 +1346,33 @@ namespace Kroira.App.Views
             UpdatePlaybackHint();
             e.Handled = true;
             return true;
+        }
+
+        private bool AreTransientPanelsOpen =>
+            _guidePanelOpen || _channelPanelOpen || _episodePanelOpen || _infoPanelOpen;
+
+        private bool IsSeekableVodPlayback()
+        {
+            return _context?.ContentType is PlaybackContentType.Movie or PlaybackContentType.Episode &&
+                   IsTimelineSeekAllowed();
+        }
+
+        private static PlayerV2Key MapPlayerV2Key(VirtualKey key)
+        {
+            return key switch
+            {
+                VirtualKey.Space => PlayerV2Key.Space,
+                VirtualKey.K => PlayerV2Key.K,
+                VirtualKey.F => PlayerV2Key.F,
+                VirtualKey.M => PlayerV2Key.M,
+                VirtualKey.I => PlayerV2Key.I,
+                VirtualKey.Escape => PlayerV2Key.Escape,
+                VirtualKey.Left => PlayerV2Key.Left,
+                VirtualKey.Right => PlayerV2Key.Right,
+                VirtualKey.Up => PlayerV2Key.Up,
+                VirtualKey.Down => PlayerV2Key.Down,
+                _ => PlayerV2Key.Other
+            };
         }
 
         private async Task TryRestartOrStartOverAsync()

@@ -84,6 +84,10 @@ namespace Kroira.App.ViewModels
             nameof(ActivityTimelineVisibility),
             nameof(ActivityQuietStateVisibility),
             nameof(HasSafeActivityReport),
+            nameof(DiagnosticsMetricsVisibility),
+            nameof(RecommendedActionsVisibility),
+            nameof(FailureReasonVisibility),
+            nameof(HasSafeDiagnosticsReport),
             nameof(RepairHeadlineVisibility),
             nameof(RepairSummaryVisibility),
             nameof(RepairStatusVisibility),
@@ -116,14 +120,29 @@ namespace Kroira.App.ViewModels
         public int ChannelCount { get; set; }
         public int MovieCount { get; set; }
         public int SeriesCount { get; set; }
+        public int EpisodeCount { get; set; }
         public int DuplicateCount { get; set; }
         public int InvalidStreamCount { get; set; }
         public int ChannelsWithLogoCount { get; set; }
         public int SuspiciousEntryCount { get; set; }
+        public int UnknownClassificationCount { get; set; }
         public int HealthScore { get; set; }
+        public int XmltvChannelCount { get; set; }
+        public int ProgrammeBackedChannelCount { get; set; }
+        public int CurrentCoverageCount { get; set; }
+        public int NextCoverageCount { get; set; }
+        public int PosterCoverageCount { get; set; }
+        public int BackdropCoverageCount { get; set; }
         public string ImportResultText { get; set; } = string.Empty;
         public string ValidationResultText { get; set; } = string.Empty;
         public string EpgCoverageText { get; set; } = string.Empty;
+        public string SyncDurationText { get; set; } = string.Empty;
+        public string FailureReasonText { get; set; } = string.Empty;
+        public string EpgDiscoveryText { get; set; } = string.Empty;
+        public string ContentCountsText { get; set; } = string.Empty;
+        public string CurrentNextCoverageText { get; set; } = string.Empty;
+        public string LogoPosterBackdropCoverageText { get; set; } = string.Empty;
+        public string DiagnosticsSafeReportText { get; set; } = string.Empty;
         public string ParseWarningsText { get; set; } = string.Empty;
         public string NetworkFailureText { get; set; } = string.Empty;
         public string LastSuccessfulSyncText { get; set; } = string.Empty;
@@ -153,6 +172,8 @@ namespace Kroira.App.ViewModels
         public IReadOnlyList<SourceHealthComponentItemViewModel> HealthComponents { get; set; } = Array.Empty<SourceHealthComponentItemViewModel>();
         public IReadOnlyList<SourceIssueItemViewModel> HealthIssues { get; set; } = Array.Empty<SourceIssueItemViewModel>();
         public IReadOnlyList<SourceAcquisitionEvidenceItemViewModel> AcquisitionEvidence { get; set; } = Array.Empty<SourceAcquisitionEvidenceItemViewModel>();
+        public IReadOnlyList<SourceDiagnosticsMetricItemViewModel> DiagnosticsMetrics { get; set; } = Array.Empty<SourceDiagnosticsMetricItemViewModel>();
+        public IReadOnlyList<SourceRecommendedActionItemViewModel> RecommendedActions { get; set; } = Array.Empty<SourceRecommendedActionItemViewModel>();
         public int ImportWarningCount { get; set; }
         public int GuideWarningCount { get; set; }
 
@@ -213,7 +234,7 @@ namespace Kroira.App.ViewModels
             ? Microsoft.UI.Xaml.Visibility.Visible
             : Microsoft.UI.Xaml.Visibility.Collapsed;
 
-        public Microsoft.UI.Xaml.Visibility HealthyVisibility => HealthLabel is "Healthy" or "Ready"
+        public Microsoft.UI.Xaml.Visibility HealthyVisibility => HealthLabel is "Healthy" or "Good" or "Ready"
             ? Microsoft.UI.Xaml.Visibility.Visible
             : Microsoft.UI.Xaml.Visibility.Collapsed;
 
@@ -303,7 +324,7 @@ namespace Kroira.App.ViewModels
             ? Status
             : SourcePanelSummaryText;
 
-        public string QualitySnapshotText => $"Duplicates {DuplicateCount:N0}, invalid {InvalidStreamCount:N0}, suspicious {SuspiciousEntryCount:N0}";
+        public string QualitySnapshotText => $"Duplicates {DuplicateCount:N0}, invalid {InvalidStreamCount:N0}, suspicious {SuspiciousEntryCount:N0}, unknown {UnknownClassificationCount:N0}";
 
         public string LogoCoverageText => ChannelCount > 0
             ? $"{ChannelsWithLogoCount:N0} / {ChannelCount:N0} live channels with logos"
@@ -359,6 +380,20 @@ namespace Kroira.App.ViewModels
             ? Microsoft.UI.Xaml.Visibility.Visible
             : Microsoft.UI.Xaml.Visibility.Collapsed;
 
+        public Microsoft.UI.Xaml.Visibility DiagnosticsMetricsVisibility => DiagnosticsMetrics.Count > 0
+            ? Microsoft.UI.Xaml.Visibility.Visible
+            : Microsoft.UI.Xaml.Visibility.Collapsed;
+
+        public Microsoft.UI.Xaml.Visibility RecommendedActionsVisibility => RecommendedActions.Count > 0
+            ? Microsoft.UI.Xaml.Visibility.Visible
+            : Microsoft.UI.Xaml.Visibility.Collapsed;
+
+        public Microsoft.UI.Xaml.Visibility FailureReasonVisibility => string.IsNullOrWhiteSpace(FailureReasonText)
+            ? Microsoft.UI.Xaml.Visibility.Collapsed
+            : Microsoft.UI.Xaml.Visibility.Visible;
+
+        public bool HasSafeDiagnosticsReport => !string.IsNullOrWhiteSpace(DiagnosticsSafeReportText);
+
         partial void OnHealthLabelChanged(string value)
         {
             OnPropertyChanged(nameof(HealthyVisibility));
@@ -411,6 +446,37 @@ namespace Kroira.App.ViewModels
         public string Detail { get; set; } = string.Empty;
         public string PillLabel { get; set; } = string.Empty;
         public StatusPillKind PillKind { get; set; } = StatusPillKind.Neutral;
+    }
+
+    public sealed class SourceDiagnosticsMetricItemViewModel
+    {
+        public string Label { get; set; } = string.Empty;
+        public string Value { get; set; } = string.Empty;
+        public string Detail { get; set; } = string.Empty;
+        public StatusPillKind PillKind { get; set; } = StatusPillKind.Neutral;
+
+        public Microsoft.UI.Xaml.Visibility DetailVisibility => string.IsNullOrWhiteSpace(Detail)
+            ? Microsoft.UI.Xaml.Visibility.Collapsed
+            : Microsoft.UI.Xaml.Visibility.Visible;
+    }
+
+    public sealed class SourceRecommendedActionItemViewModel
+    {
+        public int SourceId { get; set; }
+        public SourceRecommendedActionType ActionType { get; set; }
+        public string Title { get; set; } = string.Empty;
+        public string Summary { get; set; } = string.Empty;
+        public string ButtonText { get; set; } = string.Empty;
+        public StatusPillKind ToneKind { get; set; } = StatusPillKind.Neutral;
+        public bool IsPrimary { get; set; }
+
+        public Microsoft.UI.Xaml.Visibility PrimaryButtonVisibility => IsPrimary
+            ? Microsoft.UI.Xaml.Visibility.Visible
+            : Microsoft.UI.Xaml.Visibility.Collapsed;
+
+        public Microsoft.UI.Xaml.Visibility SecondaryButtonVisibility => !IsPrimary
+            ? Microsoft.UI.Xaml.Visibility.Visible
+            : Microsoft.UI.Xaml.Visibility.Collapsed;
     }
 
     public sealed class SourceRecentActivityItemViewModel
@@ -511,6 +577,11 @@ namespace Kroira.App.ViewModels
         partial void OnSearchTextChanged(string value)
         {
             ApplySourceFilter();
+        }
+
+        public string GetSafeDiagnosticsReport(int sourceId)
+        {
+            return _allSources.FirstOrDefault(item => item.Id == sourceId)?.DiagnosticsSafeReportText ?? string.Empty;
         }
 
         public async Task<SourceGuideSettingsDraft?> GetGuideSettingsAsync(int sourceId)
@@ -703,11 +774,19 @@ namespace Kroira.App.ViewModels
                     ChannelCount = snapshot.LiveChannelCount,
                     MovieCount = snapshot.MovieCount,
                     SeriesCount = snapshot.SeriesCount,
+                    EpisodeCount = snapshot.EpisodeCount,
                     DuplicateCount = snapshot.DuplicateCount,
                     InvalidStreamCount = snapshot.InvalidStreamCount,
                     ChannelsWithLogoCount = snapshot.ChannelsWithLogoCount,
                     SuspiciousEntryCount = snapshot.SuspiciousEntryCount,
+                    UnknownClassificationCount = snapshot.UnknownClassificationCount,
                     HealthScore = snapshot.HealthScore,
+                    XmltvChannelCount = snapshot.XmltvChannelCount,
+                    ProgrammeBackedChannelCount = snapshot.ProgrammeBackedChannelCount,
+                    CurrentCoverageCount = snapshot.CurrentCoverageCount,
+                    NextCoverageCount = snapshot.NextCoverageCount,
+                    PosterCoverageCount = snapshot.PosterCoverageCount,
+                    BackdropCoverageCount = snapshot.BackdropCoverageCount,
                     HealthLabel = snapshot.HealthLabel ?? "Saved",
                     Status = snapshot.StatusSummary,
                     HasEpgUrl = snapshot.HasEpgUrl,
@@ -721,6 +800,13 @@ namespace Kroira.App.ViewModels
                     ImportResultText = snapshot.ImportResultText,
                     ValidationResultText = snapshot.ValidationResultText,
                     EpgCoverageText = snapshot.EpgCoverageText,
+                    SyncDurationText = snapshot.SyncDurationText,
+                    FailureReasonText = snapshot.FailureReasonText,
+                    EpgDiscoveryText = snapshot.EpgDiscoveryText,
+                    ContentCountsText = snapshot.ContentCountsText,
+                    CurrentNextCoverageText = snapshot.CurrentNextCoverageText,
+                    LogoPosterBackdropCoverageText = snapshot.LogoPosterBackdropCoverageText,
+                    DiagnosticsSafeReportText = snapshot.SafeDiagnosticsReportText,
                     ParseWarningsText = snapshot.WarningSummaryText,
                     NetworkFailureText = string.IsNullOrWhiteSpace(snapshot.FailureSummaryText)
                         ? snapshot.StalkerPortalErrorText
@@ -777,6 +863,27 @@ namespace Kroira.App.ViewModels
                             Detail = BuildAcquisitionEvidenceDetail(evidence),
                             PillLabel = $"{evidence.Stage} | {evidence.Outcome}",
                             PillKind = MapAcquisitionEvidencePillKind(evidence.Outcome)
+                        })
+                        .ToList(),
+                    DiagnosticsMetrics = snapshot.DiagnosticsMetrics
+                        .Select(metric => new SourceDiagnosticsMetricItemViewModel
+                        {
+                            Label = metric.Label,
+                            Value = metric.Value,
+                            Detail = metric.Detail,
+                            PillKind = MapActivityTone(metric.Tone)
+                        })
+                        .ToList(),
+                    RecommendedActions = snapshot.RecommendedActions
+                        .Select(action => new SourceRecommendedActionItemViewModel
+                        {
+                            SourceId = snapshot.SourceProfileId,
+                            ActionType = action.ActionType,
+                            Title = action.Title,
+                            Summary = action.Summary,
+                            ButtonText = action.ButtonText,
+                            ToneKind = MapActivityTone(action.Tone),
+                            IsPrimary = action.IsPrimary
                         })
                         .ToList(),
                     ActivityHeadlineText = activitySnapshot.HeadlineText,
@@ -903,9 +1010,14 @@ namespace Kroira.App.ViewModels
                     ContainsSearch(source.RepairSummaryText, search) ||
                     ContainsSearch(source.RepairStatusText, search) ||
                     ContainsSearch(source.ValidationResultText, search) ||
+                    ContainsSearch(source.ContentCountsText, search) ||
+                    ContainsSearch(source.EpgDiscoveryText, search) ||
+                    ContainsSearch(source.FailureReasonText, search) ||
                     ContainsSearch(source.OperationalStatusText, search) ||
                     ContainsSearch(source.ProxyStatusText, search) ||
                     source.HealthComponents.Any(component => ContainsSearch(component.Label, search) || ContainsSearch(component.Summary, search)) ||
+                    source.DiagnosticsMetrics.Any(metric => ContainsSearch(metric.Label, search) || ContainsSearch(metric.Detail, search)) ||
+                    source.RecommendedActions.Any(action => ContainsSearch(action.Title, search) || ContainsSearch(action.Summary, search)) ||
                     source.RepairIssues.Any(issue => ContainsSearch(issue.Title, search) || ContainsSearch(issue.Detail, search)) ||
                     source.RepairActions.Any(action => ContainsSearch(action.Title, search) || ContainsSearch(action.Summary, search)) ||
                     ContainsSearch(source.GuideModeText, search) ||
@@ -1068,7 +1180,7 @@ namespace Kroira.App.ViewModels
         {
             return healthLabel switch
             {
-                "Healthy" or "Ready" => StatusPillKind.Healthy,
+                "Healthy" or "Good" or "Ready" => StatusPillKind.Healthy,
                 "Weak" or "Incomplete" or "Outdated" => StatusPillKind.Warning,
                 "Working" => StatusPillKind.Syncing,
                 "Attention" or "Degraded" => StatusPillKind.Warning,

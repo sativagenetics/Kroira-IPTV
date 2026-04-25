@@ -16,6 +16,8 @@ namespace Kroira.App.Services
         public PlaybackContentType ContentType { get; init; }
         public long PositionMs { get; init; }
         public long DurationMs { get; init; }
+        public string LogicalContentKey { get; init; } = string.Empty;
+        public int PreferredSourceProfileId { get; init; }
         public bool IsCompleted { get; init; }
         public WatchStateOverride WatchStateOverride { get; init; }
         public DateTime LastWatched { get; init; }
@@ -123,6 +125,16 @@ namespace Kroira.App.Services
     public interface ILibraryWatchStateService
     {
         Task<Dictionary<int, WatchProgressSnapshot>> LoadSnapshotsAsync(AppDbContext db, int profileId, PlaybackContentType contentType, IEnumerable<int> contentIds);
+        Task UpsertProgressAsync(
+            AppDbContext db,
+            int profileId,
+            PlaybackContentType contentType,
+            int contentId,
+            long positionMs,
+            long durationMs,
+            string? logicalContentKey = null,
+            int preferredSourceProfileId = 0,
+            DateTime? watchedAtUtc = null);
         Task MarkWatchedAsync(AppDbContext db, int profileId, PlaybackContentType contentType, int contentId);
         Task MarkUnwatchedAsync(AppDbContext db, int profileId, PlaybackContentType contentType, int contentId);
         Task<bool> GetHideWatchedInContinueAsync(AppDbContext db, int profileId);
@@ -154,12 +166,100 @@ namespace Kroira.App.Services
             }
 
             var progressRows = await db.PlaybackProgresses
+                .AsNoTracking()
                 .Where(progress => progress.ProfileId == profileId &&
                                    progress.ContentType == contentType &&
                                    ids.Contains(progress.ContentId))
                 .ToListAsync();
 
             return progressRows.ToDictionary(progress => progress.ContentId, CreateSnapshot);
+        }
+
+        public async Task UpsertProgressAsync(
+            AppDbContext db,
+            int profileId,
+            PlaybackContentType contentType,
+            int contentId,
+            long positionMs,
+            long durationMs,
+            string? logicalContentKey = null,
+            int preferredSourceProfileId = 0,
+            DateTime? watchedAtUtc = null)
+        {
+            if (profileId <= 0 || contentId <= 0)
+            {
+                return;
+            }
+
+            var normalizedPositionMs = Math.Max(positionMs, 0);
+            var normalizedDurationMs = Math.Max(durationMs, 0);
+            if (normalizedDurationMs > 0 && normalizedPositionMs > normalizedDurationMs)
+            {
+                normalizedPositionMs = normalizedDurationMs;
+            }
+
+            if (contentType == PlaybackContentType.Channel)
+            {
+                normalizedPositionMs = 0;
+                normalizedDurationMs = 0;
+            }
+
+            var isCompleted = WatchStateRules.ComputeCompleted(normalizedPositionMs, normalizedDurationMs);
+            if (contentType != PlaybackContentType.Channel &&
+                !isCompleted &&
+                normalizedPositionMs < WatchStateRules.MinimumSavedPositionMs)
+            {
+                return;
+            }
+
+            var normalizedLogicalKey = string.IsNullOrWhiteSpace(logicalContentKey)
+                ? string.Empty
+                : logicalContentKey.Trim();
+
+            PlaybackProgress? progress = null;
+            if (!string.IsNullOrWhiteSpace(normalizedLogicalKey))
+            {
+                progress = await db.PlaybackProgresses.FirstOrDefaultAsync(existing =>
+                    existing.ProfileId == profileId &&
+                    existing.ContentType == contentType &&
+                    existing.LogicalContentKey == normalizedLogicalKey);
+            }
+
+            progress ??= await db.PlaybackProgresses.FirstOrDefaultAsync(existing =>
+                existing.ProfileId == profileId &&
+                existing.ContentType == contentType &&
+                existing.ContentId == contentId);
+
+            var timestampUtc = watchedAtUtc ?? DateTime.UtcNow;
+            if (progress == null)
+            {
+                progress = new PlaybackProgress
+                {
+                    ProfileId = profileId,
+                    ContentType = contentType
+                };
+                db.PlaybackProgresses.Add(progress);
+            }
+
+            progress.ContentId = contentId;
+            if (!string.IsNullOrWhiteSpace(normalizedLogicalKey))
+            {
+                progress.LogicalContentKey = normalizedLogicalKey;
+            }
+
+            if (preferredSourceProfileId > 0)
+            {
+                progress.PreferredSourceProfileId = preferredSourceProfileId;
+            }
+
+            progress.PositionMs = normalizedPositionMs;
+            progress.DurationMs = normalizedDurationMs;
+            progress.IsCompleted = isCompleted;
+            progress.WatchStateOverride = WatchStateOverride.None;
+            progress.LastWatched = timestampUtc;
+            progress.CompletedAtUtc = isCompleted ? timestampUtc : null;
+            progress.ResolvedAtUtc = timestampUtc;
+            await db.SaveChangesAsync();
         }
 
         public async Task MarkWatchedAsync(AppDbContext db, int profileId, PlaybackContentType contentType, int contentId)
@@ -366,6 +466,8 @@ namespace Kroira.App.Services
                 ContentType = progress.ContentType,
                 PositionMs = progress.PositionMs,
                 DurationMs = progress.DurationMs,
+                LogicalContentKey = progress.LogicalContentKey,
+                PreferredSourceProfileId = progress.PreferredSourceProfileId,
                 IsCompleted = progress.IsCompleted,
                 WatchStateOverride = progress.WatchStateOverride,
                 LastWatched = progress.LastWatched,

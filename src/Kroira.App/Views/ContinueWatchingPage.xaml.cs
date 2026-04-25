@@ -31,6 +31,11 @@ namespace Kroira.App.Views
             Frame.Navigate(typeof(SourceListPage));
         }
 
+        private void RetrySurface_Click(object sender, RoutedEventArgs e)
+        {
+            _ = ViewModel.LoadProgressCommand.ExecuteAsync(null);
+        }
+
         private void ItemList_ItemClick(object sender, ItemClickEventArgs e)
         {
             if (e.ClickedItem is ProgressItemViewModel item)
@@ -90,9 +95,14 @@ namespace Kroira.App.Views
 
             Frame.Navigate(typeof(EmbeddedPlaybackPage), new PlaybackLaunchContext
             {
+                ProfileId = ViewModel.ActiveProfileId,
                 ContentId = item.ContentId,
                 ContentType = item.ContentType,
+                LogicalContentKey = item.LogicalContentKey,
+                PreferredSourceProfileId = item.PreferredSourceProfileId,
+                CatalogStreamUrl = item.StreamUrl,
                 StreamUrl = item.StreamUrl,
+                LiveStreamUrl = item.ContentType == PlaybackContentType.Channel ? item.StreamUrl : string.Empty,
                 StartPositionMs = item.SavedPositionMs
             });
         }

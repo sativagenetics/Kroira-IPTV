@@ -28,3 +28,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\store-screenshots.
 7. Inspect every PNG before uploading to Partner Center.
 
 Generated captures are written under `artifacts/store-screenshots` and are ignored by git.
+
+## Content Disclaimer
+
+KROIRA IPTV does not provide channels, streams, playlists, subscriptions, or media content. Store screenshots must use authorized sample data and must not imply that KROIRA bypasses DRM, paywalls, authentication, or access controls.

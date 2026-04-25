@@ -249,13 +249,19 @@ namespace Kroira.App.Services
 
                 if (target == null)
                 {
-                    if (string.IsNullOrWhiteSpace(favorite.LogicalContentKey) &&
-                        !await ContentExistsAsync(db, favorite.ContentType, favorite.ContentId))
+                    if (!await FavoriteContentAvailableAsync(db, favorite.ContentType, favorite.ContentId))
                     {
                         db.Favorites.Remove(favorite);
                         changed = true;
                     }
 
+                    continue;
+                }
+
+                if (!await FavoriteContentAvailableAsync(db, favorite.ContentType, target.ContentId))
+                {
+                    db.Favorites.Remove(favorite);
+                    changed = true;
                     continue;
                 }
 
@@ -339,13 +345,19 @@ namespace Kroira.App.Services
 
                 if (target == null)
                 {
-                    if (string.IsNullOrWhiteSpace(progress.LogicalContentKey) &&
-                        !await PlaybackContentExistsAsync(db, progress.ContentType, progress.ContentId))
+                    if (!await PlaybackContentAvailableAsync(db, progress.ContentType, progress.ContentId))
                     {
                         db.PlaybackProgresses.Remove(progress);
                         changed = true;
                     }
 
+                    continue;
+                }
+
+                if (!await PlaybackContentAvailableAsync(db, progress.ContentType, target.ContentId))
+                {
+                    db.PlaybackProgresses.Remove(progress);
+                    changed = true;
                     continue;
                 }
 
@@ -933,7 +945,7 @@ namespace Kroira.App.Services
             keeper.ResolvedAtUtc = MaxDateTime(keeper.ResolvedAtUtc, duplicate.ResolvedAtUtc);
         }
 
-        private static async Task<bool> ContentExistsAsync(AppDbContext db, FavoriteType contentType, int contentId)
+        private static async Task<bool> FavoriteContentAvailableAsync(AppDbContext db, FavoriteType contentType, int contentId)
         {
             if (contentId <= 0)
             {
@@ -942,14 +954,14 @@ namespace Kroira.App.Services
 
             return contentType switch
             {
-                FavoriteType.Channel => await db.Channels.AsNoTracking().AnyAsync(item => item.Id == contentId),
-                FavoriteType.Movie => await db.Movies.AsNoTracking().AnyAsync(item => item.Id == contentId),
-                FavoriteType.Series => await db.Series.AsNoTracking().AnyAsync(item => item.Id == contentId),
+                FavoriteType.Channel => await ChannelSourceExistsAsync(db, contentId),
+                FavoriteType.Movie => await MovieSourceExistsAsync(db, contentId),
+                FavoriteType.Series => await SeriesSourceExistsAsync(db, contentId),
                 _ => false
             };
         }
 
-        private static async Task<bool> PlaybackContentExistsAsync(AppDbContext db, PlaybackContentType contentType, int contentId)
+        private static async Task<bool> PlaybackContentAvailableAsync(AppDbContext db, PlaybackContentType contentType, int contentId)
         {
             if (contentId <= 0)
             {
@@ -958,11 +970,78 @@ namespace Kroira.App.Services
 
             return contentType switch
             {
-                PlaybackContentType.Channel => await db.Channels.AsNoTracking().AnyAsync(item => item.Id == contentId),
-                PlaybackContentType.Movie => await db.Movies.AsNoTracking().AnyAsync(item => item.Id == contentId),
-                PlaybackContentType.Episode => await db.Episodes.AsNoTracking().AnyAsync(item => item.Id == contentId),
+                PlaybackContentType.Channel => await ChannelSourceExistsAsync(db, contentId),
+                PlaybackContentType.Movie => await MovieSourceExistsAsync(db, contentId),
+                PlaybackContentType.Episode => await EpisodeSourceExistsAsync(db, contentId),
                 _ => false
             };
+        }
+
+        private static Task<bool> ChannelSourceExistsAsync(AppDbContext db, int channelId)
+        {
+            return db.Channels
+                .AsNoTracking()
+                .Where(channel => channel.Id == channelId)
+                .Join(
+                    db.ChannelCategories.AsNoTracking(),
+                    channel => channel.ChannelCategoryId,
+                    category => category.Id,
+                    (channel, category) => category.SourceProfileId)
+                .Join(
+                    db.SourceProfiles.AsNoTracking(),
+                    sourceProfileId => sourceProfileId,
+                    source => source.Id,
+                    (sourceProfileId, source) => source.Id)
+                .AnyAsync();
+        }
+
+        private static Task<bool> MovieSourceExistsAsync(AppDbContext db, int movieId)
+        {
+            return db.Movies
+                .AsNoTracking()
+                .Where(movie => movie.Id == movieId)
+                .Join(
+                    db.SourceProfiles.AsNoTracking(),
+                    movie => movie.SourceProfileId,
+                    source => source.Id,
+                    (movie, source) => source.Id)
+                .AnyAsync();
+        }
+
+        private static Task<bool> SeriesSourceExistsAsync(AppDbContext db, int seriesId)
+        {
+            return db.Series
+                .AsNoTracking()
+                .Where(series => series.Id == seriesId)
+                .Join(
+                    db.SourceProfiles.AsNoTracking(),
+                    series => series.SourceProfileId,
+                    source => source.Id,
+                    (series, source) => source.Id)
+                .AnyAsync();
+        }
+
+        private static Task<bool> EpisodeSourceExistsAsync(AppDbContext db, int episodeId)
+        {
+            return db.Episodes
+                .AsNoTracking()
+                .Where(episode => episode.Id == episodeId)
+                .Join(
+                    db.Seasons.AsNoTracking(),
+                    episode => episode.SeasonId,
+                    season => season.Id,
+                    (episode, season) => season.SeriesId)
+                .Join(
+                    db.Series.AsNoTracking(),
+                    seriesId => seriesId,
+                    series => series.Id,
+                    (seriesId, series) => series.SourceProfileId)
+                .Join(
+                    db.SourceProfiles.AsNoTracking(),
+                    sourceProfileId => sourceProfileId,
+                    source => source.Id,
+                    (sourceProfileId, source) => source.Id)
+                .AnyAsync();
         }
 
         private static DateTime? MaxDateTime(DateTime? left, DateTime? right)

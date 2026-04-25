@@ -1,0 +1,38 @@
+<UserControl
+    x:Class="Kroira.App.Controls.LoadingStateView"
+    x:Name="Root"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Border Style="{StaticResource KroiraEmptyStateSurfaceStyle}"
+            MaxWidth="560"
+            AutomationProperties.Name="{Binding Title, ElementName=Root}">
+        <Grid ColumnSpacing="16">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <Grid Width="42"
+                  Height="42"
+                  VerticalAlignment="Top">
+                <Ellipse Fill="{StaticResource KroiraStateInfoSoftBrush}" />
+                <ProgressRing Width="28"
+                              Height="28"
+                              IsActive="True"
+                              Foreground="{StaticResource KroiraAccentBrush}" />
+            </Grid>
+
+            <StackPanel Grid.Column="1"
+                        Spacing="7">
+                <TextBlock Text="{Binding Title, ElementName=Root}"
+                           Style="{StaticResource KroiraSectionTitleStyle}"
+                           TextWrapping="WrapWholeWords" />
+                <TextBlock Text="{Binding Message, ElementName=Root}"
+                           Style="{StaticResource KroiraBodyStyle}"
+                           Foreground="{StaticResource KroiraTextSecondaryBrush}"
+                           TextWrapping="WrapWholeWords" />
+            </StackPanel>
+        </Grid>
+    </Border>
+</UserControl>

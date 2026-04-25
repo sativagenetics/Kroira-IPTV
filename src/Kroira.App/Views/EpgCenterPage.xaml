@@ -63,6 +63,327 @@
                         BorderBrush="{StaticResource KroiraBorderBrush}"
                         BorderThickness="1">
                     <StackPanel Spacing="12">
+                        <Grid ColumnSpacing="12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Spacing="3">
+                                <TextBlock Text="Guide Timeline" Style="{StaticResource KroiraSectionTitleStyle}" />
+                                <TextBlock Text="{x:Bind ViewModel.GuideRangeText, Mode=OneWay}"
+                                           Style="{StaticResource KroiraMetaStyle}"
+                                           Foreground="{StaticResource KroiraTextSecondaryBrush}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                                <Button Click="JumpGuideToNow_Click">
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <FontIcon Glyph="&#xE121;" FontSize="14" />
+                                        <TextBlock Text="Jump to Now" />
+                                    </StackPanel>
+                                </Button>
+                                <Button Click="RefreshGuideTimeline_Click">
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <FontIcon Glyph="&#xE72C;" FontSize="14" />
+                                        <TextBlock Text="Reload" />
+                                    </StackPanel>
+                                </Button>
+                            </StackPanel>
+                        </Grid>
+
+                        <Grid ColumnSpacing="10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="1.1*" />
+                                <ColumnDefinition Width="1.1*" />
+                                <ColumnDefinition Width="1.4*" />
+                            </Grid.ColumnDefinitions>
+                            <ComboBox Header="Source"
+                                      DisplayMemberPath="Label"
+                                      ItemsSource="{x:Bind ViewModel.GuideSourceFilterOptions, Mode=OneWay}"
+                                      SelectedItem="{x:Bind ViewModel.SelectedGuideSourceFilter, Mode=TwoWay}"
+                                      MinWidth="220" />
+                            <ComboBox Grid.Column="1"
+                                      Header="Category"
+                                      DisplayMemberPath="Label"
+                                      ItemsSource="{x:Bind ViewModel.GuideCategoryOptions, Mode=OneWay}"
+                                      SelectedItem="{x:Bind ViewModel.SelectedGuideCategoryOption, Mode=TwoWay}"
+                                      MinWidth="220" />
+                            <TextBox Grid.Column="2"
+                                     Header="Search"
+                                     PlaceholderText="Filter channels, categories, or sources"
+                                     Text="{x:Bind ViewModel.GuideSearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                        </Grid>
+
+                        <TextBlock Text="{x:Bind ViewModel.GuideStaleWarningText, Mode=OneWay}"
+                                   Visibility="{x:Bind ViewModel.GuideStaleWarningVisibility, Mode=OneWay}"
+                                   Style="{StaticResource KroiraBodyStyle}"
+                                   Foreground="{StaticResource KroiraStateWarningBrush}"
+                                   TextWrapping="WrapWholeWords" />
+                        <TextBlock Text="Loading guide timeline..."
+                                   Visibility="{x:Bind ViewModel.GuideTimelineBusyVisibility, Mode=OneWay}"
+                                   Style="{StaticResource KroiraMetaStyle}"
+                                   Foreground="{StaticResource KroiraTextSecondaryBrush}" />
+                        <TextBlock Text="No guide programmes are available for the selected filters and time range."
+                                   Visibility="{x:Bind ViewModel.GuideTimelineEmptyVisibility, Mode=OneWay}"
+                                   Style="{StaticResource KroiraBodyStyle}"
+                                   Foreground="{StaticResource KroiraTextSecondaryBrush}"
+                                   TextWrapping="WrapWholeWords" />
+
+                        <ScrollViewer HorizontalScrollMode="Enabled"
+                                      HorizontalScrollBarVisibility="Auto"
+                                      VerticalScrollMode="Disabled"
+                                      VerticalScrollBarVisibility="Disabled">
+                            <StackPanel Spacing="0">
+                                <Grid Height="34">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="230" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="Channel"
+                                               VerticalAlignment="Center"
+                                               Style="{StaticResource KroiraMetaStyle}"
+                                               Foreground="{StaticResource KroiraTextTertiaryBrush}" />
+                                    <Grid Grid.Column="1" Width="{x:Bind ViewModel.GuideTimelineWidth, Mode=OneWay}">
+                                        <ItemsControl ItemsSource="{x:Bind ViewModel.GuideTimelineSlots, Mode=OneWay}">
+                                            <ItemsControl.ItemsPanel>
+                                                <ItemsPanelTemplate>
+                                                    <StackPanel Orientation="Horizontal" />
+                                                </ItemsPanelTemplate>
+                                            </ItemsControl.ItemsPanel>
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate x:DataType="vm:GuideTimelineSlotViewModel">
+                                                    <Border Width="{x:Bind Width}"
+                                                            BorderBrush="{StaticResource KroiraBorderBrush}"
+                                                            BorderThickness="1,0,0,1"
+                                                            Padding="8,0">
+                                                        <TextBlock Text="{x:Bind Label}"
+                                                                   VerticalAlignment="Center"
+                                                                   Style="{StaticResource KroiraMetaStyle}"
+                                                                   Foreground="{StaticResource KroiraTextTertiaryBrush}" />
+                                                    </Border>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                        <Canvas IsHitTestVisible="False">
+                                            <Border Canvas.Left="{x:Bind ViewModel.GuideNowMarkerLeft, Mode=OneWay}"
+                                                    Width="2"
+                                                    Height="34"
+                                                    Background="{StaticResource KroiraAccentBrush}"
+                                                    Visibility="{x:Bind ViewModel.GuideNowMarkerVisibility, Mode=OneWay}" />
+                                        </Canvas>
+                                    </Grid>
+                                </Grid>
+
+                                <ItemsControl ItemsSource="{x:Bind ViewModel.GuideTimelineRows, Mode=OneWay}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate x:DataType="vm:GuideTimelineChannelViewModel">
+                                            <Border MinHeight="76"
+                                                    BorderBrush="{StaticResource KroiraBorderBrush}"
+                                                    BorderThickness="0,0,0,1">
+                                                <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="230" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+
+                                                <Button Padding="0"
+                                                        Background="Transparent"
+                                                        BorderThickness="0"
+                                                        Click="TimelineChannel_Click"
+                                                        CommandParameter="{Binding}">
+                                                    <Grid Padding="0,8,12,8" ColumnSpacing="10">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="42" />
+                                                            <ColumnDefinition Width="*" />
+                                                        </Grid.ColumnDefinitions>
+                                                        <Border Width="38"
+                                                                Height="38"
+                                                                CornerRadius="6"
+                                                                Background="#2AFFFFFF">
+                                                            <Image Source="{Binding LogoUrl, Converter={StaticResource UrlToImageSourceConverter}}" Stretch="UniformToFill" />
+                                                        </Border>
+                                                        <StackPanel Grid.Column="1" Spacing="2">
+                                                            <TextBlock Text="{x:Bind ChannelName}"
+                                                                       FontWeight="SemiBold"
+                                                                       MaxLines="2"
+                                                                       TextTrimming="CharacterEllipsis"
+                                                                       TextWrapping="Wrap" />
+                                                            <TextBlock Text="{x:Bind CategoryName}"
+                                                                       Style="{StaticResource KroiraMetaStyle}"
+                                                                       Foreground="{StaticResource KroiraTextTertiaryBrush}"
+                                                                       MaxLines="1"
+                                                                       TextTrimming="CharacterEllipsis" />
+                                                            <TextBlock Text="{x:Bind CurrentText}"
+                                                                       Style="{StaticResource KroiraMetaStyle}"
+                                                                       Foreground="{StaticResource KroiraTextSecondaryBrush}"
+                                                                       MaxLines="1"
+                                                                       TextTrimming="CharacterEllipsis" />
+                                                        </StackPanel>
+                                                    </Grid>
+                                                </Button>
+
+                                                <Grid Grid.Column="1"
+                                                      Width="{x:Bind TimelineWidth}"
+                                                      MinHeight="76"
+                                                      Background="#18000000">
+                                                    <TextBlock Text="No guide in this range"
+                                                               Visibility="{x:Bind EmptyGuideVisibility}"
+                                                               Margin="12,0,0,0"
+                                                               VerticalAlignment="Center"
+                                                               Style="{StaticResource KroiraMetaStyle}"
+                                                               Foreground="{StaticResource KroiraTextTertiaryBrush}" />
+                                                    <ItemsControl ItemsSource="{x:Bind Programs}">
+                                                        <ItemsControl.ItemsPanel>
+                                                            <ItemsPanelTemplate>
+                                                                <Canvas />
+                                                            </ItemsPanelTemplate>
+                                                        </ItemsControl.ItemsPanel>
+                                                        <ItemsControl.ItemContainerStyle>
+                                                            <Style TargetType="ContentPresenter">
+                                                                <Setter Property="Canvas.Left" Value="{Binding Left}" />
+                                                            </Style>
+                                                        </ItemsControl.ItemContainerStyle>
+                                                        <ItemsControl.ItemTemplate>
+                                                            <DataTemplate x:DataType="vm:GuideTimelineProgramViewModel">
+                                                                <Button Width="{x:Bind Width}"
+                                                                        MinWidth="48"
+                                                                        Height="58"
+                                                                        Margin="0,9,4,9"
+                                                                        Padding="8,5"
+                                                                        HorizontalContentAlignment="Stretch"
+                                                                        Click="TimelineProgram_Click"
+                                                                        CommandParameter="{Binding}">
+                                                                    <StackPanel Spacing="1">
+                                                                        <TextBlock Text="{x:Bind Title}"
+                                                                                   FontWeight="SemiBold"
+                                                                                   FontSize="12"
+                                                                                   MaxLines="1"
+                                                                                   TextTrimming="CharacterEllipsis" />
+                                                                        <TextBlock Text="{x:Bind TimeText}"
+                                                                                   Style="{StaticResource KroiraMetaStyle}"
+                                                                                   Foreground="{StaticResource KroiraTextSecondaryBrush}"
+                                                                                   MaxLines="1"
+                                                                                   TextTrimming="CharacterEllipsis" />
+                                                                        <TextBlock Text="{x:Bind DetailText}"
+                                                                                   Style="{StaticResource KroiraMetaStyle}"
+                                                                                   Foreground="{StaticResource KroiraTextTertiaryBrush}"
+                                                                                   MaxLines="1"
+                                                                                   TextTrimming="CharacterEllipsis" />
+                                                                    </StackPanel>
+                                                                </Button>
+                                                            </DataTemplate>
+                                                        </ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
+                                                    <Canvas IsHitTestVisible="False">
+                                                        <Border Canvas.Left="{x:Bind NowMarkerLeft}"
+                                                                Width="2"
+                                                                Height="76"
+                                                                Background="{StaticResource KroiraAccentBrush}"
+                                                                Visibility="{x:Bind NowMarkerVisibility}" />
+                                                    </Canvas>
+                                                </Grid>
+                                            </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </StackPanel>
+                </Border>
+
+                <Border Padding="16"
+                        CornerRadius="8"
+                        Background="{StaticResource KroiraSurfaceBrush}"
+                        BorderBrush="{StaticResource KroiraBorderBrush}"
+                        BorderThickness="1">
+                    <StackPanel Spacing="12">
+                        <TextBlock Text="Manual EPG Matching" Style="{StaticResource KroiraSectionTitleStyle}" />
+                        <TextBlock Text="{x:Bind ViewModel.ManualMatchStatusText, Mode=OneWay}"
+                                   Visibility="{x:Bind ViewModel.ManualMatchStatusVisibility, Mode=OneWay}"
+                                   Style="{StaticResource KroiraBodyStyle}"
+                                   Foreground="{StaticResource KroiraTextSecondaryBrush}"
+                                   TextWrapping="WrapWholeWords" />
+                        <Grid ColumnSpacing="12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="1.1*" />
+                                <ColumnDefinition Width="1.2*" />
+                                <ColumnDefinition Width="1.4*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <ComboBox Header="Source"
+                                      DisplayMemberPath="Label"
+                                      ItemsSource="{x:Bind ViewModel.SourceOptions, Mode=OneWay}"
+                                      SelectedItem="{x:Bind ViewModel.SelectedSourceOption, Mode=TwoWay}"
+                                      MinWidth="220" />
+                            <ComboBox Grid.Column="1"
+                                      Header="Channel"
+                                      DisplayMemberPath="DisplayName"
+                                      ItemsSource="{x:Bind ViewModel.ManualMatchChannels, Mode=OneWay}"
+                                      SelectedItem="{x:Bind ViewModel.SelectedManualMatchChannel, Mode=TwoWay}"
+                                      MinWidth="280" />
+                            <TextBox Grid.Column="2"
+                                     Header="XMLTV channel search"
+                                     PlaceholderText="Search display name or enter an exact XMLTV id"
+                                     Text="{x:Bind ViewModel.ManualMatchSearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                            <Button Grid.Column="3"
+                                    Margin="0,28,0,0"
+                                    Click="ClearManualOverride_Click">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <FontIcon Glyph="&#xE711;" FontSize="14" />
+                                    <TextBlock Text="Clear Override" />
+                                </StackPanel>
+                            </Button>
+                        </Grid>
+
+                        <TextBlock Text="Searching matches..."
+                                   Visibility="{x:Bind ViewModel.ManualMatchBusyVisibility, Mode=OneWay}"
+                                   Style="{StaticResource KroiraMetaStyle}"
+                                   Foreground="{StaticResource KroiraTextSecondaryBrush}" />
+                        <ListView ItemsSource="{x:Bind ViewModel.ManualMatchCandidates, Mode=OneWay}"
+                                  MaxHeight="300"
+                                  IsItemClickEnabled="False">
+                            <ListView.ItemTemplate>
+                                <DataTemplate x:DataType="vm:ManualMatchCandidateViewModel">
+                                    <Grid Padding="8" ColumnSpacing="12">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Spacing="2">
+                                            <TextBlock Text="{x:Bind DisplayName}"
+                                                       FontWeight="SemiBold"
+                                                       TextWrapping="WrapWholeWords" />
+                                            <TextBlock Text="{x:Bind XmltvChannelId}"
+                                                       Foreground="{StaticResource KroiraTextSecondaryBrush}"
+                                                       TextWrapping="WrapWholeWords" />
+                                            <TextBlock Text="{x:Bind MatchText}"
+                                                       Foreground="{StaticResource KroiraTextTertiaryBrush}" />
+                                            <TextBlock Text="{x:Bind DetailText}"
+                                                       Foreground="{StaticResource KroiraTextTertiaryBrush}"
+                                                       TextWrapping="WrapWholeWords" />
+                                        </StackPanel>
+                                        <Button Grid.Column="1"
+                                                VerticalAlignment="Center"
+                                                Click="SetManualOverride_Click"
+                                                CommandParameter="{Binding}">
+                                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                                <FontIcon Glyph="&#xE73E;" FontSize="14" />
+                                                <TextBlock Text="Set Override" />
+                                            </StackPanel>
+                                        </Button>
+                                    </Grid>
+                                </DataTemplate>
+                            </ListView.ItemTemplate>
+                        </ListView>
+                    </StackPanel>
+                </Border>
+
+                <Border Padding="16"
+                        CornerRadius="8"
+                        Background="{StaticResource KroiraSurfaceBrush}"
+                        BorderBrush="{StaticResource KroiraBorderBrush}"
+                        BorderThickness="1">
+                    <StackPanel Spacing="12">
                         <TextBlock Text="Public Guide Source" Style="{StaticResource KroiraSectionTitleStyle}" />
                         <Grid ColumnSpacing="12" RowSpacing="10">
                             <Grid.RowDefinitions>

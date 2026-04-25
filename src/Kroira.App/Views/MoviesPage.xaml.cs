@@ -70,6 +70,11 @@ namespace Kroira.App.Views
             Frame.Navigate(typeof(SourceListPage));
         }
 
+        private void RetrySurface_Click(object sender, RoutedEventArgs e)
+        {
+            _ = ViewModel.LoadMoviesCommand.ExecuteAsync(null);
+        }
+
         private void MoviesPage_Loaded(object sender, RoutedEventArgs e)
         {
             QueueRestoreCategorySelection("page-loaded");

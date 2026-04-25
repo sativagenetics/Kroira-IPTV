@@ -314,6 +314,9 @@ namespace Kroira.App
                     case "Home":
                         NavigateTo(typeof(HomePage));
                         break;
+                    case "Search":
+                        NavigateTo(typeof(SearchPage));
+                        break;
                     case "Favorites":
                         NavigateTo(typeof(FavoritesPage));
                         break;
@@ -404,6 +407,7 @@ namespace Kroira.App
             var tag = pageType switch
             {
                 var type when type == typeof(HomePage) => "Home",
+                var type when type == typeof(SearchPage) => "Search",
                 var type when type == typeof(ContinueWatchingPage) => "ContinueWatching",
                 var type when type == typeof(MediaLibraryPage) => "MediaLibrary",
                 var type when type == typeof(ChannelsPage) => "Channels",

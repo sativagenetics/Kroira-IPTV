@@ -24,9 +24,9 @@ namespace Kroira.App.Services.Parsing
 
     internal static class M3uMetadataParser
     {
-        private static readonly Regex AttributeRegex = new(
-            @"(?<key>[A-Za-z0-9_-]+)\s*=\s*(?:(?<quote>['""])(?<quoted>.*?)\k<quote>|(?<bare>[^\s,]+))",
-            RegexOptions.Compiled | RegexOptions.IgnoreCase);
+        private static readonly Regex AbsoluteUrlRegex = new(
+            @"[a-z][a-z0-9+\-.]*://[^\s,;|]+",
+            RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
         private static readonly string[] XmltvAttributeNames =
         {
@@ -42,7 +42,7 @@ namespace Kroira.App.Services.Parsing
             var headerLines = new List<string>();
             foreach (var rawLine in playlistContent.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries))
             {
-                var line = rawLine.Trim();
+                var line = StripBom(rawLine).Trim();
                 if (string.IsNullOrWhiteSpace(line))
                 {
                     continue;
@@ -59,25 +59,20 @@ namespace Kroira.App.Services.Parsing
             var attributes = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
             foreach (var headerLine in headerLines)
             {
-                foreach (Match match in AttributeRegex.Matches(headerLine))
+                foreach (var token in ParseAttributeTokens(headerLine))
                 {
-                    var key = match.Groups["key"].Value.Trim();
-                    var value = match.Groups["quoted"].Success
-                        ? match.Groups["quoted"].Value
-                        : match.Groups["bare"].Value;
-
-                    if (string.IsNullOrWhiteSpace(key) || string.IsNullOrWhiteSpace(value))
+                    if (string.IsNullOrWhiteSpace(token.Key) || string.IsNullOrWhiteSpace(token.Value))
                     {
                         continue;
                     }
 
-                    if (!attributes.TryGetValue(key, out var values))
+                    if (!attributes.TryGetValue(token.Key, out var values))
                     {
                         values = new List<string>();
-                        attributes[key] = values;
+                        attributes[token.Key] = values;
                     }
 
-                    values.Add(value.Trim());
+                    values.Add(token.Value.Trim());
                 }
             }
 
@@ -121,26 +116,28 @@ namespace Kroira.App.Services.Parsing
 
         public static M3uExtinfMetadata ParseExtinf(string line)
         {
-            var separatorIndex = FindMetadataSeparator(line);
+            var normalizedLine = StripBom(line).Trim();
+            var separatorIndex = FindMetadataSeparator(normalizedLine);
             var metadataSegment = separatorIndex >= 0
-                ? line[..separatorIndex]
-                : line;
-            var displayName = separatorIndex >= 0 && separatorIndex < line.Length - 1
-                ? line[(separatorIndex + 1)..].Trim()
+                ? normalizedLine[..separatorIndex]
+                : normalizedLine;
+            var displayName = separatorIndex >= 0 && separatorIndex < normalizedLine.Length - 1
+                ? normalizedLine[(separatorIndex + 1)..].Trim()
                 : string.Empty;
 
             var attributes = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-            foreach (Match match in AttributeRegex.Matches(metadataSegment))
+            var tokens = ParseAttributeTokens(metadataSegment);
+            foreach (var token in tokens)
             {
-                var key = match.Groups["key"].Value.Trim();
-                var value = match.Groups["quoted"].Success
-                    ? match.Groups["quoted"].Value
-                    : match.Groups["bare"].Value;
-
-                if (!string.IsNullOrWhiteSpace(key))
+                if (!string.IsNullOrWhiteSpace(token.Key))
                 {
-                    attributes[key] = value.Trim();
+                    attributes[token.Key] = token.Value.Trim();
                 }
+            }
+
+            if (string.IsNullOrWhiteSpace(displayName))
+            {
+                displayName = InferDisplayNameWithoutComma(normalizedLine, tokens);
             }
 
             return new M3uExtinfMetadata
@@ -222,7 +219,28 @@ namespace Kroira.App.Services.Parsing
 
         private static IReadOnlyList<string> SplitPossibleUrls(string value)
         {
-            return value
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return Array.Empty<string>();
+            }
+
+            var trimmed = value.Trim();
+            var absoluteUrls = AbsoluteUrlRegex
+                .Matches(trimmed)
+                .Select(match => match.Value.Trim())
+                .Where(candidate => !string.IsNullOrWhiteSpace(candidate))
+                .ToList();
+            if (absoluteUrls.Count > 1)
+            {
+                return absoluteUrls;
+            }
+
+            if (trimmed.IndexOfAny(new[] { ',', ';', '|' }) < 0)
+            {
+                return new[] { trimmed };
+            }
+
+            return trimmed
                 .Split(new[] { ',', ';', '|'}, StringSplitOptions.RemoveEmptyEntries)
                 .Select(candidate => candidate.Trim())
                 .Where(candidate => !string.IsNullOrWhiteSpace(candidate))
@@ -248,6 +266,14 @@ namespace Kroira.App.Services.Parsing
                         return i;
                     }
                 }
+                else if (ch == '\\' && i + 1 < line.Length)
+                {
+                    i++;
+                }
+                else if (ch == quote && i + 1 < line.Length && line[i + 1] == quote)
+                {
+                    i++;
+                }
                 else if (ch == quote)
                 {
                     quote = '\0';
@@ -255,6 +281,158 @@ namespace Kroira.App.Services.Parsing
             }
 
             return -1;
+        }
+
+        private static IReadOnlyList<AttributeToken> ParseAttributeTokens(string text)
+        {
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                return Array.Empty<AttributeToken>();
+            }
+
+            var tokens = new List<AttributeToken>();
+            var index = 0;
+            while (index < text.Length)
+            {
+                if (!IsAttributeKeyChar(text[index]))
+                {
+                    index++;
+                    continue;
+                }
+
+                var keyStart = index;
+                while (index < text.Length && IsAttributeKeyChar(text[index]))
+                {
+                    index++;
+                }
+
+                var keyEnd = index;
+                while (index < text.Length && char.IsWhiteSpace(text[index]))
+                {
+                    index++;
+                }
+
+                if (index >= text.Length || text[index] != '=')
+                {
+                    index = keyEnd;
+                    continue;
+                }
+
+                index++;
+                while (index < text.Length && char.IsWhiteSpace(text[index]))
+                {
+                    index++;
+                }
+
+                if (index >= text.Length)
+                {
+                    break;
+                }
+
+                var value = string.Empty;
+                if (text[index] is '"' or '\'')
+                {
+                    var quote = text[index++];
+                    var builder = new System.Text.StringBuilder();
+                    while (index < text.Length)
+                    {
+                        var ch = text[index++];
+                        if (ch == '\\' && index < text.Length)
+                        {
+                            var escaped = text[index++];
+                            builder.Append(escaped);
+                            continue;
+                        }
+
+                        if (ch == quote)
+                        {
+                            if (index < text.Length && text[index] == quote)
+                            {
+                                builder.Append(quote);
+                                index++;
+                                continue;
+                            }
+
+                            break;
+                        }
+
+                        builder.Append(ch);
+                    }
+
+                    value = builder.ToString();
+                }
+                else
+                {
+                    var valueStart = index;
+                    while (index < text.Length && !char.IsWhiteSpace(text[index]))
+                    {
+                        index++;
+                    }
+
+                    value = text[valueStart..index];
+                }
+
+                tokens.Add(new AttributeToken(
+                    text[keyStart..keyEnd],
+                    value,
+                    keyStart,
+                    index));
+            }
+
+            return tokens;
+        }
+
+        private static string InferDisplayNameWithoutComma(string line, IReadOnlyList<AttributeToken> tokens)
+        {
+            string candidate;
+            if (tokens.Count > 0)
+            {
+                var lastAttributeEnd = tokens.Max(token => token.End);
+                candidate = lastAttributeEnd < line.Length ? line[lastAttributeEnd..] : string.Empty;
+            }
+            else
+            {
+                candidate = StripExtinfDuration(line);
+            }
+
+            return candidate.Trim().TrimStart(',').Trim();
+        }
+
+        private static string StripExtinfDuration(string line)
+        {
+            var colonIndex = line.IndexOf(':');
+            if (colonIndex < 0 || colonIndex >= line.Length - 1)
+            {
+                return line;
+            }
+
+            var index = colonIndex + 1;
+            while (index < line.Length && char.IsWhiteSpace(line[index]))
+            {
+                index++;
+            }
+
+            while (index < line.Length && line[index] != ',' && !char.IsWhiteSpace(line[index]))
+            {
+                index++;
+            }
+
+            if (index < line.Length && line[index] == ',')
+            {
+                index++;
+            }
+
+            return index < line.Length ? line[index..] : string.Empty;
+        }
+
+        private static string StripBom(string value)
+        {
+            return string.IsNullOrEmpty(value) ? string.Empty : value.TrimStart('\uFEFF');
+        }
+
+        private static bool IsAttributeKeyChar(char value)
+        {
+            return char.IsLetterOrDigit(value) || value is '_' or '-';
         }
 
         private static bool ContainsQueryParameter(string query, string parameterName)
@@ -292,5 +470,7 @@ namespace Kroira.App.Services.Parsing
 
             return absolutePath[..(lastSlashIndex + 1)] + newFileName;
         }
+
+        private sealed record AttributeToken(string Key, string Value, int Start, int End);
     }
 }

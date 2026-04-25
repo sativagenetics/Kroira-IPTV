@@ -31,6 +31,18 @@ namespace Kroira.App.Services
             _identityService = identityService;
         }
 
+        internal static IReadOnlyDictionary<string, ChannelEpgMatchOutcome> MatchXmltvChannels(
+            ILiveChannelIdentityService identityService,
+            IEnumerable<Channel> channels,
+            IReadOnlyCollection<XmltvChannelDescriptor> xmltvChannels,
+            IEnumerable<EpgMappingDecision>? decisions = null,
+            int sourceProfileId = 0)
+        {
+            var channelList = channels.ToList();
+            var decisionLookup = EpgMappingDecisionLookup.Create(sourceProfileId, channelList, decisions ?? Array.Empty<EpgMappingDecision>());
+            return new EpgChannelMatcher(identityService, channelList, decisionLookup).MatchAll(xmltvChannels);
+        }
+
         public async Task PrepareLiveCatalogAsync(AppDbContext db, int sourceProfileId, SourceAcquisitionSession? acquisitionSession = null)
         {
             var channels = await LoadSourceChannelsAsync(db, sourceProfileId);
@@ -812,9 +824,10 @@ namespace Kroira.App.Services
                 var outcomes = new Dictionary<string, ChannelEpgMatchOutcome>(StringComparer.OrdinalIgnoreCase);
                 var assignedChannelIds = new HashSet<int>();
 
+                MatchUsingApprovedDecisions(orderedChannels, outcomes, assignedChannelIds);
                 MatchUsingExactIds(orderedChannels, outcomes, assignedChannelIds, _byProviderGuideId, ChannelEpgMatchSource.Provider, 97, "Provider guide id", respectReviewRejections: false);
                 MatchUsingNormalizedValues(orderedChannels, outcomes, assignedChannelIds);
-                MatchUsingApprovedDecisions(orderedChannels, outcomes, assignedChannelIds);
+                MatchUsingTrustedAliasKeys(orderedChannels, outcomes, assignedChannelIds);
                 MatchUsingExactIds(orderedChannels, outcomes, assignedChannelIds, _byPreviousGuideId, ChannelEpgMatchSource.Previous, 91, "Previous guide mapping", respectReviewRejections: true);
                 MatchUsingAliasKeys(orderedChannels, outcomes, assignedChannelIds);
                 if (orderedChannels.Count <= ExpensiveWeakMatchXmltvChannelLimit)
@@ -964,6 +977,57 @@ namespace Kroira.App.Services
                             candidate,
                             normalized);
                         break;
+                    }
+                }
+            }
+
+            private void MatchUsingTrustedAliasKeys(
+                IReadOnlyCollection<XmltvChannelDescriptor> xmltvChannels,
+                IDictionary<string, ChannelEpgMatchOutcome> outcomes,
+                ISet<int> assignedChannelIds)
+            {
+                foreach (var xmltvChannel in xmltvChannels)
+                {
+                    if (outcomes.ContainsKey(xmltvChannel.Id))
+                    {
+                        continue;
+                    }
+
+                    foreach (var candidate in BuildSourceCandidates(xmltvChannel))
+                    {
+                        foreach (var aliasKey in _identityService.BuildAliasKeys(candidate))
+                        {
+                            if (!_byAliasKey.TryGetValue(aliasKey, out var matches))
+                            {
+                                continue;
+                            }
+
+                            var availableMatches = FilterRejectedWeakMatches(
+                                xmltvChannel,
+                                GetAvailableMatches(matches, assignedChannelIds));
+                            if (availableMatches.Count != 1 ||
+                                !IsTrustedAliasMatch(xmltvChannel, availableMatches, candidate, aliasKey, out var trustedDiagnostic))
+                            {
+                                continue;
+                            }
+
+                            AssignOutcome(
+                                outcomes,
+                                assignedChannelIds,
+                                xmltvChannel.Id,
+                                availableMatches,
+                                ChannelEpgMatchSource.Normalized,
+                                84,
+                                $"Trusted alias matched '{candidate}' using '{aliasKey}'. {trustedDiagnostic}",
+                                candidate,
+                                aliasKey);
+                            break;
+                        }
+
+                        if (outcomes.ContainsKey(xmltvChannel.Id))
+                        {
+                            break;
+                        }
                     }
                 }
             }
@@ -1286,6 +1350,56 @@ namespace Kroira.App.Services
                     MatchedValue = best.SourceValue,
                     MatchedKey = best.AliasKey
                 };
+            }
+
+            private static bool IsTrustedAliasMatch(
+                XmltvChannelDescriptor xmltvChannel,
+                IReadOnlyList<Channel> matchedChannels,
+                string matchedValue,
+                string matchedKey,
+                out string diagnostic)
+            {
+                diagnostic = string.Empty;
+                if (matchedChannels.Count != 1)
+                {
+                    diagnostic = "Rejected trusted alias because it did not resolve to exactly one source channel.";
+                    return false;
+                }
+
+                if (matchedKey.Length < 5)
+                {
+                    diagnostic = "Rejected trusted alias because the normalized alias key was too short.";
+                    return false;
+                }
+
+                if (!IsWeakMatchIdentitySafe(xmltvChannel, matchedChannels, matchedValue, matchedKey, out diagnostic))
+                {
+                    return false;
+                }
+
+                var guideTokens = ExtractNormalizedTokens(matchedValue);
+                if (guideTokens.Count < 2 &&
+                    !guideTokens.Any(token => token.Any(char.IsDigit)) &&
+                    !matchedValue.Contains('.', StringComparison.Ordinal))
+                {
+                    diagnostic = "Rejected trusted alias because the guide label was too short for automatic assignment.";
+                    return false;
+                }
+
+                var channel = matchedChannels[0];
+                var channelTokens = ExtractNormalizedTokens(string.Join(
+                    " ",
+                    new[] { channel.Name, channel.ProviderEpgChannelId, channel.NormalizedName }.Where(value => !string.IsNullOrWhiteSpace(value))));
+                if (guideTokens.Count > 0 &&
+                    channelTokens.Count > 0 &&
+                    !guideTokens.Any(token => channelTokens.Contains(token, StringComparer.OrdinalIgnoreCase)))
+                {
+                    diagnostic = "Rejected trusted alias because guide and channel tokens did not overlap.";
+                    return false;
+                }
+
+                diagnostic = "Number, suffix, and token guards passed.";
+                return true;
             }
 
             private static bool IsWeakMatchIdentitySafe(

@@ -22,11 +22,15 @@ namespace Kroira.App.Services
             RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
 
         private static readonly Regex MacAddressRegex = new(
-            @"\b[0-9a-f]{2}(?:[:-][0-9a-f]{2}){5}\b",
+            @"\b(?:[0-9a-f]{2}(?:[:-][0-9a-f]{2}){5}|[0-9a-f]{12})\b",
             RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
 
         private static readonly Regex SensitivePairRegex = new(
-            @"(?i)\b((?:username|user|password|pass|token|play_token|mac|serial|device(?:_?id)?|signature|sig|cookie|auth(?:orization)?)|(?:[a-z0-9_:-]*token[a-z0-9_:-]*)|(?:[a-z0-9_:-]*secret[a-z0-9_:-]*))\s*=\s*([^\s&;]+)",
+            @"(?i)\b((?:username|user|password|pass|token|play_token|api[_-]?key|access[_-]?key|key|mac|serial|device(?:_?id)?|signature|sig|cookie|auth(?:orization)?)|(?:[a-z0-9_:-]*token[a-z0-9_:-]*)|(?:[a-z0-9_:-]*secret[a-z0-9_:-]*)|(?:[a-z0-9_:-]*key[a-z0-9_:-]*))\s*([=:])\s*([^\s&;]+)",
+            RegexOptions.Compiled | RegexOptions.CultureInvariant);
+
+        private static readonly Regex AuthorizationTokenRegex = new(
+            @"(?i)\b(bearer|basic)\s+([a-z0-9._~+/=-]{8,})",
             RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
         private static readonly HashSet<string> SensitiveQueryKeys = new(StringComparer.OrdinalIgnoreCase)
@@ -35,6 +39,10 @@ namespace Kroira.App.Services
             "user",
             "password",
             "pass",
+            "key",
+            "api_key",
+            "apikey",
+            "access_key",
             "token",
             "auth",
             "authorization",
@@ -138,7 +146,8 @@ namespace Kroira.App.Services
             });
 
             result = MacAddressRegex.Replace(result, match => RedactMacAddress(match.Value));
-            result = SensitivePairRegex.Replace(result, match => $"{match.Groups[1].Value}=***");
+            result = SensitivePairRegex.Replace(result, match => $"{match.Groups[1].Value}{match.Groups[2].Value}***");
+            result = AuthorizationTokenRegex.Replace(result, match => $"{match.Groups[1].Value} ***");
             return result;
         }
 
@@ -221,6 +230,7 @@ namespace Kroira.App.Services
             }
 
             return trimmed.Contains("token", StringComparison.OrdinalIgnoreCase) ||
+                   trimmed.Contains("key", StringComparison.OrdinalIgnoreCase) ||
                    trimmed.Contains("secret", StringComparison.OrdinalIgnoreCase) ||
                    trimmed.Contains("signature", StringComparison.OrdinalIgnoreCase) ||
                    trimmed.Contains("cookie", StringComparison.OrdinalIgnoreCase) ||

@@ -118,7 +118,7 @@ namespace Kroira.App.Services
         {
             return state switch
             {
-                SourceHealthState.Healthy => CatalogDiscoveryHealthBucket.Healthy,
+                SourceHealthState.Healthy or SourceHealthState.Good => CatalogDiscoveryHealthBucket.Healthy,
                 SourceHealthState.Weak or SourceHealthState.Incomplete or SourceHealthState.Outdated => CatalogDiscoveryHealthBucket.Attention,
                 SourceHealthState.Problematic => CatalogDiscoveryHealthBucket.Degraded,
                 _ => CatalogDiscoveryHealthBucket.Unknown

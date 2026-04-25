@@ -33,8 +33,11 @@ namespace Kroira.App.Services.Metadata
         private static readonly TimeSpan NotFoundTtl = TimeSpan.FromDays(7);
         private static readonly TimeSpan CircuitOpenTtl = TimeSpan.FromMinutes(10);
         private static readonly TimeSpan InitialRetryDelay = TimeSpan.FromSeconds(1);
+        private static readonly TimeSpan MinimumRequestInterval = TimeSpan.FromMilliseconds(250);
         private const int MaxRequestAttempts = 2;
         private const int BroadFailureCircuitThreshold = 6;
+        private static readonly SemaphoreSlim RequestRateGate = new(1, 1);
+        private static DateTime _lastRequestUtc = DateTime.MinValue;
         private static readonly Regex BracketPattern = new Regex(@"\[[^\]]*\]|\([^\)]*\)|\{[^\}]*\}", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         private static readonly Regex YearPattern = new Regex(@"\b(19\d{2}|20\d{2})\b", RegexOptions.Compiled);
         private static readonly Regex EpisodePattern = new Regex(@"\b(s\d{1,2}\s*e\d{1,3}|s\d{1,2}|season\s*\d+|sezon\s*\d+|episode\s*\d+|ep\s*\d+|bolum\s*\d+|bölüm\s*\d+)\b", RegexOptions.IgnoreCase | RegexOptions.Compiled);
@@ -142,6 +145,7 @@ namespace Kroira.App.Services.Metadata
             foreach (var movie in candidates)
             {
                 cancellationToken.ThrowIfCancellationRequested();
+                PreserveMovieTitleMetadata(movie);
                 if (diagnostics.Attempted >= maxItems)
                 {
                     break;
@@ -256,6 +260,7 @@ namespace Kroira.App.Services.Metadata
             foreach (var show in candidates)
             {
                 cancellationToken.ThrowIfCancellationRequested();
+                PreserveSeriesTitleMetadata(show);
                 if (diagnostics.Attempted >= maxItems)
                 {
                     break;
@@ -583,7 +588,8 @@ namespace Kroira.App.Services.Metadata
                 }
             }
 
-            return await SearchAndLoadAsync(apiKey, "movie", movie.Title, movie.ReleaseDate?.Year, diagnostics, context, cancellationToken);
+            var searchTitle = string.IsNullOrWhiteSpace(movie.RawSourceTitle) ? movie.Title : movie.RawSourceTitle;
+            return await SearchAndLoadAsync(apiKey, "movie", searchTitle, movie.ReleaseDate?.Year, diagnostics, context, cancellationToken);
         }
 
         private async Task<TmdbDetails?> MatchSeriesAsync(string apiKey, Series series, TmdbDiagnostics diagnostics, CancellationToken cancellationToken)
@@ -611,7 +617,8 @@ namespace Kroira.App.Services.Metadata
                 }
             }
 
-            return await SearchAndLoadAsync(apiKey, "tv", series.Title, series.FirstAirDate?.Year, diagnostics, context, cancellationToken);
+            var searchTitle = string.IsNullOrWhiteSpace(series.RawSourceTitle) ? series.Title : series.RawSourceTitle;
+            return await SearchAndLoadAsync(apiKey, "tv", searchTitle, series.FirstAirDate?.Year, diagnostics, context, cancellationToken);
         }
 
         private async Task<TmdbDetails?> FindByImdbIdAsync(string apiKey, string mediaType, string imdbId, TmdbDiagnostics diagnostics, TmdbRequestContext context, CancellationToken cancellationToken)
@@ -639,7 +646,7 @@ namespace Kroira.App.Services.Metadata
 
         private async Task<TmdbDetails?> SearchAndLoadAsync(string apiKey, string mediaType, string rawTitle, int? providerYear, TmdbDiagnostics diagnostics, TmdbRequestContext context, CancellationToken cancellationToken)
         {
-            var queries = BuildSearchQueries(rawTitle, providerYear).ToList();
+            var queries = BuildSearchQueries(rawTitle, providerYear, mediaType == "movie" ? MetadataMediaKind.Movie : MetadataMediaKind.Series).ToList();
             if (queries.Count == 0)
             {
                 return null;
@@ -720,6 +727,7 @@ namespace Kroira.App.Services.Metadata
                 cancellationToken.ThrowIfCancellationRequested();
                 try
                 {
+                    await WaitForRequestSlotAsync(cancellationToken);
                     using var response = await _httpClient.GetAsync(url, cancellationToken);
                     if (!response.IsSuccessStatusCode)
                     {
@@ -785,6 +793,26 @@ namespace Kroira.App.Services.Metadata
             }
 
             return null;
+        }
+
+        private static async Task WaitForRequestSlotAsync(CancellationToken cancellationToken)
+        {
+            await RequestRateGate.WaitAsync(cancellationToken);
+            try
+            {
+                var elapsed = DateTime.UtcNow - _lastRequestUtc;
+                var delay = MinimumRequestInterval - elapsed;
+                if (delay > TimeSpan.Zero)
+                {
+                    await Task.Delay(delay, cancellationToken);
+                }
+
+                _lastRequestUtc = DateTime.UtcNow;
+            }
+            finally
+            {
+                RequestRateGate.Release();
+            }
         }
 
         private static TmdbFailureKind ClassifyStatusCode(HttpStatusCode statusCode)
@@ -861,24 +889,14 @@ namespace Kroira.App.Services.Metadata
             Debug.WriteLine($"TMDb request failure: media={context.MediaType}, id={context.ContentId}, title='{context.Title}', request={requestType}, kind={kind}, status={status}, message='{message}', retry={(willRetry ? "yes" : "no")}, nextRetryUtc={nextRetryUtc:O}");
         }
 
-        private static IEnumerable<TmdbSearchQuery> BuildSearchQueries(string rawTitle, int? providerYear)
+        private static IEnumerable<TmdbSearchQuery> BuildSearchQueries(string rawTitle, int? providerYear, MetadataMediaKind mediaKind)
         {
-            var raw = rawTitle ?? string.Empty;
-            var year = providerYear ?? ExtractYear(raw);
-            var cleaned = CleanProviderTitle(raw);
-            var variants = new List<string> { cleaned };
-
-            variants.AddRange(BuildAlternateTitleVariants(cleaned));
-            variants.Add(RemoveTurkishDiacritics(cleaned));
-
-            foreach (var title in variants
-                         .Select(NormalizeSpacing)
-                         .Where(title => title.Length >= 2 && !LooksLikeNonFeature(title))
-                         .Distinct(StringComparer.OrdinalIgnoreCase))
+            var analysis = MetadataTitleAnalyzer.Analyze(rawTitle, providerYear, mediaKind);
+            foreach (var title in analysis.SearchTitles)
             {
-                if (year.HasValue)
+                if (analysis.Year.HasValue)
                 {
-                    yield return new TmdbSearchQuery(title, year, true);
+                    yield return new TmdbSearchQuery(title, analysis.Year, true);
                 }
 
                 yield return new TmdbSearchQuery(title, null, false);
@@ -889,7 +907,7 @@ namespace Kroira.App.Services.Metadata
         {
             string? fallbackId = null;
             double fallbackScore = double.MinValue;
-            var normalizedQuery = NormalizeForCompare(query.Title);
+            var mediaKind = mediaType == "movie" ? MetadataMediaKind.Movie : MetadataMediaKind.Series;
 
             foreach (var result in results.EnumerateArray().Take(8))
             {
@@ -910,65 +928,18 @@ namespace Kroira.App.Services.Metadata
                 var originalTitle = mediaType == "movie"
                     ? GetString(result, "original_title")
                     : GetString(result, "original_name");
+                var resultYear = TryParseYear(date, out var parsedYear) ? parsedYear : (int?)null;
 
-                if (LooksLikeNonFeature(title ?? string.Empty) || LooksLikeNonFeature(originalTitle ?? string.Empty))
+                var candidate = new MetadataCandidate(id, title ?? string.Empty, originalTitle ?? string.Empty, resultYear, popularity, voteCount);
+                var score = MetadataTitleAnalyzer.ScoreCandidate(query.Title, query.Year, candidate, mediaKind);
+                if (score.IsAcceptable && score.Score > fallbackScore)
                 {
-                    continue;
-                }
-
-                var titleScore = Math.Max(
-                    CalculateTitleScore(normalizedQuery, NormalizeForCompare(title ?? string.Empty)),
-                    CalculateTitleScore(normalizedQuery, NormalizeForCompare(originalTitle ?? string.Empty)));
-
-                if (titleScore < 70)
-                {
-                    continue;
-                }
-
-                var yearScore = 0d;
-                var hasBadYearMismatch = false;
-                if (query.Year.HasValue && TryParseYear(date, out var resultYear))
-                {
-                    var delta = Math.Abs(resultYear - query.Year.Value);
-                    if (delta == 0)
-                    {
-                        yearScore = 18;
-                    }
-                    else if (delta == 1)
-                    {
-                        yearScore = 7;
-                    }
-                    else
-                    {
-                        yearScore = mediaType == "movie" ? -26 : -14;
-                        hasBadYearMismatch = true;
-                    }
-                }
-
-                if (hasBadYearMismatch && titleScore < 96)
-                {
-                    continue;
-                }
-
-                if (!query.Year.HasValue && titleScore < 84)
-                {
-                    continue;
-                }
-
-                var score = titleScore
-                    + yearScore
-                    + Math.Min(popularity / 12, 8)
-                    + Math.Min(voteCount / 1000, 4);
-
-                if (score > fallbackScore)
-                {
-                    fallbackScore = score;
+                    fallbackScore = score.Score;
                     fallbackId = id;
                 }
             }
 
-            var threshold = query.Year.HasValue ? 82 : 88;
-            return fallbackScore >= threshold ? fallbackId : null;
+            return fallbackId;
         }
 
         private static string CleanProviderTitle(string rawTitle)
@@ -1174,6 +1145,7 @@ namespace Kroira.App.Services.Metadata
 
         private static void ApplyMovie(Movie movie, TmdbDetails details)
         {
+            PreserveMovieTitleMetadata(movie);
             movie.TmdbId = details.TmdbId;
             movie.ImdbId = details.ImdbId;
             movie.TmdbPosterPath = details.PosterPath;
@@ -1192,6 +1164,7 @@ namespace Kroira.App.Services.Metadata
 
         private static void ApplySeries(Series series, TmdbDetails details)
         {
+            PreserveSeriesTitleMetadata(series);
             series.TmdbId = details.TmdbId;
             series.ImdbId = details.ImdbId;
             series.TmdbPosterPath = details.PosterPath;
@@ -1206,6 +1179,42 @@ namespace Kroira.App.Services.Metadata
             series.OriginalLanguage = string.IsNullOrWhiteSpace(details.OriginalLanguage) ? series.OriginalLanguage : details.OriginalLanguage;
             series.MetadataUpdatedAt = DateTime.UtcNow;
             CatalogFingerprinting.Apply(series);
+        }
+
+        private static void PreserveMovieTitleMetadata(Movie movie)
+        {
+            if (string.IsNullOrWhiteSpace(movie.RawSourceTitle))
+            {
+                movie.RawSourceTitle = movie.Title;
+            }
+
+            if (!string.IsNullOrWhiteSpace(movie.CanonicalTitleKey))
+            {
+                return;
+            }
+
+            var analysis = MetadataTitleAnalyzer.AnalyzeMovie(movie.RawSourceTitle, movie.ReleaseDate?.Year);
+            movie.CanonicalTitleKey = string.IsNullOrWhiteSpace(analysis.NormalizedTitle)
+                ? MetadataTitleAnalyzer.NormalizeTitle(movie.Title)
+                : analysis.NormalizedTitle;
+        }
+
+        private static void PreserveSeriesTitleMetadata(Series series)
+        {
+            if (string.IsNullOrWhiteSpace(series.RawSourceTitle))
+            {
+                series.RawSourceTitle = series.Title;
+            }
+
+            if (!string.IsNullOrWhiteSpace(series.CanonicalTitleKey))
+            {
+                return;
+            }
+
+            var analysis = MetadataTitleAnalyzer.AnalyzeSeries(series.RawSourceTitle, series.FirstAirDate?.Year);
+            series.CanonicalTitleKey = string.IsNullOrWhiteSpace(analysis.NormalizedTitle)
+                ? MetadataTitleAnalyzer.NormalizeTitle(series.Title)
+                : analysis.NormalizedTitle;
         }
 
         private static string ParseGenres(JsonElement root)

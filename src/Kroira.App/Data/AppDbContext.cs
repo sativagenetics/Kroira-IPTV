@@ -18,6 +18,7 @@ namespace Kroira.App.Data
         public DbSet<SchemaVersion> SchemaVersions { get; set; } = null!;
         public DbSet<SourceProfile> SourceProfiles { get; set; } = null!;
         public DbSet<SourceCredential> SourceCredentials { get; set; } = null!;
+        public DbSet<SourceProtectedCredentialSecret> SourceProtectedCredentialSecrets { get; set; } = null!;
         public DbSet<SourceSyncState> SourceSyncStates { get; set; } = null!;
         public DbSet<StalkerPortalSnapshot> StalkerPortalSnapshots { get; set; } = null!;
         public DbSet<SourceAcquisitionProfile> SourceAcquisitionProfiles { get; set; } = null!;
@@ -75,6 +76,30 @@ namespace Kroira.App.Data
                 .WithOne()
                 .HasForeignKey<SourceCredential>(e => e.SourceProfileId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<SourceProtectedCredentialSecret>()
+                .HasIndex(e => new { e.SourceProfileId, e.Name })
+                .IsUnique();
+
+            modelBuilder.Entity<SourceProtectedCredentialSecret>()
+                .HasOne<SourceProfile>()
+                .WithMany()
+                .HasForeignKey(e => e.SourceProfileId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<SourceProtectedCredentialSecret>()
+                .Property(e => e.Name)
+                .IsRequired()
+                .HasMaxLength(96);
+
+            modelBuilder.Entity<SourceProtectedCredentialSecret>()
+                .Property(e => e.ProtectedValue)
+                .IsRequired();
+
+            modelBuilder.Entity<SourceProtectedCredentialSecret>()
+                .Property(e => e.ProtectionScheme)
+                .IsRequired()
+                .HasMaxLength(64);
 
             modelBuilder.Entity<SourceCredential>()
                 .Property(e => e.ProxyUrl)
@@ -633,6 +658,12 @@ namespace Kroira.App.Data
                 .HasIndex(e => new { e.SourceProfileId, e.StreamUrlHash, e.XmltvChannelId });
 
             modelBuilder.Entity<EpgMappingDecision>()
+                .HasIndex(e => new { e.SourceProfileId, e.ChannelId });
+
+            modelBuilder.Entity<EpgMappingDecision>()
+                .HasIndex(e => new { e.SourceProfileId, e.ChannelIdentityKey });
+
+            modelBuilder.Entity<EpgMappingDecision>()
                 .Property(e => e.ChannelIdentityKey)
                 .IsRequired()
                 .HasMaxLength(180);
@@ -682,13 +713,37 @@ namespace Kroira.App.Data
                 .HasIndex(e => new { e.ChannelId, e.StartTimeUtc })
                 .HasDatabaseName("IX_EpgPrograms_ChannelId_StartTimeUtc");
 
+            modelBuilder.Entity<EpgProgram>()
+                .HasIndex(e => new { e.ChannelId, e.StartTimeUtc, e.EndTimeUtc })
+                .HasDatabaseName("IX_EpgPrograms_ChannelId_StartTimeUtc_EndTimeUtc");
+
+            modelBuilder.Entity<EpgProgram>()
+                .HasIndex(e => new { e.StartTimeUtc, e.EndTimeUtc })
+                .HasDatabaseName("IX_EpgPrograms_StartTimeUtc_EndTimeUtc");
+
+            modelBuilder.Entity<ChannelCategory>()
+                .HasIndex(e => e.SourceProfileId)
+                .HasDatabaseName("IX_ChannelCategories_SourceProfileId");
+
             modelBuilder.Entity<Channel>()
                 .HasIndex(e => e.EpgChannelId)
                 .HasDatabaseName("IX_Channels_EpgChannelId");
 
             modelBuilder.Entity<Channel>()
+                .HasIndex(e => e.ProviderEpgChannelId)
+                .HasDatabaseName("IX_Channels_ProviderEpgChannelId");
+
+            modelBuilder.Entity<Channel>()
                 .HasIndex(e => e.NormalizedIdentityKey)
                 .HasDatabaseName("IX_Channels_NormalizedIdentityKey");
+
+            modelBuilder.Entity<Channel>()
+                .HasIndex(e => e.NormalizedName)
+                .HasDatabaseName("IX_Channels_NormalizedName");
+
+            modelBuilder.Entity<Channel>()
+                .HasIndex(e => new { e.ChannelCategoryId, e.ProviderEpgChannelId })
+                .HasDatabaseName("IX_Channels_ChannelCategoryId_ProviderEpgChannelId");
 
             modelBuilder.Entity<Channel>()
                 .Property(e => e.ProviderLogoUrl)
@@ -788,6 +843,18 @@ namespace Kroira.App.Data
                 .HasIndex(job => new { job.ProfileId, job.Status, job.RequestedAtUtc });
 
             modelBuilder.Entity<Movie>()
+                .HasIndex(m => m.SourceProfileId);
+
+            modelBuilder.Entity<Movie>()
+                .HasIndex(m => new { m.SourceProfileId, m.ExternalId });
+
+            modelBuilder.Entity<Movie>()
+                .HasIndex(m => new { m.SourceProfileId, m.CanonicalTitleKey });
+
+            modelBuilder.Entity<Movie>()
+                .HasIndex(m => new { m.SourceProfileId, m.ContentKind });
+
+            modelBuilder.Entity<Movie>()
                 .HasIndex(m => m.TmdbId);
 
             modelBuilder.Entity<Movie>()
@@ -798,6 +865,18 @@ namespace Kroira.App.Data
 
             modelBuilder.Entity<Movie>()
                 .HasIndex(m => m.DedupFingerprint);
+
+            modelBuilder.Entity<Series>()
+                .HasIndex(s => s.SourceProfileId);
+
+            modelBuilder.Entity<Series>()
+                .HasIndex(s => new { s.SourceProfileId, s.ExternalId });
+
+            modelBuilder.Entity<Series>()
+                .HasIndex(s => new { s.SourceProfileId, s.CanonicalTitleKey });
+
+            modelBuilder.Entity<Series>()
+                .HasIndex(s => new { s.SourceProfileId, s.ContentKind });
 
             modelBuilder.Entity<Series>()
                 .HasIndex(s => s.TmdbId);

@@ -28,6 +28,57 @@ namespace Kroira.App.Views
             ViewModel.RefreshCommand.Execute(null);
         }
 
+        private void RefreshGuideTimeline_Click(object sender, RoutedEventArgs e)
+        {
+            ViewModel.RefreshGuideTimelineCommand.Execute(null);
+        }
+
+        private void JumpGuideToNow_Click(object sender, RoutedEventArgs e)
+        {
+            ViewModel.JumpGuideToNowCommand.Execute(null);
+        }
+
+        private void TimelineProgram_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not Button { CommandParameter: GuideTimelineProgramViewModel program })
+            {
+                return;
+            }
+
+            var context = ViewModel.CreatePlaybackContext(program);
+            if (context != null)
+            {
+                Frame.Navigate(typeof(EmbeddedPlaybackPage), context);
+            }
+        }
+
+        private void TimelineChannel_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not Button { CommandParameter: GuideTimelineChannelViewModel channel })
+            {
+                return;
+            }
+
+            var context = ViewModel.CreatePlaybackContext(channel);
+            if (context != null)
+            {
+                Frame.Navigate(typeof(EmbeddedPlaybackPage), context);
+            }
+        }
+
+        private void SetManualOverride_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button { CommandParameter: ManualMatchCandidateViewModel candidate })
+            {
+                ViewModel.SetManualOverrideCommand.Execute(candidate);
+            }
+        }
+
+        private void ClearManualOverride_Click(object sender, RoutedEventArgs e)
+        {
+            ViewModel.ClearManualOverrideCommand.Execute(null);
+        }
+
         private void AddPresetGuide_Click(object sender, RoutedEventArgs e)
         {
             ViewModel.AddSelectedPublicGuideCommand.Execute(null);

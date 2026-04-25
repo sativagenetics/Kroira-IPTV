@@ -88,11 +88,12 @@
                                                TextWrapping="Wrap" />
                                 </StackPanel>
 
-                                <ToggleSwitch x:Name="RemoteModeToggle"
-                                              Grid.Column="1"
-                                              IsOn="{x:Bind ViewModel.RemoteModeEnabled, Mode=TwoWay}"
-                                              HorizontalAlignment="Right"
-                                              VerticalAlignment="Center" />
+                                 <ToggleSwitch x:Name="RemoteModeToggle"
+                                               Grid.Column="1"
+                                               IsOn="{x:Bind ViewModel.RemoteModeEnabled, Mode=TwoWay}"
+                                               HorizontalAlignment="Right"
+                                               VerticalAlignment="Center"
+                                               AutomationProperties.Name="Remote-friendly mode" />
                             </Grid>
 
                             <Grid ColumnSpacing="18">
@@ -108,16 +109,17 @@
                                                MaxWidth="520" />
                                 </StackPanel>
 
-                                <ComboBox x:Name="LanguageComboBox"
-                                          Grid.Column="1"
-                                          Style="{StaticResource KroiraComboBoxStyle}"
-                                          ItemsSource="{x:Bind ViewModel.Languages, Mode=OneWay}"
-                                          SelectedItem="{x:Bind ViewModel.SelectedLanguage, Mode=TwoWay}"
-                                          DisplayMemberPath="DisplayName"
-                                          MinWidth="180"
-                                          MaxWidth="220"
-                                          HorizontalAlignment="Stretch"
-                                          VerticalAlignment="Center" />
+                                 <ComboBox x:Name="LanguageComboBox"
+                                           Grid.Column="1"
+                                           Style="{StaticResource KroiraComboBoxStyle}"
+                                           ItemsSource="{x:Bind ViewModel.Languages, Mode=OneWay}"
+                                           SelectedItem="{x:Bind ViewModel.SelectedLanguage, Mode=TwoWay}"
+                                           DisplayMemberPath="DisplayName"
+                                           MinWidth="180"
+                                           MaxWidth="220"
+                                           HorizontalAlignment="Stretch"
+                                           VerticalAlignment="Center"
+                                           AutomationProperties.Name="App language" />
                             </Grid>
                         </StackPanel>
                     </Border>
@@ -145,16 +147,17 @@
                                                Style="{StaticResource KroiraBodyStyle}" />
                                 </StackPanel>
 
-                                <ComboBox Grid.Column="1"
-                                          Style="{StaticResource KroiraComboBoxStyle}"
-                                          ItemsSource="{x:Bind ViewModel.ThemeOptions, Mode=OneWay}"
-                                          SelectedItem="{x:Bind ViewModel.SelectedThemeOption, Mode=TwoWay}"
-                                          DisplayMemberPath="DisplayName"
-                                          IsEnabled="{x:Bind ViewModel.CanUseThemePresets, Mode=OneWay}"
-                                          MinWidth="180"
-                                          MaxWidth="220"
-                                          HorizontalAlignment="Stretch"
-                                          VerticalAlignment="Center" />
+                                 <ComboBox Grid.Column="1"
+                                           Style="{StaticResource KroiraComboBoxStyle}"
+                                           ItemsSource="{x:Bind ViewModel.ThemeOptions, Mode=OneWay}"
+                                           SelectedItem="{x:Bind ViewModel.SelectedThemeOption, Mode=TwoWay}"
+                                           DisplayMemberPath="DisplayName"
+                                           IsEnabled="{x:Bind ViewModel.CanUseThemePresets, Mode=OneWay}"
+                                           MinWidth="180"
+                                           MaxWidth="220"
+                                           HorizontalAlignment="Stretch"
+                                           VerticalAlignment="Center"
+                                           AutomationProperties.Name="Theme preset" />
                             </Grid>
 
                             <Grid ColumnSpacing="18">
@@ -169,16 +172,17 @@
                                                Style="{StaticResource KroiraBodyStyle}" />
                                 </StackPanel>
 
-                                <ComboBox Grid.Column="1"
-                                          Style="{StaticResource KroiraComboBoxStyle}"
-                                          ItemsSource="{x:Bind ViewModel.AccentOptions, Mode=OneWay}"
-                                          SelectedItem="{x:Bind ViewModel.SelectedAccentOption, Mode=TwoWay}"
-                                          DisplayMemberPath="DisplayName"
-                                          IsEnabled="{x:Bind ViewModel.CanUseAccentPacks, Mode=OneWay}"
-                                          MinWidth="180"
-                                          MaxWidth="220"
-                                          HorizontalAlignment="Stretch"
-                                          VerticalAlignment="Center" />
+                                 <ComboBox Grid.Column="1"
+                                           Style="{StaticResource KroiraComboBoxStyle}"
+                                           ItemsSource="{x:Bind ViewModel.AccentOptions, Mode=OneWay}"
+                                           SelectedItem="{x:Bind ViewModel.SelectedAccentOption, Mode=TwoWay}"
+                                           DisplayMemberPath="DisplayName"
+                                           IsEnabled="{x:Bind ViewModel.CanUseAccentPacks, Mode=OneWay}"
+                                           MinWidth="180"
+                                           MaxWidth="220"
+                                           HorizontalAlignment="Stretch"
+                                           VerticalAlignment="Center"
+                                           AutomationProperties.Name="Accent pack" />
                             </Grid>
 
                             <TextBlock Text="{x:Bind ViewModel.AppearanceStatusText, Mode=OneWay}"
@@ -187,16 +191,55 @@
                         </StackPanel>
                     </Border>
 
-                    <Grid ColumnSpacing="18">
+                    <Grid ColumnSpacing="18"
+                          RowSpacing="18">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
 
                         <Border Style="{StaticResource KroiraSettingsGroupStyle}">
                             <StackPanel Spacing="10">
-                                <TextBlock Text="Media behavior" Style="{StaticResource KroiraSectionTitleStyle}" />
-                                <TextBlock Text="Provider data remains the primary source for artwork, titles, and playback routing."
+                                <TextBlock Text="Playback preferences" Style="{StaticResource KroiraSectionTitleStyle}" />
+                                <TextBlock Text="Resume state, favorites, and playback routing stay local and are applied without blocking app launch."
+                                            Style="{StaticResource KroiraBodyStyle}"
+                                            TextWrapping="Wrap" />
+                                <Border Height="1" Background="{StaticResource KroiraBorderBrush}" Opacity="0.45" />
+                                <TextBlock Text="Local resume and routing"
+                                           Foreground="{StaticResource KroiraAccentBrush}"
+                                           FontSize="12"
+                                           FontWeight="SemiBold" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border Grid.Column="1" Style="{StaticResource KroiraSettingsGroupStyle}">
+                            <StackPanel Spacing="10">
+                                <TextBlock Text="EPG preferences" Style="{StaticResource KroiraSectionTitleStyle}" />
+                                <TextBlock Text="Guide sources, stale guide warnings, and manual channel matching are managed from the guide and source diagnostics surfaces."
+                                            Style="{StaticResource KroiraBodyStyle}"
+                                            TextWrapping="Wrap" />
+                                <Border Height="1" Background="{StaticResource KroiraBorderBrush}" Opacity="0.45" />
+                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                    <Button Content="Open Guide"
+                                            Click="OpenGuideFromSettings_Click"
+                                            Style="{StaticResource KroiraGhostButtonStyle}"
+                                            AutomationProperties.Name="Open guide settings" />
+                                    <Button Content="Sources"
+                                            Click="OpenSourcesFromSettings_Click"
+                                            Style="{StaticResource KroiraGhostButtonStyle}"
+                                            AutomationProperties.Name="Open source diagnostics" />
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Grid.Row="1" Style="{StaticResource KroiraSettingsGroupStyle}">
+                            <StackPanel Spacing="10">
+                                <TextBlock Text="Metadata preferences" Style="{StaticResource KroiraSectionTitleStyle}" />
+                                <TextBlock Text="TMDb enrichment is a background fallback when local provider artwork or titles are incomplete."
                                            Style="{StaticResource KroiraBodyStyle}"
                                            TextWrapping="Wrap" />
                                 <Border Height="1" Background="{StaticResource KroiraBorderBrush}" Opacity="0.45" />
@@ -207,17 +250,18 @@
                             </StackPanel>
                         </Border>
 
-                        <Border Grid.Column="1" Style="{StaticResource KroiraSettingsGroupStyle}">
+                        <Border Grid.Row="1" Grid.Column="1" Style="{StaticResource KroiraSettingsGroupStyle}">
                             <StackPanel Spacing="10">
-                                <TextBlock Text="Metadata" Style="{StaticResource KroiraSectionTitleStyle}" />
-                                <TextBlock Text="TMDb is used as enrichment and fallback when local provider metadata is incomplete."
+                                <TextBlock Text="Diagnostics export" Style="{StaticResource KroiraSectionTitleStyle}" />
+                                <TextBlock Text="Sanitized source reports are available per source and do not include credentials or provider tokens."
                                            Style="{StaticResource KroiraBodyStyle}"
                                            TextWrapping="Wrap" />
                                 <Border Height="1" Background="{StaticResource KroiraBorderBrush}" Opacity="0.45" />
-                                <TextBlock Text="Fallback enrichment"
-                                           Foreground="{StaticResource KroiraAccentBrush}"
-                                           FontSize="12"
-                                           FontWeight="SemiBold" />
+                                <Button Content="Open Sources"
+                                        Click="OpenSourcesFromSettings_Click"
+                                        Style="{StaticResource KroiraGhostButtonStyle}"
+                                        HorizontalAlignment="Left"
+                                        AutomationProperties.Name="Open diagnostics export" />
                             </StackPanel>
                         </Border>
                     </Grid>
@@ -246,10 +290,11 @@
                                                TextWrapping="Wrap" />
                                 </StackPanel>
 
-                                <ToggleSwitch Grid.Column="1"
-                                              IsOn="{x:Bind ViewModel.AutoRefreshEnabled, Mode=TwoWay}"
-                                              HorizontalAlignment="Right"
-                                              VerticalAlignment="Center" />
+                                 <ToggleSwitch Grid.Column="1"
+                                               IsOn="{x:Bind ViewModel.AutoRefreshEnabled, Mode=TwoWay}"
+                                               HorizontalAlignment="Right"
+                                               VerticalAlignment="Center"
+                                               AutomationProperties.Name="Enable automatic refresh" />
                             </Grid>
 
                             <Grid ColumnSpacing="18">
@@ -264,21 +309,23 @@
                                                Style="{StaticResource KroiraBodyStyle}" />
                                 </StackPanel>
 
-                                <ComboBox Grid.Column="1"
-                                          Style="{StaticResource KroiraComboBoxStyle}"
-                                          ItemsSource="{x:Bind ViewModel.AutoRefreshIntervalOptions, Mode=OneWay}"
-                                          SelectedItem="{x:Bind ViewModel.SelectedAutoRefreshInterval, Mode=TwoWay}"
-                                          DisplayMemberPath="DisplayName"
-                                          IsEnabled="{x:Bind ViewModel.AutoRefreshEnabled, Mode=OneWay}"
-                                          MinWidth="180"
-                                          MaxWidth="220"
-                                          HorizontalAlignment="Stretch"
-                                          VerticalAlignment="Center" />
+                                 <ComboBox Grid.Column="1"
+                                           Style="{StaticResource KroiraComboBoxStyle}"
+                                           ItemsSource="{x:Bind ViewModel.AutoRefreshIntervalOptions, Mode=OneWay}"
+                                           SelectedItem="{x:Bind ViewModel.SelectedAutoRefreshInterval, Mode=TwoWay}"
+                                           DisplayMemberPath="DisplayName"
+                                           IsEnabled="{x:Bind ViewModel.AutoRefreshEnabled, Mode=OneWay}"
+                                           MinWidth="180"
+                                           MaxWidth="220"
+                                           HorizontalAlignment="Stretch"
+                                           VerticalAlignment="Center"
+                                           AutomationProperties.Name="Refresh cadence" />
                             </Grid>
 
-                            <ToggleSwitch Header="Run shortly after launch"
-                                          IsOn="{x:Bind ViewModel.RunAutoRefreshAfterLaunch, Mode=TwoWay}"
-                                          IsEnabled="{x:Bind ViewModel.AutoRefreshEnabled, Mode=OneWay}" />
+                             <ToggleSwitch Header="Run shortly after launch"
+                                           IsOn="{x:Bind ViewModel.RunAutoRefreshAfterLaunch, Mode=TwoWay}"
+                                           IsEnabled="{x:Bind ViewModel.AutoRefreshEnabled, Mode=OneWay}"
+                                           AutomationProperties.Name="Run refresh shortly after launch" />
                         </StackPanel>
                     </Border>
                 </StackPanel>
@@ -317,6 +364,23 @@
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
                                 <StackPanel Spacing="4">
+                                    <TextBlock Text="Release" Style="{StaticResource KroiraTitleStyle}" />
+                                    <TextBlock Text="Store submission version" Style="{StaticResource KroiraBodyStyle}" />
+                                </StackPanel>
+                                <TextBlock Grid.Column="1"
+                                           Text="{x:Bind ViewModel.ReleaseVersionText, Mode=OneWay}"
+                                           Foreground="{StaticResource KroiraTextPrimaryBrush}"
+                                           FontSize="13"
+                                           FontWeight="SemiBold"
+                                           VerticalAlignment="Center" />
+                            </Grid>
+
+                            <Grid ColumnSpacing="14">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Spacing="4">
                                     <TextBlock Text="Version / build" Style="{StaticResource KroiraTitleStyle}" />
                                     <TextBlock Text="Installed package" Style="{StaticResource KroiraBodyStyle}" />
                                 </StackPanel>
@@ -327,6 +391,12 @@
                                            FontWeight="SemiBold"
                                            VerticalAlignment="Center" />
                             </Grid>
+
+                            <TextBlock Text="{x:Bind ViewModel.ShortDescription, Mode=OneWay}"
+                                       Foreground="{StaticResource KroiraAccentBrush}"
+                                       FontSize="13"
+                                       FontWeight="SemiBold"
+                                       TextWrapping="Wrap" />
 
                             <TextBlock Text="{x:Bind ViewModel.ProductDescription, Mode=OneWay}"
                                        Style="{StaticResource KroiraBodyStyle}"
@@ -351,14 +421,16 @@
                                        TextWrapping="Wrap" />
 
                             <StackPanel Orientation="Horizontal" Spacing="12">
-                                <Button Content="Export"
-                                        Click="OnExportBackupClick"
-                                        IsEnabled="{x:Bind ViewModel.CanStartBackupAction, Mode=OneWay}" />
+                                 <Button Content="Export"
+                                         Click="OnExportBackupClick"
+                                         IsEnabled="{x:Bind ViewModel.CanStartBackupAction, Mode=OneWay}"
+                                         AutomationProperties.Name="Export backup" />
 
-                                <Button Content="Restore"
-                                        Click="OnRestoreBackupClick"
-                                        Visibility="{x:Bind RestoreBackupVisibility, Mode=OneWay}"
-                                        IsEnabled="{x:Bind ViewModel.CanStartBackupAction, Mode=OneWay}" />
+                                 <Button Content="Restore"
+                                         Click="OnRestoreBackupClick"
+                                         Visibility="{x:Bind RestoreBackupVisibility, Mode=OneWay}"
+                                         IsEnabled="{x:Bind ViewModel.CanStartBackupAction, Mode=OneWay}"
+                                         AutomationProperties.Name="Restore backup" />
 
                                 <ProgressRing Width="18"
                                               Height="18"
@@ -424,16 +496,33 @@
                                                Style="{StaticResource KroiraBodyStyle}"
                                                TextWrapping="Wrap" />
                                 </StackPanel>
-                                <HyperlinkButton Grid.Column="1"
-                                                 Content="Open"
-                                                 Command="{x:Bind ViewModel.OpenPrivacyPolicyCommand}"
-                                                 IsEnabled="{x:Bind ViewModel.CanOpenPrivacyPolicy, Mode=OneWay}"
-                                                 Foreground="{StaticResource KroiraAccentBrush}"
-                                                 Padding="0"
-                                                 VerticalAlignment="Center" />
+                                 <HyperlinkButton Grid.Column="1"
+                                                  Content="Open"
+                                                  Command="{x:Bind ViewModel.OpenPrivacyPolicyCommand}"
+                                                  IsEnabled="{x:Bind ViewModel.CanOpenPrivacyPolicy, Mode=OneWay}"
+                                                  Foreground="{StaticResource KroiraAccentBrush}"
+                                                  Padding="0"
+                                                  VerticalAlignment="Center"
+                                                  AutomationProperties.Name="Open privacy policy" />
                             </Grid>
 
                             <TextBlock Text="{x:Bind ViewModel.PrivacySummaryText, Mode=OneWay}"
+                                       Style="{StaticResource KroiraBodyStyle}"
+                                       TextWrapping="Wrap" />
+
+                            <TextBlock Text="{x:Bind ViewModel.CredentialHandlingText, Mode=OneWay}"
+                                       Style="{StaticResource KroiraBodyStyle}"
+                                       TextWrapping="Wrap" />
+
+                            <TextBlock Text="{x:Bind ViewModel.SanitizedLogsText, Mode=OneWay}"
+                                       Style="{StaticResource KroiraBodyStyle}"
+                                       TextWrapping="Wrap" />
+
+                            <TextBlock Text="{x:Bind ViewModel.TelemetryText, Mode=OneWay}"
+                                       Style="{StaticResource KroiraBodyStyle}"
+                                       TextWrapping="Wrap" />
+
+                            <TextBlock Text="{x:Bind ViewModel.MetadataProviderText, Mode=OneWay}"
                                        Style="{StaticResource KroiraBodyStyle}"
                                        TextWrapping="Wrap" />
 
@@ -448,13 +537,14 @@
                                                Style="{StaticResource KroiraBodyStyle}"
                                                TextWrapping="Wrap" />
                                 </StackPanel>
-                                <HyperlinkButton Grid.Column="1"
-                                                 Content="Open"
-                                                 Command="{x:Bind ViewModel.OpenSupportCommand}"
-                                                 IsEnabled="{x:Bind ViewModel.CanOpenSupportPage, Mode=OneWay}"
-                                                 Foreground="{StaticResource KroiraAccentBrush}"
-                                                 Padding="0"
-                                                 VerticalAlignment="Center" />
+                                 <HyperlinkButton Grid.Column="1"
+                                                  Content="Open"
+                                                  Command="{x:Bind ViewModel.OpenSupportCommand}"
+                                                  IsEnabled="{x:Bind ViewModel.CanOpenSupportPage, Mode=OneWay}"
+                                                  Foreground="{StaticResource KroiraAccentBrush}"
+                                                  Padding="0"
+                                                  VerticalAlignment="Center"
+                                                  AutomationProperties.Name="Open support page" />
                             </Grid>
 
                             <Grid ColumnSpacing="14">
@@ -468,16 +558,47 @@
                                                Style="{StaticResource KroiraBodyStyle}"
                                                TextWrapping="Wrap" />
                                 </StackPanel>
-                                <HyperlinkButton Grid.Column="1"
-                                                 Content="Email"
-                                                 Command="{x:Bind ViewModel.OpenSupportEmailCommand}"
-                                                 IsEnabled="{x:Bind ViewModel.CanEmailSupport, Mode=OneWay}"
-                                                 Foreground="{StaticResource KroiraAccentBrush}"
-                                                 Padding="0"
-                                                 VerticalAlignment="Center" />
+                                 <HyperlinkButton Grid.Column="1"
+                                                  Content="Email"
+                                                  Command="{x:Bind ViewModel.OpenSupportEmailCommand}"
+                                                  IsEnabled="{x:Bind ViewModel.CanEmailSupport, Mode=OneWay}"
+                                                  Foreground="{StaticResource KroiraAccentBrush}"
+                                                  Padding="0"
+                                                  VerticalAlignment="Center"
+                                                  AutomationProperties.Name="Email support" />
                             </Grid>
 
                             <TextBlock Text="{x:Bind ViewModel.SupportSummaryText, Mode=OneWay}"
+                                       Style="{StaticResource KroiraBodyStyle}"
+                                       TextWrapping="Wrap" />
+
+                            <Border Height="1" Background="{StaticResource KroiraBorderBrush}" Opacity="0.45" />
+
+                            <TextBlock Text="Common support topics"
+                                       Style="{StaticResource KroiraTitleStyle}" />
+
+                            <TextBlock Text="{x:Bind ViewModel.SupportAuthenticationFailureText, Mode=OneWay}"
+                                       Style="{StaticResource KroiraBodyStyle}"
+                                       TextWrapping="Wrap" />
+                            <TextBlock Text="{x:Bind ViewModel.SupportNoChannelsText, Mode=OneWay}"
+                                       Style="{StaticResource KroiraBodyStyle}"
+                                       TextWrapping="Wrap" />
+                            <TextBlock Text="{x:Bind ViewModel.SupportNoEpgText, Mode=OneWay}"
+                                       Style="{StaticResource KroiraBodyStyle}"
+                                       TextWrapping="Wrap" />
+                            <TextBlock Text="{x:Bind ViewModel.SupportWrongEpgText, Mode=OneWay}"
+                                       Style="{StaticResource KroiraBodyStyle}"
+                                       TextWrapping="Wrap" />
+                            <TextBlock Text="{x:Bind ViewModel.SupportStreamDoesNotPlayText, Mode=OneWay}"
+                                       Style="{StaticResource KroiraBodyStyle}"
+                                       TextWrapping="Wrap" />
+                            <TextBlock Text="{x:Bind ViewModel.SupportStoreInstallText, Mode=OneWay}"
+                                       Style="{StaticResource KroiraBodyStyle}"
+                                       TextWrapping="Wrap" />
+                            <TextBlock Text="{x:Bind ViewModel.SupportResetAppDataText, Mode=OneWay}"
+                                       Style="{StaticResource KroiraBodyStyle}"
+                                       TextWrapping="Wrap" />
+                            <TextBlock Text="{x:Bind ViewModel.SupportExportDiagnosticsText, Mode=OneWay}"
                                        Style="{StaticResource KroiraBodyStyle}"
                                        TextWrapping="Wrap" />
 
@@ -498,6 +619,10 @@
                             <Border Height="1" Background="{StaticResource KroiraBorderBrush}" Opacity="0.45" />
 
                             <TextBlock Text="{x:Bind ViewModel.LegalDisclaimerText, Mode=OneWay}"
+                                       Style="{StaticResource KroiraBodyStyle}"
+                                       TextWrapping="Wrap" />
+
+                            <TextBlock Text="{x:Bind ViewModel.RunFullTrustJustificationText, Mode=OneWay}"
                                        Style="{StaticResource KroiraBodyStyle}"
                                        TextWrapping="Wrap" />
                         </StackPanel>

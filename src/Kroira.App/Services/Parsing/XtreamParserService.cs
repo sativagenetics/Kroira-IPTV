@@ -36,19 +36,22 @@ namespace Kroira.App.Services.Parsing
         private readonly ISourceEnrichmentService _sourceEnrichmentService;
         private readonly ISourceHealthService _sourceHealthService;
         private readonly ISourceRoutingService _sourceRoutingService;
+        private readonly ISourceCredentialStore _credentialStore;
 
         public XtreamParserService(
             ICatalogNormalizationService catalogNormalizationService,
             IChannelCatchupService channelCatchupService,
             ISourceEnrichmentService sourceEnrichmentService,
             ISourceHealthService sourceHealthService,
-            ISourceRoutingService sourceRoutingService)
+            ISourceRoutingService sourceRoutingService,
+            ISourceCredentialStore? credentialStore = null)
         {
             _catalogNormalizationService = catalogNormalizationService;
             _channelCatchupService = channelCatchupService;
             _sourceEnrichmentService = sourceEnrichmentService;
             _sourceHealthService = sourceHealthService;
             _sourceRoutingService = sourceRoutingService;
+            _credentialStore = credentialStore ?? SourceCredentialStore.CreateDefault();
         }
 
         public async Task ParseAndImportXtreamAsync(
@@ -60,7 +63,7 @@ namespace Kroira.App.Services.Parsing
             var profile = await db.SourceProfiles.FindAsync(sourceProfileId);
             if (profile == null) throw new Exception("Source not found.");
 
-            var cred = await db.SourceCredentials.FirstOrDefaultAsync(c => c.SourceProfileId == sourceProfileId);
+            var cred = await _credentialStore.GetCredentialAsync(db, sourceProfileId);
             if (cred == null || string.IsNullOrWhiteSpace(cred.Url) || string.IsNullOrWhiteSpace(cred.Username))
                 throw new Exception("Xtream credentials are incomplete.");
 
@@ -74,20 +77,17 @@ namespace Kroira.App.Services.Parsing
 
             try
             {
-                var catsResponse = await client.GetAsync(catsUrl);
-                catsResponse.EnsureSuccessStatusCode();
-                var catsJson = await catsResponse.Content.ReadAsStringAsync();
-                if (string.IsNullOrWhiteSpace(catsJson)) catsJson = "[]";
-                using var catsDoc = JsonDocument.Parse(catsJson);
+                await ValidateXtreamAuthAsync(client, $"{baseUrl}/player_api.php{authQuery}");
+                using var catsDoc = await ReadJsonDocumentAsync(client, catsUrl, "Xtream live categories response", "[]");
 
-                var streamsResponse = await client.GetAsync(streamsUrl);
-                streamsResponse.EnsureSuccessStatusCode();
-                var streamsJson = await streamsResponse.Content.ReadAsStringAsync();
-                if (string.IsNullOrWhiteSpace(streamsJson)) streamsJson = "[]";
-                using var streamsDoc = JsonDocument.Parse(streamsJson);
+                using var streamsDoc = await ReadJsonDocumentAsync(client, streamsUrl, "Xtream live streams response", "[]");
                 if (streamsDoc.RootElement.ValueKind == JsonValueKind.Array)
                 {
                     acquisitionSession?.RegisterRawItems(streamsDoc.RootElement.GetArrayLength());
+                }
+                else
+                {
+                    throw new InvalidOperationException("Xtream live streams response was not an array.");
                 }
 
                 using var transaction = await db.Database.BeginTransactionAsync();
@@ -225,6 +225,7 @@ namespace Kroira.App.Services.Parsing
 
                     profile.LastSync = DateTime.UtcNow;
 
+                    await _credentialStore.ProtectCredentialAsync(db, cred);
                     await db.SaveChangesAsync();
                     await transaction.CommitAsync();
                     if (refreshHealth)
@@ -240,19 +241,20 @@ namespace Kroira.App.Services.Parsing
             }
             catch (Exception ex)
             {
+                var safeMessage = SanitizeExceptionMessage(ex);
                 var syncState = await db.SourceSyncStates.FirstOrDefaultAsync(s => s.SourceProfileId == sourceProfileId);
                 if (syncState != null)
                 {
                     syncState.LastAttempt = DateTime.UtcNow;
                     syncState.HttpStatusCode = ResolveFailureStatusCode(ex);
-                    syncState.ErrorLog = $"Xtream Live sync failed: {ex.Message}";
+                    syncState.ErrorLog = $"Xtream Live sync failed: {safeMessage}";
                     await db.SaveChangesAsync();
                 }
                 if (refreshHealth)
                 {
                     await _sourceHealthService.RefreshSourceHealthAsync(db, sourceProfileId, acquisitionSession);
                 }
-                throw;
+                throw CreateSanitizedException(ex, safeMessage);
             }
         }
 
@@ -265,20 +267,20 @@ namespace Kroira.App.Services.Parsing
             var profile = await db.SourceProfiles.FindAsync(sourceProfileId);
             if (profile == null) throw new Exception("Source not found.");
 
-            var cred = await db.SourceCredentials.FirstOrDefaultAsync(c => c.SourceProfileId == sourceProfileId);
+            var cred = await _credentialStore.GetCredentialAsync(db, sourceProfileId);
             if (cred == null || string.IsNullOrWhiteSpace(cred.Url) || string.IsNullOrWhiteSpace(cred.Username))
                 throw new Exception("Xtream credentials are incomplete.");
 
             string baseUrl = cred.Url.TrimEnd('/');
             string authQuery = $"?username={Uri.EscapeDataString(cred.Username)}&password={Uri.EscapeDataString(cred.Password)}";
+            cred.DetectedEpgUrl = $"{baseUrl}/xmltv.php{authQuery}";
 
             using var client = _sourceRoutingService.CreateHttpClient(cred, SourceNetworkPurpose.Import, TimeSpan.FromSeconds(45));
 
             try
             {
-                var movCatsJson = await client.GetStringAsync($"{baseUrl}/player_api.php{authQuery}&action=get_vod_categories");
-                if (string.IsNullOrWhiteSpace(movCatsJson)) movCatsJson = "[]";
-                using var movCatsDoc = JsonDocument.Parse(movCatsJson);
+                await ValidateXtreamAuthAsync(client, $"{baseUrl}/player_api.php{authQuery}");
+                using var movCatsDoc = await ReadJsonDocumentAsync(client, $"{baseUrl}/player_api.php{authQuery}&action=get_vod_categories", "Xtream VOD categories response", "[]");
                 var md = new Dictionary<string, string>();
                 if (movCatsDoc.RootElement.ValueKind == JsonValueKind.Array)
                 {
@@ -291,9 +293,7 @@ namespace Kroira.App.Services.Parsing
                         }
                     }
                 }
-                var serCatsJson = await client.GetStringAsync($"{baseUrl}/player_api.php{authQuery}&action=get_series_categories");
-                if (string.IsNullOrWhiteSpace(serCatsJson)) serCatsJson = "[]";
-                using var serCatsDoc = JsonDocument.Parse(serCatsJson);
+                using var serCatsDoc = await ReadJsonDocumentAsync(client, $"{baseUrl}/player_api.php{authQuery}&action=get_series_categories", "Xtream series categories response", "[]");
                 var sd = new Dictionary<string, string>();
                 if (serCatsDoc.RootElement.ValueKind == JsonValueKind.Array)
                 {
@@ -306,9 +306,7 @@ namespace Kroira.App.Services.Parsing
                         }
                     }
                 }
-                var moviesJson = await client.GetStringAsync($"{baseUrl}/player_api.php{authQuery}&action=get_vod_streams");
-                if (string.IsNullOrWhiteSpace(moviesJson)) moviesJson = "[]";
-                using var moviesDoc = JsonDocument.Parse(moviesJson);
+                using var moviesDoc = await ReadJsonDocumentAsync(client, $"{baseUrl}/player_api.php{authQuery}&action=get_vod_streams", "Xtream VOD streams response", "[]");
                 var parsedMovies = new List<Movie>();
                 if (moviesDoc.RootElement.ValueKind == JsonValueKind.Array)
                 {
@@ -398,9 +396,7 @@ namespace Kroira.App.Services.Parsing
                     }
                 }
 
-                var seriesJson = await client.GetStringAsync($"{baseUrl}/player_api.php{authQuery}&action=get_series");
-                if (string.IsNullOrWhiteSpace(seriesJson)) seriesJson = "[]";
-                using var seriesDoc = JsonDocument.Parse(seriesJson);
+                using var seriesDoc = await ReadJsonDocumentAsync(client, $"{baseUrl}/player_api.php{authQuery}&action=get_series", "Xtream series list response", "[]");
                 var pendingSeries = new List<(string SeriesId, Series BaseObj)>();
                 if (seriesDoc.RootElement.ValueKind == JsonValueKind.Array)
                 {
@@ -487,9 +483,7 @@ namespace Kroira.App.Services.Parsing
                         await semaphore.WaitAsync();
                         try
                         {
-                            var infoStr = await client.GetStringAsync($"{baseUrl}/player_api.php{authQuery}&action=get_series_info&series_id={sInfo.SeriesId}");
-                            if (string.IsNullOrWhiteSpace(infoStr)) return;
-                            using var iDoc = JsonDocument.Parse(infoStr);
+                            using var iDoc = await ReadJsonDocumentAsync(client, $"{baseUrl}/player_api.php{authQuery}&action=get_series_info&series_id={sInfo.SeriesId}", $"Xtream series info response for {sInfo.SeriesId}", "{}");
 
                             if (iDoc.RootElement.TryGetProperty("episodes", out var epNode) && epNode.ValueKind == JsonValueKind.Object)
                             {
@@ -526,6 +520,10 @@ namespace Kroira.App.Services.Parsing
                                     (sInfo.BaseObj.Seasons ??= new List<Season>()).Add(seasonObj);
                                 }
                             }
+                        }
+                        catch (OperationCanceledException)
+                        {
+                            throw;
                         }
                         catch { } // Suppress gracefully per entity
                         finally
@@ -777,6 +775,7 @@ namespace Kroira.App.Services.Parsing
 
                     profile.LastSync = DateTime.UtcNow;
 
+                    await _credentialStore.ProtectCredentialAsync(db, cred);
                     await db.SaveChangesAsync();
                     await transaction.CommitAsync();
                     acquisitionSession?.RegisterAccepted(SourceAcquisitionItemKind.Movie, parsedMovies.Count);
@@ -796,20 +795,112 @@ namespace Kroira.App.Services.Parsing
             }
             catch (Exception ex)
             {
+                var safeMessage = SanitizeExceptionMessage(ex);
                 var syncState = await db.SourceSyncStates.FirstOrDefaultAsync(s => s.SourceProfileId == sourceProfileId);
                 if (syncState != null)
                 {
                     syncState.LastAttempt = DateTime.UtcNow;
                     syncState.HttpStatusCode = ResolveFailureStatusCode(ex);
-                    syncState.ErrorLog = $"Xtream VOD parsing failed: {ex.Message}";
+                    syncState.ErrorLog = $"Xtream VOD parsing failed: {safeMessage}";
                     await db.SaveChangesAsync();
                 }
                 if (refreshHealth)
                 {
                     await _sourceHealthService.RefreshSourceHealthAsync(db, sourceProfileId, acquisitionSession);
                 }
-                throw;
+                throw CreateSanitizedException(ex, safeMessage);
             }
+        }
+
+        private static async Task ValidateXtreamAuthAsync(HttpClient client, string authUrl)
+        {
+            JsonDocument authDoc;
+            try
+            {
+                authDoc = await ReadJsonDocumentAsync(client, authUrl, "Xtream auth response", "{}");
+            }
+            catch (HttpRequestException ex) when (ex.StatusCode is HttpStatusCode.NotFound or HttpStatusCode.MethodNotAllowed)
+            {
+                return;
+            }
+
+            using (authDoc)
+            {
+                if (authDoc.RootElement.ValueKind != JsonValueKind.Object)
+                {
+                    return;
+                }
+
+                var authRoot = authDoc.RootElement.TryGetProperty("user_info", out var userInfo) &&
+                               userInfo.ValueKind == JsonValueKind.Object
+                    ? userInfo
+                    : authDoc.RootElement;
+
+                if (TryReadAuthRejected(authRoot))
+                {
+                    throw new UnauthorizedAccessException("Xtream authentication failed.");
+                }
+            }
+        }
+
+        private static async Task<JsonDocument> ReadJsonDocumentAsync(
+            HttpClient client,
+            string url,
+            string label,
+            string emptyJson)
+        {
+            using var response = await client.GetAsync(url);
+            if (response.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
+            {
+                throw new UnauthorizedAccessException($"{label} rejected the supplied credentials.");
+            }
+
+            response.EnsureSuccessStatusCode();
+            var json = await response.Content.ReadAsStringAsync();
+            if (string.IsNullOrWhiteSpace(json))
+            {
+                json = emptyJson;
+            }
+
+            try
+            {
+                return JsonDocument.Parse(json);
+            }
+            catch (JsonException ex)
+            {
+                throw new InvalidOperationException($"{label} was malformed JSON.", ex);
+            }
+        }
+
+        private static bool TryReadAuthRejected(JsonElement element)
+        {
+            if (element.TryGetProperty("auth", out var auth) && IsAuthFalse(auth))
+            {
+                return true;
+            }
+
+            if (element.TryGetProperty("status", out var status) &&
+                status.ValueKind == JsonValueKind.String)
+            {
+                var value = status.GetString()?.Trim();
+                return string.Equals(value, "disabled", StringComparison.OrdinalIgnoreCase) ||
+                       string.Equals(value, "banned", StringComparison.OrdinalIgnoreCase) ||
+                       string.Equals(value, "expired", StringComparison.OrdinalIgnoreCase);
+            }
+
+            return false;
+        }
+
+        private static bool IsAuthFalse(JsonElement auth)
+        {
+            return auth.ValueKind switch
+            {
+                JsonValueKind.False => true,
+                JsonValueKind.True => false,
+                JsonValueKind.Number => auth.TryGetInt32(out var number) && number == 0,
+                JsonValueKind.String => auth.GetString()?.Trim() is "0" or "false" or "False" or "FALSE",
+                _ => false
+            };
         }
 
         private static string GetJsonString(JsonElement element, string propertyName)
@@ -846,9 +937,35 @@ namespace Kroira.App.Services.Parsing
             return ex switch
             {
                 HttpRequestException httpEx when httpEx.StatusCode.HasValue => (int)httpEx.StatusCode.Value,
+                UnauthorizedAccessException => (int)HttpStatusCode.Unauthorized,
                 TaskCanceledException => (int)HttpStatusCode.RequestTimeout,
                 TimeoutException => (int)HttpStatusCode.RequestTimeout,
                 _ => (int)HttpStatusCode.InternalServerError
+            };
+        }
+
+        private static string SanitizeExceptionMessage(Exception ex)
+        {
+            if (ex is TaskCanceledException or TimeoutException)
+            {
+                return "Xtream request timed out or was cancelled.";
+            }
+
+            var redacted = EpgDiagnosticFormatter.Redact(ex.Message);
+            return string.IsNullOrWhiteSpace(redacted)
+                ? "Xtream import failed."
+                : redacted;
+        }
+
+        private static Exception CreateSanitizedException(Exception ex, string safeMessage)
+        {
+            return ex switch
+            {
+                HttpRequestException httpEx => new HttpRequestException(safeMessage, httpEx, httpEx.StatusCode),
+                UnauthorizedAccessException => new UnauthorizedAccessException(safeMessage, ex),
+                TaskCanceledException => new TaskCanceledException(safeMessage, ex),
+                TimeoutException => new TimeoutException(safeMessage, ex),
+                _ => new InvalidOperationException(safeMessage, ex)
             };
         }
 

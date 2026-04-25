@@ -98,6 +98,7 @@ namespace Kroira.App.Services
             using var scope = _serviceProvider.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             var refreshService = scope.ServiceProvider.GetRequiredService<ISourceRefreshService>();
+            var credentialStore = scope.ServiceProvider.GetRequiredService<ISourceCredentialStore>();
 
             var normalized = NormalizeCreateRequest(request);
             ValidateCreateRequest(normalized);
@@ -118,7 +119,7 @@ namespace Kroira.App.Services
                 db.SourceProfiles.Add(profile);
                 await db.SaveChangesAsync();
 
-                db.SourceCredentials.Add(new SourceCredential
+                var credential = new SourceCredential
                 {
                     SourceProfileId = profile.Id,
                     Url = normalized.Url,
@@ -138,7 +139,8 @@ namespace Kroira.App.Services
                     StalkerSerialNumber = normalized.StalkerSerialNumber,
                     StalkerTimezone = normalized.StalkerTimezone,
                     StalkerLocale = normalized.StalkerLocale
-                });
+                };
+                db.SourceCredentials.Add(credential);
 
                 db.SourceSyncStates.Add(new SourceSyncState
                 {
@@ -149,6 +151,7 @@ namespace Kroira.App.Services
                 });
 
                 await db.SaveChangesAsync();
+                await credentialStore.ProtectCredentialAsync(db, credential);
                 await transaction.CommitAsync();
 
                 sourceId = profile.Id;
@@ -209,8 +212,9 @@ namespace Kroira.App.Services
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             var refreshService = scope.ServiceProvider.GetRequiredService<ISourceRefreshService>();
             var sourceHealthService = scope.ServiceProvider.GetRequiredService<ISourceHealthService>();
+            var credentialStore = scope.ServiceProvider.GetRequiredService<ISourceCredentialStore>();
 
-            var credential = await db.SourceCredentials.FirstOrDefaultAsync(item => item.SourceProfileId == request.SourceId);
+            var credential = await credentialStore.GetCredentialAsync(db, request.SourceId);
             if (credential == null)
             {
                 throw new InvalidOperationException("Source credentials were not found.");
@@ -237,6 +241,7 @@ namespace Kroira.App.Services
             credential.CompanionMode = normalized.CompanionMode;
             credential.CompanionUrl = normalized.CompanionUrl;
             await db.SaveChangesAsync();
+            await credentialStore.ProtectCredentialAsync(db, credential);
 
             var guideBindingChanged = previousMode != credential.EpgMode ||
                                       !string.Equals(previousManualUrl, credential.ManualEpgUrl, StringComparison.OrdinalIgnoreCase) ||
@@ -328,6 +333,15 @@ namespace Kroira.App.Services
                         .Select(channel => channel.Id)
                         .ToListAsync();
 
+                var epgMappingDecisions = await db.EpgMappingDecisions
+                    .Where(decision => decision.SourceProfileId == sourceProfileId ||
+                                       channelIds.Contains(decision.ChannelId))
+                    .ToListAsync();
+                if (epgMappingDecisions.Count > 0)
+                {
+                    db.EpgMappingDecisions.RemoveRange(epgMappingDecisions);
+                }
+
                 if (channelIds.Count > 0)
                 {
                     var epgPrograms = await db.EpgPrograms
@@ -394,6 +408,14 @@ namespace Kroira.App.Services
                 if (credentials.Count > 0)
                 {
                     db.SourceCredentials.RemoveRange(credentials);
+                }
+
+                var protectedCredentials = await db.SourceProtectedCredentialSecrets
+                    .Where(secret => secret.SourceProfileId == sourceProfileId)
+                    .ToListAsync();
+                if (protectedCredentials.Count > 0)
+                {
+                    db.SourceProtectedCredentialSecrets.RemoveRange(protectedCredentials);
                 }
 
                 var syncStates = await db.SourceSyncStates

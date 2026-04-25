@@ -139,6 +139,13 @@
                         <StackPanel Orientation="Horizontal"
                                     Spacing="10"
                                     HorizontalAlignment="Right">
+                            <Button Click="OpenEpgCenter_Click"
+                                    Style="{StaticResource SourceActionSecondaryButtonStyle}">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <FontIcon Glyph="&#xE9D2;" FontSize="12" />
+                                    <TextBlock Text="Guide" />
+                                </StackPanel>
+                            </Button>
                             <Button Command="{x:Bind ViewModel.LoadSourcesCommand}"
                                     Style="{StaticResource SourceActionSecondaryButtonStyle}">
                                 <StackPanel Orientation="Horizontal" Spacing="8">
@@ -593,6 +600,83 @@
                                                                 </StackPanel>
                                                                 <TextBlock Text="{Binding Message}" Style="{StaticResource KroiraBodyStyle}" MaxLines="2" TextWrapping="WrapWholeWords" TextTrimming="CharacterEllipsis" />
                                                             </StackPanel>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                                <TextBlock Text="Diagnostics metrics"
+                                                           Visibility="{Binding DiagnosticsMetricsVisibility}"
+                                                           Style="{StaticResource SourceMiniLabelStyle}" />
+                                                <ItemsControl ItemsSource="{Binding DiagnosticsMetrics}"
+                                                              Visibility="{Binding DiagnosticsMetricsVisibility}">
+                                                    <ItemsControl.ItemsPanel>
+                                                        <ItemsPanelTemplate>
+                                                            <ItemsWrapGrid Orientation="Horizontal" MaximumRowsOrColumns="2" />
+                                                        </ItemsPanelTemplate>
+                                                    </ItemsControl.ItemsPanel>
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <Border Style="{StaticResource SourceMetricChipStyle}" Margin="0,0,10,10">
+                                                                <StackPanel Spacing="6" Width="220">
+                                                                    <TextBlock Text="{Binding Label}" Style="{StaticResource SourceMiniLabelStyle}" />
+                                                                    <controls:StatusPill Label="{Binding Value}" Kind="{Binding PillKind}" />
+                                                                    <TextBlock Text="{Binding Detail}"
+                                                                               Visibility="{Binding DetailVisibility}"
+                                                                               Style="{StaticResource KroiraBodyStyle}"
+                                                                               Foreground="{StaticResource KroiraTextSecondaryBrush}"
+                                                                               MaxLines="3"
+                                                                               TextWrapping="WrapWholeWords"
+                                                                               TextTrimming="CharacterEllipsis" />
+                                                                </StackPanel>
+                                                            </Border>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                                <TextBlock Text="{Binding FailureReasonText}"
+                                                           Visibility="{Binding FailureReasonVisibility}"
+                                                           Foreground="{StaticResource KroiraLiveDotBrush}"
+                                                           FontSize="11"
+                                                           MaxLines="3"
+                                                           TextWrapping="WrapWholeWords"
+                                                           TextTrimming="CharacterEllipsis" />
+                                                <TextBlock Text="Recommended actions"
+                                                           Visibility="{Binding RecommendedActionsVisibility}"
+                                                           Style="{StaticResource SourceMiniLabelStyle}" />
+                                                <ItemsControl ItemsSource="{Binding RecommendedActions}"
+                                                              Visibility="{Binding RecommendedActionsVisibility}">
+                                                    <ItemsControl.ItemsPanel>
+                                                        <ItemsPanelTemplate>
+                                                            <ItemsWrapGrid Orientation="Horizontal" MaximumRowsOrColumns="2" />
+                                                        </ItemsPanelTemplate>
+                                                    </ItemsControl.ItemsPanel>
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <Border Style="{StaticResource SourceMetricChipStyle}" Margin="0,0,10,10">
+                                                                <StackPanel Spacing="8" Width="245">
+                                                                    <controls:StatusPill Label="{Binding Title}" Kind="{Binding ToneKind}" />
+                                                                    <TextBlock Text="{Binding Summary}"
+                                                                               Style="{StaticResource KroiraBodyStyle}"
+                                                                               MaxLines="3"
+                                                                               TextWrapping="WrapWholeWords"
+                                                                               TextTrimming="CharacterEllipsis" />
+                                                                    <Button Tag="{Binding}"
+                                                                            Click="DiagnosticsAction_Click"
+                                                                            Visibility="{Binding PrimaryButtonVisibility}"
+                                                                            Style="{StaticResource KroiraPrimaryButtonStyle}"
+                                                                            Padding="16,10"
+                                                                            HorizontalAlignment="Left"
+                                                                            Content="{Binding ButtonText}" />
+                                                                    <Button Tag="{Binding}"
+                                                                            Click="DiagnosticsAction_Click"
+                                                                            Visibility="{Binding SecondaryButtonVisibility}"
+                                                                            Style="{StaticResource SourceActionQuietButtonStyle}"
+                                                                            HorizontalAlignment="Left">
+                                                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                                                            <FontIcon Glyph="&#xE9CE;" FontSize="12" />
+                                                                            <TextBlock Text="{Binding ButtonText}" />
+                                                                        </StackPanel>
+                                                                    </Button>
+                                                                </StackPanel>
+                                                            </Border>
                                                         </DataTemplate>
                                                     </ItemsControl.ItemTemplate>
                                                 </ItemsControl>
