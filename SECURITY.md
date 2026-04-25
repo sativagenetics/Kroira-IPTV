@@ -33,6 +33,10 @@ If a report involves accidentally exposed source credentials, playlist URLs, or 
 - rotate or revoke the affected secret if possible
 - mention that the report contains sensitive data
 
+Security reports should not include working provider credentials, personal playlist URLs, MAC addresses, tokens, or copyrighted source data unless absolutely necessary to demonstrate the vulnerability. When possible, use sanitized reproduction data.
+
+Requests for channels, playlists, subscriptions, credentials, provider account recovery, or content-access disputes are not security vulnerabilities and should follow [SUPPORT.md](SUPPORT.md) only when they involve KROIRA app behavior.
+
 ## Response Expectations
 
 Response timing is best-effort and may vary. Public disclosure should wait until the issue has been reviewed and a fix or mitigation path is available.

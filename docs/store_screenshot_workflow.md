@@ -2,6 +2,8 @@
 
 Use `scripts/store-screenshots.ps1` only after preparing a clean, sanitized data set. The script launches the packaged app and captures the same visual routes used by the smoke workflow, but it cannot remove private or third-party content from the app database.
 
+KROIRA starts empty until a user adds an authorized source. Store screenshots must show only sample or licensed source data that you are allowed to publish.
+
 ## Store-Safe Data Requirements
 
 Public Store screenshots must not show:
@@ -16,7 +18,7 @@ Public Store screenshots must not show:
 
 1. Back up any real KROIRA data you need to keep.
 2. Use a clean Windows test account or clear the packaged app's local data for the test account.
-3. Import only a sanitized M3U/Xtream/Stalker source that you control.
+3. Import only a sanitized M3U, Xtream, or supported portal source that you control.
 4. Use sample titles, generic channel names, and artwork you own or are licensed to use.
 5. Verify Home, Movies, Series, Live TV, Continue Watching, Favorites, Sources, Settings, Profile, and Player manually before capture.
 6. Run:
@@ -31,4 +33,4 @@ Generated captures are written under `artifacts/store-screenshots` and are ignor
 
 ## Content Disclaimer
 
-KROIRA IPTV does not provide channels, streams, playlists, subscriptions, or media content. Store screenshots must use authorized sample data and must not imply that KROIRA bypasses DRM, paywalls, authentication, or access controls.
+KROIRA IPTV does not provide channels, streams, playlists, subscriptions, credentials, or media content. Store screenshots must use authorized sample data and must not imply that KROIRA provides free TV, bundled channels, premium content access, or DRM/paywall/authentication bypass.

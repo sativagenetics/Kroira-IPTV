@@ -37,13 +37,13 @@
   <div class="box">
     <p>Last updated: April 2026</p>
 
-    <p>KROIRA IPTV is a Windows media player and source manager for user-provided M3U playlists, Xtream providers, and Stalker portals. KROIRA does not provide channels, streams, playlists, subscriptions, credentials, or media content.</p>
+    <p>KROIRA IPTV is a Windows media player and source manager for user-provided M3U playlists, Xtream providers, and supported provider portal profiles. KROIRA starts empty until a user adds an authorized source. KROIRA does not provide channels, streams, playlists, subscriptions, accounts, credentials, movies, series, or other media content.</p>
 
     <h2>What the app uses</h2>
     <p>The app can connect to user-provided source endpoints, XMLTV guide endpoints, poster/artwork endpoints, metadata provider endpoints, and optional local routing or companion endpoints configured by the user.</p>
 
     <h2>Local data storage</h2>
-    <p>KROIRA stores app-related data locally on the device, including source configuration, guide settings, cached guide data, favorites, playback progress, continue-watching data, source health diagnostics, protected credential records, and local preferences.</p>
+    <p>KROIRA stores app-related data locally on the device, including source configuration, guide settings, cached guide data, favorites, playback progress, continue-watching data, source health diagnostics, protected credential records, profile-related local state, player preferences, and local app preferences.</p>
 
     <h2>Source credentials</h2>
     <p>Source credentials are used only to connect to sources that the user configures. KROIRA uses protected credential copies with Windows DPAPI CurrentUser scope when available. Some plaintext source fields may remain for backward compatibility with existing import and parser flows; they are not removed destructively in this release.</p>
@@ -58,7 +58,7 @@
     <p>When metadata enrichment is used, KROIRA may contact metadata or artwork providers such as TMDb, plus image URLs supplied by user-configured sources, to improve titles, posters, and backdrops. KROIRA does not send source passwords or provider tokens to TMDb.</p>
 
     <h2>User responsibility</h2>
-    <p>KROIRA is not a content provider. Users are responsible for adding only authorized sources and for understanding what information their configured sources expose. KROIRA does not bypass DRM, paywalls, authentication, or access controls.</p>
+    <p>KROIRA is not a content provider. Users are responsible for adding only authorized sources and for understanding what information their configured sources expose. KROIRA does not bypass DRM, paywalls, authentication, provider restrictions, or access controls.</p>
 
     <h2>Network access</h2>
     <p>Network access is used to connect to user-provided IPTV sources, XMLTV guide data, metadata/artwork endpoints, and optional local companion or proxy services that the user configures.</p>

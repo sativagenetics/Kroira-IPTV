@@ -1,12 +1,12 @@
 # KROIRA Regression Corpus
 
-This project runs deterministic end-to-end regression coverage against the real KROIRA ingestion pipeline: source refresh, parsing, enrichment, source health, probing, catchup, and operational mirror selection.
+This project runs deterministic end-to-end regression coverage against the real KROIRA ingestion pipeline: source refresh, parsing, enrichment, source health, probing, catch-up detection, and operational mirror selection.
 
 ## What it covers
 
 - M3U import and sync behavior
 - Xtream live/VOD/series sync behavior
-- Stalker portal sync behavior
+- supported provider portal sync behavior
 - XMLTV parsing and guide attachment
 - live/movie/series classification
 - normalization and logical identity behavior
@@ -90,5 +90,6 @@ powershell -ExecutionPolicy Bypass -File .\scripts\ci-regressions.ps1 -Configura
 
 - Prefer reduced real samples when safe; anonymize provider details.
 - Keep payloads minimal but representative of the bug or behavior under test.
+- Do not commit real provider credentials, personal playlist URLs, tokens, MAC addresses, or copyrighted catalog/media payloads.
 - Stub network behavior through `server.json`; do not depend on live providers.
 - Add cases when a new provider quirk or regression is discovered so the corpus keeps getting sharper.

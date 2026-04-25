@@ -2760,16 +2760,16 @@
     <value>4. If guide coverage looks weak, review the source in Sources and adjust guide settings there.</value>
   </data>
   <data name="Submission.LegalDisclaimer" xml:space="preserve">
-    <value>KROIRA is a media player and source manager. KROIRA does not provide channels, streams, playlists, subscriptions, or media content. Users are responsible for adding only authorized sources and for complying with applicable provider terms and laws. KROIRA does not bypass DRM, paywalls, authentication, or access controls.</value>
+    <value>KROIRA is a media player and source manager. KROIRA does not provide channels, streams, playlists, subscriptions, credentials, or media content. Users are responsible for adding only authorized sources and for complying with applicable provider terms and laws. KROIRA does not bypass DRM, paywalls, authentication, provider restrictions, or access controls.</value>
   </data>
   <data name="Submission_LegalDisclaimer" xml:space="preserve">
-    <value>KROIRA is a media player and source manager. KROIRA does not provide channels, streams, playlists, subscriptions, or media content. Users are responsible for adding only authorized sources and for complying with applicable provider terms and laws. KROIRA does not bypass DRM, paywalls, authentication, or access controls.</value>
+    <value>KROIRA is a media player and source manager. KROIRA does not provide channels, streams, playlists, subscriptions, credentials, or media content. Users are responsible for adding only authorized sources and for complying with applicable provider terms and laws. KROIRA does not bypass DRM, paywalls, authentication, provider restrictions, or access controls.</value>
   </data>
   <data name="Submission.LongDescription" xml:space="preserve">
-    <value>KROIRA IPTV is a Windows media player and source manager for user-provided M3U playlists, Xtream providers, and Stalker portals. It helps organize live channels, VOD libraries, guide data, favorites, continue-watching state, and source diagnostics on this device. KROIRA does not provide channels, streams, playlists, subscriptions, accounts, credentials, or media content.</value>
+    <value>KROIRA IPTV is a Windows media player and source manager for user-provided M3U playlists, Xtream providers, and supported provider portal profiles. It helps organize live channels, VOD libraries, guide data, favorites, continue-watching state, playback, and source diagnostics locally on this device. KROIRA does not provide channels, streams, playlists, subscriptions, accounts, credentials, or media content.</value>
   </data>
   <data name="Submission_LongDescription" xml:space="preserve">
-    <value>KROIRA IPTV is a Windows media player and source manager for user-provided M3U playlists, Xtream providers, and Stalker portals. It helps organize live channels, VOD libraries, guide data, favorites, continue-watching state, and source diagnostics on this device. KROIRA does not provide channels, streams, playlists, subscriptions, accounts, credentials, or media content.</value>
+    <value>KROIRA IPTV is a Windows media player and source manager for user-provided M3U playlists, Xtream providers, and supported provider portal profiles. It helps organize live channels, VOD libraries, guide data, favorites, continue-watching state, playback, and source diagnostics locally on this device. KROIRA does not provide channels, streams, playlists, subscriptions, accounts, credentials, or media content.</value>
   </data>
   <data name="Submission.MetadataProviderSummary" xml:space="preserve">
     <value>When metadata enrichment is used, KROIRA may contact metadata or artwork providers such as TMDb, plus image URLs supplied by user-configured sources. KROIRA does not send source passwords or provider tokens to TMDb.</value>
@@ -5261,7 +5261,7 @@
   <data name="SeriesPickShowMessage.Text" xml:space="preserve"><value>Select a title from the library to load artwork, seasons, and episode playback here.</value></data>
   <data name="SourceOnboardingM3uPathBox.PlaceholderText" xml:space="preserve"><value>http://... or C:\...</value></data>
   <data name="AppDisplayName" xml:space="preserve"><value>KROIRA IPTV</value></data>
-  <data name="AppDescription" xml:space="preserve"><value>KROIRA IPTV brings live TV, movies, series, EPG, and source management into one polished Windows app.</value></data>
+  <data name="AppDescription" xml:space="preserve"><value>Play and organize your own IPTV sources with Live TV, VOD, EPG, diagnostics, and local playback.</value></data>
   <data name="General_Never" xml:space="preserve"><value>Never</value></data>
   <data name="General_Saved" xml:space="preserve"><value>Saved</value></data>
   <data name="General_Syncing" xml:space="preserve"><value>Syncing...</value></data>

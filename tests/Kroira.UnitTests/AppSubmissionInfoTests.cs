@@ -16,7 +16,7 @@ public sealed class AppSubmissionInfoTests
         AssertContains(AppSubmissionInfo.ShortDescription, "source manager");
         AssertContains(AppSubmissionInfo.LongDescription, "M3U");
         AssertContains(AppSubmissionInfo.LongDescription, "Xtream");
-        AssertContains(AppSubmissionInfo.LongDescription, "Stalker");
+        AssertContains(AppSubmissionInfo.LongDescription, "supported provider portal profiles");
         AssertContains(AppSubmissionInfo.LongDescription, "does not provide");
 
         Assert.IsTrue(AppSubmissionInfo.TryCreatePrivacyPolicyUri(out var privacyUri));

@@ -1,5 +1,5 @@
 name: Feature request
-description: Suggest an improvement that fits the current KROIRA IPTV product direction.
+description: Suggest an improvement that fits the current KROIRA IPTV V2 product direction.
 title: "[Feature]: "
 labels:
   - enhancement
@@ -7,7 +7,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Please keep requests grounded in the current product direction and avoid asking for content distribution, playlists, or credentials.
+        Please keep requests grounded in the current V2 product direction and avoid asking for content distribution, playlists, subscriptions, accounts, or credentials.
   - type: dropdown
     id: area
     attributes:
@@ -59,7 +59,7 @@ body:
       options:
         - label: I searched for existing requests before filing this one.
           required: true
-        - label: This request is for the current product direction, not a discarded UI or architecture experiment.
+        - label: This request is for the current V2 release-candidate product direction, not a discarded UI or architecture experiment.
           required: true
-        - label: This request does not ask KROIRA to provide channels, playlists, subscriptions, or credentials.
+        - label: This request does not ask KROIRA to provide channels, playlists, subscriptions, credentials, or media content.
           required: true

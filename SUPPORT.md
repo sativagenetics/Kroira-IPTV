@@ -2,7 +2,7 @@
 
 ## What KROIRA Supports
 
-KROIRA IPTV is a Windows media player and source manager for user-provided IPTV sources. KROIRA does not provide channels, streams, playlists, subscriptions, credentials, or media content.
+KROIRA IPTV is a Windows media player and source manager for user-provided IPTV sources. It starts empty until a user adds an authorized source. KROIRA does not provide channels, streams, playlists, subscriptions, credentials, movies, series, or other media content.
 
 Support requests are appropriate for:
 
@@ -30,9 +30,9 @@ Support requests are not appropriate for:
 
 Include the minimum context needed to reproduce the problem:
 
-- source type: M3U, Xtream, or Stalker
+- source type: M3U playlist, Xtream provider, or supported portal profile
 - affected area: sources, live TV, movies, series, guide data, playback, favorites, continue watching, or settings
-- app build/version if known
+- app build/version if known, for example `2.0.0` or package `2.0.0.4`
 - Windows version if relevant
 - steps to reproduce
 - expected result

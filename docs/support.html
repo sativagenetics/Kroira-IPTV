@@ -35,7 +35,7 @@
 <body>
   <h1>KROIRA IPTV Support</h1>
   <div class="box">
-    <p>KROIRA IPTV is a media player and source manager for user-provided IPTV sources. It does not provide channels, streams, playlists, subscriptions, media content, accounts, or credentials.</p>
+    <p>KROIRA IPTV is a media player and source manager for user-provided IPTV sources. It starts empty until you add an authorized source. It does not provide channels, streams, playlists, subscriptions, media content, accounts, or credentials.</p>
 
     <h2>Need help?</h2>
     <p>Use the GitHub issue templates for reproducible bugs and feature requests. For private or sensitive support matters, email <a href="mailto:batuhandemirbilek7@gmail.com">batuhandemirbilek7@gmail.com</a>.</p>
@@ -50,19 +50,20 @@
       <li><strong>No EPG:</strong> confirm the source advertises an XMLTV URL or configure a manual EPG URL, then run an EPG sync from Sources or Guide.</li>
       <li><strong>Wrong EPG:</strong> open manual EPG matching from Guide or source diagnostics, search the XMLTV channel, set or clear an override, and resync guide data.</li>
       <li><strong>Stream does not play:</strong> verify the stream URL works for the account, check whether the source requires authentication, proxy, or companion routing, and run a limited source probe from diagnostics.</li>
+      <li><strong>Audio or subtitle tracks are missing:</strong> track availability depends on the stream and provider. Open the player track menu when playback is active and confirm the stream actually exposes alternate tracks.</li>
       <li><strong>Store/MSIX install:</strong> install from Microsoft Store or a trusted signed package, then restart Windows if the Windows App SDK runtime was updated.</li>
       <li><strong>Reset app data:</strong> use Windows Settings &gt; Apps &gt; Installed apps &gt; KROIRA IPTV &gt; Advanced options &gt; Reset. This removes local sources, credentials, guide data, favorites, and preferences.</li>
       <li><strong>Export diagnostics:</strong> use the source diagnostics export action. Exports are sanitized, but review files before sharing because provider names and non-secret configuration may remain.</li>
     </ul>
 
     <h2>Include with your report</h2>
-    <p>If possible, mention the source type (M3U, Xtream, or Stalker), the affected area (Live TV, movies, series, guide data, playback, install, or settings), the app version, Windows version, and the latest sync or health status shown in Sources.</p>
+    <p>If possible, mention the source type (M3U playlist, Xtream provider, or supported portal profile), the affected area (Live TV, movies, series, guide data, playback, install, or settings), the app version, Windows version, and the latest sync or health status shown in Sources.</p>
 
     <h2>Do not include</h2>
     <p>Do not send passwords, playlist URLs, MAC addresses, or other private provider credentials in public bug reports.</p>
 
     <h2>Content and access disclaimer</h2>
-    <p>KROIRA does not bypass DRM, paywalls, authentication, or access controls. Users are responsible for adding only authorized sources and for complying with applicable provider terms and laws.</p>
+    <p>KROIRA does not bypass DRM, paywalls, authentication, provider restrictions, or access controls. Users are responsible for adding only authorized sources and for complying with applicable provider terms and laws.</p>
   </div>
 </body>
 </html>

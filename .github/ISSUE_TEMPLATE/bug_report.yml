@@ -1,5 +1,5 @@
 name: Bug report
-description: Report a reproducible problem in the current KROIRA IPTV codebase.
+description: Report a reproducible problem in the current KROIRA IPTV V2 release-candidate codebase.
 title: "[Bug]: "
 labels:
   - bug
@@ -10,16 +10,17 @@ body:
         Thanks for taking the time to file a bug.
 
         Please do not include provider credentials, personal playlist URLs, or other sensitive source data in this report.
+        KROIRA does not provide channels, playlists, subscriptions, credentials, or media content.
   - type: dropdown
     id: source_type
     attributes:
       label: Source type
       description: Which source type is involved?
       options:
-        - M3U
-        - Xtream
-        - Stalker
-        - Mixed or not sure
+        - M3U playlist
+        - Xtream provider
+        - Supported portal profile
+        - Mixed, not source-specific, or not sure
     validations:
       required: true
   - type: dropdown
@@ -46,7 +47,7 @@ body:
     attributes:
       label: App version or commit
       description: Include the app build/version if known, or the commit/branch you tested.
-      placeholder: e.g. 0.9.0.0 or main @ abc1234
+      placeholder: e.g. 2.0.0 / package 2.0.0.4 or main @ abc1234
   - type: input
     id: windows_version
     attributes:
@@ -100,5 +101,5 @@ body:
           required: true
         - label: I removed provider credentials, playlist URLs, and other sensitive data from this report.
           required: true
-        - label: I am describing a problem in the current restored product baseline, not an abandoned experiment.
+        - label: I am describing a problem in the current V2 release-candidate product baseline, not an abandoned experiment.
           required: true

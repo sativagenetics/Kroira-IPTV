@@ -2,7 +2,7 @@
 
 ## Scope
 
-Contributions should improve the current restored product baseline, not revive abandoned experiments.
+Contributions should improve the current V2 release-candidate baseline, not revive abandoned experiments or reposition the app as a content service.
 
 Good contributions include:
 
@@ -11,18 +11,20 @@ Good contributions include:
 - documentation improvements
 - focused UX polish that preserves the current direction
 - regression coverage for real bugs or provider quirks
+- Store-safe language, privacy/support improvements, and release-readiness cleanup
 
 Out of scope for drive-by changes:
 
 - redesign passes with no product alignment
 - speculative rewrites of backend/service/model layers
 - adding provider credentials, copyrighted fixtures, or temporary artifacts
+- requests or code paths that imply KROIRA provides channels, playlists, subscriptions, credentials, or media content
 
 ## Before You Start
 
 - Search existing issues before opening a new one.
 - For larger changes, open an issue or start from an agreed bug/feature request first.
-- Keep proposals aligned with the current player-only product position.
+- Keep proposals aligned with the current player/source-manager product position.
 
 ## Development Setup
 
@@ -34,6 +36,8 @@ Requirements:
 - Windows App SDK compatible environment
 
 Open `Kroira.sln`, select the packaged `Kroira.App` startup profile, and build for `x64`.
+
+KROIRA expects package identity for normal app flows. Use the packaged Visual Studio profile or the packaged launch script rather than treating `bin\...\Kroira.App.exe` as the primary smoke-test path.
 
 ## Build and Validation
 
