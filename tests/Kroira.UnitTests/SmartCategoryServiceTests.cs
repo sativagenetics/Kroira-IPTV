@@ -123,6 +123,70 @@ namespace Kroira.UnitTests
             Assert.AreEqual(_service.NormalizeKey("Tr/Dizi / Apple"), normalized);
         }
 
+        [TestMethod]
+        public void SmartCategoryIndexReturnsSmartAndProviderMemberships()
+        {
+            var items = new[]
+            {
+                new SmartCategoryIndexTestItem(1, "007 Skyfall", "James Bond Collection", false, "Netflix"),
+                new SmartCategoryIndexTestItem(2, "Dune Part Two 4K UHD", "New Movies", false, "Prime Video")
+            };
+
+            var index = BuildMovieIndex(items);
+
+            CollectionAssert.Contains(index.GetItems("movie.collection.james_bond_collection").Select(item => item.Id).ToList(), 1);
+            CollectionAssert.Contains(index.GetItems("movie.quality.4k").Select(item => item.Id).ToList(), 2);
+            Assert.AreEqual(2, index.GetCount(string.Empty));
+            Assert.AreEqual(2, index.ContextBuildCount);
+
+            var providerKey = _service.BuildOriginalProviderGroupKey("James Bond Collection");
+            CollectionAssert.Contains(index.GetItems(providerKey).Select(item => item.Id).ToList(), 1);
+            Assert.IsTrue(index.OriginalProviderGroups.Any(group => group.Key == providerKey && group.Count == 1));
+        }
+
+        [TestMethod]
+        public void SmartCategoryIndexCountsAreStableAcrossRepeatedSelection()
+        {
+            var items = new[]
+            {
+                new SmartCategoryIndexTestItem(1, "The Killer", "Netflix Movies", true, "Netflix"),
+                new SmartCategoryIndexTestItem(2, "Severance", "Apple TV+ Movies", false, "Apple")
+            };
+            var index = BuildMovieIndex(items);
+            var favoritesBefore = index.GetCount("movie.library.favorites");
+
+            _ = index.GetItems("movie.platform.netflix");
+            _ = index.GetItems("movie.platform.apple_tv");
+            _ = index.GetItems("movie.platform.netflix");
+
+            Assert.AreEqual(favoritesBefore, index.GetCount("movie.library.favorites"));
+            Assert.AreEqual(1, favoritesBefore);
+        }
+
+        [TestMethod]
+        public void SmartCategoryIndexCandidateSetComposesWithProviderSearchAndFavorites()
+        {
+            var items = new[]
+            {
+                new SmartCategoryIndexTestItem(1, "The Killer", "Netflix Movies", true, "Netflix"),
+                new SmartCategoryIndexTestItem(2, "The Crown", "Netflix Movies", false, "Netflix"),
+                new SmartCategoryIndexTestItem(3, "Ted Lasso", "Apple TV+ Movies", true, "Apple")
+            };
+            var index = BuildMovieIndex(items);
+            var providerKey = _service.BuildOriginalProviderGroupKey("Netflix Movies");
+            var normalizedSearch = _service.NormalizeKey("killer");
+
+            var composed = index.GetItems(providerKey)
+                .Where(item => item.SourceName == "Netflix")
+                .Where(item => item.IsFavorite)
+                .Where(item => _service.NormalizeKey(item.Title).Contains(normalizedSearch))
+                .Select(item => item.Id)
+                .ToList();
+
+            CollectionAssert.AreEqual(new[] { 1 }, composed);
+            Assert.AreEqual(2, index.GetCount(providerKey));
+        }
+
         private bool MatchesDisplayName(
             SmartCategoryMediaType mediaType,
             string displayName,
@@ -132,5 +196,30 @@ namespace Kroira.UnitTests
                 .Single(item => item.DisplayName == displayName);
             return _service.Matches(definition.Id, context);
         }
+
+        private SmartCategoryIndex<SmartCategoryIndexTestItem> BuildMovieIndex(SmartCategoryIndexTestItem[] items)
+        {
+            return SmartCategoryIndexBuilder.Build(
+                items,
+                _service.GetDefinitions(SmartCategoryMediaType.Movie),
+                item => new SmartCategoryItemContext
+                {
+                    MediaType = SmartCategoryMediaType.Movie,
+                    Title = item.Title,
+                    ProviderGroupName = item.ProviderGroup,
+                    SourceName = item.SourceName,
+                    SourceSummary = item.SourceName,
+                    IsFavorite = item.IsFavorite
+                },
+                item => new[] { item.ProviderGroup },
+                _service);
+        }
+
+        private sealed record SmartCategoryIndexTestItem(
+            int Id,
+            string Title,
+            string ProviderGroup,
+            bool IsFavorite,
+            string SourceName);
     }
 }

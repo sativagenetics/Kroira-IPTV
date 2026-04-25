@@ -286,6 +286,7 @@ namespace Kroira.App.ViewModels
         private readonly List<CatalogSeriesGroup> _allSeriesGroups = new();
         private readonly Dictionary<int, CatalogCategoryProjection> _seriesCategoryById = new();
         private readonly Dictionary<int, SeriesSmartWatchState> _seriesSmartStateById = new();
+        private readonly Dictionary<string, string> _seriesSearchTextByGroupKey = new(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<int, SourceType> _sourceTypeById = new();
         private readonly Dictionary<int, CatalogDiscoveryHealthBucket> _sourceHealthById = new();
         private readonly Dictionary<int, DateTime?> _sourceLastSyncById = new();
@@ -303,6 +304,7 @@ namespace Kroira.App.ViewModels
         private int? _preferredSeriesVariantId;
         private BrowsePreferences _browsePreferences = new();
         private HashSet<string> _favoriteSeriesKeys = new(StringComparer.OrdinalIgnoreCase);
+        private SmartCategoryIndex<CatalogSeriesGroup> _seriesCategoryIndex = SmartCategoryIndex<CatalogSeriesGroup>.Empty;
         private string _browseLanguageCode = AppLanguageService.DefaultLanguageCode;
         private bool _isApplyingFilter;
         private bool _pendingApplyFilter;
@@ -950,9 +952,10 @@ namespace Kroira.App.ViewModels
 
         private void ApplyFilterCore(string reason)
         {
+            var totalStopwatch = Stopwatch.StartNew();
             var currentCategoryKey = SelectedCategory?.FilterKey ?? string.Empty;
             LogBrowse(
-                $"apply start reason={reason} selectedKey={currentCategoryKey} search='{SearchQuery}' source={SelectedSourceOption?.Id ?? 0}");
+                $"PERF apply_start reason={reason} selectedKey={currentCategoryKey} search='{SearchQuery}' source={SelectedSourceOption?.Id ?? 0}");
 
             var previousSelectedSeries = SelectedSeries;
             var previousSelectedGroupKey = SelectedSeries?.GroupKey ?? string.Empty;
@@ -964,29 +967,38 @@ namespace Kroira.App.ViewModels
                 item.ActiveSeriesChanged -= SelectedSeries_ActiveSeriesChanged;
             }
 
+            var filterStopwatch = Stopwatch.StartNew();
             var baseResults = BuildFilteredSeriesResults().ToList();
+            LogBrowse($"PERF filter_compose reason={reason} groups={baseResults.Count} ms={filterStopwatch.ElapsedMilliseconds}");
+            var discoveryStopwatch = Stopwatch.StartNew();
             var discoveryProjection = BuildDiscoveryProjection(baseResults, DateTime.UtcNow);
             RefreshDiscoveryOptions(discoveryProjection);
             var filteredResults = baseResults
                 .Where(result => discoveryProjection.MatchingKeys.Contains(result.Group.GroupKey))
                 .ToList();
+            LogBrowse($"PERF discovery reason={reason} groups={filteredResults.Count} ms={discoveryStopwatch.ElapsedMilliseconds}");
 
-            _isInitializingBrowsePreferences = true;
-            try
+            if (ShouldRebuildCategoryRail(reason))
             {
-                var selectedCategory = BuildVisibleCategories(_browseLanguageCode, currentCategoryKey);
-                ReassignSelectedCategory(selectedCategory, $"apply:{reason}");
-            }
-            finally
-            {
-                _isInitializingBrowsePreferences = false;
+                _isInitializingBrowsePreferences = true;
+                try
+                {
+                    var selectedCategory = BuildVisibleCategories(_browseLanguageCode, currentCategoryKey);
+                    ReassignSelectedCategory(selectedCategory, $"apply:{reason}");
+                }
+                finally
+                {
+                    _isInitializingBrowsePreferences = false;
+                }
             }
 
+            var uiStopwatch = Stopwatch.StartNew();
             PatchFilteredSeriesItems(filteredResults);
 
             _filteredSeries = _allSeries;
             OnPropertyChanged(nameof(FilteredSeries));
             OnPropertyChanged(nameof(FilteredSeriesCount));
+            LogBrowse($"PERF ui_items reason={reason} results={_filteredSeries.Count} ms={uiStopwatch.ElapsedMilliseconds}");
 
             var nextSelectedSeries = _allSeries.FirstOrDefault(item => string.Equals(item.GroupKey, previousSelectedGroupKey, StringComparison.OrdinalIgnoreCase));
             if (previousSelectedSeries != null && nextSelectedSeries != null)
@@ -1025,7 +1037,7 @@ namespace Kroira.App.ViewModels
             _preferStagedFirstPaint = false;
             _displaySeriesSlotRefreshTask = RefreshDisplaySeriesSlotsAsync(shouldStageFirstPaint, reason);
             LogBrowse(
-                $"apply end reason={reason} groups={filteredResults.Count} results={_filteredSeries.Count} slots={DisplaySeriesSlots.Count} selectedKey={SelectedCategory?.FilterKey ?? "<all>"}");
+                $"PERF apply_end reason={reason} groups={filteredResults.Count} results={_filteredSeries.Count} slots={DisplaySeriesSlots.Count} selectedKey={SelectedCategory?.FilterKey ?? "<all>"} total_ms={totalStopwatch.ElapsedMilliseconds}");
         }
 
         [RelayCommand]
@@ -1060,6 +1072,8 @@ namespace Kroira.App.ViewModels
             }
 
             RefreshSeriesFavoriteState(targetGroup.GroupKey);
+            var selectedCategory = BuildVisibleCategories(_browseLanguageCode, SelectedCategory?.FilterKey ?? string.Empty);
+            ReassignSelectedCategory(selectedCategory, "toggle-favorite-lite");
         }
 
         [RelayCommand]
@@ -1136,6 +1150,7 @@ namespace Kroira.App.ViewModels
 
         private async Task RefreshDisplaySeriesSlotsAsync(bool prioritizeFirstPaint, string reason)
         {
+            var totalStopwatch = Stopwatch.StartNew();
             if (_filteredSeries.Count == 0)
             {
                 var emptyPatch = DisplaySeriesSlots.PatchToMatch(
@@ -1150,14 +1165,18 @@ namespace Kroira.App.ViewModels
             try
             {
                 var refreshVersion = ++_seriesSlotRefreshVersion;
+                var buildStopwatch = Stopwatch.StartNew();
                 var slots = BuildSeriesSlots(_filteredSeries);
+                LogBrowse($"PERF slots_build media=series reason={reason} slots={slots.Count} ms={buildStopwatch.ElapsedMilliseconds}");
                 if (!prioritizeFirstPaint || slots.Count <= InitialDisplaySeriesSlotBatchSize)
                 {
+                    var uiStopwatch = Stopwatch.StartNew();
                     var patch = DisplaySeriesSlots.PatchToMatch(
                         slots,
                         static (existing, incoming) => existing.Matches(incoming),
                         static (existing, incoming) => existing.UpdateFrom(incoming.Series));
                     LogBrowse($"slot patch reason={reason} reused={patch.ReusedCount} inserted={patch.InsertedCount} removed={patch.RemovedCount} moved={patch.MovedCount}");
+                    LogBrowse($"PERF ui_update media=series reason={reason} slots={DisplaySeriesSlots.Count} ms={uiStopwatch.ElapsedMilliseconds} total_ms={totalStopwatch.ElapsedMilliseconds}");
                     UpdateSelectedSeriesSlotState();
                     if (prioritizeFirstPaint)
                     {
@@ -1170,11 +1189,13 @@ namespace Kroira.App.ViewModels
 
                 var initialSlots = slots.Take(InitialDisplaySeriesSlotBatchSize).ToList();
                 var deferredSlots = slots.Skip(InitialDisplaySeriesSlotBatchSize).ToList();
+                var initialUiStopwatch = Stopwatch.StartNew();
                 var initialPatch = DisplaySeriesSlots.PatchToMatch(
                     initialSlots,
                     static (existing, incoming) => existing.Matches(incoming),
                     static (existing, incoming) => existing.UpdateFrom(incoming.Series));
                 LogBrowse($"slot patch reason={reason}:initial reused={initialPatch.ReusedCount} inserted={initialPatch.InsertedCount} removed={initialPatch.RemovedCount} moved={initialPatch.MovedCount}");
+                LogBrowse($"PERF ui_update media=series reason={reason}:initial slots={DisplaySeriesSlots.Count} ms={initialUiStopwatch.ElapsedMilliseconds} total_ms={totalStopwatch.ElapsedMilliseconds}");
                 UpdateSelectedSeriesSlotState();
                 LogBrowse(
                     $"first content ready ms={_activeLoadStopwatch?.ElapsedMilliseconds ?? -1} reason={reason} visibleSlots={initialSlots.Count}");
@@ -1198,6 +1219,8 @@ namespace Kroira.App.ViewModels
                     UpdateSelectedSeriesSlotState();
                     await Task.Yield();
                 }
+
+                LogBrowse($"PERF ui_update media=series reason={reason}:deferred slots={DisplaySeriesSlots.Count} total_ms={totalStopwatch.ElapsedMilliseconds}");
             }
             catch (Exception ex)
             {
@@ -1264,8 +1287,12 @@ namespace Kroira.App.ViewModels
             var selectedCategoryKey = SelectedCategory?.FilterKey ?? string.Empty;
             var selectedSourceId = SelectedSourceOption?.Id ?? 0;
             var results = new List<FilteredSeriesResult>();
+            var candidateGroups = _seriesCategoryIndex.AllItems.Count > 0
+                ? _seriesCategoryIndex.GetItems(selectedCategoryKey)
+                : _allSeriesGroups;
+            var normalizedSearchQuery = _smartCategoryService.NormalizeKey(SearchQuery);
 
-            foreach (var group in _allSeriesGroups)
+            foreach (var group in candidateGroups)
             {
                 var variants = group.Variants
                     .Where(variant => visibleSourceIds.Contains(variant.SourceProfile.Id))
@@ -1293,19 +1320,13 @@ namespace Kroira.App.ViewModels
                     SourceSummary = BuildSourceSummary(variants.Select(variant => variant.SourceProfile.Name))
                 };
 
-                if (!string.IsNullOrWhiteSpace(selectedCategoryKey) &&
-                    !MatchesSeriesCategorySelection(filteredGroup, categoryProjection, selectedCategoryKey))
-                {
-                    continue;
-                }
-
                 if (FavoritesOnly && !IsSeriesGroupFavorite(filteredGroup))
                 {
                     continue;
                 }
 
                 if (!string.IsNullOrWhiteSpace(SearchQuery) &&
-                    !MatchesSeriesSearch(filteredGroup, categoryProjection.DisplayCategoryName))
+                    !MatchesSeriesSearch(filteredGroup, categoryProjection.DisplayCategoryName, normalizedSearchQuery))
                 {
                     continue;
                 }
@@ -1313,10 +1334,14 @@ namespace Kroira.App.ViewModels
                 results.Add(new FilteredSeriesResult(filteredGroup, categoryProjection.DisplayCategoryName));
             }
 
-            return SortSeriesGroups(results.Select(result => result.Group))
+            var sortStopwatch = Stopwatch.StartNew();
+            var sortedResults = SortSeriesGroups(results.Select(result => result.Group))
                 .Select(group => new FilteredSeriesResult(
                     group,
-                    GetCategoryProjection(group.PreferredSeries).DisplayCategoryName));
+                    GetCategoryProjection(group.PreferredSeries).DisplayCategoryName))
+                .ToList();
+            LogBrowse($"PERF sort media=series input={results.Count} output={sortedResults.Count} ms={sortStopwatch.ElapsedMilliseconds}");
+            return sortedResults;
         }
 
         private CatalogDiscoveryProjection BuildDiscoveryProjection(
@@ -1558,6 +1583,7 @@ namespace Kroira.App.ViewModels
         private bool RequiresFullBrowseRefreshForFavoriteToggle()
         {
             return FavoritesOnly ||
+                   string.Equals(SelectedCategory?.FilterKey, "series.library.favorites", StringComparison.OrdinalIgnoreCase) ||
                    string.Equals(SelectedSortOption?.Key ?? "recommended", "favorites_first", StringComparison.OrdinalIgnoreCase);
         }
 
@@ -1635,6 +1661,7 @@ namespace Kroira.App.ViewModels
 
         private BrowserCategoryViewModel? BuildVisibleCategories(string languageCode, string currentKey)
         {
+            var stopwatch = Stopwatch.StartNew();
             LogBrowse($"categories rebuild start preserveKey={currentKey}");
 
             var visibleSourceIds = SourceVisibilityOptions.Where(option => option.IsVisible).Select(option => option.Id).ToHashSet();
@@ -1675,15 +1702,26 @@ namespace Kroira.App.ViewModels
 
             var categoryItems = new List<BrowserCategoryViewModel>();
             var categoryIndex = 0;
-            var smartContexts = visibleGroups
-                .Select(BuildSeriesSmartCategoryContext)
-                .ToList();
+            _seriesSearchTextByGroupKey.Clear();
+            foreach (var group in visibleGroups)
+            {
+                _seriesSearchTextByGroupKey[group.GroupKey] = BuildSeriesSearchText(group, GetCategoryProjection(group.PreferredSeries).DisplayCategoryName);
+            }
+
+            var indexStopwatch = Stopwatch.StartNew();
+            _seriesCategoryIndex = SmartCategoryIndexBuilder.Build(
+                visibleGroups,
+                _smartCategoryService.GetDefinitions(SmartCategoryMediaType.Series),
+                BuildSeriesSmartCategoryContext,
+                group => group.Variants.Select(variant => GetRawCategory(variant.Series)).Distinct(StringComparer.OrdinalIgnoreCase),
+                _smartCategoryService);
+            LogBrowse($"PERF smart_index media=series groups={visibleGroups.Count} contexts={_seriesCategoryIndex.ContextBuildCount} keys={_seriesCategoryIndex.ItemsByCategoryKey.Count} ms={indexStopwatch.ElapsedMilliseconds}");
 
             foreach (var definition in _smartCategoryService.GetDefinitions(SmartCategoryMediaType.Series))
             {
                 var count = definition.IsAllCategory
-                    ? visibleGroups.Count
-                    : smartContexts.Count(definition.Predicate);
+                    ? _seriesCategoryIndex.GetCount(string.Empty)
+                    : _seriesCategoryIndex.GetCount(definition.Id);
                 if (count <= 0 && !definition.AlwaysShow)
                 {
                     continue;
@@ -1704,18 +1742,11 @@ namespace Kroira.App.ViewModels
                 });
             }
 
-            var providerCategories = visibleGroups
-                .SelectMany(group => group.Variants
-                    .Select(variant => new { group.GroupKey, RawCategory = GetRawCategory(variant.Series) })
-                    .GroupBy(item => item.RawCategory, StringComparer.OrdinalIgnoreCase)
-                    .Select(grouping => grouping.First()))
-                .GroupBy(item => item.RawCategory, StringComparer.OrdinalIgnoreCase)
-                .Select(group => new { Name = group.Key, Count = group.Select(item => item.GroupKey).Distinct(StringComparer.OrdinalIgnoreCase).Count() })
-                .OrderBy(category => category.Name, StringComparer.CurrentCultureIgnoreCase)
+            var providerCategories = _seriesCategoryIndex.OriginalProviderGroups
                 .Select((category, index) => new BrowserCategoryViewModel
                 {
                     Id = categoryIndex++,
-                    FilterKey = _smartCategoryService.BuildOriginalProviderGroupKey(category.Name),
+                    FilterKey = category.Key,
                     Name = category.Name,
                     Description = ResolveDisplayCategoryName(category.Name),
                     SectionName = "Original Provider Groups",
@@ -1740,7 +1771,7 @@ namespace Kroira.App.ViewModels
                     ?? Categories.FirstOrDefault()
                 : Categories.FirstOrDefault();
 
-            LogBrowse($"categories rebuild end count={Categories.Count} resolvedKey={resolvedCategory?.FilterKey ?? "<all>"}");
+            LogBrowse($"PERF categories_built media=series categories={Categories.Count} groups={visibleGroups.Count} resolvedKey={resolvedCategory?.FilterKey ?? "<all>"} ms={stopwatch.ElapsedMilliseconds}");
             return resolvedCategory;
         }
 
@@ -1918,11 +1949,34 @@ namespace Kroira.App.ViewModels
             };
         }
 
-        private bool MatchesSeriesSearch(CatalogSeriesGroup group, string displayCategory)
+        private bool MatchesSeriesSearch(CatalogSeriesGroup group, string displayCategory, string normalizedQuery)
         {
-            return group.PreferredSeries.Title.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase) ||
-                   displayCategory.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase) ||
-                   group.SourceSummary.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase);
+            if (string.IsNullOrWhiteSpace(normalizedQuery))
+            {
+                return true;
+            }
+
+            if (_seriesSearchTextByGroupKey.TryGetValue(group.GroupKey, out var searchText))
+            {
+                return searchText.Contains(normalizedQuery, StringComparison.Ordinal);
+            }
+
+            return BuildSeriesSearchText(group, displayCategory)
+                .Contains(normalizedQuery, StringComparison.Ordinal);
+        }
+
+        private string BuildSeriesSearchText(CatalogSeriesGroup group, string displayCategory)
+        {
+            return _smartCategoryService.NormalizeKey(
+                $"{group.PreferredSeries.Title} {group.PreferredSeries.RawSourceTitle} {displayCategory} {group.SourceSummary} {group.PreferredSeries.Genres} {group.PreferredSeries.OriginalLanguage}");
+        }
+
+        private bool ShouldRebuildCategoryRail(string reason)
+        {
+            return Categories.Count == 0 ||
+                   _seriesCategoryIndex.AllItems.Count == 0 ||
+                   reason.Contains("rebuild", StringComparison.OrdinalIgnoreCase) ||
+                   reason.Contains("toggle-favorite", StringComparison.OrdinalIgnoreCase);
         }
 
         private void OnSourceVisibilityChanged(BrowseSourceVisibilityViewModel option, bool isVisible)

@@ -196,6 +196,7 @@ namespace Kroira.App.ViewModels
         private readonly List<CatalogMovieGroup> _allMovieGroups = new();
         private readonly Dictionary<int, CatalogCategoryProjection> _movieCategoryById = new();
         private readonly Dictionary<int, WatchProgressSnapshot> _movieWatchSnapshotsById = new();
+        private readonly Dictionary<string, string> _movieSearchTextByGroupKey = new(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<int, SourceType> _sourceTypeById = new();
         private readonly Dictionary<int, CatalogDiscoveryHealthBucket> _sourceHealthById = new();
         private readonly Dictionary<int, DateTime?> _sourceLastSyncById = new();
@@ -204,6 +205,7 @@ namespace Kroira.App.ViewModels
         private List<MovieBrowseItemViewModel> _filteredMovies = new();
         private BrowsePreferences _preferences = new();
         private HashSet<string> _favoriteMovieKeys = new(StringComparer.OrdinalIgnoreCase);
+        private SmartCategoryIndex<CatalogMovieGroup> _movieCategoryIndex = SmartCategoryIndex<CatalogMovieGroup>.Empty;
         private int _activeProfileId;
         private string _languageCode = AppLanguageService.DefaultLanguageCode;
         private string _visibleCategorySignature = string.Empty;
@@ -617,31 +619,41 @@ namespace Kroira.App.ViewModels
 
         private void ApplyFilterCore(string reason)
         {
+            var totalStopwatch = Stopwatch.StartNew();
             string currentCategoryKey = SelectedCategory?.FilterKey ?? string.Empty;
             LogBrowse(
-                $"apply start reason={reason} selectedKey={currentCategoryKey} search='{SearchQuery}' source={SelectedSourceOption?.Id ?? 0}");
+                $"PERF apply_start reason={reason} selectedKey={currentCategoryKey} search='{SearchQuery}' source={SelectedSourceOption?.Id ?? 0}");
 
+            var filterStopwatch = Stopwatch.StartNew();
             var baseResults = BuildFilteredMovieResults().ToList();
+            LogBrowse($"PERF filter_compose reason={reason} groups={baseResults.Count} ms={filterStopwatch.ElapsedMilliseconds}");
+            var discoveryStopwatch = Stopwatch.StartNew();
             var discoveryProjection = BuildDiscoveryProjection(baseResults, DateTime.UtcNow);
             RefreshDiscoveryOptions(discoveryProjection);
             var filteredResults = baseResults
                 .Where(result => discoveryProjection.MatchingKeys.Contains(result.Group.GroupKey))
                 .ToList();
+            LogBrowse($"PERF discovery reason={reason} groups={filteredResults.Count} ms={discoveryStopwatch.ElapsedMilliseconds}");
 
-            _isInitializing = true;
-            try
+            if (ShouldRebuildCategoryRail(reason))
             {
-                var selectedCategory = BuildVisibleCategories(currentCategoryKey);
-                ReassignSelectedCategory(selectedCategory, $"apply:{reason}");
-            }
-            finally
-            {
-                _isInitializing = false;
+                _isInitializing = true;
+                try
+                {
+                    var selectedCategory = BuildVisibleCategories(currentCategoryKey);
+                    ReassignSelectedCategory(selectedCategory, $"apply:{reason}");
+                }
+                finally
+                {
+                    _isInitializing = false;
+                }
             }
 
+            var uiStopwatch = Stopwatch.StartNew();
             PatchFilteredMovies(filteredResults);
             OnPropertyChanged(nameof(FilteredMovies));
             OnPropertyChanged(nameof(FilteredMovieCount));
+            LogBrowse($"PERF ui_items reason={reason} results={_filteredMovies.Count} ms={uiStopwatch.ElapsedMilliseconds}");
 
             RefreshFeaturedMovie(_filteredMovies);
             DiscoverySummaryText = discoveryProjection.SummaryText;
@@ -659,7 +671,7 @@ namespace Kroira.App.ViewModels
             _preferStagedFirstPaint = false;
             _displayMovieSlotRefreshTask = RefreshDisplayMovieSlotsAsync(shouldStageFirstPaint, reason);
             LogBrowse(
-                $"apply end reason={reason} groups={filteredResults.Count} results={_filteredMovies.Count} slots={DisplayMovieSlots.Count} selectedKey={SelectedCategory?.FilterKey ?? "<all>"}");
+                $"PERF apply_end reason={reason} groups={filteredResults.Count} results={_filteredMovies.Count} slots={DisplayMovieSlots.Count} selectedKey={SelectedCategory?.FilterKey ?? "<all>"} total_ms={totalStopwatch.ElapsedMilliseconds}");
         }
 
         [RelayCommand]
@@ -694,6 +706,8 @@ namespace Kroira.App.ViewModels
             }
 
             RefreshMovieFavoriteState(group.GroupKey);
+            var selectedCategory = BuildVisibleCategories(SelectedCategory?.FilterKey ?? string.Empty);
+            ReassignSelectedCategory(selectedCategory, "toggle-favorite-lite");
         }
 
         private IEnumerable<FilteredMovieResult> BuildFilteredMovieResults()
@@ -710,8 +724,12 @@ namespace Kroira.App.ViewModels
             var selectedCategoryKey = SelectedCategory?.FilterKey ?? string.Empty;
             var selectedSourceId = SelectedSourceOption?.Id ?? 0;
             var results = new List<FilteredMovieResult>();
+            var candidateGroups = _movieCategoryIndex.AllItems.Count > 0
+                ? _movieCategoryIndex.GetItems(selectedCategoryKey)
+                : _allMovieGroups;
+            var normalizedSearchQuery = _smartCategoryService.NormalizeKey(SearchQuery);
 
-            foreach (var group in _allMovieGroups)
+            foreach (var group in candidateGroups)
             {
                 var variants = group.Variants
                     .Where(variant => visibleSourceIds.Contains(variant.SourceProfile.Id))
@@ -739,19 +757,13 @@ namespace Kroira.App.ViewModels
                     SourceSummary = BuildSourceSummary(variants.Select(variant => variant.SourceProfile.Name))
                 };
 
-                if (!string.IsNullOrWhiteSpace(selectedCategoryKey) &&
-                    !MatchesMovieCategorySelection(filteredGroup, categoryProjection, selectedCategoryKey))
-                {
-                    continue;
-                }
-
                 if (FavoritesOnly && !IsMovieGroupFavorite(filteredGroup))
                 {
                     continue;
                 }
 
                 if (!string.IsNullOrWhiteSpace(SearchQuery) &&
-                    !MatchesMovieSearch(filteredGroup, categoryProjection.DisplayCategoryName))
+                    !MatchesMovieSearch(filteredGroup, categoryProjection.DisplayCategoryName, normalizedSearchQuery))
                 {
                     continue;
                 }
@@ -759,10 +771,14 @@ namespace Kroira.App.ViewModels
                 results.Add(new FilteredMovieResult(filteredGroup, categoryProjection.DisplayCategoryName));
             }
 
-            return SortMovieGroups(results.Select(result => result.Group))
+            var sortStopwatch = Stopwatch.StartNew();
+            var sortedResults = SortMovieGroups(results.Select(result => result.Group))
                 .Select(group => new FilteredMovieResult(
                     group,
-                    GetCategoryProjection(group.PreferredMovie).DisplayCategoryName));
+                    GetCategoryProjection(group.PreferredMovie).DisplayCategoryName))
+                .ToList();
+            LogBrowse($"PERF sort media=movies input={results.Count} output={sortedResults.Count} ms={sortStopwatch.ElapsedMilliseconds}");
+            return sortedResults;
         }
 
         private CatalogDiscoveryProjection BuildDiscoveryProjection(
@@ -923,6 +939,7 @@ namespace Kroira.App.ViewModels
 
         private async Task RefreshDisplayMovieSlotsAsync(bool prioritizeFirstPaint, string reason)
         {
+            var totalStopwatch = Stopwatch.StartNew();
             if (_filteredMovies.Count == 0)
             {
                 var emptyPatch = DisplayMovieSlots.PatchToMatch(
@@ -936,14 +953,18 @@ namespace Kroira.App.ViewModels
             try
             {
                 var refreshVersion = ++_movieSlotRefreshVersion;
+                var buildStopwatch = Stopwatch.StartNew();
                 var slots = BuildMovieSlots(_filteredMovies);
+                LogBrowse($"PERF slots_build media=movies reason={reason} slots={slots.Count} ms={buildStopwatch.ElapsedMilliseconds}");
                 if (!prioritizeFirstPaint || slots.Count <= InitialDisplayMovieSlotBatchSize)
                 {
+                    var uiStopwatch = Stopwatch.StartNew();
                     var patch = DisplayMovieSlots.PatchToMatch(
                         slots,
                         static (existing, incoming) => existing.Matches(incoming),
                         static (existing, incoming) => existing.UpdateFrom(incoming.Movie));
                     LogBrowse($"slot patch reason={reason} reused={patch.ReusedCount} inserted={patch.InsertedCount} removed={patch.RemovedCount} moved={patch.MovedCount}");
+                    LogBrowse($"PERF ui_update media=movies reason={reason} slots={DisplayMovieSlots.Count} ms={uiStopwatch.ElapsedMilliseconds} total_ms={totalStopwatch.ElapsedMilliseconds}");
                     if (prioritizeFirstPaint)
                     {
                         LogBrowse(
@@ -955,11 +976,13 @@ namespace Kroira.App.ViewModels
 
                 var initialSlots = slots.Take(InitialDisplayMovieSlotBatchSize).ToList();
                 var deferredSlots = slots.Skip(InitialDisplayMovieSlotBatchSize).ToList();
+                var initialUiStopwatch = Stopwatch.StartNew();
                 var initialPatch = DisplayMovieSlots.PatchToMatch(
                     initialSlots,
                     static (existing, incoming) => existing.Matches(incoming),
                     static (existing, incoming) => existing.UpdateFrom(incoming.Movie));
                 LogBrowse($"slot patch reason={reason}:initial reused={initialPatch.ReusedCount} inserted={initialPatch.InsertedCount} removed={initialPatch.RemovedCount} moved={initialPatch.MovedCount}");
+                LogBrowse($"PERF ui_update media=movies reason={reason}:initial slots={DisplayMovieSlots.Count} ms={initialUiStopwatch.ElapsedMilliseconds} total_ms={totalStopwatch.ElapsedMilliseconds}");
                 LogBrowse(
                     $"first content ready ms={_activeLoadStopwatch?.ElapsedMilliseconds ?? -1} reason={reason} visibleSlots={initialSlots.Count}");
 
@@ -981,6 +1004,8 @@ namespace Kroira.App.ViewModels
                         Math.Min(DeferredSlotAppendBatchSize, deferredSlots.Count - index)));
                     await Task.Yield();
                 }
+
+                LogBrowse($"PERF ui_update media=movies reason={reason}:deferred slots={DisplayMovieSlots.Count} total_ms={totalStopwatch.ElapsedMilliseconds}");
             }
             catch (Exception ex)
             {
@@ -1161,6 +1186,7 @@ namespace Kroira.App.ViewModels
 
         private BrowserCategoryViewModel? BuildVisibleCategories(string currentKey)
         {
+            var stopwatch = Stopwatch.StartNew();
             LogBrowse($"categories rebuild start preserveKey={currentKey ?? string.Empty}");
 
             var visibleSourceIds = SourceVisibilityOptions.Where(option => option.IsVisible).Select(option => option.Id).ToHashSet();
@@ -1201,15 +1227,26 @@ namespace Kroira.App.ViewModels
 
             var categoryItems = new List<BrowserCategoryViewModel>();
             var categoryId = 0;
-            var smartContexts = visibleGroups
-                .Select(BuildMovieSmartCategoryContext)
-                .ToList();
+            _movieSearchTextByGroupKey.Clear();
+            foreach (var group in visibleGroups)
+            {
+                _movieSearchTextByGroupKey[group.GroupKey] = BuildMovieSearchText(group, GetCategoryProjection(group.PreferredMovie).DisplayCategoryName);
+            }
+
+            var indexStopwatch = Stopwatch.StartNew();
+            _movieCategoryIndex = SmartCategoryIndexBuilder.Build(
+                visibleGroups,
+                _smartCategoryService.GetDefinitions(SmartCategoryMediaType.Movie),
+                BuildMovieSmartCategoryContext,
+                group => group.Variants.Select(variant => GetRawCategory(variant.Movie)).Distinct(StringComparer.OrdinalIgnoreCase),
+                _smartCategoryService);
+            LogBrowse($"PERF smart_index media=movies groups={visibleGroups.Count} contexts={_movieCategoryIndex.ContextBuildCount} keys={_movieCategoryIndex.ItemsByCategoryKey.Count} ms={indexStopwatch.ElapsedMilliseconds}");
 
             foreach (var definition in _smartCategoryService.GetDefinitions(SmartCategoryMediaType.Movie))
             {
                 var count = definition.IsAllCategory
-                    ? visibleGroups.Count
-                    : smartContexts.Count(definition.Predicate);
+                    ? _movieCategoryIndex.GetCount(string.Empty)
+                    : _movieCategoryIndex.GetCount(definition.Id);
                 if (count <= 0 && !definition.AlwaysShow)
                 {
                     continue;
@@ -1230,18 +1267,11 @@ namespace Kroira.App.ViewModels
                 });
             }
 
-            var providerCategories = visibleGroups
-                .SelectMany(group => group.Variants
-                    .Select(variant => new { group.GroupKey, RawCategory = GetRawCategory(variant.Movie) })
-                    .GroupBy(item => item.RawCategory, StringComparer.OrdinalIgnoreCase)
-                    .Select(grouping => grouping.First()))
-                .GroupBy(item => item.RawCategory, StringComparer.OrdinalIgnoreCase)
-                .Select(group => new { Name = group.Key, Count = group.Select(item => item.GroupKey).Distinct(StringComparer.OrdinalIgnoreCase).Count() })
-                .OrderBy(category => category.Name, StringComparer.CurrentCultureIgnoreCase)
+            var providerCategories = _movieCategoryIndex.OriginalProviderGroups
                 .Select((category, index) => new BrowserCategoryViewModel
                 {
                     Id = categoryId++,
-                    FilterKey = _smartCategoryService.BuildOriginalProviderGroupKey(category.Name),
+                    FilterKey = category.Key,
                     Name = category.Name,
                     Description = ResolveDisplayCategoryName(category.Name),
                     SectionName = "Original Provider Groups",
@@ -1266,7 +1296,7 @@ namespace Kroira.App.ViewModels
                     ?? Categories.FirstOrDefault()
                 : Categories.FirstOrDefault();
 
-            LogBrowse($"categories rebuild end count={Categories.Count} resolvedKey={resolvedCategory?.FilterKey ?? "<all>"}");
+            LogBrowse($"PERF categories_built media=movies categories={Categories.Count} groups={visibleGroups.Count} resolvedKey={resolvedCategory?.FilterKey ?? "<all>"} ms={stopwatch.ElapsedMilliseconds}");
             return resolvedCategory;
         }
 
@@ -1434,16 +1464,40 @@ namespace Kroira.App.ViewModels
             };
         }
 
-        private bool MatchesMovieSearch(CatalogMovieGroup group, string displayCategory)
+        private bool MatchesMovieSearch(CatalogMovieGroup group, string displayCategory, string normalizedQuery)
         {
-            return group.PreferredMovie.Title.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase) ||
-                   displayCategory.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase) ||
-                   group.SourceSummary.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase);
+            if (string.IsNullOrWhiteSpace(normalizedQuery))
+            {
+                return true;
+            }
+
+            if (_movieSearchTextByGroupKey.TryGetValue(group.GroupKey, out var searchText))
+            {
+                return searchText.Contains(normalizedQuery, StringComparison.Ordinal);
+            }
+
+            return BuildMovieSearchText(group, displayCategory)
+                .Contains(normalizedQuery, StringComparison.Ordinal);
+        }
+
+        private string BuildMovieSearchText(CatalogMovieGroup group, string displayCategory)
+        {
+            return _smartCategoryService.NormalizeKey(
+                $"{group.PreferredMovie.Title} {group.PreferredMovie.RawSourceTitle} {displayCategory} {group.SourceSummary} {group.PreferredMovie.Genres} {group.PreferredMovie.OriginalLanguage}");
+        }
+
+        private bool ShouldRebuildCategoryRail(string reason)
+        {
+            return Categories.Count == 0 ||
+                   _movieCategoryIndex.AllItems.Count == 0 ||
+                   reason.Contains("rebuild", StringComparison.OrdinalIgnoreCase) ||
+                   reason.Contains("toggle-favorite", StringComparison.OrdinalIgnoreCase);
         }
 
         private bool RequiresFullBrowseRefreshForFavoriteToggle()
         {
             return FavoritesOnly ||
+                   string.Equals(SelectedCategory?.FilterKey, "movie.library.favorites", StringComparison.OrdinalIgnoreCase) ||
                    string.Equals(SelectedSortOption?.Key ?? "recommended", "favorites_first", StringComparison.OrdinalIgnoreCase);
         }
 

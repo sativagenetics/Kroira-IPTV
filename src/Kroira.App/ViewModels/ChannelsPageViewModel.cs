@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -56,6 +57,8 @@ namespace Kroira.App.ViewModels
         private readonly Dictionary<int, CatalogDiscoveryHealthBucket> _sourceHealthById = new();
         private readonly Dictionary<int, DateTime?> _sourceLastSyncById = new();
         private readonly Dictionary<int, string> _categoryNames = new();
+        private readonly Dictionary<int, string> _liveSearchTextById = new();
+        private SmartCategoryIndex<BrowserChannelViewModel> _liveCategoryIndex = SmartCategoryIndex<BrowserChannelViewModel>.Empty;
         private readonly Dictionary<string, LiveChannelSectionViewModel> _spotlightSectionMap = new(StringComparer.OrdinalIgnoreCase);
         private HashSet<string> _favoriteLogicalKeys = new(StringComparer.OrdinalIgnoreCase);
         private BrowsePreferences _preferences = new();
@@ -161,7 +164,7 @@ namespace Kroira.App.ViewModels
         partial void OnSearchQueryChanged(string value)
         {
             Log($"SEL: search query changed -> '{value}'");
-            QueueApplyFilter();
+            QueueApplyFilter("search-query-changed");
         }
 
         partial void OnSelectedCategoryChanged(BrowserCategoryViewModel? value)
@@ -176,7 +179,8 @@ namespace Kroira.App.ViewModels
             _preferences.SelectedCategoryKey = value?.FilterKey ?? string.Empty;
             Log($"SEL: category -> {value?.FilterKey ?? "(all)"} ({value?.Name ?? "All channels"})");
             NotifyBrowseResultChanged();
-            _ = SavePreferencesAndRefreshAsync(rebuildCollections: false);
+            QueueApplyFilter("selected-category-changed");
+            _ = SavePreferencesOnlyAsync("selected-category-changed");
         }
 
         partial void OnSelectedSortOptionChanged(BrowseSortOptionViewModel? value)
@@ -324,7 +328,7 @@ namespace Kroira.App.ViewModels
 
             UpdateCategorySelectionState(SelectedCategory?.FilterKey ?? string.Empty);
             NotifyBrowseResultChanged();
-            QueueApplyFilter();
+            QueueApplyFilter("navigation-context");
         }
 
         [RelayCommand]
@@ -493,7 +497,7 @@ namespace Kroira.App.ViewModels
 
                 UpdateCategorySelectionState(SelectedCategory?.FilterKey ?? string.Empty);
                 Log("05: initialized selected filters");
-                QueueApplyFilter();
+                QueueApplyFilter("load-channels");
                 SurfaceState = surfaceStateService.ResolveSourceBackedState(sourceAvailability, _allChannels.Count, SurfaceStateCopies.LiveTv);
                 _hasLoadedOnce = true;
                 OnPropertyChanged(nameof(HasLoadedOnce));
@@ -678,22 +682,23 @@ namespace Kroira.App.ViewModels
             await SavePreferencesAndRefreshAsync(rebuildCollections: true);
         }
 
-        private void QueueApplyFilter()
+        private void QueueApplyFilter(string reason = "direct")
         {
-            _ = ApplyFilterAsync(System.Threading.Interlocked.Increment(ref _filterRequestVersion));
+            _ = ApplyFilterAsync(System.Threading.Interlocked.Increment(ref _filterRequestVersion), reason);
         }
 
-        private async Task ApplyFilterAsync(int requestVersion)
+        private async Task ApplyFilterAsync(int requestVersion, string reason)
         {
-            Log($"07: ApplyFilterAsync start request={requestVersion}");
-            var baseVisibleChannels = BuildSourceScopedChannels();
+            var totalStopwatch = Stopwatch.StartNew();
+            Log($"PERF apply_start request={requestVersion} reason={reason} selectedKey={SelectedCategory?.FilterKey ?? "<all>"} search='{SearchQuery}' source={SelectedSourceOption?.Id ?? 0}");
+            var selectedCategoryKey = SelectedCategory?.FilterKey ?? string.Empty;
+            var categoryStopwatch = Stopwatch.StartNew();
+            var baseVisibleChannels = GetLiveCategoryCandidates(selectedCategoryKey).ToList();
+            Log($"PERF category_candidates request={requestVersion} reason={reason} count={baseVisibleChannels.Count} ms={categoryStopwatch.ElapsedMilliseconds}");
 
             var filtered = baseVisibleChannels.AsEnumerable();
 
-            if (SelectedCategory != null && !string.IsNullOrWhiteSpace(SelectedCategory.FilterKey))
-            {
-                filtered = filtered.Where(channel => MatchesCategorySelection(channel, SelectedCategory.FilterKey));
-            }
+            var composeStopwatch = Stopwatch.StartNew();
 
             if (FavoritesOnly)
             {
@@ -702,20 +707,20 @@ namespace Kroira.App.ViewModels
 
             if (!string.IsNullOrWhiteSpace(SearchQuery))
             {
-                filtered = filtered.Where(channel =>
-                    channel.Name.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase) ||
-                    channel.RawName.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase) ||
-                    channel.DisplayCategoryName.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase) ||
-                    channel.SourceName.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase));
+                var normalizedQuery = _smartCategoryService.NormalizeKey(SearchQuery);
+                filtered = filtered.Where(channel => MatchesLiveSearch(channel, normalizedQuery));
             }
 
             var nowUtc = DateTime.UtcNow;
             var preDiscoveryList = filtered.ToList();
+            Log($"PERF filter_compose request={requestVersion} reason={reason} count={preDiscoveryList.Count} ms={composeStopwatch.ElapsedMilliseconds}");
+            var discoveryStopwatch = Stopwatch.StartNew();
             var discoveryProjection = BuildDiscoveryProjection(preDiscoveryList, nowUtc);
             RefreshDiscoveryOptions(discoveryProjection);
             var filteredList = preDiscoveryList
                 .Where(channel => discoveryProjection.MatchingKeys.Contains(channel.LogicalContentKey))
                 .ToList();
+            Log($"PERF discovery request={requestVersion} reason={reason} count={filteredList.Count} ms={discoveryStopwatch.ElapsedMilliseconds}");
             DiscoverySummaryText = discoveryProjection.SummaryText;
             _lastPreDiscoveryCount = preDiscoveryList.Count;
             _lastDiscoveryFacetFiltersActive = discoveryProjection.HasActiveFacetFilters;
@@ -727,15 +732,27 @@ namespace Kroira.App.ViewModels
                 return;
             }
 
+            var shouldRefreshGuide = ShouldRefreshGuideDuringApply(reason);
             if (!GuideMatchedOnly)
             {
+                var sortStopwatch = Stopwatch.StartNew();
                 var initialSorted = SortChannels(filteredList).ToList();
+                Log($"PERF sort_initial request={requestVersion} reason={reason} count={initialSorted.Count} ms={sortStopwatch.ElapsedMilliseconds}");
                 ApplyVisibleChannels(initialSorted, requestVersion, "08b: initial grid applied before deferred guide refresh");
                 await Task.Yield();
             }
-            else
+            else if (shouldRefreshGuide)
             {
                 Log("08b: guide matched filter active; deferring initial grid until guide refresh completes");
+            }
+            else
+            {
+                var cachedGuideMatches = filteredList.Where(channel => channel.HasMatchedGuide).ToList();
+                var sortStopwatch = Stopwatch.StartNew();
+                var sortedCachedGuideMatches = SortChannels(cachedGuideMatches).ToList();
+                Log($"PERF sort_cached_guide request={requestVersion} reason={reason} count={sortedCachedGuideMatches.Count} ms={sortStopwatch.ElapsedMilliseconds}");
+                ApplyVisibleChannels(sortedCachedGuideMatches, requestVersion, "08b: cached guide-matched grid applied");
+                await Task.Yield();
             }
 
             if (requestVersion != _filterRequestVersion)
@@ -744,7 +761,16 @@ namespace Kroira.App.ViewModels
                 return;
             }
 
-            await RefreshGuideAndDeferredSectionsAsync(requestVersion, baseVisibleChannels, filteredList, nowUtc);
+            if (shouldRefreshGuide)
+            {
+                await RefreshGuideAndDeferredSectionsAsync(requestVersion, baseVisibleChannels, filteredList, nowUtc);
+            }
+            else
+            {
+                Log($"PERF guide_refresh_skipped request={requestVersion} reason={reason}");
+            }
+
+            Log($"PERF apply_end request={requestVersion} reason={reason} total_ms={totalStopwatch.ElapsedMilliseconds}");
         }
 
         [RelayCommand]
@@ -763,8 +789,10 @@ namespace Kroira.App.ViewModels
             var activeProfileId = await profileService.GetActiveProfileIdAsync(db);
             var isFavorite = await _logicalCatalogStateService.ToggleFavoriteAsync(db, activeProfileId, FavoriteType.Channel, channelId);
             UpdateFavoriteState(target.LogicalContentKey, isFavorite);
+            BuildVisibleCategories();
+            EnsureSelectedCategory();
 
-            QueueApplyFilter();
+            QueueApplyFilter("toggle-favorite");
         }
 
         public async Task RecordChannelLaunchAsync(int channelId)
@@ -790,6 +818,9 @@ namespace Kroira.App.ViewModels
                     channel.LastWatchedAtUtc = DateTime.UtcNow;
                 }
             }
+
+            BuildVisibleCategories();
+            EnsureSelectedCategory();
         }
 
         private async Task SavePreferencesAndRefreshAsync(bool rebuildCollections)
@@ -807,7 +838,23 @@ namespace Kroira.App.ViewModels
                 EnsureSelectedCategory();
             }
 
-            QueueApplyFilter();
+            QueueApplyFilter(rebuildCollections ? "save-preferences-rebuild" : "save-preferences");
+        }
+
+        private async Task SavePreferencesOnlyAsync(string reason)
+        {
+            var stopwatch = Stopwatch.StartNew();
+            try
+            {
+                using var scope = _serviceProvider.CreateScope();
+                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                await _browsePreferencesService.SaveAsync(db, Domain, _activeProfileId, _preferences);
+                Log($"PERF preferences_saved reason={reason} ms={stopwatch.ElapsedMilliseconds}");
+            }
+            catch (Exception ex)
+            {
+                Log($"preferences save skipped reason={reason} error={ex.Message}");
+            }
         }
 
         private void UpdateFavoriteState(string logicalKey, bool isFavorite)
@@ -1039,7 +1086,7 @@ namespace Kroira.App.ViewModels
             OnPropertyChanged(nameof(SpotlightVisibility));
         }
 
-        private List<BrowserChannelViewModel> BuildSourceScopedChannels()
+        private List<BrowserChannelViewModel> BuildSourceScopedChannels(bool refreshDerivedFields = false)
         {
             var visibleSourceIds = SourceVisibilityOptions
                 .Where(option => option.IsVisible)
@@ -1053,14 +1100,12 @@ namespace Kroira.App.ViewModels
             var baseVisibleChannels = _allChannels
                 .Where(channel => visibleSourceIds.Contains(channel.SourceProfileId))
                 .Where(channel => !_browsePreferencesService.IsCategoryHidden(_preferences, channel.CategoryName))
-                .Select(channel =>
-                {
-                    channel.DisplayCategoryName = ResolveEffectiveLiveDisplayCategoryName(channel.CategoryName, channel.Name);
-                    channel.IsSportsChannel = ContentClassifier.IsSportsLikeChannel(channel.Name, channel.DisplayCategoryName);
-                    channel.IsTurkishSportsChannel = ContentClassifier.IsTurkishSportsLikeChannel(channel.Name, channel.DisplayCategoryName);
-                    return channel;
-                })
                 .ToList();
+
+            if (refreshDerivedFields)
+            {
+                RefreshLiveDerivedFields(baseVisibleChannels);
+            }
 
             if (SelectedSourceOption != null && SelectedSourceOption.Id != 0)
             {
@@ -1070,6 +1115,42 @@ namespace Kroira.App.ViewModels
             }
 
             return baseVisibleChannels;
+        }
+
+        private void RefreshLiveDerivedFields(IEnumerable<BrowserChannelViewModel> channels)
+        {
+            foreach (var channel in channels)
+            {
+                channel.DisplayCategoryName = ResolveEffectiveLiveDisplayCategoryName(channel.CategoryName, channel.Name);
+                channel.IsSportsChannel = ContentClassifier.IsSportsLikeChannel(channel.Name, channel.DisplayCategoryName);
+                channel.IsTurkishSportsChannel = ContentClassifier.IsTurkishSportsLikeChannel(channel.Name, channel.DisplayCategoryName);
+            }
+        }
+
+        private IReadOnlyList<BrowserChannelViewModel> GetLiveCategoryCandidates(string selectedCategoryKey)
+        {
+            if (_liveCategoryIndex.AllItems.Count == 0)
+            {
+                return BuildSourceScopedChannels(refreshDerivedFields: true);
+            }
+
+            return _liveCategoryIndex.GetItems(selectedCategoryKey);
+        }
+
+        private bool MatchesLiveSearch(BrowserChannelViewModel channel, string normalizedQuery)
+        {
+            if (string.IsNullOrWhiteSpace(normalizedQuery))
+            {
+                return true;
+            }
+
+            if (_liveSearchTextById.TryGetValue(channel.Id, out var searchText))
+            {
+                return searchText.Contains(normalizedQuery, StringComparison.Ordinal);
+            }
+
+            return _smartCategoryService.NormalizeKey($"{channel.Name} {channel.RawName} {channel.DisplayCategoryName} {channel.CategoryName} {channel.SourceName}")
+                .Contains(normalizedQuery, StringComparison.Ordinal);
         }
 
         private bool MatchesCategorySelection(BrowserChannelViewModel channel, string filterKey)
@@ -1439,18 +1520,31 @@ namespace Kroira.App.ViewModels
 
         private void BuildVisibleCategories()
         {
-            var visibleChannels = BuildSourceScopedChannels();
+            var stopwatch = Stopwatch.StartNew();
+            var visibleChannels = BuildSourceScopedChannels(refreshDerivedFields: true);
             var categoryItems = new List<BrowserCategoryViewModel>();
             var categoryId = 0;
-            var smartContexts = visibleChannels
-                .Select(BuildLiveSmartCategoryContext)
-                .ToList();
+            _liveSearchTextById.Clear();
+            foreach (var channel in visibleChannels)
+            {
+                _liveSearchTextById[channel.Id] = _smartCategoryService.NormalizeKey(
+                    $"{channel.Name} {channel.RawName} {channel.DisplayCategoryName} {channel.CategoryName} {channel.SourceName}");
+            }
+
+            var indexStopwatch = Stopwatch.StartNew();
+            _liveCategoryIndex = SmartCategoryIndexBuilder.Build(
+                visibleChannels,
+                _smartCategoryService.GetDefinitions(SmartCategoryMediaType.Live),
+                BuildLiveSmartCategoryContext,
+                channel => new[] { channel.CategoryName },
+                _smartCategoryService);
+            Log($"PERF smart_index media=live items={visibleChannels.Count} contexts={_liveCategoryIndex.ContextBuildCount} keys={_liveCategoryIndex.ItemsByCategoryKey.Count} ms={indexStopwatch.ElapsedMilliseconds}");
 
             foreach (var definition in _smartCategoryService.GetDefinitions(SmartCategoryMediaType.Live))
             {
                 var count = definition.IsAllCategory
-                    ? visibleChannels.Count
-                    : smartContexts.Count(definition.Predicate);
+                    ? _liveCategoryIndex.GetCount(string.Empty)
+                    : _liveCategoryIndex.GetCount(definition.Id);
                 if (count <= 0 && !definition.AlwaysShow)
                 {
                     continue;
@@ -1471,17 +1565,15 @@ namespace Kroira.App.ViewModels
                 });
             }
 
-            var providerCategories = visibleChannels
-                .GroupBy(channel => channel.CategoryName)
-                .OrderBy(group => group.Key, StringComparer.CurrentCultureIgnoreCase)
+            var providerCategories = _liveCategoryIndex.OriginalProviderGroups
                 .Select((group, index) => new BrowserCategoryViewModel
                 {
                     Id = categoryId++,
-                    FilterKey = _smartCategoryService.BuildOriginalProviderGroupKey(group.Key),
-                    Name = group.Key,
-                    Description = ResolveEffectiveLiveDisplayCategoryName(group.Key, string.Empty),
+                    FilterKey = group.Key,
+                    Name = group.Name,
+                    Description = ResolveEffectiveLiveDisplayCategoryName(group.Name, string.Empty),
                     SectionName = "Original Provider Groups",
-                    ItemCount = group.Count(),
+                    ItemCount = group.Count,
                     OrderIndex = 100_000 + index,
                     IsOriginalProviderGroup = true,
                     IconGlyph = "\uE8B3"
@@ -1497,7 +1589,7 @@ namespace Kroira.App.ViewModels
                 Categories.Add(category);
             }
 
-            Log($"RAIL: BuildVisibleCategories completed with {Categories.Count} categories from {visibleChannels.Count} visible channels");
+            Log($"PERF categories_built media=live categories={Categories.Count} items={visibleChannels.Count} ms={stopwatch.ElapsedMilliseconds}");
         }
 
         private static void ApplyCategorySectionHeaders(IReadOnlyList<BrowserCategoryViewModel> categories)
@@ -1613,6 +1705,14 @@ namespace Kroira.App.ViewModels
             };
         }
 
+        private static bool ShouldRefreshGuideDuringApply(string reason)
+        {
+            return reason.Contains("load", StringComparison.OrdinalIgnoreCase) ||
+                   reason.Contains("guide", StringComparison.OrdinalIgnoreCase) ||
+                   reason.Contains("source", StringComparison.OrdinalIgnoreCase) ||
+                   reason.Contains("rebuild", StringComparison.OrdinalIgnoreCase);
+        }
+
         private void OnSourceVisibilityChanged(BrowseSourceVisibilityViewModel sourceOption, bool isVisible)
         {
             if (_isInitializing)
@@ -1639,6 +1739,7 @@ namespace Kroira.App.ViewModels
             List<BrowserChannelViewModel> filteredList,
             DateTime nowUtc)
         {
+            var guideStopwatch = Stopwatch.StartNew();
             Log($"09: deferred guide refresh start request={requestVersion} channels={filteredList.Count}");
 
             try
@@ -1664,7 +1765,7 @@ namespace Kroira.App.ViewModels
                 }
 
                 await RefreshDeferredSpotlightSectionsAsync(requestVersion, baseVisibleChannels);
-                Log($"11: guide summaries applied for request={requestVersion}");
+                Log($"PERF guide_refresh request={requestVersion} channels={filteredList.Count} ms={guideStopwatch.ElapsedMilliseconds}");
             }
             catch (Exception ex)
             {
@@ -1686,7 +1787,9 @@ namespace Kroira.App.ViewModels
             var finalList = GuideMatchedOnly
                 ? filteredList.Where(channel => channel.HasMatchedGuide).ToList()
                 : filteredList;
+            var sortStopwatch = Stopwatch.StartNew();
             finalList = SortChannels(finalList).ToList();
+            Log($"PERF sort_final request={requestVersion} count={finalList.Count} ms={sortStopwatch.ElapsedMilliseconds}");
 
             ApplyVisibleChannels(finalList, requestVersion, "12: final grid applied after deferred guide refresh");
         }
@@ -1728,6 +1831,7 @@ namespace Kroira.App.ViewModels
 
             EnsureSelectedSourceOption();
 
+            var uiStopwatch = Stopwatch.StartNew();
             var patch = FilteredChannels.PatchToMatch(
                 visibleChannels,
                 static (existing, incoming) => existing.Id == incoming.Id);
@@ -1744,6 +1848,7 @@ namespace Kroira.App.ViewModels
             UpdateEmptyState(_lastPreDiscoveryCount, _lastDiscoveryFacetFiltersActive);
             NotifyBrowseResultChanged();
             Log($"{phaseLogMessage}; visible channels={FilteredChannels.Count}; reused={patch.ReusedCount}; inserted={patch.InsertedCount}; removed={patch.RemovedCount}; moved={patch.MovedCount}");
+            Log($"PERF ui_update media=live count={FilteredChannels.Count} reused={patch.ReusedCount} inserted={patch.InsertedCount} removed={patch.RemovedCount} moved={patch.MovedCount} ms={uiStopwatch.ElapsedMilliseconds}");
         }
 
         private bool HasDiscoveryFilters()
