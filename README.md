@@ -108,9 +108,20 @@ Unsigned packages are for local review only and should not be uploaded to Partne
 
 ## Screenshots
 
-Curated repository screenshots are not committed yet. Temporary debug captures and generated Store-review captures belong under `artifacts/` and are ignored by git.
+The current V2 Store-ready screenshot set lives under [docs/screenshots/store](docs/screenshots/store/). These PNGs use sanitized sample data and are the repository-facing screenshots for Store review.
 
-When stable, sanitized screenshots are approved for public use, place them under [docs/screenshots](docs/screenshots/README.md) and update this section with relative image links.
+![KROIRA IPTV social preview](docs/screenshots/store/social-preview.png)
+
+| Screen | File |
+| --- | --- |
+| Home | [01-home.png](docs/screenshots/store/01-home.png) |
+| Live TV | [02-live-tv.png](docs/screenshots/store/02-live-tv.png) |
+| Movies | [03-movies.png](docs/screenshots/store/03-movies.png) |
+| Series | [04-series.png](docs/screenshots/store/04-series.png) |
+| Sources | [05-sources.png](docs/screenshots/store/05-sources.png) |
+| EPG Center | [06-epg-center.png](docs/screenshots/store/06-epg-center.png) |
+| Settings | [07-settings.png](docs/screenshots/store/07-settings.png) |
+| Player | [08-player.png](docs/screenshots/store/08-player.png) |
 
 For local visual QA:
 
@@ -207,7 +218,6 @@ Keep Partner Center copy aligned with those files and the in-app About/Settings 
 - KROIRA starts empty until the user adds an authorized source.
 - Source quality varies. Channel availability, VOD catalogs, EPG coverage, logos, categories, catch-up support, subtitles, audio tracks, and stream reliability all depend on the user source.
 - TMDb enrichment is optional fallback metadata behavior and does not replace missing provider rights or stream access.
-- Curated public screenshots are not yet committed.
 - Recording, download, restore, and media-library workflows exist in the codebase but are release-gated and are not part of the default public V2 RC surface.
 - Store signing and Partner Center identity must be handled outside the unsigned local packaging script.
 
@@ -218,7 +228,7 @@ Near-term V2 polish:
 - Playback stability, error messaging, and player UX polish
 - Source diagnostics, repair guidance, and guide-quality improvements
 - Search, filtering, sorting, and metadata-quality improvements across catalog surfaces
-- Sanitized screenshot approval and final Store asset review
+- Store submission asset maintenance and Partner Center review
 - Store review readiness and public documentation polish
 
 Longer-term areas under evaluation:
