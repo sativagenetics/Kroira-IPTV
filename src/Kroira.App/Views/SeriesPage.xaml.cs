@@ -76,9 +76,17 @@ namespace Kroira.App.Views
             if (DispatcherQueue != null)
             {
                 DispatcherQueue.TryEnqueue(() =>
+                {
+                    var pageVisibleMs = navigationStopwatch.ElapsedMilliseconds;
                     BrowseRuntimeLogger.Log(
                         "SERIES UI",
-                        $"page visible ms={navigationStopwatch.ElapsedMilliseconds} cached={ViewModel.HasLoadedOnce} slots={ViewModel.DisplaySeriesSlots.Count}"));
+                        $"PERF page_visible media=series ms={pageVisibleMs} cached={ViewModel.HasLoadedOnce} slots={ViewModel.DisplaySeriesSlots.Count}");
+                    BrowsePerformanceDiagnostics.WarnIfPageVisibleSlow(
+                        "SERIES UI",
+                        "series",
+                        pageVisibleMs,
+                        $"cached={ViewModel.HasLoadedOnce} slots={ViewModel.DisplaySeriesSlots.Count}");
+                });
             }
 
             var shouldLoad = !ViewModel.HasLoadedOnce ||

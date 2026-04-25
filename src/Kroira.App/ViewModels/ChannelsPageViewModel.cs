@@ -761,6 +761,7 @@ namespace Kroira.App.ViewModels
 
             if (requestVersion != _filterRequestVersion)
             {
+                Log($"PERF stale_apply_skip media=live phase=before-initial-grid request={requestVersion} current={_filterRequestVersion}");
                 Log($"08a: request {requestVersion} became stale before initial grid apply");
                 return;
             }
@@ -790,6 +791,7 @@ namespace Kroira.App.ViewModels
 
             if (requestVersion != _filterRequestVersion)
             {
+                Log($"PERF stale_apply_skip media=live phase=before-guide-refresh request={requestVersion} current={_filterRequestVersion}");
                 Log($"08c: request {requestVersion} became stale before deferred guide refresh");
                 return;
             }
@@ -1667,6 +1669,11 @@ namespace Kroira.App.ViewModels
                 channel => new[] { channel.CategoryName },
                 _smartCategoryService));
             Log($"PERF smart_index media=live items={visibleChannels.Count} contexts={categoryIndex.ContextBuildCount} keys={categoryIndex.ItemsByCategoryKey.Count} ms={indexStopwatch.ElapsedMilliseconds} offThread=True");
+            BrowsePerformanceDiagnostics.WarnIfSmartCategoryIndexSlow(
+                "CHANNELS",
+                "live",
+                indexStopwatch.ElapsedMilliseconds,
+                $"items={visibleChannels.Count} contexts={categoryIndex.ContextBuildCount} offThread=True");
             ApplyVisibleCategories(visibleChannels, categoryIndex, stopwatch);
         }
 
@@ -1683,6 +1690,11 @@ namespace Kroira.App.ViewModels
                 channel => new[] { channel.CategoryName },
                 _smartCategoryService);
             Log($"PERF smart_index media=live items={visibleChannels.Count} contexts={categoryIndex.ContextBuildCount} keys={categoryIndex.ItemsByCategoryKey.Count} ms={indexStopwatch.ElapsedMilliseconds} offThread=False");
+            BrowsePerformanceDiagnostics.WarnIfSmartCategoryIndexSlow(
+                "CHANNELS",
+                "live",
+                indexStopwatch.ElapsedMilliseconds,
+                $"items={visibleChannels.Count} contexts={categoryIndex.ContextBuildCount} offThread=False");
             ApplyVisibleCategories(visibleChannels, categoryIndex, stopwatch);
         }
 
@@ -1748,11 +1760,17 @@ namespace Kroira.App.ViewModels
             categoryItems.AddRange(providerCategories);
             ApplyCategorySectionHeaders(categoryItems);
 
+            var categoryUiStopwatch = Stopwatch.StartNew();
             Categories.Clear();
             foreach (var category in categoryItems)
             {
                 Categories.Add(category);
             }
+            BrowsePerformanceDiagnostics.WarnIfUiThreadCollectionApplySlow(
+                "CHANNELS",
+                "live",
+                categoryUiStopwatch.ElapsedMilliseconds,
+                $"step=category_replace categories={categoryItems.Count}");
 
             Log($"PERF categories_built media=live categories={Categories.Count} items={visibleChannels.Count} ms={stopwatch.ElapsedMilliseconds}");
         }
@@ -1920,6 +1938,7 @@ namespace Kroira.App.ViewModels
 
                 if (requestVersion != _filterRequestVersion)
                 {
+                    Log($"PERF stale_apply_skip media=live phase=guide-query request={requestVersion} current={_filterRequestVersion}");
                     Log($"10: request {requestVersion} became stale during guide query");
                     return;
                 }
@@ -1937,6 +1956,7 @@ namespace Kroira.App.ViewModels
             {
                 if (requestVersion != _filterRequestVersion)
                 {
+                    Log($"PERF stale_apply_skip media=live phase=guide-failure request={requestVersion} current={_filterRequestVersion}");
                     Log($"10: request {requestVersion} became stale after guide failure");
                     return;
                 }
@@ -1976,6 +1996,7 @@ namespace Kroira.App.ViewModels
             await Task.Yield();
             if (requestVersion != _filterRequestVersion)
             {
+                Log($"PERF stale_apply_skip media=live phase=spotlight-helper request={requestVersion} current={_filterRequestVersion}");
                 Log($"10: request {requestVersion} became stale before spotlight helper build");
                 return;
             }
@@ -1991,6 +2012,7 @@ namespace Kroira.App.ViewModels
         {
             if (requestVersion != _filterRequestVersion)
             {
+                Log($"PERF stale_apply_skip media=live phase=visible-grid request={requestVersion} current={_filterRequestVersion}");
                 Log($"{phaseLogMessage} skipped because request {requestVersion} is stale");
                 return;
             }
@@ -2015,9 +2037,23 @@ namespace Kroira.App.ViewModels
             NotifyBrowseResultChanged();
             Log($"{phaseLogMessage}; visible channels={FilteredChannels.Count}; reused={patch.ReusedCount}; inserted={patch.InsertedCount}; removed={patch.RemovedCount}; moved={patch.MovedCount}");
             Log($"PERF ui_update media=live count={FilteredChannels.Count} reused={patch.ReusedCount} inserted={patch.InsertedCount} removed={patch.RemovedCount} moved={patch.MovedCount} ms={uiStopwatch.ElapsedMilliseconds}");
+            BrowsePerformanceDiagnostics.WarnIfUiThreadCollectionApplySlow(
+                "CHANNELS",
+                "live",
+                uiStopwatch.ElapsedMilliseconds,
+                $"step=visible_grid count={FilteredChannels.Count}");
             if (phaseLogMessage.StartsWith("08b:", StringComparison.Ordinal))
             {
-                Log($"first content ready ms={_activeLoadStopwatch?.ElapsedMilliseconds ?? -1} reason=load-channels visibleChannels={FilteredChannels.Count}");
+                var firstContentMs = _activeLoadStopwatch?.ElapsedMilliseconds ?? -1;
+                Log($"first content ready ms={firstContentMs} reason=load-channels visibleChannels={FilteredChannels.Count}");
+                if (firstContentMs >= 0)
+                {
+                    BrowsePerformanceDiagnostics.WarnIfFirstUsefulContentSlow(
+                        "CHANNELS",
+                        "live",
+                        firstContentMs,
+                        $"reason=load-channels visibleChannels={FilteredChannels.Count}");
+                }
             }
         }
 

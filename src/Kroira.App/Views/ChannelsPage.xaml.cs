@@ -71,8 +71,23 @@ namespace Kroira.App.Views
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
             var navigationContext = e.Parameter as ChannelsNavigationContext;
+            var navigationStopwatch = Stopwatch.StartNew();
             Log($"04: OnNavigatedTo entered, parameterType={e.Parameter?.GetType().FullName ?? "null"}, mode={navigationContext?.Mode.ToString() ?? "Default"}");
             base.OnNavigatedTo(e);
+            if (DispatcherQueue != null)
+            {
+                DispatcherQueue.TryEnqueue(() =>
+                {
+                    var pageVisibleMs = navigationStopwatch.ElapsedMilliseconds;
+                    Log($"PERF page_visible media=live ms={pageVisibleMs} cached={ViewModel.HasLoadedOnce} channels={ViewModel.FilteredChannels.Count}");
+                    BrowsePerformanceDiagnostics.WarnIfPageVisibleSlow(
+                        nameof(ChannelsPage),
+                        "live",
+                        pageVisibleMs,
+                        $"cached={ViewModel.HasLoadedOnce} channels={ViewModel.FilteredChannels.Count}");
+                });
+            }
+
             if (ViewModel.HasLoadedOnce)
             {
                 ViewModel.RefreshNavigationContext(navigationContext);

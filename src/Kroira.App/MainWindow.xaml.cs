@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using Kroira.App.Models;
 using Kroira.App.Services;
+using Kroira.App.ViewModels;
 using Kroira.App.Views;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI;
@@ -539,7 +540,10 @@ namespace Kroira.App
             _activeNavigationStopwatch = Stopwatch.StartNew();
             LogStartupCheckpoint($"MW NAV 01: before navigate to {pageType.FullName}");
             var navigated = ContentFrame.Navigate(pageType);
-            LogStartupCheckpoint($"MW NAV 02: after navigate to {pageType.FullName}, result={navigated}, elapsedMs={_activeNavigationStopwatch.ElapsedMilliseconds}");
+            var navigateMs = _activeNavigationStopwatch.ElapsedMilliseconds;
+            LogStartupCheckpoint($"MW NAV 02: after navigate to {pageType.FullName}, result={navigated}, elapsedMs={navigateMs}");
+            BrowseRuntimeLogger.Log("NAV", $"PERF frame_navigate page={pageType.Name} result={navigated} ms={navigateMs}");
+            BrowsePerformanceDiagnostics.WarnIfFrameNavigateSlow(pageType.Name, navigateMs);
 
             if (!navigated)
             {

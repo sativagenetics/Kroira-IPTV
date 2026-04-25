@@ -326,7 +326,9 @@ namespace Kroira.App.ViewModels
         private CancellationTokenSource? _metadataEnrichmentCts;
         private Task? _metadataEnrichmentTask;
         private Stopwatch? _activeLoadStopwatch;
+        private Stopwatch? _initialLoadingStopwatch;
         private Task _displaySeriesSlotRefreshTask = Task.CompletedTask;
+        private bool _hasReportedFirstUsefulContentForActiveLoad;
 
         public IReadOnlyList<SeriesBrowseItemViewModel> FilteredSeries => _filteredSeries;
         public int FilteredSeriesCount => _filteredSeries.Count;
@@ -474,6 +476,30 @@ namespace Kroira.App.ViewModels
             {
                 IsInitialLoading = true;
             }
+        }
+
+        partial void OnIsInitialLoadingChanged(bool value)
+        {
+            if (value)
+            {
+                _initialLoadingStopwatch = Stopwatch.StartNew();
+                LogBrowse("PERF skeleton state=visible media=series");
+                return;
+            }
+
+            if (_initialLoadingStopwatch == null)
+            {
+                return;
+            }
+
+            var visibleMs = _initialLoadingStopwatch.ElapsedMilliseconds;
+            _initialLoadingStopwatch = null;
+            LogBrowse($"PERF skeleton state=hidden media=series visibleMs={visibleMs} slots={DisplaySeriesSlots.Count} empty={IsEmpty} surface={SurfaceState.State}");
+            BrowsePerformanceDiagnostics.WarnIfSkeletonVisibleSlow(
+                "SERIES",
+                "series",
+                visibleMs,
+                $"slots={DisplaySeriesSlots.Count} empty={IsEmpty} surface={SurfaceState.State}");
         }
 
         partial void OnSearchQueryChanged(string value)
@@ -692,6 +718,7 @@ namespace Kroira.App.ViewModels
             RefreshLocalizedLabelsIfNeeded();
             var loadStopwatch = Stopwatch.StartNew();
             _activeLoadStopwatch = loadStopwatch;
+            _hasReportedFirstUsefulContentForActiveLoad = false;
             _preferStagedFirstPaint = !_hasLoadedOnce || DisplaySeriesSlots.Count == 0;
             if (!_hasLoadedOnce || DisplaySeriesSlots.Count == 0)
             {
@@ -1192,21 +1219,27 @@ namespace Kroira.App.ViewModels
         private async Task RefreshDisplaySeriesSlotsAsync(bool prioritizeFirstPaint, string reason)
         {
             var totalStopwatch = Stopwatch.StartNew();
+            var refreshVersion = ++_seriesSlotRefreshVersion;
             if (_filteredSeries.Count == 0)
             {
+                var uiStopwatch = Stopwatch.StartNew();
                 var emptyPatch = DisplaySeriesSlots.PatchToMatch(
                     Array.Empty<SeriesBrowseSlotViewModel>(),
                     static (existing, incoming) => existing.Matches(incoming),
                     static (existing, incoming) => existing.UpdateFrom(incoming.Series));
                 IsInitialLoading = false;
                 LogBrowse($"slot patch reason={reason} reused={emptyPatch.ReusedCount} inserted={emptyPatch.InsertedCount} removed={emptyPatch.RemovedCount} moved={emptyPatch.MovedCount}");
+                BrowsePerformanceDiagnostics.WarnIfUiThreadCollectionApplySlow(
+                    "SERIES",
+                    "series",
+                    uiStopwatch.ElapsedMilliseconds,
+                    $"step=slot_patch_empty reason={reason}");
                 UpdateSelectedSeriesSlotState();
                 return;
             }
 
             try
             {
-                var refreshVersion = ++_seriesSlotRefreshVersion;
                 var buildStopwatch = Stopwatch.StartNew();
                 var slots = BuildSeriesSlots(_filteredSeries);
                 LogBrowse($"PERF slots_build media=series reason={reason} slots={slots.Count} ms={buildStopwatch.ElapsedMilliseconds}");
@@ -1219,12 +1252,16 @@ namespace Kroira.App.ViewModels
                         static (existing, incoming) => existing.UpdateFrom(incoming.Series));
                     LogBrowse($"slot patch reason={reason} reused={patch.ReusedCount} inserted={patch.InsertedCount} removed={patch.RemovedCount} moved={patch.MovedCount}");
                     LogBrowse($"PERF ui_update media=series reason={reason} slots={DisplaySeriesSlots.Count} ms={uiStopwatch.ElapsedMilliseconds} total_ms={totalStopwatch.ElapsedMilliseconds}");
+                    BrowsePerformanceDiagnostics.WarnIfUiThreadCollectionApplySlow(
+                        "SERIES",
+                        "series",
+                        uiStopwatch.ElapsedMilliseconds,
+                        $"step=slot_patch reason={reason} slots={DisplaySeriesSlots.Count}");
                     IsInitialLoading = false;
                     UpdateSelectedSeriesSlotState();
                     if (prioritizeFirstPaint)
                     {
-                        LogBrowse(
-                            $"first content ready ms={_activeLoadStopwatch?.ElapsedMilliseconds ?? -1} reason={reason} visibleSlots={slots.Count}");
+                        ReportFirstUsefulContent(reason, slots.Count);
                     }
 
                     return;
@@ -1239,14 +1276,19 @@ namespace Kroira.App.ViewModels
                     static (existing, incoming) => existing.UpdateFrom(incoming.Series));
                 LogBrowse($"slot patch reason={reason}:initial reused={initialPatch.ReusedCount} inserted={initialPatch.InsertedCount} removed={initialPatch.RemovedCount} moved={initialPatch.MovedCount}");
                 LogBrowse($"PERF ui_update media=series reason={reason}:initial slots={DisplaySeriesSlots.Count} ms={initialUiStopwatch.ElapsedMilliseconds} total_ms={totalStopwatch.ElapsedMilliseconds}");
+                BrowsePerformanceDiagnostics.WarnIfUiThreadCollectionApplySlow(
+                    "SERIES",
+                    "series",
+                    initialUiStopwatch.ElapsedMilliseconds,
+                    $"step=slot_patch_initial reason={reason} slots={DisplaySeriesSlots.Count}");
                 IsInitialLoading = false;
                 UpdateSelectedSeriesSlotState();
-                LogBrowse(
-                    $"first content ready ms={_activeLoadStopwatch?.ElapsedMilliseconds ?? -1} reason={reason} visibleSlots={initialSlots.Count}");
+                ReportFirstUsefulContent(reason, initialSlots.Count);
 
                 await Task.Yield();
                 if (refreshVersion != _seriesSlotRefreshVersion)
                 {
+                    LogBrowse($"PERF stale_slot_skip media=series reason={reason} phase=before-deferred refresh={refreshVersion} current={_seriesSlotRefreshVersion}");
                     return;
                 }
 
@@ -1254,12 +1296,19 @@ namespace Kroira.App.ViewModels
                 {
                     if (refreshVersion != _seriesSlotRefreshVersion)
                     {
+                        LogBrowse($"PERF stale_slot_skip media=series reason={reason} phase=deferred index={index} refresh={refreshVersion} current={_seriesSlotRefreshVersion}");
                         return;
                     }
 
+                    var appendStopwatch = Stopwatch.StartNew();
                     DisplaySeriesSlots.AppendRange(deferredSlots.GetRange(
                         index,
                         Math.Min(DeferredSlotAppendBatchSize, deferredSlots.Count - index)));
+                    BrowsePerformanceDiagnostics.WarnIfUiThreadCollectionApplySlow(
+                        "SERIES",
+                        "series",
+                        appendStopwatch.ElapsedMilliseconds,
+                        $"step=slot_append_deferred reason={reason} index={index}");
                     UpdateSelectedSeriesSlotState();
                     await Task.Yield();
                 }
@@ -1270,6 +1319,28 @@ namespace Kroira.App.ViewModels
             {
                 LogBrowse($"slot refresh failed reason={reason} error={ex.Message}");
             }
+        }
+
+        private void ReportFirstUsefulContent(string reason, int visibleSlots)
+        {
+            if (_hasReportedFirstUsefulContentForActiveLoad)
+            {
+                return;
+            }
+
+            var firstContentMs = _activeLoadStopwatch?.ElapsedMilliseconds ?? -1;
+            if (firstContentMs < 0)
+            {
+                return;
+            }
+
+            _hasReportedFirstUsefulContentForActiveLoad = true;
+            LogBrowse($"PERF first_content media=series ms={firstContentMs} reason={reason} visibleSlots={visibleSlots}");
+            BrowsePerformanceDiagnostics.WarnIfFirstUsefulContentSlow(
+                "SERIES",
+                "series",
+                firstContentMs,
+                $"reason={reason} visibleSlots={visibleSlots}");
         }
 
         private List<SeriesBrowseSlotViewModel> BuildSeriesSlots(IReadOnlyList<SeriesBrowseItemViewModel> filteredSeries)
@@ -1815,6 +1886,11 @@ namespace Kroira.App.ViewModels
                 group => group.Variants.Select(variant => GetRawCategory(variant.Series)).Distinct(StringComparer.OrdinalIgnoreCase),
                 _smartCategoryService));
             LogBrowse($"PERF smart_index media=series groups={visibleGroups.Count} contexts={categoryIndex.ContextBuildCount} keys={categoryIndex.ItemsByCategoryKey.Count} ms={indexStopwatch.ElapsedMilliseconds} offThread=True");
+            BrowsePerformanceDiagnostics.WarnIfSmartCategoryIndexSlow(
+                "SERIES",
+                "series",
+                indexStopwatch.ElapsedMilliseconds,
+                $"groups={visibleGroups.Count} contexts={categoryIndex.ContextBuildCount} offThread=True");
             return ApplyVisibleCategories(languageCode, currentKey ?? string.Empty, visibleGroups, categoryIndex, stopwatch);
         }
 
@@ -1832,6 +1908,11 @@ namespace Kroira.App.ViewModels
                 group => group.Variants.Select(variant => GetRawCategory(variant.Series)).Distinct(StringComparer.OrdinalIgnoreCase),
                 _smartCategoryService);
             LogBrowse($"PERF smart_index media=series groups={visibleGroups.Count} contexts={categoryIndex.ContextBuildCount} keys={categoryIndex.ItemsByCategoryKey.Count} ms={indexStopwatch.ElapsedMilliseconds} offThread=False");
+            BrowsePerformanceDiagnostics.WarnIfSmartCategoryIndexSlow(
+                "SERIES",
+                "series",
+                indexStopwatch.ElapsedMilliseconds,
+                $"groups={visibleGroups.Count} contexts={categoryIndex.ContextBuildCount} offThread=False");
             return ApplyVisibleCategories(languageCode, currentKey ?? string.Empty, visibleGroups, categoryIndex, stopwatch);
         }
 
@@ -1941,7 +2022,13 @@ namespace Kroira.App.ViewModels
             var signature = BuildCategorySignature(categoryItems);
             if (!string.Equals(_visibleCategorySignature, signature, StringComparison.Ordinal))
             {
+                var categoryUiStopwatch = Stopwatch.StartNew();
                 Categories.ReplaceAll(categoryItems);
+                BrowsePerformanceDiagnostics.WarnIfUiThreadCollectionApplySlow(
+                    "SERIES",
+                    "series",
+                    categoryUiStopwatch.ElapsedMilliseconds,
+                    $"step=category_replace categories={categoryItems.Count}");
                 _visibleCategorySignature = signature;
             }
 
