@@ -2256,7 +2256,7 @@
     <value>No guide</value>
   </data>
   <data name="SourceOnboardingPageSubtitle.Text" xml:space="preserve">
-    <value>Connect your own M3U playlist, Xtream provider, or Stalker portal for live TV, movies, series, and guide data.</value>
+    <value>Connect your own M3U playlist, Xtream provider, or supported portal profile to browse source-provided live TV, movies, series, and guide data.</value>
   </data>
   <data name="SourceOnboardingPageTitle.Text" xml:space="preserve">
     <value>Add Source</value>
@@ -2736,10 +2736,10 @@
     <value>Source credentials are used only to connect to sources the user configures. Protected credential copies use Windows DPAPI CurrentUser scope when available, with plaintext compatibility retained for existing import and parser flows.</value>
   </data>
   <data name="Submission.Help.Step1" xml:space="preserve">
-    <value>1. Add an M3U playlist, Xtream provider, or Stalker portal.</value>
+    <value>1. Add your own M3U playlist, Xtream provider, or supported portal profile.</value>
   </data>
   <data name="Submission_Help_Step1" xml:space="preserve">
-    <value>1. Add an M3U playlist, Xtream provider, or Stalker portal.</value>
+    <value>1. Add your own M3U playlist, Xtream provider, or supported portal profile.</value>
   </data>
   <data name="Submission.Help.Step2" xml:space="preserve">
     <value>2. Let KROIRA complete the first sync and health check.</value>
@@ -5395,7 +5395,7 @@
   <data name="Sources_HealthStatus_IdleCaption" xml:space="preserve"><value>Add a source to get started.</value></data>
   <data name="Sources_Empty_NoSources_Title" xml:space="preserve"><value>No sources configured</value></data>
   <data name="Sources_Empty_NoMatches_Title" xml:space="preserve"><value>No matching sources</value></data>
-  <data name="Sources_Empty_NoSources_Message" xml:space="preserve"><value>Add an M3U playlist, Xtream provider, or Stalker portal to start importing live channels, movies, series, and guide data.</value></data>
+  <data name="Sources_Empty_NoSources_Message" xml:space="preserve"><value>Add your own M3U playlist, Xtream provider, or supported portal profile to import source-provided catalog and guide data.</value></data>
   <data name="Sources_Empty_NoMatches_Message" xml:space="preserve"><value>Try a different source name, type, or guide status.</value></data>
   <data name="Sources_Recent_Status_Review" xml:space="preserve"><value>Review</value></data>
   <data name="Sources_Recent_Status_Complete" xml:space="preserve"><value>Complete</value></data>

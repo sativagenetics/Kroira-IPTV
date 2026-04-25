@@ -2256,7 +2256,7 @@
     <value>कोई मार्गदर्शक नहीं</value>
   </data>
   <data name="SourceOnboardingPageSubtitle.Text" xml:space="preserve">
-    <value>लाइव टीवी, मूवी, सीरीज़ और गाइड डेटा के लिए अपनी खुद की M3U प्लेलिस्ट, Xtream प्रदाता, या Stalker पोर्टल कनेक्ट करें।</value>
+    <value>स्रोत द्वारा दिए गए लाइव TV, फिल्में, सीरीज़ और गाइड डेटा ब्राउज़ करने के लिए अपनी M3U प्लेलिस्ट, Xtream प्रदाता या समर्थित पोर्टल प्रोफ़ाइल कनेक्ट करें।</value>
   </data>
   <data name="SourceOnboardingPageTitle.Text" xml:space="preserve">
     <value>स्रोत जोड़ें</value>
@@ -2736,40 +2736,40 @@
     <value>प्रदाता क्रेडेंशियल इस डिवाइस पर रहते हैं और शेयर-सुरक्षित रिपोर्ट से संपादित किए जाते हैं।</value>
   </data>
   <data name="Submission.Help.Step1" xml:space="preserve">
-    <value>स्रोतों से एक M3U, Xtream, या Stalker स्रोत जोड़ें।</value>
+    <value>1. अपनी M3U प्लेलिस्ट, Xtream प्रदाता या समर्थित पोर्टल प्रोफ़ाइल जोड़ें।</value>
   </data>
   <data name="Submission_Help_Step1" xml:space="preserve">
-    <value>स्रोतों से एक M3U, Xtream, या Stalker स्रोत जोड़ें।</value>
+    <value>1. अपनी M3U प्लेलिस्ट, Xtream प्रदाता या समर्थित पोर्टल प्रोफ़ाइल जोड़ें।</value>
   </data>
   <data name="Submission.Help.Step2" xml:space="preserve">
-    <value>आयातित प्रदाता सामग्री ब्राउज़ करने के लिए लाइव टीवी, मूवी और सीरीज़ का उपयोग करें।</value>
+    <value>2. KROIRA को पहली सिंक और स्वास्थ्य जाँच पूरी करने दें।</value>
   </data>
   <data name="Submission_Help_Step2" xml:space="preserve">
-    <value>आयातित प्रदाता सामग्री ब्राउज़ करने के लिए लाइव टीवी, मूवी और सीरीज़ का उपयोग करें।</value>
+    <value>2. KROIRA को पहली सिंक और स्वास्थ्य जाँच पूरी करने दें।</value>
   </data>
   <data name="Submission.Help.Step3" xml:space="preserve">
-    <value>उपस्थिति, भाषा, बैकअप और स्रोत रिफ्रेश को समायोजित करने के लिए सेटिंग्स खोलें।</value>
+    <value>3. लाइव TV, मूवी, सीरीज़, पसंदीदा या जारी रखें देखना ब्राउज़ करें।</value>
   </data>
   <data name="Submission_Help_Step3" xml:space="preserve">
-    <value>उपस्थिति, भाषा, बैकअप और स्रोत रिफ्रेश को समायोजित करने के लिए सेटिंग्स खोलें।</value>
+    <value>3. लाइव TV, मूवी, सीरीज़, पसंदीदा या जारी रखें देखना ब्राउज़ करें।</value>
   </data>
   <data name="Submission.Help.Step4" xml:space="preserve">
-    <value>समर्थन विवरण साझा करते समय डायग्नोस्टिक्स निर्यात का उपयोग करें।</value>
+    <value>4. यदि गाइड कवरेज कमजोर लगे, तो स्रोत को स्रोतों में देखें और वहीं गाइड सेटिंग्स समायोजित करें।</value>
   </data>
   <data name="Submission_Help_Step4" xml:space="preserve">
-    <value>समर्थन विवरण साझा करते समय डायग्नोस्टिक्स निर्यात का उपयोग करें।</value>
+    <value>4. यदि गाइड कवरेज कमजोर लगे, तो स्रोत को स्रोतों में देखें और वहीं गाइड सेटिंग्स समायोजित करें।</value>
   </data>
   <data name="Submission.LegalDisclaimer" xml:space="preserve">
-    <value>KROIRA चैनल, प्लेलिस्ट, सदस्यता या मीडिया सामग्री प्रदान नहीं करता है।</value>
+    <value>KROIRA एक मीडिया प्लेयर और स्रोत प्रबंधक है। KROIRA चैनल, स्ट्रीम, प्लेलिस्ट, सदस्यता, क्रेडेंशियल या मीडिया सामग्री प्रदान नहीं करता। उपयोगकर्ता केवल अधिकृत स्रोत जोड़ने और लागू प्रदाता शर्तों तथा कानूनों का पालन करने के लिए जिम्मेदार हैं। KROIRA DRM, पेवॉल, प्रमाणीकरण, प्रदाता प्रतिबंध या एक्सेस नियंत्रण को बायपास नहीं करता।</value>
   </data>
   <data name="Submission_LegalDisclaimer" xml:space="preserve">
-    <value>KROIRA चैनल, प्लेलिस्ट, सदस्यता या मीडिया सामग्री प्रदान नहीं करता है।</value>
+    <value>KROIRA एक मीडिया प्लेयर और स्रोत प्रबंधक है। KROIRA चैनल, स्ट्रीम, प्लेलिस्ट, सदस्यता, क्रेडेंशियल या मीडिया सामग्री प्रदान नहीं करता। उपयोगकर्ता केवल अधिकृत स्रोत जोड़ने और लागू प्रदाता शर्तों तथा कानूनों का पालन करने के लिए जिम्मेदार हैं। KROIRA DRM, पेवॉल, प्रमाणीकरण, प्रदाता प्रतिबंध या एक्सेस नियंत्रण को बायपास नहीं करता।</value>
   </data>
   <data name="Submission.LongDescription" xml:space="preserve">
-    <value>KROIRA IPTV लाइव चैनल, VOD, श्रृंखला, EPG, पसंदीदा, देखना जारी रखें, प्रोफ़ाइल और स्थानीय स्रोत निदान के लिए एक विंडोज़ डेस्कटॉप IPTV क्लाइंट है।</value>
+    <value>KROIRA IPTV उपयोगकर्ता द्वारा दिए गए M3U प्लेलिस्ट, Xtream प्रदाताओं और समर्थित प्रदाता पोर्टल प्रोफाइल के लिए Windows मीडिया प्लेयर और स्रोत प्रबंधक है। यह इस डिवाइस पर लाइव चैनल, VOD लाइब्रेरी, गाइड डेटा, पसंदीदा, जारी रखें देखने की स्थिति, प्लेबैक और स्रोत निदान को स्थानीय रूप से व्यवस्थित करने में मदद करता है। KROIRA चैनल, स्ट्रीम, प्लेलिस्ट, सदस्यता, खाते, क्रेडेंशियल या मीडिया सामग्री प्रदान नहीं करता।</value>
   </data>
   <data name="Submission_LongDescription" xml:space="preserve">
-    <value>KROIRA IPTV लाइव चैनल, VOD, श्रृंखला, EPG, पसंदीदा, देखना जारी रखें, प्रोफ़ाइल और स्थानीय स्रोत निदान के लिए एक विंडोज़ डेस्कटॉप IPTV क्लाइंट है।</value>
+    <value>KROIRA IPTV उपयोगकर्ता द्वारा दिए गए M3U प्लेलिस्ट, Xtream प्रदाताओं और समर्थित प्रदाता पोर्टल प्रोफाइल के लिए Windows मीडिया प्लेयर और स्रोत प्रबंधक है। यह इस डिवाइस पर लाइव चैनल, VOD लाइब्रेरी, गाइड डेटा, पसंदीदा, जारी रखें देखने की स्थिति, प्लेबैक और स्रोत निदान को स्थानीय रूप से व्यवस्थित करने में मदद करता है। KROIRA चैनल, स्ट्रीम, प्लेलिस्ट, सदस्यता, खाते, क्रेडेंशियल या मीडिया सामग्री प्रदान नहीं करता।</value>
   </data>
   <data name="Submission.MetadataProviderSummary" xml:space="preserve">
     <value>TMDb मेटाडेटा स्थानीय कैटलॉग ब्राउज़िंग के लिए वैकल्पिक संवर्धन है।</value>
@@ -5261,7 +5261,7 @@
   <data name="SeriesPickShowMessage.Text" xml:space="preserve"><value>यहां आर्टवर्क, सीज़न और एपिसोड प्लेबैक लोड करने के लिए लाइब्रेरी से कोई शीर्षक चुनें.</value></data>
   <data name="SourceOnboardingM3uPathBox.PlaceholderText" xml:space="preserve"><value>http://... या C:\...</value></data>
   <data name="AppDisplayName" xml:space="preserve"><value>KROIRA IPTV</value></data>
-  <data name="AppDescription" xml:space="preserve"><value>KROIRA IPTV लाइव TV, फ़िल्में, सीरीज़, EPG और स्रोत प्रबंधन को एक परिष्कृत Windows ऐप में लाता है.</value></data>
+  <data name="AppDescription" xml:space="preserve"><value>अपने IPTV स्रोतों को लाइव TV, VOD, EPG, निदान और स्थानीय प्लेबैक के साथ चलाएँ और व्यवस्थित करें।</value></data>
   <data name="General_Never" xml:space="preserve"><value>Never</value></data>
   <data name="General_Saved" xml:space="preserve"><value>Saved</value></data>
   <data name="General_Syncing" xml:space="preserve"><value>Syncing...</value></data>
@@ -5395,7 +5395,7 @@
   <data name="Sources_HealthStatus_IdleCaption" xml:space="preserve"><value>Add a source to get started.</value></data>
   <data name="Sources_Empty_NoSources_Title" xml:space="preserve"><value>No sources configured</value></data>
   <data name="Sources_Empty_NoMatches_Title" xml:space="preserve"><value>No matching sources</value></data>
-  <data name="Sources_Empty_NoSources_Message" xml:space="preserve"><value>Add an M3U playlist, Xtream provider, or Stalker portal to start importing live channels, movies, series, and guide data.</value></data>
+  <data name="Sources_Empty_NoSources_Message" xml:space="preserve"><value>स्रोत द्वारा दिए गए कैटलॉग और गाइड डेटा आयात करने के लिए अपनी M3U प्लेलिस्ट, Xtream प्रदाता या समर्थित पोर्टल प्रोफ़ाइल जोड़ें।</value></data>
   <data name="Sources_Empty_NoMatches_Message" xml:space="preserve"><value>Try a different source name, type, or guide status.</value></data>
   <data name="Sources_Recent_Status_Review" xml:space="preserve"><value>Review</value></data>
   <data name="Sources_Recent_Status_Complete" xml:space="preserve"><value>Complete</value></data>

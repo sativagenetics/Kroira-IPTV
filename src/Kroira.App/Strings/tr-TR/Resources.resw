@@ -2256,7 +2256,7 @@
     <value>Kılavuz yok</value>
   </data>
   <data name="SourceOnboardingPageSubtitle.Text" xml:space="preserve">
-    <value>Canlı TV, filmler, diziler ve rehber verileri için kendi M3U çalma listenizi, Xtream sağlayıcınızı veya Stalker portalınızı bağlayın.</value>
+    <value>Kaynağın sağladığı canlı TV, film, dizi ve rehber verilerine göz atmak için kendi M3U çalma listenizi, Xtream sağlayıcınızı veya desteklenen portal profilinizi bağlayın.</value>
   </data>
   <data name="SourceOnboardingPageTitle.Text" xml:space="preserve">
     <value>Kaynak Ekle</value>
@@ -2736,40 +2736,40 @@
     <value>Sağlayıcı kimlik bilgileri bu cihazda kalır ve paylaşım güvenli raporlardan çıkarılır.</value>
   </data>
   <data name="Submission.Help.Step1" xml:space="preserve">
-    <value>Kaynaklardan bir M3U, Xtream veya Stalker kaynağı ekleyin.</value>
+    <value>1. Kendi M3U çalma listenizi, Xtream sağlayıcınızı veya desteklenen portal profilinizi ekleyin.</value>
   </data>
   <data name="Submission_Help_Step1" xml:space="preserve">
-    <value>Kaynaklardan bir M3U, Xtream veya Stalker kaynağı ekleyin.</value>
+    <value>1. Kendi M3U çalma listenizi, Xtream sağlayıcınızı veya desteklenen portal profilinizi ekleyin.</value>
   </data>
   <data name="Submission.Help.Step2" xml:space="preserve">
-    <value>İçe aktarılan sağlayıcı içeriğine göz atmak için Canlı TV, Filmler ve Dizileri kullanın.</value>
+    <value>2. KROIRA&apos;nın ilk eşitlemeyi ve sağlık denetimini tamamlamasına izin verin.</value>
   </data>
   <data name="Submission_Help_Step2" xml:space="preserve">
-    <value>İçe aktarılan sağlayıcı içeriğine göz atmak için Canlı TV, Filmler ve Dizileri kullanın.</value>
+    <value>2. KROIRA&apos;nın ilk eşitlemeyi ve sağlık denetimini tamamlamasına izin verin.</value>
   </data>
   <data name="Submission.Help.Step3" xml:space="preserve">
-    <value>Görünümü, dili, yedeklemeleri ve kaynak yenilemeyi ayarlamak için Ayarlar'ı açın.</value>
+    <value>3. Canlı TV, Filmler, Diziler, Favoriler veya İzlemeye Devam Et bölümlerine göz atın.</value>
   </data>
   <data name="Submission_Help_Step3" xml:space="preserve">
-    <value>Görünümü, dili, yedeklemeleri ve kaynak yenilemeyi ayarlamak için Ayarlar'ı açın.</value>
+    <value>3. Canlı TV, Filmler, Diziler, Favoriler veya İzlemeye Devam Et bölümlerine göz atın.</value>
   </data>
   <data name="Submission.Help.Step4" xml:space="preserve">
-    <value>Destek ayrıntılarını paylaşırken tanılama dışa aktarımlarını kullanın.</value>
+    <value>4. Rehber kapsaması zayıf görünüyorsa kaynağı Kaynaklar bölümünde inceleyin ve rehber ayarlarını orada düzenleyin.</value>
   </data>
   <data name="Submission_Help_Step4" xml:space="preserve">
-    <value>Destek ayrıntılarını paylaşırken tanılama dışa aktarımlarını kullanın.</value>
+    <value>4. Rehber kapsaması zayıf görünüyorsa kaynağı Kaynaklar bölümünde inceleyin ve rehber ayarlarını orada düzenleyin.</value>
   </data>
   <data name="Submission.LegalDisclaimer" xml:space="preserve">
-    <value>KROIRA kanallar, oynatma listeleri, abonelikler veya medya içeriği sağlamaz.</value>
+    <value>KROIRA bir medya oynatıcısı ve kaynak yöneticisidir. KROIRA kanal, yayın, çalma listesi, abonelik, kimlik bilgisi veya medya içeriği sağlamaz. Kullanıcılar yalnızca yetkili kaynaklar eklemekten ve geçerli sağlayıcı koşullarına ve yasalara uymaktan sorumludur. KROIRA DRM, ödeme duvarları, kimlik doğrulama, sağlayıcı kısıtlamaları veya erişim kontrollerini aşmaz.</value>
   </data>
   <data name="Submission_LegalDisclaimer" xml:space="preserve">
-    <value>KROIRA kanallar, oynatma listeleri, abonelikler veya medya içeriği sağlamaz.</value>
+    <value>KROIRA bir medya oynatıcısı ve kaynak yöneticisidir. KROIRA kanal, yayın, çalma listesi, abonelik, kimlik bilgisi veya medya içeriği sağlamaz. Kullanıcılar yalnızca yetkili kaynaklar eklemekten ve geçerli sağlayıcı koşullarına ve yasalara uymaktan sorumludur. KROIRA DRM, ödeme duvarları, kimlik doğrulama, sağlayıcı kısıtlamaları veya erişim kontrollerini aşmaz.</value>
   </data>
   <data name="Submission.LongDescription" xml:space="preserve">
-    <value>KROIRA IPTV, canlı kanallar, VOD, diziler, EPG, favoriler, izlemeye devam etme, profiller ve yerel kaynak teşhisi için bir Windows masaüstü IPTV istemcisidir.</value>
+    <value>KROIRA IPTV, kullanıcının sağladığı M3U çalma listeleri, Xtream sağlayıcıları ve desteklenen sağlayıcı portal profilleri için bir Windows medya oynatıcısı ve kaynak yöneticisidir. Canlı kanalları, VOD kitaplıklarını, rehber verilerini, favorileri, izlemeye devam etme durumunu, oynatmayı ve kaynak tanılamalarını bu cihazda yerel olarak düzenlemeye yardımcı olur. KROIRA kanal, yayın, çalma listesi, abonelik, hesap, kimlik bilgisi veya medya içeriği sağlamaz.</value>
   </data>
   <data name="Submission_LongDescription" xml:space="preserve">
-    <value>KROIRA IPTV, canlı kanallar, VOD, diziler, EPG, favoriler, izlemeye devam etme, profiller ve yerel kaynak teşhisi için bir Windows masaüstü IPTV istemcisidir.</value>
+    <value>KROIRA IPTV, kullanıcının sağladığı M3U çalma listeleri, Xtream sağlayıcıları ve desteklenen sağlayıcı portal profilleri için bir Windows medya oynatıcısı ve kaynak yöneticisidir. Canlı kanalları, VOD kitaplıklarını, rehber verilerini, favorileri, izlemeye devam etme durumunu, oynatmayı ve kaynak tanılamalarını bu cihazda yerel olarak düzenlemeye yardımcı olur. KROIRA kanal, yayın, çalma listesi, abonelik, hesap, kimlik bilgisi veya medya içeriği sağlamaz.</value>
   </data>
   <data name="Submission.MetadataProviderSummary" xml:space="preserve">
     <value>TMDb meta verileri, yerel katalog taraması için isteğe bağlı bir zenginleştirmedir.</value>
@@ -5261,7 +5261,7 @@
   <data name="SeriesPickShowMessage.Text" xml:space="preserve"><value>Kapak görseli, sezonlar ve bölüm oynatmayı burada yüklemek için kitaplıktan bir başlık seçin.</value></data>
   <data name="SourceOnboardingM3uPathBox.PlaceholderText" xml:space="preserve"><value>http://... veya C:\...</value></data>
   <data name="AppDisplayName" xml:space="preserve"><value>KROIRA IPTV</value></data>
-  <data name="AppDescription" xml:space="preserve"><value>KROIRA IPTV canlı TV, film, dizi, EPG ve kaynak yönetimini tek bir özenli Windows uygulamasında birleştirir.</value></data>
+  <data name="AppDescription" xml:space="preserve"><value>Kendi IPTV kaynaklarınızı canlı TV, VOD, EPG, tanılama ve yerel oynatma ile oynatın ve düzenleyin.</value></data>
   <data name="General_Never" xml:space="preserve"><value>Asla</value></data>
   <data name="General_Saved" xml:space="preserve"><value>Kaydedildi</value></data>
   <data name="General_Syncing" xml:space="preserve"><value>Eşitleniyor...</value></data>
@@ -5395,7 +5395,7 @@
   <data name="Sources_HealthStatus_IdleCaption" xml:space="preserve"><value>Add a source to get started.</value></data>
   <data name="Sources_Empty_NoSources_Title" xml:space="preserve"><value>No sources configured</value></data>
   <data name="Sources_Empty_NoMatches_Title" xml:space="preserve"><value>No matching sources</value></data>
-  <data name="Sources_Empty_NoSources_Message" xml:space="preserve"><value>Add an M3U playlist, Xtream provider, or Stalker portal to start importing live channels, movies, series, and guide data.</value></data>
+  <data name="Sources_Empty_NoSources_Message" xml:space="preserve"><value>Kaynağın sağladığı katalog ve rehber verilerini içe aktarmak için kendi M3U çalma listenizi, Xtream sağlayıcınızı veya desteklenen portal profilinizi ekleyin.</value></data>
   <data name="Sources_Empty_NoMatches_Message" xml:space="preserve"><value>Try a different source name, type, or guide status.</value></data>
   <data name="Sources_Recent_Status_Review" xml:space="preserve"><value>İncele</value></data>
   <data name="Sources_Recent_Status_Complete" xml:space="preserve"><value>Tamamlandı</value></data>

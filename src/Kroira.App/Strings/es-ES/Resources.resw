@@ -2256,7 +2256,7 @@
     <value>Sin guía</value>
   </data>
   <data name="SourceOnboardingPageSubtitle.Text" xml:space="preserve">
-    <value>Conecte su propia lista de reproducción M3U, proveedor Xtream o portal Stalker para TV en vivo, películas, series y datos de guías.</value>
+    <value>Conecta tu propia lista M3U, proveedor Xtream o perfil de portal compatible para explorar TV en directo, películas, series y datos de guía proporcionados por la fuente.</value>
   </data>
   <data name="SourceOnboardingPageTitle.Text" xml:space="preserve">
     <value>Agregar fuente</value>
@@ -2736,40 +2736,40 @@
     <value>Las credenciales del proveedor permanecen en este dispositivo y se eliminan de los informes seguros para compartir.</value>
   </data>
   <data name="Submission.Help.Step1" xml:space="preserve">
-    <value>Agregue una fuente M3U, Xtream o Stalker desde Fuentes.</value>
+    <value>1. Añade tu propia lista M3U, proveedor Xtream o perfil de portal compatible.</value>
   </data>
   <data name="Submission_Help_Step1" xml:space="preserve">
-    <value>Agregue una fuente M3U, Xtream o Stalker desde Fuentes.</value>
+    <value>1. Añade tu propia lista M3U, proveedor Xtream o perfil de portal compatible.</value>
   </data>
   <data name="Submission.Help.Step2" xml:space="preserve">
-    <value>Utilice TV, películas y series en vivo para explorar contenido de proveedores importados.</value>
+    <value>2. Deja que KROIRA complete la primera sincronización y comprobación de estado.</value>
   </data>
   <data name="Submission_Help_Step2" xml:space="preserve">
-    <value>Utilice TV, películas y series en vivo para explorar contenido de proveedores importados.</value>
+    <value>2. Deja que KROIRA complete la primera sincronización y comprobación de estado.</value>
   </data>
   <data name="Submission.Help.Step3" xml:space="preserve">
-    <value>Abra Configuración para ajustar la apariencia, el idioma, las copias de seguridad y la actualización de la fuente.</value>
+    <value>3. Explora TV en directo, Películas, Series, Favoritos o Continuar viendo.</value>
   </data>
   <data name="Submission_Help_Step3" xml:space="preserve">
-    <value>Abra Configuración para ajustar la apariencia, el idioma, las copias de seguridad y la actualización de la fuente.</value>
+    <value>3. Explora TV en directo, Películas, Series, Favoritos o Continuar viendo.</value>
   </data>
   <data name="Submission.Help.Step4" xml:space="preserve">
-    <value>Utilice exportaciones de diagnóstico cuando comparta detalles de soporte.</value>
+    <value>4. Si la cobertura de guía parece débil, revisa la fuente en Fuentes y ajusta allí la configuración de guía.</value>
   </data>
   <data name="Submission_Help_Step4" xml:space="preserve">
-    <value>Utilice exportaciones de diagnóstico cuando comparta detalles de soporte.</value>
+    <value>4. Si la cobertura de guía parece débil, revisa la fuente en Fuentes y ajusta allí la configuración de guía.</value>
   </data>
   <data name="Submission.LegalDisclaimer" xml:space="preserve">
-    <value>KROIRA no proporciona canales, listas de reproducción, suscripciones ni contenido multimedia.</value>
+    <value>KROIRA es un reproductor multimedia y gestor de fuentes. KROIRA no proporciona canales, streams, listas, suscripciones, credenciales ni contenido multimedia. Los usuarios son responsables de añadir solo fuentes autorizadas y de cumplir las condiciones del proveedor y las leyes aplicables. KROIRA no evita DRM, muros de pago, autenticación, restricciones del proveedor ni controles de acceso.</value>
   </data>
   <data name="Submission_LegalDisclaimer" xml:space="preserve">
-    <value>KROIRA no proporciona canales, listas de reproducción, suscripciones ni contenido multimedia.</value>
+    <value>KROIRA es un reproductor multimedia y gestor de fuentes. KROIRA no proporciona canales, streams, listas, suscripciones, credenciales ni contenido multimedia. Los usuarios son responsables de añadir solo fuentes autorizadas y de cumplir las condiciones del proveedor y las leyes aplicables. KROIRA no evita DRM, muros de pago, autenticación, restricciones del proveedor ni controles de acceso.</value>
   </data>
   <data name="Submission.LongDescription" xml:space="preserve">
-    <value>KROIRA IPTV es un cliente IPTV de escritorio de Windows para canales en vivo, VOD, series, EPG, favoritos, seguir viendo, perfiles y diagnósticos de fuentes locales.</value>
+    <value>KROIRA IPTV es un reproductor multimedia y gestor de fuentes de Windows para listas M3U, proveedores Xtream y perfiles de portal de proveedor compatibles proporcionados por el usuario. Ayuda a organizar canales en directo, bibliotecas VOD, datos de guía, favoritos, estado de continuar viendo, reproducción y diagnósticos de fuentes localmente en este dispositivo. KROIRA no proporciona canales, streams, listas, suscripciones, cuentas, credenciales ni contenido multimedia.</value>
   </data>
   <data name="Submission_LongDescription" xml:space="preserve">
-    <value>KROIRA IPTV es un cliente IPTV de escritorio de Windows para canales en vivo, VOD, series, EPG, favoritos, seguir viendo, perfiles y diagnósticos de fuentes locales.</value>
+    <value>KROIRA IPTV es un reproductor multimedia y gestor de fuentes de Windows para listas M3U, proveedores Xtream y perfiles de portal de proveedor compatibles proporcionados por el usuario. Ayuda a organizar canales en directo, bibliotecas VOD, datos de guía, favoritos, estado de continuar viendo, reproducción y diagnósticos de fuentes localmente en este dispositivo. KROIRA no proporciona canales, streams, listas, suscripciones, cuentas, credenciales ni contenido multimedia.</value>
   </data>
   <data name="Submission.MetadataProviderSummary" xml:space="preserve">
     <value>Los metadatos TMDb son un enriquecimiento opcional para la exploración del catálogo local.</value>
@@ -5261,7 +5261,7 @@
   <data name="SeriesPickShowMessage.Text" xml:space="preserve"><value>Selecciona un título de la biblioteca para cargar aquí el arte, las temporadas y la reproducción de episodios.</value></data>
   <data name="SourceOnboardingM3uPathBox.PlaceholderText" xml:space="preserve"><value>http://... o C:\...</value></data>
   <data name="AppDisplayName" xml:space="preserve"><value>KROIRA IPTV</value></data>
-  <data name="AppDescription" xml:space="preserve"><value>KROIRA IPTV reúne TV en directo, películas, series, EPG y gestión de fuentes en una app de Windows pulida.</value></data>
+  <data name="AppDescription" xml:space="preserve"><value>Reproduce y organiza tus propias fuentes IPTV con TV en directo, VOD, EPG, diagnósticos y reproducción local.</value></data>
   <data name="General_Never" xml:space="preserve"><value>Nunca</value></data>
   <data name="General_Saved" xml:space="preserve"><value>Guardado</value></data>
   <data name="General_Syncing" xml:space="preserve"><value>Sincronizando...</value></data>
@@ -5395,7 +5395,7 @@
   <data name="Sources_HealthStatus_IdleCaption" xml:space="preserve"><value>Add a source to get started.</value></data>
   <data name="Sources_Empty_NoSources_Title" xml:space="preserve"><value>No sources configured</value></data>
   <data name="Sources_Empty_NoMatches_Title" xml:space="preserve"><value>No matching sources</value></data>
-  <data name="Sources_Empty_NoSources_Message" xml:space="preserve"><value>Add an M3U playlist, Xtream provider, or Stalker portal to start importing live channels, movies, series, and guide data.</value></data>
+  <data name="Sources_Empty_NoSources_Message" xml:space="preserve"><value>Añade tu propia lista M3U, proveedor Xtream o perfil de portal compatible para importar el catálogo y los datos de guía proporcionados por la fuente.</value></data>
   <data name="Sources_Empty_NoMatches_Message" xml:space="preserve"><value>Try a different source name, type, or guide status.</value></data>
   <data name="Sources_Recent_Status_Review" xml:space="preserve"><value>Revisar</value></data>
   <data name="Sources_Recent_Status_Complete" xml:space="preserve"><value>Completo</value></data>

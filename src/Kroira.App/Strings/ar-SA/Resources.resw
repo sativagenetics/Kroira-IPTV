@@ -2256,7 +2256,7 @@
     <value>لا يوجد دليل</value>
   </data>
   <data name="SourceOnboardingPageSubtitle.Text" xml:space="preserve">
-    <value>قم بتوصيل قائمة التشغيل M3U الخاصة بك أو مزود Xtream أو بوابة Stalker للبث التلفزيوني المباشر والأفلام والمسلسلات وبيانات الدليل.</value>
+    <value>وصّل قائمة M3U الخاصة بك أو مزود Xtream أو ملف تعريف بوابة مدعوماً لتصفح التلفزيون المباشر والأفلام والمسلسلات وبيانات الدليل التي يوفرها المصدر.</value>
   </data>
   <data name="SourceOnboardingPageTitle.Text" xml:space="preserve">
     <value>أضف المصدر</value>
@@ -2736,40 +2736,40 @@
     <value>تبقى بيانات اعتماد الموفر على هذا الجهاز ويتم تنقيحها من تقارير المشاركة الآمنة.</value>
   </data>
   <data name="Submission.Help.Step1" xml:space="preserve">
-    <value>أضف مصدر M3U أو Xtream أو Stalker من المصادر.</value>
+    <value>1. أضف قائمة M3U الخاصة بك أو مزود Xtream أو ملف تعريف بوابة مدعوماً.</value>
   </data>
   <data name="Submission_Help_Step1" xml:space="preserve">
-    <value>أضف مصدر M3U أو Xtream أو Stalker من المصادر.</value>
+    <value>1. أضف قائمة M3U الخاصة بك أو مزود Xtream أو ملف تعريف بوابة مدعوماً.</value>
   </data>
   <data name="Submission.Help.Step2" xml:space="preserve">
-    <value>استخدم البث التلفزيوني المباشر والأفلام والمسلسلات لتصفح محتوى الموفر المستورد.</value>
+    <value>2. دع KROIRA يكمل أول مزامنة وفحص صحة.</value>
   </data>
   <data name="Submission_Help_Step2" xml:space="preserve">
-    <value>استخدم البث التلفزيوني المباشر والأفلام والمسلسلات لتصفح محتوى الموفر المستورد.</value>
+    <value>2. دع KROIRA يكمل أول مزامنة وفحص صحة.</value>
   </data>
   <data name="Submission.Help.Step3" xml:space="preserve">
-    <value>افتح الإعدادات لضبط المظهر واللغة والنسخ الاحتياطية وتحديث المصدر.</value>
+    <value>3. تصفح التلفزيون المباشر أو الأفلام أو المسلسلات أو المفضلات أو متابعة المشاهدة.</value>
   </data>
   <data name="Submission_Help_Step3" xml:space="preserve">
-    <value>افتح الإعدادات لضبط المظهر واللغة والنسخ الاحتياطية وتحديث المصدر.</value>
+    <value>3. تصفح التلفزيون المباشر أو الأفلام أو المسلسلات أو المفضلات أو متابعة المشاهدة.</value>
   </data>
   <data name="Submission.Help.Step4" xml:space="preserve">
-    <value>استخدم صادرات التشخيص عند مشاركة تفاصيل الدعم.</value>
+    <value>4. إذا بدت تغطية الدليل ضعيفة، فراجع المصدر في المصادر واضبط إعدادات الدليل هناك.</value>
   </data>
   <data name="Submission_Help_Step4" xml:space="preserve">
-    <value>استخدم صادرات التشخيص عند مشاركة تفاصيل الدعم.</value>
+    <value>4. إذا بدت تغطية الدليل ضعيفة، فراجع المصدر في المصادر واضبط إعدادات الدليل هناك.</value>
   </data>
   <data name="Submission.LegalDisclaimer" xml:space="preserve">
-    <value>لا يوفر KROIRA قنوات أو قوائم تشغيل أو اشتراكات أو محتوى وسائط.</value>
+    <value>KROIRA هو مشغل وسائط ومدير مصادر. لا يوفر KROIRA قنوات أو بثوثاً أو قوائم تشغيل أو اشتراكات أو بيانات اعتماد أو محتوى وسائط. يتحمل المستخدمون مسؤولية إضافة المصادر المصرح بها فقط والالتزام بشروط المزود والقوانين المعمول بها. لا يتجاوز KROIRA DRM أو جدران الدفع أو المصادقة أو قيود المزود أو عناصر التحكم في الوصول.</value>
   </data>
   <data name="Submission_LegalDisclaimer" xml:space="preserve">
-    <value>لا يوفر KROIRA قنوات أو قوائم تشغيل أو اشتراكات أو محتوى وسائط.</value>
+    <value>KROIRA هو مشغل وسائط ومدير مصادر. لا يوفر KROIRA قنوات أو بثوثاً أو قوائم تشغيل أو اشتراكات أو بيانات اعتماد أو محتوى وسائط. يتحمل المستخدمون مسؤولية إضافة المصادر المصرح بها فقط والالتزام بشروط المزود والقوانين المعمول بها. لا يتجاوز KROIRA DRM أو جدران الدفع أو المصادقة أو قيود المزود أو عناصر التحكم في الوصول.</value>
   </data>
   <data name="Submission.LongDescription" xml:space="preserve">
-    <value>KROIRA IPTV هو عميل IPTV لسطح مكتب Windows للقنوات المباشرة وVOD والمسلسلات وEPG والمفضلات ومواصلة المشاهدة والملفات الشخصية وتشخيصات المصدر المحلي.</value>
+    <value>KROIRA IPTV هو مشغل وسائط ومدير مصادر لنظام Windows لقوائم M3U ومزودي Xtream وملفات تعريف بوابات المزودين المدعومة التي يضيفها المستخدم. يساعد على تنظيم القنوات المباشرة ومكتبات VOD وبيانات الدليل والمفضلات وحالة متابعة المشاهدة والتشغيل وتشخيصات المصدر محلياً على هذا الجهاز. لا يوفر KROIRA قنوات أو بثوثاً أو قوائم تشغيل أو اشتراكات أو حسابات أو بيانات اعتماد أو محتوى وسائط.</value>
   </data>
   <data name="Submission_LongDescription" xml:space="preserve">
-    <value>KROIRA IPTV هو عميل IPTV لسطح مكتب Windows للقنوات المباشرة وVOD والمسلسلات وEPG والمفضلات ومواصلة المشاهدة والملفات الشخصية وتشخيصات المصدر المحلي.</value>
+    <value>KROIRA IPTV هو مشغل وسائط ومدير مصادر لنظام Windows لقوائم M3U ومزودي Xtream وملفات تعريف بوابات المزودين المدعومة التي يضيفها المستخدم. يساعد على تنظيم القنوات المباشرة ومكتبات VOD وبيانات الدليل والمفضلات وحالة متابعة المشاهدة والتشغيل وتشخيصات المصدر محلياً على هذا الجهاز. لا يوفر KROIRA قنوات أو بثوثاً أو قوائم تشغيل أو اشتراكات أو حسابات أو بيانات اعتماد أو محتوى وسائط.</value>
   </data>
   <data name="Submission.MetadataProviderSummary" xml:space="preserve">
     <value>تعد البيانات التعريفية TMDb بمثابة إثراء اختياري لتصفح الكتالوج المحلي.</value>
@@ -5261,7 +5261,7 @@
   <data name="SeriesPickShowMessage.Text" xml:space="preserve"><value>حدد عنوانا من المكتبة لتحميل الصور والمواسم وتشغيل الحلقات هنا.</value></data>
   <data name="SourceOnboardingM3uPathBox.PlaceholderText" xml:space="preserve"><value>http://... أو C:\...</value></data>
   <data name="AppDisplayName" xml:space="preserve"><value>KROIRA IPTV</value></data>
-  <data name="AppDescription" xml:space="preserve"><value>يجمع KROIRA IPTV البث التلفزيوني المباشر والأفلام والمسلسلات وEPG وإدارة المصادر في تطبيق Windows مصقول واحد.</value></data>
+  <data name="AppDescription" xml:space="preserve"><value>شغّل ونظّم مصادر IPTV الخاصة بك مع التلفزيون المباشر وVOD وEPG والتشخيصات والتشغيل المحلي.</value></data>
   <data name="General_Never" xml:space="preserve"><value>Never</value></data>
   <data name="General_Saved" xml:space="preserve"><value>Saved</value></data>
   <data name="General_Syncing" xml:space="preserve"><value>Syncing...</value></data>
@@ -5395,7 +5395,7 @@
   <data name="Sources_HealthStatus_IdleCaption" xml:space="preserve"><value>Add a source to get started.</value></data>
   <data name="Sources_Empty_NoSources_Title" xml:space="preserve"><value>No sources configured</value></data>
   <data name="Sources_Empty_NoMatches_Title" xml:space="preserve"><value>No matching sources</value></data>
-  <data name="Sources_Empty_NoSources_Message" xml:space="preserve"><value>Add an M3U playlist, Xtream provider, or Stalker portal to start importing live channels, movies, series, and guide data.</value></data>
+  <data name="Sources_Empty_NoSources_Message" xml:space="preserve"><value>أضف قائمة M3U الخاصة بك أو مزود Xtream أو ملف تعريف بوابة مدعوماً لاستيراد الكتالوج وبيانات الدليل التي يوفرها المصدر.</value></data>
   <data name="Sources_Empty_NoMatches_Message" xml:space="preserve"><value>Try a different source name, type, or guide status.</value></data>
   <data name="Sources_Recent_Status_Review" xml:space="preserve"><value>Review</value></data>
   <data name="Sources_Recent_Status_Complete" xml:space="preserve"><value>Complete</value></data>

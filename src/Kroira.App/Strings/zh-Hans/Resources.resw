@@ -2256,7 +2256,7 @@
     <value>无向导</value>
   </data>
   <data name="SourceOnboardingPageSubtitle.Text" xml:space="preserve">
-    <value>连接您自己的 M3U 播放列表、Xtream 提供商或 Stalker 门户，以获取直播电视、电影、连续剧和指南数据。</value>
+    <value>连接你自己的 M3U 播放列表、Xtream 提供商或受支持的门户配置文件，以浏览来源提供的直播电视、电影、剧集和指南数据。</value>
   </data>
   <data name="SourceOnboardingPageTitle.Text" xml:space="preserve">
     <value>添加来源</value>
@@ -2736,40 +2736,40 @@
     <value>提供商凭据保留在此设备上，并从共享安全报告中进行编辑。</value>
   </data>
   <data name="Submission.Help.Step1" xml:space="preserve">
-    <value>从源中添加 M3U、Xtream 或 Stalker 源。</value>
+    <value>1. 添加你自己的 M3U 播放列表、Xtream 提供商或受支持的门户配置文件。</value>
   </data>
   <data name="Submission_Help_Step1" xml:space="preserve">
-    <value>从源中添加 M3U、Xtream 或 Stalker 源。</value>
+    <value>1. 添加你自己的 M3U 播放列表、Xtream 提供商或受支持的门户配置文件。</value>
   </data>
   <data name="Submission.Help.Step2" xml:space="preserve">
-    <value>使用直播电视、电影和电视剧浏览导入的提供商内容。</value>
+    <value>2. 让 KROIRA 完成首次同步和健康检查。</value>
   </data>
   <data name="Submission_Help_Step2" xml:space="preserve">
-    <value>使用直播电视、电影和电视剧浏览导入的提供商内容。</value>
+    <value>2. 让 KROIRA 完成首次同步和健康检查。</value>
   </data>
   <data name="Submission.Help.Step3" xml:space="preserve">
-    <value>打开“设置”以调整外观、语言、备份和源刷新。</value>
+    <value>3. 浏览直播电视、电影、剧集、收藏或继续观看。</value>
   </data>
   <data name="Submission_Help_Step3" xml:space="preserve">
-    <value>打开“设置”以调整外观、语言、备份和源刷新。</value>
+    <value>3. 浏览直播电视、电影、剧集、收藏或继续观看。</value>
   </data>
   <data name="Submission.Help.Step4" xml:space="preserve">
-    <value>共享支持详细信息时使用诊断导出。</value>
+    <value>4. 如果指南覆盖看起来较弱，请在来源中检查该来源并在那里调整指南设置。</value>
   </data>
   <data name="Submission_Help_Step4" xml:space="preserve">
-    <value>共享支持详细信息时使用诊断导出。</value>
+    <value>4. 如果指南覆盖看起来较弱，请在来源中检查该来源并在那里调整指南设置。</value>
   </data>
   <data name="Submission.LegalDisclaimer" xml:space="preserve">
-    <value>KROIRA 不提供频道、播放列表、订阅或媒体内容。</value>
+    <value>KROIRA 是媒体播放器和来源管理器。KROIRA 不提供频道、流、播放列表、订阅、凭据或媒体内容。用户负责只添加已授权的来源，并遵守适用的提供商条款和法律。KROIRA 不绕过 DRM、付费墙、身份验证、提供商限制或访问控制。</value>
   </data>
   <data name="Submission_LegalDisclaimer" xml:space="preserve">
-    <value>KROIRA 不提供频道、播放列表、订阅或媒体内容。</value>
+    <value>KROIRA 是媒体播放器和来源管理器。KROIRA 不提供频道、流、播放列表、订阅、凭据或媒体内容。用户负责只添加已授权的来源，并遵守适用的提供商条款和法律。KROIRA 不绕过 DRM、付费墙、身份验证、提供商限制或访问控制。</value>
   </data>
   <data name="Submission.LongDescription" xml:space="preserve">
-    <value>KROIRA IPTV 是一个 Windows 桌面 IPTV 客户端，用于直播频道、VOD、系列、EPG、收藏夹、继续观看、配置文件和本地源诊断。</value>
+    <value>KROIRA IPTV 是一款 Windows 媒体播放器和来源管理器，用于用户提供的 M3U 播放列表、Xtream 提供商和受支持的提供商门户配置文件。它可在本设备本地整理直播频道、VOD 资料库、指南数据、收藏、继续观看状态、播放和来源诊断。KROIRA 不提供频道、流、播放列表、订阅、账户、凭据或媒体内容。</value>
   </data>
   <data name="Submission_LongDescription" xml:space="preserve">
-    <value>KROIRA IPTV 是一个 Windows 桌面 IPTV 客户端，用于直播频道、VOD、系列、EPG、收藏夹、继续观看、配置文件和本地源诊断。</value>
+    <value>KROIRA IPTV 是一款 Windows 媒体播放器和来源管理器，用于用户提供的 M3U 播放列表、Xtream 提供商和受支持的提供商门户配置文件。它可在本设备本地整理直播频道、VOD 资料库、指南数据、收藏、继续观看状态、播放和来源诊断。KROIRA 不提供频道、流、播放列表、订阅、账户、凭据或媒体内容。</value>
   </data>
   <data name="Submission.MetadataProviderSummary" xml:space="preserve">
     <value>TMDb 元数据是本地目录浏览的可选丰富内容。</value>
@@ -5261,7 +5261,7 @@
   <data name="SeriesPickShowMessage.Text" xml:space="preserve"><value>从媒体库选择标题，以在此加载海报、季和剧集播放。</value></data>
   <data name="SourceOnboardingM3uPathBox.PlaceholderText" xml:space="preserve"><value>http://... 或 C:\...</value></data>
   <data name="AppDisplayName" xml:space="preserve"><value>KROIRA IPTV</value></data>
-  <data name="AppDescription" xml:space="preserve"><value>KROIRA IPTV 将直播电视、电影、剧集、EPG 和来源管理整合到一个精致的 Windows 应用中。</value></data>
+  <data name="AppDescription" xml:space="preserve"><value>使用直播电视、VOD、EPG、诊断和本地播放来播放并整理你自己的 IPTV 来源。</value></data>
   <data name="General_Never" xml:space="preserve"><value>Never</value></data>
   <data name="General_Saved" xml:space="preserve"><value>Saved</value></data>
   <data name="General_Syncing" xml:space="preserve"><value>Syncing...</value></data>
@@ -5395,7 +5395,7 @@
   <data name="Sources_HealthStatus_IdleCaption" xml:space="preserve"><value>Add a source to get started.</value></data>
   <data name="Sources_Empty_NoSources_Title" xml:space="preserve"><value>No sources configured</value></data>
   <data name="Sources_Empty_NoMatches_Title" xml:space="preserve"><value>No matching sources</value></data>
-  <data name="Sources_Empty_NoSources_Message" xml:space="preserve"><value>Add an M3U playlist, Xtream provider, or Stalker portal to start importing live channels, movies, series, and guide data.</value></data>
+  <data name="Sources_Empty_NoSources_Message" xml:space="preserve"><value>添加你自己的 M3U 播放列表、Xtream 提供商或受支持的门户配置文件，以导入来源提供的目录和指南数据。</value></data>
   <data name="Sources_Empty_NoMatches_Message" xml:space="preserve"><value>Try a different source name, type, or guide status.</value></data>
   <data name="Sources_Recent_Status_Review" xml:space="preserve"><value>Review</value></data>
   <data name="Sources_Recent_Status_Complete" xml:space="preserve"><value>Complete</value></data>
