@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git -C C:/Users/SATIVA/Desktop/stream remote -v)",
+      "Bash(git -C C:/Users/SATIVA/Desktop/stream log --oneline -20)"
+    ]
+  }
+}
