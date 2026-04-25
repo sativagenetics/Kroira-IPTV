@@ -195,6 +195,7 @@ Store-supporting copy lives in:
 - [docs/store_submission_info.md](docs/store_submission_info.md)
 - [docs/store_release_checklist.md](docs/store_release_checklist.md)
 - [docs/store_screenshot_workflow.md](docs/store_screenshot_workflow.md)
+- [docs/package_assets.md](docs/package_assets.md)
 - [RELEASE_NOTES_v2.0.0.md](RELEASE_NOTES_v2.0.0.md)
 - [docs/privacy.html](docs/privacy.html)
 - [docs/support.html](docs/support.html)
@@ -217,7 +218,7 @@ Near-term V2 polish:
 - Playback stability, error messaging, and player UX polish
 - Source diagnostics, repair guidance, and guide-quality improvements
 - Search, filtering, sorting, and metadata-quality improvements across catalog surfaces
-- Sanitized screenshot and release-asset preparation
+- Sanitized screenshot approval and final Store asset review
 - Store review readiness and public documentation polish
 
 Longer-term areas under evaluation:

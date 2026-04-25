@@ -47,6 +47,7 @@ KROIRA does not provide, host, sell, curate, or distribute channels, playlists, 
 - [ ] [docs/store_submission_info.md](store_submission_info.md) matches Partner Center copy
 - [ ] [docs/privacy.html](privacy.html) and [docs/support.html](support.html) are published and reachable
 - [ ] `runFullTrust` and `internetClient` capability justifications are current
+- [ ] Package icons, Store logo, tile logos, and splash assets match [docs/package_assets.md](package_assets.md)
 - [ ] Sanitized screenshots are reviewed for private URLs, credentials, provider brands, channel logos, copyrighted posters, and personal profile names
 - [ ] Full validation passes:
 

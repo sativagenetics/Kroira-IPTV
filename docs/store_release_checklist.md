@@ -60,6 +60,9 @@ The listing must not imply that KROIRA supplies free TV, included channels, prem
 
 ## 5. Screenshots And Assets
 
+- Confirm package visual assets under `src/Kroira.App/Assets/` use the official purple/navy KROIRA K mark and match [docs/package_assets.md](package_assets.md).
+- Keep `Package.appxmanifest` pointed at the base asset names (`StoreLogo.png`, `Square44x44Logo.png`, `Square150x150Logo.png`, `Wide310x150Logo.png`, and `SplashScreen.png`) so Windows can select scale, target-size, and theme variants automatically.
+- If higher-resolution source artwork becomes available before final Store upload, re-export the generated high-DPI variants from that source rather than upscaling bitmap assets.
 - Capture screenshots only from sanitized/sample source data that you own or have permission to show.
 - Do not publish screenshots that expose private playlist URLs, credentials, MAC addresses, personal profile names, third-party provider brands, channel logos, copyrighted posters, or debug tooling.
 - Use `scripts/store-screenshots.ps1` with `-SanitizedDataConfirmed` only after manually confirming the data set is Store-safe.
