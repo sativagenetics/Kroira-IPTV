@@ -444,7 +444,7 @@ namespace Kroira.App.Views
             _windowManager = null;
         }
 
-        private void TeardownPlayback()
+        private void TeardownPlayback(bool deferNativePlayerDisposal = true)
         {
             if (_teardownStarted && _player == null && _surface == null)
             {
@@ -502,15 +502,19 @@ namespace Kroira.App.Views
 
             HideZapBanner();
             ResetSessionRuntimeState("teardown", 0, clearRetryState: true);
-            DetachAndDisposePlayer();
 
-            if (_surface != null)
+            var surface = _surface;
+            _surface = null;
+            if (surface != null)
             {
-                var surface = _surface;
-                _surface = null;
-                var hwnd = surface.Handle;
-                LogPlaybackState($"SURFACE: disposing hwnd=0x{hwnd.ToInt64():X}");
-                try { surface.Dispose(); } catch { }
+                try { surface.SetInputEnabled(false); } catch { }
+                try { surface.SetVisible(false, "teardown_dispose"); } catch { }
+            }
+
+            var surfaceDisposeDeferred = DetachAndDisposePlayer(deferNativePlayerDisposal, surface);
+            if (!surfaceDisposeDeferred && surface != null)
+            {
+                DisposeVideoSurface(surface);
             }
 
             ResetTrackMenus();
@@ -789,11 +793,11 @@ namespace Kroira.App.Views
             return player;
         }
 
-        private void DetachAndDisposePlayer()
+        private bool DetachAndDisposePlayer(bool disposeOnBackgroundThread = false, VideoSurface? surfaceToDisposeAfterPlayer = null)
         {
             if (_player == null)
             {
-                return;
+                return false;
             }
 
             var player = _player;
@@ -808,10 +812,41 @@ namespace Kroira.App.Views
             player.OutputReady -= OnOutputReady;
             player.TrackListChanged -= OnTrackListChanged;
             player.WarningMessage -= OnWarningMessage;
+            if (disposeOnBackgroundThread)
+            {
+                LogPlaybackState("PLAYER: disposing async");
+                _ = Task.Run(() =>
+                {
+                    try { player.Stop(); } catch { }
+                    try { player.Dispose(); } catch { }
+                    Log("PLAYER disposed async");
+                }).ContinueWith(_ =>
+                {
+                    if (surfaceToDisposeAfterPlayer == null)
+                    {
+                        return;
+                    }
+
+                    if (!DispatcherQueue.TryEnqueue(() => DisposeVideoSurface(surfaceToDisposeAfterPlayer)))
+                    {
+                        Log("SURFACE dispose skipped: dispatcher unavailable after async player disposal");
+                    }
+                });
+                return surfaceToDisposeAfterPlayer != null;
+            }
+
             LogPlaybackState("PLAYER: disposing");
             try { player.Stop(); } catch { }
             try { player.Dispose(); } catch { }
             LogPlaybackState("PLAYER: disposed");
+            return false;
+        }
+
+        private void DisposeVideoSurface(VideoSurface surface)
+        {
+            var hwnd = surface.Handle;
+            LogPlaybackState($"SURFACE: disposing hwnd=0x{hwnd.ToInt64():X}");
+            try { surface.Dispose(); } catch { }
         }
 
         private void ResetLiveEdgePlayerSession(string reason)
@@ -3361,6 +3396,33 @@ namespace Kroira.App.Views
             return BuildFailureMessage(baseMessage);
         }
 
+        private void PrepareResponsiveNavigationExit(string reason)
+        {
+            LogPlaybackState($"PAGE: responsive navigation exit requested reason={reason}");
+            _teardownStarted = true;
+            _playbackStarted = false;
+            _isStartingPlayback = false;
+            _activeAttemptId = 0;
+            _recoveryInProgress = false;
+            CancelPlaybackSession();
+            _controlsHideTimer?.Stop();
+            StopTimer(ref _loadTimeoutTimer);
+            StopTimer(ref _bufferTimeoutTimer);
+            StopTimer(ref _progressPersistTimer);
+            _sleepTimer?.Stop();
+            _sleepDeadline = null;
+            try { _surface?.SetInputEnabled(false); } catch { }
+            try { _surface?.SetVisible(false, $"navigation_{reason}"); } catch { }
+            _overlayController.ShowOverlay();
+            _overlayHiddenByInactivity = false;
+            HideZapBanner();
+
+            if (_context != null)
+            {
+                _ = PersistProgressOnTeardownAsync(_context, _lastPositionMs, _lastDurationMs);
+            }
+        }
+
         private bool IsPlaybackComplete()
         {
             return _lastDurationMs > 0 && _lastPositionMs >= _lastDurationMs * 0.95;
@@ -3387,14 +3449,25 @@ namespace Kroira.App.Views
             if (_isNavigatingBack) return;
             _isNavigatingBack = true;
 
-            TeardownPlayback();
+            PrepareResponsiveNavigationExit("back");
             if (IsPictureInPictureMode())
             {
+                TeardownPlayback(deferNativePlayerDisposal: true);
                 _pictureInPictureService.Close();
                 return;
             }
 
-            if (Frame != null && Frame.CanGoBack) Frame.GoBack();
+            if (Frame != null && Frame.CanGoBack)
+            {
+                if (!DispatcherQueue.TryEnqueue(() => Frame.GoBack()))
+                {
+                    Frame.GoBack();
+                }
+
+                return;
+            }
+
+            TeardownPlayback(deferNativePlayerDisposal: true);
         }
 
         private static void StopTimer(ref DispatcherTimer? timer)

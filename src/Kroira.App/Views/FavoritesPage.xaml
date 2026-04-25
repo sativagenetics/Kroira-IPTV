@@ -6,13 +6,7 @@
     Background="{StaticResource KroiraPageBackgroundBrush}">
 
     <Page.Resources>
-        <Style x:Key="HubColumnStyle" TargetType="Border">
-            <Setter Property="Background" Value="#28070B12" />
-            <Setter Property="BorderBrush" Value="Transparent" />
-            <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="CornerRadius" Value="12" />
-            <Setter Property="Padding" Value="0" />
-        </Style>
+        <Style x:Key="HubColumnStyle" TargetType="Border" BasedOn="{StaticResource KroiraLaneColumnStyle}" />
 
         <Style x:Key="HubItemContainerStyle" TargetType="ListViewItem">
             <Setter Property="Padding" Value="0" />
@@ -100,7 +94,8 @@
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
-                    <Grid Padding="18,16,18,12" ColumnSpacing="12">
+                    <Border Style="{StaticResource KroiraLaneHeaderStyle}">
+                    <Grid ColumnSpacing="10">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
@@ -111,11 +106,7 @@
                             <TextBlock Text="Saved channels" Style="{StaticResource KroiraBodyStyle}" />
                         </StackPanel>
                         <Border Grid.Column="1"
-                                Background="{StaticResource KroiraStateDangerSoftBrush}"
-                                BorderBrush="#33FF5A5F"
-                                BorderThickness="1"
-                                CornerRadius="8"
-                                Padding="8,4"
+                                Style="{StaticResource KroiraLaneCountBadgeStyle}"
                                 VerticalAlignment="Center">
                             <TextBlock Text="{x:Bind ViewModel.ChannelCountText, Mode=OneWay}"
                                        Foreground="{StaticResource KroiraLiveDotBrush}"
@@ -125,11 +116,12 @@
                         <Button Grid.Column="2"
                                 Content="Clear all"
                                 Click="ClearChannelFavorites_Click"
-                                Style="{StaticResource QuietManagementButtonStyle}"
+                                Style="{StaticResource KroiraLaneClearButtonStyle}"
                                 Visibility="{x:Bind ViewModel.ClearChannelsVisibility, Mode=OneWay}"
                                 VerticalAlignment="Center"
                                 AutomationProperties.Name="Clear all favorite live channels" />
                     </Grid>
+                    </Border>
 
                     <Grid Grid.Row="1" Padding="10,0,10,12">
                         <controls:EmptyStateView IconGlyph="&#xE714;"
@@ -198,7 +190,8 @@
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
-                    <Grid Padding="18,16,18,12" ColumnSpacing="12">
+                    <Border Style="{StaticResource KroiraLaneHeaderStyle}">
+                    <Grid ColumnSpacing="10">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
@@ -208,17 +201,18 @@
                             <TextBlock Text="Movies" Style="{StaticResource KroiraSectionTitleStyle}" />
                             <TextBlock Text="Saved films" Style="{StaticResource KroiraBodyStyle}" />
                         </StackPanel>
-                        <Border Grid.Column="1" Style="{StaticResource KroiraCountBadgeStyle}" Padding="8,4">
+                        <Border Grid.Column="1" Style="{StaticResource KroiraLaneCountBadgeStyle}">
                             <TextBlock Text="{x:Bind ViewModel.MovieCountText, Mode=OneWay}" Foreground="{StaticResource KroiraAccentBrush}" FontSize="10" FontWeight="SemiBold" />
                         </Border>
                         <Button Grid.Column="2"
                                 Content="Clear all"
                                 Click="ClearMovieFavorites_Click"
-                                Style="{StaticResource QuietManagementButtonStyle}"
+                                Style="{StaticResource KroiraLaneClearButtonStyle}"
                                 Visibility="{x:Bind ViewModel.ClearMoviesVisibility, Mode=OneWay}"
                                 VerticalAlignment="Center"
                                 AutomationProperties.Name="Clear all favorite movies" />
                     </Grid>
+                    </Border>
 
                     <Grid Grid.Row="1" Padding="10,0,10,12">
                         <controls:EmptyStateView IconGlyph="&#xE8B2;"
@@ -278,7 +272,8 @@
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
-                    <Grid Padding="18,16,18,12" ColumnSpacing="12">
+                    <Border Style="{StaticResource KroiraLaneHeaderStyle}">
+                    <Grid ColumnSpacing="10">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
@@ -288,17 +283,18 @@
                             <TextBlock Text="Series" Style="{StaticResource KroiraSectionTitleStyle}" />
                             <TextBlock Text="Saved shows" Style="{StaticResource KroiraBodyStyle}" />
                         </StackPanel>
-                        <Border Grid.Column="1" Style="{StaticResource KroiraCountBadgeStyle}" Padding="8,4">
+                        <Border Grid.Column="1" Style="{StaticResource KroiraLaneCountBadgeStyle}">
                             <TextBlock Text="{x:Bind ViewModel.SeriesCountText, Mode=OneWay}" Foreground="{StaticResource KroiraAccentBrush}" FontSize="10" FontWeight="SemiBold" />
                         </Border>
                         <Button Grid.Column="2"
                                 Content="Clear all"
                                 Click="ClearSeriesFavorites_Click"
-                                Style="{StaticResource QuietManagementButtonStyle}"
+                                Style="{StaticResource KroiraLaneClearButtonStyle}"
                                 Visibility="{x:Bind ViewModel.ClearSeriesVisibility, Mode=OneWay}"
                                 VerticalAlignment="Center"
                                 AutomationProperties.Name="Clear all favorite series" />
                     </Grid>
+                    </Border>
 
                     <Grid Grid.Row="1" Padding="10,0,10,12">
                         <controls:EmptyStateView IconGlyph="&#xE8A9;"

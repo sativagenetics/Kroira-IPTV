@@ -1408,7 +1408,8 @@ namespace Kroira.App.ViewModels
                 Name = "All channels",
                 Description = "Every visible live channel",
                 ItemCount = visibleChannels.Count,
-                OrderIndex = -1
+                OrderIndex = -1,
+                IconGlyph = "\uE714"
             });
 
             void AddSmartCategory(int id, string key, string name, string description, int count, int orderIndex)
@@ -1426,7 +1427,8 @@ namespace Kroira.App.ViewModels
                     Description = description,
                     ItemCount = count,
                     OrderIndex = orderIndex,
-                    IsSmartCategory = true
+                    IsSmartCategory = true,
+                    IconGlyph = "\uE7C1"
                 });
             }
 
@@ -1444,7 +1446,8 @@ namespace Kroira.App.ViewModels
                     FilterKey = _browsePreferencesService.NormalizeCategoryKey(group.Key),
                     Name = group.Key,
                     ItemCount = group.Count(),
-                    OrderIndex = index + 10
+                    OrderIndex = index + 10,
+                    IconGlyph = "\uE8B3"
                 })
                 .ToList();
 

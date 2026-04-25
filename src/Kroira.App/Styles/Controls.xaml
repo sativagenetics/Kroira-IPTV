@@ -150,6 +150,136 @@
         <Setter Property="Padding" Value="12" />
     </Style>
 
+    <Style x:Key="KroiraLibraryToolbarStyle" TargetType="Border">
+        <Setter Property="Background" Value="#72070B12" />
+        <Setter Property="BorderBrush" Value="{StaticResource KroiraGhostBorderBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="18" />
+        <Setter Property="Padding" Value="10" />
+        <Setter Property="MinHeight" Value="66" />
+    </Style>
+
+    <Style x:Key="KroiraCategoryRailPanelStyle" TargetType="Border">
+        <Setter Property="Background" Value="#4A070B12" />
+        <Setter Property="BorderBrush" Value="{StaticResource KroiraChromeLineBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="18" />
+        <Setter Property="Padding" Value="8" />
+    </Style>
+
+    <Style x:Key="KroiraCategoryRailItemContainerStyle" TargetType="ListViewItem">
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="Margin" Value="0,0,0,6" />
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="MinHeight" Value="44" />
+        <Setter Property="CornerRadius" Value="13" />
+        <Setter Property="UseSystemFocusVisuals" Value="True" />
+    </Style>
+
+    <DataTemplate x:Key="KroiraCategoryRailItemTemplate">
+        <Grid MinHeight="44"
+              ToolTipService.ToolTip="{Binding Name}">
+            <Border Background="{StaticResource KroiraAccentContainerBrush}"
+                    BorderBrush="{StaticResource KroiraChromeLineBrush}"
+                    BorderThickness="1"
+                    CornerRadius="13"
+                    Opacity="{Binding SelectionBackgroundOpacity}" />
+            <Border BorderBrush="{StaticResource KroiraAccentBrush}"
+                    BorderThickness="1"
+                    CornerRadius="13"
+                    Opacity="{Binding SelectionChromeOpacity}" />
+            <Border Width="3"
+                    HorizontalAlignment="Left"
+                    Margin="0,7,0,7"
+                    CornerRadius="2"
+                    Background="{StaticResource KroiraAccentBrush}"
+                    Opacity="{Binding SelectionAccentOpacity}" />
+            <Grid Padding="11,8,9,8" ColumnSpacing="8">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="18" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <FontIcon Glyph="{Binding IconGlyph}"
+                          FontSize="12"
+                          Foreground="{StaticResource KroiraAccentBrush}"
+                          Opacity="0.82"
+                          VerticalAlignment="Center" />
+
+                <StackPanel Grid.Column="1"
+                            Spacing="1"
+                            MinWidth="0"
+                            VerticalAlignment="Center">
+                    <TextBlock Text="{Binding Name}"
+                               Foreground="{StaticResource KroiraTextPrimaryBrush}"
+                               FontSize="12"
+                               FontWeight="SemiBold"
+                               MaxLines="1"
+                               TextTrimming="CharacterEllipsis" />
+                    <TextBlock Text="{Binding Description}"
+                               Visibility="{Binding DescriptionVisibility}"
+                               Foreground="{StaticResource KroiraTextTertiaryBrush}"
+                               FontSize="10"
+                               MaxLines="1"
+                               TextTrimming="CharacterEllipsis" />
+                </StackPanel>
+
+                <Border Grid.Column="2"
+                        Background="#1AFFFFFF"
+                        BorderBrush="{StaticResource KroiraChromeLineBrush}"
+                        BorderThickness="1"
+                        CornerRadius="9"
+                        Padding="6,2"
+                        MinWidth="28"
+                        VerticalAlignment="Center"
+                        Visibility="{Binding CountVisibility}">
+                    <TextBlock Text="{Binding CountText}"
+                               Foreground="{StaticResource KroiraTextSecondaryBrush}"
+                               FontSize="10"
+                               FontWeight="SemiBold"
+                               HorizontalAlignment="Center" />
+                </Border>
+            </Grid>
+        </Grid>
+    </DataTemplate>
+
+    <Style x:Key="KroiraLaneColumnStyle" TargetType="Border">
+        <Setter Property="Background" Value="#36070B12" />
+        <Setter Property="BorderBrush" Value="{StaticResource KroiraGhostBorderBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="16" />
+        <Setter Property="Padding" Value="0" />
+    </Style>
+
+    <Style x:Key="KroiraLaneHeaderStyle" TargetType="Border">
+        <Setter Property="Background" Value="#54111827" />
+        <Setter Property="BorderBrush" Value="{StaticResource KroiraChromeLineBrush}" />
+        <Setter Property="BorderThickness" Value="0,0,0,1" />
+        <Setter Property="CornerRadius" Value="16,16,0,0" />
+        <Setter Property="Padding" Value="16,14,16,12" />
+        <Setter Property="MinHeight" Value="76" />
+    </Style>
+
+    <Style x:Key="KroiraLaneCountBadgeStyle" TargetType="Border">
+        <Setter Property="Background" Value="#24251235" />
+        <Setter Property="BorderBrush" Value="{StaticResource KroiraChromeLineBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="10" />
+        <Setter Property="Padding" Value="8,4" />
+        <Setter Property="MinWidth" Value="42" />
+    </Style>
+
+    <Style x:Key="KroiraLaneClearButtonStyle" TargetType="Button" BasedOn="{StaticResource KroiraGhostButtonStyle}">
+        <Setter Property="Padding" Value="10,5" />
+        <Setter Property="MinHeight" Value="30" />
+        <Setter Property="FontSize" Value="11" />
+        <Setter Property="Foreground" Value="{StaticResource KroiraTextSecondaryBrush}" />
+        <Setter Property="BorderBrush" Value="{StaticResource KroiraChromeLineBrush}" />
+        <Setter Property="Background" Value="#22111827" />
+        <Setter Property="CornerRadius" Value="12" />
+    </Style>
+
     <Style x:Key="KroiraCountBadgeStyle" TargetType="Border">
         <Setter Property="Background" Value="#2E251235" />
         <Setter Property="BorderBrush" Value="{StaticResource KroiraChromeLineBrush}" />

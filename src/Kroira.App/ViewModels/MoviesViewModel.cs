@@ -1156,28 +1156,42 @@ namespace Kroira.App.ViewModels
                 visibleSourceIds = _allMovieGroups.SelectMany(group => group.Variants).Select(variant => variant.SourceProfile.Id).ToHashSet();
             }
 
-            var categoryItems = new List<BrowserCategoryViewModel>
-            {
-                new BrowserCategoryViewModel { Id = 0, FilterKey = string.Empty, Name = "All Categories", OrderIndex = -1 }
-            };
-
-            var categories = _allMovieGroups
+            var visibleMovies = _allMovieGroups
                 .Where(group => group.Variants.Any(variant => visibleSourceIds.Contains(variant.SourceProfile.Id)))
                 .Where(group => group.Variants.Any(variant => !HideSecondaryContent || string.Equals(variant.Movie.ContentKind, "Primary", StringComparison.OrdinalIgnoreCase)))
                 .Select(group => group.PreferredMovie)
                 .Select(GetCategoryProjection)
                 .Where(category => !IsCategoryHidden(category.RawCategoryName))
-                .Select(category => category.DisplayCategoryName)
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .OrderBy(category => category, StringComparer.CurrentCultureIgnoreCase)
                 .ToList();
 
-            categoryItems.AddRange(categories.Select((name, index) => new BrowserCategoryViewModel
+            var categoryItems = new List<BrowserCategoryViewModel>
+            {
+                new BrowserCategoryViewModel
+                {
+                    Id = 0,
+                    FilterKey = string.Empty,
+                    Name = "All Categories",
+                    Description = "Every visible film",
+                    ItemCount = visibleMovies.Count,
+                    OrderIndex = -1,
+                    IconGlyph = "\uE8B2"
+                }
+            };
+
+            var categories = visibleMovies
+                .GroupBy(category => category.DisplayCategoryName, StringComparer.OrdinalIgnoreCase)
+                .Select(group => new { Name = group.Key, Count = group.Count() })
+                .OrderBy(category => category.Name, StringComparer.CurrentCultureIgnoreCase)
+                .ToList();
+
+            categoryItems.AddRange(categories.Select((category, index) => new BrowserCategoryViewModel
                      {
                          Id = index + 1,
-                         FilterKey = NormalizeCategoryKey(name),
-                         Name = name,
-                         OrderIndex = index + 1
+                         FilterKey = NormalizeCategoryKey(category.Name),
+                         Name = category.Name,
+                         ItemCount = category.Count,
+                         OrderIndex = index + 1,
+                         IconGlyph = "\uE8FD"
                      }));
 
             var signature = BuildCategorySignature(categoryItems);
@@ -1331,7 +1345,7 @@ namespace Kroira.App.ViewModels
 
         private static string BuildCategorySignature(IEnumerable<BrowserCategoryViewModel> categories)
         {
-            return string.Join("|", categories.Select(category => $"{category.FilterKey}:{category.Name}:{category.OrderIndex}"));
+            return string.Join("|", categories.Select(category => $"{category.FilterKey}:{category.Name}:{category.ItemCount}:{category.IconGlyph}:{category.OrderIndex}"));
         }
 
         private void OnSourceVisibilityChanged(BrowseSourceVisibilityViewModel option, bool isVisible)

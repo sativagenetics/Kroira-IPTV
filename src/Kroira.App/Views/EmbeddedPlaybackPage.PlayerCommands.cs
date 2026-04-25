@@ -288,7 +288,6 @@ namespace Kroira.App.Views
             session.Items.Add(new MenuFlyoutSeparator());
             AddToolsMenuItem(session.Items, "Stop playback", () =>
             {
-                _player?.Stop();
                 NavigateBack();
             });
             items.Add(session);
@@ -1772,7 +1771,6 @@ namespace Kroira.App.Views
             {
                 _sleepTimer?.Stop();
                 _sleepDeadline = null;
-                _player?.Stop();
                 NavigateBack();
                 return;
             }

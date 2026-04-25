@@ -4,6 +4,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="using:Kroira.App.Controls"
     x:Name="LiveTvPage"
+    NavigationCacheMode="Required"
     Background="{StaticResource KroiraPageBackgroundBrush}">
 
     <Page.Resources>
@@ -87,10 +88,10 @@
     <Grid XYFocusKeyboardNavigation="Enabled">
         <controls:AmbientPageBackground />
 
-        <Grid Padding="24,12,24,20"
-              MaxWidth="1440"
+        <Grid Padding="30,24,30,34"
+              MaxWidth="1660"
               HorizontalAlignment="Center"
-              RowSpacing="9"
+              RowSpacing="14"
               Visibility="{x:Bind ViewModel.SurfaceState.ContentVisibility, Mode=OneWay}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
@@ -99,7 +100,7 @@
         </Grid.RowDefinitions>
 
         <Border Grid.Row="0"
-                MinHeight="0"
+                MinHeight="76"
                 BorderBrush="{StaticResource KroiraGhostBorderBrush}"
                 BorderThickness="0"
                 CornerRadius="{StaticResource KroiraRadiusHero}"
@@ -129,18 +130,18 @@
             </Grid>
         </Border>
 
-        <Border Grid.Row="1" Style="{StaticResource KroiraFilterStripStyle}">
-            <Grid ColumnSpacing="8">
+        <Border Grid.Row="1" Style="{StaticResource KroiraLibraryToolbarStyle}">
+            <Grid ColumnSpacing="12">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="2.3*" MaxWidth="620" />
-                        <ColumnDefinition Width="1.15*" />
-                        <ColumnDefinition Width="1.05*" />
-                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="2.2*" MaxWidth="520" />
+                        <ColumnDefinition Width="190" />
+                        <ColumnDefinition Width="190" />
+                        <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
 
                     <Grid Grid.Column="0">
                         <TextBox x:Name="SearchBox"
-                                 Style="{StaticResource ChannelInputStyle}"
+                                 Style="{StaticResource KroiraFilterTextBoxStyle}"
                                  Text="{x:Bind ViewModel.SearchQuery, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                  PlaceholderText="Search channels"
                                  AutomationProperties.Name="Search channels"
@@ -155,14 +156,14 @@
                     </Grid>
 
                     <ComboBox Grid.Column="1"
-                              Style="{StaticResource ChannelComboStyle}"
+                              Style="{StaticResource KroiraFilterComboBoxStyle}"
                               ItemsSource="{x:Bind ViewModel.SourceOptions, Mode=OneWay}"
                               SelectedItem="{x:Bind ViewModel.SelectedSourceOption, Mode=TwoWay}"
                               DisplayMemberPath="DisplayName"
                               AutomationProperties.Name="Channel provider" />
 
                     <ComboBox Grid.Column="2"
-                              Style="{StaticResource ChannelComboStyle}"
+                              Style="{StaticResource KroiraFilterComboBoxStyle}"
                               ItemsSource="{x:Bind ViewModel.SortOptions, Mode=OneWay}"
                               SelectedItem="{x:Bind ViewModel.SelectedSortOption, Mode=TwoWay}"
                               DisplayMemberPath="Label"
@@ -194,20 +195,17 @@
 
         <Grid Grid.Row="2" ColumnSpacing="14">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="188" />
+                <ColumnDefinition Width="208" />
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
 
             <Border Grid.Column="0"
-                    Background="#22070B12"
-                    BorderBrush="{StaticResource KroiraChromeLineBrush}"
-                    BorderThickness="1"
-                    CornerRadius="16"
-                    Padding="8">
+                    Style="{StaticResource KroiraCategoryRailPanelStyle}">
                 <ListView ItemsSource="{x:Bind ViewModel.Categories, Mode=OneWay}"
                           SelectedItem="{x:Bind ViewModel.SelectedCategory, Mode=TwoWay}"
                           SelectionMode="Single"
-                          ItemContainerStyle="{StaticResource CategoryRailItemContainerStyle}"
+                          ItemContainerStyle="{StaticResource KroiraCategoryRailItemContainerStyle}"
+                          ItemTemplate="{StaticResource KroiraCategoryRailItemTemplate}"
                           Background="Transparent"
                           BorderThickness="0"
                           Padding="0"
@@ -215,61 +213,7 @@
                           ScrollViewer.VerticalScrollMode="Enabled"
                           ScrollViewer.VerticalScrollBarVisibility="Auto"
                           ScrollViewer.HorizontalScrollMode="Disabled"
-                          ScrollViewer.HorizontalScrollBarVisibility="Disabled">
-                    <ListView.ItemTemplate>
-                        <DataTemplate>
-                            <Grid MinHeight="44">
-                                <Border Background="{StaticResource KroiraAccentContainerBrush}"
-                                        BorderBrush="{StaticResource KroiraChromeLineBrush}"
-                                        BorderThickness="1"
-                                        CornerRadius="12"
-                                        Opacity="{Binding SelectionBackgroundOpacity}" />
-                                <Border BorderBrush="{StaticResource KroiraAccentBrush}"
-                                        BorderThickness="1"
-                                        CornerRadius="12"
-                                        Opacity="{Binding SelectionChromeOpacity}" />
-                                <Border Width="3"
-                                        HorizontalAlignment="Left"
-                                        Margin="0,7,0,7"
-                                        CornerRadius="2"
-                                        Background="{StaticResource KroiraAccentBrush}"
-                                        Opacity="{Binding SelectionAccentOpacity}" />
-                                <Grid Padding="12,8,10,8" ColumnSpacing="8">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
-                                    <StackPanel Spacing="1">
-                                        <TextBlock Text="{Binding Name}"
-                                                   Foreground="{StaticResource KroiraTextPrimaryBrush}"
-                                                   FontSize="12"
-                                                   FontWeight="SemiBold"
-                                                   TextTrimming="CharacterEllipsis" />
-                                        <TextBlock Text="{Binding Description}"
-                                                   Foreground="{StaticResource KroiraTextTertiaryBrush}"
-                                                   FontSize="10"
-                                                   MaxLines="1"
-                                                   TextTrimming="CharacterEllipsis"
-                                                   Visibility="{Binding DescriptionVisibility}" />
-                                    </StackPanel>
-                                    <Border Grid.Column="1"
-                                            Background="#1AFFFFFF"
-                                            BorderBrush="{StaticResource KroiraChromeLineBrush}"
-                                            BorderThickness="1"
-                                            CornerRadius="9"
-                                            Padding="6,2"
-                                            VerticalAlignment="Center"
-                                            Visibility="{Binding CountVisibility}">
-                                        <TextBlock Text="{Binding CountText}"
-                                                   Foreground="{StaticResource KroiraTextSecondaryBrush}"
-                                                   FontSize="10"
-                                                   FontWeight="SemiBold" />
-                                    </Border>
-                                </Grid>
-                            </Grid>
-                        </DataTemplate>
-                    </ListView.ItemTemplate>
-                </ListView>
+                          ScrollViewer.HorizontalScrollBarVisibility="Disabled" />
             </Border>
 
             <Grid Grid.Column="1" RowSpacing="8">

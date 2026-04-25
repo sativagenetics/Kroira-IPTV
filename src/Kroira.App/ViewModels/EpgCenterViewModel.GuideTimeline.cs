@@ -36,10 +36,14 @@ namespace Kroira.App.ViewModels
         public double Left { get; set; }
         public double Width { get; set; }
         public string TimeText => $"{StartTimeUtc.ToLocalTime():HH:mm} - {EndTimeUtc.ToLocalTime():HH:mm}";
-        public Visibility TitleVisibility => Width >= 34 ? Visibility.Visible : Visibility.Collapsed;
-        public Visibility TimeVisibility => Width >= 74 ? Visibility.Visible : Visibility.Collapsed;
-        public Visibility DetailVisibility => Width >= 126 && !string.IsNullOrWhiteSpace(DetailText) ? Visibility.Visible : Visibility.Collapsed;
-        public int TitleMaxLines => Width >= 112 ? 2 : 1;
+        public string ToolTipText => string.IsNullOrWhiteSpace(DetailText)
+            ? $"{Title}\n{TimeText}"
+            : $"{Title}\n{TimeText}\n{DetailText}";
+        public Visibility CompactGlyphVisibility => Width < 56 ? Visibility.Visible : Visibility.Collapsed;
+        public Visibility TitleVisibility => Width >= 56 ? Visibility.Visible : Visibility.Collapsed;
+        public Visibility TimeVisibility => Width >= 104 ? Visibility.Visible : Visibility.Collapsed;
+        public Visibility DetailVisibility => Width >= 174 && !string.IsNullOrWhiteSpace(DetailText) ? Visibility.Visible : Visibility.Collapsed;
+        public int TitleMaxLines => Width >= 156 ? 2 : 1;
     }
 
     public sealed class GuideTimelineChannelViewModel
@@ -82,7 +86,9 @@ namespace Kroira.App.ViewModels
 
     public partial class EpgCenterViewModel
     {
-        private const double TimelineSlotWidth = 120d;
+        private const double TimelineSlotWidth = 132d;
+        private const double TimelineProgramGap = 3d;
+        private const double TimelineProgramMinimumWidth = 14d;
         private CancellationTokenSource? _guideTimelineLoadCts;
         private CancellationTokenSource? _manualMatchLoadCts;
         private CancellationTokenSource? _manualMatchSearchCts;
@@ -525,7 +531,7 @@ namespace Kroira.App.ViewModels
 
             foreach (var program in row.Programs)
             {
-                viewModel.Programs.Add(BuildTimelineProgramViewModel(program, row));
+                viewModel.Programs.Add(BuildTimelineProgramViewModel(program, row, result));
             }
 
             return viewModel;
@@ -533,8 +539,24 @@ namespace Kroira.App.ViewModels
 
         private GuideTimelineProgramViewModel BuildTimelineProgramViewModel(
             EpgGuideTimelineProgram program,
-            EpgGuideTimelineChannel row)
+            EpgGuideTimelineChannel row,
+            EpgGuideTimelineResult result)
         {
+            var clippedStartUtc = program.StartTimeUtc < result.RangeStartUtc ? result.RangeStartUtc : program.StartTimeUtc;
+            var clippedEndUtc = program.EndTimeUtc > result.RangeEndUtc ? result.RangeEndUtc : program.EndTimeUtc;
+            if (clippedEndUtc < clippedStartUtc)
+            {
+                clippedEndUtc = clippedStartUtc;
+            }
+
+            var rangeTicks = Math.Max(1, (result.RangeEndUtc - result.RangeStartUtc).Ticks);
+            var left = Math.Clamp((clippedStartUtc - result.RangeStartUtc).Ticks * GuideTimelineWidth / rangeTicks, 0, GuideTimelineWidth);
+            var availableWidth = Math.Max(0, GuideTimelineWidth - left);
+            var rawWidth = Math.Clamp((clippedEndUtc - clippedStartUtc).Ticks * GuideTimelineWidth / rangeTicks, 0, availableWidth);
+            var width = rawWidth <= 0
+                ? 0
+                : Math.Min(availableWidth, Math.Max(TimelineProgramMinimumWidth, rawWidth - TimelineProgramGap));
+
             return new GuideTimelineProgramViewModel
             {
                 ChannelId = row.ChannelId,
@@ -545,8 +567,8 @@ namespace Kroira.App.ViewModels
                 DetailText = string.Join(" - ", new[] { program.Subtitle, program.Category }.Where(value => !string.IsNullOrWhiteSpace(value))),
                 StartTimeUtc = program.StartTimeUtc,
                 EndTimeUtc = program.EndTimeUtc,
-                Left = program.OffsetPercent * GuideTimelineWidth / 100d,
-                Width = Math.Max(2, program.WidthPercent * GuideTimelineWidth / 100d)
+                Left = left,
+                Width = width
             };
         }
 

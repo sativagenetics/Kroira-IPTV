@@ -24,6 +24,7 @@ namespace Kroira.App.ViewModels
         public int ItemCount { get; set; }
         public int OrderIndex { get; set; }
         public bool IsSmartCategory { get; set; }
+        public string IconGlyph { get; set; } = "\uE8B2";
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(SelectionBackgroundOpacity))]
         [NotifyPropertyChangedFor(nameof(SelectionChromeOpacity))]

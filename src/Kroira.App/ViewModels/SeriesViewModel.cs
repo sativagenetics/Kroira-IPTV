@@ -1542,21 +1542,33 @@ namespace Kroira.App.ViewModels
                 visibleSourceIds = _allSeriesGroups.SelectMany(group => group.Variants).Select(variant => variant.SourceProfile.Id).ToHashSet();
             }
 
-            var categoryItems = new List<BrowserCategoryViewModel>
-            {
-                new BrowserCategoryViewModel { Id = 0, FilterKey = string.Empty, Name = "All Categories", OrderIndex = -1 }
-            };
-
-            var categoryNames = _allSeriesGroups
+            var visibleSeriesCategories = _allSeriesGroups
                 .Where(group => group.Variants.Any(variant => visibleSourceIds.Contains(variant.SourceProfile.Id)))
                 .Where(group => group.Variants.Any(variant => !HideSecondaryContent || string.Equals(variant.Series.ContentKind, "Primary", StringComparison.OrdinalIgnoreCase)))
                 .Select(group => group.PreferredSeries)
                 .Select(GetCategoryProjection)
                 .Where(category => !IsCategoryHidden(category.RawCategoryName))
-                .Select(category => category.DisplayCategoryName)
-                .Distinct(StringComparer.OrdinalIgnoreCase);
+                .ToList();
 
-            var orderedCategories = CatalogOrderingService.OrderCategories(categoryNames, languageCode);
+            var categoryItems = new List<BrowserCategoryViewModel>
+            {
+                new BrowserCategoryViewModel
+                {
+                    Id = 0,
+                    FilterKey = string.Empty,
+                    Name = "All Categories",
+                    Description = "Every visible show",
+                    ItemCount = visibleSeriesCategories.Count,
+                    OrderIndex = -1,
+                    IconGlyph = "\uE8A9"
+                }
+            };
+
+            var categoryCounts = visibleSeriesCategories
+                .GroupBy(category => category.DisplayCategoryName, StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(group => group.Key, group => group.Count(), StringComparer.OrdinalIgnoreCase);
+
+            var orderedCategories = CatalogOrderingService.OrderCategories(categoryCounts.Keys, languageCode);
             var categoryIndex = 1;
             foreach (var categoryName in orderedCategories)
             {
@@ -1565,7 +1577,9 @@ namespace Kroira.App.ViewModels
                     Id = categoryIndex,
                     FilterKey = NormalizeCategoryKey(categoryName),
                     Name = categoryName,
-                    OrderIndex = categoryIndex
+                    ItemCount = categoryCounts.TryGetValue(categoryName, out var count) ? count : 0,
+                    OrderIndex = categoryIndex,
+                    IconGlyph = "\uE7C3"
                 });
                 categoryIndex++;
             }
@@ -2323,7 +2337,7 @@ namespace Kroira.App.ViewModels
 
         private static string BuildCategorySignature(IEnumerable<BrowserCategoryViewModel> categories)
         {
-            return string.Join("|", categories.Select(category => $"{category.FilterKey}:{category.Name}:{category.OrderIndex}"));
+            return string.Join("|", categories.Select(category => $"{category.FilterKey}:{category.Name}:{category.ItemCount}:{category.IconGlyph}:{category.OrderIndex}"));
         }
 
         private async Task SaveHideWatchedEpisodesAsync(bool value)
