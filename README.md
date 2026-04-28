@@ -194,7 +194,3 @@ Release-gated workflows such as recording, download, restore, and media-library 
 - Code of conduct: [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
 
 Users are responsible for adding only authorized sources and for complying with applicable provider terms and laws.
-
-## License
-
-This repository is licensed under the [MIT License](LICENSE).
