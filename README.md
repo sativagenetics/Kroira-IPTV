@@ -1,114 +1,59 @@
 # KROIRA IPTV
 
-KROIRA IPTV is a modern packaged Windows IPTV player built with WinUI 3 and .NET 8. It is designed for users who already have authorized IPTV sources and want a polished local app for source management, catalog browsing, EPG, metadata, diagnostics, and embedded playback.
+Lightweight, desktop-first Windows IPTV player for user-provided legal M3U and Xtream-compatible sources.
 
-KROIRA is not a content service. It does not provide, host, sell, curate, or distribute channels, playlists, subscriptions, credentials, movies, series, or live streams. Users must bring their own legal source.
+[Get KROIRA IPTV from Microsoft Store](https://apps.microsoft.com/detail/9NFBFHT16FWZ?cid=github_readme)
 
-[Contributing](CONTRIBUTING.md) | [Code of Conduct](CODE_OF_CONDUCT.md) | [Security](SECURITY.md) | [Support](SUPPORT.md) | [Privacy](docs/privacy.html) | [V2 Status](docs/v2_release_status.md)
+[Website](https://kroira.com) | [Support](SUPPORT.md) | [Privacy](docs/privacy.html) | [Security](SECURITY.md) | [Contributing](CONTRIBUTING.md)
 
-## Current Status
+> KROIRA IPTV is only a software player and source manager. It does not provide channels, playlists, movies, series, live TV, sports, streams, subscriptions, credentials, or any media content. Users must bring their own legal M3U or Xtream-compatible source.
 
-`main` currently carries the V2 release-candidate baseline.
+## What It Does
 
-- Public release version: `2.0.0`
-- Package manifest identity version: `2.0.0.4`
-- App assembly/file version: `2.0.0.0`
-- Primary platform: Windows desktop, packaged MSIX, WinUI 3, .NET 8
-- Release posture: active V2 release-candidate validation, not long-term maintenance mode
+KROIRA IPTV is a packaged WinUI 3 / .NET 8 Windows app for people who already have authorized IPTV sources and want a local desktop player for organizing, browsing, diagnosing, and playing those sources.
 
-The current validation baseline covers restore, Debug x64 build, unit tests, Release regression corpus, localization checks, and unsigned local MSIX packaging with signing disabled where appropriate.
+Core features:
 
-Run the V2 release gate locally:
-
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\validate-v2-release.ps1 -Configuration Debug -Platform x64
-```
-
-Create an unsigned local release-candidate package:
-
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\package-v2-release.ps1 -Unsigned -SkipValidation -Configuration Release -Platform x64
-```
-
-Unsigned packages are for local review only and should not be uploaded to Partner Center.
-
-## What KROIRA Is
-
-- A Windows desktop IPTV player for user-provided sources
-- A local-first source manager and catalog organizer
-- A Live TV, Movies, Series, Favorites, Continue Watching, Search, Guide, Sources, Settings, and Profile experience
-- A packaged WinUI 3 application built on .NET 8 and Windows App SDK
-- An embedded playback app based on `mpv/libmpv`
-- A diagnostics surface for understanding provider/source health, guide coverage, logos, sync results, and playback readiness
-
-## What KROIRA Is Not
-
-- Not an IPTV reseller, subscription provider, or content provider
-- Not a channel directory, playlist index, stream host, or credential broker
-- Not a way to bypass DRM, paywalls, authentication, provider restrictions, or access controls
-- Not a guarantee that a third-party source is lawful, stable, complete, or compatible
-- Not responsible for the EPG, logos, categories, metadata, availability, or reliability supplied by a user source
-
-## Feature Set
-
-### Source Management
-
-- Add and manage user-provided M3U playlists, Xtream providers, and supported provider portal profiles
-- Use local files or remote URLs for M3U playlists
-- Configure Xtream server URL, username, and password
-- Configure provider-dependent portal details where supported by the app
-- Re-sync sources and guide data from the Sources and Guide surfaces
-- Review safe-to-share source activity summaries and diagnostics
-- Store source settings, credentials, guide state, preferences, favorites, and progress locally on the device
-
-### Library And Navigation
-
-- Live TV browsing with provider categories, smart groupings, search, and focus-friendly navigation
-- Movies and Series catalog surfaces backed by provider VOD data
-- Favorites across live channels, movies, and series
+- M3U and Xtream-compatible source support
+- Live TV, Movies, and Series organization
+- EPG guide support for sources that provide guide data
+- Favorites across supported media sections
 - Continue Watching for resumable VOD playback
-- Global search across synced live channels, movies, series, and playable episodes
-- Profile-related local state for favorites, resume data, and access-related controls
-- Runtime localization support across the app shell and major surfaces
+- Local profiles, settings, favorites, guide state, and watch state
+- Source diagnostics for sync quality, guide coverage, logos, duplicates, probes, and playback readiness
+- Cinematic embedded playback through `mpv/libmpv`
+- Fullscreen playback, keyboard-friendly controls, audio tracks, subtitles, and picture-in-picture where available
+- Lightweight Windows desktop experience built with WinUI 3, Windows App SDK, and .NET 8
 
-### Playback
+## What It Does Not Provide
 
-- Embedded in-app playback for live TV, movies, and episodes
-- `mpv/libmpv` playback pipeline through `MpvPlayer`, `NativeMpv`, and `VideoSurface`
-- Fullscreen playback, double-click fullscreen toggle, and auto-hiding playback chrome
-- Keyboard and remote-friendly playback controls
-- Seek behavior for VOD and live-edge behavior for live streams
-- Volume, mute, speed, aspect, deinterlace, screenshot, and picture-in-picture support where available
-- Audio track and subtitle track selection
-- Subtitle delay, subtitle scale, subtitle position, and external subtitle loading support
-- Item inspection and external handoff support for troubleshooting and advanced workflows
+KROIRA is not an IPTV reseller, playlist index, stream host, subscription provider, credential broker, or content service.
 
-### EPG And Metadata
+KROIRA does not bypass DRM, paywalls, authentication, provider restrictions, or access controls. Source availability, legality, reliability, categories, logos, metadata, subtitles, audio tracks, and EPG coverage depend on the source the user adds.
 
-- XMLTV guide support for detected, manual override, fallback/enrichment, and no-guide flows
-- EPG coverage reporting, weak match review, manual channel matching, and guide timeline views
-- Provider logos, categories, current/next programme details, and catch-up signals when the source exposes them
-- TMDb metadata enrichment/fallback for movies and series when configured and when provider data is incomplete
-- Conservative fallback behavior when provider metadata, artwork, or guide data is missing
+## Install
 
-### Diagnostics And Health
+### Recommended: Microsoft Store
 
-- Source health reports for catalog quality, guide coverage, logo coverage, duplicates, suspicious entries, probes, and sync outcomes
-- Source repair guidance for common import, authentication, guide, and routing problems
-- Sanitized diagnostics designed to mask playlist URLs, usernames, passwords, tokens, keys, MAC-like values, and loose secrets before display or export
-- Deterministic regression corpus for M3U, Xtream, supported portal sources, XMLTV, source health, catch-up detection, and playback URL resolution
+Install the public Windows app from Microsoft Store:
 
-## Supported Source Types
+- [KROIRA IPTV on Microsoft Store](https://apps.microsoft.com/detail/9NFBFHT16FWZ?cid=github_readme)
+- Store ID: `9NFBFHT16FWZ`
 
-| Source type | Input model | Guide behavior | Notes |
-| --- | --- | --- | --- |
-| M3U | Remote URL or local playlist file | Detected XMLTV, manual XMLTV override, fallback XMLTV URLs, or no guide | Provider categories, logos, and stream reliability depend on the playlist |
-| Xtream | Server URL, username, password | Provider-derived guide URL, manual XMLTV override, fallback XMLTV URLs, or no guide | Live, VOD, and series availability depend on the account/source |
-| Provider portal profiles | Portal URL plus provider-specific profile details where supported | Manual XMLTV override, fallback XMLTV URLs, or no guide | Provider-dependent behavior; only use sources you are authorized to access |
+### Developers: Build From Source
+
+Clone this repository and build the packaged Windows app locally.
+
+Requirements:
+
+- Windows 10 version 1809 or newer, or Windows 11
+- .NET SDK compatible with [global.json](global.json), currently .NET `8.0.400` with latest feature roll-forward
+- Visual Studio 2022 or newer with Windows App SDK / WinUI workload support
+- Windows App SDK runtime compatible with the project package references
 
 ## Screenshots
 
-The current V2 Store-ready screenshot set lives under [docs/screenshots/store](docs/screenshots/store/). These PNGs use sanitized sample data and are the repository-facing screenshots for Store review.
+The repository screenshot set lives under [docs/screenshots/store](docs/screenshots/store/). These images use sanitized sample data and are safe for public repository and Store-review use.
 
 ![KROIRA IPTV social preview](docs/screenshots/store/social-preview.png)
 
@@ -123,28 +68,17 @@ The current V2 Store-ready screenshot set lives under [docs/screenshots/store](d
 | Settings | [07-settings.png](docs/screenshots/store/07-settings.png) |
 | Player | [08-player.png](docs/screenshots/store/08-player.png) |
 
-For local visual QA:
+Public screenshots must use sanitized or sample data that is authorized for public display. See the [Store Screenshot Workflow](docs/store_screenshot_workflow.md).
 
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\visual-smoke.ps1 -Configuration Debug -Platform x64
-```
+## Supported Source Types
 
-For Store/release screenshot review:
+| Source type | Input model | Guide behavior | Notes |
+| --- | --- | --- | --- |
+| M3U | Remote URL or local playlist file | Detected XMLTV, manual XMLTV override, fallback XMLTV URLs, or no guide | Categories, logos, and stream reliability depend on the playlist |
+| Xtream-compatible | Server URL, username, and password | Provider-derived guide URL, manual XMLTV override, fallback XMLTV URLs, or no guide | Live, VOD, and series availability depend on the account/source |
+| Supported provider portal profiles | Portal URL plus provider-specific profile details where supported | Manual XMLTV override, fallback XMLTV URLs, or no guide | Provider-dependent behavior; only use sources you are authorized to access |
 
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\store-screenshots.ps1 -Configuration Release -Platform x64 -SanitizedDataConfirmed
-```
-
-Public screenshots must use sanitized/sample data that is authorized for public display. See [Store Screenshot Workflow](docs/store_screenshot_workflow.md).
-
-## Installation And Build
-
-### Requirements
-
-- Windows 10 version 1809 or newer, or Windows 11
-- .NET SDK compatible with [global.json](global.json), currently .NET `8.0.400` with latest feature roll-forward
-- Visual Studio 2022 or newer with Windows App SDK / WinUI workload support
-- Windows App SDK runtime compatible with the project package references
+## Development
 
 ### Run From Visual Studio
 
@@ -168,7 +102,7 @@ Launch the packaged debug build outside the IDE:
 powershell -ExecutionPolicy Bypass -File .\scripts\launch-packaged-debug.ps1
 ```
 
-### Tests And Regression Validation
+### Tests And Validation
 
 Run unit tests:
 
@@ -188,6 +122,34 @@ Run the CI-equivalent local validation:
 powershell -ExecutionPolicy Bypass -File .\scripts\ci-regressions.ps1 -Configuration Release
 ```
 
+Run the full V2 release validation gate:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\validate-v2-release.ps1 -Configuration Debug -Platform x64
+```
+
+Create an unsigned local review package:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\package-v2-release.ps1 -Unsigned -SkipValidation -Configuration Release -Platform x64
+```
+
+Unsigned packages are for local review only and should not be uploaded to Partner Center.
+
+### Screenshot QA
+
+For local visual QA:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\visual-smoke.ps1 -Configuration Debug -Platform x64
+```
+
+For Store/release screenshot review:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\store-screenshots.ps1 -Configuration Release -Platform x64 -SanitizedDataConfirmed
+```
+
 ## Repository Layout
 
 - `src/Kroira.App/` - packaged WinUI 3 Windows app
@@ -199,58 +161,39 @@ powershell -ExecutionPolicy Bypass -File .\scripts\ci-regressions.ps1 -Configura
 - `docs/` - public support/privacy pages, Store submission copy, release checklist, and product docs
 - `.github/` - issue templates, pull request template, and GitHub Actions workflows
 
-## Store And Release Notes
+## Project Status
 
-Store-supporting copy lives in:
+KROIRA IPTV `2.0.0` is the current public app line. The Microsoft Store is the recommended install path for users, while this repository remains the source, issue, release, validation, and contributor workspace.
 
-- [docs/store_submission_info.md](docs/store_submission_info.md)
-- [docs/store_release_checklist.md](docs/store_release_checklist.md)
-- [docs/store_screenshot_workflow.md](docs/store_screenshot_workflow.md)
-- [docs/package_assets.md](docs/package_assets.md)
-- [RELEASE_NOTES_v2.0.0.md](RELEASE_NOTES_v2.0.0.md)
-- [docs/privacy.html](docs/privacy.html)
-- [docs/support.html](docs/support.html)
+Useful project docs:
 
-Keep Partner Center copy aligned with those files and the in-app About/Settings legal text.
+- [V2 Release Status](docs/v2_release_status.md)
+- [Store Submission Info](docs/store_submission_info.md)
+- [Store Release Checklist](docs/store_release_checklist.md)
+- [Package Assets](docs/package_assets.md)
+- [Release Notes v2.0.0](RELEASE_NOTES_v2.0.0.md)
 
-## Honest Limitations
-
-- KROIRA starts empty until the user adds an authorized source.
-- Source quality varies. Channel availability, VOD catalogs, EPG coverage, logos, categories, catch-up support, subtitles, audio tracks, and stream reliability all depend on the user source.
-- TMDb enrichment is optional fallback metadata behavior and does not replace missing provider rights or stream access.
-- Recording, download, restore, and media-library workflows exist in the codebase but are release-gated and are not part of the default public V2 RC surface.
-- Store signing and Partner Center identity must be handled outside the unsigned local packaging script.
-
-## Roadmap
-
-Near-term V2 polish:
+Current focus areas:
 
 - Playback stability, error messaging, and player UX polish
 - Source diagnostics, repair guidance, and guide-quality improvements
 - Search, filtering, sorting, and metadata-quality improvements across catalog surfaces
-- Store submission asset maintenance and Partner Center review
-- Store review readiness and public documentation polish
+- Localization quality and provider-quirk coverage in the regression corpus
 
-Longer-term areas under evaluation:
+Release-gated workflows such as recording, download, restore, and media-library features may exist in the codebase, but they are not part of the default public `2.0.0` surface.
 
-- Productizing currently gated recording, download, restore, and media-library workflows
-- Additional remote-first and desktop-first quality-of-life improvements
-- Broader provider-quirk coverage in the deterministic regression corpus
+## Privacy, Support, And Legal
 
-## Legal Disclaimer
+- Website: [kroira.com](https://kroira.com)
+- Microsoft Store: [apps.microsoft.com/detail/9NFBFHT16FWZ](https://apps.microsoft.com/detail/9NFBFHT16FWZ?cid=github_readme)
+- Privacy policy: [docs/privacy.html](docs/privacy.html)
+- Public privacy URL: [sativagenetics.github.io/KroiraIPTV/privacy.html](https://sativagenetics.github.io/KroiraIPTV/privacy.html)
+- Support: [SUPPORT.md](SUPPORT.md)
+- Public support URL: [sativagenetics.github.io/KroiraIPTV/support.html](https://sativagenetics.github.io/KroiraIPTV/support.html)
+- Security reporting: [SECURITY.md](SECURITY.md)
+- Code of conduct: [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
 
-KROIRA IPTV is a media player and source manager for user-provided sources.
-
-It does not include, sell, provide, host, curate, or distribute:
-
-- channels
-- streams
-- playlists
-- stream credentials
-- subscription services
-- movies, series, or other media content
-
-Users are responsible for adding only authorized sources and for complying with applicable provider terms and laws. KROIRA does not bypass DRM, paywalls, authentication, provider restrictions, or access controls.
+Users are responsible for adding only authorized sources and for complying with applicable provider terms and laws.
 
 ## License
 
