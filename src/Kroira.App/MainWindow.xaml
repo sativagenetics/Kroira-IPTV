@@ -105,7 +105,7 @@
                                     Tag="MediaLibrary"
                                     Margin="0,2"
                                     Height="42"
-                                    Visibility="{x:Bind MediaLibraryNavigationVisibility, Mode=OneWay}">
+                                    Visibility="{x:Bind MediaLibraryNavigationVisibility, Mode=OneTime}">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE7C3;" FontSize="16" />
                     </NavigationViewItem.Icon>

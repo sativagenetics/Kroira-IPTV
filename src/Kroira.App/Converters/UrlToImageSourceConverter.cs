@@ -9,6 +9,8 @@ namespace Kroira.App.Converters
     {
         private static readonly ConcurrentDictionary<string, DateTime> FailedUrlCooldowns = new(StringComparer.OrdinalIgnoreCase);
         private static readonly TimeSpan FailedUrlTtl = TimeSpan.FromHours(6);
+        private const int DefaultDecodePixelWidth = 160;
+        private const int MaxFailedUrlCooldowns = 512;
 
         public object Convert(object value, Type targetType, object parameter, string language)
         {
@@ -24,6 +26,12 @@ namespace Kroira.App.Converters
                 return null;
             }
 
+            if (!IsSupportedImageUri(uri))
+            {
+                MarkFailed(trimmed);
+                return null;
+            }
+
             var cacheKey = uri.AbsoluteUri;
             if (IsTemporarilySuppressed(cacheKey))
             {
@@ -32,7 +40,10 @@ namespace Kroira.App.Converters
 
             try
             {
-                var image = new BitmapImage();
+                var image = new BitmapImage
+                {
+                    DecodePixelWidth = ResolveDecodePixelWidth(parameter)
+                };
                 image.ImageOpened += (_, _) => FailedUrlCooldowns.TryRemove(cacheKey, out _);
                 image.ImageFailed += (_, _) => MarkFailed(cacheKey);
                 image.UriSource = uri;
@@ -65,6 +76,32 @@ namespace Kroira.App.Converters
             return false;
         }
 
+        private static bool IsSupportedImageUri(Uri uri)
+        {
+            return uri.Scheme.Equals(Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase) ||
+                   uri.Scheme.Equals(Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase) ||
+                   uri.Scheme.Equals(Uri.UriSchemeFile, StringComparison.OrdinalIgnoreCase) ||
+                   uri.Scheme.Equals("ms-appx", StringComparison.OrdinalIgnoreCase) ||
+                   uri.Scheme.Equals("ms-appdata", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static int ResolveDecodePixelWidth(object parameter)
+        {
+            if (parameter is int intValue && intValue > 0)
+            {
+                return intValue;
+            }
+
+            if (parameter is string text &&
+                int.TryParse(text, out var parsed) &&
+                parsed > 0)
+            {
+                return parsed;
+            }
+
+            return DefaultDecodePixelWidth;
+        }
+
         private static void MarkFailed(string key)
         {
             if (string.IsNullOrWhiteSpace(key))
@@ -72,7 +109,39 @@ namespace Kroira.App.Converters
                 return;
             }
 
+            TrimFailedUrlCooldowns();
             FailedUrlCooldowns[key] = DateTime.UtcNow + FailedUrlTtl;
+        }
+
+        private static void TrimFailedUrlCooldowns()
+        {
+            if (FailedUrlCooldowns.Count < MaxFailedUrlCooldowns)
+            {
+                return;
+            }
+
+            var now = DateTime.UtcNow;
+            foreach (var pair in FailedUrlCooldowns)
+            {
+                if (pair.Value <= now)
+                {
+                    FailedUrlCooldowns.TryRemove(pair.Key, out _);
+                }
+            }
+
+            if (FailedUrlCooldowns.Count < MaxFailedUrlCooldowns)
+            {
+                return;
+            }
+
+            foreach (var pair in FailedUrlCooldowns)
+            {
+                FailedUrlCooldowns.TryRemove(pair.Key, out _);
+                if (FailedUrlCooldowns.Count < MaxFailedUrlCooldowns)
+                {
+                    break;
+                }
+            }
         }
     }
 }

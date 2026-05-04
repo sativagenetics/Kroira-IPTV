@@ -2,6 +2,7 @@
 using System;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -66,7 +67,7 @@ namespace Kroira.App.ViewModels
         [NotifyPropertyChangedFor(nameof(ValidationIssuesVisibility))]
         private ObservableCollection<SourceSetupIssueItemViewModel> _validationIssues = new();
 
-        public bool CanTestSource => !IsTestingSource;
+        public bool CanTestSource => !IsTestingSource && !IsSavingSource;
         public bool HasValidation => !string.IsNullOrWhiteSpace(ValidationHeadlineText);
         public bool HasValidationSafeReport => !string.IsNullOrWhiteSpace(_lastValidationSnapshot?.SafeReportText);
         public Microsoft.UI.Xaml.Visibility ValidationVisibility => HasValidation ? Microsoft.UI.Xaml.Visibility.Visible : Microsoft.UI.Xaml.Visibility.Collapsed;
@@ -82,10 +83,12 @@ namespace Kroira.App.ViewModels
         [RelayCommand]
         public async Task ValidateSourceAsync()
         {
-            await ValidateCurrentDraftAsync(force: true);
+            await ValidateCurrentDraftAsync(force: true, CancellationToken.None);
         }
 
-        private async Task<SourceSetupValidationSnapshot> ValidateCurrentDraftAsync(bool force)
+        private async Task<SourceSetupValidationSnapshot> ValidateCurrentDraftAsync(
+            bool force,
+            CancellationToken cancellationToken = default)
         {
             var signature = BuildValidationSignature();
             if (!force &&
@@ -100,7 +103,7 @@ namespace Kroira.App.ViewModels
             {
                 using var scope = _serviceProvider.CreateScope();
                 var guidanceService = scope.ServiceProvider.GetRequiredService<ISourceGuidanceService>();
-                var snapshot = await guidanceService.ValidateDraftAsync(BuildSetupDraft());
+                var snapshot = await guidanceService.ValidateDraftAsync(BuildSetupDraft(), cancellationToken);
                 ApplyValidationSnapshot(snapshot);
                 _lastValidationSignature = signature;
                 _lastValidationSnapshot = snapshot;

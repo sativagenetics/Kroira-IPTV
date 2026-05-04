@@ -235,9 +235,14 @@
                                 Padding="16,10" />
                         <Button x:Uid="SourceOnboardingSaveAndSyncButton" runtime:RuntimeLocalizer.Uid="SourceOnboardingSaveAndSyncButton" Content="Save and sync"
                                 Command="{x:Bind ViewModel.SaveSourceCommand}"
-                                IsEnabled="{x:Bind ViewModel.CanSaveSource, Mode=OneWay}"
+                                IsEnabled="{x:Bind ViewModel.CanStartSaveSource, Mode=OneWay}"
                                 Style="{StaticResource KroiraPrimaryButtonStyle}"
                                 Padding="18,10" />
+                        <Button Content="Cancel"
+                                Command="{x:Bind ViewModel.CancelSourceSaveCommand}"
+                                Visibility="{x:Bind ViewModel.CancelSaveVisibility, Mode=OneWay}"
+                                Style="{StaticResource KroiraGhostButtonStyle}"
+                                Padding="16,10" />
                     </StackPanel>
 
                     <Border Visibility="{x:Bind ViewModel.StatusVisibility, Mode=OneWay}" BorderBrush="{StaticResource KroiraBorderStrongBrush}" BorderThickness="1" CornerRadius="12" Padding="12" Background="#1B2134">

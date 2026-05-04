@@ -920,16 +920,37 @@ namespace Kroira.App.Services
                 tokenSource.Cancel();
             }
 
+            _ = DisposeAsyncAfterProcessingStops(_processingLoopTask, _loopCancellationTokenSource, _processGate);
+        }
+
+        private static async Task DisposeAsyncAfterProcessingStops(
+            Task processingLoopTask,
+            CancellationTokenSource loopCancellationTokenSource,
+            SemaphoreSlim processGate)
+        {
             try
             {
-                _processingLoopTask.Wait(TimeSpan.FromSeconds(2));
+                await Task.WhenAny(processingLoopTask, Task.Delay(TimeSpan.FromSeconds(2)));
             }
             catch
             {
             }
 
-            _loopCancellationTokenSource?.Dispose();
-            _processGate.Dispose();
+            try
+            {
+                loopCancellationTokenSource?.Dispose();
+            }
+            catch
+            {
+            }
+
+            try
+            {
+                processGate.Dispose();
+            }
+            catch
+            {
+            }
         }
     }
 }

@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Kroira.App.Data;
 using Kroira.App.Models;
@@ -26,7 +27,11 @@ namespace Kroira.App.Services
 
     public interface ISourceRefreshService
     {
-        Task<SourceRefreshResult> RefreshSourceAsync(int sourceProfileId, SourceRefreshTrigger trigger, SourceRefreshScope scope);
+        Task<SourceRefreshResult> RefreshSourceAsync(
+            int sourceProfileId,
+            SourceRefreshTrigger trigger,
+            SourceRefreshScope scope,
+            CancellationToken cancellationToken = default);
     }
 
     public sealed class SourceRefreshService : ISourceRefreshService
@@ -38,8 +43,16 @@ namespace Kroira.App.Services
             _serviceProvider = serviceProvider;
         }
 
-        public async Task<SourceRefreshResult> RefreshSourceAsync(int sourceProfileId, SourceRefreshTrigger trigger, SourceRefreshScope scope)
+        public async Task<SourceRefreshResult> RefreshSourceAsync(
+            int sourceProfileId,
+            SourceRefreshTrigger trigger,
+            SourceRefreshScope scope,
+            CancellationToken cancellationToken = default)
         {
+            using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            timeoutCts.CancelAfter(ResolveRefreshTimeout(scope));
+            var operationToken = timeoutCts.Token;
+
             using var scopeServices = _serviceProvider.CreateScope();
             var db = scopeServices.ServiceProvider.GetRequiredService<AppDbContext>();
             var parserM3u = scopeServices.ServiceProvider.GetRequiredService<IM3uParserService>();
@@ -54,13 +67,13 @@ namespace Kroira.App.Services
             var sourceHealthService = scopeServices.ServiceProvider.GetRequiredService<ISourceHealthService>();
             var credentialStore = scopeServices.ServiceProvider.GetRequiredService<ISourceCredentialStore>();
 
-            var profile = await db.SourceProfiles.FirstOrDefaultAsync(item => item.Id == sourceProfileId);
+            var profile = await db.SourceProfiles.FirstOrDefaultAsync(item => item.Id == sourceProfileId, operationToken);
             if (profile == null)
             {
                 throw new InvalidOperationException("Source not found.");
             }
 
-            var syncState = await db.SourceSyncStates.FirstOrDefaultAsync(item => item.SourceProfileId == sourceProfileId);
+            var syncState = await db.SourceSyncStates.FirstOrDefaultAsync(item => item.SourceProfileId == sourceProfileId, operationToken);
             if (syncState == null)
             {
                 syncState = new SourceSyncState
@@ -69,7 +82,7 @@ namespace Kroira.App.Services
                     LastAttempt = DateTime.UtcNow
                 };
                 db.SourceSyncStates.Add(syncState);
-                await db.SaveChangesAsync();
+                await db.SaveChangesAsync(operationToken);
             }
 
             if (trigger == SourceRefreshTrigger.Auto)
@@ -77,7 +90,7 @@ namespace Kroira.App.Services
                 syncState.LastAutoRefreshAttemptAtUtc = DateTime.UtcNow;
                 syncState.AutoRefreshState = SourceAutoRefreshState.Running;
                 syncState.AutoRefreshSummary = "Automatic refresh is running.";
-                await db.SaveChangesAsync();
+                await db.SaveChangesAsync(operationToken);
             }
 
             var credential = await credentialStore.GetCredentialAsync(db, sourceProfileId);
@@ -101,7 +114,7 @@ namespace Kroira.App.Services
                         }
 
                         guideAttempted = true;
-                        await parserXmltv.ParseAndImportEpgAsync(db, sourceProfileId, acquisitionSession, refreshHealth: false);
+                        await parserXmltv.ParseAndImportEpgAsync(db, sourceProfileId, acquisitionSession, refreshHealth: false, operationToken);
                         guideSucceeded = true;
                         guideSummary = "Guide sync completed.";
                         break;
@@ -109,13 +122,13 @@ namespace Kroira.App.Services
                     case SourceRefreshScope.VodOnly:
                         if (profile.Type == SourceType.Xtream)
                         {
-                            await parserXtream.ParseAndImportXtreamVodAsync(db, sourceProfileId, acquisitionSession, refreshHealth: false);
+                            await parserXtream.ParseAndImportXtreamVodAsync(db, sourceProfileId, acquisitionSession, refreshHealth: false, operationToken);
                             break;
                         }
 
                         if (profile.Type == SourceType.Stalker)
                         {
-                            await parserStalker.ParseAndImportStalkerVodAsync(db, sourceProfileId, acquisitionSession, refreshHealth: false);
+                            await parserStalker.ParseAndImportStalkerVodAsync(db, sourceProfileId, acquisitionSession, refreshHealth: false, operationToken);
                             break;
                         }
 
@@ -128,15 +141,15 @@ namespace Kroira.App.Services
                     case SourceRefreshScope.LiveOnly:
                         if (profile.Type == SourceType.M3U)
                         {
-                            await parserM3u.ParseAndImportM3uAsync(db, sourceProfileId, acquisitionSession, refreshHealth: false);
+                            await parserM3u.ParseAndImportM3uAsync(db, sourceProfileId, acquisitionSession, refreshHealth: false, operationToken);
                         }
                         else if (profile.Type == SourceType.Stalker)
                         {
-                            await parserStalker.ParseAndImportStalkerAsync(db, sourceProfileId, acquisitionSession, refreshHealth: false);
+                            await parserStalker.ParseAndImportStalkerAsync(db, sourceProfileId, acquisitionSession, refreshHealth: false, operationToken);
                         }
                         else
                         {
-                            await parserXtream.ParseAndImportXtreamAsync(db, sourceProfileId, acquisitionSession, refreshHealth: false);
+                            await parserXtream.ParseAndImportXtreamAsync(db, sourceProfileId, acquisitionSession, refreshHealth: false, operationToken);
                         }
 
                         if (shouldAttemptGuideSync)
@@ -144,7 +157,7 @@ namespace Kroira.App.Services
                             guideAttempted = true;
                             try
                             {
-                                await parserXmltv.ParseAndImportEpgAsync(db, sourceProfileId, acquisitionSession, refreshHealth: false);
+                                await parserXmltv.ParseAndImportEpgAsync(db, sourceProfileId, acquisitionSession, refreshHealth: false, operationToken);
                                 guideSucceeded = true;
                                 guideSummary = "Guide sync completed.";
                             }
@@ -158,16 +171,16 @@ namespace Kroira.App.Services
                     default:
                         if (profile.Type == SourceType.M3U)
                         {
-                            await parserM3u.ParseAndImportM3uAsync(db, sourceProfileId, acquisitionSession, refreshHealth: false);
+                            await parserM3u.ParseAndImportM3uAsync(db, sourceProfileId, acquisitionSession, refreshHealth: false, operationToken);
                         }
                         else if (profile.Type == SourceType.Xtream)
                         {
-                            await parserXtream.ParseAndImportXtreamAsync(db, sourceProfileId, acquisitionSession, refreshHealth: false);
-                            await parserXtream.ParseAndImportXtreamVodAsync(db, sourceProfileId, acquisitionSession, refreshHealth: false);
+                            await parserXtream.ParseAndImportXtreamAsync(db, sourceProfileId, acquisitionSession, refreshHealth: false, operationToken);
+                            await parserXtream.ParseAndImportXtreamVodAsync(db, sourceProfileId, acquisitionSession, refreshHealth: false, operationToken);
                         }
                         else
                         {
-                            await parserStalker.ParseAndImportStalkerAsync(db, sourceProfileId, acquisitionSession, refreshHealth: false);
+                            await parserStalker.ParseAndImportStalkerAsync(db, sourceProfileId, acquisitionSession, refreshHealth: false, operationToken);
                         }
 
                         if (shouldAttemptGuideSync)
@@ -175,7 +188,7 @@ namespace Kroira.App.Services
                             guideAttempted = true;
                             try
                             {
-                                await parserXmltv.ParseAndImportEpgAsync(db, sourceProfileId, acquisitionSession, refreshHealth: false);
+                                await parserXmltv.ParseAndImportEpgAsync(db, sourceProfileId, acquisitionSession, refreshHealth: false, operationToken);
                                 guideSucceeded = true;
                                 guideSummary = "Guide sync completed.";
                             }
@@ -238,11 +251,12 @@ namespace Kroira.App.Services
             }
             catch (Exception ex)
             {
+                var userMessage = MapRefreshFailureMessage(ex, profile.Type, scope, cancellationToken);
                 acquisitionSession.RecordFailure(
                     scope == SourceRefreshScope.EpgOnly ? SourceAcquisitionStage.GuideMatch : SourceAcquisitionStage.Acquire,
                     SourceAcquisitionItemKind.Source,
                     "source.refresh.failed",
-                    ex.Message);
+                    userMessage);
 
                 try
                 {
@@ -269,13 +283,13 @@ namespace Kroira.App.Services
                     sourceProfileId,
                     trigger,
                     success: false,
-                    CombineSummaries(ex.Message, runtimeRepairSummary));
-                RuntimeEventLogger.Log("SOURCE-REFRESH", ex, $"source_id={sourceProfileId} refresh failed");
+                    CombineSummaries(userMessage, runtimeRepairSummary));
+                RuntimeEventLogger.Log("SOURCE-REFRESH", ex, $"source_id={sourceProfileId} refresh failed message={userMessage}");
                 await acquisitionService.CompleteSessionAsync(
                     db,
                     acquisitionSession,
                     SourceAcquisitionRunStatus.Failed,
-                    ex.Message,
+                    userMessage,
                     string.Empty,
                     guideSummary,
                     acquisitionSession.ValidationSummary);
@@ -286,13 +300,71 @@ namespace Kroira.App.Services
                     Trigger = trigger,
                     Scope = scope,
                     Success = false,
-                    Message = ex.Message,
+                    Message = userMessage,
                     CatalogSummary = string.Empty,
                     GuideSummary = guideSummary,
                     GuideAttempted = guideAttempted,
                     GuideSucceeded = false
                 };
             }
+        }
+
+        private static TimeSpan ResolveRefreshTimeout(SourceRefreshScope scope)
+        {
+            return scope switch
+            {
+                SourceRefreshScope.EpgOnly => TimeSpan.FromMinutes(2),
+                SourceRefreshScope.LiveOnly => TimeSpan.FromMinutes(3),
+                SourceRefreshScope.VodOnly => TimeSpan.FromMinutes(3),
+                _ => TimeSpan.FromMinutes(4)
+            };
+        }
+
+        private static string MapRefreshFailureMessage(
+            Exception ex,
+            SourceType sourceType,
+            SourceRefreshScope scope,
+            CancellationToken callerCancellationToken)
+        {
+            if (ex is OperationCanceledException)
+            {
+                return callerCancellationToken.IsCancellationRequested
+                    ? "Source import was canceled."
+                    : "Request timed out.";
+            }
+
+            if (scope == SourceRefreshScope.EpgOnly ||
+                ex.Message.Contains("XMLTV", StringComparison.OrdinalIgnoreCase) ||
+                ex.Message.Contains("guide", StringComparison.OrdinalIgnoreCase))
+            {
+                return "EPG could not be loaded.";
+            }
+
+            if (sourceType == SourceType.Xtream && ex is UnauthorizedAccessException)
+            {
+                return "Xtream login failed.";
+            }
+
+            if (sourceType == SourceType.M3U &&
+                ex.Message.Contains("M3U", StringComparison.OrdinalIgnoreCase) &&
+                ex.Message.Contains("format", StringComparison.OrdinalIgnoreCase))
+            {
+                return "Invalid M3U format.";
+            }
+
+            if (ex.Message.Contains("No playable", StringComparison.OrdinalIgnoreCase))
+            {
+                return "No playable channels found.";
+            }
+
+            if (ex is System.Net.Http.HttpRequestException)
+            {
+                return sourceType == SourceType.Xtream
+                    ? "Xtream login failed."
+                    : "Playlist could not be reached.";
+            }
+
+            return ex.Message;
         }
 
         private static async Task<string> TryFinalizeRuntimeStateAsync(

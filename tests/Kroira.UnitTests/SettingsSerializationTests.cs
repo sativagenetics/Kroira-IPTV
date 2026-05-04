@@ -80,7 +80,8 @@ public sealed class SettingsSerializationTests
         public Task<SourceRefreshResult> RefreshSourceAsync(
             int sourceProfileId,
             SourceRefreshTrigger trigger,
-            SourceRefreshScope scope)
+            SourceRefreshScope scope,
+            System.Threading.CancellationToken cancellationToken = default)
         {
             return Task.FromResult(new SourceRefreshResult
             {

@@ -50,10 +50,12 @@ namespace Kroira.App.Views
         private readonly ICatchupPlaybackService _catchupPlaybackService;
         private readonly IEntitlementService _entitlementService;
         private readonly IPictureInPictureService _pictureInPictureService;
+        private readonly SemaphoreSlim _playerLifecycleGate = new(1, 1);
 
         private PlaybackLaunchContext? _context;
         private MpvPlayer? _player;
         private VideoSurface? _surface;
+        private Task _playerDisposalTask = Task.CompletedTask;
         private IWindowManagerService? _windowManager;
         private DispatcherTimer? _controlsHideTimer;
         private DispatcherTimer? _loadTimeoutTimer;
@@ -315,6 +317,55 @@ namespace Kroira.App.Views
                    IsPlaybackSessionActive(playbackSessionId, cancellationToken);
         }
 
+        private async Task WaitForDetachedPlayerDisposalAsync(string reason, CancellationToken cancellationToken)
+        {
+            var disposalTask = _playerDisposalTask;
+            if (disposalTask.IsCompleted)
+            {
+                return;
+            }
+
+            LogStructuredPlayback("player_dispose_wait_started", $"reason={SanitizeForLog(reason)}");
+            await disposalTask.WaitAsync(cancellationToken);
+            LogStructuredPlayback("player_dispose_wait_completed", $"reason={SanitizeForLog(reason)}");
+        }
+
+        private void LogPlayerOperationFailure(string operation, Exception ex)
+        {
+            LogStructuredPlayback(
+                "player_operation_failed",
+                $"operation={SanitizeForLog(operation)}; message={SanitizeForLog(ex.Message)}");
+            RuntimeEventLogger.LogEvent(
+                "playback_failed",
+                ex,
+                $"phase={SanitizeForLog(operation)}; content_type={_context?.ContentType.ToString() ?? "unknown"}");
+        }
+
+        private async Task RunPlayerOperationAsync(string operation, Func<Task> action, bool showError = true)
+        {
+            try
+            {
+                await action();
+            }
+            catch (OperationCanceledException)
+            {
+                LogStructuredPlayback("player_operation_canceled", $"operation={SanitizeForLog(operation)}");
+            }
+            catch (Exception ex)
+            {
+                LogPlayerOperationFailure(operation, ex);
+                if (showError && !_teardownStarted)
+                {
+                    ShowFatalError(ex.Message);
+                }
+            }
+        }
+
+        private void FireAndForgetPlayerOperation(string operation, Func<Task> action, bool showError = true)
+        {
+            _ = RunPlayerOperationAsync(operation, action, showError);
+        }
+
         private async Task EnsureProfileIdAsync(CancellationToken cancellationToken)
         {
             if (_context == null || _context.ProfileId > 0)
@@ -344,16 +395,27 @@ namespace Kroira.App.Views
 
         private async void OnPageLoaded(object sender, RoutedEventArgs e)
         {
-            if (_context == null) return;
-            LogPlaybackState("PAGE: loaded");
-            RestorePlayerKeyboardFocus(force: true);
-            await TryStartPlaybackAsync();
-            RestorePlayerKeyboardFocus(force: true);
+            try
+            {
+                if (_context == null) return;
+                LogPlaybackState("PAGE: loaded");
+                RestorePlayerKeyboardFocus(force: true);
+                await TryStartPlaybackAsync();
+                RestorePlayerKeyboardFocus(force: true);
+            }
+            catch (Exception ex)
+            {
+                LogPlayerOperationFailure("page_loaded_start", ex);
+                if (!_teardownStarted)
+                {
+                    ShowFatalError(ex.Message);
+                }
+            }
         }
 
         private async void VideoHost_StartSizeChanged(object sender, SizeChangedEventArgs e)
         {
-            await TryStartPlaybackAsync();
+            await RunPlayerOperationAsync("surface_size_start", TryStartPlaybackAsync);
         }
 
         private async Task TryStartPlaybackAsync()
@@ -676,7 +738,9 @@ namespace Kroira.App.Views
             if (_loadTimeoutAttemptId != _activeAttemptId) return;
 
             LogStructuredPlayback("timeout_reason", "reason=open_timeout");
-            _ = AttemptRecoveryAsync(BuildFailureMessage(MapPlaybackError(LocalizedStrings.Get("Player_Error_StreamStartTimedOut"), wasTimeout: true)), _activeAttemptId);
+            FireAndForgetPlayerOperation(
+                "open_timeout_recovery",
+                () => AttemptRecoveryAsync(BuildFailureMessage(MapPlaybackError(LocalizedStrings.Get("Player_Error_StreamStartTimedOut"), wasTimeout: true)), _activeAttemptId));
         }
 
         private void BufferTimeoutTimer_Tick(object? sender, object e)
@@ -686,12 +750,21 @@ namespace Kroira.App.Views
             if (_bufferTimeoutAttemptId != _activeAttemptId) return;
 
             LogStructuredPlayback("timeout_reason", "reason=buffer_timeout");
-            _ = AttemptRecoveryAsync(BuildFailureMessage(MapPlaybackError(LocalizedStrings.Get("Player_Error_StreamBufferStalled"), wasTimeout: true)), _activeAttemptId);
+            FireAndForgetPlayerOperation(
+                "buffer_timeout_recovery",
+                () => AttemptRecoveryAsync(BuildFailureMessage(MapPlaybackError(LocalizedStrings.Get("Player_Error_StreamBufferStalled"), wasTimeout: true)), _activeAttemptId));
         }
 
         private async void ProgressPersistTimer_Tick(object? sender, object e)
         {
-            await PersistProgressAsync(force: false);
+            try
+            {
+                await PersistProgressAsync(force: false);
+            }
+            catch (Exception ex)
+            {
+                LogPlayerOperationFailure("progress_persist_timer", ex);
+            }
         }
 
         private void BeginPlaybackAttempt(bool isRetry, string? retryReason, long startPositionMs)
@@ -739,10 +812,34 @@ namespace Kroira.App.Views
                 _stateMachine.BeginLoad();
             }
 
-            _player.Play(_context.StreamUrl, IsLivePlayback() ? 0 : _lastPositionMs);
-            _player.SetVolume(VolumeSlider.Value);
-            _player.SetMuted(_isMuted);
-            _player.SetAspectMode(_selectedAspectMode);
+            RuntimeEventLogger.LogEvent(
+                "player_start",
+                $"attempt_id={_activeAttemptId}; retry={(isRetry ? "true" : "false")}; content_type={_context.ContentType}");
+
+            try
+            {
+                _player.Play(_context.StreamUrl, IsLivePlayback() ? 0 : _lastPositionMs);
+                _player.SetVolume(VolumeSlider.Value);
+                _player.SetMuted(_isMuted);
+                _player.SetAspectMode(_selectedAspectMode);
+            }
+            catch (Exception ex)
+            {
+                StopLoadTimeout();
+                StopBufferTimeout();
+                RuntimeEventLogger.LogEvent(
+                    "playback_failed",
+                    ex,
+                    $"attempt_id={_activeAttemptId}; phase=player_start; content_type={_context.ContentType}");
+                LogStructuredPlayback(
+                    "player_start_failed",
+                    $"attempt_id={_activeAttemptId}; message={SanitizeForLog(ex.Message)}");
+                ShowFatalError(ex.Message);
+                UpdateInteractionState();
+                UpdateOverlayVisibility("open_failed");
+                return;
+            }
+
             _progressPersistTimer?.Start();
             StartLoadTimeout();
             UpdateLiveAndSeekUi();
@@ -751,6 +848,9 @@ namespace Kroira.App.Views
             LogStructuredPlayback(
                 "open_started",
                 $"attempt_id={_activeAttemptId}; retry={(isRetry ? "true" : "false")}; reason={SanitizeForLog(retryReason ?? "direct")}; start_position_ms={startPositionMs}");
+            RuntimeEventLogger.LogEvent(
+                "playback_started",
+                $"attempt_id={_activeAttemptId}; retry={(isRetry ? "true" : "false")}; content_type={_context.ContentType}");
             LogPlaybackState($"ATTEMPT: begin {(isRetry ? "retry" : "start")} reason={retryReason ?? "direct"} startMs={startPositionMs}");
         }
 
@@ -816,15 +916,13 @@ namespace Kroira.App.Views
             player.OutputReady -= OnOutputReady;
             player.TrackListChanged -= OnTrackListChanged;
             player.WarningMessage -= OnWarningMessage;
-            if (disposeOnBackgroundThread)
+            RuntimeEventLogger.LogEvent("player_dispose_started", $"background={disposeOnBackgroundThread}");
+            LogPlaybackState(disposeOnBackgroundThread ? "PLAYER: disposing async" : "PLAYER: disposing deferred");
+            var disposeTask = Task.Run(() => DisposeDetachedPlayer(player, disposeOnBackgroundThread));
+            _playerDisposalTask = disposeTask;
+            _ = disposeTask.ContinueWith(_ =>
             {
-                LogPlaybackState("PLAYER: disposing async");
-                _ = Task.Run(() =>
-                {
-                    try { player.Stop(); } catch { }
-                    try { player.Dispose(); } catch { }
-                    Log("PLAYER disposed async");
-                }).ContinueWith(_ =>
+                try
                 {
                     if (surfaceToDisposeAfterPlayer == null)
                     {
@@ -835,15 +933,47 @@ namespace Kroira.App.Views
                     {
                         Log("SURFACE dispose skipped: dispatcher unavailable after async player disposal");
                     }
-                });
-                return surfaceToDisposeAfterPlayer != null;
+                }
+                catch (Exception ex)
+                {
+                    RuntimeEventLogger.LogEvent("player_dispose_failed", ex, "phase=surface_dispose_enqueue");
+                }
+            });
+            return surfaceToDisposeAfterPlayer != null;
+        }
+
+        private static void DisposeDetachedPlayer(MpvPlayer player, bool background)
+        {
+            var stopSucceeded = true;
+            var disposeSucceeded = true;
+
+            try
+            {
+                RuntimeEventLogger.LogEvent("player_stop", $"background={BoolToLog(background)}");
+                player.Stop();
+            }
+            catch (Exception ex)
+            {
+                stopSucceeded = false;
+                RuntimeEventLogger.LogEvent("player_dispose_failed", ex, $"phase=stop; background={BoolToLog(background)}");
             }
 
-            LogPlaybackState("PLAYER: disposing");
-            try { player.Stop(); } catch { }
-            try { player.Dispose(); } catch { }
-            LogPlaybackState("PLAYER: disposed");
-            return false;
+            try
+            {
+                player.Dispose();
+            }
+            catch (Exception ex)
+            {
+                disposeSucceeded = false;
+                RuntimeEventLogger.LogEvent("player_dispose_failed", ex, $"phase=dispose; background={BoolToLog(background)}");
+            }
+            finally
+            {
+                RuntimeEventLogger.LogEvent(
+                    "player_dispose_completed",
+                    $"background={BoolToLog(background)}; stop_succeeded={BoolToLog(stopSucceeded)}; dispose_succeeded={BoolToLog(disposeSucceeded)}");
+                Log(background ? "PLAYER disposed async" : "PLAYER disposed");
+            }
         }
 
         private void DisposeVideoSurface(VideoSurface surface)
@@ -853,26 +983,49 @@ namespace Kroira.App.Views
             try { surface.Dispose(); } catch { }
         }
 
-        private void ResetLiveEdgePlayerSession(string reason)
+        private async Task ResetLiveEdgePlayerSessionAsync(string reason)
         {
-            if (_surface == null)
-            {
-                BeginPlaybackAttempt(isRetry: false, retryReason: $"go-live:{reason}", startPositionMs: 0);
-                return;
-            }
+            var playbackSessionId = _playbackSessionId;
+            var cancellationToken = CurrentPlaybackSessionToken;
 
-            LogPlaybackState($"LIVECTL: recreating live player session reason={reason}");
-            StopLoadTimeout();
-            StopBufferTimeout();
-            _progressPersistTimer?.Stop();
-            _overlayHiddenByInactivity = false;
-            DetachAndDisposePlayer();
-            _player = CreatePlayer(_surface.Handle);
-            ResetTrackMenus();
-            ClearError();
-            HideStatusOverlay();
-            BeginPlaybackAttempt(isRetry: false, retryReason: $"go-live:{reason}", startPositionMs: 0);
-            StopInactivityTimer("click");
+            await _playerLifecycleGate.WaitAsync(cancellationToken);
+            try
+            {
+                if (!IsPlaybackSessionActive(playbackSessionId, cancellationToken) || _context == null)
+                {
+                    return;
+                }
+
+                if (_surface == null)
+                {
+                    BeginPlaybackAttempt(isRetry: false, retryReason: $"go-live:{reason}", startPositionMs: 0);
+                    return;
+                }
+
+                LogPlaybackState($"LIVECTL: recreating live player session reason={reason}");
+                StopLoadTimeout();
+                StopBufferTimeout();
+                _progressPersistTimer?.Stop();
+                _overlayHiddenByInactivity = false;
+                RuntimeEventLogger.LogEvent("player_restart", $"reason=go_live; content_type={_context?.ContentType.ToString() ?? "unknown"}");
+                DetachAndDisposePlayer(disposeOnBackgroundThread: true);
+                await WaitForDetachedPlayerDisposalAsync($"go-live:{reason}", cancellationToken);
+                if (!IsPlaybackSessionActive(playbackSessionId, cancellationToken) || _surface == null || _context == null)
+                {
+                    return;
+                }
+
+                _player = CreatePlayer(_surface.Handle);
+                ResetTrackMenus();
+                ClearError();
+                HideStatusOverlay();
+                BeginPlaybackAttempt(isRetry: false, retryReason: $"go-live:{reason}", startPositionMs: 0);
+                StopInactivityTimer("click");
+            }
+            finally
+            {
+                _playerLifecycleGate.Release();
+            }
         }
 
         private void MarkPlaybackActive()
@@ -896,6 +1049,9 @@ namespace Kroira.App.Views
                 _lastOpenSucceededAttemptId = _activeAttemptId;
                 openSucceeded = true;
                 LogStructuredPlayback("open_succeeded", $"attempt_id={_activeAttemptId}");
+                RuntimeEventLogger.LogEvent(
+                    "playback_success",
+                    $"attempt_id={_activeAttemptId}; content_type={_context?.ContentType.ToString() ?? "unknown"}");
             }
 
             if (previousState != PlaybackSessionState.Playing)
@@ -1061,7 +1217,7 @@ namespace Kroira.App.Views
             }
 
             ShowZapBanner(TitleText.Text, string.IsNullOrWhiteSpace(fallback.RecoverySummary) ? LocalizedStrings.Get("Player_Status_RecoveredBackupMirror") : fallback.RecoverySummary);
-            RestartPlayerSession("mirror_fallback", IsLivePlayback() ? 0 : GetRetryPositionMs());
+            await RestartPlayerSessionAsync("mirror_fallback", IsLivePlayback() ? 0 : GetRetryPositionMs());
             return true;
         }
 
@@ -1218,34 +1374,41 @@ namespace Kroira.App.Views
 
         private async void OnPauseChanged(bool isPaused)
         {
-            if (_teardownStarted) return;
-            var playbackSessionId = _playbackSessionId;
-            var cancellationToken = CurrentPlaybackSessionToken;
-
-            PlayPauseIcon.Glyph = isPaused ? "\uE768" : "\uE769";
-            ToolTipService.SetToolTip(PlayPauseButton, isPaused ? "Play" : "Pause");
-            if (isPaused && IsLivePlayback())
+            try
             {
-                _isLiveTimeshiftActive = true;
-                StopLoadTimeout();
-                StopBufferTimeout();
-            }
+                if (_teardownStarted) return;
+                var playbackSessionId = _playbackSessionId;
+                var cancellationToken = CurrentPlaybackSessionToken;
 
-            if (isPaused && _player?.IsBuffering != true)
-            {
-                _stateMachine.SetPaused();
-                await PersistProgressAsync(force: true);
-                if (!IsPlaybackSessionActive(playbackSessionId, cancellationToken))
+                PlayPauseIcon.Glyph = isPaused ? "\uE768" : "\uE769";
+                ToolTipService.SetToolTip(PlayPauseButton, isPaused ? "Play" : "Pause");
+                if (isPaused && IsLivePlayback())
                 {
-                    return;
+                    _isLiveTimeshiftActive = true;
+                    StopLoadTimeout();
+                    StopBufferTimeout();
                 }
-            }
-            else if (!isPaused && _player?.IsBuffering != true)
-            {
-                MarkPlaybackActive();
-            }
 
-            LogPlaybackState($"LIVECTL: pause changed paused={isPaused}");
+                if (isPaused && _player?.IsBuffering != true)
+                {
+                    _stateMachine.SetPaused();
+                    await PersistProgressAsync(force: true);
+                    if (!IsPlaybackSessionActive(playbackSessionId, cancellationToken))
+                    {
+                        return;
+                    }
+                }
+                else if (!isPaused && _player?.IsBuffering != true)
+                {
+                    MarkPlaybackActive();
+                }
+
+                LogPlaybackState($"LIVECTL: pause changed paused={isPaused}");
+            }
+            catch (Exception ex)
+            {
+                LogPlayerOperationFailure("pause_changed", ex);
+            }
         }
 
         private void OnSeekableChanged(bool seekable)
@@ -1338,52 +1501,63 @@ namespace Kroira.App.Views
 
         private async void OnPlaybackEnded(MpvPlaybackEndedInfo endInfo)
         {
-            if (_teardownStarted) return;
-            var playbackSessionId = _playbackSessionId;
-            var cancellationToken = CurrentPlaybackSessionToken;
-
-            LogPlaybackState($"LIVECTL: playback ended signaled reason={endInfo?.Reason} error={endInfo?.ErrorCode ?? 0}");
-
-            if (IsLivePlayback())
+            try
             {
-                var nowUtc = DateTime.UtcNow;
-                if (_stateMachine.State == PlaybackSessionState.Opening ||
-                    nowUtc < _ignoreLivePlaybackEndedUntilUtc)
+                if (_teardownStarted) return;
+                var playbackSessionId = _playbackSessionId;
+                var cancellationToken = CurrentPlaybackSessionToken;
+
+                LogPlaybackState($"LIVECTL: playback ended signaled reason={endInfo?.Reason} error={endInfo?.ErrorCode ?? 0}");
+
+                if (IsLivePlayback())
                 {
-                    LogPlaybackState(
-                        $"LIVECTL: ignored playback-ended during live transition graceRemainingMs={Math.Max(0, (_ignoreLivePlaybackEndedUntilUtc - nowUtc).TotalMilliseconds):0}");
+                    var nowUtc = DateTime.UtcNow;
+                    if (_stateMachine.State == PlaybackSessionState.Opening ||
+                        nowUtc < _ignoreLivePlaybackEndedUntilUtc)
+                    {
+                        LogPlaybackState(
+                            $"LIVECTL: ignored playback-ended during live transition graceRemainingMs={Math.Max(0, (_ignoreLivePlaybackEndedUntilUtc - nowUtc).TotalMilliseconds):0}");
+                        return;
+                    }
+                }
+
+                if (_stateMachine.State == PlaybackSessionState.Opening)
+                {
                     return;
                 }
-            }
 
-            if (_stateMachine.State == PlaybackSessionState.Opening)
-            {
-                return;
-            }
-
-            if (!IsPlaybackComplete())
-            {
-                await AttemptRecoveryAsync(BuildFailureMessage(MapPlaybackError(LocalizedStrings.Get("Player_Error_StreamEndedUnexpectedly"), streamEnded: true)), _activeAttemptId);
-                return;
-            }
-
-            _stateMachine.SetEnded();
-            if (_player != null)
-            {
-                var finalMs = (long)_player.Duration.TotalMilliseconds;
-                if (finalMs > 0)
+                if (!IsPlaybackComplete())
                 {
-                    _lastPositionMs = finalMs;
+                    await AttemptRecoveryAsync(BuildFailureMessage(MapPlaybackError(LocalizedStrings.Get("Player_Error_StreamEndedUnexpectedly"), streamEnded: true)), _activeAttemptId);
+                    return;
+                }
+
+                _stateMachine.SetEnded();
+                if (_player != null)
+                {
+                    var finalMs = (long)_player.Duration.TotalMilliseconds;
+                    if (finalMs > 0)
+                    {
+                        _lastPositionMs = finalMs;
+                    }
+                }
+
+                await PersistProgressAsync(force: true);
+                if (!IsPlaybackSessionActive(playbackSessionId, cancellationToken))
+                {
+                    return;
+                }
+
+                NavigateBack();
+            }
+            catch (Exception ex)
+            {
+                LogPlayerOperationFailure("playback_ended", ex);
+                if (!_teardownStarted)
+                {
+                    ShowFatalError(ex.Message);
                 }
             }
-
-            await PersistProgressAsync(force: true);
-            if (!IsPlaybackSessionActive(playbackSessionId, cancellationToken))
-            {
-                return;
-            }
-
-            NavigateBack();
         }
 
         // --- UI handlers ---
@@ -1402,24 +1576,45 @@ namespace Kroira.App.Views
 
         private async void GoLive_Click(object sender, RoutedEventArgs e)
         {
-            if (_teardownStarted) return;
-            if (IsCatchupPlayback())
+            try
             {
-                await ReturnToLivePlaybackAsync("button");
-            }
-            else
-            {
-                GoToLiveEdge("button");
-            }
+                if (_teardownStarted) return;
+                if (IsCatchupPlayback())
+                {
+                    await ReturnToLivePlaybackAsync("button");
+                }
+                else
+                {
+                    GoToLiveEdge("button");
+                }
 
-            ShowControls(cause: "click");
-            ResetInactivityTimer("click");
+                ShowControls(cause: "click");
+                ResetInactivityTimer("click");
+            }
+            catch (Exception ex)
+            {
+                LogPlayerOperationFailure("go_live_button", ex);
+                if (!_teardownStarted)
+                {
+                    ShowFatalError(ex.Message);
+                }
+            }
         }
 
         private void Stop_Click(object sender, RoutedEventArgs e)
         {
             if (_teardownStarted) return;
-            _player?.Stop();
+            try
+            {
+                RuntimeEventLogger.LogEvent("player_stop", "reason=stop_button");
+                _player?.Stop();
+            }
+            catch (Exception ex)
+            {
+                RuntimeEventLogger.LogEvent("playback_failed", ex, "phase=player_stop; reason=stop_button");
+                LogStructuredPlayback("player_stop_failed", $"message={SanitizeForLog(ex.Message)}");
+            }
+
             NavigateBack();
         }
 
@@ -1430,31 +1625,42 @@ namespace Kroira.App.Views
 
         private async void PictureInPicture_Click(object sender, RoutedEventArgs e)
         {
-            if (_teardownStarted ||
-                _context == null ||
-                !CanUseFeature(EntitlementFeatureKeys.PlaybackPictureInPicture))
+            try
             {
-                return;
+                if (_teardownStarted ||
+                    _context == null ||
+                    !CanUseFeature(EntitlementFeatureKeys.PlaybackPictureInPicture))
+                {
+                    return;
+                }
+
+                var playbackSessionId = _playbackSessionId;
+                var cancellationToken = CurrentPlaybackSessionToken;
+
+                if (IsPictureInPictureMode())
+                {
+                    await RestoreFromPictureInPictureAsync();
+                }
+                else
+                {
+                    await EnterPictureInPictureAsync();
+                }
+
+                if (!IsPlaybackSessionActive(playbackSessionId, cancellationToken))
+                {
+                    return;
+                }
+
+                ResetInactivityTimer("click");
             }
-
-            var playbackSessionId = _playbackSessionId;
-            var cancellationToken = CurrentPlaybackSessionToken;
-
-            if (IsPictureInPictureMode())
+            catch (Exception ex)
             {
-                await RestoreFromPictureInPictureAsync();
+                LogPlayerOperationFailure("picture_in_picture", ex);
+                if (!_teardownStarted)
+                {
+                    ShowFatalError(ex.Message);
+                }
             }
-            else
-            {
-                await EnterPictureInPictureAsync();
-            }
-
-            if (!IsPlaybackSessionActive(playbackSessionId, cancellationToken))
-            {
-                return;
-            }
-
-            ResetInactivityTimer("click");
         }
 
         private void Page_PointerMoved(object sender, PointerRoutedEventArgs e)
@@ -1606,36 +1812,47 @@ namespace Kroira.App.Views
 
         private async void CommitTimelineSeek(bool force = false)
         {
-            if (_teardownStarted) return;
-            var playbackSessionId = _playbackSessionId;
-            var cancellationToken = CurrentPlaybackSessionToken;
-            if (!_isUserSeeking && !force) return;
-            _isUserSeeking = false;
-            ResumeOverlayAutoHide();
-
-            if (_player == null || !IsTimelineSeekAllowed()) return;
-            if (_suppressSliderUpdates) return;
-
-            var durationSeconds = _player.Duration.TotalSeconds;
-            if (durationSeconds <= 0) return;
-
-            var fraction = TimelineSlider.Value / 1000.0;
-            var targetSeconds = fraction * durationSeconds;
-            if (IsLivePlayback())
+            try
             {
-                _isLiveTimeshiftActive = true;
-            }
+                if (_teardownStarted) return;
+                var playbackSessionId = _playbackSessionId;
+                var cancellationToken = CurrentPlaybackSessionToken;
+                if (!_isUserSeeking && !force) return;
+                _isUserSeeking = false;
+                ResumeOverlayAutoHide();
 
-            _lastPositionMs = (long)(targetSeconds * 1000);
-            LogPlaybackState($"LIVECTL: timeline seek commit targetSeconds={targetSeconds:F3}");
-            _player.SeekAbsoluteSeconds(targetSeconds);
-            await PersistProgressAsync(force: true);
-            if (!IsPlaybackSessionActive(playbackSessionId, cancellationToken))
+                if (_player == null || !IsTimelineSeekAllowed()) return;
+                if (_suppressSliderUpdates) return;
+
+                var durationSeconds = _player.Duration.TotalSeconds;
+                if (durationSeconds <= 0) return;
+
+                var fraction = TimelineSlider.Value / 1000.0;
+                var targetSeconds = fraction * durationSeconds;
+                if (IsLivePlayback())
+                {
+                    _isLiveTimeshiftActive = true;
+                }
+
+                _lastPositionMs = (long)(targetSeconds * 1000);
+                LogPlaybackState($"LIVECTL: timeline seek commit targetSeconds={targetSeconds:F3}");
+                _player.SeekAbsoluteSeconds(targetSeconds);
+                await PersistProgressAsync(force: true);
+                if (!IsPlaybackSessionActive(playbackSessionId, cancellationToken))
+                {
+                    return;
+                }
+
+                ResetInactivityTimer("click");
+            }
+            catch (Exception ex)
             {
-                return;
+                LogPlayerOperationFailure("timeline_seek", ex);
+                if (!_teardownStarted)
+                {
+                    ShowFatalError(ex.Message);
+                }
             }
-
-            ResetInactivityTimer("click");
         }
 
         private void VolumeSlider_PointerPressed(object sender, PointerRoutedEventArgs e)
@@ -1991,7 +2208,7 @@ namespace Kroira.App.Views
 
             _isLiveTimeshiftActive = false;
             LogPlaybackState($"LIVECTL: go-live requested reason={reason}; strategy=recreate-player");
-            ResetLiveEdgePlayerSession(reason);
+            FireAndForgetPlayerOperation("go_live_edge", () => ResetLiveEdgePlayerSessionAsync(reason));
 
             UpdateLiveAndSeekUi();
         }
@@ -3510,6 +3727,9 @@ namespace Kroira.App.Views
                 LogStructuredPlayback(
                     "open_failed",
                     $"attempt_id={_activeAttemptId}; code={error.Code}; retryable={BoolToLog(error.IsRetryable)}; reason={SanitizeForLog(error.Title)}");
+                RuntimeEventLogger.LogEvent(
+                    "playback_failed",
+                    $"attempt_id={_activeAttemptId}; code={error.Code}; retryable={BoolToLog(error.IsRetryable)}; reason={SanitizeForLog(error.Title)}");
             }
 
             _stateMachine.SetError(BuildFailureMessage(error));
@@ -3817,7 +4037,7 @@ namespace Kroira.App.Views
             }
 
             ShowZapBanner(TitleText.Text, LocalizedStrings.Get("Player_Status_ReturnedToLive"));
-            RestartPlayerSession($"go_live:{reason}", 0);
+            await RestartPlayerSessionAsync($"go_live:{reason}", 0);
         }
 
         private static bool IsCatchupRequested(PlaybackLaunchContext context)

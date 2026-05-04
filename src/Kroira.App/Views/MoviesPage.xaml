@@ -217,7 +217,7 @@
                                 </StackPanel>
                             </Button>
                             <Button Click="FeaturedDownload_Click"
-                                    Visibility="{x:Bind DownloadActionsVisibility, Mode=OneWay}"
+                                    Visibility="{x:Bind DownloadActionsVisibility, Mode=OneTime}"
                                     IsEnabled="{x:Bind ViewModel.FeaturedMovieCanPlay, Mode=OneWay}"
                                     Style="{StaticResource FavoritePillButtonStyle}">
                                 <StackPanel Orientation="Horizontal" Spacing="8">

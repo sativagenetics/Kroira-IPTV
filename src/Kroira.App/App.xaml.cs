@@ -26,6 +26,7 @@ namespace Kroira.App
         private Window? _window;
         private readonly CancellationTokenSource _startupMetadataCts = new();
         private readonly CancellationTokenSource _startupMaintenanceCts = new();
+        private UiHangMonitor? _uiHangMonitor;
         public Window? MainWindow => _window;
 
         public IServiceProvider Services => _services;
@@ -70,6 +71,7 @@ namespace Kroira.App
         protected override void OnLaunched(LaunchActivatedEventArgs args)
         {
             SafeAppendLog("APP 06: OnLaunched entered");
+            RuntimeEventLogger.LogEvent("app_started", $"version={typeof(App).Assembly.GetName().Version}");
 
             try
             {
@@ -80,21 +82,17 @@ namespace Kroira.App
                     DatabaseBootstrapper.Initialize(dbContext);
                 });
 
-                RunRecoverableStartupStep("APP 08: runtime startup repair", () =>
-                {
-                    Services.GetRequiredService<IRuntimeMaintenanceService>()
-                        .RunStartupRepairAsync(_startupMaintenanceCts.Token)
-                        .GetAwaiter()
-                        .GetResult();
-                });
-
                 SafeAppendLog("APP 09: before MainWindow ctor");
                 _window = new MainWindow();
                 SafeAppendLog("APP 10: after MainWindow ctor");
                 _window.Closed += (_, _) =>
                 {
+                    RuntimeEventLogger.LogEvent("app_closing");
+                    SafeAppendLog("APP closing");
                     CancelStartupMaintenance("window closed");
                     CancelStartupMetadataBackfill("window closed");
+                    _uiHangMonitor?.Dispose();
+                    _uiHangMonitor = null;
                     try
                     {
                         Services.GetRequiredService<ISourceAutoRefreshService>().Stop();
@@ -105,17 +103,9 @@ namespace Kroira.App
                     }
                 };
 
-                RunRecoverableStartupStep("APP 11: appearance init", () =>
-                {
-                    Services.GetRequiredService<IAppAppearanceService>().InitializeAsync().GetAwaiter().GetResult();
-                });
                 RunRecoverableStartupStep("APP 12: media jobs start", () =>
                 {
                     Services.GetRequiredService<IMediaJobService>().Start();
-                });
-                RunRecoverableStartupStep("APP 12A: remote navigation init", () =>
-                {
-                    Services.GetRequiredService<IRemoteNavigationService>().InitializeAsync().GetAwaiter().GetResult();
                 });
                 RunRecoverableStartupStep("APP 13: auto refresh start", () =>
                 {
@@ -135,6 +125,7 @@ namespace Kroira.App
                 SafeAppendLog("APP 16: before window.Activate");
                 _window.Activate();
                 SafeAppendLog("APP 17: after window.Activate");
+                StartUiHangMonitor();
 
                 if (_window is MainWindow mainWindow)
                 {
@@ -143,6 +134,13 @@ namespace Kroira.App
                     SafeAppendLog("APP 19: after queue initial navigation");
                 }
 
+                RuntimeEventLogger.LogEvent("app_ready");
+                ScheduleRecoverableAsyncStartupStep(
+                    "APP 11: appearance init",
+                    () => Services.GetRequiredService<IAppAppearanceService>().InitializeAsync());
+                ScheduleRecoverableAsyncStartupStep(
+                    "APP 12A: remote navigation init",
+                    () => Services.GetRequiredService<IRemoteNavigationService>().InitializeAsync());
                 ScheduleDeferredRuntimeMaintenance();
                 ScheduleMetadataBackfillAfterShellVisible();
             }
@@ -151,6 +149,27 @@ namespace Kroira.App
                 SafeAppendLog("APP FATAL: exception in OnLaunched");
                 SafeLogException("APP ONLAUNCHED EXCEPTION", ex);
                 ShowStartupErrorWindow(ex);
+            }
+        }
+
+        private void StartUiHangMonitor()
+        {
+            try
+            {
+                var dispatcherQueue = Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread();
+                if (dispatcherQueue == null)
+                {
+                    RuntimeEventLogger.LogEvent("ui_thread_block_warning", "reason=dispatcher_queue_unavailable");
+                    return;
+                }
+
+                _uiHangMonitor?.Dispose();
+                _uiHangMonitor = new UiHangMonitor(dispatcherQueue);
+                _uiHangMonitor.Start();
+            }
+            catch (Exception ex)
+            {
+                RuntimeEventLogger.LogEvent("ui_thread_block_warning", ex, "reason=monitor_start_failed");
             }
         }
 
@@ -166,6 +185,7 @@ namespace Kroira.App
             {
                 SafeAppendLog($"APP RM 01: delaying runtime maintenance by {DeferredRuntimeMaintenanceDelay.TotalSeconds:0}s");
                 await Task.Delay(DeferredRuntimeMaintenanceDelay, cancellationToken);
+                await Services.GetRequiredService<IRuntimeMaintenanceService>().RunStartupRepairAsync(cancellationToken);
                 await Services.GetRequiredService<IRuntimeMaintenanceService>().RunDeferredRepairAsync(cancellationToken);
                 SafeAppendLog("APP RM 02: deferred runtime maintenance completed");
             }
@@ -357,6 +377,26 @@ namespace Kroira.App
             try
             {
                 action();
+                SafeAppendLog($"{checkpoint} end");
+            }
+            catch (Exception ex)
+            {
+                SafeLogException($"{checkpoint} failed", ex);
+            }
+        }
+
+        private void ScheduleRecoverableAsyncStartupStep(string checkpoint, Func<Task> action)
+        {
+            SafeAppendLog($"{checkpoint} scheduled");
+            _ = RunRecoverableAsyncStartupStepAsync(checkpoint, action);
+        }
+
+        private async Task RunRecoverableAsyncStartupStepAsync(string checkpoint, Func<Task> action)
+        {
+            SafeAppendLog($"{checkpoint} start");
+            try
+            {
+                await action();
                 SafeAppendLog($"{checkpoint} end");
             }
             catch (Exception ex)

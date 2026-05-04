@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Kroira.App.Data;
 using Kroira.App.Models;
@@ -187,10 +188,16 @@ namespace Kroira.App.Views
             var canUsePictureInPicture = CanUseFeature(EntitlementFeatureKeys.PlaybackPictureInPicture);
 
             AddToolsMenuItem(flyout.Items, LocalizedStrings.Get("Player_Menu_Info"), () => TogglePanel(nameof(InfoPanel)), _infoPanelOpen);
-            AddToolsMenuItem(flyout.Items, LocalizedStrings.Get("Player_Menu_RetryStream"), RetryCurrentPlayback);
+            AddToolsMenuItem(
+                flyout.Items,
+                LocalizedStrings.Get("Player_Menu_RetryStream"),
+                () => FireAndForgetPlayerOperation("manual_retry", RetryCurrentPlaybackAsync));
             if (!isLive && canSeek)
             {
-                AddToolsMenuItem(flyout.Items, LocalizedStrings.Get("Player_Menu_Restart"), () => RestartPlayerSession("tools_menu", 0));
+                AddToolsMenuItem(
+                    flyout.Items,
+                    LocalizedStrings.Get("Player_Menu_Restart"),
+                    () => FireAndForgetPlayerOperation("tools_menu_restart", () => RestartPlayerSessionAsync("tools_menu", 0)));
             }
 
             if (IsCatchupPlayback() || (isLive && canSeek))
@@ -199,7 +206,7 @@ namespace Kroira.App.Views
                 {
                     if (IsCatchupPlayback())
                     {
-                        _ = ReturnToLivePlaybackAsync("tools_menu");
+                        FireAndForgetPlayerOperation("tools_menu_return_live", () => ReturnToLivePlaybackAsync("tools_menu"));
                     }
                     else
                     {
@@ -970,35 +977,64 @@ namespace Kroira.App.Views
             };
         }
 
-        private void RetryCurrentPlayback()
+        private Task RetryCurrentPlaybackAsync()
         {
             var retryPosition = IsLivePlayback() ? 0 : GetRetryPositionMs();
-            RestartPlayerSession("manual_retry", retryPosition);
+            return RestartPlayerSessionAsync("manual_retry", retryPosition);
         }
 
-        private void RestartPlayerSession(string reason, long startPositionMs)
+        private async Task RestartPlayerSessionAsync(string reason, long startPositionMs, bool preserveResolvedPlaybackUiState = false)
         {
-            if (_surface == null)
-            {
-                ResetSessionRuntimeState($"restart:{reason}", startPositionMs, clearRetryState: true);
-                BeginPlaybackAttempt(isRetry: false, retryReason: reason, startPositionMs: startPositionMs);
-                return;
-            }
+            var playbackSessionId = _playbackSessionId;
+            var cancellationToken = CurrentPlaybackSessionToken;
 
-            StopLoadTimeout();
-            StopBufferTimeout();
-            _progressPersistTimer?.Stop();
-            ResetTransientPlaybackPanels(clearChannelSearch: true, restoreFocus: false);
-            ResetSessionRuntimeState($"restart:{reason}", startPositionMs, clearRetryState: true);
-            DetachAndDisposePlayer();
-            _player = CreatePlayer(_surface.Handle);
-            _launchOverridesApplied = false;
-            ResetTrackMenus();
-            ResetResolvedPlaybackUiState();
-            ClearError();
-            HideStatusOverlay();
-            BeginPlaybackAttempt(isRetry: false, retryReason: reason, startPositionMs: _lastPositionMs);
-            UpdateEnhancedControlState();
+            await _playerLifecycleGate.WaitAsync(cancellationToken);
+            try
+            {
+                if (!IsPlaybackSessionActive(playbackSessionId, cancellationToken) || _context == null)
+                {
+                    return;
+                }
+
+                RuntimeEventLogger.LogEvent(
+                    "player_restart",
+                    $"reason={SanitizeForLog(reason)}; content_type={_context.ContentType}");
+
+                if (_surface == null)
+                {
+                    ResetSessionRuntimeState($"restart:{reason}", startPositionMs, clearRetryState: true);
+                    BeginPlaybackAttempt(isRetry: false, retryReason: reason, startPositionMs: startPositionMs);
+                    return;
+                }
+
+                StopLoadTimeout();
+                StopBufferTimeout();
+                _progressPersistTimer?.Stop();
+                ResetTransientPlaybackPanels(clearChannelSearch: true, restoreFocus: false);
+                ResetSessionRuntimeState($"restart:{reason}", startPositionMs, clearRetryState: true);
+                DetachAndDisposePlayer(disposeOnBackgroundThread: true);
+                await WaitForDetachedPlayerDisposalAsync($"restart:{reason}", cancellationToken);
+                if (!IsPlaybackSessionActive(playbackSessionId, cancellationToken) || _surface == null || _context == null)
+                {
+                    return;
+                }
+
+                _player = CreatePlayer(_surface.Handle);
+                _launchOverridesApplied = false;
+                ResetTrackMenus();
+                if (!preserveResolvedPlaybackUiState)
+                {
+                    ResetResolvedPlaybackUiState();
+                }
+                ClearError();
+                HideStatusOverlay();
+                BeginPlaybackAttempt(isRetry: false, retryReason: reason, startPositionMs: _lastPositionMs);
+                UpdateEnhancedControlState();
+            }
+            finally
+            {
+                _playerLifecycleGate.Release();
+            }
         }
 
         private async Task RecordChannelLaunchAsync(int channelId)
@@ -1016,9 +1052,174 @@ namespace Kroira.App.Views
 
         private async Task SwitchToChannelAsync(int channelId, string reason)
         {
-            var nextItem = _allChannelSwitchItems.FirstOrDefault(item => item.Id == channelId);
-            if (_context == null || nextItem == null || string.IsNullOrWhiteSpace(nextItem.StreamUrl))
+            var attemptId = Interlocked.Increment(ref _channelSwitchAttemptId);
+            var direction = NormalizeChannelSwitchDirection(reason);
+            var cancellationToken = CurrentPlaybackSessionToken;
+            var gateAcquired = false;
+
+            try
             {
+                await _channelSwitchGate.WaitAsync(cancellationToken);
+                gateAcquired = true;
+                _channelSwitchInProgress = true;
+                UpdateEnhancedControlState();
+
+                var queue = GetPlaybackChannelQueueSnapshot();
+                var fromChannelId = GetCurrentChannelIdForSwitch();
+                var fromIndex = FindChannelIndex(queue, fromChannelId);
+                var nextItem = ResolveChannelSwitchItem(channelId, queue);
+                var toIndex = FindChannelIndex(queue, channelId);
+                LogChannelSwitchEvent(
+                    "channel_switch_requested",
+                    direction,
+                    fromChannelId,
+                    channelId,
+                    fromIndex,
+                    toIndex,
+                    queue.Count,
+                    reason,
+                    nextItem?.PreferredSourceProfileId ?? _playbackQueueSourceId,
+                    nextItem?.CategoryId ?? _playbackQueueCategoryId,
+                    nextItem?.CategoryKey ?? _playbackQueueCategoryKey,
+                    attemptId);
+
+                if (_context == null || !IsChannelPlayback())
+                {
+                    LogChannelSwitchEvent("channel_switch_blocked", direction, fromChannelId, channelId, fromIndex, toIndex, queue.Count, "no_channel_context", 0, 0, string.Empty, attemptId);
+                    return;
+                }
+
+                if (nextItem == null)
+                {
+                    LogChannelSwitchEvent("channel_switch_failed", direction, fromChannelId, channelId, fromIndex, toIndex, queue.Count, "target_not_found", _playbackQueueSourceId, _playbackQueueCategoryId, _playbackQueueCategoryKey, attemptId);
+                    return;
+                }
+
+                if (string.IsNullOrWhiteSpace(nextItem.StreamUrl))
+                {
+                    LogChannelSwitchEvent("channel_switch_failed", direction, fromChannelId, channelId, fromIndex, toIndex, queue.Count, "stream_missing", nextItem.PreferredSourceProfileId, nextItem.CategoryId, nextItem.CategoryKey, attemptId);
+                    return;
+                }
+
+                if (nextItem.Id == fromChannelId)
+                {
+                    LogChannelSwitchEvent("channel_switch_blocked", direction, fromChannelId, nextItem.Id, fromIndex, toIndex, queue.Count, "same_channel", nextItem.PreferredSourceProfileId, nextItem.CategoryId, nextItem.CategoryKey, attemptId);
+                    return;
+                }
+
+                LogChannelSwitchEvent("channel_switch_resolved", direction, fromChannelId, nextItem.Id, fromIndex, toIndex, queue.Count, reason, nextItem.PreferredSourceProfileId, nextItem.CategoryId, nextItem.CategoryKey, attemptId);
+                await SwitchToChannelCoreAsync(nextItem, direction, reason, attemptId, fromChannelId, fromIndex, toIndex, queue.Count);
+            }
+            catch (OperationCanceledException)
+            {
+                LogChannelSwitchEvent("channel_switch_blocked", direction, 0, channelId, -1, -1, 0, "canceled", 0, 0, string.Empty, attemptId);
+            }
+            catch (Exception ex)
+            {
+                LogChannelSwitchEvent("channel_switch_failed", direction, 0, channelId, -1, -1, 0, ex.GetType().Name, 0, 0, string.Empty, attemptId);
+                throw;
+            }
+            finally
+            {
+                if (gateAcquired)
+                {
+                    _channelSwitchInProgress = false;
+                    try
+                    {
+                        UpdateEnhancedControlState();
+                        RefreshInfoPanel();
+                        UpdatePlaybackHint();
+                    }
+                    finally
+                    {
+                        _channelSwitchGate.Release();
+                    }
+                }
+            }
+        }
+
+        private async Task SwitchToChannelAsync(PlayerChannelSwitchItem nextItem, string reason)
+        {
+            var attemptId = Interlocked.Increment(ref _channelSwitchAttemptId);
+            var direction = NormalizeChannelSwitchDirection(reason);
+            var cancellationToken = CurrentPlaybackSessionToken;
+            var gateAcquired = false;
+
+            try
+            {
+                await _channelSwitchGate.WaitAsync(cancellationToken);
+                gateAcquired = true;
+                _channelSwitchInProgress = true;
+                UpdateEnhancedControlState();
+
+                var queue = GetPlaybackChannelQueueSnapshot();
+                var fromChannelId = GetCurrentChannelIdForSwitch();
+                var fromIndex = FindChannelIndex(queue, fromChannelId);
+                var toIndex = FindChannelIndex(queue, nextItem.Id);
+                LogChannelSwitchEvent("channel_switch_requested", direction, fromChannelId, nextItem.Id, fromIndex, toIndex, queue.Count, reason, nextItem.PreferredSourceProfileId, nextItem.CategoryId, nextItem.CategoryKey, attemptId);
+
+                if (_context == null || !IsChannelPlayback())
+                {
+                    LogChannelSwitchEvent("channel_switch_blocked", direction, fromChannelId, nextItem.Id, fromIndex, toIndex, queue.Count, "no_channel_context", nextItem.PreferredSourceProfileId, nextItem.CategoryId, nextItem.CategoryKey, attemptId);
+                    return;
+                }
+
+                if (string.IsNullOrWhiteSpace(nextItem.StreamUrl))
+                {
+                    LogChannelSwitchEvent("channel_switch_failed", direction, fromChannelId, nextItem.Id, fromIndex, toIndex, queue.Count, "stream_missing", nextItem.PreferredSourceProfileId, nextItem.CategoryId, nextItem.CategoryKey, attemptId);
+                    return;
+                }
+
+                if (nextItem.Id == fromChannelId)
+                {
+                    LogChannelSwitchEvent("channel_switch_blocked", direction, fromChannelId, nextItem.Id, fromIndex, toIndex, queue.Count, "same_channel", nextItem.PreferredSourceProfileId, nextItem.CategoryId, nextItem.CategoryKey, attemptId);
+                    return;
+                }
+
+                LogChannelSwitchEvent("channel_switch_resolved", direction, fromChannelId, nextItem.Id, fromIndex, toIndex, queue.Count, reason, nextItem.PreferredSourceProfileId, nextItem.CategoryId, nextItem.CategoryKey, attemptId);
+                await SwitchToChannelCoreAsync(nextItem, direction, reason, attemptId, fromChannelId, fromIndex, toIndex, queue.Count);
+            }
+            catch (OperationCanceledException)
+            {
+                LogChannelSwitchEvent("channel_switch_blocked", direction, 0, nextItem.Id, -1, -1, 0, "canceled", nextItem.PreferredSourceProfileId, nextItem.CategoryId, nextItem.CategoryKey, attemptId);
+            }
+            catch (Exception ex)
+            {
+                LogChannelSwitchEvent("channel_switch_failed", direction, 0, nextItem.Id, -1, -1, 0, ex.GetType().Name, nextItem.PreferredSourceProfileId, nextItem.CategoryId, nextItem.CategoryKey, attemptId);
+                throw;
+            }
+            finally
+            {
+                if (gateAcquired)
+                {
+                    _channelSwitchInProgress = false;
+                    try
+                    {
+                        UpdateEnhancedControlState();
+                        RefreshInfoPanel();
+                        UpdatePlaybackHint();
+                    }
+                    finally
+                    {
+                        _channelSwitchGate.Release();
+                    }
+                }
+            }
+        }
+
+        private async Task SwitchToChannelCoreAsync(
+            PlayerChannelSwitchItem nextItem,
+            string direction,
+            string reason,
+            int attemptId,
+            int fromChannelId,
+            int fromIndex,
+            int toIndex,
+            int queueCount)
+        {
+            if (_context == null)
+            {
+                LogChannelSwitchEvent("channel_switch_failed", direction, fromChannelId, nextItem.Id, fromIndex, toIndex, queueCount, "no_context", nextItem.PreferredSourceProfileId, nextItem.CategoryId, nextItem.CategoryKey, attemptId);
                 return;
             }
 
@@ -1026,9 +1227,10 @@ namespace Kroira.App.Views
             var cancellationToken = CurrentPlaybackSessionToken;
             var switchGeneration = BeginContextSwitch($"channel_switch:{reason}");
             _failedMirrorContentIds.Clear();
-            await RecordChannelLaunchAsync(channelId);
+            await RecordChannelLaunchAsync(nextItem.Id);
             if (!IsPlaybackContextOperationActive(playbackSessionId, switchGeneration, cancellationToken) || _context == null)
             {
+                LogChannelSwitchEvent("channel_switch_failed", direction, fromChannelId, nextItem.Id, fromIndex, toIndex, queueCount, "operation_inactive", nextItem.PreferredSourceProfileId, nextItem.CategoryId, nextItem.CategoryKey, attemptId);
                 return;
             }
 
@@ -1049,10 +1251,14 @@ namespace Kroira.App.Views
             await LoadEnhancedPlayerStateAsync(cancellationToken);
             if (!IsPlaybackContextOperationActive(playbackSessionId, switchGeneration, cancellationToken))
             {
+                LogChannelSwitchEvent("channel_switch_failed", direction, fromChannelId, nextItem.Id, fromIndex, toIndex, queueCount, "operation_inactive", nextItem.PreferredSourceProfileId, nextItem.CategoryId, nextItem.CategoryKey, attemptId);
                 return;
             }
 
-            RestartPlayerSession($"channel_switch:{reason}", 0);
+            _playbackQueueCurrentChannelId = nextItem.Id;
+            await RestartPlayerSessionAsync($"channel_switch:{reason}", 0, preserveResolvedPlaybackUiState: true);
+            _playbackQueueCurrentChannelId = nextItem.Id;
+            LogChannelSwitchEvent("channel_switch_completed", direction, fromChannelId, nextItem.Id, fromIndex, toIndex, queueCount, reason, nextItem.PreferredSourceProfileId, nextItem.CategoryId, nextItem.CategoryKey, attemptId);
         }
 
         private async Task SwitchToEpisodeAsync(int episodeId)
@@ -1083,7 +1289,7 @@ namespace Kroira.App.Views
                 return;
             }
 
-            RestartPlayerSession("episode_switch", nextItem.ResumePositionMs);
+            await RestartPlayerSessionAsync("episode_switch", nextItem.ResumePositionMs);
         }
 
         private async Task PlayGuideProgramAsync(PlayerGuideProgramItem item)
@@ -1149,7 +1355,7 @@ namespace Kroira.App.Views
                 return;
             }
 
-            RestartPlayerSession(item.RequestKind == CatchupRequestKind.StartOver ? "catchup_start_over" : "catchup_replay", 0);
+            await RestartPlayerSessionAsync(item.RequestKind == CatchupRequestKind.StartOver ? "catchup_start_over" : "catchup_replay", 0);
         }
 
         private void ShowZapBanner(string title, string message)
@@ -1408,25 +1614,144 @@ namespace Kroira.App.Views
 
             if (IsTimelineSeekAllowed())
             {
-                RestartPlayerSession("remote_restart", 0);
+                await RestartPlayerSessionAsync("remote_restart", 0);
             }
         }
 
         private async Task SwitchRelativeChannelAsync(int delta)
         {
-            if (_context == null || _allChannelSwitchItems.Count == 0)
+            var direction = delta > 0 ? "next" : "previous";
+            var attemptId = Interlocked.Increment(ref _channelSwitchAttemptId);
+            var cancellationToken = CurrentPlaybackSessionToken;
+            var gateAcquired = false;
+
+            try
             {
-                return;
+                await _channelSwitchGate.WaitAsync(cancellationToken);
+                gateAcquired = true;
+                _channelSwitchInProgress = true;
+                UpdateEnhancedControlState();
+
+                var queue = GetPlaybackChannelQueueSnapshot();
+                var fromChannelId = GetCurrentChannelIdForSwitch();
+                var currentIndex = FindChannelIndex(queue, fromChannelId);
+                LogChannelSwitchEvent("channel_switch_requested", direction, fromChannelId, 0, currentIndex, -1, queue.Count, direction, _playbackQueueSourceId, _playbackQueueCategoryId, _playbackQueueCategoryKey, attemptId);
+
+                if (_context == null || !IsChannelPlayback())
+                {
+                    LogChannelSwitchEvent("channel_switch_blocked", direction, fromChannelId, 0, currentIndex, -1, queue.Count, "no_channel_context", _playbackQueueSourceId, _playbackQueueCategoryId, _playbackQueueCategoryKey, attemptId);
+                    return;
+                }
+
+                if (queue.Count <= 1)
+                {
+                    LogChannelSwitchEvent("channel_switch_blocked", direction, fromChannelId, 0, currentIndex, -1, queue.Count, "queue_unavailable", _playbackQueueSourceId, _playbackQueueCategoryId, _playbackQueueCategoryKey, attemptId);
+                    return;
+                }
+
+                if (currentIndex < 0)
+                {
+                    LogChannelSwitchEvent("channel_switch_failed", direction, fromChannelId, 0, -1, -1, queue.Count, "current_not_found", _playbackQueueSourceId, _playbackQueueCategoryId, _playbackQueueCategoryKey, attemptId);
+                    return;
+                }
+
+                var targetIndex = (currentIndex + delta + queue.Count) % queue.Count;
+                var nextItem = queue[targetIndex];
+                LogChannelSwitchEvent("channel_switch_resolved", direction, fromChannelId, nextItem.Id, currentIndex, targetIndex, queue.Count, direction, nextItem.PreferredSourceProfileId, nextItem.CategoryId, nextItem.CategoryKey, attemptId);
+                await SwitchToChannelCoreAsync(nextItem, direction, direction, attemptId, fromChannelId, currentIndex, targetIndex, queue.Count);
+            }
+            catch (OperationCanceledException)
+            {
+                LogChannelSwitchEvent("channel_switch_blocked", direction, 0, 0, -1, -1, 0, "canceled", 0, 0, string.Empty, attemptId);
+            }
+            catch (Exception ex)
+            {
+                LogChannelSwitchEvent("channel_switch_failed", direction, 0, 0, -1, -1, 0, ex.GetType().Name, 0, 0, string.Empty, attemptId);
+                throw;
+            }
+            finally
+            {
+                if (gateAcquired)
+                {
+                    _channelSwitchInProgress = false;
+                    try
+                    {
+                        UpdateEnhancedControlState();
+                        RefreshInfoPanel();
+                        UpdatePlaybackHint();
+                    }
+                    finally
+                    {
+                        _channelSwitchGate.Release();
+                    }
+                }
+            }
+        }
+
+        private IReadOnlyList<PlayerChannelSwitchItem> GetPlaybackChannelQueueSnapshot()
+        {
+            var source = _playbackChannelQueue.Count > 0 ? _playbackChannelQueue : _allChannelSwitchItems;
+            return source.ToList();
+        }
+
+        private int GetCurrentChannelIdForSwitch()
+        {
+            return _playbackQueueCurrentChannelId > 0
+                ? _playbackQueueCurrentChannelId
+                : _context?.ContentId ?? 0;
+        }
+
+        private PlayerChannelSwitchItem? ResolveChannelSwitchItem(int channelId, IReadOnlyList<PlayerChannelSwitchItem> queue)
+        {
+            return queue.FirstOrDefault(item => item.Id == channelId)
+                ?? _allChannelSwitchItems.FirstOrDefault(item => item.Id == channelId);
+        }
+
+        private static int FindChannelIndex(IReadOnlyList<PlayerChannelSwitchItem> queue, int channelId)
+        {
+            if (channelId <= 0)
+            {
+                return -1;
             }
 
-            var currentIndex = _allChannelSwitchItems.FindIndex(item => item.Id == _context.ContentId);
-            if (currentIndex < 0)
+            for (var index = 0; index < queue.Count; index++)
             {
-                currentIndex = 0;
+                if (queue[index].Id == channelId)
+                {
+                    return index;
+                }
             }
 
-            var targetIndex = (currentIndex + delta + _allChannelSwitchItems.Count) % _allChannelSwitchItems.Count;
-            await SwitchToChannelAsync(_allChannelSwitchItems[targetIndex].Id, delta > 0 ? "next" : "previous");
+            return -1;
+        }
+
+        private static string NormalizeChannelSwitchDirection(string reason)
+        {
+            return reason switch
+            {
+                "next" => "next",
+                "previous" => "previous",
+                _ => "direct"
+            };
+        }
+
+        private void LogChannelSwitchEvent(
+            string eventName,
+            string direction,
+            int fromChannelId,
+            int toChannelId,
+            int fromIndex,
+            int toIndex,
+            int queueCount,
+            string reason,
+            int sourceId,
+            int categoryId,
+            string categoryKey,
+            int attemptId)
+        {
+            RuntimeEventLogger.LogEvent(
+                eventName,
+                $"direction={SanitizeForLog(direction)}; from_channel_id={fromChannelId}; to_channel_id={toChannelId}; from_index={fromIndex}; to_index={toIndex}; queue_count={queueCount}; reason={SanitizeForLog(reason)}; source_id={sourceId}; category_id={categoryId}; category_key={SanitizeForLog(categoryKey)}; attempt_id={attemptId}");
         }
 
         private void ToggleSubtitleSelection()
@@ -1851,17 +2176,39 @@ namespace Kroira.App.Views
 
         private async void ChannelSwitchList_ItemClick(object sender, ItemClickEventArgs e)
         {
-            if (e.ClickedItem is PlayerChannelSwitchItem item)
+            try
             {
-                await SwitchToChannelAsync(item.Id, "list");
+                if (e.ClickedItem is PlayerChannelSwitchItem item)
+                {
+                    await SwitchToChannelAsync(item, "list");
+                }
+            }
+            catch (Exception ex)
+            {
+                LogPlayerOperationFailure("channel_switch_list", ex);
+                if (!_teardownStarted)
+                {
+                    ShowFatalError(ex.Message);
+                }
             }
         }
 
         private async void EpisodeSwitchList_ItemClick(object sender, ItemClickEventArgs e)
         {
-            if (e.ClickedItem is PlayerEpisodeSwitchItem item)
+            try
             {
-                await SwitchToEpisodeAsync(item.Id);
+                if (e.ClickedItem is PlayerEpisodeSwitchItem item)
+                {
+                    await SwitchToEpisodeAsync(item.Id);
+                }
+            }
+            catch (Exception ex)
+            {
+                LogPlayerOperationFailure("episode_switch_list", ex);
+                if (!_teardownStarted)
+                {
+                    ShowFatalError(ex.Message);
+                }
             }
         }
 
@@ -1878,19 +2225,42 @@ namespace Kroira.App.Views
             {
                 await PlayGuideProgramAsync(item);
             }
+            catch (Exception ex)
+            {
+                LogPlayerOperationFailure("guide_program_action", ex);
+                if (!_teardownStarted)
+                {
+                    ShowFatalError(ex.Message);
+                }
+            }
             finally
             {
                 button.IsEnabled = true;
             }
         }
 
-        private async void PreviousChannel_Click(object sender, RoutedEventArgs e) => await SwitchRelativeChannelAsync(-1);
-        private async void NextChannel_Click(object sender, RoutedEventArgs e) => await SwitchRelativeChannelAsync(1);
+        private void PreviousChannel_Click(object sender, RoutedEventArgs e) =>
+            FireAndForgetPlayerOperation("previous_channel", () => SwitchRelativeChannelAsync(-1));
+
+        private void NextChannel_Click(object sender, RoutedEventArgs e) =>
+            FireAndForgetPlayerOperation("next_channel", () => SwitchRelativeChannelAsync(1));
+
         private async void LastChannel_Click(object sender, RoutedEventArgs e)
         {
-            if (_lastChannelCandidateId > 0)
+            try
             {
-                await SwitchToChannelAsync(_lastChannelCandidateId, "last_button");
+                if (_lastChannelCandidateId > 0)
+                {
+                    await SwitchToChannelAsync(_lastChannelCandidateId, "last_button");
+                }
+            }
+            catch (Exception ex)
+            {
+                LogPlayerOperationFailure("last_channel", ex);
+                if (!_teardownStarted)
+                {
+                    ShowFatalError(ex.Message);
+                }
             }
         }
 
@@ -1898,8 +2268,11 @@ namespace Kroira.App.Views
         private void Back30_Click(object sender, RoutedEventArgs e) => TrySeekRelativeSeconds(-30);
         private void Forward10_Click(object sender, RoutedEventArgs e) => TrySeekRelativeSeconds(10);
         private void Forward30_Click(object sender, RoutedEventArgs e) => TrySeekRelativeSeconds(30);
-        private void Restart_Click(object sender, RoutedEventArgs e) => RestartPlayerSession("restart", 0);
-        private void RetryPlayback_Click(object sender, RoutedEventArgs e) => RetryCurrentPlayback();
+        private void Restart_Click(object sender, RoutedEventArgs e) =>
+            FireAndForgetPlayerOperation("restart_button", () => RestartPlayerSessionAsync("restart", 0));
+
+        private void RetryPlayback_Click(object sender, RoutedEventArgs e) =>
+            FireAndForgetPlayerOperation("retry_button", RetryCurrentPlaybackAsync);
 
         private void Page_PointerWheelChanged(object sender, PointerRoutedEventArgs e)
         {

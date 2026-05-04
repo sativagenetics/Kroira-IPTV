@@ -93,7 +93,7 @@ public sealed class SourceImportHardeningTests
     }
 
     [TestMethod]
-    public async Task M3uImport_EmptySourceCompletesWithEmptyCatalog()
+    public async Task M3uImport_EmptySourceFailsWithoutChangingCatalog()
     {
         await using var connection = await OpenConnectionAsync();
         await using var db = await CreateDatabaseAsync(connection);
@@ -103,12 +103,14 @@ public sealed class SourceImportHardeningTests
             """);
         var sourceId = await SeedSourceAsync(db, SourceType.M3U, playlistPath);
 
-        await CreateM3uParser().ParseAndImportM3uAsync(db, sourceId, refreshHealth: false);
+        var ex = await Assert.ThrowsExceptionAsync<InvalidDataException>(() =>
+            CreateM3uParser().ParseAndImportM3uAsync(db, sourceId, refreshHealth: false));
 
+        StringAssert.Contains(ex.Message, "No playable channels found");
         Assert.AreEqual(0, await db.ChannelCategories.CountAsync(category => category.SourceProfileId == sourceId));
         Assert.AreEqual(0, await db.Movies.CountAsync(movie => movie.SourceProfileId == sourceId));
         Assert.AreEqual(0, await db.Series.CountAsync(series => series.SourceProfileId == sourceId));
-        StringAssert.Contains((await db.SourceSyncStates.SingleAsync(item => item.SourceProfileId == sourceId)).ErrorLog, "Parsed 0 channels");
+        StringAssert.Contains((await db.SourceSyncStates.SingleAsync(item => item.SourceProfileId == sourceId)).ErrorLog, "No playable channels found");
     }
 
     [TestMethod]

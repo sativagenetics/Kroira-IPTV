@@ -27,6 +27,7 @@ public sealed class CredentialProtectionTests
         Assert.IsFalse(redacted.Contains("dev123", StringComparison.OrdinalIgnoreCase));
         Assert.IsFalse(redacted.Contains("AA:BB", StringComparison.OrdinalIgnoreCase));
         Assert.IsFalse(redacted.Contains("abcdefghijk", StringComparison.OrdinalIgnoreCase));
+        Assert.IsFalse(redacted.Contains('?', StringComparison.Ordinal));
         StringAssert.Contains(redacted, "iptv.example");
     }
 

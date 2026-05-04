@@ -121,12 +121,15 @@ namespace Kroira.App.Services
 
     public static class SurfaceStateCopies
     {
+        private const string NoSourcesContentMessage =
+            "KROIRA does not provide content. Add your own IPTV source to start watching.";
+
         public static readonly SurfaceStateCopy Home = new(
             "\uE8F1",
             "Loading home",
             "Preparing your library.",
             "Add your first source",
-            "Connect an M3U playlist or Xtream provider to start building Home.",
+            NoSourcesContentMessage,
             "Home is still getting ready",
             "Your sources are saved, but Home does not have enough imported items yet.",
             "Sources are temporarily offline",
@@ -143,7 +146,7 @@ namespace Kroira.App.Services
             "Loading Live TV",
             "Checking your live channels.",
             "Add a live source",
-            "Connect a source with live channels to start watching Live TV.",
+            NoSourcesContentMessage,
             "No live channels imported",
             "Your current sources have not returned any usable live channels yet.",
             "Live TV is temporarily offline",
@@ -160,7 +163,7 @@ namespace Kroira.App.Services
             "Loading movies",
             "Checking your movie library.",
             "Add a movie source",
-            "Connect a source with movie catalog data to start browsing Movies.",
+            NoSourcesContentMessage,
             "No movies imported",
             "Your current sources have not returned any usable movies yet.",
             "Movies are temporarily offline",
@@ -177,7 +180,7 @@ namespace Kroira.App.Services
             "Loading series",
             "Checking your series library.",
             "Add a series source",
-            "Connect a source with series data to start browsing Series.",
+            NoSourcesContentMessage,
             "No series imported",
             "Your current sources have not returned any usable series yet.",
             "Series is temporarily offline",
@@ -194,7 +197,7 @@ namespace Kroira.App.Services
             "Loading favorites",
             "Preparing your saved items.",
             "No sources configured",
-            "Add a source first, then save channels, movies, or series to Favorites.",
+            NoSourcesContentMessage,
             "No favorites yet",
             "Save a channel, movie, or series and it will appear here.",
             "Favorites are temporarily unavailable",
@@ -211,7 +214,7 @@ namespace Kroira.App.Services
             "Loading Continue Watching",
             "Preparing your saved playback queue.",
             "No sources configured",
-            "Add a source first, then start watching to build your resume queue.",
+            NoSourcesContentMessage,
             "Nothing to resume yet",
             "Start watching a channel, movie, or episode and it will appear here.",
             "Continue Watching is temporarily unavailable",

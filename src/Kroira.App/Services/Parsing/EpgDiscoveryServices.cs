@@ -126,7 +126,10 @@ namespace Kroira.App.Services.Parsing
     public interface IEpgSourceDiscoveryService
     {
         SourceType SourceType { get; }
-        Task<EpgDiscoveryResult> DiscoverAsync(AppDbContext db, int sourceProfileId);
+        Task<EpgDiscoveryResult> DiscoverAsync(
+            AppDbContext db,
+            int sourceProfileId,
+            CancellationToken cancellationToken = default);
     }
 
     public sealed class M3uEpgDiscoveryService : IEpgSourceDiscoveryService
@@ -144,7 +147,10 @@ namespace Kroira.App.Services.Parsing
 
         public SourceType SourceType => SourceType.M3U;
 
-        public async Task<EpgDiscoveryResult> DiscoverAsync(AppDbContext db, int sourceProfileId)
+        public async Task<EpgDiscoveryResult> DiscoverAsync(
+            AppDbContext db,
+            int sourceProfileId,
+            CancellationToken cancellationToken = default)
         {
             var cred = await _credentialStore.GetCredentialAsync(db, sourceProfileId);
             if (cred == null || string.IsNullOrWhiteSpace(cred.Url))
@@ -152,7 +158,7 @@ namespace Kroira.App.Services.Parsing
                 throw new Exception("M3U source URL or path is empty.");
             }
 
-            var playlistContent = await EpgDiscoveryHelpers.ReadTextAsync(cred.Url, cred, SourceNetworkPurpose.Import, _sourceRoutingService);
+            var playlistContent = await EpgDiscoveryHelpers.ReadTextAsync(cred.Url, cred, SourceNetworkPurpose.Import, _sourceRoutingService, cancellationToken);
             var headerMetadata = M3uMetadataParser.ParseHeaderMetadata(playlistContent, cred.Url);
             LogHeaderDiscovery(sourceProfileId, headerMetadata);
 
@@ -219,7 +225,8 @@ namespace Kroira.App.Services.Parsing
                 cred,
                 cred.DetectedEpgUrl,
                 _sourceRoutingService,
-                activeMode == EpgActiveMode.Manual ? "Manual XMLTV override with fallback sources" : "Provider XMLTV with fallback sources");
+                activeMode == EpgActiveMode.Manual ? "Manual XMLTV override with fallback sources" : "Provider XMLTV with fallback sources",
+                cancellationToken);
         }
 
         private static void LogHeaderDiscovery(int sourceProfileId, M3uHeaderMetadata headerMetadata)
@@ -264,7 +271,10 @@ namespace Kroira.App.Services.Parsing
 
         public SourceType SourceType => SourceType.Xtream;
 
-        public async Task<EpgDiscoveryResult> DiscoverAsync(AppDbContext db, int sourceProfileId)
+        public async Task<EpgDiscoveryResult> DiscoverAsync(
+            AppDbContext db,
+            int sourceProfileId,
+            CancellationToken cancellationToken = default)
         {
             var cred = await _credentialStore.GetCredentialAsync(db, sourceProfileId);
             if (cred == null || string.IsNullOrWhiteSpace(cred.Url) || string.IsNullOrWhiteSpace(cred.Username))
@@ -309,7 +319,8 @@ namespace Kroira.App.Services.Parsing
                 cred,
                 providerGuideUrl,
                 _sourceRoutingService,
-                activeMode == EpgActiveMode.Manual ? "Manual XMLTV override with fallback sources" : "Xtream provider XMLTV with fallback sources");
+                activeMode == EpgActiveMode.Manual ? "Manual XMLTV override with fallback sources" : "Xtream provider XMLTV with fallback sources",
+                cancellationToken);
         }
 
         private static string FormatDiagnosticValue(string value)
@@ -333,7 +344,10 @@ namespace Kroira.App.Services.Parsing
 
         public SourceType SourceType => SourceType.Stalker;
 
-        public async Task<EpgDiscoveryResult> DiscoverAsync(AppDbContext db, int sourceProfileId)
+        public async Task<EpgDiscoveryResult> DiscoverAsync(
+            AppDbContext db,
+            int sourceProfileId,
+            CancellationToken cancellationToken = default)
         {
             var cred = await _credentialStore.GetCredentialAsync(db, sourceProfileId);
             if (cred == null || string.IsNullOrWhiteSpace(cred.Url))
@@ -382,7 +396,8 @@ namespace Kroira.App.Services.Parsing
                 cred,
                 cred.DetectedEpgUrl,
                 _sourceRoutingService,
-                activeMode == EpgActiveMode.Manual ? "Manual XMLTV override with fallback sources" : "Stalker XMLTV with fallback sources");
+                activeMode == EpgActiveMode.Manual ? "Manual XMLTV override with fallback sources" : "Stalker XMLTV with fallback sources",
+                cancellationToken);
         }
     }
 
@@ -509,7 +524,8 @@ namespace Kroira.App.Services.Parsing
             SourceCredential credential,
             string detectedXmltvUrl,
             ISourceRoutingService sourceRoutingService,
-            string description)
+            string description,
+            CancellationToken cancellationToken = default)
         {
             var distinctCandidates = candidates
                 .Where(candidate => !string.IsNullOrWhiteSpace(candidate.Url))
@@ -538,7 +554,8 @@ namespace Kroira.App.Services.Parsing
                     sourceProfileId,
                     activeMode,
                     credential,
-                    sourceRoutingService));
+                    sourceRoutingService,
+                    cancellationToken));
             }
 
             if (optionalCandidates.Count > 0)
@@ -546,7 +563,7 @@ namespace Kroira.App.Services.Parsing
                 using var throttler = new SemaphoreSlim(5);
                 var optionalTasks = optionalCandidates.Select(async candidate =>
                 {
-                    await throttler.WaitAsync();
+                    await throttler.WaitAsync(cancellationToken);
                     try
                     {
                         return await FetchGuideSourceCandidateAsync(
@@ -555,7 +572,8 @@ namespace Kroira.App.Services.Parsing
                             sourceProfileId,
                             activeMode,
                             credential,
-                            sourceRoutingService);
+                            sourceRoutingService,
+                            cancellationToken);
                     }
                     finally
                     {
@@ -601,7 +619,8 @@ namespace Kroira.App.Services.Parsing
             int sourceProfileId,
             EpgActiveMode activeMode,
             SourceCredential credential,
-            ISourceRoutingService sourceRoutingService)
+            ISourceRoutingService sourceRoutingService,
+            CancellationToken cancellationToken)
         {
             var source = new EpgDiscoveredGuideSource
             {
@@ -616,7 +635,7 @@ namespace Kroira.App.Services.Parsing
 
             try
             {
-                var fetchResult = await ReadXmltvAsync(source.Url, activeMode, credential, sourceRoutingService);
+                var fetchResult = await ReadXmltvAsync(source.Url, activeMode, credential, sourceRoutingService, cancellationToken);
                 stopwatch.Stop();
                 source.XmlContent = fetchResult.Content;
                 source.Status = EpgGuideSourceStatus.Ready;
@@ -651,11 +670,12 @@ namespace Kroira.App.Services.Parsing
             string location,
             EpgActiveMode activeMode,
             SourceCredential? credential,
-            ISourceRoutingService sourceRoutingService)
+            ISourceRoutingService sourceRoutingService,
+            CancellationToken cancellationToken = default)
         {
             try
             {
-                var result = await ReadTextResultAsync(location, credential, SourceNetworkPurpose.Guide, sourceRoutingService);
+                var result = await ReadTextResultAsync(location, credential, SourceNetworkPurpose.Guide, sourceRoutingService, cancellationToken);
                 if (!LooksLikeXmltv(result.Content))
                 {
                     throw new EpgFetchException("XMLTV URL did not return XMLTV content.", location, activeMode);
@@ -681,9 +701,10 @@ namespace Kroira.App.Services.Parsing
             string location,
             SourceCredential? credential,
             SourceNetworkPurpose purpose,
-            ISourceRoutingService sourceRoutingService)
+            ISourceRoutingService sourceRoutingService,
+            CancellationToken cancellationToken = default)
         {
-            var result = await ReadTextResultAsync(location, credential, purpose, sourceRoutingService);
+            var result = await ReadTextResultAsync(location, credential, purpose, sourceRoutingService, cancellationToken);
             return result.Content;
         }
 
@@ -691,17 +712,18 @@ namespace Kroira.App.Services.Parsing
             string location,
             SourceCredential? credential,
             SourceNetworkPurpose purpose,
-            ISourceRoutingService sourceRoutingService)
+            ISourceRoutingService sourceRoutingService,
+            CancellationToken cancellationToken = default)
         {
             if (location.StartsWith("http", StringComparison.OrdinalIgnoreCase))
             {
                 using var client = sourceRoutingService.CreateHttpClient(credential, purpose, TimeSpan.FromSeconds(60));
                 if (purpose == SourceNetworkPurpose.Guide)
                 {
-                    return await ReadHttpTextWithCacheAsync(client, location);
+                    return await ReadHttpTextWithCacheAsync(client, location, cancellationToken);
                 }
 
-                var bytes = await client.GetByteArrayAsync(location);
+                var bytes = await client.GetByteArrayAsync(location, cancellationToken);
                 return EpgTextReadResult.FromBytes(bytes, location, wasCacheHit: false, wasContentUnchanged: false);
             }
 
@@ -710,7 +732,7 @@ namespace Kroira.App.Services.Parsing
                 throw new FileNotFoundException("EPG or playlist file was not found.", location);
             }
 
-            var fileBytes = await File.ReadAllBytesAsync(location);
+            var fileBytes = await File.ReadAllBytesAsync(location, cancellationToken);
             return EpgTextReadResult.FromBytes(fileBytes, location, wasCacheHit: false, wasContentUnchanged: false);
         }
 
@@ -720,7 +742,10 @@ namespace Kroira.App.Services.Parsing
                    content.IndexOf("<tv", StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
-        private static async Task<EpgTextReadResult> ReadHttpTextWithCacheAsync(HttpClient client, string location)
+        private static async Task<EpgTextReadResult> ReadHttpTextWithCacheAsync(
+            HttpClient client,
+            string location,
+            CancellationToken cancellationToken)
         {
             var cachePaths = EpgGuideHttpCachePaths.Create(location);
             var cachedMetadata = await TryReadCacheMetadataAsync(cachePaths.MetadataPath);
@@ -738,12 +763,12 @@ namespace Kroira.App.Services.Parsing
                 }
             }
 
-            using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
+            using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
             if (response.StatusCode == HttpStatusCode.NotModified &&
                 cachedMetadata != null &&
                 File.Exists(cachePaths.BodyPath))
             {
-                var cachedBytes = await File.ReadAllBytesAsync(cachePaths.BodyPath);
+                var cachedBytes = await File.ReadAllBytesAsync(cachePaths.BodyPath, cancellationToken);
                 return EpgTextReadResult.FromBytes(
                     cachedBytes,
                     location,
@@ -753,7 +778,7 @@ namespace Kroira.App.Services.Parsing
             }
 
             response.EnsureSuccessStatusCode();
-            var bytes = await response.Content.ReadAsByteArrayAsync();
+            var bytes = await response.Content.ReadAsByteArrayAsync(cancellationToken);
             var contentHash = ComputeSha256(bytes);
             var wasContentUnchanged = cachedMetadata != null &&
                                       !string.IsNullOrWhiteSpace(cachedMetadata.ContentHash) &&

@@ -6,7 +6,7 @@ namespace Kroira.App.Services
     internal static class AppSubmissionInfo
     {
         internal const string AppName = "KROIRA IPTV";
-        internal const string ReleaseVersion = "2.0.0";
+        internal const string ReleaseVersion = "2.0.1";
         internal static string ShortDescription => LocalizedStrings.Get("Submission_ShortDescription");
         internal static string LongDescription => LocalizedStrings.Get("Submission_LongDescription");
         internal static string ProductDescription => LongDescription;

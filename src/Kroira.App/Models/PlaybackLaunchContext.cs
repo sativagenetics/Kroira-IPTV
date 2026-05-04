@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using Kroira.App.Services.Playback;
 
 namespace Kroira.App.Models
@@ -51,6 +53,10 @@ namespace Kroira.App.Models
         public string PreferredAudioTrackId { get; set; } = string.Empty;
         public bool RestoreSubtitleTrackSelection { get; set; }
         public string PreferredSubtitleTrackId { get; set; } = string.Empty;
+        public List<PlaybackQueueChannelItem> ChannelQueue { get; set; } = new();
+        public int ChannelQueueSourceId { get; set; }
+        public int ChannelQueueCategoryId { get; set; }
+        public string ChannelQueueCategoryKey { get; set; } = string.Empty;
 
         public PlaybackLaunchContext Clone()
         {
@@ -101,7 +107,38 @@ namespace Kroira.App.Models
                 RestoreAudioTrackSelection = RestoreAudioTrackSelection,
                 PreferredAudioTrackId = PreferredAudioTrackId,
                 RestoreSubtitleTrackSelection = RestoreSubtitleTrackSelection,
-                PreferredSubtitleTrackId = PreferredSubtitleTrackId
+                PreferredSubtitleTrackId = PreferredSubtitleTrackId,
+                ChannelQueue = ChannelQueue?.Select(item => item.Clone()).ToList() ?? new List<PlaybackQueueChannelItem>(),
+                ChannelQueueSourceId = ChannelQueueSourceId,
+                ChannelQueueCategoryId = ChannelQueueCategoryId,
+                ChannelQueueCategoryKey = ChannelQueueCategoryKey
+            };
+        }
+    }
+
+    public class PlaybackQueueChannelItem
+    {
+        public int Id { get; set; }
+        public int PreferredSourceProfileId { get; set; }
+        public string LogicalContentKey { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
+        public string SourceName { get; set; } = string.Empty;
+        public string StreamUrl { get; set; } = string.Empty;
+        public int CategoryId { get; set; }
+        public string CategoryKey { get; set; } = string.Empty;
+
+        public PlaybackQueueChannelItem Clone()
+        {
+            return new PlaybackQueueChannelItem
+            {
+                Id = Id,
+                PreferredSourceProfileId = PreferredSourceProfileId,
+                LogicalContentKey = LogicalContentKey,
+                Name = Name,
+                SourceName = SourceName,
+                StreamUrl = StreamUrl,
+                CategoryId = CategoryId,
+                CategoryKey = CategoryKey
             };
         }
     }

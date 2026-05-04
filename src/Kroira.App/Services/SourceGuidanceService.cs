@@ -228,7 +228,8 @@ namespace Kroira.App.Services
                             var result = await refreshService.RefreshSourceAsync(
                                 sourceId,
                                 SourceRefreshTrigger.Manual,
-                                SourceRefreshScope.Full);
+                                SourceRefreshScope.Full,
+                                cancellationToken);
                             detailBuilder.Add(SanitizeText(result.Message));
                             break;
                         }
@@ -238,7 +239,8 @@ namespace Kroira.App.Services
                             var result = await refreshService.RefreshSourceAsync(
                                 sourceId,
                                 SourceRefreshTrigger.Manual,
-                                SourceRefreshScope.EpgOnly);
+                                SourceRefreshScope.EpgOnly,
+                                cancellationToken);
                             detailBuilder.Add(SanitizeText(result.Message));
                             break;
                         }
@@ -272,14 +274,16 @@ namespace Kroira.App.Services
                                         CompanionMode = credential.CompanionMode,
                                         CompanionUrl = string.Empty
                                     },
-                                    syncNow: false);
+                                    syncNow: false,
+                                    cancellationToken);
                                 detailBuilder.Add(SanitizeText(update.Message));
                             }
 
                             var refresh = await refreshService.RefreshSourceAsync(
                                 sourceId,
                                 SourceRefreshTrigger.Manual,
-                                SourceRefreshScope.Full);
+                                SourceRefreshScope.Full,
+                                cancellationToken);
                             detailBuilder.Add(SanitizeText(refresh.Message));
                             break;
                         }

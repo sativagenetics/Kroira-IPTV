@@ -4,6 +4,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using Kroira.App.Data;
 using Kroira.App.Models;
@@ -20,13 +21,15 @@ namespace Kroira.App.Services.Parsing
             AppDbContext db,
             int sourceProfileId,
             SourceAcquisitionSession? acquisitionSession = null,
-            bool refreshHealth = true);
+            bool refreshHealth = true,
+            CancellationToken cancellationToken = default);
 
         Task ParseAndImportXtreamVodAsync(
             AppDbContext db,
             int sourceProfileId,
             SourceAcquisitionSession? acquisitionSession = null,
-            bool refreshHealth = true);
+            bool refreshHealth = true,
+            CancellationToken cancellationToken = default);
     }
 
     public class XtreamParserService : IXtreamParserService
@@ -58,8 +61,10 @@ namespace Kroira.App.Services.Parsing
             AppDbContext db,
             int sourceProfileId,
             SourceAcquisitionSession? acquisitionSession = null,
-            bool refreshHealth = true)
+            bool refreshHealth = true,
+            CancellationToken cancellationToken = default)
         {
+            RuntimeEventLogger.LogEvent("playlist_parse_started", $"source_id={sourceProfileId}; source_type=Xtream; scope=live");
             var profile = await db.SourceProfiles.FindAsync(sourceProfileId);
             if (profile == null) throw new Exception("Source not found.");
 
@@ -77,10 +82,10 @@ namespace Kroira.App.Services.Parsing
 
             try
             {
-                await ValidateXtreamAuthAsync(client, $"{baseUrl}/player_api.php{authQuery}");
-                using var catsDoc = await ReadJsonDocumentAsync(client, catsUrl, "Xtream live categories response", "[]");
+                await ValidateXtreamAuthAsync(client, $"{baseUrl}/player_api.php{authQuery}", cancellationToken);
+                using var catsDoc = await ReadJsonDocumentAsync(client, catsUrl, "Xtream live categories response", "[]", cancellationToken);
 
-                using var streamsDoc = await ReadJsonDocumentAsync(client, streamsUrl, "Xtream live streams response", "[]");
+                using var streamsDoc = await ReadJsonDocumentAsync(client, streamsUrl, "Xtream live streams response", "[]", cancellationToken);
                 if (streamsDoc.RootElement.ValueKind == JsonValueKind.Array)
                 {
                     acquisitionSession?.RegisterRawItems(streamsDoc.RootElement.GetArrayLength());
@@ -108,8 +113,14 @@ namespace Kroira.App.Services.Parsing
 
                     if (catsDoc.RootElement.ValueKind == JsonValueKind.Array)
                     {
+                        var categoryIndex = 0;
                         foreach (var element in catsDoc.RootElement.EnumerateArray())
                         {
+                            if ((++categoryIndex & 0xff) == 0)
+                            {
+                                cancellationToken.ThrowIfCancellationRequested();
+                            }
+
                             string? id = null;
                             if (element.TryGetProperty("category_id", out var idProp))
                             {
@@ -137,8 +148,14 @@ namespace Kroira.App.Services.Parsing
                     {
                         var channelsList = new List<Channel>();
                         var liveCategoryLabels = ContentClassifier.BuildCategoryLabelSet(categoryMap.Values.Select(c => c.Name));
+                        var streamIndex = 0;
                         foreach (var element in streamsDoc.RootElement.EnumerateArray())
                         {
+                            if ((++streamIndex & 0x3ff) == 0)
+                            {
+                                cancellationToken.ThrowIfCancellationRequested();
+                            }
+
                             string? catId = null;
                             if (element.TryGetProperty("category_id", out var cIdProp))
                             {
@@ -232,6 +249,7 @@ namespace Kroira.App.Services.Parsing
                     {
                         await _sourceHealthService.RefreshSourceHealthAsync(db, sourceProfileId, acquisitionSession);
                     }
+                    RuntimeEventLogger.LogEvent("playlist_parse_completed", $"source_id={sourceProfileId}; source_type=Xtream; scope=live");
                 }
                 catch
                 {
@@ -241,6 +259,7 @@ namespace Kroira.App.Services.Parsing
             }
             catch (Exception ex)
             {
+                RuntimeEventLogger.LogEvent("playlist_parse_failed", ex, $"source_id={sourceProfileId}; source_type=Xtream; scope=live");
                 var safeMessage = SanitizeExceptionMessage(ex);
                 var syncState = await db.SourceSyncStates.FirstOrDefaultAsync(s => s.SourceProfileId == sourceProfileId);
                 if (syncState != null)
@@ -262,8 +281,10 @@ namespace Kroira.App.Services.Parsing
             AppDbContext db,
             int sourceProfileId,
             SourceAcquisitionSession? acquisitionSession = null,
-            bool refreshHealth = true)
+            bool refreshHealth = true,
+            CancellationToken cancellationToken = default)
         {
+            RuntimeEventLogger.LogEvent("playlist_parse_started", $"source_id={sourceProfileId}; source_type=Xtream; scope=vod");
             var profile = await db.SourceProfiles.FindAsync(sourceProfileId);
             if (profile == null) throw new Exception("Source not found.");
 
@@ -279,8 +300,8 @@ namespace Kroira.App.Services.Parsing
 
             try
             {
-                await ValidateXtreamAuthAsync(client, $"{baseUrl}/player_api.php{authQuery}");
-                using var movCatsDoc = await ReadJsonDocumentAsync(client, $"{baseUrl}/player_api.php{authQuery}&action=get_vod_categories", "Xtream VOD categories response", "[]");
+                await ValidateXtreamAuthAsync(client, $"{baseUrl}/player_api.php{authQuery}", cancellationToken);
+                using var movCatsDoc = await ReadJsonDocumentAsync(client, $"{baseUrl}/player_api.php{authQuery}&action=get_vod_categories", "Xtream VOD categories response", "[]", cancellationToken);
                 var md = new Dictionary<string, string>();
                 if (movCatsDoc.RootElement.ValueKind == JsonValueKind.Array)
                 {
@@ -293,7 +314,7 @@ namespace Kroira.App.Services.Parsing
                         }
                     }
                 }
-                using var serCatsDoc = await ReadJsonDocumentAsync(client, $"{baseUrl}/player_api.php{authQuery}&action=get_series_categories", "Xtream series categories response", "[]");
+                using var serCatsDoc = await ReadJsonDocumentAsync(client, $"{baseUrl}/player_api.php{authQuery}&action=get_series_categories", "Xtream series categories response", "[]", cancellationToken);
                 var sd = new Dictionary<string, string>();
                 if (serCatsDoc.RootElement.ValueKind == JsonValueKind.Array)
                 {
@@ -306,7 +327,7 @@ namespace Kroira.App.Services.Parsing
                         }
                     }
                 }
-                using var moviesDoc = await ReadJsonDocumentAsync(client, $"{baseUrl}/player_api.php{authQuery}&action=get_vod_streams", "Xtream VOD streams response", "[]");
+                using var moviesDoc = await ReadJsonDocumentAsync(client, $"{baseUrl}/player_api.php{authQuery}&action=get_vod_streams", "Xtream VOD streams response", "[]", cancellationToken);
                 var parsedMovies = new List<Movie>();
                 if (moviesDoc.RootElement.ValueKind == JsonValueKind.Array)
                 {
@@ -315,8 +336,14 @@ namespace Kroira.App.Services.Parsing
 
                 if (moviesDoc.RootElement.ValueKind == JsonValueKind.Array)
                 {
+                    var movieIndex = 0;
                     foreach (var element in moviesDoc.RootElement.EnumerateArray())
                     {
+                        if ((++movieIndex & 0x3ff) == 0)
+                        {
+                            cancellationToken.ThrowIfCancellationRequested();
+                        }
+
                         string? streamId = element.TryGetProperty("stream_id", out var sProp) ? (sProp.ValueKind == JsonValueKind.Number ? sProp.GetInt32().ToString() : sProp.GetString()) : null;
                         string? catId = element.TryGetProperty("category_id", out var cProp) ? (cProp.ValueKind == JsonValueKind.Number ? cProp.GetInt32().ToString() : cProp.GetString()) : null;
 
@@ -396,7 +423,7 @@ namespace Kroira.App.Services.Parsing
                     }
                 }
 
-                using var seriesDoc = await ReadJsonDocumentAsync(client, $"{baseUrl}/player_api.php{authQuery}&action=get_series", "Xtream series list response", "[]");
+                using var seriesDoc = await ReadJsonDocumentAsync(client, $"{baseUrl}/player_api.php{authQuery}&action=get_series", "Xtream series list response", "[]", cancellationToken);
                 var pendingSeries = new List<(string SeriesId, Series BaseObj)>();
                 if (seriesDoc.RootElement.ValueKind == JsonValueKind.Array)
                 {
@@ -405,8 +432,14 @@ namespace Kroira.App.Services.Parsing
 
                 if (seriesDoc.RootElement.ValueKind == JsonValueKind.Array)
                 {
+                    var seriesIndex = 0;
                     foreach (var element in seriesDoc.RootElement.EnumerateArray())
                     {
+                        if ((++seriesIndex & 0x3ff) == 0)
+                        {
+                            cancellationToken.ThrowIfCancellationRequested();
+                        }
+
                         string? seriesId = element.TryGetProperty("series_id", out var sProp) ? (sProp.ValueKind == JsonValueKind.Number ? sProp.GetInt32().ToString() : sProp.GetString()) : null;
                         string? catId = element.TryGetProperty("category_id", out var cProp) ? (cProp.ValueKind == JsonValueKind.Number ? cProp.GetInt32().ToString() : cProp.GetString()) : null;
 
@@ -480,10 +513,10 @@ namespace Kroira.App.Services.Parsing
                     var semaphore = new System.Threading.SemaphoreSlim(8);
                     var seriesTasks = limitedSeries.Select(async sInfo =>
                     {
-                        await semaphore.WaitAsync();
+                        await semaphore.WaitAsync(cancellationToken);
                         try
                         {
-                            using var iDoc = await ReadJsonDocumentAsync(client, $"{baseUrl}/player_api.php{authQuery}&action=get_series_info&series_id={sInfo.SeriesId}", $"Xtream series info response for {sInfo.SeriesId}", "{}");
+                            using var iDoc = await ReadJsonDocumentAsync(client, $"{baseUrl}/player_api.php{authQuery}&action=get_series_info&series_id={sInfo.SeriesId}", $"Xtream series info response for {sInfo.SeriesId}", "{}", cancellationToken);
 
                             if (iDoc.RootElement.TryGetProperty("episodes", out var epNode) && epNode.ValueKind == JsonValueKind.Object)
                             {
@@ -786,6 +819,9 @@ namespace Kroira.App.Services.Parsing
                     {
                         await _sourceHealthService.RefreshSourceHealthAsync(db, sourceProfileId, acquisitionSession);
                     }
+                    RuntimeEventLogger.LogEvent(
+                        "playlist_parse_completed",
+                        $"source_id={sourceProfileId}; source_type=Xtream; scope=vod; movies={parsedMovies.Count}; series={pendingSeries.Count}; episodes={totalEpisodeCount}");
                 }
                 catch
                 {
@@ -795,6 +831,7 @@ namespace Kroira.App.Services.Parsing
             }
             catch (Exception ex)
             {
+                RuntimeEventLogger.LogEvent("playlist_parse_failed", ex, $"source_id={sourceProfileId}; source_type=Xtream; scope=vod");
                 var safeMessage = SanitizeExceptionMessage(ex);
                 var syncState = await db.SourceSyncStates.FirstOrDefaultAsync(s => s.SourceProfileId == sourceProfileId);
                 if (syncState != null)
@@ -812,12 +849,15 @@ namespace Kroira.App.Services.Parsing
             }
         }
 
-        private static async Task ValidateXtreamAuthAsync(HttpClient client, string authUrl)
+        private static async Task ValidateXtreamAuthAsync(
+            HttpClient client,
+            string authUrl,
+            CancellationToken cancellationToken)
         {
             JsonDocument authDoc;
             try
             {
-                authDoc = await ReadJsonDocumentAsync(client, authUrl, "Xtream auth response", "{}");
+                authDoc = await ReadJsonDocumentAsync(client, authUrl, "Xtream auth response", "{}", cancellationToken);
             }
             catch (HttpRequestException ex) when (ex.StatusCode is HttpStatusCode.NotFound or HttpStatusCode.MethodNotAllowed)
             {
@@ -847,16 +887,17 @@ namespace Kroira.App.Services.Parsing
             HttpClient client,
             string url,
             string label,
-            string emptyJson)
+            string emptyJson,
+            CancellationToken cancellationToken)
         {
-            using var response = await client.GetAsync(url);
+            using var response = await client.GetAsync(url, cancellationToken);
             if (response.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
             {
                 throw new UnauthorizedAccessException($"{label} rejected the supplied credentials.");
             }
 
             response.EnsureSuccessStatusCode();
-            var json = await response.Content.ReadAsStringAsync();
+            var json = await response.Content.ReadAsStringAsync(cancellationToken);
             if (string.IsNullOrWhiteSpace(json))
             {
                 json = emptyJson;

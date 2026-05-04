@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Runtime.InteropServices;
 using System.Threading;
+using Kroira.App.Services;
 using Microsoft.UI.Dispatching;
 
 #nullable enable
@@ -575,52 +576,60 @@ namespace Kroira.App.Services.Playback
                 return;
             }
 
-            while (true)
+            try
             {
-                if (IsDisposed) break;
-
-                var evPtr = NativeMpv.mpv_wait_event(ctx, 0.25);
-                if (IsDisposed) break;
-                if (evPtr == IntPtr.Zero) continue;
-                var ev = NativeMpv.ReadEvent(evPtr);
-
-                if (ev.EventId == NativeMpv.MpvEventId.Shutdown) break;
-                if (ev.EventId == NativeMpv.MpvEventId.None) continue;
-
-                switch (ev.EventId)
+                while (true)
                 {
-                    case NativeMpv.MpvEventId.PropertyChange:
-                        HandlePropertyChange(ev);
-                        break;
-                    case NativeMpv.MpvEventId.LogMessage:
-                        HandleLogMessage(ev);
-                        break;
-                    case NativeMpv.MpvEventId.EndFile:
-                        HandleEndFileEvent(ev);
-                        break;
-                    case NativeMpv.MpvEventId.FileLoaded:
-                        EnqueueCallback(() =>
-                        {
-                            EnsurePlaybackActive(ctx, selectAudio: true);
-                            FileLoaded?.Invoke();
-                            TrackListChanged?.Invoke();
-                            OutputReady?.Invoke();
-                        });
-                        break;
-                    case NativeMpv.MpvEventId.PlaybackRestart:
-                        EnqueueCallback(() =>
-                        {
-                            TrackListChanged?.Invoke();
-                            OutputReady?.Invoke();
-                        });
-                        break;
-                    case NativeMpv.MpvEventId.VideoReconfig:
-                        EnqueueCallback(() => OutputReady?.Invoke());
-                        break;
-                    case NativeMpv.MpvEventId.AudioReconfig:
-                        EnqueueCallback(() => TrackListChanged?.Invoke());
-                        break;
+                    if (IsDisposed) break;
+
+                    var evPtr = NativeMpv.mpv_wait_event(ctx, 0.25);
+                    if (IsDisposed) break;
+                    if (evPtr == IntPtr.Zero) continue;
+                    var ev = NativeMpv.ReadEvent(evPtr);
+
+                    if (ev.EventId == NativeMpv.MpvEventId.Shutdown) break;
+                    if (ev.EventId == NativeMpv.MpvEventId.None) continue;
+
+                    switch (ev.EventId)
+                    {
+                        case NativeMpv.MpvEventId.PropertyChange:
+                            HandlePropertyChange(ev);
+                            break;
+                        case NativeMpv.MpvEventId.LogMessage:
+                            HandleLogMessage(ev);
+                            break;
+                        case NativeMpv.MpvEventId.EndFile:
+                            HandleEndFileEvent(ev);
+                            break;
+                        case NativeMpv.MpvEventId.FileLoaded:
+                            EnqueueCallback(() =>
+                            {
+                                EnsurePlaybackActive(ctx, selectAudio: true);
+                                FileLoaded?.Invoke();
+                                TrackListChanged?.Invoke();
+                                OutputReady?.Invoke();
+                            });
+                            break;
+                        case NativeMpv.MpvEventId.PlaybackRestart:
+                            EnqueueCallback(() =>
+                            {
+                                TrackListChanged?.Invoke();
+                                OutputReady?.Invoke();
+                            });
+                            break;
+                        case NativeMpv.MpvEventId.VideoReconfig:
+                            EnqueueCallback(() => OutputReady?.Invoke());
+                            break;
+                        case NativeMpv.MpvEventId.AudioReconfig:
+                            EnqueueCallback(() => TrackListChanged?.Invoke());
+                            break;
+                    }
                 }
+            }
+            catch (Exception ex)
+            {
+                RuntimeEventLogger.LogEvent("playback_failed", ex, "phase=mpv_event_loop");
+                Log($"EVENTLOOP failed {ex.GetType().Name}: {ex.Message}");
             }
         }
 
@@ -740,7 +749,15 @@ namespace Kroira.App.Services.Playback
             if (callback == null || IsDisposed) return;
             _dispatcher.TryEnqueue(() =>
             {
-                if (!IsDisposed) callback();
+                try
+                {
+                    if (!IsDisposed) callback();
+                }
+                catch (Exception ex)
+                {
+                    RuntimeEventLogger.LogEvent("playback_failed", ex, "phase=mpv_callback");
+                    Log($"CALLBACK failed {ex.GetType().Name}: {ex.Message}");
+                }
             });
         }
 

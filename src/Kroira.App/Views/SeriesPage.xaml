@@ -609,7 +609,7 @@
                                         </Button>
                                         <Button x:Uid="SeriesEpisodeDownloadButton" runtime:RuntimeLocalizer.Uid="SeriesEpisodeDownloadButton"
                                                 Click="DownloadSelectedEpisode_Click"
-                                                Visibility="{x:Bind DownloadActionsVisibility, Mode=OneWay}"
+                                                Visibility="{x:Bind DownloadActionsVisibility, Mode=OneTime}"
                                                 Style="{StaticResource KroiraGhostButtonStyle}"
                                                 Width="38"
                                                 Height="38"

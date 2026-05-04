@@ -5,6 +5,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using Kroira.App.Data;
 using Kroira.App.Models;
@@ -77,8 +78,8 @@ namespace Kroira.App.Services
 
     public interface ISourceLifecycleService
     {
-        Task<SourceCreateResult> CreateSourceAsync(SourceCreateRequest request);
-        Task<SourceGuideSettingsUpdateResult> UpdateGuideSettingsAsync(SourceGuideSettingsUpdateRequest request, bool syncNow);
+        Task<SourceCreateResult> CreateSourceAsync(SourceCreateRequest request, CancellationToken cancellationToken = default);
+        Task<SourceGuideSettingsUpdateResult> UpdateGuideSettingsAsync(SourceGuideSettingsUpdateRequest request, bool syncNow, CancellationToken cancellationToken = default);
         Task<SourceDeleteResult> DeleteSourceAsync(int sourceProfileId);
     }
 
@@ -91,9 +92,10 @@ namespace Kroira.App.Services
             _serviceProvider = serviceProvider;
         }
 
-        public async Task<SourceCreateResult> CreateSourceAsync(SourceCreateRequest request)
+        public async Task<SourceCreateResult> CreateSourceAsync(SourceCreateRequest request, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(request);
+            RuntimeEventLogger.LogEvent("source_add_started", $"source_type={request.Type}");
 
             using var scope = _serviceProvider.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -107,7 +109,7 @@ namespace Kroira.App.Services
             int sourceId;
             string sourceName;
 
-            using (var transaction = await db.Database.BeginTransactionAsync())
+            using (var transaction = await db.Database.BeginTransactionAsync(cancellationToken))
             {
                 var profile = new SourceProfile
                 {
@@ -117,7 +119,7 @@ namespace Kroira.App.Services
                 };
 
                 db.SourceProfiles.Add(profile);
-                await db.SaveChangesAsync();
+                await db.SaveChangesAsync(cancellationToken);
 
                 var credential = new SourceCredential
                 {
@@ -150,9 +152,9 @@ namespace Kroira.App.Services
                     ErrorLog = string.Empty
                 });
 
-                await db.SaveChangesAsync();
+                await db.SaveChangesAsync(cancellationToken);
                 await credentialStore.ProtectCredentialAsync(db, credential);
-                await transaction.CommitAsync();
+                await transaction.CommitAsync(cancellationToken);
 
                 sourceId = profile.Id;
                 sourceName = profile.Name;
@@ -163,7 +165,8 @@ namespace Kroira.App.Services
                 var refreshResult = await refreshService.RefreshSourceAsync(
                     sourceId,
                     SourceRefreshTrigger.InitialImport,
-                    SourceRefreshScope.Full);
+                    SourceRefreshScope.Full,
+                    cancellationToken);
 
                 var message = refreshResult.Success
                     ? refreshResult.Message
@@ -174,6 +177,9 @@ namespace Kroira.App.Services
                     message = $"{message} {duplicateHint}";
                 }
 
+                RuntimeEventLogger.LogEvent(
+                    refreshResult.Success ? "source_add_success" : "source_add_failed",
+                    $"source_id={sourceId}; source_type={normalized.Type}; import_succeeded={refreshResult.Success}; message={message}");
                 return new SourceCreateResult
                 {
                     Success = true,
@@ -187,6 +193,7 @@ namespace Kroira.App.Services
             catch (Exception ex)
             {
                 var message = F("SourceLifecycle_Create_ImportFailed", ex.Message);
+                RuntimeEventLogger.LogEvent("source_add_failed", ex, $"source_id={sourceId}; source_type={normalized.Type}");
                 if (!string.IsNullOrWhiteSpace(duplicateHint))
                 {
                     message = $"{message} {duplicateHint}";
@@ -204,7 +211,10 @@ namespace Kroira.App.Services
             }
         }
 
-        public async Task<SourceGuideSettingsUpdateResult> UpdateGuideSettingsAsync(SourceGuideSettingsUpdateRequest request, bool syncNow)
+        public async Task<SourceGuideSettingsUpdateResult> UpdateGuideSettingsAsync(
+            SourceGuideSettingsUpdateRequest request,
+            bool syncNow,
+            CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(request);
 
@@ -257,7 +267,8 @@ namespace Kroira.App.Services
                 var result = await refreshService.RefreshSourceAsync(
                     request.SourceId,
                     SourceRefreshTrigger.Manual,
-                    SourceRefreshScope.EpgOnly);
+                    SourceRefreshScope.EpgOnly,
+                    cancellationToken);
 
                 return new SourceGuideSettingsUpdateResult
                 {

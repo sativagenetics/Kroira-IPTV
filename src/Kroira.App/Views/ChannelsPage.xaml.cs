@@ -1,8 +1,10 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using System.Threading.Tasks;
 using Kroira.App.Models;
 using Kroira.App.Services;
@@ -387,7 +389,7 @@ namespace Kroira.App.Views
                 return;
             }
 
-            await ItemInspectorDialog.ShowAsync(XamlRoot, CreateChannelLaunchContext(channel));
+            await ItemInspectorDialog.ShowAsync(XamlRoot, CreateChannelLaunchContext(channel, null));
         }
 
         private async Task LaunchChannelAsync(BrowserChannelViewModel channel)
@@ -399,7 +401,7 @@ namespace Kroira.App.Views
 
             Log($"06: LaunchChannelAsync channelId={channel.Id} name='{channel.Name}'");
             await ViewModel.RecordChannelLaunchAsync(channel.Id);
-            Frame.Navigate(typeof(EmbeddedPlaybackPage), CreateChannelLaunchContext(channel));
+            Frame.Navigate(typeof(EmbeddedPlaybackPage), CreateChannelLaunchContext(channel, ViewModel.FilteredChannels));
         }
 
         private async Task LaunchCatchupAsync(BrowserChannelViewModel channel)
@@ -419,7 +421,7 @@ namespace Kroira.App.Views
             Log($"06a: LaunchCatchupAsync channelId={channel.Id} name='{channel.Name}' kind={channel.CatchupRequestKind}");
             await ViewModel.RecordChannelLaunchAsync(channel.Id);
 
-            var context = CreateChannelLaunchContext(channel);
+            var context = CreateChannelLaunchContext(channel, ViewModel.FilteredChannels);
             context.PlaybackMode = CatchupPlaybackMode.Catchup;
             context.CatchupRequestKind = channel.CatchupRequestKind;
             context.CatchupStatusText = channel.CatchupStatusText;
@@ -430,8 +432,19 @@ namespace Kroira.App.Views
             Frame.Navigate(typeof(EmbeddedPlaybackPage), context);
         }
 
-        private static PlaybackLaunchContext CreateChannelLaunchContext(BrowserChannelViewModel channel)
+        private static PlaybackLaunchContext CreateChannelLaunchContext(
+            BrowserChannelViewModel channel,
+            IEnumerable<BrowserChannelViewModel>? visibleChannels)
         {
+            var channelQueue = visibleChannels?
+                .Where(item => !string.IsNullOrWhiteSpace(item.StreamUrl))
+                .Select(CreatePlaybackQueueChannelItem)
+                .ToList() ?? new List<PlaybackQueueChannelItem>();
+            if (channelQueue.All(item => item.Id != channel.Id) && !string.IsNullOrWhiteSpace(channel.StreamUrl))
+            {
+                channelQueue.Insert(0, CreatePlaybackQueueChannelItem(channel));
+            }
+
             return new PlaybackLaunchContext
             {
                 ContentId = channel.Id,
@@ -441,8 +454,32 @@ namespace Kroira.App.Views
                 CatalogStreamUrl = channel.StreamUrl,
                 StreamUrl = channel.StreamUrl,
                 LiveStreamUrl = channel.StreamUrl,
-                StartPositionMs = 0
+                StartPositionMs = 0,
+                ChannelQueue = channelQueue,
+                ChannelQueueSourceId = channel.SourceProfileId,
+                ChannelQueueCategoryId = channel.CategoryId,
+                ChannelQueueCategoryKey = BuildChannelCategoryKey(channel)
             };
+        }
+
+        private static PlaybackQueueChannelItem CreatePlaybackQueueChannelItem(BrowserChannelViewModel channel)
+        {
+            return new PlaybackQueueChannelItem
+            {
+                Id = channel.Id,
+                PreferredSourceProfileId = channel.PreferredSourceProfileId,
+                LogicalContentKey = channel.LogicalContentKey,
+                Name = channel.Name,
+                SourceName = channel.SourceName,
+                StreamUrl = channel.StreamUrl,
+                CategoryId = channel.CategoryId,
+                CategoryKey = BuildChannelCategoryKey(channel)
+            };
+        }
+
+        private static string BuildChannelCategoryKey(BrowserChannelViewModel channel)
+        {
+            return $"{channel.SourceProfileId}:{channel.CategoryId}";
         }
 
         private void ChannelsPage_Loaded(object sender, RoutedEventArgs e)

@@ -2,9 +2,9 @@
 
 ## 1. V2 Identity
 
-- Confirm the package manifest identity version in `src/Kroira.App/Package.appxmanifest`. Current V2 RC value: `2.0.0.4`.
-- Confirm app assembly/file metadata in `src/Kroira.App/Kroira.App.csproj`. Current value: `2.0.0.0`.
-- Confirm public Store release version is listed as `2.0.0`.
+- Confirm the package manifest identity version in `src/Kroira.App/Package.appxmanifest`. Current hotfix value: `2.0.1.0`.
+- Confirm app assembly/file metadata in `src/Kroira.App/Kroira.App.csproj`. Current value: `2.0.1.0`.
+- Confirm public Store release version is listed as `2.0.1`.
 - Keep the app name consistent with the package manifest and localized resources unless Partner Center copy is intentionally changed. Current display name: `KROIRA IPTV`.
 - Verify publisher identity and Partner Center package identity before uploading release artifacts.
 - Keep [docs/store_submission_info.md](store_submission_info.md), the in-app About/Settings legal text, and Partner Center copy aligned.

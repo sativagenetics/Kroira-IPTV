@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Kroira.App.Data;
 using Kroira.App.Models;
@@ -15,13 +16,15 @@ namespace Kroira.App.Services.Parsing
             AppDbContext db,
             int sourceProfileId,
             SourceAcquisitionSession? acquisitionSession = null,
-            bool refreshHealth = true);
+            bool refreshHealth = true,
+            CancellationToken cancellationToken = default);
 
         Task ParseAndImportStalkerVodAsync(
             AppDbContext db,
             int sourceProfileId,
             SourceAcquisitionSession? acquisitionSession = null,
-            bool refreshHealth = true);
+            bool refreshHealth = true,
+            CancellationToken cancellationToken = default);
     }
 
     public sealed class StalkerParserService : IStalkerParserService
@@ -50,8 +53,10 @@ namespace Kroira.App.Services.Parsing
             AppDbContext db,
             int sourceProfileId,
             SourceAcquisitionSession? acquisitionSession = null,
-            bool refreshHealth = true)
+            bool refreshHealth = true,
+            CancellationToken cancellationToken = default)
         {
+            RuntimeEventLogger.LogEvent("playlist_parse_started", $"source_id={sourceProfileId}; source_type=Stalker; scope=full");
             var profile = await db.SourceProfiles.FindAsync(sourceProfileId);
             if (profile == null)
             {
@@ -64,9 +69,9 @@ namespace Kroira.App.Services.Parsing
                 throw new InvalidOperationException("Stalker source credentials are missing.");
             }
 
-            var portalCatalog = await _stalkerPortalClient.LoadCatalogAsync(credential);
+            var portalCatalog = await _stalkerPortalClient.LoadCatalogAsync(credential, cancellationToken);
             acquisitionSession?.RegisterRawItems(portalCatalog.LiveChannels.Count + portalCatalog.Movies.Count + portalCatalog.Series.Count);
-            using var transaction = await db.Database.BeginTransactionAsync();
+            using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
             try
             {
                 await ReplaceLiveCatalogAsync(db, sourceProfileId, portalCatalog, acquisitionSession);
@@ -78,16 +83,20 @@ namespace Kroira.App.Services.Parsing
                     200,
                     $"Stalker sync imported {portalCatalog.LiveChannels.Count} live, {portalCatalog.Movies.Count} movies, and {portalCatalog.Series.Count} series.");
                 profile.LastSync = DateTime.UtcNow;
-                await db.SaveChangesAsync();
-                await transaction.CommitAsync();
+                await db.SaveChangesAsync(cancellationToken);
+                await transaction.CommitAsync(cancellationToken);
 
                 if (refreshHealth)
                 {
                     await _sourceHealthService.RefreshSourceHealthAsync(db, sourceProfileId, acquisitionSession);
                 }
+                RuntimeEventLogger.LogEvent(
+                    "playlist_parse_completed",
+                    $"source_id={sourceProfileId}; source_type=Stalker; live={portalCatalog.LiveChannels.Count}; movies={portalCatalog.Movies.Count}; series={portalCatalog.Series.Count}");
             }
             catch (Exception ex)
             {
+                RuntimeEventLogger.LogEvent("playlist_parse_failed", ex, $"source_id={sourceProfileId}; source_type=Stalker; scope=full");
                 var safeMessage = EpgDiagnosticFormatter.Redact(ex.Message);
                 await transaction.RollbackAsync();
                 await UpsertPortalSnapshotAsync(db, sourceProfileId, portalCatalog, safeMessage);
@@ -105,8 +114,10 @@ namespace Kroira.App.Services.Parsing
             AppDbContext db,
             int sourceProfileId,
             SourceAcquisitionSession? acquisitionSession = null,
-            bool refreshHealth = true)
+            bool refreshHealth = true,
+            CancellationToken cancellationToken = default)
         {
+            RuntimeEventLogger.LogEvent("playlist_parse_started", $"source_id={sourceProfileId}; source_type=Stalker; scope=vod");
             var profile = await db.SourceProfiles.FindAsync(sourceProfileId);
             if (profile == null)
             {
@@ -119,9 +130,9 @@ namespace Kroira.App.Services.Parsing
                 throw new InvalidOperationException("Stalker source credentials are missing.");
             }
 
-            var portalCatalog = await _stalkerPortalClient.LoadCatalogAsync(credential);
+            var portalCatalog = await _stalkerPortalClient.LoadCatalogAsync(credential, cancellationToken);
             acquisitionSession?.RegisterRawItems(portalCatalog.Movies.Count + portalCatalog.Series.Count);
-            using var transaction = await db.Database.BeginTransactionAsync();
+            using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
             try
             {
                 await ReplaceVodCatalogAsync(db, sourceProfileId, portalCatalog, acquisitionSession);
@@ -132,16 +143,20 @@ namespace Kroira.App.Services.Parsing
                     200,
                     $"Stalker library sync imported {portalCatalog.Movies.Count} movies and {portalCatalog.Series.Count} series.");
                 profile.LastSync = DateTime.UtcNow;
-                await db.SaveChangesAsync();
-                await transaction.CommitAsync();
+                await db.SaveChangesAsync(cancellationToken);
+                await transaction.CommitAsync(cancellationToken);
 
                 if (refreshHealth)
                 {
                     await _sourceHealthService.RefreshSourceHealthAsync(db, sourceProfileId, acquisitionSession);
                 }
+                RuntimeEventLogger.LogEvent(
+                    "playlist_parse_completed",
+                    $"source_id={sourceProfileId}; source_type=Stalker; scope=vod; movies={portalCatalog.Movies.Count}; series={portalCatalog.Series.Count}");
             }
             catch (Exception ex)
             {
+                RuntimeEventLogger.LogEvent("playlist_parse_failed", ex, $"source_id={sourceProfileId}; source_type=Stalker; scope=vod");
                 var safeMessage = EpgDiagnosticFormatter.Redact(ex.Message);
                 await transaction.RollbackAsync();
                 await UpsertPortalSnapshotAsync(db, sourceProfileId, portalCatalog, safeMessage);

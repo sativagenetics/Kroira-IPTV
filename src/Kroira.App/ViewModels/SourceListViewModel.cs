@@ -536,6 +536,9 @@ namespace Kroira.App.ViewModels
 
     public partial class SourceListViewModel : ObservableObject
     {
+        private const string NoSourcesContentMessage =
+            "KROIRA does not provide content. Add your own IPTV source to start watching.";
+
         private readonly IServiceProvider _serviceProvider;
         private List<SourceItemViewModel> _allSources = new();
         private int _localizedTextVersion = -1;
@@ -550,7 +553,7 @@ namespace Kroira.App.ViewModels
         private string _emptyStateTitle = "No sources configured";
 
         [ObservableProperty]
-        private string _emptyStateMessage = "Add an M3U playlist, Xtream provider, or Stalker portal to start importing live channels, movies, series, and guide data.";
+        private string _emptyStateMessage = NoSourcesContentMessage;
 
         [ObservableProperty]
         private int _sourceCount;
@@ -669,22 +672,27 @@ namespace Kroira.App.ViewModels
 
         public async Task SaveGuideSettingsAsync(SourceGuideSettingsDraft draft, bool syncNow)
         {
-            using var scope = _serviceProvider.CreateScope();
-            var lifecycleService = scope.ServiceProvider.GetRequiredService<ISourceLifecycleService>();
-            await lifecycleService.UpdateGuideSettingsAsync(
-                new SourceGuideSettingsUpdateRequest
-                {
-                    SourceId = draft.SourceId,
-                    ActiveMode = draft.ActiveMode,
-                    ManualEpgUrl = draft.ManualEpgUrl,
-                    FallbackEpgUrls = draft.FallbackEpgUrls,
-                    ProxyScope = draft.ProxyScope,
-                    ProxyUrl = draft.ProxyUrl,
-                    CompanionScope = draft.CompanionScope,
-                    CompanionMode = draft.CompanionMode,
-                    CompanionUrl = draft.CompanionUrl
-                },
-                syncNow);
+            var request = new SourceGuideSettingsUpdateRequest
+            {
+                SourceId = draft.SourceId,
+                ActiveMode = draft.ActiveMode,
+                ManualEpgUrl = draft.ManualEpgUrl,
+                FallbackEpgUrls = draft.FallbackEpgUrls,
+                ProxyScope = draft.ProxyScope,
+                ProxyUrl = draft.ProxyUrl,
+                CompanionScope = draft.CompanionScope,
+                CompanionMode = draft.CompanionMode,
+                CompanionUrl = draft.CompanionUrl
+            };
+
+            await Task.Run(async () =>
+            {
+                using var scope = _serviceProvider.CreateScope();
+                var lifecycleService = scope.ServiceProvider.GetRequiredService<ISourceLifecycleService>();
+                await lifecycleService.UpdateGuideSettingsAsync(
+                    request,
+                    syncNow);
+            });
 
             await LoadSourcesAsync();
         }
@@ -693,9 +701,7 @@ namespace Kroira.App.ViewModels
         {
             try
             {
-                using var scope = _serviceProvider.CreateScope();
-                var refreshService = scope.ServiceProvider.GetRequiredService<ISourceRefreshService>();
-                var result = await refreshService.RefreshSourceAsync(sourceId, SourceRefreshTrigger.Manual, SourceRefreshScope.EpgOnly);
+                var result = await RefreshSourceOffUiThreadAsync(sourceId, SourceRefreshTrigger.Manual, SourceRefreshScope.EpgOnly);
                 if (!result.Success)
                 {
                     return result.Message;
@@ -1122,7 +1128,7 @@ namespace Kroira.App.ViewModels
                 ? LocalizedStrings.Get("Sources_Empty_NoSources_Title")
                 : LocalizedStrings.Get("Sources_Empty_NoMatches_Title");
             EmptyStateMessage = noConfiguredSources
-                ? LocalizedStrings.Get("Sources_Empty_NoSources_Message")
+                ? NoSourcesContentMessage
                 : LocalizedStrings.Get("Sources_Empty_NoMatches_Message");
         }
 
@@ -1171,7 +1177,7 @@ namespace Kroira.App.ViewModels
                 ? LocalizedStrings.Get("Sources_Empty_NoSources_Title")
                 : LocalizedStrings.Get("Sources_Empty_NoMatches_Title");
             EmptyStateMessage = noConfiguredSources
-                ? LocalizedStrings.Get("Sources_Empty_NoSources_Message")
+                ? NoSourcesContentMessage
                 : LocalizedStrings.Get("Sources_Empty_NoMatches_Message");
         }
 
@@ -1518,9 +1524,7 @@ namespace Kroira.App.ViewModels
 
             try
             {
-                using var scope = _serviceProvider.CreateScope();
-                var refreshService = scope.ServiceProvider.GetRequiredService<ISourceRefreshService>();
-                var result = await refreshService.RefreshSourceAsync(id, SourceRefreshTrigger.Manual, SourceRefreshScope.LiveOnly);
+                var result = await RefreshSourceOffUiThreadAsync(id, SourceRefreshTrigger.Manual, SourceRefreshScope.LiveOnly);
                 await LoadSourcesAsync();
                 if (!result.Success)
                 {
@@ -1588,7 +1592,7 @@ namespace Kroira.App.ViewModels
                             item.Status = LocalizedStrings.Get("Sources_Status_RefreshingSource");
                         }
 
-                        await refreshService.RefreshSourceAsync(profile.Id, SourceRefreshTrigger.Manual, refreshScope);
+                        await RefreshSourceOffUiThreadAsync(profile.Id, SourceRefreshTrigger.Manual, refreshScope);
                     }
                     catch (Exception ex)
                     {
@@ -1620,9 +1624,7 @@ namespace Kroira.App.ViewModels
 
             try
             {
-                using var scope = _serviceProvider.CreateScope();
-                var refreshService = scope.ServiceProvider.GetRequiredService<ISourceRefreshService>();
-                await refreshService.RefreshSourceAsync(id, SourceRefreshTrigger.Manual, SourceRefreshScope.EpgOnly);
+                await RefreshSourceOffUiThreadAsync(id, SourceRefreshTrigger.Manual, SourceRefreshScope.EpgOnly);
                 await LoadSourcesAsync();
             }
             catch (Exception ex)
@@ -1645,9 +1647,7 @@ namespace Kroira.App.ViewModels
 
             try
             {
-                using var scope = _serviceProvider.CreateScope();
-                var refreshService = scope.ServiceProvider.GetRequiredService<ISourceRefreshService>();
-                var result = await refreshService.RefreshSourceAsync(id, SourceRefreshTrigger.Manual, SourceRefreshScope.Full);
+                var result = await RefreshSourceOffUiThreadAsync(id, SourceRefreshTrigger.Manual, SourceRefreshScope.Full);
                 await LoadSourcesAsync();
                 if (!result.Success)
                 {
@@ -1688,9 +1688,7 @@ namespace Kroira.App.ViewModels
 
             try
             {
-                using var scope = _serviceProvider.CreateScope();
-                var refreshService = scope.ServiceProvider.GetRequiredService<ISourceRefreshService>();
-                await refreshService.RefreshSourceAsync(id, SourceRefreshTrigger.Manual, SourceRefreshScope.VodOnly);
+                await RefreshSourceOffUiThreadAsync(id, SourceRefreshTrigger.Manual, SourceRefreshScope.VodOnly);
                 await LoadSourcesAsync();
             }
             catch (Exception ex)
@@ -1701,6 +1699,19 @@ namespace Kroira.App.ViewModels
                     item.Status = BuildStatusMessage(LocalizedStrings.Get("Sources_Status_LibraryRefreshFailed"), ex.Message);
                 }
             }
+        }
+
+        private Task<SourceRefreshResult> RefreshSourceOffUiThreadAsync(
+            int sourceProfileId,
+            SourceRefreshTrigger trigger,
+            SourceRefreshScope refreshScope)
+        {
+            return Task.Run(async () =>
+            {
+                using var scope = _serviceProvider.CreateScope();
+                var refreshService = scope.ServiceProvider.GetRequiredService<ISourceRefreshService>();
+                return await refreshService.RefreshSourceAsync(sourceProfileId, trigger, refreshScope);
+            });
         }
 
         [RelayCommand]

@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 using Kroira.App.Data;
 using Kroira.App.Models;
@@ -20,7 +21,8 @@ namespace Kroira.App.Services.Parsing
             AppDbContext db,
             int sourceProfileId,
             SourceAcquisitionSession? acquisitionSession = null,
-            bool refreshHealth = true);
+            bool refreshHealth = true,
+            CancellationToken cancellationToken = default);
     }
 
     public class M3uParserService : IM3uParserService
@@ -53,8 +55,10 @@ namespace Kroira.App.Services.Parsing
             AppDbContext db,
             int sourceProfileId,
             SourceAcquisitionSession? acquisitionSession = null,
-            bool refreshHealth = true)
+            bool refreshHealth = true,
+            CancellationToken cancellationToken = default)
         {
+            RuntimeEventLogger.LogEvent("playlist_parse_started", $"source_id={sourceProfileId}; source_type=M3U");
             var cred = await _credentialStore.GetCredentialAsync(db, sourceProfileId);
             if (cred == null || string.IsNullOrWhiteSpace(cred.Url))
             {
@@ -64,7 +68,12 @@ namespace Kroira.App.Services.Parsing
             try
             {
                 var importMode = cred.M3uImportMode;
-                var content = await ReadPlaylistAsync(cred.Url, cred);
+                var content = await ReadPlaylistAsync(cred.Url, cred, cancellationToken);
+                if (!LooksLikeM3u(content))
+                {
+                    throw new InvalidDataException("Invalid M3U format.");
+                }
+
                 var headerMetadata = M3uMetadataParser.ParseHeaderMetadata(content, cred.Url);
                 cred.DetectedEpgUrl = headerMetadata.XmltvUrls.FirstOrDefault() ?? string.Empty;
                 var diagnostics = new M3uImportDiagnostics
@@ -81,9 +90,15 @@ namespace Kroira.App.Services.Parsing
                 var currentCategoryContext = string.Empty;
                 PendingExtinf? pending = null;
                 var seenEntries = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                var parsedLineCount = 0;
 
                 foreach (var rawLine in lines)
                 {
+                    if ((++parsedLineCount & 0x3ff) == 0)
+                    {
+                        cancellationToken.ThrowIfCancellationRequested();
+                    }
+
                     var line = StripBom(rawLine).Trim();
                     if (string.IsNullOrWhiteSpace(line))
                     {
@@ -431,6 +446,10 @@ namespace Kroira.App.Services.Parsing
                 var totalSeries = seriesList.Count;
                 var totalEpisodes = seriesList.Sum(series => series.Seasons?.Sum(season => season.Episodes?.Count ?? 0) ?? 0);
                 var uncategorizedCount = GetUncategorizedCount(categoriesDict, movieList, seriesList);
+                if (totalChannels == 0 && totalMovies == 0 && totalSeries == 0)
+                {
+                    throw new InvalidDataException("No playable channels found.");
+                }
 
                 diagnostics.LiveCount = totalChannels;
                 diagnostics.MovieCount = totalMovies;
@@ -438,38 +457,38 @@ namespace Kroira.App.Services.Parsing
                 diagnostics.UncategorizedCount = uncategorizedCount;
                 LogImportDiagnostics(sourceProfileId, diagnostics);
 
-                using var transaction = await db.Database.BeginTransactionAsync();
+                using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
                 try
                 {
                     var existingCats = await db.ChannelCategories
                         .Where(category => category.SourceProfileId == sourceProfileId)
-                        .ToListAsync();
+                        .ToListAsync(cancellationToken);
                     var catIds = existingCats.Select(category => category.Id).ToList();
                     var existingChannels = await db.Channels
                         .Where(channel => catIds.Contains(channel.ChannelCategoryId))
-                        .ToListAsync();
+                        .ToListAsync(cancellationToken);
                     db.Channels.RemoveRange(existingChannels);
                     db.ChannelCategories.RemoveRange(existingCats);
 
                     var existingMovies = await db.Movies
                         .Where(movie => movie.SourceProfileId == sourceProfileId)
-                        .ToListAsync();
+                        .ToListAsync(cancellationToken);
                     db.Movies.RemoveRange(existingMovies);
 
                     var existingSeries = await db.Series
                         .Include(series => series.Seasons!)
                         .ThenInclude(season => season.Episodes!)
                         .Where(series => series.SourceProfileId == sourceProfileId)
-                        .ToListAsync();
+                        .ToListAsync(cancellationToken);
                     db.Series.RemoveRange(existingSeries);
 
-                    await db.SaveChangesAsync();
+                    await db.SaveChangesAsync(cancellationToken);
 
                     db.ChannelCategories.AddRange(categoriesDict.Values);
                     db.Movies.AddRange(movieList);
                     db.Series.AddRange(seriesList);
 
-                    var syncState = await db.SourceSyncStates.FirstOrDefaultAsync(state => state.SourceProfileId == sourceProfileId);
+                    var syncState = await db.SourceSyncStates.FirstOrDefaultAsync(state => state.SourceProfileId == sourceProfileId, cancellationToken);
                     if (syncState != null)
                     {
                         syncState.LastAttempt = DateTime.UtcNow;
@@ -483,16 +502,16 @@ namespace Kroira.App.Services.Parsing
                             diagnostics);
                     }
 
-                    var profile = await db.SourceProfiles.FirstOrDefaultAsync(source => source.Id == sourceProfileId);
+                    var profile = await db.SourceProfiles.FirstOrDefaultAsync(source => source.Id == sourceProfileId, cancellationToken);
                     if (profile != null)
                     {
                         profile.LastSync = DateTime.UtcNow;
                     }
 
                     await _credentialStore.ProtectCredentialAsync(db, cred);
-                    await db.SaveChangesAsync();
+                    await db.SaveChangesAsync(cancellationToken);
                     await _sourceEnrichmentService.PrepareLiveCatalogAsync(db, sourceProfileId, acquisitionSession);
-                    await transaction.CommitAsync();
+                    await transaction.CommitAsync(cancellationToken);
 
                     acquisitionSession?.RegisterAccepted(SourceAcquisitionItemKind.LiveChannel, totalChannels);
                     acquisitionSession?.RegisterAccepted(SourceAcquisitionItemKind.Movie, totalMovies);
@@ -504,6 +523,10 @@ namespace Kroira.App.Services.Parsing
                     {
                         await _sourceHealthService.RefreshSourceHealthAsync(db, sourceProfileId, acquisitionSession);
                     }
+
+                    RuntimeEventLogger.LogEvent(
+                        "playlist_parse_completed",
+                        $"source_id={sourceProfileId}; source_type=M3U; live={totalChannels}; movies={totalMovies}; series={totalSeries}; episodes={totalEpisodes}");
                 }
                 catch
                 {
@@ -514,6 +537,7 @@ namespace Kroira.App.Services.Parsing
             catch (Exception ex)
             {
                 var safeMessage = EpgDiagnosticFormatter.Redact(ex.Message);
+                RuntimeEventLogger.LogEvent("playlist_parse_failed", ex, $"source_id={sourceProfileId}; source_type=M3U");
                 var syncState = await db.SourceSyncStates.FirstOrDefaultAsync(state => state.SourceProfileId == sourceProfileId);
                 if (syncState != null)
                 {
@@ -810,15 +834,21 @@ namespace Kroira.App.Services.Parsing
             return movie;
         }
 
-        private async Task<string> ReadPlaylistAsync(string location, SourceCredential credential)
+        private async Task<string> ReadPlaylistAsync(string location, SourceCredential credential, CancellationToken cancellationToken)
         {
             if (location.StartsWith("http", StringComparison.OrdinalIgnoreCase))
             {
                 using var client = _sourceRoutingService.CreateHttpClient(credential, SourceNetworkPurpose.Import, TimeSpan.FromSeconds(60));
-                return await client.GetStringAsync(location);
+                return await client.GetStringAsync(location, cancellationToken);
             }
 
-            return await System.IO.File.ReadAllTextAsync(location);
+            return await System.IO.File.ReadAllTextAsync(location, cancellationToken);
+        }
+
+        private static bool LooksLikeM3u(string content)
+        {
+            return !string.IsNullOrWhiteSpace(content) &&
+                   content.Contains("#EXTM3U", StringComparison.OrdinalIgnoreCase);
         }
 
         private static string ResolveEntryName(M3uExtinfMetadata extinf)

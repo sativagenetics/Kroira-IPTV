@@ -1,5 +1,7 @@
+#nullable enable
 using System;
 using System.Globalization;
+using System.Threading;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -15,6 +17,8 @@ namespace Kroira.App.ViewModels
     {
         private readonly IServiceProvider _serviceProvider;
         private readonly IEntitlementService _entitlementService;
+        private CancellationTokenSource? _saveSourceCts;
+        private bool _saveSourceCancelRequested;
 
         [ObservableProperty]
         private string _sourceName = string.Empty;
@@ -103,9 +107,17 @@ namespace Kroira.App.ViewModels
         [NotifyPropertyChangedFor(nameof(StatusVisibility))]
         private string _statusMessage = string.Empty;
 
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(CanStartSaveSource))]
+        [NotifyPropertyChangedFor(nameof(CancelSaveVisibility))]
+        [NotifyPropertyChangedFor(nameof(CanTestSource))]
+        private bool _isSavingSource;
+
         public bool HasStatus => !string.IsNullOrEmpty(StatusMessage);
         public Microsoft.UI.Xaml.Visibility StatusVisibility => HasStatus ? Microsoft.UI.Xaml.Visibility.Visible : Microsoft.UI.Xaml.Visibility.Collapsed;
         public bool CanSaveSource => _entitlementService.IsFeatureEnabled(EntitlementFeatureKeys.SourcesAdd);
+        public bool CanStartSaveSource => CanSaveSource && !IsSavingSource;
+        public Microsoft.UI.Xaml.Visibility CancelSaveVisibility => IsSavingSource ? Microsoft.UI.Xaml.Visibility.Visible : Microsoft.UI.Xaml.Visibility.Collapsed;
         public Microsoft.UI.Xaml.Visibility ManualEpgVisibility => SelectedEpgModeIndex == 1
             ? Microsoft.UI.Xaml.Visibility.Visible
             : Microsoft.UI.Xaml.Visibility.Collapsed;
@@ -152,9 +164,16 @@ namespace Kroira.App.ViewModels
             _entitlementService = entitlementService;
         }
 
-        [RelayCommand]
+        public event EventHandler<int>? SourceImportSucceeded;
+
+        [RelayCommand(CanExecute = nameof(CanStartSaveSource))]
         public async Task SaveSourceAsync()
         {
+            if (IsSavingSource)
+            {
+                return;
+            }
+
             if (!CanSaveSource)
             {
                 StatusMessage = "Adding sources is not available on this tier.";
@@ -199,8 +218,16 @@ namespace Kroira.App.ViewModels
 
             try
             {
+                IsSavingSource = true;
+                _saveSourceCancelRequested = false;
+                _saveSourceCts?.Cancel();
+                _saveSourceCts?.Dispose();
+                _saveSourceCts = new CancellationTokenSource();
+                _saveSourceCts.CancelAfter(TimeSpan.FromMinutes(4));
+                var cancellationToken = _saveSourceCts.Token;
+
                 StatusMessage = "Testing the source before save...";
-                var validation = await ValidateCurrentDraftAsync(force: false);
+                var validation = await ValidateCurrentDraftAsync(force: false, cancellationToken);
                 if (!validation.CanSave)
                 {
                     StatusMessage = string.IsNullOrWhiteSpace(validation.SummaryText)
@@ -214,7 +241,7 @@ namespace Kroira.App.ViewModels
                 var sourceLimit = _entitlementService.GetLimit(EntitlementLimitKeys.SourcesMaxCount);
                 if (sourceLimit.HasValue)
                 {
-                    var existingSourceCount = await db.SourceProfiles.CountAsync();
+                    var existingSourceCount = await db.SourceProfiles.CountAsync(cancellationToken);
                     if (existingSourceCount >= sourceLimit.Value)
                     {
                         StatusMessage = $"This tier supports up to {sourceLimit.Value} source{(sourceLimit.Value == 1 ? string.Empty : "s")}.";
@@ -225,7 +252,7 @@ namespace Kroira.App.ViewModels
                 var lifecycleService = scope.ServiceProvider.GetRequiredService<ISourceLifecycleService>();
                 StatusMessage = "Saving your source and starting the first sync...";
 
-                var result = await lifecycleService.CreateSourceAsync(new SourceCreateRequest
+                var request = new SourceCreateRequest
                 {
                     Name = SourceName,
                     Type = IsM3U ? SourceType.M3U : IsXtream ? SourceType.Xtream : SourceType.Stalker,
@@ -246,9 +273,18 @@ namespace Kroira.App.ViewModels
                     StalkerSerialNumber = StalkerSerialNumber,
                     StalkerTimezone = StalkerTimezone,
                     StalkerLocale = StalkerLocale
-                });
+                };
+
+                var result = await Task.Run(
+                    () => lifecycleService.CreateSourceAsync(request, cancellationToken),
+                    cancellationToken);
 
                 StatusMessage = result.Message;
+                if (!result.ImportSucceeded)
+                {
+                    return;
+                }
+
                 SourceName = string.Empty;
                 M3uUrlOrPath = string.Empty;
                 ManualEpgUrl = string.Empty;
@@ -269,11 +305,38 @@ namespace Kroira.App.ViewModels
                 StalkerTimezone = ResolveDefaultTimezone();
                 StalkerLocale = CultureInfo.CurrentCulture.Name;
                 ClearValidationSnapshot();
+                SourceImportSucceeded?.Invoke(this, result.SourceId);
+            }
+            catch (OperationCanceledException)
+            {
+                StatusMessage = _saveSourceCancelRequested
+                    ? "Source import was canceled."
+                    : "Request timed out.";
             }
             catch (Exception ex)
             {
                 StatusMessage = $"Could not save this source: {ex.Message}";
             }
+            finally
+            {
+                IsSavingSource = false;
+                _saveSourceCts?.Dispose();
+                _saveSourceCts = null;
+                _saveSourceCancelRequested = false;
+            }
+        }
+
+        [RelayCommand]
+        public void CancelSourceSave()
+        {
+            _saveSourceCancelRequested = true;
+            _saveSourceCts?.Cancel();
+            StatusMessage = "Canceling source import...";
+        }
+
+        partial void OnIsSavingSourceChanged(bool value)
+        {
+            SaveSourceCommand.NotifyCanExecuteChanged();
         }
 
         private EpgActiveMode SelectedGuideMode => SelectedEpgModeIndex switch

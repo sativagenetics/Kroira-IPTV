@@ -284,7 +284,6 @@ namespace Kroira.App.ViewModels
                 using var scope = _serviceProvider.CreateScope();
                 var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
                 var reportService = scope.ServiceProvider.GetRequiredService<IEpgCoverageReportService>();
-                var refreshService = scope.ServiceProvider.GetRequiredService<ISourceRefreshService>();
                 var report = await reportService.BuildReportAsync(db);
                 var sourceIds = report.Sources
                     .Where(source => source.CanSync)
@@ -300,7 +299,7 @@ namespace Kroira.App.ViewModels
                     await Task.Yield();
                     try
                     {
-                        await refreshService.RefreshSourceAsync(sourceId, SourceRefreshTrigger.Manual, SourceRefreshScope.EpgOnly);
+                        await RefreshGuideOffUiThreadAsync(sourceId);
                     }
                     catch (Exception ex)
                     {
@@ -316,6 +315,16 @@ namespace Kroira.App.ViewModels
                 RefreshProgressText = string.Empty;
                 IsBusy = false;
             }
+        }
+
+        private Task RefreshGuideOffUiThreadAsync(int sourceId)
+        {
+            return Task.Run(async () =>
+            {
+                using var scope = _serviceProvider.CreateScope();
+                var refreshService = scope.ServiceProvider.GetRequiredService<ISourceRefreshService>();
+                await refreshService.RefreshSourceAsync(sourceId, SourceRefreshTrigger.Manual, SourceRefreshScope.EpgOnly);
+            });
         }
 
         [RelayCommand]

@@ -4,7 +4,7 @@ namespace Kroira.App.Services
 {
     /// <summary>
     /// Stub entitlement service used until real Store IAP is wired up.
-    /// Always reports Free tier; purchase calls are no-ops. StoreContext integration is outside the v2.0.0 release candidate scope.
+    /// Always reports Free tier; purchase calls are no-ops. StoreContext integration is outside the v2.0.1 release candidate scope.
     /// </summary>
     public class MockEntitlementService : IEntitlementService
     {

@@ -3,9 +3,9 @@
 ## App Identity
 
 - App name: KROIRA IPTV
-- Public release version: `2.0.0`
-- Package manifest identity version: `2.0.0.4`
-- App assembly/file version: `2.0.0.0`
+- Public release version: `2.0.1`
+- Package manifest identity version: `2.0.1.0`
+- App assembly/file version: `2.0.1.0`
 - Privacy URL: https://sativagenetics.github.io/KroiraIPTV/privacy.html
 - Support URL: https://sativagenetics.github.io/KroiraIPTV/support.html
 - Support email: batuhandemirbilek7@gmail.com

@@ -353,7 +353,10 @@ public sealed class EpgDiscoveryParsingMatchingTests
 
         public SourceType SourceType => SourceType.M3U;
 
-        public Task<EpgDiscoveryResult> DiscoverAsync(AppDbContext db, int sourceProfileId)
+        public Task<EpgDiscoveryResult> DiscoverAsync(
+            AppDbContext db,
+            int sourceProfileId,
+            System.Threading.CancellationToken cancellationToken = default)
         {
             var source = new EpgDiscoveredGuideSource
             {

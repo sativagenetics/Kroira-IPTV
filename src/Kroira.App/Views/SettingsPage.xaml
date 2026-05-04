@@ -448,8 +448,8 @@
                     <Border Style="{StaticResource KroiraSettingsGroupStyle}">
                         <StackPanel Spacing="14">
                             <StackPanel Spacing="3">
-                                <TextBlock Text="{x:Bind BackupSectionTitle, Mode=OneWay}" Style="{StaticResource KroiraSectionTitleStyle}" />
-                                <TextBlock Text="{x:Bind BackupSectionDescription, Mode=OneWay}"
+                                <TextBlock Text="{x:Bind BackupSectionTitle, Mode=OneTime}" Style="{StaticResource KroiraSectionTitleStyle}" />
+                                <TextBlock Text="{x:Bind BackupSectionDescription, Mode=OneTime}"
                                            Style="{StaticResource KroiraBodyStyle}"
                                            TextWrapping="Wrap" />
                             </StackPanel>
@@ -457,7 +457,7 @@
                             <Border Height="1" Background="{StaticResource KroiraBorderBrush}" Opacity="0.45" />
 
                             <TextBlock x:Uid="SettingsRestoreWarning" runtime:RuntimeLocalizer.Uid="SettingsRestoreWarning" Text="Restore replaces the current local setup, then rebuilds the library from the restored sources on this device."
-                                       Visibility="{x:Bind RestoreBackupVisibility, Mode=OneWay}"
+                                       Visibility="{x:Bind RestoreBackupVisibility, Mode=OneTime}"
                                        Style="{StaticResource KroiraBodyStyle}"
                                        TextWrapping="Wrap" />
 
@@ -469,7 +469,7 @@
 
                                  <Button x:Uid="SettingsRestoreButton" runtime:RuntimeLocalizer.Uid="SettingsRestoreButton" Content="Restore"
                                          Click="OnRestoreBackupClick"
-                                         Visibility="{x:Bind RestoreBackupVisibility, Mode=OneWay}"
+                                         Visibility="{x:Bind RestoreBackupVisibility, Mode=OneTime}"
                                          IsEnabled="{x:Bind ViewModel.CanStartBackupAction, Mode=OneWay}"
                                          AutomationProperties.Name="Restore backup" />
 

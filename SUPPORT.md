@@ -32,7 +32,7 @@ Include the minimum context needed to reproduce the problem:
 
 - source type: M3U playlist, Xtream provider, or supported portal profile
 - affected area: sources, live TV, movies, series, guide data, playback, favorites, continue watching, or settings
-- app build/version if known, for example `2.0.0` or package `2.0.0.4`
+- app build/version if known, for example `2.0.1` or package `2.0.1.0`
 - Windows version if relevant
 - steps to reproduce
 - expected result

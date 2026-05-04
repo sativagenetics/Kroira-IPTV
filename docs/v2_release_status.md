@@ -5,9 +5,9 @@ This document summarizes the current V2 release-candidate state for public GitHu
 ## Release Identity
 
 - Product name: KROIRA IPTV
-- Public release version: `2.0.0`
-- Package manifest identity version: `2.0.0.4`
-- App assembly/file version: `2.0.0.0`
+- Public release version: `2.0.1`
+- Package manifest identity version: `2.0.1.0`
+- App assembly/file version: `2.0.1.0`
 - Current baseline branch: `main`
 - Primary platform: packaged Windows desktop app, WinUI 3, .NET 8, Windows App SDK
 
@@ -43,7 +43,7 @@ KROIRA does not provide, host, sell, curate, or distribute channels, playlists, 
 ## Release-Readiness Checklist
 
 - [ ] `src/Kroira.App/Package.appxmanifest` version matches the intended package upload version
-- [ ] `src/Kroira.App/Kroira.App.csproj`, [RELEASE_NOTES_v2.0.0.md](../RELEASE_NOTES_v2.0.0.md), and Store copy agree on release identity
+- [ ] `src/Kroira.App/Kroira.App.csproj`, [RELEASE_NOTES_v2.0.1.md](../RELEASE_NOTES_v2.0.1.md), and Store copy agree on release identity
 - [ ] [docs/store_submission_info.md](store_submission_info.md) matches Partner Center copy
 - [ ] [docs/privacy.html](privacy.html) and [docs/support.html](support.html) are published and reachable
 - [ ] `runFullTrust` and `internetClient` capability justifications are current

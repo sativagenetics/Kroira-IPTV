@@ -163,7 +163,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\store-screenshots.
 
 ## Project Status
 
-KROIRA IPTV `2.0.0` is the current public app line. The Microsoft Store is the recommended install path for users, while this repository remains the source, issue, release, validation, and contributor workspace.
+KROIRA IPTV `2.0.1` is the current public app line. The Microsoft Store is the recommended install path for users, while this repository remains the source, issue, release, validation, and contributor workspace.
 
 Useful project docs:
 
@@ -171,7 +171,7 @@ Useful project docs:
 - [Store Submission Info](docs/store_submission_info.md)
 - [Store Release Checklist](docs/store_release_checklist.md)
 - [Package Assets](docs/package_assets.md)
-- [Release Notes v2.0.0](RELEASE_NOTES_v2.0.0.md)
+- [Release Notes v2.0.1](RELEASE_NOTES_v2.0.1.md)
 
 Current focus areas:
 
@@ -180,7 +180,7 @@ Current focus areas:
 - Search, filtering, sorting, and metadata-quality improvements across catalog surfaces
 - Localization quality and provider-quirk coverage in the regression corpus
 
-Release-gated workflows such as recording, download, restore, and media-library features may exist in the codebase, but they are not part of the default public `2.0.0` surface.
+Release-gated workflows such as recording, download, restore, and media-library features may exist in the codebase, but they are not part of the default public `2.0.1` surface.
 
 ## Privacy, Support, And Legal
 

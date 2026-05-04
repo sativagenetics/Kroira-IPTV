@@ -120,7 +120,7 @@ namespace Kroira.App.Services
             builder.Path = pathSegments.Count == 0
                 ? uri.AbsolutePath
                 : "/" + string.Join("/", pathSegments.Select(Uri.EscapeDataString));
-            builder.Query = BuildRedactedQuery(uri.Query);
+            builder.Query = string.Empty;
             return builder.Uri.AbsoluteUri;
         }
 

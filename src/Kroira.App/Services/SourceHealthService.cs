@@ -332,11 +332,13 @@ namespace Kroira.App.Services
             var liveProbeTask = BuildLiveProbeAsync(db, profile, credential, liveChannels);
             var vodProbeTask = BuildVodProbeAsync(db, profile, credential, movies, episodes);
             await Task.WhenAll(liveProbeTask, vodProbeTask);
+            var liveProbe = await liveProbeTask;
+            var vodProbe = await vodProbeTask;
 
             return new List<SourceHealthProbeDraft>
             {
-                liveProbeTask.Result,
-                vodProbeTask.Result
+                liveProbe,
+                vodProbe
             };
         }
 

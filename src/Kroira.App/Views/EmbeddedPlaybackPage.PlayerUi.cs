@@ -32,6 +32,8 @@ namespace Kroira.App.Views
             public string SourceName { get; init; } = string.Empty;
             public string StreamUrl { get; init; } = string.Empty;
             public string MetaText { get; init; } = string.Empty;
+            public int CategoryId { get; init; }
+            public string CategoryKey { get; init; } = string.Empty;
         }
 
         private sealed class PlayerEpisodeSwitchItem
@@ -65,6 +67,7 @@ namespace Kroira.App.Views
         private readonly ObservableCollection<PlayerGuideProgramItem> _guideProgramItems = new();
         private readonly List<PlayerChannelSwitchItem> _allChannelSwitchItems = new();
         private readonly List<PlayerEpisodeSwitchItem> _allEpisodeSwitchItems = new();
+        private readonly SemaphoreSlim _channelSwitchGate = new(1, 1);
         private readonly List<(double Speed, ToggleMenuFlyoutItem Item)> _speedItems = new();
         private readonly List<(string Key, ToggleMenuFlyoutItem Item)> _toggleToolItems = new();
         private readonly List<(double Scale, string Label)> _subtitleScalePresets = new()
@@ -83,9 +86,16 @@ namespace Kroira.App.Views
         private string _resolvedGuideSummary = string.Empty;
         private string _resolvedRoutingSummary = string.Empty;
         private int _resolvedSourceProfileId;
+        private IReadOnlyList<PlayerChannelSwitchItem> _playbackChannelQueue = Array.Empty<PlayerChannelSwitchItem>();
+        private int _playbackQueueCurrentChannelId;
+        private int _playbackQueueSourceId;
+        private int _playbackQueueCategoryId;
+        private string _playbackQueueCategoryKey = string.Empty;
         private FavoriteType? _favoriteType;
         private int _favoriteContentId;
         private int _lastChannelCandidateId;
+        private bool _channelSwitchInProgress;
+        private int _channelSwitchAttemptId;
         private bool _guidePanelOpen;
         private bool _channelPanelOpen;
         private bool _episodePanelOpen;
@@ -378,11 +388,12 @@ namespace Kroira.App.Views
                 scopedRows.Select(row => row.Channel.Id).ToList(),
                 DateTime.UtcNow);
 
+            var scopedItems = new List<PlayerChannelSwitchItem>(scopedRows.Count);
             foreach (var row in scopedRows)
             {
                 guideSummaries.TryGetValue(row.Channel.Id, out var summary);
                 var meta = BuildChannelMeta(summary);
-                _allChannelSwitchItems.Add(new PlayerChannelSwitchItem
+                var item = new PlayerChannelSwitchItem
                 {
                     Id = row.Channel.Id,
                     PreferredSourceProfileId = row.SourceId,
@@ -390,9 +401,22 @@ namespace Kroira.App.Views
                     Name = row.Channel.Name,
                     SourceName = row.SourceName,
                     StreamUrl = row.Channel.StreamUrl,
-                    MetaText = meta
-                });
+                    MetaText = meta,
+                    CategoryId = row.Category.Id,
+                    CategoryKey = BuildChannelCategoryKey(row.SourceId, row.Category.Id)
+                };
+                _allChannelSwitchItems.Add(item);
+                scopedItems.Add(item);
             }
+
+            var launchQueue = BuildPlaybackQueueFromLaunchContext(_context);
+            _playbackChannelQueue = launchQueue.Any(item => item.Id == currentRow.Channel.Id)
+                ? launchQueue
+                : scopedItems;
+            _playbackQueueCurrentChannelId = currentRow.Channel.Id;
+            _playbackQueueSourceId = currentRow.SourceId;
+            _playbackQueueCategoryId = currentRow.Category.Id;
+            _playbackQueueCategoryKey = BuildChannelCategoryKey(currentRow.SourceId, currentRow.Category.Id);
 
             ApplyChannelSearchFilter();
             if (guideSummaries.TryGetValue(currentRow.Channel.Id, out var currentSummary))
@@ -403,6 +427,45 @@ namespace Kroira.App.Views
             {
                 ClearGuidePanel();
             }
+        }
+
+        private static List<PlayerChannelSwitchItem> BuildPlaybackQueueFromLaunchContext(PlaybackLaunchContext context)
+        {
+            if (context.ChannelQueue.Count == 0)
+            {
+                return new List<PlayerChannelSwitchItem>();
+            }
+
+            var items = new List<PlayerChannelSwitchItem>(context.ChannelQueue.Count);
+            var seenIds = new HashSet<int>();
+            foreach (var item in context.ChannelQueue)
+            {
+                if (item.Id <= 0 || !seenIds.Add(item.Id))
+                {
+                    continue;
+                }
+
+                items.Add(new PlayerChannelSwitchItem
+                {
+                    Id = item.Id,
+                    PreferredSourceProfileId = item.PreferredSourceProfileId,
+                    LogicalContentKey = item.LogicalContentKey,
+                    Name = item.Name,
+                    SourceName = item.SourceName,
+                    StreamUrl = item.StreamUrl,
+                    CategoryId = item.CategoryId,
+                    CategoryKey = string.IsNullOrWhiteSpace(item.CategoryKey)
+                        ? BuildChannelCategoryKey(item.PreferredSourceProfileId, item.CategoryId)
+                        : item.CategoryKey
+                });
+            }
+
+            return items;
+        }
+
+        private static string BuildChannelCategoryKey(int sourceProfileId, int categoryId)
+        {
+            return $"{sourceProfileId}:{categoryId}";
         }
 
         private async Task LoadMovieContentStateAsync(
@@ -594,9 +657,11 @@ namespace Kroira.App.Views
             BottomGuideButton.Visibility = isChannel ? Visibility.Visible : Visibility.Collapsed;
             BottomChannelListButton.Visibility = isChannel ? Visibility.Visible : Visibility.Collapsed;
 
-            PreviousChannelButton.IsEnabled = useLiveControlLayout && _allChannelSwitchItems.Count > 1;
-            NextChannelButton.IsEnabled = useLiveControlLayout && _allChannelSwitchItems.Count > 1;
-            LastChannelButton.IsEnabled = isChannel && _lastChannelCandidateId > 0;
+            var channelQueueCount = _playbackChannelQueue.Count > 0 ? _playbackChannelQueue.Count : _allChannelSwitchItems.Count;
+            var canSwitchChannels = useLiveControlLayout && channelQueueCount > 1 && !_channelSwitchInProgress;
+            PreviousChannelButton.IsEnabled = canSwitchChannels;
+            NextChannelButton.IsEnabled = canSwitchChannels;
+            LastChannelButton.IsEnabled = isChannel && _lastChannelCandidateId > 0 && !_channelSwitchInProgress;
             EpisodePanelButton.IsEnabled = hasEpisodeNavigation;
             FavoriteButton.Visibility = _favoriteType.HasValue ? Visibility.Visible : Visibility.Collapsed;
             BuildToolsFlyout();

@@ -10,7 +10,7 @@ public sealed class AppSubmissionInfoTests
     public void StoreMetadata_HasRequiredVersionDescriptionsAndLinks()
     {
         Assert.AreEqual("KROIRA IPTV", AppSubmissionInfo.AppName);
-        Assert.AreEqual("2.0.0", AppSubmissionInfo.ReleaseVersion);
+        Assert.AreEqual("2.0.1", AppSubmissionInfo.ReleaseVersion);
 
         AssertContains(AppSubmissionInfo.ShortDescription, "media player");
         AssertContains(AppSubmissionInfo.ShortDescription, "source manager");

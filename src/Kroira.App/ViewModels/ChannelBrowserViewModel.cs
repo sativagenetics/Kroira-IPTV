@@ -1,7 +1,6 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -174,7 +173,7 @@ namespace Kroira.App.ViewModels
         public string Key { get; }
         public string Title => _title;
         public string Subtitle => _subtitle;
-        public ObservableCollection<BrowserChannelViewModel> Channels { get; } = new();
+        public BulkObservableCollection<BrowserChannelViewModel> Channels { get; } = new();
         public Visibility Visibility => Channels.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
         public Visibility ClearRecentActionVisibility =>
             string.Equals(Key, "recent", StringComparison.OrdinalIgnoreCase) && Channels.Count > 0
@@ -409,8 +408,8 @@ namespace Kroira.App.ViewModels
         private int _filterRequestVersion;
         private HashSet<string> _favoriteLogicalKeys = new(StringComparer.OrdinalIgnoreCase);
 
-        public ObservableCollection<BrowserCategoryViewModel> Categories { get; } = new();
-        public ObservableCollection<BrowserChannelViewModel> DisplayedChannels { get; } = new();
+        public BulkObservableCollection<BrowserCategoryViewModel> Categories { get; } = new();
+        public BulkObservableCollection<BrowserChannelViewModel> DisplayedChannels { get; } = new();
 
         [ObservableProperty]
         private BrowserCategoryViewModel? _selectedCategory;
@@ -427,8 +426,8 @@ namespace Kroira.App.ViewModels
 
         public async Task LoadSourceAsync(int sourceProfileId)
         {
-            Categories.Clear();
-            DisplayedChannels.Clear();
+            Categories.ReplaceAll(Array.Empty<BrowserCategoryViewModel>());
+            DisplayedChannels.ReplaceAll(Array.Empty<BrowserChannelViewModel>());
             _allChannelsCache.Clear();
 
             using var scope = _serviceProvider.CreateScope();
@@ -466,8 +465,10 @@ namespace Kroira.App.ViewModels
 
             _favoriteLogicalKeys = await _logicalCatalogStateService.GetFavoriteLogicalKeysAsync(db, activeProfileId, FavoriteType.Channel);
 
-            // Populate category list
-            Categories.Add(new BrowserCategoryViewModel { Id = 0, FilterKey = string.Empty, Name = "All Categories", OrderIndex = -1 });
+            var categoryItems = new List<BrowserCategoryViewModel>
+            {
+                new() { Id = 0, FilterKey = string.Empty, Name = "All Categories", OrderIndex = -1 }
+            };
             // Build channel view models first — always succeeds regardless of EPG state
             var channelVMs = chans
                 .Select(ch =>
@@ -511,7 +512,7 @@ namespace Kroira.App.ViewModels
                          .GroupBy(channel => channel.DisplayCategoryName)
                          .OrderBy(group => group.Key, StringComparer.CurrentCultureIgnoreCase))
             {
-                Categories.Add(new BrowserCategoryViewModel
+                categoryItems.Add(new BrowserCategoryViewModel
                 {
                     Id = categoryIndex,
                     FilterKey = NormalizeCategoryKey(category.Key),
@@ -522,8 +523,8 @@ namespace Kroira.App.ViewModels
                 categoryIndex++;
             }
 
-            foreach (var item in channelVMs)
-                _allChannelsCache.Add(item);
+            _allChannelsCache = channelVMs;
+            Categories.ReplaceAll(categoryItems);
 
             SelectedCategory = Categories.FirstOrDefault();
         }
@@ -595,11 +596,7 @@ namespace Kroira.App.ViewModels
                 return;
             }
 
-            DisplayedChannels.Clear();
-            foreach (var ch in filtered)
-            {
-                DisplayedChannels.Add(ch);
-            }
+            DisplayedChannels.ReplaceAll(filtered);
         }
 
         [RelayCommand]

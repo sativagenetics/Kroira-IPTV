@@ -5,6 +5,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Linq;
@@ -21,7 +22,8 @@ namespace Kroira.App.Services.Parsing
             AppDbContext db,
             int sourceProfileId,
             SourceAcquisitionSession? acquisitionSession = null,
-            bool refreshHealth = true);
+            bool refreshHealth = true,
+            CancellationToken cancellationToken = default);
     }
 
     public class XmltvParserService : IXmltvParserService
@@ -51,8 +53,10 @@ namespace Kroira.App.Services.Parsing
             AppDbContext db,
             int sourceProfileId,
             SourceAcquisitionSession? acquisitionSession = null,
-            bool refreshHealth = true)
+            bool refreshHealth = true,
+            CancellationToken cancellationToken = default)
         {
+            RuntimeEventLogger.LogEvent("playlist_parse_started", $"source_id={sourceProfileId}; source_type=EPG");
             var profile = await db.SourceProfiles.FirstOrDefaultAsync(p => p.Id == sourceProfileId);
             if (profile == null)
             {
@@ -98,7 +102,7 @@ namespace Kroira.App.Services.Parsing
 
             try
             {
-                var discovered = await discoveryService.DiscoverAsync(db, sourceProfileId);
+                var discovered = await discoveryService.DiscoverAsync(db, sourceProfileId, cancellationToken);
                 ImportRuntimeLogger.Log(
                     "EPG SYNC",
                     $"source_profile_id={sourceProfileId}; stage=discovery_complete; mode={discovered.ActiveMode}; active_xmltv_url={FormatDiagnosticValue(discovered.ActiveXmltvUrl)}; detected_xmltv_url={FormatDiagnosticValue(discovered.DetectedXmltvUrl)}; description={FormatDiagnosticValue(discovered.Description)}");
@@ -119,11 +123,13 @@ namespace Kroira.App.Services.Parsing
                     discovered,
                     _sourceEnrichmentService,
                     _credentialStore,
-                    acquisitionSession);
+                    acquisitionSession,
+                    cancellationToken);
                 if (refreshHealth)
                 {
                     await _sourceHealthService.RefreshSourceHealthAsync(db, sourceProfileId, acquisitionSession);
                 }
+                RuntimeEventLogger.LogEvent("playlist_parse_completed", $"source_id={sourceProfileId}; source_type=EPG");
             }
             catch (EpgUnavailableException ex)
             {
@@ -135,6 +141,7 @@ namespace Kroira.App.Services.Parsing
             }
             catch (EpgFetchException ex)
             {
+                RuntimeEventLogger.LogEvent("playlist_parse_failed", ex, $"source_id={sourceProfileId}; source_type=EPG");
                 await MarkEpgFailureAsync(
                     db,
                     sourceProfileId,
@@ -152,6 +159,7 @@ namespace Kroira.App.Services.Parsing
             }
             catch (EpgSyncFailureException ex)
             {
+                RuntimeEventLogger.LogEvent("playlist_parse_failed", ex, $"source_id={sourceProfileId}; source_type=EPG");
                 await MarkEpgFailureAsync(
                     db,
                     sourceProfileId,
@@ -169,6 +177,7 @@ namespace Kroira.App.Services.Parsing
             }
             catch (Exception ex)
             {
+                RuntimeEventLogger.LogEvent("playlist_parse_failed", ex, $"source_id={sourceProfileId}; source_type=EPG");
                 await MarkEpgFailureAsync(
                     db,
                     sourceProfileId,
@@ -192,7 +201,8 @@ namespace Kroira.App.Services.Parsing
             EpgDiscoveryResult discovered,
             ISourceEnrichmentService sourceEnrichmentService,
             ISourceCredentialStore credentialStore,
-            SourceAcquisitionSession? acquisitionSession)
+            SourceAcquisitionSession? acquisitionSession,
+            CancellationToken cancellationToken)
         {
             var xmltvChannels = new Dictionary<string, XmltvChannelAccumulator>(StringComparer.OrdinalIgnoreCase);
             var parseFailures = new List<string>();
@@ -202,6 +212,7 @@ namespace Kroira.App.Services.Parsing
 
             foreach (var source in discovered.GuideSources.OrderBy(source => source.Priority))
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 if (source.Status != EpgGuideSourceStatus.Ready || string.IsNullOrWhiteSpace(source.XmlContent))
                 {
                     continue;
